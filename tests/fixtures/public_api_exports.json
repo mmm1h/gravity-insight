@@ -35,6 +35,10 @@
     ".governor_observation",
     "validate_governor_observation_snapshot"
   ],
+  "validate_adaptive_governor_snapshot": [
+    ".adaptive_governor",
+    "validate_adaptive_governor_snapshot"
+  ],
   "ActionPlanService": [
     ".action_plan",
     "ActionPlanService"

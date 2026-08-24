@@ -199,7 +199,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
 | `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
 | `analysis_artifacts.compile()` / `verify()` / `render_markdown()` / `write_artifact()` / `write_markdown()` | 从正式 Analysis Result 编译目标无关 Artifact，并离线确定性渲染/原子写入 Markdown |
-| `governor.observations(after_sequence=0, limit=1000)` | 零网络读取当前私有 Runtime scope 的值无关 HTTP attempt 观测；不暴露 path、请求/响应值或 scope key |
+| `governor.policy()` / `observations(after_sequence=0, limit=1000)` | 零网络读取当前私有 Runtime scope 的 adaptive policy 与值无关 HTTP attempt 观测；不暴露 path、请求/响应值或 scope key |
 | `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
 | `LocalSkillResolver()` / `RuntimeSkillResolver(workspace=...).resolve(id, journey=...)` | 前者只读/导出 Built-in package；后者 Built-in-first，并只读项目 exact Team lock、CAS 与 Trusted Pack startup state；均不选择或执行 Product |
 | `SemanticRegistry(sources).list()` / `describe(uri)` / `resolve(uri)` / `validate(source)` / `dependencies(uris)` | 确定性编译并离线解析版本化 Business Semantic 与项目 Binding；缺失或冲突不猜测 |
@@ -619,10 +619,10 @@ markdown_receipt = sdk.analysis_artifacts.write_markdown(artifact, "tmp/analysis
 固定上限为 source/Artifact 各 8 MiB、findings 256、sections 8、Markdown UTF-8 1 MiB；超限整体失败且不截断 claims/findings。`gravity.analysis-rendering.v1` 转义所有非固定文本，不生成链接、raw HTML、项目模板或部门措辞，并绑定 Artifact/Result/Receipt/content digest。JSON/Markdown 在完整校验后原子写；Artifact 服务不执行 Plan、查询或 Action。`sdk.actions.preview_dashboard_delivery()` 只接受 `markdown_notes + artifact_scope + single_column`、verified Artifact、resolved Metric/Dimension、Workspace App、有序日期和无 report association 的 owned Dashboard，完整行最多拆为 20 个 4,000 字符 note。
 确认后同一 Action store/claim owner 把 expected preimage 交给既有 `dashboard.notes.replace` write lock，最多写一次并用 marker 读回；request 永不接受 `ui_config`、`report_list` 或 raw Web config。成功 target/Receipts 绑定 Artifact、Result、snapshot、filters、claims、rendering、source/mutation Receipt digest；非 Gravity renderer 不依赖 Dashboard，最终报告语言仍由调用项目负责。
 
-## Governor Observation Mode
+## Adaptive Governor
 
-`sdk.governor.observations()` 返回 `gravity.governor-observation-snapshot.v1`：同一 `GravitySDK.from_env()` shared Runtime 的最多 4,096 条 attempt，按 sequence 增量读取；host 只保留 SHA-256 key，operation/status/latency/rate-delay/attempt/当前静态 budget 都有上限，查询本身 `network_called=false`。
-R14-A 只在原 `perform_http_request()` 计数边界完成后记录，既有 HTTP Receipt 保持不变；`observe|disabled` 不改变 limiter、24/2 semaphore、SQL 外层池、Plan worker、retry、请求参数/数量/顺序。未绑定 Runtime 的直接 SDK 返回 `GOVERNOR_SCOPE_UNBOUND`；Provider RPC/内部网络不进入 Runtime HTTP 观测，进程重启会清空内存基线。
+`sdk.governor.policy()` 返回 `gravity.adaptive-governor-snapshot.v1`：同一 `GravitySDK.from_env()` shared Runtime 的当前私有 scope、25-total/24-business/two-SQL hard cap、最多 128 个 waiters 以及 bounded lane limit/circuit/counter/latency；默认 `adaptive`，`GRAVITY_GOVERNOR_MODE=static` 保留固定上限并关闭 AIMD、circuit 与 single-flight。查询本身 `network_called=false`，只呈现 SHA-256 host key，不呈现 request/Journey key、scope、URL/path 或值。
+每个真实 `perform_http_request()` attempt 在计数/HTTP Receipt/R14-A observation 之前取得中央 lease；成功 single-flight follower 和 circuit/backpressure/cancellation rejection 不生成网络证据。AIMD/circuit 不增加 retry，Host Rate Limiter 与请求参数/顺序不变；Plan 只绑定 execution Journey fairness，Artifact stream 受 hard cap 但不合并，Provider RPC 仍只受 R08。`observations()` 保留最多 4,096 条增量 attempt；未绑定 Runtime 的 SDK 返回 `GOVERNOR_SCOPE_UNBOUND`，进程重启清空内存 policy/observation state。
 
 ## Skill And Provider Control Planes
 

@@ -6,8 +6,8 @@ module; SQL has one exact POST route.
 
 ``get_shared_runtime()`` (in ``shared_runtime``) is shared **per resolved
 credential file** inside one process: that file's session, credential
-provider, and connection pool. The 10 rps host limiter and 24 in-flight
-slots stay process-wide so two accounts in one process cannot multiply
+provider, and connection pool. The 10 rps host limiter and 25-total/24-business
+Governor stay process-wide so two accounts in one process cannot multiply
 upstream traffic. Different credential files no longer reuse one runtime.
 """
 
@@ -16,7 +16,6 @@ from __future__ import annotations
 import os
 import random
 import re
-import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -25,6 +24,12 @@ from types import MappingProxyType
 from typing import Any, Callable, Collection, Mapping, MutableMapping
 
 from .content_encoding import ACCEPT_ENCODING
+from .adaptive_governor import (
+    AdaptiveRequestGovernor,
+    SQL_CAPACITY,
+    get_process_governor,
+)
+from .adaptive_governor_contract import raise_request_failure
 from .credentials import (
     GRAVITY_HOST,
     CredentialProvider,
@@ -64,14 +69,12 @@ from .runtime_principal import (
 
 
 DEFAULT_CONCURRENCY = 6
-MAX_SQL_CONCURRENCY = 2
+MAX_SQL_CONCURRENCY = SQL_CAPACITY
 # One spare connection allows a login on the 401 recovery path while twenty-four
 # business requests are in flight.
 CONNECTION_POOL_SIZE = MAX_CONCURRENCY + 1
 FALLBACK_CHROME_MAJOR = 150
 _RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
-_PROCESS_BUSINESS_SLOTS = threading.BoundedSemaphore(MAX_CONCURRENCY)
-_PROCESS_SQL_SLOTS = threading.BoundedSemaphore(MAX_SQL_CONCURRENCY)
 _AUTH_HEADER_NAMES = frozenset(
     {"Authorization", "Gravity_Id", "gravity_Cid", "gravity_Super", "gravity_Email"}
 )
@@ -211,6 +214,7 @@ class _GravityRequester:
         receipt_root: Path = STATE_ROOT,
         observation_scope_key: str = "local-runtime",
         observation_clock: Callable[[], float] = time.monotonic,
+        governor: AdaptiveRequestGovernor | None = None,
     ) -> None:
         if timeout <= 0 or attempts < 1 or attempts > 5:
             raise ValueError("invalid Gravity timeout or retry count")
@@ -224,8 +228,9 @@ class _GravityRequester:
         self.receipt_root = receipt_root
         self.observation_scope_key = observation_scope_key
         self.observation_clock = observation_clock
-        self.business_limit = MAX_CONCURRENCY
-        self.sql_limit = MAX_SQL_CONCURRENCY
+        self.governor = governor if governor is not None else get_process_governor()
+        self.business_limit = self.governor.business_capacity
+        self.sql_limit = self.governor.sql_capacity
 
     def request(
         self,
@@ -269,9 +274,7 @@ class _GravityRequester:
                 if attempt + 1 < request_attempts and _is_retryable_exception(exc):
                     self.sleeper(self._backoff(attempt))
                     continue
-                raise TransportError(
-                    "Gravity request failed before a response was received"
-                ) from exc
+                raise_request_failure(exc)
             status = int(getattr(response, "status_code", 0))
             if status == 429:
                 delay = _retry_delay(
@@ -314,6 +317,7 @@ class _GravityRequester:
                 method="POST",
                 path="/account_center/api/v1/user_login/v2/",
                 body=body,
+                effect="login",
             ),
         )
         return validated_login_payload(response.status_code, response.payload, response.retry_after_ms)
@@ -341,8 +345,7 @@ class GravityHttpRuntime:
         wall_clock: Callable[[], datetime] | None = None,
         random_source: Callable[[], float] = random.random,
         interval_jitter_ratio: float = 0.1,
-        business_slots: threading.BoundedSemaphore | None = None,
-        sql_slots: threading.BoundedSemaphore | None = None,
+        governor: AdaptiveRequestGovernor | None = None,
         persist_credentials: bool = True,
         environ: MutableMapping[str, str] | None = None,
         receipt_root: Path = STATE_ROOT,
@@ -354,7 +357,9 @@ class GravityHttpRuntime:
             resolved_isolated = True
         env_path = selected_env
         isolated = resolved_isolated
-        selected_observation_scope = observation_scope_key or f"local-runtime:{id(self)}"
+        selected_observation_scope = observation_scope_key or (
+            f"local-runtime:{id(self)}:{time.monotonic_ns()}"
+        )
         self.__session = session or _build_session()
         self.__limiter = limiter or HostRateLimiter(
             clock=rate_clock,
@@ -362,8 +367,9 @@ class GravityHttpRuntime:
             interval_jitter_ratio=interval_jitter_ratio,
         )
         self.__limiter.configure(GRAVITY_HOST, requests_per_second)
-        self.__business_slots = business_slots or _PROCESS_BUSINESS_SLOTS
-        self.__sql_slots = sql_slots or _PROCESS_SQL_SLOTS
+        self.__governor = (
+            governor if governor is not None else get_process_governor()
+        )
         self.__requester = _GravityRequester(
             self.__session,
             self.__limiter,
@@ -375,6 +381,7 @@ class GravityHttpRuntime:
             receipt_root=receipt_root,
             observation_scope_key=selected_observation_scope,
             observation_clock=rate_clock,
+            governor=self.__governor,
         )
         self.__observation_scope_key = selected_observation_scope
         if credentials is None:
@@ -412,6 +419,11 @@ class GravityHttpRuntime:
             limit=limit,
         )
 
+    def adaptive_governor_snapshot(self) -> dict[str, Any]:
+        """Return this private Runtime scope's active policy without I/O."""
+
+        return self.__governor.snapshot(self.__observation_scope_key)
+
     def request(
         self,
         profile: RequestProfile,
@@ -444,6 +456,8 @@ class GravityHttpRuntime:
                 path=path,
                 query=params,
                 body=json_body,
+                effect="read",
+                coalesce_safe=True,
             ),
         )
 
@@ -500,53 +514,42 @@ class GravityHttpRuntime:
         attempts: int | None,
         receipt_context: Mapping[str, Any],
     ) -> RuntimeResponse:
-        is_sql = profile is SQL_PROFILE
-        if is_sql:
-            self.__sql_slots.acquire()
-        try:
-            self.__business_slots.acquire()
-            try:
-                refreshed = False
-                while True:
-                    credential = self.__credentials.get()
-                    response = self.__requester.request(
-                        profile,
-                        method,
-                        path,
-                        headers=credential.authorization_headers(),
-                        params=params,
-                        json_body=json_body,
-                        timeout=timeout,
-                        attempts=attempts,
-                        receipt_context={**receipt_context, "retry": refreshed},
+        refreshed = False
+        while True:
+            credential = self.__credentials.get()
+            response = self.__requester.request(
+                profile,
+                method,
+                path,
+                headers=credential.authorization_headers(),
+                params=params,
+                json_body=json_body,
+                timeout=timeout,
+                attempts=attempts,
+                receipt_context={**receipt_context, "retry": refreshed},
+            )
+            semantic_code = (
+                response.payload.get("code")
+                if isinstance(response.payload, Mapping)
+                else None
+            )
+            rejected = (
+                response.status_code in {401, 403}
+                or semantic_code in semantic_auth_codes
+            )
+            if rejected and not refreshed:
+                _refresh_if_rejected(self.__credentials, credential)
+                refreshed = True
+                continue
+            if rejected:
+                if response.status_code == 403:
+                    raise PermissionUnavailableError(
+                        "the authenticated Gravity account cannot read this capability"
                     )
-                    semantic_code = (
-                        response.payload.get("code")
-                        if isinstance(response.payload, Mapping)
-                        else None
-                    )
-                    rejected = (
-                        response.status_code in {401, 403}
-                        or semantic_code in semantic_auth_codes
-                    )
-                    if rejected and not refreshed:
-                        _refresh_if_rejected(self.__credentials, credential)
-                        refreshed = True
-                        continue
-                    if rejected:
-                        if response.status_code == 403:
-                            raise PermissionUnavailableError(
-                                "the authenticated Gravity account cannot read this capability"
-                            )
-                        raise AuthenticationError(
-                            "Gravity authorization is invalid or expired"
-                        )
-                    return response
-            finally:
-                self.__business_slots.release()
-        finally:
-            if is_sql:
-                self.__sql_slots.release()
+                raise AuthenticationError(
+                    "Gravity authorization is invalid or expired"
+                )
+            return response
 
 
 def _build_session() -> Any:

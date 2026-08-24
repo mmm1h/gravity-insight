@@ -12,6 +12,7 @@ from unittest import mock
 from gravity_sdk import (
     GovernorObservationService,
     GravitySDK,
+    validate_adaptive_governor_snapshot,
     validate_governor_observation,
     validate_governor_observation_snapshot,
 )
@@ -371,8 +372,10 @@ class GovernorObservationContractTests(unittest.TestCase):
             self.assertIs(sdk.governor, sdk.governor)
             self.assertIsInstance(sdk.governor, GovernorObservationService)
             empty = sdk.governor.observations()
+            empty_policy = sdk.governor.policy()
             _sql(runtime)
             populated = sdk.governor.observations(after_sequence=empty["next_sequence"])
+            populated_policy = sdk.governor.policy()
 
             unbound = GravitySDK(
                 insight_factory=lambda: self.fail("Insight must remain lazy"),
@@ -380,11 +383,22 @@ class GovernorObservationContractTests(unittest.TestCase):
             )
             with self.assertRaises(InputValidationError) as raised:
                 unbound.governor.observations()
+            with self.assertRaises(InputValidationError) as policy_raised:
+                unbound.governor.policy()
 
         self.assertEqual((0, 1, 1), (
             empty["count"], populated["count"], len(session.calls)
         ))
         self.assertEqual("GOVERNOR_SCOPE_UNBOUND", raised.exception.code)
+        self.assertEqual("GOVERNOR_SCOPE_UNBOUND", policy_raised.exception.code)
+        self.assertEqual((0, 1, False), (
+            empty_policy["lane_count"], populated_policy["lane_count"],
+            populated_policy["network_called"],
+        ))
+        self.assertEqual(
+            populated_policy,
+            validate_adaptive_governor_snapshot(populated_policy),
+        )
         self.assertEqual(
             populated, validate_governor_observation_snapshot(populated)
         )
@@ -400,6 +414,10 @@ class GovernorObservationContractTests(unittest.TestCase):
         self.assertIs(
             gravity_sdk.validate_governor_observation_snapshot,
             validate_governor_observation_snapshot,
+        )
+        self.assertIs(
+            gravity_sdk.validate_adaptive_governor_snapshot,
+            validate_adaptive_governor_snapshot,
         )
 
 

@@ -17,16 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1335 -> 1339 for R14-A scope and snapshot query gates.
+        """Went 1339 -> 1340 for the R14-B offline policy query gate.
 
-        Governor cursor/runtime validation has safe actuals; observation write
-        failures remain isolated and cannot alter request outcomes.
+        Governor policy/runtime validation has safe actuals; scheduling
+        rejections remain structured and never expose request values.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1339
-        assert counts["A"] == 1172
+        assert len(rows) == 1340
+        assert counts["A"] == 1173
         assert counts["B"] == 167
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

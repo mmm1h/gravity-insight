@@ -31,7 +31,7 @@ class AgentRuntimeSdkMixin:
 
     @property
     def governor(self) -> Any:
-        """Value-free observations for this SDK's shared Runtime scope."""
+        """Value-free policy and observations for the shared Runtime scope."""
 
         if self._governor_service is None:
             with self._governor_lock:

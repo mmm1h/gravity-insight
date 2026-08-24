@@ -46,6 +46,9 @@ _EXPORTS = {
     "validate_governor_observation_snapshot": (
         ".governor_observation", "validate_governor_observation_snapshot"
     ),
+    "validate_adaptive_governor_snapshot": (
+        ".adaptive_governor", "validate_adaptive_governor_snapshot"
+    ),
     "compile_analysis_artifact": (
         ".analysis_artifact", "compile_analysis_artifact"
     ),

@@ -223,6 +223,7 @@ class _OpenApiProbeRuntime:
             path=path,
             query=query,
             body=body,
+            coalesce_safe=False,
         )
         response = perform_http_request(
             self._recording.request,

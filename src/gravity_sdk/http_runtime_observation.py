@@ -1,4 +1,4 @@
-"""Observed call adapter kept outside the fixed HTTP scheduling loop."""
+"""Runtime call adapter for central governance and value-free observation."""
 
 from __future__ import annotations
 
@@ -47,6 +47,7 @@ def perform_runtime_attempt(
             sql_limit=requester.sql_limit,
         ),
         governor_clock=requester.observation_clock,
+        adaptive_governor=requester.governor,
     )
 
 

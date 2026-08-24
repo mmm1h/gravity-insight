@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from gravity_sdk.analysis_context import ANALYSIS_CONTEXT_SOURCES, analysis_context
+from gravity_sdk.adaptive_governor import AdaptiveRequestGovernor, STATIC
 from gravity_sdk.credentials import Credential
 from gravity_sdk.dashboard_analysis import run_dashboard_analysis
 from gravity_sdk.http_runtime import GravityHttpRuntime, HostRateLimiter, SQL_PROFILE
@@ -383,8 +384,12 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
             rate_clock=lambda: now[0], random_source=lambda: 0.0,
             interval_jitter_ratio=0.0,
             wall_clock=lambda: datetime(2026, 8, 13, tzinfo=timezone.utc),
-            business_slots=threading.BoundedSemaphore(2),
-            sql_slots=threading.BoundedSemaphore(2),
+            governor=AdaptiveRequestGovernor(
+                mode=STATIC,
+                total_capacity=3,
+                business_capacity=2,
+                sql_capacity=2,
+            ),
         )
 
         def request():

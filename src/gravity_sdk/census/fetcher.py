@@ -158,6 +158,7 @@ class StaticFetcher:
                             operation_id="census_fetch",
                             method="GET",
                             path=urlsplit(url).path,
+                            effect="read",
                         ),
                         "attempt": attempt + 1,
                         "retry": attempt > 0,

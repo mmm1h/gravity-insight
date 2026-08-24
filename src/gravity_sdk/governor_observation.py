@@ -289,7 +289,7 @@ def validate_governor_observation_snapshot(
 
 
 class GovernorObservationService:
-    """Lazy current-scope snapshot facade for an environment-bound SDK."""
+    """Lazy current-scope Governor facade for an environment-bound SDK."""
 
     def __init__(self, runtime_factory: Callable[[], Any] | None) -> None:
         self._runtime_factory = runtime_factory
@@ -300,14 +300,7 @@ class GovernorObservationService:
     def observations(
         self, *, after_sequence: int = 0, limit: int = MAX_PAGE_SIZE
     ) -> dict[str, Any]:
-        if self._runtime_factory is None:
-            raise InputValidationError(
-                "actual value: SDK has no environment-bound Runtime; allowed value: GravitySDK.from_env()",
-                field="sdk",
-                code="GOVERNOR_SCOPE_UNBOUND",
-                next_action="Construct a scoped SDK with GravitySDK.from_env(), then read its observations.",
-            )
-        runtime = self._runtime_factory()
+        runtime = self._runtime()
         snapshot = getattr(runtime, "governor_observations", None)
         if not callable(snapshot):
             raise InputValidationError(
@@ -317,6 +310,30 @@ class GovernorObservationService:
                 next_action="Reinstall the current Runtime and retry the offline observation query.",
             )
         return snapshot(after_sequence=after_sequence, limit=limit)
+
+    def policy(self) -> dict[str, Any]:
+        """Return the current adaptive policy snapshot without network I/O."""
+
+        runtime = self._runtime()
+        snapshot = getattr(runtime, "adaptive_governor_snapshot", None)
+        if not callable(snapshot):
+            raise InputValidationError(
+                "actual value: bound Runtime has no adaptive Governor contract; allowed value: the current Gravity HTTP Runtime",
+                field="runtime",
+                code="GOVERNOR_RUNTIME_UNAVAILABLE",
+                next_action="Reinstall the current Runtime and retry the offline policy query.",
+            )
+        return snapshot()
+
+    def _runtime(self) -> Any:
+        if self._runtime_factory is None:
+            raise InputValidationError(
+                "actual value: SDK has no environment-bound Runtime; allowed value: GravitySDK.from_env()",
+                field="sdk",
+                code="GOVERNOR_SCOPE_UNBOUND",
+                next_action="Construct a scoped SDK with GravitySDK.from_env(), then read its Governor state.",
+            )
+        return self._runtime_factory()
 
 
 def _validate(value: Mapping[str, Any], schema: str, label: str) -> dict[str, Any]:

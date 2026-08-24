@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.adaptive-governor-snapshot.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "mode", "policy_revision", "capacity", "scope",
+    "lanes", "lane_count", "truncated", "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.adaptive-governor-snapshot.v1"},
+    "mode": {"enum": ["adaptive", "static"]},
+    "policy_revision": {"const": "gravity.governor-policy.adaptive.v1"},
+    "capacity": {
+      "type": "object",
+      "required": ["total", "business", "sql", "max_queue"],
+      "additionalProperties": false,
+      "properties": {
+        "total": {"type": "integer", "minimum": 2, "maximum": 25},
+        "business": {"type": "integer", "minimum": 1, "maximum": 24},
+        "sql": {"type": "integer", "minimum": 1, "maximum": 24},
+        "max_queue": {"type": "integer", "minimum": 1, "maximum": 128}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "active", "queued", "peak_active", "rejected", "cancelled", "coalesced"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "active": {"type": "integer", "minimum": 0, "maximum": 25},
+        "queued": {"type": "integer", "minimum": 0, "maximum": 128},
+        "peak_active": {"type": "integer", "minimum": 0, "maximum": 25},
+        "rejected": {"type": "integer", "minimum": 0},
+        "cancelled": {"type": "integer", "minimum": 0},
+        "coalesced": {"type": "integer", "minimum": 0}
+      }
+    },
+    "lanes": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/lane"}
+    },
+    "lane_count": {"type": "integer", "minimum": 0, "maximum": 256},
+    "truncated": {"type": "boolean"},
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "lane": {
+      "type": "object",
+      "required": [
+        "host_key", "operation_class", "profile", "concurrency_limit",
+        "max_limit", "active", "queued", "circuit_state",
+        "cooldown_remaining_ms", "consecutive_failures", "ewma_latency_ms",
+        "counters"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "host_key": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "operation_class": {
+          "type": "string", "minLength": 1, "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        "profile": {
+          "type": "string", "minLength": 1, "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        "concurrency_limit": {"type": "integer", "minimum": 1, "maximum": 24},
+        "max_limit": {"type": "integer", "minimum": 1, "maximum": 24},
+        "active": {"type": "integer", "minimum": 0, "maximum": 25},
+        "queued": {"type": "integer", "minimum": 0, "maximum": 128},
+        "circuit_state": {"enum": ["closed", "open", "half_open"]},
+        "cooldown_remaining_ms": {"type": "integer", "minimum": 0, "maximum": 30000},
+        "consecutive_failures": {"type": "integer", "minimum": 0},
+        "ewma_latency_ms": {"type": "integer", "minimum": 0, "maximum": 600000},
+        "counters": {
+          "type": "object",
+          "required": [
+            "success", "capacity_failure", "client_error", "aimd_increase",
+            "aimd_decrease", "circuit_open", "half_open", "coalesced"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "success": {"type": "integer", "minimum": 0},
+            "capacity_failure": {"type": "integer", "minimum": 0},
+            "client_error": {"type": "integer", "minimum": 0},
+            "aimd_increase": {"type": "integer", "minimum": 0},
+            "aimd_decrease": {"type": "integer", "minimum": 0},
+            "circuit_open": {"type": "integer", "minimum": 0},
+            "half_open": {"type": "integer", "minimum": 0},
+            "coalesced": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    }
+  }
+}

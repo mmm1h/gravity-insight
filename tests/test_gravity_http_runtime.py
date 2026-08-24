@@ -11,6 +11,8 @@ from unittest import mock
 
 import requests
 
+from gravity_sdk.adaptive_governor import AdaptiveRequestGovernor, STATIC
+
 try:
     from gravity_sdk import (
         AuthenticationError,
@@ -324,7 +326,12 @@ class GravityHttpRuntimeTests(unittest.TestCase):
         runtime = GravityHttpRuntime(
             session=session,
             credentials=StaticCredentials(),
-            sql_slots=threading.BoundedSemaphore(6),
+            governor=AdaptiveRequestGovernor(
+                mode=STATIC,
+                total_capacity=7,
+                business_capacity=6,
+                sql_capacity=6,
+            ),
             limiter=HostRateLimiter(
                 clock=lambda: 0.0,
                 random_source=lambda: 0.0,
@@ -400,8 +407,12 @@ class GravityHttpRuntimeTests(unittest.TestCase):
             runtime = GravityHttpRuntime(
                 session=session,
                 credentials=provider,
-                business_slots=threading.BoundedSemaphore(6),
-                sql_slots=threading.BoundedSemaphore(6),
+                governor=AdaptiveRequestGovernor(
+                    mode=STATIC,
+                    total_capacity=7,
+                    business_capacity=6,
+                    sql_capacity=6,
+                ),
                 requests_per_second=100,
                 sleeper=lambda _delay: None,
                 random_source=lambda: 0.0,
@@ -450,11 +461,12 @@ class GravityHttpRuntimeTests(unittest.TestCase):
                     with lock:
                         active -= 1
 
+        governor = AdaptiveRequestGovernor(mode=STATIC)
         runtimes = tuple(
             GravityHttpRuntime(
                 session=SqlConcurrencySession(),
                 credentials=StaticCredentials(),
-                business_slots=threading.BoundedSemaphore(24),
+                governor=governor,
                 requests_per_second=100,
                 sleeper=lambda _delay: None,
                 random_source=lambda: 0.0,

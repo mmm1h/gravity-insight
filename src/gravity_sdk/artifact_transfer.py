@@ -247,6 +247,7 @@ class _RequestsArtifactTransport:
                 operation_id=self._operation_id,
                 method="GET",
                 path="/<response-bound-artifact-binary>",
+                effect="stream",
             ),
             receipt_root=STATE_ROOT,
         )
