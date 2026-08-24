@@ -21,11 +21,11 @@ from gravity_sdk.skill_hub_contract import compile_hub_index, compile_hub_source
 from gravity_sdk.skill_hub_locks import build_skills_lock, compile_skills_lock
 from gravity_sdk.skill_render import render_package_files, skill_package_descriptor
 from gravity_sdk.thinkingai_full_specification import (
-    compile_full_eval,
     compile_full_source,
     compile_full_specification,
     full_source_manifests,
 )
+from gravity_sdk.thinkingai_full_eval import compile_full_eval
 from gravity_sdk.thinkingai_inventory import load_inventory_snapshot
 from gravity_sdk.thinkingai_representative import (
     validate_representative_eval,
