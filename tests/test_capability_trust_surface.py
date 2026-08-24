@@ -97,7 +97,7 @@ class CapabilityTrustSurfaceTests(unittest.TestCase):
 
         self.assertIs(sdk.capability_trust, sdk.capability_trust)
         self.assertIs(sdk.journeys, sdk.journeys)
-        self.assertEqual(6, sdk.journeys.list()["count"])
+        self.assertEqual(11, sdk.journeys.list()["count"])
 
 
 if __name__ == "__main__":
