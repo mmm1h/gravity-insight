@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.thinkingai-source-observation.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "source_adapter", "observed_at", "scope",
+    "closure", "category_counts", "item_count", "items", "network_called",
+    "observation_sha256"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "thinkingai_source_observation"},
+    "schema_version": {"const": "gravity.thinkingai-source-observation.v1"},
+    "source_adapter": {"$ref": "#/$defs/source_adapter"},
+    "observed_at": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 32,
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "scope": {"$ref": "#/$defs/scope"},
+    "closure": {
+      "type": "object",
+      "required": [
+        "pagination_urls", "sitemap_skill_count", "sitemap_orphans",
+        "missing_from_sitemap"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "pagination_urls": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 512}
+        },
+        "sitemap_skill_count": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "sitemap_orphans": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/detail_url"}
+        },
+        "missing_from_sitemap": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/detail_url"}
+        }
+      }
+    },
+    "category_counts": {"$ref": "#/$defs/category_counts"},
+    "item_count": {"type": "integer", "minimum": 1, "maximum": 1000},
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": {"$ref": "#/$defs/item"}
+    },
+    "network_called": {"const": true},
+    "observation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "source_adapter": {
+      "type": "object",
+      "required": ["adapter_id", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {"const": "thinkingai-public-catalog-dom"},
+        "version": {"const": 1}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "root_url", "robots_url", "robots_status", "sitemap_url",
+        "catalog_language", "detail_route_pattern"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "root_url": {"const": "https://www.thinkingai.cn/skills/"},
+        "robots_url": {"const": "https://www.thinkingai.cn/robots.txt"},
+        "robots_status": {"const": "allowed_except_backend_and_cj_booth"},
+        "sitemap_url": {"const": "https://www.thinkingai.cn/sitemap.xml"},
+        "catalog_language": {"const": "zh-CN"},
+        "detail_route_pattern": {"const": "https://www.thinkingai.cn/skills/<source-id>/"}
+      }
+    },
+    "detail_url": {
+      "type": "string",
+      "minLength": 40,
+      "maxLength": 256,
+      "pattern": "^https://www\\.thinkingai\\.cn/skills/[a-z0-9]+(?:-[a-z0-9]+)*/$"
+    },
+    "category": {
+      "enum": [
+        "付费分析", "游戏分析", "用户分析", "数据分析", "异常诊断", "舆情分析",
+        "数据工程", "数据采集", "运营分析", "Agent", "知识库管理"
+      ]
+    },
+    "category_counts": {
+      "type": "object",
+      "required": [
+        "付费分析", "游戏分析", "用户分析", "数据分析", "异常诊断", "舆情分析",
+        "数据工程", "数据采集", "运营分析", "Agent", "知识库管理"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "付费分析": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "游戏分析": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "用户分析": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "数据分析": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "异常诊断": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "舆情分析": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "数据工程": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "数据采集": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "运营分析": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "Agent": {"type": "integer", "minimum": 0, "maximum": 1000},
+        "知识库管理": {"type": "integer", "minimum": 0, "maximum": 1000}
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": [
+        "source_id", "canonical_url", "title", "source_categories", "http_status",
+        "final_url", "declared_canonical_url", "h1", "content_sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "canonical_url": {"$ref": "#/$defs/detail_url"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 160},
+        "source_categories": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/category"}
+        },
+        "http_status": {"type": "integer", "minimum": 100, "maximum": 599},
+        "final_url": {"$ref": "#/$defs/detail_url"},
+        "declared_canonical_url": {"$ref": "#/$defs/detail_url"},
+        "h1": {"type": "string", "minLength": 1, "maxLength": 160},
+        "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

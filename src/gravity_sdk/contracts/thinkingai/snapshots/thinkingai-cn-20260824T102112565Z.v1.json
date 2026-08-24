@@ -1,0 +1,1131 @@
+{
+  "artifact_kind": "thinkingai_inventory_snapshot",
+  "category_counts": {
+    "Agent": 3,
+    "付费分析": 14,
+    "异常诊断": 13,
+    "数据分析": 13,
+    "数据工程": 8,
+    "数据采集": 8,
+    "游戏分析": 4,
+    "用户分析": 3,
+    "知识库管理": 3,
+    "舆情分析": 5,
+    "运营分析": 5
+  },
+  "crawl_scope": {
+    "catalog_language": "zh-CN",
+    "detail_route_pattern": "https://www.thinkingai.cn/skills/<source-id>/",
+    "robots_status": "allowed_except_backend_and_cj_booth",
+    "robots_url": "https://www.thinkingai.cn/robots.txt",
+    "root_url": "https://www.thinkingai.cn/skills/",
+    "sitemap_url": "https://www.thinkingai.cn/sitemap.xml"
+  },
+  "item_count": 55,
+  "items": [
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/ad-delivery-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "运营分析"
+      ],
+      "source_content_sha256": "ee600c4306a8f29472eb8d1d4f76aae59834dc5400fe9e009e93fd5dd1dd762c",
+      "source_id": "ad-delivery-analysis",
+      "source_title": "广告投放分析",
+      "source_url": "https://www.thinkingai.cn/skills/ad-delivery-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/agent@1",
+        "taxonomy://gravity/knowledge@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "Agent",
+        "知识库管理"
+      ],
+      "source_content_sha256": "42705c18fece50907816b7690483885ef6dc6257146d0637ee4343838e9fa88d",
+      "source_id": "ae-agent-resource-management",
+      "source_title": "AE Agent 平台资源管理",
+      "source_url": "https://www.thinkingai.cn/skills/ae-agent-resource-management/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/agent@1",
+        "taxonomy://gravity/knowledge@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "Agent",
+        "知识库管理"
+      ],
+      "source_content_sha256": "9369aa40fc33ea0942a970e8ad94d1bccfc7b3fee5e8cf2a65066e3e345f6725",
+      "source_id": "ae-agent-team-management",
+      "source_title": "AE 多 Agent 协作",
+      "source_url": "https://www.thinkingai.cn/skills/ae-agent-team-management/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "8eddb65348d28b8184cf2e3bd4528e45551604d69d8936c537bd8eca5dcef166",
+      "source_id": "ae-analysis",
+      "source_title": "AE 分析",
+      "source_url": "https://www.thinkingai.cn/skills/ae-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "9c9475b59d288fe8d22a1afba47b3dbed919f87259e1c7baa261f2fca9bdd663",
+      "source_id": "ae-analysis-global",
+      "source_title": "AE 分析-多集群",
+      "source_url": "https://www.thinkingai.cn/skills/ae-analysis-global/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "ede0dae53b23b5aa776b184f9e9b005fe303f8eee9090f7b9b7bcaef4e0060e6",
+      "source_id": "ae-analysis-intent",
+      "source_title": "分析意图路由",
+      "source_url": "https://www.thinkingai.cn/skills/ae-analysis-intent/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "舆情分析"
+      ],
+      "source_content_sha256": "aadffa0705e853ec2ef5fb20cfc7c370f592e3f3977e1d5e3640d57f1a68bb83",
+      "source_id": "ae-community",
+      "source_title": "AE 社区",
+      "source_url": "https://www.thinkingai.cn/skills/ae-community/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "bbf54f9fa593f919a960d79a604cbbf9c59043a836a9fefa46a7d4306ef16acf",
+      "source_id": "ae-dataops",
+      "source_title": "AE 数据开发",
+      "source_url": "https://www.thinkingai.cn/skills/ae-dataops/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "运营分析"
+      ],
+      "source_content_sha256": "7a1d32be56644cd93d7c35c583d87f9319cda8db6cf032ef3f2abbf9fb577c15",
+      "source_id": "ae-engage",
+      "source_title": "AE 运营",
+      "source_url": "https://www.thinkingai.cn/skills/ae-engage/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/agent@1",
+        "taxonomy://gravity/knowledge@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "Agent",
+        "知识库管理"
+      ],
+      "source_content_sha256": "edd2022552d018897b9b17e538b9fcaf246735766468fafec89c2892cc306fbc",
+      "source_id": "ae-knowledge-base-management",
+      "source_title": "AE 知识库管理",
+      "source_url": "https://www.thinkingai.cn/skills/ae-knowledge-base-management/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "459b75d97e76cde6aa88381c60d1769db13614cfdcd3dc557f13deac33208450",
+      "source_id": "ae-tracking-code-generation",
+      "source_title": "AE 埋点代码生成",
+      "source_url": "https://www.thinkingai.cn/skills/ae-tracking-code-generation/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "7123c349b38a47d8b40d26a87196568dfcdb3aabdbd2c1a0f640ff8ff55a57a7",
+      "source_id": "ae-tracking-plan-generation",
+      "source_title": "AE 埋点方案生成",
+      "source_url": "https://www.thinkingai.cn/skills/ae-tracking-plan-generation/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "4224c77205412c143f81d630dd17545bcd24337de25b374573d6a7b9499d08a7",
+      "source_id": "analysis-metric-definition-alignment",
+      "source_title": "分析口径对齐",
+      "source_url": "https://www.thinkingai.cn/skills/analysis-metric-definition-alignment/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/app-device-performance-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "c3a92e92c3c0c6a80f2071aa2d5fea9072c111288d3c42f5031904a39486c345",
+      "source_id": "app-device-performance-analysis",
+      "source_title": "APP 设备性能分析",
+      "source_url": "https://www.thinkingai.cn/skills/app-device-performance-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/channel-quality-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "运营分析"
+      ],
+      "source_content_sha256": "4a371ca5c338c120a0768f494c27dfc0ad9256ecaa385cce6ff2da2fd2ac5f84",
+      "source_id": "channel-quality-analysis",
+      "source_title": "渠道质量分析",
+      "source_url": "https://www.thinkingai.cn/skills/channel-quality-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/churn-user-identification-persona@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/user@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "用户分析"
+      ],
+      "source_content_sha256": "10736fbee7a8b8a470601d3b36855b97d4a08962345ff6f5e0d758a1ce1cfa84",
+      "source_id": "churn-user-identification-persona",
+      "source_title": "流失用户识别与画像",
+      "source_url": "https://www.thinkingai.cn/skills/churn-user-identification-persona/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/community-comment-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "舆情分析"
+      ],
+      "source_content_sha256": "d4f9492f38ee509c4c050cf47dd5e1550b7111904d2329c52bbed4145a2290f7",
+      "source_id": "community-comment-analysis",
+      "source_title": "社区评论分析",
+      "source_url": "https://www.thinkingai.cn/skills/community-comment-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/community-daily-report@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "舆情分析"
+      ],
+      "source_content_sha256": "9ca3d9848dd6a1ec2a867d8a2a437ec7d4ca257a1966ecc71d4b8bb684d86d82",
+      "source_id": "community-daily-report",
+      "source_title": "社区每日报告",
+      "source_url": "https://www.thinkingai.cn/skills/community-daily-report/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/community-hot-topic-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "舆情分析"
+      ],
+      "source_content_sha256": "5d366c376b19ed4cbd4ebb2d6066e8e7f26bc121c7d544b838d5b30f84b112d8",
+      "source_id": "community-hot-topic-analysis",
+      "source_title": "社区话题分析",
+      "source_url": "https://www.thinkingai.cn/skills/community-hot-topic-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/community-weekly-report@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "舆情分析"
+      ],
+      "source_content_sha256": "e404bb43f2717da518aea0d74362fe5895d6f8fb9caa474d14945ae6cfb2fce5",
+      "source_id": "community-weekly-report",
+      "source_title": "社区周报复盘",
+      "source_url": "https://www.thinkingai.cn/skills/community-weekly-report/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/dashboard-no-data-diagnosis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "c7c0adb7f28e504eada3071af628a3060c85c95d28884d2bd1f82eb7e7f067bd",
+      "source_id": "dashboard-no-data-diagnosis",
+      "source_title": "看板无数据排查",
+      "source_url": "https://www.thinkingai.cn/skills/dashboard-no-data-diagnosis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/data-access-assistant@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "76d527f23dbd06236a71a5475c3806292ed218a6384bbe862660d8ad90fbe6bf",
+      "source_id": "data-access-assistant",
+      "source_title": "数据接入助手",
+      "source_url": "https://www.thinkingai.cn/skills/data-access-assistant/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/data-integration-assistant@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "584f10f27b769a529375e6b9e5526b1492b9d953bf354b4e79c94bab538ad2a7",
+      "source_id": "data-integration-assistant",
+      "source_title": "数据集成助手",
+      "source_url": "https://www.thinkingai.cn/skills/data-integration-assistant/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/filter-result-bias-diagnosis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "2dc7dd1512a60b5d1deda800336b8e4bdb0be185699a9dd15d1beb0395b4ee11",
+      "source_id": "filter-result-bias-diagnosis",
+      "source_title": "筛选结果偏差排查",
+      "source_url": "https://www.thinkingai.cn/skills/filter-result-bias-diagnosis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/first-purchase-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "13f93eb5514c0fba38285cb9cce554faac58a987391c96ea990eb71096b8d66e",
+      "source_id": "first-purchase-analysis",
+      "source_title": "首购分析",
+      "source_url": "https://www.thinkingai.cn/skills/first-purchase-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/funnel-analysis-misunderstanding-diagnosis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "f402e4bbddb8ba71a67754ba0f9135a6105b7bc803d1082028f7755892225110",
+      "source_id": "funnel-analysis-misunderstanding-diagnosis",
+      "source_title": "漏斗分析常见误解排查",
+      "source_url": "https://www.thinkingai.cn/skills/funnel-analysis-misunderstanding-diagnosis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/game-campaign-effect-evaluation@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "游戏分析"
+      ],
+      "source_content_sha256": "8e30fa6e8926d35dcef41f15a7e3e8e604347b65c5d6dd887e481abf586d9c7f",
+      "source_id": "game-campaign-effect-evaluation",
+      "source_title": "游戏活动效果评估",
+      "source_url": "https://www.thinkingai.cn/skills/game-campaign-effect-evaluation/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/game-revenue-forecast@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "9b3f0d029e49ccf7ecee2209ada87b31a42ae108d74e7d56c399a81cb825a8cf",
+      "source_id": "game-revenue-forecast",
+      "source_title": "游戏流水预测",
+      "source_url": "https://www.thinkingai.cn/skills/game-revenue-forecast/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "AUTOMATIC_TEXT_TO_SQL_OUT_OF_SCOPE",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "6a3884aefa04928c473b81bbaed7b60f036981075806fbe81f0f3ba4521d69bd",
+      "source_id": "generate-sql-query",
+      "source_title": "SQL 查询生成",
+      "source_url": "https://www.thinkingai.cn/skills/generate-sql-query/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/gift-package-push-strategy@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "运营分析"
+      ],
+      "source_content_sha256": "0c0b39140ffbec420d558733e68995663fcc022861e6a68bfc885b316daf03fd",
+      "source_id": "gift-package-push-strategy",
+      "source_title": "礼包推送策略设计",
+      "source_url": "https://www.thinkingai.cn/skills/gift-package-push-strategy/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/gift-penetration-optimization@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "d0fb5743c7baae4293fa6797f4d1e95a94468b0454bb90eb483f80a0ad4025cb",
+      "source_id": "gift-penetration-optimization",
+      "source_title": "礼包渗透率分析与优化",
+      "source_url": "https://www.thinkingai.cn/skills/gift-penetration-optimization/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/level-churn-diagnosis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "游戏分析"
+      ],
+      "source_content_sha256": "891cbd6fef1b23eb4391357524df518b43d41d6238d96f4bebbc8f84a41e13b1",
+      "source_id": "level-churn-diagnosis",
+      "source_title": "关卡流失诊断",
+      "source_url": "https://www.thinkingai.cn/skills/level-churn-diagnosis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/lt-prediction@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "3a5dffc0fc5a90eb1f769f588b8d544353d5c4858653bd92a1e64e169c7116e7",
+      "source_id": "lt-prediction",
+      "source_title": "LT 预测（用户生命周期预测）",
+      "source_url": "https://www.thinkingai.cn/skills/lt-prediction/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/ltv-analysis-monitoring@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "1ba98b4c820ff820f8d8e83a375a07c303d5ad1289bdfb4bbe82fb232f767f66",
+      "source_id": "ltv-analysis-monitoring",
+      "source_title": "LTV 分析与监控",
+      "source_url": "https://www.thinkingai.cn/skills/ltv-analysis-monitoring/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/ltv-curve-fitting-segmented-calculation@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "f931fc1de1de2ad42c01fc6f4a4cc546f0fab30b17732c6768a360e8e72b566f",
+      "source_id": "ltv-curve-fitting-segmented-calculation",
+      "source_title": "LTV 曲线拟合与分层精算",
+      "source_url": "https://www.thinkingai.cn/skills/ltv-curve-fitting-segmented-calculation/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/ltv-dashboard-setup@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "3011bddebcb841e43a331b1d1f5e372a19e7438dcb887a793016e8df8b7e0fa1",
+      "source_id": "ltv-dashboard-setup",
+      "source_title": "LTV 指标计算与监控看板搭建",
+      "source_url": "https://www.thinkingai.cn/skills/ltv-dashboard-setup/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/ltv-payback-period-prediction@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "c8722f542f1edeebd0ff747b34004074f0aa40d827b16edbc915737f5e34ba1b",
+      "source_id": "ltv-payback-period-prediction",
+      "source_title": "LTV 回本周期预测",
+      "source_url": "https://www.thinkingai.cn/skills/ltv-payback-period-prediction/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/new-hero-launch-insight@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "游戏分析"
+      ],
+      "source_content_sha256": "18cc2babf10bcc19d55814cae849b38bb83ed69133091e21ad3d4c6350b3801f",
+      "source_id": "new-hero-launch-insight",
+      "source_title": "新英雄上线数据洞察",
+      "source_url": "https://www.thinkingai.cn/skills/new-hero-launch-insight/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/operation-journey-canvas-creation@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "运营分析"
+      ],
+      "source_content_sha256": "a635d6ce66395319234ddbbcef497d3712597d0e8c5980d80fc5027b015771d5",
+      "source_id": "operation-journey-canvas-creation",
+      "source_title": "运营旅程画布搭建",
+      "source_url": "https://www.thinkingai.cn/skills/operation-journey-canvas-creation/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/payment-attribution-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "29747f29bfd9d5c0c2aca59dd480c1b4aeede75fcd6c54b6d649a3b0911dd846",
+      "source_id": "payment-attribution-analysis",
+      "source_title": "付费归因分析",
+      "source_url": "https://www.thinkingai.cn/skills/payment-attribution-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/payment-conversion-funnel@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "ad76f239ae2815e76cad6e74da3bfc3ebae5da52025a4291303e25977fc396a4",
+      "source_id": "payment-conversion-funnel",
+      "source_title": "付费漏斗分析",
+      "source_url": "https://www.thinkingai.cn/skills/payment-conversion-funnel/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/payment-funnel-setup@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "66796c487f2b0673bdeea9d554abc4bd4ca65fb0a91b7af475a098ae1a853540",
+      "source_id": "payment-funnel-setup",
+      "source_title": "付费转化漏斗搭建",
+      "source_url": "https://www.thinkingai.cn/skills/payment-funnel-setup/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/payment-rate-anomaly-diagnosis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "4d6a19de6e54e0a720ccf6d558e2b8895acdf2c30beb004c058fa09490f9c1a2",
+      "source_id": "payment-rate-anomaly-diagnosis",
+      "source_title": "付费率异常诊断",
+      "source_url": "https://www.thinkingai.cn/skills/payment-rate-anomaly-diagnosis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/product-pricing-optimization@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "534d2a2eeeba674c709fc183e0b9ed0e40c90f59c9b9ef2b27c671368d00faa5",
+      "source_id": "product-pricing-optimization",
+      "source_title": "产品定价合理性评估与优化",
+      "source_url": "https://www.thinkingai.cn/skills/product-pricing-optimization/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/pvp-win-rate-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "游戏分析"
+      ],
+      "source_content_sha256": "b92a3031f6346b6ad0f8863cd688c3f97d34daedea6c13653b99c8673687bf19",
+      "source_id": "pvp-win-rate-analysis",
+      "source_title": "PVP 胜率分析",
+      "source_url": "https://www.thinkingai.cn/skills/pvp-win-rate-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/repurchase-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "付费分析"
+      ],
+      "source_content_sha256": "8d10e8d1bdcf06c3e915a66669ecda905da31d585c7e5938b6e07857b68d53df",
+      "source_id": "repurchase-analysis",
+      "source_title": "复购分析",
+      "source_url": "https://www.thinkingai.cn/skills/repurchase-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/retention-analysis-data-verification@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "e95c11521d19f9f3ec13e6578add165665bfdd3420c9842a6fdb15295611cf58",
+      "source_id": "retention-analysis-data-verification",
+      "source_title": "留存分析数据验证",
+      "source_url": "https://www.thinkingai.cn/skills/retention-analysis-data-verification/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/single-user-behavior-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/user@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "用户分析"
+      ],
+      "source_content_sha256": "5b7d2ba6ba508ad2c4a078d12500e20129cadca24996607e6ac5b1473a4afd29",
+      "source_id": "single-user-behavior-analysis",
+      "source_title": "单用户行为分析",
+      "source_url": "https://www.thinkingai.cn/skills/single-user-behavior-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/sql-performance-optimization@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "d784ff75e05e38185cb1e3cbb16e75455e8245b14f432a9f20439be92902e775",
+      "source_id": "sql-performance-optimization",
+      "source_title": "SQL 性能优化",
+      "source_url": "https://www.thinkingai.cn/skills/sql-performance-optimization/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/system-field-reference-guide@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "af4734ccb1f42d5946cf5500f824880a000ba53155b73f73dd8cc74c30f84bd7",
+      "source_id": "system-field-reference-guide",
+      "source_title": "系统字段引用指引",
+      "source_url": "https://www.thinkingai.cn/skills/system-field-reference-guide/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "d480813b9d15d58c28687bdbe44496e54586ec3373d5f6bf9eecf27a080d1c9a",
+      "source_id": "te-analysis-model-selection",
+      "source_title": "AE 分析模型调用",
+      "source_url": "https://www.thinkingai.cn/skills/te-analysis-model-selection/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "75a5455f23bf0530f4b0cb83b9b37fe4cae92ec13b2cfd4cc68481c305b0ec39",
+      "source_id": "te-report-data-mismatch-diagnosis",
+      "source_title": "AE 报表数据不一致排查",
+      "source_url": "https://www.thinkingai.cn/skills/te-report-data-mismatch-diagnosis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION",
+      "distribution_allowed": false,
+      "future_skill_uri": null,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": "not_applicable",
+      "license_review": "blocked",
+      "mapping_kind": "out_of_scope_alternative",
+      "source_categories": [
+        "数据分析",
+        "异常诊断"
+      ],
+      "source_content_sha256": "7c04286c61279c00f2d3b9c9cd7a4b78d4f49d466d9a3aa948aac5e03d7a2355",
+      "source_id": "te-user-id-binding-diagnosis",
+      "source_title": "AE 用户 ID 绑定诊断",
+      "source_url": "https://www.thinkingai.cn/skills/te-user-id-binding-diagnosis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/trino-metadata-query-analysis@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "数据工程",
+        "数据采集"
+      ],
+      "source_content_sha256": "7f3803acd5c726f199c75ddfb62bca69f1f6cb770cf3156cac8e3fdcfa10eebd",
+      "source_id": "trino-metadata-query-analysis",
+      "source_title": "Trino 元数据检查与查询分析",
+      "source_url": "https://www.thinkingai.cn/skills/trino-metadata-query-analysis/",
+      "specification_state": "catalogued"
+    },
+    {
+      "alternative_reason_code": null,
+      "distribution_allowed": false,
+      "future_skill_uri": "skill://gravity.game/user-tag-system-design@1.0.0",
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/user@1"
+      ],
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
+      "source_categories": [
+        "用户分析"
+      ],
+      "source_content_sha256": "13511503a8eee9db08b9a203dccf639ef786047e620a0a68a9175a9af27289c6",
+      "source_id": "user-tag-system-design",
+      "source_title": "用户标签体系设计",
+      "source_url": "https://www.thinkingai.cn/skills/user-tag-system-design/",
+      "specification_state": "catalogued"
+    }
+  ],
+  "network_called": false,
+  "schema_version": "gravity.thinkingai-inventory-snapshot.v1",
+  "snapshot_sha256": "da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5",
+  "source_adapter": {
+    "adapter_id": "thinkingai-public-catalog-dom",
+    "version": 1
+  },
+  "source_observation": {
+    "observation_sha256": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2",
+    "observed_at": "2026-08-24T10:21:12.565Z"
+  }
+}
