@@ -3,18 +3,20 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A/B `fixed_dev`, R14-C/D `specified` |
+| Status | `in_progress`; R14-A/B `fixed_dev`, R14-C internally approved 2026-08-24 |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A/B `fixed_dev`; R14-C/D `specified` |
+| Milestones | R14-A/B `fixed_dev`; R14-C `in_progress`; R14-D `specified` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
 | R14-B branch / worktree | `codex/r14b-adaptive-governor` / `D:\git-pjt\gravity-sdk-wt\r14b-adaptive-governor` |
 | R14-B feature / merge | `fe299ea279f43c3ed3396e5998745395ab4720e9` / `dev@dd357ed5baa0fdd9c4ca63b278ac274f94d91d55` |
+| R14-C baseline | `dev@711d288134813cb9fa73d87c246c470b5391fc07` |
+| R14-C branch / worktree | `codex/r14c-execution-variants` / `D:\git-pjt\gravity-sdk-wt\r14c-execution-variants` |
 | Production requests | `0`; fake Runtime HTTP only |
 | Main integration | Frozen until whole program completion |
 
@@ -233,6 +235,35 @@ not authorize Variant selection, production probes, releases or `main`.
   single-flight follower may already have reserved a fixed rate slot.
 - R14-C/D Variant contracts and automatic selection are not delivered. No
   latency/cost observation can select a Product path or bypass Trust.
+
+## R14-C Plan Owner Verdict And Ready Binding
+
+R14-B is `fixed_dev`. Under the user's continuous implementation authorization,
+the plan owner reviewed `tmp/r14c-execution-variant-characterization-proposal.md`
+and its conflict ledger, bound the baseline/Product/gates, and advanced only
+R14-C through `reviewed` and `ready` to `in_progress`. R14-D remains
+`specified`; this does not authorize automatic selection, production probes,
+release or `main`.
+
+- Characterize the real `analysis.query.spec:event` Product Capability, whose
+  current contract binds `analysis.event.query`, completeness `unknown`, DQ
+  `pass`, user-level privacy and one allowed observation claim.
+- Register exactly two fixed, non-selecting descriptors for the current Direct
+  SDK Product entry and existing request-bound Plan `analysis_query` adapter.
+  Both bind the exact Product contract and common safe result projection.
+- Generate a compact value-free corpus over success, empty, contract drift and
+  runtime failure. Input/output, completeness, DQ, claims, privacy, freshness,
+  request-count and Journey dimensions must all be equivalent; any mismatch
+  fails the Characterization.
+- Add only offline `sdk.execution_variants.list()/describe()/characterization()`.
+  Current Capability Trust is attached from its existing owner, while
+  selection remains explicitly disabled until R14-D.
+- Keep a closed two-branch Characterization runner for generator/tests only.
+  No registration API, arbitrary callable/import, third routing arm, scheduler,
+  Agent-chosen variant, benchmark execution, pin or kill switch is added.
+- Acceptance includes schema/digest/tamper/privacy/Trust/current-path parity,
+  full gates, wheel and consumer with zero production HTTP/RPC. Active human
+  docs remain exactly 5,500 lines.
 
 ## Scope
 
