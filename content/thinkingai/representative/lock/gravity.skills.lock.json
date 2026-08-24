@@ -1,0 +1,185 @@
+{
+  "artifact_kind": "skills_lock",
+  "lock_digest": "0441f0694557f218d610d63e98a7ae75f91dde89dde5c7ed3c9b0a707451a3c9",
+  "requested": [
+    "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
+    "skill://gravity.game/app-device-performance-analysis@1.0.0",
+    "skill://gravity.game/community-hot-topic-analysis@1.0.0",
+    "skill://gravity.game/filter-result-bias-diagnosis@1.0.0",
+    "skill://gravity.game/game-revenue-forecast@1.0.0"
+  ],
+  "runtime_version": "0.3.0",
+  "schema_version": "gravity.skills-lock.v1",
+  "skills": [
+    {
+      "archive_sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
+      "artifact_size": 3964,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.project-metric-contract-check"
+        ],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/primary-analysis-metric@1"
+        ]
+      },
+      "manifest_digest": "afcd4e600361624e2f3828dd90b24653db46f4aced41f0a3acc0d6c4e63530ce",
+      "package_digest": "2d6dd3a16a4063b56760f498f00ad861312b2fb43674503edfcb3b884f2a2162",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0"
+    },
+    {
+      "archive_sha256": "27f8a300c8c7afba46a05263fae7bacdd3d1446a957ce05ac77f94ed469fdd05",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/app-device-performance-analysis-1.0.0.zip",
+      "artifact_size": 3827,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.device-segment-event-review"
+        ],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "7d4e52797e248699ffe7ba3a2fb4a7a60f7e1a1fee889b3a819a3f23d09542d8",
+      "package_digest": "766c2ac759188c1829075c2609840f2e352cdcf8b68a49299f467fb92fda3134",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/app-device-performance-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
+      "artifact_size": 4024,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/community-signal@1"
+          ]
+        },
+        "journeys": [
+          "analysis.thinkingai.community-context-correlation"
+        ],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "da80bf092c8eb320b71b3a9a19212c4cca37bf25d98546eabd8eef43c5fc61cb",
+      "package_digest": "5aec96cfdc23cbb14d76fee2f833f4526c06de14b5c8294e2b35e49cfd9af631",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/community-hot-topic-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "2f9668784a26a6553c469c66cccc7d7be46e75e0197b5bcf807c7d4b02d87cfb",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/filter-result-bias-diagnosis-1.0.0.zip",
+      "artifact_size": 4134,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.returned-filter-comparison"
+        ],
+        "models": [],
+        "operators": [
+          "operator://gravity/returned-dimension-change@1"
+        ],
+        "semantics": []
+      },
+      "manifest_digest": "756840bdd784d694622c6d2d8eeab91a73ba196895fbad9b73826fb402d851c7",
+      "package_digest": "e55378b50ca318a3c64918d2c49ae7d1f124be8d647d0f8d34a114e127250828",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/filter-result-bias-diagnosis@1.0.0"
+    },
+    {
+      "archive_sha256": "7b7afac4fb5353b0a38172fac13418af4b1a9bac399ec8b3bc46a69c0a93047d",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/game-revenue-forecast-1.0.0.zip",
+      "artifact_size": 4080,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "composite",
+            "minimum_trust": "stable",
+            "selector": "composite:business_pulse"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.revenue-forecast-readiness"
+        ],
+        "models": [
+          "model://gravity/game-revenue-forecast@1"
+        ],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "fc125c689547f36a4b124d5aed4ad5b0d697c293746ca220e8ff0c3ffddee2b5",
+      "package_digest": "4e982c53b33994e97e7d7fa3d944ba7401876938d780ea675a46a3a8f8de83cd",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/game-revenue-forecast@1.0.0"
+    }
+  ],
+  "source": {
+    "index_digest": "ae981d6974bb43af0499e446cd169e8197d965bd76e0997169e9a11552be425d",
+    "source_descriptor_digest": "8013e578f6648d5d9efa01f634b724b3a6017304a86abdab85e63938a5e6d2a3",
+    "source_id": "hub-source://gravity/thinkingai-representative@1",
+    "source_revision": "e76a88202a652fdd2d9b9e5440ab44066aac8cc1",
+    "transport": "git"
+  }
+}

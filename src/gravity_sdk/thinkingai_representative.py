@@ -248,17 +248,38 @@ def validate_representative_eval(value: Mapping[str, Any]) -> dict[str, Any]:
     if set(scenarios) != set(selected["scenarios"]) or len(scenarios) != len(set(scenarios)):
         _invalid("THINKINGAI_REPRESENTATIVE_EVAL_INVALID", "eval scenarios are incomplete")
     for case in cases:
-        if case["expected_outcome"] in {"blocked", "reject"} and case["allowed_claims"]:
-            _invalid(
-                "THINKINGAI_REPRESENTATIVE_EVAL_INVALID",
-                "blocked and rejected eval cases cannot allow claims",
-            )
-        if case["expected_outcome"] == "pass" and case["reason_codes"]:
-            _invalid(
-                "THINKINGAI_REPRESENTATIVE_EVAL_INVALID",
-                "passing eval cases cannot carry failure reasons",
-            )
+        _validate_eval_case(case)
     return selected
+
+
+def _validate_eval_case(case: Mapping[str, Any]) -> None:
+    outcome = case["expected_outcome"]
+    status = case["result_status"]
+    if outcome in {"blocked", "reject"} and case["allowed_claims"]:
+        _invalid(
+            "THINKINGAI_REPRESENTATIVE_EVAL_INVALID",
+            "blocked and rejected eval cases cannot allow claims",
+        )
+    if outcome == "pass" and case["reason_codes"]:
+        _invalid(
+            "THINKINGAI_REPRESENTATIVE_EVAL_INVALID",
+            "passing eval cases cannot carry failure reasons",
+        )
+    expected_statuses = {
+        "pass": {"success", "empty", "partial"},
+        "blocked": {"blocked"},
+        "reject": {"invalid"},
+    }
+    if status not in expected_statuses[outcome]:
+        _invalid(
+            "THINKINGAI_REPRESENTATIVE_EVAL_INVALID",
+            "eval outcome and result status disagree",
+        )
+    if status in {"empty", "partial", "blocked", "invalid"} and case["allowed_claims"]:
+        _invalid(
+            "THINKINGAI_REPRESENTATIVE_EVAL_INVALID",
+            "non-success eval cases cannot allow claims",
+        )
 
 
 def _validate_manifest(
