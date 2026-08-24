@@ -45,6 +45,7 @@ from scripts.generate_thinkingai_full_specifications import (
     SOURCE_INPUT,
     SOURCE_TARGET,
     SPECIFICATION_TARGET,
+    _verify_source_revision as verify_full_source_revision,
     render_outputs,
 )
 
@@ -235,6 +236,23 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
                     self.assertEqual([], case["allowed_claims"])
 
     def test_coverage_state_content_and_digest_tampering_fail_closed(self) -> None:
+        for field, digest in (
+            ("source_snapshot_sha256", "0" * 64),
+            ("source_observation_sha256", "1" * 64),
+        ):
+            mismatched_representatives = copy.deepcopy(self.representative_set)
+            mismatched_representatives[field] = digest
+            _redigest(mismatched_representatives, "representative_set_sha256")
+            with self.subTest(representative_binding=field):
+                self.assert_reason(
+                    "THINKINGAI_FULL_REPRESENTATIVE_DRIFT",
+                    compile_full_specification,
+                    self.source,
+                    self.snapshot,
+                    mismatched_representatives,
+                    self.index,
+                )
+
         duplicate = copy.deepcopy(self.source)
         duplicate["skills"].append(copy.deepcopy(duplicate["skills"][0]))
         self.assert_reason(
@@ -311,12 +329,26 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
             "THINKINGAI_FULL_EVAL_INVALID", validate_full_eval, bad_eval
         )
 
+        mismatched_representative_eval = copy.deepcopy(self.representative_eval)
+        mismatched_representative_eval["representative_set_sha256"] = "2" * 64
+        _redigest(mismatched_representative_eval, "eval_sha256")
+        self.assert_reason(
+            "THINKINGAI_FULL_EVAL_INVALID",
+            compile_full_eval,
+            self.specification,
+            mismatched_representative_eval,
+        )
+
     def test_source_diff_requires_review_and_preserves_package_history(self) -> None:
         initial = load_json_object(DIFF, "CT01 initial diff")
         initial_impact = compile_source_impact(self.specification, initial)
         self.assertEqual(55, len(initial_impact["changes"]))
         self.assertEqual(
             {"covered"}, {item["action"] for item in initial_impact["changes"]}
+        )
+        self.assertEqual(
+            self.specification["specification_sha256"],
+            initial_impact["current_specification_sha256"],
         )
 
         changed_snapshot = copy.deepcopy(self.snapshot)
@@ -336,6 +368,94 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
         self.assertEqual("review_required", selected["action"])
         self.assertEqual(stable, selected["stable_reference"])
         self.assertFalse(selected["silent_rewrite_allowed"])
+
+        added_id = "zz-newly-discovered-topic"
+        added_diff = copy.deepcopy(changed_diff)
+        added_change = copy.deepcopy(initial["changes"][0])
+        added_change.update(
+            {
+                "source_id": added_id,
+                "previous_item_sha256": None,
+                "previous_url": None,
+                "current_item_sha256": "4" * 64,
+                "current_url": (
+                    "https://www.thinkingai.cn/skills/zz-newly-discovered-topic/"
+                ),
+                "changed_fields": [],
+                "state": "added",
+            }
+        )
+        added_diff["changes"].append(added_change)
+        added_diff["changes"].sort(key=lambda item: item["source_id"])
+        added_diff["counts"]["added"] += 1
+        added_diff["counts"]["total"] += 1
+        _redigest(added_diff, "diff_sha256")
+        self.assert_reason(
+            "THINKINGAI_FULL_COVERAGE_INVALID",
+            compile_source_impact,
+            self.specification,
+            added_diff,
+        )
+
+        current_specification = copy.deepcopy(self.specification)
+        new_item = copy.deepcopy(
+            next(
+                item
+                for item in current_specification["items"]
+                if item["skill"] is not None
+                and item["skill"]["readiness"] == "blocked"
+                and item["skill"]["validation"] == "unvalidated"
+            )
+        )
+        new_item["source_id"] = added_id
+        new_item["source_content_sha256"] = "4" * 64
+        new_item["skill"].update(
+            {
+                "skill_uri": f"skill://gravity.game/{added_id}@1.0.0",
+                "manifest_sha256": "5" * 64,
+                "package_sha256": "6" * 64,
+                "archive_sha256": "7" * 64,
+                "artifact_path": f"artifacts/skills/{added_id}-1.0.0.zip",
+            }
+        )
+        current_specification["items"].append(new_item)
+        current_specification["items"].sort(key=lambda item: item["source_id"])
+        for field in (
+            "coverage_count",
+            "specified_count",
+            "skill_specification_count",
+            "blocked_count",
+            "unvalidated_count",
+        ):
+            current_specification[field] += 1
+        current_specification["source_snapshot_sha256"] = added_diff[
+            "current_snapshot"
+        ]["snapshot_sha256"]
+        current_specification["source_observation_sha256"] = "8" * 64
+        _redigest(current_specification, "specification_sha256")
+        validate_full_specification(current_specification)
+        wrong_current_specification = copy.deepcopy(current_specification)
+        wrong_current_specification["source_snapshot_sha256"] = "9" * 64
+        _redigest(wrong_current_specification, "specification_sha256")
+        self.assert_reason(
+            "THINKINGAI_FULL_SOURCE_IMPACT_INVALID",
+            compile_source_impact,
+            self.specification,
+            added_diff,
+            wrong_current_specification,
+        )
+        added_impact = compile_source_impact(
+            self.specification, added_diff, current_specification
+        )
+        selected = next(
+            item for item in added_impact["changes"] if item["source_id"] == added_id
+        )
+        self.assertEqual("covered", selected["action"])
+        self.assertEqual("6" * 64, selected["stable_reference"])
+        self.assertEqual(
+            current_specification["specification_sha256"],
+            added_impact["current_specification_sha256"],
+        )
 
         removed_snapshot = copy.deepcopy(self.snapshot)
         removed_id = "user-tag-system-design"
@@ -432,6 +552,14 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
         self.assertEqual(
             self.index["digest"], self.lock["source"]["index_digest"]
         )
+        verify_full_source_revision(
+            self.lock["source"]["source_revision"], INDEX_TARGET.read_bytes()
+        )
+        with self.assertRaisesRegex(SystemExit, "does not match generated index"):
+            verify_full_source_revision(
+                self.lock["source"]["source_revision"],
+                INDEX_TARGET.read_bytes() + b" ",
+            )
         changed = copy.deepcopy(self.lock)
         changed["skills"][0]["archive_sha256"] = "0" * 64
         with self.assertRaisesRegex(Exception, "DIGEST_MISMATCH"):

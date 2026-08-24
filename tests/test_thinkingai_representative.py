@@ -41,6 +41,7 @@ from scripts.generate_thinkingai_representatives import (
     LOCK_TARGET,
     SET_TARGET,
     SOURCE_TARGET,
+    _verify_source_revision as verify_representative_source_revision,
     render_outputs,
 )
 from tests.test_project_skill_overlay import (
@@ -342,6 +343,12 @@ class ThinkingAIRepresentativeTests(unittest.TestCase):
             with self.subTest(path=path.relative_to(ROOT)):
                 self.assertTrue(path.is_file())
                 self.assertEqual(content, path.read_bytes())
+        assert revision is not None
+        verify_representative_source_revision(revision, INDEX_TARGET.read_bytes())
+        with self.assertRaisesRegex(SystemExit, "does not match generated index"):
+            verify_representative_source_revision(
+                revision, INDEX_TARGET.read_bytes() + b" "
+            )
 
     def test_two_projects_install_identical_locks_and_resolve_dependency_shapes(self) -> None:
         revision = self.lock["source"]["source_revision"]
