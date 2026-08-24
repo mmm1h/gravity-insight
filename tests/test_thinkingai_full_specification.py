@@ -485,6 +485,12 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
             with self.subTest(path=path.relative_to(ROOT)):
                 self.assertTrue(path.is_file())
                 self.assertEqual(content, path.read_bytes())
+                if path.suffix == ".zip":
+                    with zipfile.ZipFile(path) as archive:
+                        self.assertEqual(
+                            {zipfile.ZIP_STORED},
+                            {item.compress_type for item in archive.infolist()},
+                        )
 
         rebuilt = compile_full_specification(
             self.source, self.snapshot, self.representative_set, self.index

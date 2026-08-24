@@ -164,11 +164,11 @@ def _manifests() -> list[dict[str, Any]]:
 def _zip(files: dict[str, bytes]) -> bytes:
     output = io.BytesIO()
     with zipfile.ZipFile(
-        output, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+        output, mode="w", compression=zipfile.ZIP_STORED
     ) as archive:
         for name, content in sorted(files.items()):
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             info.create_system = 3
             info.external_attr = 0o100644 << 16
             archive.writestr(info, content)

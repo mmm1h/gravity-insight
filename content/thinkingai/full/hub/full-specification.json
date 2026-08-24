@@ -20,7 +20,7 @@
         "Provide reviewed project spend and acquisition-outcome definitions with App, platform, currency and attribution bindings."
       ],
       "skill": {
-        "archive_sha256": "4d7a3feb538881e042fe0c1f8a272c9f45df305d641bb2296dbb9d81053aab56",
+        "archive_sha256": "c33852f43b845e8b9f3ebdeb75fda9a2de66eefa9b5155b60372cdc6eeafacda",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ad-delivery-analysis-1.0.0.zip",
         "dependency_contract_sha256": "9651a4d0d52cecafa8b93b01395c3cc304d929f4586b6b0d1695231bc761c563",
         "lifecycle": "reviewed",
@@ -346,7 +346,7 @@
         "Provide an exact project Semantic Definition and App binding, then rerun the existing Journey evaluation."
       ],
       "skill": {
-        "archive_sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+        "archive_sha256": "4a9551a982fb1a9783e61a0fe676f8bf1771b40b6d899ac31f8056e00b114ff4",
         "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
         "dependency_contract_sha256": "27055d1189b90200332232e87f689fa6f633354d3b588cbada062c36460ce73e",
         "lifecycle": "reviewed",
@@ -377,7 +377,7 @@
         "Install the exact project lock and validate the declared event, metric, grouping, Trust and data-quality inputs."
       ],
       "skill": {
-        "archive_sha256": "27f8a300c8c7afba46a05263fae7bacdd3d1446a957ce05ac77f94ed469fdd05",
+        "archive_sha256": "7eac32cd2277b4238d99354fca22283c0663857765108a020d5afbae2b08d504",
         "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/app-device-performance-analysis-1.0.0.zip",
         "dependency_contract_sha256": "90ddcbcbb8b10526e636bc081469e79befca1dbe2880261a9ae9bd0578bf8238",
         "lifecycle": "reviewed",
@@ -409,7 +409,7 @@
         "Provide reviewed channel, cohort, cost, value and attribution bindings with compatible units."
       ],
       "skill": {
-        "archive_sha256": "4cbfc48ec81d057d418d97cce9700dc5a5f77b96128fbd897f159155e6d55c90",
+        "archive_sha256": "4ee3b1c903924b7fef2aef7cc42dd550ca54444819d16412edace5e0b589ddc6",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/channel-quality-analysis-1.0.0.zip",
         "dependency_contract_sha256": "8ebb3dd8d2db51481462eec441993cea276a9b4a21e6f1d7ebba2efdee256cf8",
         "lifecycle": "reviewed",
@@ -442,7 +442,7 @@
         "Register reviewed churn/cohort semantics and a privacy-bounded segment-profile Operator with golden cases."
       ],
       "skill": {
-        "archive_sha256": "db2a9275c26b56fd2be418b49e1e1e52de97bd5786a95f4d2c5c976a60e8a6d0",
+        "archive_sha256": "a21afeda60f8fed899b1ad2b70469887eb97d00c252c5c7dedf3b95d4e4dc5fb",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/churn-user-identification-persona-1.0.0.zip",
         "dependency_contract_sha256": "53d05d858f29befeaf0ed0272164356e3ada72c4f89f7b3c02c153c04090e113",
         "lifecycle": "reviewed",
@@ -476,7 +476,7 @@
         "Register a bounded comment Context Provider and reviewed sentiment aggregation with corpus and language golden cases."
       ],
       "skill": {
-        "archive_sha256": "245fc56812e84f290047d9f0ae71705368702d58bd77dce2fc64efd6d73109ab",
+        "archive_sha256": "d4d05e6d4d39e1be3ad905c7319301fa14f15bfaa9d8d85fb1b9c74dd116baf6",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-comment-analysis-1.0.0.zip",
         "dependency_contract_sha256": "c67bd2298036005ecc1b82b227e7d66de3637d6772d6814c965f6d14b64f7a2f",
         "lifecycle": "reviewed",
@@ -510,7 +510,7 @@
         "Provide a provider contract with daily source closure plus reviewed aggregation and conflict behavior."
       ],
       "skill": {
-        "archive_sha256": "ba85be4f70b349e344d871eed67a50bb20856d3530880c154d5aaebe0afd8e3d",
+        "archive_sha256": "f2619abdab75c7378b1453a2bd4925700d384f5b9226b5bb878f09797a9c58b9",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-daily-report-1.0.0.zip",
         "dependency_contract_sha256": "bc782693d389ac6b0518e3ec9710fb49abf9d633d90c664a7dd343cf510adc84",
         "lifecycle": "reviewed",
@@ -540,7 +540,7 @@
         "Provide a bounded project community Context requirement and rerun entity, time and authority alignment."
       ],
       "skill": {
-        "archive_sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+        "archive_sha256": "d75d5e987a82ddedd8d23d2cc8889af53630293aa749e0c3815fd619aad83812",
         "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
         "dependency_contract_sha256": "c78ce3727fd190e9ad8ad67c7732abf429961d44ce880960c82ae07c4c56cec4",
         "lifecycle": "reviewed",
@@ -574,7 +574,7 @@
         "Provide weekly source-coverage and deduplication contracts plus reviewed aggregation golden cases."
       ],
       "skill": {
-        "archive_sha256": "b5e66799d24ccc8d07e670e91e844cbfa08daa400b3ea0d59992e70791a6eb3f",
+        "archive_sha256": "3f904cd5ef4033572f7f4b031baaa63b94aededff2e79661339a69858f6cc083",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-weekly-report-1.0.0.zip",
         "dependency_contract_sha256": "fc93b777bba2b6b55e96fcd16951873dc9ec6c0bf941a3360169a94a851721ab",
         "lifecycle": "reviewed",
@@ -607,7 +607,7 @@
         "Provide the exact project dashboard definition, source binding, filters and effective revision."
       ],
       "skill": {
-        "archive_sha256": "7f84b9c9088a4cb39aff82650dac064a7ba86e11da7d5845c0607f49fcf13fbd",
+        "archive_sha256": "8d8369d75001712fa2dbfbf3204311512d53c8a5e7220261746a89f82f50465e",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/dashboard-no-data-diagnosis-1.0.0.zip",
         "dependency_contract_sha256": "cd472bd63260ba2753ec1e32c6ec0c342ec06747f4ace8dfd591ea67407d3b20",
         "lifecycle": "reviewed",
@@ -641,7 +641,7 @@
         "Provide a reviewed project data contract and a same-layer Gravity capability or explicit owner decision."
       ],
       "skill": {
-        "archive_sha256": "0496984944042324760ba2f694711a855dcd5fcf5f005c8e5d63cc16c28cefe5",
+        "archive_sha256": "9971564ad24f5cce0aa1082009ccc8dd3f15c0a03041f02f7819301ad78ad894",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-access-assistant-1.0.0.zip",
         "dependency_contract_sha256": "47ad012cf2ee9f893f1796b1ae512a25e70c4835da68f41e8691981c2c1d6a4f",
         "lifecycle": "reviewed",
@@ -676,7 +676,7 @@
         "Provide reviewed integration contracts and an explicit governed connector with preview, authorization and readback."
       ],
       "skill": {
-        "archive_sha256": "18b133feecc77a563fe3609c07de09fddeb1be17c57bad8d288891afa37375a2",
+        "archive_sha256": "9db0d5a78a2d353257c45ab2f5fed2005b6babffbdf6b237dd815b35b3a17f82",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-integration-assistant-1.0.0.zip",
         "dependency_contract_sha256": "1fbd9da080b3508b1634d60f27c8cf6603cad118a74dd450c19e0df5ca898b7c",
         "lifecycle": "reviewed",
@@ -707,7 +707,7 @@
         "Install the exact project lock and rerun the registered Operator golden and Journey dependency gates."
       ],
       "skill": {
-        "archive_sha256": "2f9668784a26a6553c469c66cccc7d7be46e75e0197b5bcf807c7d4b02d87cfb",
+        "archive_sha256": "9e3d911d7b1b6f30ba4861bf87866cb509cd778f940335449f467ee8fd1bfa45",
         "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/filter-result-bias-diagnosis-1.0.0.zip",
         "dependency_contract_sha256": "578b0d9bd58f95ceaabf4217d4b05c8a58cab0fb870edd9fd98e1c88624618ec",
         "lifecycle": "reviewed",
@@ -739,7 +739,7 @@
         "Provide a reviewed first-purchase definition with user, order, refund, currency and history-window bindings."
       ],
       "skill": {
-        "archive_sha256": "d4df45043886c7213f7ab0740ca74539546a7c985efaed18d38164a39cb02ca3",
+        "archive_sha256": "c1c2ef6eab5cfaa0a57f27ca26b20d9a2515b7c963a7d41dea4b2706ed7e05f7",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/first-purchase-analysis-1.0.0.zip",
         "dependency_contract_sha256": "692417e9ee6b6c4d3883d81b11c51bcf8a478db5dfe21d5a49db861c3b7db9e1",
         "lifecycle": "reviewed",
@@ -773,7 +773,7 @@
         "Register the project funnel contract and a deterministic funnel-diagnosis Operator with edge-case golden tests."
       ],
       "skill": {
-        "archive_sha256": "d74af7b8f28ed0de7f89a5392ac1e90527c1db3ccf735120cb50e569782f70e8",
+        "archive_sha256": "65ae9a9aa0ad1b35d0612354fa5b754f0feeb0f1ad1ac83568dc21382d6eaa4e",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/funnel-analysis-misunderstanding-diagnosis-1.0.0.zip",
         "dependency_contract_sha256": "b5b6b9bad18f758246246f646434b9c6d7433088eb6b8a2282274109a71d0031",
         "lifecycle": "reviewed",
@@ -807,7 +807,7 @@
         "Provide campaign exposure/outcome semantics, aligned campaign Context and a reviewed evaluation method."
       ],
       "skill": {
-        "archive_sha256": "6f16b42d1dd67b7354d4dd83c6ff2f1b9497b2f94be3af6aabf23de1dfbd0345",
+        "archive_sha256": "1b6eb7079b76543b978b607ad4b6ce9d5a0319e6e06ccdb219adaf748e81e292",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/game-campaign-effect-evaluation-1.0.0.zip",
         "dependency_contract_sha256": "9d7652cb9ed3c805e36a4060e6c7fbb7d804ceae13eb5a0e785c82f16a38007a",
         "lifecycle": "reviewed",
@@ -840,7 +840,7 @@
         "Approve an exact trusted Model artifact with lineage, evaluation, expiry and safe horizon before any forecast claim."
       ],
       "skill": {
-        "archive_sha256": "7b7afac4fb5353b0a38172fac13418af4b1a9bac399ec8b3bc46a69c0a93047d",
+        "archive_sha256": "b593f89087d7b0e9bc2869b28ad9eefcf7d1371ec74729d6add31bbfc5c84226",
         "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/game-revenue-forecast-1.0.0.zip",
         "dependency_contract_sha256": "200fb9818dc3be9a7e0d54a46fd5d67b4ac95d5adca0e54e616310b4b2bb322f",
         "lifecycle": "reviewed",
@@ -901,7 +901,7 @@
         "Provide offer/contact semantics and policy Context, then register a governed connector with preview and readback."
       ],
       "skill": {
-        "archive_sha256": "704d77f1438d91fbb1d50cb702a30adcea4fc25dbca307a5c2c2dc4ee83a020a",
+        "archive_sha256": "1f32365d4dda3b9c466690c952f103c8c0b5afe3f1eec63d776668c9342649d0",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-package-push-strategy-1.0.0.zip",
         "dependency_contract_sha256": "436dcdc0d30f110af35b2e1c11256bd14eea4c6cded602212df9d9ee683d145b",
         "lifecycle": "reviewed",
@@ -934,7 +934,7 @@
         "Register gift eligibility and purchase semantics plus a unit-aware metric decomposition Operator."
       ],
       "skill": {
-        "archive_sha256": "000c7c7a92eb0527e6b0adc7a79eff87bf4ec6b16324ebdb6b1af66a6819e8ba",
+        "archive_sha256": "3dad06da612282b381b1f2990b0b2c09b7e568822b6ea515ecf18d63f6636995",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-penetration-optimization-1.0.0.zip",
         "dependency_contract_sha256": "59f42dabbee1e3684db2f78c62628859c97e9cd458612771e9dd78e72ebf8ee1",
         "lifecycle": "reviewed",
@@ -967,7 +967,7 @@
         "Provide level progression semantics and a deterministic funnel Operator with retry and missing-step cases."
       ],
       "skill": {
-        "archive_sha256": "6b9c9fa12844d398316d10b9e4b193ece9a85dadfa6f3ede40784ab79859532b",
+        "archive_sha256": "43591ece21904268ab015544866a7bb459ba8e1f2ea3b3b81b7ffee0ea2d7166",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/level-churn-diagnosis-1.0.0.zip",
         "dependency_contract_sha256": "a5422041c4ccf8efdcf4b422280348a2fd16883a87710ffb2dfe2cc928f67514",
         "lifecycle": "reviewed",
@@ -1001,7 +1001,7 @@
         "Provide cohort/censoring semantics and an approved lifetime Model with lineage, calibration, expiry and safe horizon."
       ],
       "skill": {
-        "archive_sha256": "b7d1de33f2ceb741ee2f262e060731f373a1d24207055110a62d5e8470c65e13",
+        "archive_sha256": "617fadafb2a2301ca18580396dd8ee168376f26dbfc6550e7c5a40e1ebecef13",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/lt-prediction-1.0.0.zip",
         "dependency_contract_sha256": "86357a99f9b2d677e18ca97b59daf61934644ad0f1c8655502ea23ef9794ec3e",
         "lifecycle": "reviewed",
@@ -1035,7 +1035,7 @@
         "Provide project LTV semantics and an approved monitored Model with evaluation and drift thresholds."
       ],
       "skill": {
-        "archive_sha256": "b8c3e3dee832ded0eed746668dc426ee815f4816027b1519b5f743f6b5089f3e",
+        "archive_sha256": "f02694ede03071a4df28afc92f6d1da7716e8ff453eb5e7fbaeb336a5073b67a",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-analysis-monitoring-1.0.0.zip",
         "dependency_contract_sha256": "f94782df425c2c886f8d3f0d19b6f5d826f015cb2f47c932806ec228ccbc3cb5",
         "lifecycle": "reviewed",
@@ -1069,7 +1069,7 @@
         "Provide segment/value semantics and an approved curve Model with sparse-cohort and horizon evaluation."
       ],
       "skill": {
-        "archive_sha256": "31a8bf686e97268aa030f696ecc2acbae3ccd466274f62e964d0fa05af0e90bc",
+        "archive_sha256": "b84863f15080e389a956815e162e7c9f9ce30e671da11873cebea71710ae0ec8",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-curve-fitting-segmented-calculation-1.0.0.zip",
         "dependency_contract_sha256": "644d0622bedc78d839c5aff5ee71b8b5aab92a14b69682333465025f730944e8",
         "lifecycle": "reviewed",
@@ -1104,7 +1104,7 @@
         "Provide LTV semantics, an approved Model and an exact dashboard connector binding with preview/readback evidence."
       ],
       "skill": {
-        "archive_sha256": "2fbf9fa34551bb1e36d72fbc9ac5f48b5e008bc16dc77554101fb21c101289d0",
+        "archive_sha256": "6d446bce1c770b000a598a5ac5eb997fa258df4a3f6b27fde7815e4cf274cfc6",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-dashboard-setup-1.0.0.zip",
         "dependency_contract_sha256": "f94782df425c2c886f8d3f0d19b6f5d826f015cb2f47c932806ec228ccbc3cb5",
         "lifecycle": "reviewed",
@@ -1138,7 +1138,7 @@
         "Provide cost/value semantics and an approved payback Model with calibration and horizon evidence."
       ],
       "skill": {
-        "archive_sha256": "4bfd8c05f79b0df4f32a559c9108d2e4737113583b915cfd2c5b7ad78236beac",
+        "archive_sha256": "920cf73c16a1ac9914662d5a59552625e9306780a12d998d82dae045b98c288d",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-payback-period-prediction-1.0.0.zip",
         "dependency_contract_sha256": "b5b6e48b660afc7c7c79d0bc76e04295c52509e0f3d9516433ad4b2a42f83e1e",
         "lifecycle": "reviewed",
@@ -1171,7 +1171,7 @@
         "Provide content/outcome semantics and an authoritative release Context aligned to the analysis window."
       ],
       "skill": {
-        "archive_sha256": "dbe1bc69d3f7f30d3e79aa178144ebc88013f683d9174116cd6edce60e9cc411",
+        "archive_sha256": "65e16edb815cc4bd64a303b986462ed0f1b3acd659ac7a8e9cd5562d32488d7a",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/new-hero-launch-insight-1.0.0.zip",
         "dependency_contract_sha256": "098ffbcf2c75f90db5579d20e14a59c72b88e3afb260481fbe933266e12c04a0",
         "lifecycle": "reviewed",
@@ -1206,7 +1206,7 @@
         "Provide audience/contact semantics and policy Context plus an exact governed journey connector."
       ],
       "skill": {
-        "archive_sha256": "235f0ae7d76571cd0630f2869e373e7caee204fd76081d74def3b086710a12b7",
+        "archive_sha256": "0d3eab2d4cd9674c6111176cba7440b66efedbe8efb7c8f81486fdeb4e61bfd3",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/operation-journey-canvas-creation-1.0.0.zip",
         "dependency_contract_sha256": "35a76211104d5d945ecf9e49e7793c74236ff1c4809fde4f9c0a1f2d87052fac",
         "lifecycle": "reviewed",
@@ -1238,7 +1238,7 @@
         "Provide a reviewed payment attribution definition with channel, window, currency and refund bindings."
       ],
       "skill": {
-        "archive_sha256": "111a0a5c58c6361d191e6a6f447c3a627f2f9bbe9438f7f90515c0df64bf1960",
+        "archive_sha256": "f031fd8e82d6d0b60230f055a70b3da6e898eb46849198008d6fac718bf10762",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-attribution-analysis-1.0.0.zip",
         "dependency_contract_sha256": "00c2e8c80394a213e53f256545e0c3c7e8bc40267ca5f9c65c909fcbe0ee47e7",
         "lifecycle": "reviewed",
@@ -1271,7 +1271,7 @@
         "Register the payment funnel semantics and deterministic diagnosis Operator with empty and partial cases."
       ],
       "skill": {
-        "archive_sha256": "92990e91a0c3301769939a6b37b24da0f955189fcea4434e779d9d7191177355",
+        "archive_sha256": "2fb1b38ac283454749d1dda9451f2bbea032c740b7e36660a1de9fd4d9dd20c9",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-conversion-funnel-1.0.0.zip",
         "dependency_contract_sha256": "2ec902bff2a3dd398f7c1413e6a09a314e484c493e6842090488adbc60f382d5",
         "lifecycle": "reviewed",
@@ -1304,7 +1304,7 @@
         "Provide reviewed funnel semantics and an exact saved-analysis or dashboard connector binding."
       ],
       "skill": {
-        "archive_sha256": "c72c62430a74b71185c3fa1b1c6bdf402a5f32a1cd6eeb2e12e214f38f2cf1da",
+        "archive_sha256": "71ad2d81fc3947408fb9b05ddd8c5295230891698c529fc524a0303491443a6d",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-funnel-setup-1.0.0.zip",
         "dependency_contract_sha256": "6d685013cb760f14f112a626accaa0c7b88004c68d7d224d5154ed7f826c8cdd",
         "lifecycle": "reviewed",
@@ -1336,7 +1336,7 @@
         "Provide the reviewed payment-rate numerator, denominator, cohort, timezone and attribution binding."
       ],
       "skill": {
-        "archive_sha256": "e44c733f8162662910cd96a9a1c931613f83f7a2bb99348755e8054054d6668f",
+        "archive_sha256": "7f8ecdb992d65f0e975fdfe2cd889e19514ea6da9bc402e0c109dd068ae2257d",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-rate-anomaly-diagnosis-1.0.0.zip",
         "dependency_contract_sha256": "ddf5f40b5d6aee3a58432cb7f99aa838ba19842a0df1ff6a564c212fa289892f",
         "lifecycle": "reviewed",
@@ -1371,7 +1371,7 @@
         "Provide price/outcome semantics, catalog Context, a validated elasticity Operator and a governed pricing connector."
       ],
       "skill": {
-        "archive_sha256": "d005dbf4f863208b5e4f7360e05cf7bc35872a56d275032e03194ee850a89c98",
+        "archive_sha256": "4de4c3f1c61a672874c6ca512f4d09b88c7d19cf16700f0ad2642ef7e9a60943",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/product-pricing-optimization-1.0.0.zip",
         "dependency_contract_sha256": "5931698a7fc9290ec3ffa3dbb804395140f3c0f883a67ff55ce55015c29a691c",
         "lifecycle": "reviewed",
@@ -1403,7 +1403,7 @@
         "Provide reviewed match, outcome, mode, participant, bracket and version bindings."
       ],
       "skill": {
-        "archive_sha256": "fbcf0980d1bd89eff62baa0436cffce96c9e2067b5910232d7b940c3c3f14ea4",
+        "archive_sha256": "ea76afac5d14a38f90199d11fd89c11d24d5c1775c12e6aeb95ec046198e9fc1",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/pvp-win-rate-analysis-1.0.0.zip",
         "dependency_contract_sha256": "eab578189c8872b4686d19c706d8eaf8e7bc8a8322e1a26556dd33041954136d",
         "lifecycle": "reviewed",
@@ -1435,7 +1435,7 @@
         "Provide reviewed qualifying-order, refund, identity, cohort and repeat-window bindings."
       ],
       "skill": {
-        "archive_sha256": "560b1d3c8c1667fe493aa2694810f417b7be7929b3dcdb78165b7315e5c07b5e",
+        "archive_sha256": "c0b6206bc6ea9f2991c9506f6d9e80307cbe7d037daf994a361102e744caa8d6",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/repurchase-analysis-1.0.0.zip",
         "dependency_contract_sha256": "808bd4a6d602834a1f8c901ffd54f2886925ec64f7f79aedaace93c78688941e",
         "lifecycle": "reviewed",
@@ -1469,7 +1469,7 @@
         "Register retention/cohort semantics and a deterministic curve Operator with censoring and late-data golden cases."
       ],
       "skill": {
-        "archive_sha256": "58e53313c5454495a0c00ab26ea54dae1a57c07361fa89ad013e7b88618192b2",
+        "archive_sha256": "7ec822185818aae3edf39513a64237b3d72d3845b28b5c0635140edb878d252c",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/retention-analysis-data-verification-1.0.0.zip",
         "dependency_contract_sha256": "b634e4930f09d20a83517512ed79c8cc5f033f9e9f3adb35420df9d539c7a828",
         "lifecycle": "reviewed",
@@ -1502,7 +1502,7 @@
         "Provide a reviewed subject-identity binding, authorization purpose, projection and retention policy."
       ],
       "skill": {
-        "archive_sha256": "8439eea739eb1155aab04a701b5255c35238858116085e3a714765668fa97ce7",
+        "archive_sha256": "5f2f9caee3bd54e58efdfb419663301059942ff22dcfbdaa702db1e3497e8f58",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/single-user-behavior-analysis-1.0.0.zip",
         "dependency_contract_sha256": "2c83ce4d8207329b322ea7e903d881ac777f9559300f81601648686866d862cd",
         "lifecycle": "reviewed",
@@ -1537,7 +1537,7 @@
         "Provide a supported dialect contract and a bounded query-plan Context artifact from the database owner."
       ],
       "skill": {
-        "archive_sha256": "74758733179fff679b2477de06d4f7ee6d54ac68547c9956faed02322eb4f520",
+        "archive_sha256": "82ff188377af7c39459f1b6f88598880fdfa0e3b55e3af58f8dd26511adf75fc",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/sql-performance-optimization-1.0.0.zip",
         "dependency_contract_sha256": "52395fd04e7e171f184508dd9a570cec924d515120d0dfb445b99e186c5b46a5",
         "lifecycle": "reviewed",
@@ -1571,7 +1571,7 @@
         "Provide a project-authoritative field contract source with owner, revision, sensitivity and effective range."
       ],
       "skill": {
-        "archive_sha256": "e372d3a56796efeeb49e7ae1bb5594ccb7ce65149a1eef5d680630f692439496",
+        "archive_sha256": "becfaf52ba208949ddbb2f54d58ddff3bd8b1075437567f43bd42caaed663f6a",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/system-field-reference-guide-1.0.0.zip",
         "dependency_contract_sha256": "4d4173c5f8fdc4211e0a6be0a7efe275f80640f32e3a76a6c946168fc7a6be3b",
         "lifecycle": "reviewed",
@@ -1686,7 +1686,7 @@
         "Register a Trino-specific read-only capability with AST, relation/function allowlists and enforceable budgets."
       ],
       "skill": {
-        "archive_sha256": "b6b28c57887c9e89a8cc0251fc34c11fc8f71d168f93dd12c1633669104dbd7a",
+        "archive_sha256": "2beda24f7c7ab4b7d348b7014460697a9bbb44e4385ef542640bf8c7adefd5b9",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/trino-metadata-query-analysis-1.0.0.zip",
         "dependency_contract_sha256": "aaf6d80f35f7c0b3a917745ae75948662c38159128a8a3c073938fd185615ecb",
         "lifecycle": "reviewed",
@@ -1721,7 +1721,7 @@
         "Provide project identity/taxonomy governance and a separate reviewed computation plus tag connector contract."
       ],
       "skill": {
-        "archive_sha256": "036b115c4b37529d6d6cfe95b554c4a2f5f56c1086a6f1c08b1e094d5dcdefd8",
+        "archive_sha256": "4cb2f5cabcee287344762dad05590ddb5889918ae9459411112d11401e37d592",
         "artifact_path": "content/thinkingai/full/hub/artifacts/skills/user-tag-system-design-1.0.0.zip",
         "dependency_contract_sha256": "b7923529da1dd33b3191b0f3d9a82b991d21f6e617bde9a30581b14f33861eb1",
         "lifecycle": "reviewed",
@@ -1739,13 +1739,13 @@
     }
   ],
   "network_called": false,
-  "representative_set_sha256": "36d2c996debc614772e7028dade7e2c7d04d9931e1411410888280aa26961cbf",
+  "representative_set_sha256": "90fff31d5b8384b1393077cdee0065387739eac8cdd041f322cc93bc2ea23ad6",
   "safe_alternative_count": 15,
   "schema_version": "gravity.thinkingai-full-specification.v1",
   "skill_specification_count": 40,
   "source_observation_sha256": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2",
   "source_snapshot_sha256": "da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5",
-  "specification_sha256": "06cfd6e50694dfeb459fc339dbb4772fd00eb04699415a57f5acd6f0861324f6",
+  "specification_sha256": "b447d2f7c927d3cc68d4bbc32cfc26fe11c216ef180a5f041b6048d063ff9716",
   "specified_count": 55,
   "unvalidated_count": 35,
   "validated_count": 5

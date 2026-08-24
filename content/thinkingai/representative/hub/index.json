@@ -7,8 +7,8 @@
       "archive": {
         "media_type": "application/vnd.gravity.skill-package.v1+zip",
         "path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
-        "sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
-        "size_bytes": 3964
+        "sha256": "4a9551a982fb1a9783e61a0fe676f8bf1771b40b6d899ac31f8056e00b114ff4",
+        "size_bytes": 8368
       },
       "manifest": {
         "artifact_kind": "skill",
@@ -154,8 +154,8 @@
       "archive": {
         "media_type": "application/vnd.gravity.skill-package.v1+zip",
         "path": "content/thinkingai/representative/hub/artifacts/skills/app-device-performance-analysis-1.0.0.zip",
-        "sha256": "27f8a300c8c7afba46a05263fae7bacdd3d1446a957ce05ac77f94ed469fdd05",
-        "size_bytes": 3827
+        "sha256": "7eac32cd2277b4238d99354fca22283c0663857765108a020d5afbae2b08d504",
+        "size_bytes": 8078
       },
       "manifest": {
         "artifact_kind": "skill",
@@ -301,8 +301,8 @@
       "archive": {
         "media_type": "application/vnd.gravity.skill-package.v1+zip",
         "path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
-        "sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
-        "size_bytes": 4024
+        "sha256": "d75d5e987a82ddedd8d23d2cc8889af53630293aa749e0c3815fd619aad83812",
+        "size_bytes": 8619
       },
       "manifest": {
         "artifact_kind": "skill",
@@ -451,8 +451,8 @@
       "archive": {
         "media_type": "application/vnd.gravity.skill-package.v1+zip",
         "path": "content/thinkingai/representative/hub/artifacts/skills/filter-result-bias-diagnosis-1.0.0.zip",
-        "sha256": "2f9668784a26a6553c469c66cccc7d7be46e75e0197b5bcf807c7d4b02d87cfb",
-        "size_bytes": 4134
+        "sha256": "9e3d911d7b1b6f30ba4861bf87866cb509cd778f940335449f467ee8fd1bfa45",
+        "size_bytes": 8661
       },
       "manifest": {
         "artifact_kind": "skill",
@@ -602,8 +602,8 @@
       "archive": {
         "media_type": "application/vnd.gravity.skill-package.v1+zip",
         "path": "content/thinkingai/representative/hub/artifacts/skills/game-revenue-forecast-1.0.0.zip",
-        "sha256": "7b7afac4fb5353b0a38172fac13418af4b1a9bac399ec8b3bc46a69c0a93047d",
-        "size_bytes": 4080
+        "sha256": "b593f89087d7b0e9bc2869b28ad9eefcf7d1371ec74729d6add31bbfc5c84226",
+        "size_bytes": 8473
       },
       "manifest": {
         "artifact_kind": "skill",
