@@ -1,0 +1,523 @@
+{
+  "artifact_kind": "thinkingai_inventory_diff",
+  "changes": [
+    {
+      "changed_fields": [],
+      "current_item_sha256": "cd7a64498845a311e83caefea1f60046bb50204b9058ad5c3f3327312c524caf",
+      "current_url": "https://www.thinkingai.cn/skills/ad-delivery-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ad-delivery-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "c8d36cb3d4bc4e7e5c4129cb8bcd1141e49e543f29ebca6e6883ad74cf851d6a",
+      "current_url": "https://www.thinkingai.cn/skills/ae-agent-resource-management/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-agent-resource-management",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "29e7ed0e8bbecc596c9fe7cd474e7e2fe861d49a786334346c94a33923383283",
+      "current_url": "https://www.thinkingai.cn/skills/ae-agent-team-management/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-agent-team-management",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "531fdeb46a24576cfa531e365d75835ce6c956816b87c0ad4584df1e21afdae5",
+      "current_url": "https://www.thinkingai.cn/skills/ae-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "9117b9b7f640213205ac56b91c83fa1d375f6fa422484c0bbeffb59aa1be5e78",
+      "current_url": "https://www.thinkingai.cn/skills/ae-analysis-global/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-analysis-global",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "e121e048e4ee1d94f85ee1a0bae1a3d68189ba26a5ea4367416154632d0901c0",
+      "current_url": "https://www.thinkingai.cn/skills/ae-analysis-intent/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-analysis-intent",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "48fbb27b84518169029e361b1189c59870dcefc60bdb93aa709a8b400e8c733b",
+      "current_url": "https://www.thinkingai.cn/skills/ae-community/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-community",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "eaa7c8de8e3dd03d26d5e9813618014d862cf96eda6fb0fc759f2ef994ddf515",
+      "current_url": "https://www.thinkingai.cn/skills/ae-dataops/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-dataops",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "1347efdde9b3b78494217b7e9be4b8a5bda5390d301de9a308c45b643b1fbd6c",
+      "current_url": "https://www.thinkingai.cn/skills/ae-engage/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-engage",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "114a8211bbafc872f59a0ecbbd404d4159a871288179c815c15af140796f41a5",
+      "current_url": "https://www.thinkingai.cn/skills/ae-knowledge-base-management/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-knowledge-base-management",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "d8d82100eac6c075f0bb4488744721250ddf1260a9bbd02e0be48b270d2afdec",
+      "current_url": "https://www.thinkingai.cn/skills/ae-tracking-code-generation/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-tracking-code-generation",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "ef29825bd227d56efbaa9fabc421f4422b5108cffdb37e2966538f5e8d0f9e7e",
+      "current_url": "https://www.thinkingai.cn/skills/ae-tracking-plan-generation/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ae-tracking-plan-generation",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "fe67513e6af32633f5cba029e744999913c63dc65c3b6ed78a698f2542485642",
+      "current_url": "https://www.thinkingai.cn/skills/analysis-metric-definition-alignment/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "analysis-metric-definition-alignment",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "c427f3ce27873304e45a82553dafd745b2f72d29ff4517177a01b59bb46adc8e",
+      "current_url": "https://www.thinkingai.cn/skills/app-device-performance-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "app-device-performance-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "f303be7f5eca97dd93fb1eb9cdd5357843d21e5ad8f1eb2f416e586473259b30",
+      "current_url": "https://www.thinkingai.cn/skills/channel-quality-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "channel-quality-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "b2f29f4b5ba31a835638dbf8db7ebc80f3750c302a22ef50b90271093d3fb042",
+      "current_url": "https://www.thinkingai.cn/skills/churn-user-identification-persona/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "churn-user-identification-persona",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "00cd2009f87fea4ffe0e14b5321bea393a6948a0282505e1fc53fae5a0641c58",
+      "current_url": "https://www.thinkingai.cn/skills/community-comment-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "community-comment-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "5516be486deec25fe3dd0546d928b7246a6ab88b9e8c6991936201a343c3db76",
+      "current_url": "https://www.thinkingai.cn/skills/community-daily-report/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "community-daily-report",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "b1701ae124aef67f6e3ad999842c98b863af0f9a4a6748fcc7095c2cb4658b10",
+      "current_url": "https://www.thinkingai.cn/skills/community-hot-topic-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "community-hot-topic-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "39c71e8c6e803c4fdbd41c6f3e78391214b8269bceb85de9a013585237bccce2",
+      "current_url": "https://www.thinkingai.cn/skills/community-weekly-report/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "community-weekly-report",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "b7ba59dc8960341b004be3614d42cf9a55eaea6a19551db019da74aff2553f6f",
+      "current_url": "https://www.thinkingai.cn/skills/dashboard-no-data-diagnosis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "dashboard-no-data-diagnosis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "604ac2a9e4208eae858e36ed38b2c4eee44fc9cf2e390eca8fc0f188f4e34ea6",
+      "current_url": "https://www.thinkingai.cn/skills/data-access-assistant/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "data-access-assistant",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "6ee80cfd5cbe844df38f60618d7eddc18a29c68722ac2bc7ba074cc0f84dbd66",
+      "current_url": "https://www.thinkingai.cn/skills/data-integration-assistant/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "data-integration-assistant",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "d363fc43f0d7c77944357377322757a7955bfce92b9b98737143a9f19970c51d",
+      "current_url": "https://www.thinkingai.cn/skills/filter-result-bias-diagnosis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "filter-result-bias-diagnosis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "60cfa03f024a715b6580f527baea13b38e5e1c0ae8fc215e39f56f44f15a2233",
+      "current_url": "https://www.thinkingai.cn/skills/first-purchase-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "first-purchase-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "8848d293b1d8608429506e54abc7b9161f184b1b8028b26b0c51b8d723cec8ca",
+      "current_url": "https://www.thinkingai.cn/skills/funnel-analysis-misunderstanding-diagnosis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "funnel-analysis-misunderstanding-diagnosis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "b5432cc5b4e127b14a065ad1dbfd249c6ada4af9131c3123fc0cfb736b24e367",
+      "current_url": "https://www.thinkingai.cn/skills/game-campaign-effect-evaluation/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "game-campaign-effect-evaluation",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "5d59c184e3ad1fdc09cb91afe99eea79364ef9996b1a07b578f28c3512db3ef7",
+      "current_url": "https://www.thinkingai.cn/skills/game-revenue-forecast/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "game-revenue-forecast",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "c7cc484804dc6db7fc9b4d56ae91452f01b016e983bf90cdbd03c827b2967d19",
+      "current_url": "https://www.thinkingai.cn/skills/generate-sql-query/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "generate-sql-query",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "7c93f44c321f6553cddd15849180db590c029baafa06398272e77ee9622c7900",
+      "current_url": "https://www.thinkingai.cn/skills/gift-package-push-strategy/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "gift-package-push-strategy",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "bca1fbffee14a8f7b6803b08ebe45c3350e35d88c6e76e5086f4893e1add8140",
+      "current_url": "https://www.thinkingai.cn/skills/gift-penetration-optimization/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "gift-penetration-optimization",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "ea36deeea9217b11c671f73c2808952745963c3a60bb8c5a68698a8dc4d964b8",
+      "current_url": "https://www.thinkingai.cn/skills/level-churn-diagnosis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "level-churn-diagnosis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "165f4ac135b2191c0a923e5416e61aa7d6d8802624725b2329bf1c63891b4082",
+      "current_url": "https://www.thinkingai.cn/skills/lt-prediction/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "lt-prediction",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "67929f66bbcfa76840e38104785fba6d5109d84c7577fa46cad29d6163b7055f",
+      "current_url": "https://www.thinkingai.cn/skills/ltv-analysis-monitoring/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ltv-analysis-monitoring",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "895688de06b8cddc516e94d93b897194c8d2e37c7741ebc77aadf7f5fc879efc",
+      "current_url": "https://www.thinkingai.cn/skills/ltv-curve-fitting-segmented-calculation/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ltv-curve-fitting-segmented-calculation",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "7893c70e921dda432ee899c1c60ddfa28ffcbcda0ea1836a3469ddd86291a686",
+      "current_url": "https://www.thinkingai.cn/skills/ltv-dashboard-setup/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ltv-dashboard-setup",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "f2934d149af18a725b8b636036b81103121c7f5dec2495e68b20055b6729544c",
+      "current_url": "https://www.thinkingai.cn/skills/ltv-payback-period-prediction/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "ltv-payback-period-prediction",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "7ce559173a3d6995358e46a383c9abafd020ffc0b0aece57aa791e3f390e4e1e",
+      "current_url": "https://www.thinkingai.cn/skills/new-hero-launch-insight/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "new-hero-launch-insight",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "dbf9f6289405dd6a3e8f12a97e70af77c2ae64f3ff94e00f17a800b9a515ebe6",
+      "current_url": "https://www.thinkingai.cn/skills/operation-journey-canvas-creation/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "operation-journey-canvas-creation",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "4d0ec550b1c450b13f9ab1500c3eae481fc00fc1c0f92b7bc04f2d1bd6697221",
+      "current_url": "https://www.thinkingai.cn/skills/payment-attribution-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "payment-attribution-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "0a028f13975f3a4f30ff3aea4159b536b23ebd9771f47e98df6670d26dad6cbf",
+      "current_url": "https://www.thinkingai.cn/skills/payment-conversion-funnel/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "payment-conversion-funnel",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "50fad0049482c7d3c99b4d919533a9da5da3ba6a7fbb1e638b70e8976286e0d2",
+      "current_url": "https://www.thinkingai.cn/skills/payment-funnel-setup/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "payment-funnel-setup",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "d5b89bc17b74b37f56e358110d199b2bbd5960f2aeb2327c8d9323f2d626eceb",
+      "current_url": "https://www.thinkingai.cn/skills/payment-rate-anomaly-diagnosis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "payment-rate-anomaly-diagnosis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "f404ac07e1e8332f8832c1661e736f81281e3395d15086ca93d9906e2733f80e",
+      "current_url": "https://www.thinkingai.cn/skills/product-pricing-optimization/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "product-pricing-optimization",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "356a1d903083be962d38ec42c08c6ffa5dbe5863d1aebf0954a04c95c016746c",
+      "current_url": "https://www.thinkingai.cn/skills/pvp-win-rate-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "pvp-win-rate-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "cc5b0570744e533cef5bc1fd07d895228ba1298a0944b3e848db5ad7843b10b7",
+      "current_url": "https://www.thinkingai.cn/skills/repurchase-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "repurchase-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "da19db47b30fc132320b316c74aa0de718f943c5fbf2d0f98a353dbbbd43d99e",
+      "current_url": "https://www.thinkingai.cn/skills/retention-analysis-data-verification/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "retention-analysis-data-verification",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "8d0e6ec4449495e2dc5f95ff625e1081707ed1bb3a1dd3624625fe7817d1f78a",
+      "current_url": "https://www.thinkingai.cn/skills/single-user-behavior-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "single-user-behavior-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "3f6920ab81c13ae218650be7447139263709446d9869487427192a416452d851",
+      "current_url": "https://www.thinkingai.cn/skills/sql-performance-optimization/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "sql-performance-optimization",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "2b544ab181373bda0bf03ef1cb5fce3b510a6b0d5a3621a1a8bb4389f6a54a9a",
+      "current_url": "https://www.thinkingai.cn/skills/system-field-reference-guide/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "system-field-reference-guide",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "c52672de471e8e6d0948c95227de4c76a145910689b263302da5987e32a9c416",
+      "current_url": "https://www.thinkingai.cn/skills/te-analysis-model-selection/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "te-analysis-model-selection",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "9ea843957b34a5944efd4ce210d36338ef3522696fc9af31a64aa3057d7ea160",
+      "current_url": "https://www.thinkingai.cn/skills/te-report-data-mismatch-diagnosis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "te-report-data-mismatch-diagnosis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "4926f05bf902fb22a5a8807f3504a6be7c7e3a12f681cc943906f3d72e8c538d",
+      "current_url": "https://www.thinkingai.cn/skills/te-user-id-binding-diagnosis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "te-user-id-binding-diagnosis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "a71284d4b9b37e8e697b51f0faa31036a9ec7d2094c062d73ea6aaf30cd7c246",
+      "current_url": "https://www.thinkingai.cn/skills/trino-metadata-query-analysis/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "trino-metadata-query-analysis",
+      "state": "added"
+    },
+    {
+      "changed_fields": [],
+      "current_item_sha256": "a48c62bb50c01da5ec87c82107023e8bb5c1d6ee0014e67eafaaf236950ecebe",
+      "current_url": "https://www.thinkingai.cn/skills/user-tag-system-design/",
+      "previous_item_sha256": null,
+      "previous_url": null,
+      "source_id": "user-tag-system-design",
+      "state": "added"
+    }
+  ],
+  "counts": {
+    "added": 55,
+    "changed": 0,
+    "redirect": 0,
+    "removed": 0,
+    "total": 55,
+    "unchanged": 0
+  },
+  "current_snapshot": {
+    "observed_at": "2026-08-24T10:21:12.565Z",
+    "snapshot_sha256": "da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5"
+  },
+  "diff_sha256": "c9b10412537eb7ffe3ed0f1a4edaf59c70bc2935060c6acdb3d3d47379e23a57",
+  "network_called": false,
+  "previous_snapshot": {
+    "observed_at": null,
+    "snapshot_sha256": null
+  },
+  "schema_version": "gravity.thinkingai-inventory-diff.v1",
+  "source_adapter": {
+    "adapter_id": "thinkingai-public-catalog-dom",
+    "version": 1
+  }
+}
