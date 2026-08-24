@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
+from .adaptive_governor_contract import governor_journey
 from .errors import (ErrorCategory, ErrorDetail, GravityInsightError,
                      InputValidationError)
 from .plan import (
@@ -193,7 +194,8 @@ def execute_one(
             _worker_lease=lease,
         )
         try:
-            result = adapter.execute(copy.deepcopy(dict(request)), context)
+            with governor_journey(execution_id):
+                result = adapter.execute(copy.deepcopy(dict(request)), context)
             if not isinstance(result, Mapping):
                 raise TypeError("adapter result must be an object")
             if native_failure(result):

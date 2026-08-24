@@ -135,40 +135,25 @@ def perform_http_request(
     receipt_root: Path | None = None,
     governor_context: Mapping[str, Any] | None = None,
     governor_clock: Callable[[], float] = time.monotonic,
+    adaptive_governor: Any | None = None,
+    governor_cancellation: Any | None = None,
     **kwargs: Any,
 ) -> Any:
-    record_http_request()
-    active = (
-        _ActiveHttpReceipt(http_receipt, receipt_root)
-        if http_receipt is not None and receipt_root is not None
-        else None
+    """Govern one actual HTTP attempt before its canonical evidence boundary."""
+
+    from .http_attempt import perform_governed_http_request
+
+    return perform_governed_http_request(
+        request,
+        args,
+        kwargs,
+        receipt_context=http_receipt,
+        receipt_root=receipt_root,
+        governor_context=governor_context,
+        governor_clock=governor_clock,
+        adaptive_governor=adaptive_governor,
+        cancellation=governor_cancellation,
     )
-    token = _ACTIVE_HTTP_RECEIPT.set(active) if active is not None else None
-    started = _governor_clock_value(governor_clock)
-    finished = started
-    response: Any = None
-    error: BaseException | None = None
-    try:
-        response = request(*args, **kwargs)
-        finished = _governor_clock_value(governor_clock, fallback=started)
-        record_active_http_response(response)
-        return response
-    except BaseException as caught:
-        error = caught
-        finished = _governor_clock_value(governor_clock, fallback=started)
-        raise
-    finally:
-        _record_governor_observation(
-            args,
-            kwargs,
-            receipt_context=http_receipt,
-            governor_context=governor_context,
-            response=response,
-            error=error,
-            duration_seconds=max(0.0, finished - started),
-        )
-        if token is not None:
-            _ACTIVE_HTTP_RECEIPT.reset(token)
 
 
 def _governor_clock_value(
@@ -213,6 +198,8 @@ def request_receipt_context(
     body: Mapping[str, Any] | None = None,
     page_number: int | None = None,
     retry: bool = False,
+    effect: str = "other",
+    coalesce_safe: bool = False,
 ) -> dict[str, Any]:
     """Build value-free metadata before a controlled request is sent."""
 
@@ -222,6 +209,8 @@ def request_receipt_context(
         "path": path,
         "page_number": page_number,
         "retry": retry,
+        "_governor_effect": effect,
+        "_governor_coalesce_safe": coalesce_safe is True and effect == "read",
         "request_shape_fingerprint": shape_fingerprint(
             {"query": dict(query or {}), "body": dict(body or {})}
         ),
@@ -244,6 +233,7 @@ def authorized_request_receipt_context(
     path: str,
     query: Mapping[str, Any] | None,
     body: Mapping[str, Any] | None,
+    coalesce_safe: bool = True,
 ) -> dict[str, Any]:
     """Derive safe operation and pagination identity from a policy receipt."""
 
@@ -251,6 +241,7 @@ def authorized_request_receipt_context(
         authorization, "route", None
     )
     operation_id = str(getattr(target, "operation_id", "unknown"))
+    effect = str(getattr(target, "effect", "other"))
     receipt_path = str(
         getattr(target, "path_template", None) or getattr(target, "path", None) or path
     )
@@ -269,6 +260,8 @@ def authorized_request_receipt_context(
         query=query,
         body=body,
         page_number=page_number,
+        effect=effect,
+        coalesce_safe=coalesce_safe and effect == "read",
     )
 
 

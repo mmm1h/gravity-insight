@@ -207,6 +207,7 @@ class RequestsBlobTransport:
                 operation_id="export_blob_download",
                 method="GET",
                 path="/<authorized-export-blob>",
+                effect="stream",
             ),
             receipt_root=STATE_ROOT,
         )
@@ -234,6 +235,7 @@ class RequestsBlobTransport:
                     method="POST",
                     path="/<authorized-export-blob>",
                     body={"form": dict(form_fields), "file": file_field},
+                    effect="mutation",
                 ),
                 receipt_root=STATE_ROOT,
             )
