@@ -58,6 +58,9 @@ _EXPORTS = {
     "validate_execution_variant_characterization": (
         ".execution_variant", "validate_execution_variant_characterization"
     ),
+    "validate_execution_variant_selection": (
+        ".execution_variant", "validate_execution_variant_selection"
+    ),
     "compile_analysis_artifact": (
         ".analysis_artifact", "compile_analysis_artifact"
     ),

@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.execution-variant-selection.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "status", "selection_status", "product",
+    "characterization", "mode", "pin", "selected_variant_uri",
+    "canonical_variant_uri", "current_trust", "candidates",
+    "objective_facts", "gates", "reason_codes", "rollback",
+    "automatic_selection", "network_called", "decision_sha256"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.execution-variant-selection.v1"},
+    "status": {"const": "success"},
+    "selection_status": {
+      "enum": ["canonical_fallback", "pinned_selection", "automatic_selection"]
+    },
+    "product": {"$ref": "#/$defs/product"},
+    "characterization": {
+      "type": "object",
+      "required": [
+        "characterization_id", "artifact_sha256", "corpus_sha256",
+        "fixed", "equivalent"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "characterization_id": {"const": "analysis-query-event.direct-plan@1"},
+        "artifact_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "corpus_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "fixed": {"const": true},
+        "equivalent": {"const": true}
+      }
+    },
+    "mode": {"enum": ["automatic", "disabled"]},
+    "pin": {
+      "type": "object",
+      "required": ["requested", "evaluated", "variant_uri"],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {"type": "boolean"},
+        "evaluated": {"type": "boolean"},
+        "variant_uri": {
+          "type": ["string", "null"],
+          "pattern": "^gravity\\.execution-variant/[a-z0-9-]+/[a-z0-9-]+@[1-9][0-9]*$"
+        }
+      }
+    },
+    "selected_variant_uri": {"$ref": "#/$defs/variant_uri"},
+    "canonical_variant_uri": {
+      "const": "gravity.execution-variant/analysis-query-event/direct@1"
+    },
+    "current_trust": {"$ref": "#/$defs/current_trust"},
+    "candidates": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "objective_facts": {
+      "type": "object",
+      "required": [
+        "trust_hard_gate", "request_count", "freshness", "latency_evidence",
+        "cost_evidence", "secondary_objective", "secondary_objective_evaluated"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "trust_hard_gate": {"enum": ["passed", "failed"]},
+        "request_count": {"const": "equivalent"},
+        "freshness": {"const": "same_product_trust_and_upstream_response"},
+        "latency_evidence": {"const": "unavailable"},
+        "cost_evidence": {"const": "unavailable"},
+        "secondary_objective": {"const": "minimum_local_topology"},
+        "secondary_objective_evaluated": {"type": "boolean"}
+      }
+    },
+    "gates": {
+      "type": "array", "minItems": 5, "maxItems": 5,
+      "items": {"$ref": "#/$defs/gate"}
+    },
+    "reason_codes": {
+      "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/reason_code"}
+    },
+    "rollback": {"$ref": "#/$defs/rollback"},
+    "automatic_selection": {"type": "boolean"},
+    "network_called": {"const": false},
+    "decision_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "variant_uri": {
+      "enum": [
+        "gravity.execution-variant/analysis-query-event/direct@1",
+        "gravity.execution-variant/analysis-query-event/plan-adapter@1"
+      ]
+    },
+    "product": {
+      "type": "object",
+      "required": ["identity_kind", "selector", "contract_version", "contract_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "identity_kind": {"const": "product"},
+        "selector": {"const": "analysis.query.spec:event"},
+        "contract_version": {"const": "1"},
+        "contract_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "current_trust": {
+      "type": "object",
+      "required": ["trust_status", "contract_digest", "reason_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "trust_status": {
+          "enum": ["stable", "unknown", "degraded", "blocked", "quarantined"]
+        },
+        "contract_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "reason_codes": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"$ref": "#/$defs/reason_code"}
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "required": [
+        "variant_uri", "descriptor_sha256", "topology", "local_topology_hops",
+        "canonical", "eligible", "eligibility_reason_codes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "variant_uri": {"$ref": "#/$defs/variant_uri"},
+        "descriptor_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "topology": {"enum": ["direct_product", "plan_adapter"]},
+        "local_topology_hops": {"type": "integer", "minimum": 1, "maximum": 2},
+        "canonical": {"type": "boolean"},
+        "eligible": {"type": "boolean"},
+        "eligibility_reason_codes": {
+          "type": "array", "maxItems": 2, "uniqueItems": true,
+          "items": {"$ref": "#/$defs/reason_code"}
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": ["gate", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "gate": {
+          "enum": [
+            "characterization", "product_trust", "kill_switch", "pin",
+            "secondary_objective"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "passed", "failed", "disabled", "selected", "not_requested",
+            "not_evaluated"
+          ]
+        }
+      }
+    },
+    "reason_code": {
+      "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+    },
+    "rollback": {
+      "type": "object",
+      "required": ["canonical_variant_uri", "strategy", "capability_preserved"],
+      "additionalProperties": false,
+      "properties": {
+        "canonical_variant_uri": {
+          "const": "gravity.execution-variant/analysis-query-event/direct@1"
+        },
+        "strategy": {"const": "pin_canonical_direct"},
+        "capability_preserved": {"const": true}
+      }
+    }
+  }
+}
