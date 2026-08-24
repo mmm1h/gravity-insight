@@ -1,0 +1,1752 @@
+{
+  "artifact_kind": "thinkingai_full_specification",
+  "blocked_count": 36,
+  "coverage_count": 55,
+  "executable_count": 4,
+  "items": [
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide reviewed project spend and acquisition-outcome definitions with App, platform, currency and attribution bindings."
+      ],
+      "skill": {
+        "archive_sha256": "4d7a3feb538881e042fe0c1f8a272c9f45df305d641bb2296dbb9d81053aab56",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ad-delivery-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "9651a4d0d52cecafa8b93b01395c3cc304d929f4586b6b0d1695231bc761c563",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "55c42eb7e39db234ac0abe7acd36b97671ae2ac06f2835021ba0c904866bcca7",
+        "package_sha256": "6021bcda66a8c1670fa1d134b01f40c61bf604d373b3ba524102531f767c2774",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/ad-delivery-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "ee600c4306a8f29472eb8d1d4f76aae59834dc5400fe9e009e93fd5dd1dd762c",
+      "source_content_used": false,
+      "source_id": "ad-delivery-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "host_agent_orchestration",
+        "alternative_ref": "alternative://gravity/host-agent-orchestration@1",
+        "guidance": "Use the Host Agent and explicit project locks to discover and select governed Gravity resources; Runtime does not reproduce vendor Agent administration.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/agent@1",
+        "taxonomy://gravity/knowledge@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Propose a separate Gravity-native requirement only if a concrete second consumer needs a bounded resource-management contract."
+      ],
+      "skill": null,
+      "source_content_sha256": "42705c18fece50907816b7690483885ef6dc6257146d0637ee4343838e9fa88d",
+      "source_content_used": false,
+      "source_id": "ae-agent-resource-management",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "host_agent_orchestration",
+        "alternative_ref": "alternative://gravity/host-agent-orchestration@1",
+        "guidance": "Keep team membership and Host Agent administration outside Runtime; use reviewed repository and project authorization boundaries.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/agent@1",
+        "taxonomy://gravity/knowledge@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide a concrete cross-project governance need before defining any new bounded control-plane contract."
+      ],
+      "skill": null,
+      "source_content_sha256": "9369aa40fc33ea0942a970e8ad94d1bccfc7b3fee5e8cf2a65066e3e345f6725",
+      "source_content_used": false,
+      "source_id": "ae-agent-team-management",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "governed_analysis",
+        "alternative_ref": "alternative://gravity/governed-analysis-runtime@1",
+        "guidance": "Use exact Gravity Product, Composite or Plan surfaces with Journey, Trust, Semantic and claim gates instead of a vendor analysis operation.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Map a concrete analysis question to an existing governed owner or open a separate evidence-backed capability requirement."
+      ],
+      "skill": null,
+      "source_content_sha256": "8eddb65348d28b8184cf2e3bd4528e45551604d69d8936c537bd8eca5dcef166",
+      "source_content_used": false,
+      "source_id": "ae-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "governed_analysis",
+        "alternative_ref": "alternative://gravity/governed-analysis-runtime@1",
+        "guidance": "Compose bounded project evidence through existing Products and Context Packs; no global vendor analysis executor is admitted.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Define one bounded cross-source Journey with exact ownership, permissions and request budgets before proposing expansion."
+      ],
+      "skill": null,
+      "source_content_sha256": "9c9475b59d288fe8d22a1afba47b3dbed919f87259e1c7baa261f2fca9bdd663",
+      "source_content_used": false,
+      "source_id": "ae-analysis-global",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "governed_analysis",
+        "alternative_ref": "alternative://gravity/governed-analysis-runtime@1",
+        "guidance": "Use host catalog plus host selection or the existing recognizer fallback; Skill content does not create another intent router.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Add a bounded Agent catalog or recognizer regression only when a current governed Product owns the question."
+      ],
+      "skill": null,
+      "source_content_sha256": "ede0dae53b23b5aa776b184f9e9b005fe303f8eee9090f7b9b7bcaef4e0060e6",
+      "source_content_used": false,
+      "source_id": "ae-analysis-intent",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "project_context",
+        "alternative_ref": "alternative://gravity/project-context-provider@1",
+        "guidance": "Integrate community evidence through a project-controlled Context Provider with permissions, citations and data-only authority.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide a reviewed provider descriptor, source permissions, entity/time alignment and output budget."
+      ],
+      "skill": null,
+      "source_content_sha256": "aadffa0705e853ec2ef5fb20cfc7c370f592e3f3977e1d5e3640d57f1a68bb83",
+      "source_content_used": false,
+      "source_id": "ae-community",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "project_engineering",
+        "alternative_ref": "alternative://gravity/project-engineering-review@1",
+        "guidance": "Keep data-platform operations in project engineering and register only fixed governed read capabilities needed by analysis.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide a concrete fixed host/path/method read contract or a separately governed connector proposal."
+      ],
+      "skill": null,
+      "source_content_sha256": "bbf54f9fa593f919a960d79a604cbbf9c59043a836a9fefa46a7d4306ef16acf",
+      "source_content_used": false,
+      "source_id": "ae-dataops",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "governed_action",
+        "alternative_ref": "alternative://gravity/governed-action-preview@1",
+        "guidance": "Use an exact Action Connector with Preview, explicit user authorization, Execute and Readback; vendor engagement operations are not imported.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide one exact target connector, managed fields, stale checks, authorization and readback contract."
+      ],
+      "skill": null,
+      "source_content_sha256": "7a1d32be56644cd93d7c35c583d87f9319cda8db6cf032ef3f2abbf9fb577c15",
+      "source_content_used": false,
+      "source_id": "ae-engage",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "project_context",
+        "alternative_ref": "alternative://gravity/project-context-provider@1",
+        "guidance": "Manage project knowledge in its owning repository or system and expose only bounded read resources through a Context Provider.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/agent@1",
+        "taxonomy://gravity/knowledge@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide a provider descriptor with resource ownership, permissions, freshness and citation behavior."
+      ],
+      "skill": null,
+      "source_content_sha256": "edd2022552d018897b9b17e538b9fcaf246735766468fafec89c2892cc306fbc",
+      "source_content_used": false,
+      "source_id": "ae-knowledge-base-management",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "project_engineering",
+        "alternative_ref": "alternative://gravity/project-engineering-review@1",
+        "guidance": "Treat tracking code as project engineering work with code review, schema ownership and deployment controls outside Runtime.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide a project-owned tracking requirement and repository review workflow; do not execute generated code from a Skill package."
+      ],
+      "skill": null,
+      "source_content_sha256": "459b75d97e76cde6aa88381c60d1769db13614cfdcd3dc557f13deac33208450",
+      "source_content_used": false,
+      "source_id": "ae-tracking-code-generation",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "project_engineering",
+        "alternative_ref": "alternative://gravity/project-engineering-review@1",
+        "guidance": "Create a project tracking proposal from owned event semantics and review it through the project engineering process.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide project event ownership, naming, privacy and release-review requirements before a bounded proposal Skill is considered."
+      ],
+      "skill": null,
+      "source_content_sha256": "7123c349b38a47d8b40d26a87196568dfcdb3aabdbd2c1a0f640ff8ff55a57a7",
+      "source_content_used": false,
+      "source_id": "ae-tracking-plan-generation",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide an exact project Semantic Definition and App binding, then rerun the existing Journey evaluation."
+      ],
+      "skill": {
+        "archive_sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+        "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
+        "dependency_contract_sha256": "27055d1189b90200332232e87f689fa6f633354d3b588cbada062c36460ce73e",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "afcd4e600361624e2f3828dd90b24653db46f4aced41f0a3acc0d6c4e63530ce",
+        "package_sha256": "2d6dd3a16a4063b56760f498f00ad861312b2fb43674503edfcb3b884f2a2162",
+        "readiness": "executable",
+        "skill_uri": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
+        "specification": "specified",
+        "validation": "validated"
+      },
+      "source_content_sha256": "4224c77205412c143f81d630dd17545bcd24337de25b374573d6a7b9499d08a7",
+      "source_content_used": false,
+      "source_id": "analysis-metric-definition-alignment",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Install the exact project lock and validate the declared event, metric, grouping, Trust and data-quality inputs."
+      ],
+      "skill": {
+        "archive_sha256": "27f8a300c8c7afba46a05263fae7bacdd3d1446a957ce05ac77f94ed469fdd05",
+        "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/app-device-performance-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "90ddcbcbb8b10526e636bc081469e79befca1dbe2880261a9ae9bd0578bf8238",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "7d4e52797e248699ffe7ba3a2fb4a7a60f7e1a1fee889b3a819a3f23d09542d8",
+        "package_sha256": "766c2ac759188c1829075c2609840f2e352cdcf8b68a49299f467fb92fda3134",
+        "readiness": "executable",
+        "skill_uri": "skill://gravity.game/app-device-performance-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "validated"
+      },
+      "source_content_sha256": "c3a92e92c3c0c6a80f2071aa2d5fea9072c111288d3c42f5031904a39486c345",
+      "source_content_used": false,
+      "source_id": "app-device-performance-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide reviewed channel, cohort, cost, value and attribution bindings with compatible units."
+      ],
+      "skill": {
+        "archive_sha256": "4cbfc48ec81d057d418d97cce9700dc5a5f77b96128fbd897f159155e6d55c90",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/channel-quality-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "8ebb3dd8d2db51481462eec441993cea276a9b4a21e6f1d7ebba2efdee256cf8",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "78c53498018192ca6bf494896c6356d09925ed35e3b47f61be54ba2c9758b7a5",
+        "package_sha256": "7425ebd1bfb7bc2cdc79624eac395918a02de18ecd71fdae914551c14b03787e",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/channel-quality-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "4a371ca5c338c120a0768f494c27dfc0ad9256ecaa385cce6ff2da2fd2ac5f84",
+      "source_content_used": false,
+      "source_id": "channel-quality-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/user@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Register reviewed churn/cohort semantics and a privacy-bounded segment-profile Operator with golden cases."
+      ],
+      "skill": {
+        "archive_sha256": "db2a9275c26b56fd2be418b49e1e1e52de97bd5786a95f4d2c5c976a60e8a6d0",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/churn-user-identification-persona-1.0.0.zip",
+        "dependency_contract_sha256": "53d05d858f29befeaf0ed0272164356e3ada72c4f89f7b3c02c153c04090e113",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "fda44ea236ef4cb6067b051c46544c69eaca9c89ff8f5e2fac0ff39887174caa",
+        "package_sha256": "7451c5aa0ae98c2d3c626bc17527bf85d80bfbf439e1b702c3a350fb0ef2cac7",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/churn-user-identification-persona@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "10736fbee7a8b8a470601d3b36855b97d4a08962345ff6f5e0d758a1ce1cfa84",
+      "source_content_used": false,
+      "source_id": "churn-user-identification-persona",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING",
+        "OPERATOR_UNAVAILABLE"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Register a bounded comment Context Provider and reviewed sentiment aggregation with corpus and language golden cases."
+      ],
+      "skill": {
+        "archive_sha256": "245fc56812e84f290047d9f0ae71705368702d58bd77dce2fc64efd6d73109ab",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-comment-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "c67bd2298036005ecc1b82b227e7d66de3637d6772d6814c965f6d14b64f7a2f",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "704cf025b798b96bf856f4286a008b65ba700634c18cc3e8252eb81a29829b9e",
+        "package_sha256": "8177f7b7a074c58727fbd59723f77cce0a795ac33f8ae2846750bfe90a348a0a",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/community-comment-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "d4f9492f38ee509c4c050cf47dd5e1550b7111904d2329c52bbed4145a2290f7",
+      "source_content_used": false,
+      "source_id": "community-comment-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING",
+        "OPERATOR_UNAVAILABLE"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a provider contract with daily source closure plus reviewed aggregation and conflict behavior."
+      ],
+      "skill": {
+        "archive_sha256": "ba85be4f70b349e344d871eed67a50bb20856d3530880c154d5aaebe0afd8e3d",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-daily-report-1.0.0.zip",
+        "dependency_contract_sha256": "bc782693d389ac6b0518e3ec9710fb49abf9d633d90c664a7dd343cf510adc84",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "3c72a0617b69b2c0ef7a7669a515404b92140e22fd12f746eb2f559d14682056",
+        "package_sha256": "b8143d1d56f94cf62c2cffb6b7be899ac272eda830b238a1798b46889ebca6cf",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/community-daily-report@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "9ca3d9848dd6a1ec2a867d8a2a437ec7d4ca257a1966ecc71d4b8bb684d86d82",
+      "source_content_used": false,
+      "source_id": "community-daily-report",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a bounded project community Context requirement and rerun entity, time and authority alignment."
+      ],
+      "skill": {
+        "archive_sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+        "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "c78ce3727fd190e9ad8ad67c7732abf429961d44ce880960c82ae07c4c56cec4",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "da80bf092c8eb320b71b3a9a19212c4cca37bf25d98546eabd8eef43c5fc61cb",
+        "package_sha256": "5aec96cfdc23cbb14d76fee2f833f4526c06de14b5c8294e2b35e49cfd9af631",
+        "readiness": "executable",
+        "skill_uri": "skill://gravity.game/community-hot-topic-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "validated"
+      },
+      "source_content_sha256": "5d366c376b19ed4cbd4ebb2d6066e8e7f26bc121c7d544b838d5b30f84b112d8",
+      "source_content_used": false,
+      "source_id": "community-hot-topic-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING",
+        "OPERATOR_UNAVAILABLE"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/community@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide weekly source-coverage and deduplication contracts plus reviewed aggregation golden cases."
+      ],
+      "skill": {
+        "archive_sha256": "b5e66799d24ccc8d07e670e91e844cbfa08daa400b3ea0d59992e70791a6eb3f",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-weekly-report-1.0.0.zip",
+        "dependency_contract_sha256": "fc93b777bba2b6b55e96fcd16951873dc9ec6c0bf941a3360169a94a851721ab",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "5712d92615777e4631253ef0e833c866b3c7fb60ede53a8e7076dfb3a2c974fb",
+        "package_sha256": "3115873bb302808e22b5373269bd800e4330f4033e201e12b2703f96d2cd20f3",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/community-weekly-report@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "e404bb43f2717da518aea0d74362fe5895d6f8fb9caa474d14945ae6cfb2fce5",
+      "source_content_used": false,
+      "source_id": "community-weekly-report",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CONTEXT_REQUIRED_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide the exact project dashboard definition, source binding, filters and effective revision."
+      ],
+      "skill": {
+        "archive_sha256": "7f84b9c9088a4cb39aff82650dac064a7ba86e11da7d5845c0607f49fcf13fbd",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/dashboard-no-data-diagnosis-1.0.0.zip",
+        "dependency_contract_sha256": "cd472bd63260ba2753ec1e32c6ec0c342ec06747f4ace8dfd591ea67407d3b20",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "be7ee4d47349dea77bb2ad2cb3a883ea5cba5c5a3c964a2140a911b192976f48",
+        "package_sha256": "8fb314c8f31b8a486b4f749e18794c59370f113d47d1a6c7374c7af68e4dbc78",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/dashboard-no-data-diagnosis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "c7c0adb7f28e504eada3071af628a3060c85c95d28884d2bd1f82eb7e7f067bd",
+      "source_content_used": false,
+      "source_id": "dashboard-no-data-diagnosis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a reviewed project data contract and a same-layer Gravity capability or explicit owner decision."
+      ],
+      "skill": {
+        "archive_sha256": "0496984944042324760ba2f694711a855dcd5fcf5f005c8e5d63cc16c28cefe5",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-access-assistant-1.0.0.zip",
+        "dependency_contract_sha256": "47ad012cf2ee9f893f1796b1ae512a25e70c4835da68f41e8691981c2c1d6a4f",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "0072f151cbca551011a32cefcc959af38339c2351fd92361f5d1a939ef2e3dda",
+        "package_sha256": "8afad0f0dc798652ed5fdbf8bee9c35580d616404a882c154113bad4cd587f3c",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/data-access-assistant@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "76d527f23dbd06236a71a5475c3806292ed218a6384bbe862660d8ad90fbe6bf",
+      "source_content_used": false,
+      "source_id": "data-access-assistant",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide reviewed integration contracts and an explicit governed connector with preview, authorization and readback."
+      ],
+      "skill": {
+        "archive_sha256": "18b133feecc77a563fe3609c07de09fddeb1be17c57bad8d288891afa37375a2",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-integration-assistant-1.0.0.zip",
+        "dependency_contract_sha256": "1fbd9da080b3508b1634d60f27c8cf6603cad118a74dd450c19e0df5ca898b7c",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "636f010ab8385f8366f4bb306498ac74e663038ccf700cb9dedae0037ec26c91",
+        "package_sha256": "2a5614c9aff917cd7fc6f98d1a10bde9fe47431846c4445355cfb7450a213cb4",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/data-integration-assistant@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "584f10f27b769a529375e6b9e5526b1492b9d953bf354b4e79c94bab538ad2a7",
+      "source_content_used": false,
+      "source_id": "data-integration-assistant",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Install the exact project lock and rerun the registered Operator golden and Journey dependency gates."
+      ],
+      "skill": {
+        "archive_sha256": "2f9668784a26a6553c469c66cccc7d7be46e75e0197b5bcf807c7d4b02d87cfb",
+        "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/filter-result-bias-diagnosis-1.0.0.zip",
+        "dependency_contract_sha256": "578b0d9bd58f95ceaabf4217d4b05c8a58cab0fb870edd9fd98e1c88624618ec",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "756840bdd784d694622c6d2d8eeab91a73ba196895fbad9b73826fb402d851c7",
+        "package_sha256": "e55378b50ca318a3c64918d2c49ae7d1f124be8d647d0f8d34a114e127250828",
+        "readiness": "executable",
+        "skill_uri": "skill://gravity.game/filter-result-bias-diagnosis@1.0.0",
+        "specification": "specified",
+        "validation": "validated"
+      },
+      "source_content_sha256": "2dc7dd1512a60b5d1deda800336b8e4bdb0be185699a9dd15d1beb0395b4ee11",
+      "source_content_used": false,
+      "source_id": "filter-result-bias-diagnosis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a reviewed first-purchase definition with user, order, refund, currency and history-window bindings."
+      ],
+      "skill": {
+        "archive_sha256": "d4df45043886c7213f7ab0740ca74539546a7c985efaed18d38164a39cb02ca3",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/first-purchase-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "692417e9ee6b6c4d3883d81b11c51bcf8a478db5dfe21d5a49db861c3b7db9e1",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "e3d3cf9d8104a8191f87850badfa1d9b49ab6bcce2ac47f3f788c5cdf4b6bdcb",
+        "package_sha256": "e0f017c34126095ea9b68fb8ecdd30d62bc8aec6ca71c79e1a6ec3d465b835f1",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/first-purchase-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "13f93eb5514c0fba38285cb9cce554faac58a987391c96ea990eb71096b8d66e",
+      "source_content_used": false,
+      "source_id": "first-purchase-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Register the project funnel contract and a deterministic funnel-diagnosis Operator with edge-case golden tests."
+      ],
+      "skill": {
+        "archive_sha256": "d74af7b8f28ed0de7f89a5392ac1e90527c1db3ccf735120cb50e569782f70e8",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/funnel-analysis-misunderstanding-diagnosis-1.0.0.zip",
+        "dependency_contract_sha256": "b5b6b9bad18f758246246f646434b9c6d7433088eb6b8a2282274109a71d0031",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "779041d4909153fca367c713a52d749e0e60413b29fcb4d8f1433ee6fa7c0ae0",
+        "package_sha256": "b32d7b9a737782b039e095bc74b1251773d409d1c84b3ee18edf971459e06175",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/funnel-analysis-misunderstanding-diagnosis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "f402e4bbddb8ba71a67754ba0f9135a6105b7bc803d1082028f7755892225110",
+      "source_content_used": false,
+      "source_id": "funnel-analysis-misunderstanding-diagnosis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CONTEXT_REQUIRED_MISSING",
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide campaign exposure/outcome semantics, aligned campaign Context and a reviewed evaluation method."
+      ],
+      "skill": {
+        "archive_sha256": "6f16b42d1dd67b7354d4dd83c6ff2f1b9497b2f94be3af6aabf23de1dfbd0345",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/game-campaign-effect-evaluation-1.0.0.zip",
+        "dependency_contract_sha256": "9d7652cb9ed3c805e36a4060e6c7fbb7d804ceae13eb5a0e785c82f16a38007a",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "f1159a87106c416e45614886d5a4c983e473ff4a3bc3a0ae013033038b475262",
+        "package_sha256": "ccbfd4cd8f3b9ff10848ecc98ccb7012baaba74b5159153f1e284cd4f0359e33",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/game-campaign-effect-evaluation@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "8e30fa6e8926d35dcef41f15a7e3e8e604347b65c5d6dd887e481abf586d9c7f",
+      "source_content_used": false,
+      "source_id": "game-campaign-effect-evaluation",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "HUB_TRUSTED_PACK_MISSING",
+        "MODEL_UNVALIDATED"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Approve an exact trusted Model artifact with lineage, evaluation, expiry and safe horizon before any forecast claim."
+      ],
+      "skill": {
+        "archive_sha256": "7b7afac4fb5353b0a38172fac13418af4b1a9bac399ec8b3bc46a69c0a93047d",
+        "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/game-revenue-forecast-1.0.0.zip",
+        "dependency_contract_sha256": "200fb9818dc3be9a7e0d54a46fd5d67b4ac95d5adca0e54e616310b4b2bb322f",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "fc125c689547f36a4b124d5aed4ad5b0d697c293746ca220e8ff0c3ffddee2b5",
+        "package_sha256": "4e982c53b33994e97e7d7fa3d944ba7401876938d780ea675a46a3a8f8de83cd",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/game-revenue-forecast@1.0.0",
+        "specification": "specified",
+        "validation": "validated"
+      },
+      "source_content_sha256": "9b3f0d029e49ccf7ecee2209ada87b31a42ae108d74e7d56c399a81cb825a8cf",
+      "source_content_used": false,
+      "source_id": "game-revenue-forecast",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "registered_sql_or_explorer",
+        "alternative_ref": "alternative://gravity/registered-sql-or-isolated-explorer@1",
+        "guidance": "Use a reviewed Registered SQL Product or explicitly invoke the isolated dialect-locked Explorer; automatic Text-to-SQL is outside Runtime.",
+        "reason_code": "AUTOMATIC_TEXT_TO_SQL_OUT_OF_SCOPE"
+      },
+      "blocker_reason_codes": [
+        "AUTOMATIC_TEXT_TO_SQL_OUT_OF_SCOPE"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "approved",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Promote repeated exploratory work only through reviewed SQL definition, projection, privacy and consumer contracts."
+      ],
+      "skill": null,
+      "source_content_sha256": "6a3884aefa04928c473b81bbaed7b60f036981075806fbe81f0f3ba4521d69bd",
+      "source_content_used": false,
+      "source_id": "generate-sql-query",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "CONTEXT_REQUIRED_MISSING",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide offer/contact semantics and policy Context, then register a governed connector with preview and readback."
+      ],
+      "skill": {
+        "archive_sha256": "704d77f1438d91fbb1d50cb702a30adcea4fc25dbca307a5c2c2dc4ee83a020a",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-package-push-strategy-1.0.0.zip",
+        "dependency_contract_sha256": "436dcdc0d30f110af35b2e1c11256bd14eea4c6cded602212df9d9ee683d145b",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "c9e1c78acfcc98595946f428013d39f2409daa21a0245a64acd120c202791d7e",
+        "package_sha256": "f1cf027044a5a553b1f6d7b688376eff85e9f07816909113c36fbf52f6814564",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/gift-package-push-strategy@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "0c0b39140ffbec420d558733e68995663fcc022861e6a68bfc885b316daf03fd",
+      "source_content_used": false,
+      "source_id": "gift-package-push-strategy",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Register gift eligibility and purchase semantics plus a unit-aware metric decomposition Operator."
+      ],
+      "skill": {
+        "archive_sha256": "000c7c7a92eb0527e6b0adc7a79eff87bf4ec6b16324ebdb6b1af66a6819e8ba",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-penetration-optimization-1.0.0.zip",
+        "dependency_contract_sha256": "59f42dabbee1e3684db2f78c62628859c97e9cd458612771e9dd78e72ebf8ee1",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "be8a13f8474587196dfd53fb212a4ccd53b9e79f4330aa8d90f4333e4597d5d3",
+        "package_sha256": "4d77b9b6ab2b2e6534964d8b6ff058d8d7c47d284daa37b0d2552af4988999a9",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/gift-penetration-optimization@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "d0fb5743c7baae4293fa6797f4d1e95a94468b0454bb90eb483f80a0ad4025cb",
+      "source_content_used": false,
+      "source_id": "gift-penetration-optimization",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide level progression semantics and a deterministic funnel Operator with retry and missing-step cases."
+      ],
+      "skill": {
+        "archive_sha256": "6b9c9fa12844d398316d10b9e4b193ece9a85dadfa6f3ede40784ab79859532b",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/level-churn-diagnosis-1.0.0.zip",
+        "dependency_contract_sha256": "a5422041c4ccf8efdcf4b422280348a2fd16883a87710ffb2dfe2cc928f67514",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "efd1c280ed3ef2db945f804c03f9566db5bcb7c872e13daff42478e876bc4e0b",
+        "package_sha256": "5018228c48c84bb46d74cde8b8bd28b1c126df429361345fd778acc584a65294",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/level-churn-diagnosis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "891cbd6fef1b23eb4391357524df518b43d41d6238d96f4bebbc8f84a41e13b1",
+      "source_content_used": false,
+      "source_id": "level-churn-diagnosis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "HUB_TRUSTED_PACK_MISSING",
+        "MODEL_UNVALIDATED",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide cohort/censoring semantics and an approved lifetime Model with lineage, calibration, expiry and safe horizon."
+      ],
+      "skill": {
+        "archive_sha256": "b7d1de33f2ceb741ee2f262e060731f373a1d24207055110a62d5e8470c65e13",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/lt-prediction-1.0.0.zip",
+        "dependency_contract_sha256": "86357a99f9b2d677e18ca97b59daf61934644ad0f1c8655502ea23ef9794ec3e",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "a2febcc315de0e341cd1e992e57c2d33180f073441e0572f08f49ebd73a1e4b9",
+        "package_sha256": "82a8d553e2564a09e52e31de0a034d878199ec18906e5c71341b644f3a2c5c49",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/lt-prediction@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "3a5dffc0fc5a90eb1f769f588b8d544353d5c4858653bd92a1e64e169c7116e7",
+      "source_content_used": false,
+      "source_id": "lt-prediction",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "HUB_TRUSTED_PACK_MISSING",
+        "MODEL_UNVALIDATED",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide project LTV semantics and an approved monitored Model with evaluation and drift thresholds."
+      ],
+      "skill": {
+        "archive_sha256": "b8c3e3dee832ded0eed746668dc426ee815f4816027b1519b5f743f6b5089f3e",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-analysis-monitoring-1.0.0.zip",
+        "dependency_contract_sha256": "f94782df425c2c886f8d3f0d19b6f5d826f015cb2f47c932806ec228ccbc3cb5",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "61cacac61ecfed08b4b85185bd52992d64b3c07e0cd5fb930d580fca7b265849",
+        "package_sha256": "42a1a0b58a62c53fa86ca91c1925120b1865b177b684359efefb0fec82a0ca93",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/ltv-analysis-monitoring@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "1ba98b4c820ff820f8d8e83a375a07c303d5ad1289bdfb4bbe82fb232f767f66",
+      "source_content_used": false,
+      "source_id": "ltv-analysis-monitoring",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "HUB_TRUSTED_PACK_MISSING",
+        "MODEL_UNVALIDATED",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide segment/value semantics and an approved curve Model with sparse-cohort and horizon evaluation."
+      ],
+      "skill": {
+        "archive_sha256": "31a8bf686e97268aa030f696ecc2acbae3ccd466274f62e964d0fa05af0e90bc",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-curve-fitting-segmented-calculation-1.0.0.zip",
+        "dependency_contract_sha256": "644d0622bedc78d839c5aff5ee71b8b5aab92a14b69682333465025f730944e8",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "14fba63e1cf06014a457ba2d5ef695ea57d15fe30eeb52529dba530df5a8228f",
+        "package_sha256": "589a6f8cff22e9f36dbc030c762ae5bb688de8db73ac034d7f5b8ef047acceb7",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/ltv-curve-fitting-segmented-calculation@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "f931fc1de1de2ad42c01fc6f4a4cc546f0fab30b17732c6768a360e8e72b566f",
+      "source_content_used": false,
+      "source_id": "ltv-curve-fitting-segmented-calculation",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "HUB_TRUSTED_PACK_MISSING",
+        "MODEL_UNVALIDATED",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide LTV semantics, an approved Model and an exact dashboard connector binding with preview/readback evidence."
+      ],
+      "skill": {
+        "archive_sha256": "2fbf9fa34551bb1e36d72fbc9ac5f48b5e008bc16dc77554101fb21c101289d0",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-dashboard-setup-1.0.0.zip",
+        "dependency_contract_sha256": "f94782df425c2c886f8d3f0d19b6f5d826f015cb2f47c932806ec228ccbc3cb5",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "3cc99b33b88adacc149f8f8d823febecb1edf8b33c0cd359b6e71cc76b0a8122",
+        "package_sha256": "63cbe11ba24fbf5fb82740716df613af0645b9fc21c8f2f618b1a61381f6de5d",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/ltv-dashboard-setup@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "3011bddebcb841e43a331b1d1f5e372a19e7438dcb887a793016e8df8b7e0fa1",
+      "source_content_used": false,
+      "source_id": "ltv-dashboard-setup",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "HUB_TRUSTED_PACK_MISSING",
+        "MODEL_UNVALIDATED",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide cost/value semantics and an approved payback Model with calibration and horizon evidence."
+      ],
+      "skill": {
+        "archive_sha256": "4bfd8c05f79b0df4f32a559c9108d2e4737113583b915cfd2c5b7ad78236beac",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-payback-period-prediction-1.0.0.zip",
+        "dependency_contract_sha256": "b5b6e48b660afc7c7c79d0bc76e04295c52509e0f3d9516433ad4b2a42f83e1e",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "eac08e5d0e5d08ddfe66bbfff8528a1291f8414f1180a354c87ce67c09b1e183",
+        "package_sha256": "250b04c7e424cc1634452becd939655ed1de08ee47062985007c637f551406c1",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/ltv-payback-period-prediction@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "c8722f542f1edeebd0ff747b34004074f0aa40d827b16edbc915737f5e34ba1b",
+      "source_content_used": false,
+      "source_id": "ltv-payback-period-prediction",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CONTEXT_REQUIRED_MISSING",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide content/outcome semantics and an authoritative release Context aligned to the analysis window."
+      ],
+      "skill": {
+        "archive_sha256": "dbe1bc69d3f7f30d3e79aa178144ebc88013f683d9174116cd6edce60e9cc411",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/new-hero-launch-insight-1.0.0.zip",
+        "dependency_contract_sha256": "098ffbcf2c75f90db5579d20e14a59c72b88e3afb260481fbe933266e12c04a0",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "02bc9316740dd125f0db2f1151675431b05051fb3a6cfcdfec98451666849ae8",
+        "package_sha256": "eeeedcd3dc34e5e9542591bbece0b8127495b82052bcdb4f60eb1c460da90ea3",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/new-hero-launch-insight@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "18cc2babf10bcc19d55814cae849b38bb83ed69133091e21ad3d4c6350b3801f",
+      "source_content_used": false,
+      "source_id": "new-hero-launch-insight",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/operations@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide audience/contact semantics and policy Context plus an exact governed journey connector."
+      ],
+      "skill": {
+        "archive_sha256": "235f0ae7d76571cd0630f2869e373e7caee204fd76081d74def3b086710a12b7",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/operation-journey-canvas-creation-1.0.0.zip",
+        "dependency_contract_sha256": "35a76211104d5d945ecf9e49e7793c74236ff1c4809fde4f9c0a1f2d87052fac",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "7d63917dfda9a2588fdc37a7231f9093ee60826dbb5374e29fb99ab2f0c3becf",
+        "package_sha256": "a37c766df8b9f0c12b4a33d2c18ce3fbf8f874e634f115c8b0c89b1185b578e4",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/operation-journey-canvas-creation@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "a635d6ce66395319234ddbbcef497d3712597d0e8c5980d80fc5027b015771d5",
+      "source_content_used": false,
+      "source_id": "operation-journey-canvas-creation",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a reviewed payment attribution definition with channel, window, currency and refund bindings."
+      ],
+      "skill": {
+        "archive_sha256": "111a0a5c58c6361d191e6a6f447c3a627f2f9bbe9438f7f90515c0df64bf1960",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-attribution-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "00c2e8c80394a213e53f256545e0c3c7e8bc40267ca5f9c65c909fcbe0ee47e7",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "fa5f64d29cd7e696d454320e571f4187133c57c5ff02c92fc0263ba6504d42b6",
+        "package_sha256": "d2ad3d6bcd7c020b1bd3a2be916acab3bc09dbf6e1878ed641e79e8971f5852d",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/payment-attribution-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "29747f29bfd9d5c0c2aca59dd480c1b4aeede75fcd6c54b6d649a3b0911dd846",
+      "source_content_used": false,
+      "source_id": "payment-attribution-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Register the payment funnel semantics and deterministic diagnosis Operator with empty and partial cases."
+      ],
+      "skill": {
+        "archive_sha256": "92990e91a0c3301769939a6b37b24da0f955189fcea4434e779d9d7191177355",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-conversion-funnel-1.0.0.zip",
+        "dependency_contract_sha256": "2ec902bff2a3dd398f7c1413e6a09a314e484c493e6842090488adbc60f382d5",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "aec24bf2b48c40268f3d8e140859a6584996876619c29ee7970ddad3147ac45e",
+        "package_sha256": "9d2304db7779cfa3708460853f834106aa1fe9b461999a4ca4cb534582ceb2cb",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/payment-conversion-funnel@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "ad76f239ae2815e76cad6e74da3bfc3ebae5da52025a4291303e25977fc396a4",
+      "source_content_used": false,
+      "source_id": "payment-conversion-funnel",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide reviewed funnel semantics and an exact saved-analysis or dashboard connector binding."
+      ],
+      "skill": {
+        "archive_sha256": "c72c62430a74b71185c3fa1b1c6bdf402a5f32a1cd6eeb2e12e214f38f2cf1da",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-funnel-setup-1.0.0.zip",
+        "dependency_contract_sha256": "6d685013cb760f14f112a626accaa0c7b88004c68d7d224d5154ed7f826c8cdd",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "14ee2d3b1ce92b7344caa9ff9515ba0eb830c614cd76c4e8fa7300ccf15e316c",
+        "package_sha256": "89a8e807e2e2b85b8a259f133f280d8c163b68ed01ddcb14ff3eb4bf09c7bf11",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/payment-funnel-setup@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "66796c487f2b0673bdeea9d554abc4bd4ca65fb0a91b7af475a098ae1a853540",
+      "source_content_used": false,
+      "source_id": "payment-funnel-setup",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide the reviewed payment-rate numerator, denominator, cohort, timezone and attribution binding."
+      ],
+      "skill": {
+        "archive_sha256": "e44c733f8162662910cd96a9a1c931613f83f7a2bb99348755e8054054d6668f",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-rate-anomaly-diagnosis-1.0.0.zip",
+        "dependency_contract_sha256": "ddf5f40b5d6aee3a58432cb7f99aa838ba19842a0df1ff6a564c212fa289892f",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "06204191e9e09cad369e667a20571445dd0e6e8692615364c9918d2133b27beb",
+        "package_sha256": "659b203174ef0f102ee37f023352dbaa38f66e3655b22d4ac68d81be169f9e29",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/payment-rate-anomaly-diagnosis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "4d6a19de6e54e0a720ccf6d558e2b8895acdf2c30beb004c058fa09490f9c1a2",
+      "source_content_used": false,
+      "source_id": "payment-rate-anomaly-diagnosis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "CONTEXT_REQUIRED_MISSING",
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide price/outcome semantics, catalog Context, a validated elasticity Operator and a governed pricing connector."
+      ],
+      "skill": {
+        "archive_sha256": "d005dbf4f863208b5e4f7360e05cf7bc35872a56d275032e03194ee850a89c98",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/product-pricing-optimization-1.0.0.zip",
+        "dependency_contract_sha256": "5931698a7fc9290ec3ffa3dbb804395140f3c0f883a67ff55ce55015c29a691c",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "b00c28b98eed058123ad9cecef72c135908e45a6f2f1d2c40b8fafab9f59b7fc",
+        "package_sha256": "af7852b4ab3d113e16b4117dec4fd6367e047e9683780f9249fe3e43c6e9f134",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/product-pricing-optimization@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "534d2a2eeeba674c709fc183e0b9ed0e40c90f59c9b9ef2b27c671368d00faa5",
+      "source_content_used": false,
+      "source_id": "product-pricing-optimization",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/gameplay@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide reviewed match, outcome, mode, participant, bracket and version bindings."
+      ],
+      "skill": {
+        "archive_sha256": "fbcf0980d1bd89eff62baa0436cffce96c9e2067b5910232d7b940c3c3f14ea4",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/pvp-win-rate-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "eab578189c8872b4686d19c706d8eaf8e7bc8a8322e1a26556dd33041954136d",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "98d5a07b51f5c28a5300a8a2be2450857c49dd54fc710f537c2fba7b5d53466a",
+        "package_sha256": "5688d174c2ac3ada5699d128b3d7d682d8060f52b3f3e0eaf21b567232c53f7f",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/pvp-win-rate-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "b92a3031f6346b6ad0f8863cd688c3f97d34daedea6c13653b99c8673687bf19",
+      "source_content_used": false,
+      "source_id": "pvp-win-rate-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/monetization@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide reviewed qualifying-order, refund, identity, cohort and repeat-window bindings."
+      ],
+      "skill": {
+        "archive_sha256": "560b1d3c8c1667fe493aa2694810f417b7be7929b3dcdb78165b7315e5c07b5e",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/repurchase-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "808bd4a6d602834a1f8c901ffd54f2886925ec64f7f79aedaace93c78688941e",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "bb517bf5059d1aa06355a4a00e2602bfc9bbfed0f2809bfb1dc931705da7ca81",
+        "package_sha256": "acbad45401c4a472184cf78a4a0ad3d2ddaae22f5c50f7d385b7a1fe716c7c20",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/repurchase-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "8d10e8d1bdcf06c3e915a66669ecda905da31d585c7e5938b6e07857b68d53df",
+      "source_content_used": false,
+      "source_id": "repurchase-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Register retention/cohort semantics and a deterministic curve Operator with censoring and late-data golden cases."
+      ],
+      "skill": {
+        "archive_sha256": "58e53313c5454495a0c00ab26ea54dae1a57c07361fa89ad013e7b88618192b2",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/retention-analysis-data-verification-1.0.0.zip",
+        "dependency_contract_sha256": "b634e4930f09d20a83517512ed79c8cc5f033f9e9f3adb35420df9d539c7a828",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "d3098a1085e97951be8102fba3e9141e4675ddf188f96e782276c7638a89c0bf",
+        "package_sha256": "fabfc736e03a1d029807eda2f1598cb5591db47b9aac4e2dbaca8f59099610e6",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/retention-analysis-data-verification@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "e95c11521d19f9f3ec13e6578add165665bfdd3420c9842a6fdb15295611cf58",
+      "source_content_used": false,
+      "source_id": "retention-analysis-data-verification",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "IDENTITY_BINDING_MISSING",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/user@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a reviewed subject-identity binding, authorization purpose, projection and retention policy."
+      ],
+      "skill": {
+        "archive_sha256": "8439eea739eb1155aab04a701b5255c35238858116085e3a714765668fa97ce7",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/single-user-behavior-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "2c83ce4d8207329b322ea7e903d881ac777f9559300f81601648686866d862cd",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "7952a489b29049514333bb2911caccb676961f532c0c0346a8e5763309b0605f",
+        "package_sha256": "2894d2c246e2539cb17bf746ee2e64f3ef304564ba18880cc56009dc01536041",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/single-user-behavior-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "5b7d2ba6ba508ad2c4a078d12500e20129cadca24996607e6ac5b1473a4afd29",
+      "source_content_used": false,
+      "source_id": "single-user-behavior-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING",
+        "DATABASE_DIALECT_UNSUPPORTED"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a supported dialect contract and a bounded query-plan Context artifact from the database owner."
+      ],
+      "skill": {
+        "archive_sha256": "74758733179fff679b2477de06d4f7ee6d54ac68547c9956faed02322eb4f520",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/sql-performance-optimization-1.0.0.zip",
+        "dependency_contract_sha256": "52395fd04e7e171f184508dd9a570cec924d515120d0dfb445b99e186c5b46a5",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "b76a40965bc57e1131f0fdc5cad6c745cb2ded5bc5e91dd7f568565bc9f0933d",
+        "package_sha256": "014d599ab4a34d0297dabc17407a620034f2304bd8e24125c92e4d3ecfb5ec2b",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/sql-performance-optimization@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "d784ff75e05e38185cb1e3cbb16e75455e8245b14f432a9f20439be92902e775",
+      "source_content_used": false,
+      "source_id": "sql-performance-optimization",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide a project-authoritative field contract source with owner, revision, sensitivity and effective range."
+      ],
+      "skill": {
+        "archive_sha256": "e372d3a56796efeeb49e7ae1bb5594ccb7ce65149a1eef5d680630f692439496",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/system-field-reference-guide-1.0.0.zip",
+        "dependency_contract_sha256": "4d4173c5f8fdc4211e0a6be0a7efe275f80640f32e3a76a6c946168fc7a6be3b",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "9ee7c2162ea2b8ad410c162239066e4a0eac093f9094c4c19dc505a85c778b8f",
+        "package_sha256": "f8246534cb04a99f0c9979549ba054262800dd3578ecd7c1d4cdaf937afa7ad3",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/system-field-reference-guide@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "af4734ccb1f42d5946cf5500f824880a000ba53155b73f73dd8cc74c30f84bd7",
+      "source_content_used": false,
+      "source_id": "system-field-reference-guide",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "model_registry",
+        "alternative_ref": "alternative://gravity/model-registry-review@1",
+        "guidance": "Select only an exact approved Model artifact with lineage, evaluation, expiry and safe horizon; no vendor model-selection operation is imported.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide a Gravity-native Model requirement and reviewed artifact evidence for one bounded Journey."
+      ],
+      "skill": null,
+      "source_content_sha256": "d480813b9d15d58c28687bdbe44496e54586ec3373d5f6bf9eecf27a080d1c9a",
+      "source_content_used": false,
+      "source_id": "te-analysis-model-selection",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "governed_analysis",
+        "alternative_ref": "alternative://gravity/governed-analysis-runtime@1",
+        "guidance": "Use same-layer Capability Trust, Data Quality, Semantic and dashboard-binding evidence to classify mismatches.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide the exact report source, binding, filters, revisions and mismatched value-free fingerprints."
+      ],
+      "skill": null,
+      "source_content_sha256": "75a5455f23bf0530f4b0cb83b9b37fe4cae92ec13b2cfd4cc68481c305b0ec39",
+      "source_content_used": false,
+      "source_id": "te-report-data-mismatch-diagnosis",
+      "specification": "specified"
+    },
+    {
+      "alternative": {
+        "alternative_kind": "project_engineering",
+        "alternative_ref": "alternative://gravity/project-identity-binding-review@1",
+        "guidance": "Keep identity binding in the calling project and diagnose it from reviewed identity, permission and projection contracts.",
+        "reason_code": "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      },
+      "blocker_reason_codes": [
+        "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+      ],
+      "distribution_allowed": false,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/analysis@1",
+        "taxonomy://gravity/diagnostics@1"
+      ],
+      "independent_authorship": false,
+      "license_review": "blocked",
+      "mapping_kind": "safe_alternative",
+      "next_evidence": [
+        "Provide a project-owned identity contract and sanitized mismatch evidence without exposing user identifiers."
+      ],
+      "skill": null,
+      "source_content_sha256": "7c04286c61279c00f2d3b9c9cd7a4b78d4f49d466d9a3aa948aac5e03d7a2355",
+      "source_content_used": false,
+      "source_id": "te-user-id-binding-diagnosis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "DATABASE_DIALECT_UNSUPPORTED"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/data-engineering@1",
+        "taxonomy://gravity/data-collection@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Register a Trino-specific read-only capability with AST, relation/function allowlists and enforceable budgets."
+      ],
+      "skill": {
+        "archive_sha256": "b6b28c57887c9e89a8cc0251fc34c11fc8f71d168f93dd12c1633669104dbd7a",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/trino-metadata-query-analysis-1.0.0.zip",
+        "dependency_contract_sha256": "aaf6d80f35f7c0b3a917745ae75948662c38159128a8a3c073938fd185615ecb",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "0ddf5f578413fcc2321c932d0169c067e81cb630304e393b051c7b7c5afc9863",
+        "package_sha256": "d079724c8c9b1e482ca4f6764238460a1fdb17a39bc72a19b75c6cdf01f9ee0a",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/trino-metadata-query-analysis@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "7f3803acd5c726f199c75ddfb62bca69f1f6cb770cf3156cac8e3fdcfa10eebd",
+      "source_content_used": false,
+      "source_id": "trino-metadata-query-analysis",
+      "specification": "specified"
+    },
+    {
+      "alternative": null,
+      "blocker_reason_codes": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING",
+        "SEMANTIC_DEFINITION_MISSING"
+      ],
+      "distribution_allowed": true,
+      "gravity_taxonomy_ids": [
+        "taxonomy://gravity/user@1"
+      ],
+      "independent_authorship": true,
+      "license_review": "approved",
+      "mapping_kind": "skill_specification",
+      "next_evidence": [
+        "Provide project identity/taxonomy governance and a separate reviewed computation plus tag connector contract."
+      ],
+      "skill": {
+        "archive_sha256": "036b115c4b37529d6d6cfe95b554c4a2f5f56c1086a6f1c08b1e094d5dcdefd8",
+        "artifact_path": "content/thinkingai/full/hub/artifacts/skills/user-tag-system-design-1.0.0.zip",
+        "dependency_contract_sha256": "b7923529da1dd33b3191b0f3d9a82b991d21f6e617bde9a30581b14f33861eb1",
+        "lifecycle": "reviewed",
+        "manifest_sha256": "b94048eb2afc674e6aaf0402954d28be2027d823077834e10c44078581ed1e00",
+        "package_sha256": "aa80c8459d8c49455747af3efb7f9fb32656b8ac2140851bab0dc06ba0dfa652",
+        "readiness": "blocked",
+        "skill_uri": "skill://gravity.game/user-tag-system-design@1.0.0",
+        "specification": "specified",
+        "validation": "unvalidated"
+      },
+      "source_content_sha256": "13511503a8eee9db08b9a203dccf639ef786047e620a0a68a9175a9af27289c6",
+      "source_content_used": false,
+      "source_id": "user-tag-system-design",
+      "specification": "specified"
+    }
+  ],
+  "network_called": false,
+  "representative_set_sha256": "36d2c996debc614772e7028dade7e2c7d04d9931e1411410888280aa26961cbf",
+  "safe_alternative_count": 15,
+  "schema_version": "gravity.thinkingai-full-specification.v1",
+  "skill_specification_count": 40,
+  "source_observation_sha256": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2",
+  "source_snapshot_sha256": "da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5",
+  "specification_sha256": "06cfd6e50694dfeb459fc339dbb4772fd00eb04699415a57f5acd6f0861324f6",
+  "specified_count": 55,
+  "unvalidated_count": 35,
+  "validated_count": 5
+}

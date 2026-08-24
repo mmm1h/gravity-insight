@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-cohort-population",
+      "inferred-retention-definition"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Require cohort entry, return activity, observation horizon, timezone and late-data semantics before validation.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use when a project supplies reviewed cohort and return-event definitions for a bounded horizon.",
+    "context_boundary": "A returned retention-like field cannot define denominator, censoring or late-arrival behavior.",
+    "steps": [
+      "Resolve cohort entry, return activity, identity, timezone, observation horizon and late-data rules.",
+      "Apply a reviewed retention-curve Operator to governed observations with continuity and sample checks.",
+      "Report verified windows, missing dates, censoring limits and unsupported interpretations."
+    ],
+    "title": "Retention contract and data check"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [
+    "operator://gravity/retention-curve@1"
+  ],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://retention-analysis-data-verification",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "analysis.query.spec:event"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/retention@1"
+  ],
+  "skill_id": "retention-analysis-data-verification",
+  "specification": "specified",
+  "summary": "Verify cohort and activity evidence before interpreting retention curves.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress` |
+| Status | `fixed_dev` |
 | Track | Content expansion |
 | Dependencies | CT02 |
 | Parallel group | `content-c` |
@@ -13,6 +13,8 @@
 | Branch / worktree | `codex/ct03-thinkingai-full-specification` / `D:\git-pjt\gravity-sdk-wt\ct03-thinkingai-full-specification` |
 | Approved source snapshot | CT01 snapshot `da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5` |
 | Gravity production / Hub / Provider requests | `0` |
+| Feature commits | `4309b7f`, `8b09f14`, `bc448f8` |
+| Canonical consumer | `work-dashboard@2039e387` |
 
 ## Plan Owner Verdict And Ready Binding
 
@@ -46,6 +48,65 @@ Every item in the approved CT01 inventory has an independently authored Gravity 
 ## Current Baseline
 
 CT02 proves the content schema and dependency model on representative shapes. The remaining inventory may include topics outside Runtime scope, missing Gravity capabilities, unavailable Context or legally blocked source use.
+
+## Fixed-Dev Delivery Evidence
+
+- The full specification covers every identity in the approved CT01 snapshot
+  exactly once: 40 versioned Skill specifications and 15 explicit safe
+  alternatives. Five CT02 representatives are reused byte-for-byte; 35 new
+  independently authored Skills are `specified + reviewed + blocked +
+  unvalidated`. The full specification digest is
+  `06cfd6e50694dfeb459fc339dbb4772fd00eb04699415a57f5acd6f0861324f6`.
+- Current evidence, not a target, derives four executable / 36 blocked Skills and
+  five validated / 35 unvalidated Skills. Every blocked item has closed machine
+  reason codes and next evidence. The 14 vendor-specific identities remain safe
+  alternatives, and automatic SQL points only to Registered SQL or the explicit
+  isolated Explorer; none becomes a package or Runtime operation.
+- Three strict schemas compile the compact source, full coverage matrix and
+  17-case zero-network eval. Independent problem/method/stop/claim text is bound
+  to CT01 metadata provenance without source prose, examples, images, methods or
+  marketing numbers. Source-title, marketing-number, instruction, duplicate,
+  unmapped, state, digest, package and eval tampering fail closed. Eval digest is
+  `219df1a4f13f8d9dfb2e508221ca7e244d6a918b2118dd08d29b684f7f274f43`.
+- Source-diff impact preserves stable package references: added identities must
+  already be covered, changed/redirected identities require review, and removed
+  identities retain history instead of automatic deletion. CT01 observation,
+  snapshot and diff bytes and all CT02 package bytes remain unchanged.
+- The full Stage A Hub index contains the exact 40-Skill set and reuses the five
+  representative entries. Its index digest is
+  `ae40a656675a8b9a71a0322358f7d0c7a36b79fa75eb48781b8872c499d0b038`.
+  The lock digest
+  `e6e5218d96d2670d595f9e05099861d9cf863319eb635813a97efba11dd3f5ae`
+  binds package commit `4309b7f74b8e8d38fa5bae5bdcf3f3a292cdc6fc`;
+  two isolated CAS/project roots fetched, materialized and verified all packages
+  byte-identically with zero Hub network.
+- Complete gates passed 1,773 unittest tests and 1,773 pytest tests plus 4,373
+  subtests. The expanded ThinkingAI/Hub/documentation suite passed 68 tests plus
+  432 subtests. All eight deterministic generators/checkers passed; compiler
+  stayed at 237 operations / 11 manifests, quality and touched Ruff passed, and
+  development usability stayed 296/336 selection, 248/248 fillability, 53/53
+  offline terminal, 5/5 recovery, 0 security violations and 0 production HTTP.
+- Isolated-wheel validation loaded all three CT03 schemas and source/coverage/
+  eval compilers from `site-packages`; wheel SHA-256 is
+  `5d8d21cc4c5eb50b490811a1c20f866562b1c9b5ea71a2960d0cc979312949ef`.
+  Its 1,650 entries contain no top-level Team Hub content; the installed Runtime
+  still has 11 Journeys and exactly one Built-in Skill.
+- `work-dashboard@2039e387` passed 11 tests plus 94 subtests against CT03 with no
+  consumer change. Active human docs remain exactly 5,500 lines. Structural
+  technical debt was reviewed and no current entry changed or closed. Gravity
+  production, remote Hub, external Provider, credentials, release and `main`
+  promotion performed by CT03: `0`.
+
+## Known Limits
+
+- All 35 new Skills intentionally remain blocked/unvalidated until their exact
+  project Semantic, Capability, Operator, Model, Context, identity, dialect or
+  Action evidence is supplied. CT03 records those gaps; it does not implement
+  their dependencies or claim that full specification equals full execution.
+- R10 and R16 remain `specified`: no second real MCP consumer/explicit pilot and
+  no external trust/compliance boundary triggered them. With those conditional
+  nodes untriggered, there is no active feature candidate and `main` remains
+  frozen under the directive's separate program-integration conditions.
 
 ## Scope
 

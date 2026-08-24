@@ -1,0 +1,82 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-channel-population",
+      "incremental-return"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Compare governed delivery observations only after project spend, outcome, platform and attribution definitions are explicit.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use for a bounded channel or campaign window when the project owns the acquisition metric bindings.",
+    "context_boundary": "Campaign names, budgets and attribution rules are project data; absent bindings stop the review and no returned association proves incrementality.",
+    "steps": [
+      "Resolve project spend and acquisition-outcome semantics for the selected window and platform.",
+      "Use the registered anomaly product to compare only matched returned dimensions with preserved completeness and quality.",
+      "Separate observed delivery movement from attribution assumptions, excluded channels and causal hypotheses."
+    ],
+    "title": "Bounded acquisition delivery review"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://ad-delivery-analysis",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/acquisition-outcome@1",
+    "metric://project/ad-spend@1"
+  ],
+  "skill_id": "ad-delivery-analysis",
+  "specification": "specified",
+  "summary": "Review returned acquisition delivery changes without inventing campaign efficiency.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

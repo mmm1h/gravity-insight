@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "composite",
+      "minimum_trust": "stable",
+      "selector": "composite:business_pulse"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "dashboard-write-authorized",
+      "invented-confidence",
+      "unvalidated-future-value"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Define sections, metrics, windows and claim limits only after project LTV semantics and model provenance are exact.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use to prepare a target-neutral dashboard proposal for reviewed value observations and estimates.",
+    "context_boundary": "The specification cannot create a dashboard, invent model outputs or authorize a target-system write.",
+    "steps": [
+      "Resolve project LTV, cohort, currency, horizon and model-version semantics.",
+      "Define a target-neutral Analysis Artifact with sources, filters, limitations and allowed claims.",
+      "Require a separate governed dashboard preview, user authorization and readback before any target change."
+    ],
+    "title": "LTV dashboard artifact proposal"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [
+    "model://gravity/ltv-curve@1"
+  ],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://ltv-dashboard-setup",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "composite:business_pulse"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/lifetime-value@1"
+  ],
+  "skill_id": "ltv-dashboard-setup",
+  "specification": "specified",
+  "summary": "Specify a governed value dashboard artifact without writing target configuration.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.thinkingai-full-source.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "source_snapshot_sha256", "skills",
+    "alternatives", "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "thinkingai_full_source"},
+    "schema_version": {"const": "gravity.thinkingai-full-source.v1"},
+    "source_snapshot_sha256": {"$ref": "#/$defs/digest"},
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/skill"}
+    },
+    "alternatives": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/alternative"}
+    },
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 128},
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "uri": {"type": "string", "minLength": 1, "maxLength": 256},
+    "uri_array": {
+      "type": "array", "maxItems": 32, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/uri"}
+    },
+    "text_array": {
+      "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/text"}
+    },
+    "reason": {
+      "enum": [
+        "ACTION_CONNECTOR_UNAVAILABLE",
+        "CAPABILITY_TRUST_CONTRACT_MISSING",
+        "CONTEXT_REQUIRED_MISSING",
+        "DATABASE_DIALECT_UNSUPPORTED",
+        "HUB_TRUSTED_PACK_MISSING",
+        "IDENTITY_BINDING_MISSING",
+        "MODEL_UNVALIDATED",
+        "OPERATOR_UNAVAILABLE",
+        "SEMANTIC_DEFINITION_MISSING"
+      ]
+    },
+    "reason_array": {
+      "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/reason"}
+    },
+    "skill": {
+      "type": "object",
+      "required": [
+        "source_id", "title", "summary", "description", "applicability",
+        "context_boundary", "steps", "capability_profile",
+        "semantic_dependencies", "operator_dependencies", "model_dependencies",
+        "context_dependencies", "blocker_reason_codes", "next_evidence",
+        "forbidden_claims"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"$ref": "#/$defs/source_id"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 128},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 256},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "applicability": {"type": "string", "minLength": 1, "maxLength": 512},
+        "context_boundary": {"type": "string", "minLength": 1, "maxLength": 512},
+        "steps": {
+          "type": "array", "minItems": 3, "maxItems": 16,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "capability_profile": {"enum": ["none", "event", "anomaly", "pulse"]},
+        "semantic_dependencies": {"$ref": "#/$defs/uri_array"},
+        "operator_dependencies": {"$ref": "#/$defs/uri_array"},
+        "model_dependencies": {"$ref": "#/$defs/uri_array"},
+        "context_dependencies": {"$ref": "#/$defs/uri_array"},
+        "blocker_reason_codes": {"$ref": "#/$defs/reason_array"},
+        "next_evidence": {"$ref": "#/$defs/text_array"},
+        "forbidden_claims": {"$ref": "#/$defs/text_array"}
+      }
+    },
+    "alternative": {
+      "type": "object",
+      "required": [
+        "source_id", "alternative_kind", "alternative_ref", "guidance",
+        "reason_code", "next_evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"$ref": "#/$defs/source_id"},
+        "alternative_kind": {
+          "enum": [
+            "governed_action", "governed_analysis", "host_agent_orchestration",
+            "model_registry", "project_context", "project_engineering",
+            "registered_sql_or_explorer"
+          ]
+        },
+        "alternative_ref": {
+          "type": "string",
+          "pattern": "^alternative://gravity/[a-z0-9]+(?:-[a-z0-9]+)*@1$",
+          "maxLength": 256
+        },
+        "guidance": {"$ref": "#/$defs/text"},
+        "reason_code": {
+          "enum": [
+            "AUTOMATIC_TEXT_TO_SQL_OUT_OF_SCOPE",
+            "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
+          ]
+        },
+        "next_evidence": {"$ref": "#/$defs/text_array"}
+      }
+    }
+  }
+}

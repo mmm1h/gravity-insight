@@ -1,0 +1,1260 @@
+{
+  "artifact_kind": "skills_lock",
+  "lock_digest": "e6e5218d96d2670d595f9e05099861d9cf863319eb635813a97efba11dd3f5ae",
+  "requested": [
+    "skill://gravity.game/ad-delivery-analysis@1.0.0",
+    "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
+    "skill://gravity.game/app-device-performance-analysis@1.0.0",
+    "skill://gravity.game/channel-quality-analysis@1.0.0",
+    "skill://gravity.game/churn-user-identification-persona@1.0.0",
+    "skill://gravity.game/community-comment-analysis@1.0.0",
+    "skill://gravity.game/community-daily-report@1.0.0",
+    "skill://gravity.game/community-hot-topic-analysis@1.0.0",
+    "skill://gravity.game/community-weekly-report@1.0.0",
+    "skill://gravity.game/dashboard-no-data-diagnosis@1.0.0",
+    "skill://gravity.game/data-access-assistant@1.0.0",
+    "skill://gravity.game/data-integration-assistant@1.0.0",
+    "skill://gravity.game/filter-result-bias-diagnosis@1.0.0",
+    "skill://gravity.game/first-purchase-analysis@1.0.0",
+    "skill://gravity.game/funnel-analysis-misunderstanding-diagnosis@1.0.0",
+    "skill://gravity.game/game-campaign-effect-evaluation@1.0.0",
+    "skill://gravity.game/game-revenue-forecast@1.0.0",
+    "skill://gravity.game/gift-package-push-strategy@1.0.0",
+    "skill://gravity.game/gift-penetration-optimization@1.0.0",
+    "skill://gravity.game/level-churn-diagnosis@1.0.0",
+    "skill://gravity.game/lt-prediction@1.0.0",
+    "skill://gravity.game/ltv-analysis-monitoring@1.0.0",
+    "skill://gravity.game/ltv-curve-fitting-segmented-calculation@1.0.0",
+    "skill://gravity.game/ltv-dashboard-setup@1.0.0",
+    "skill://gravity.game/ltv-payback-period-prediction@1.0.0",
+    "skill://gravity.game/new-hero-launch-insight@1.0.0",
+    "skill://gravity.game/operation-journey-canvas-creation@1.0.0",
+    "skill://gravity.game/payment-attribution-analysis@1.0.0",
+    "skill://gravity.game/payment-conversion-funnel@1.0.0",
+    "skill://gravity.game/payment-funnel-setup@1.0.0",
+    "skill://gravity.game/payment-rate-anomaly-diagnosis@1.0.0",
+    "skill://gravity.game/product-pricing-optimization@1.0.0",
+    "skill://gravity.game/pvp-win-rate-analysis@1.0.0",
+    "skill://gravity.game/repurchase-analysis@1.0.0",
+    "skill://gravity.game/retention-analysis-data-verification@1.0.0",
+    "skill://gravity.game/single-user-behavior-analysis@1.0.0",
+    "skill://gravity.game/sql-performance-optimization@1.0.0",
+    "skill://gravity.game/system-field-reference-guide@1.0.0",
+    "skill://gravity.game/trino-metadata-query-analysis@1.0.0",
+    "skill://gravity.game/user-tag-system-design@1.0.0"
+  ],
+  "runtime_version": "0.3.0",
+  "schema_version": "gravity.skills-lock.v1",
+  "skills": [
+    {
+      "archive_sha256": "4d7a3feb538881e042fe0c1f8a272c9f45df305d641bb2296dbb9d81053aab56",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ad-delivery-analysis-1.0.0.zip",
+      "artifact_size": 3841,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "metric-anomaly-localization@1"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/acquisition-outcome@1",
+          "metric://project/ad-spend@1"
+        ]
+      },
+      "manifest_digest": "55c42eb7e39db234ac0abe7acd36b97671ae2ac06f2835021ba0c904866bcca7",
+      "package_digest": "6021bcda66a8c1670fa1d134b01f40c61bf604d373b3ba524102531f767c2774",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/ad-delivery-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
+      "artifact_size": 3964,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.project-metric-contract-check"
+        ],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/primary-analysis-metric@1"
+        ]
+      },
+      "manifest_digest": "afcd4e600361624e2f3828dd90b24653db46f4aced41f0a3acc0d6c4e63530ce",
+      "package_digest": "2d6dd3a16a4063b56760f498f00ad861312b2fb43674503edfcb3b884f2a2162",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0"
+    },
+    {
+      "archive_sha256": "27f8a300c8c7afba46a05263fae7bacdd3d1446a957ce05ac77f94ed469fdd05",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/app-device-performance-analysis-1.0.0.zip",
+      "artifact_size": 3827,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.device-segment-event-review"
+        ],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "7d4e52797e248699ffe7ba3a2fb4a7a60f7e1a1fee889b3a819a3f23d09542d8",
+      "package_digest": "766c2ac759188c1829075c2609840f2e352cdcf8b68a49299f467fb92fda3134",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/app-device-performance-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "4cbfc48ec81d057d418d97cce9700dc5a5f77b96128fbd897f159155e6d55c90",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/channel-quality-analysis-1.0.0.zip",
+      "artifact_size": 3818,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "metric-anomaly-localization@1"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/acquisition-cost@1",
+          "metric://project/downstream-value@1"
+        ]
+      },
+      "manifest_digest": "78c53498018192ca6bf494896c6356d09925ed35e3b47f61be54ba2c9758b7a5",
+      "package_digest": "7425ebd1bfb7bc2cdc79624eac395918a02de18ecd71fdae914551c14b03787e",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/channel-quality-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "db2a9275c26b56fd2be418b49e1e1e52de97bd5786a95f4d2c5c976a60e8a6d0",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/churn-user-identification-persona-1.0.0.zip",
+      "artifact_size": 3914,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/churn-segment-profile@1"
+        ],
+        "semantics": [
+          "cohort://project/churn-eligible@1",
+          "metric://project/churn-state@1"
+        ]
+      },
+      "manifest_digest": "fda44ea236ef4cb6067b051c46544c69eaca9c89ff8f5e2fac0ff39887174caa",
+      "package_digest": "7451c5aa0ae98c2d3c626bc17527bf85d80bfbf439e1b702c3a350fb0ef2cac7",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/churn-user-identification-persona@1.0.0"
+    },
+    {
+      "archive_sha256": "245fc56812e84f290047d9f0ae71705368702d58bd77dce2fc64efd6d73109ab",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-comment-analysis-1.0.0.zip",
+      "artifact_size": 3687,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/community-comments@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/sentiment-aggregation@1"
+        ],
+        "semantics": []
+      },
+      "manifest_digest": "704cf025b798b96bf856f4286a008b65ba700634c18cc3e8252eb81a29829b9e",
+      "package_digest": "8177f7b7a074c58727fbd59723f77cce0a795ac33f8ae2846750bfe90a348a0a",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/community-comment-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "ba85be4f70b349e344d871eed67a50bb20856d3530880c154d5aaebe0afd8e3d",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-daily-report-1.0.0.zip",
+      "artifact_size": 3674,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/community-daily@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/sentiment-aggregation@1"
+        ],
+        "semantics": []
+      },
+      "manifest_digest": "3c72a0617b69b2c0ef7a7669a515404b92140e22fd12f746eb2f559d14682056",
+      "package_digest": "b8143d1d56f94cf62c2cffb6b7be899ac272eda830b238a1798b46889ebca6cf",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/community-daily-report@1.0.0"
+    },
+    {
+      "archive_sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
+      "artifact_size": 4024,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/community-signal@1"
+          ]
+        },
+        "journeys": [
+          "analysis.thinkingai.community-context-correlation"
+        ],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "da80bf092c8eb320b71b3a9a19212c4cca37bf25d98546eabd8eef43c5fc61cb",
+      "package_digest": "5aec96cfdc23cbb14d76fee2f833f4526c06de14b5c8294e2b35e49cfd9af631",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/community-hot-topic-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "b5e66799d24ccc8d07e670e91e844cbfa08daa400b3ea0d59992e70791a6eb3f",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-weekly-report-1.0.0.zip",
+      "artifact_size": 3702,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/community-weekly@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/sentiment-aggregation@1"
+        ],
+        "semantics": []
+      },
+      "manifest_digest": "5712d92615777e4631253ef0e833c866b3c7fb60ede53a8e7076dfb3a2c974fb",
+      "package_digest": "3115873bb302808e22b5373269bd800e4330f4033e201e12b2703f96d2cd20f3",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/community-weekly-report@1.0.0"
+    },
+    {
+      "archive_sha256": "7f84b9c9088a4cb39aff82650dac064a7ba86e11da7d5845c0607f49fcf13fbd",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/dashboard-no-data-diagnosis-1.0.0.zip",
+      "artifact_size": 3844,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "metric-anomaly-localization@1"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/dashboard-definition@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "be7ee4d47349dea77bb2ad2cb3a883ea5cba5c5a3c964a2140a911b192976f48",
+      "package_digest": "8fb314c8f31b8a486b4f749e18794c59370f113d47d1a6c7374c7af68e4dbc78",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/dashboard-no-data-diagnosis@1.0.0"
+    },
+    {
+      "archive_sha256": "0496984944042324760ba2f694711a855dcd5fcf5f005c8e5d63cc16c28cefe5",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-access-assistant-1.0.0.zip",
+      "artifact_size": 3596,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/data-access-contracts@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "0072f151cbca551011a32cefcc959af38339c2351fd92361f5d1a939ef2e3dda",
+      "package_digest": "8afad0f0dc798652ed5fdbf8bee9c35580d616404a882c154113bad4cd587f3c",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/data-access-assistant@1.0.0"
+    },
+    {
+      "archive_sha256": "18b133feecc77a563fe3609c07de09fddeb1be17c57bad8d288891afa37375a2",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-integration-assistant-1.0.0.zip",
+      "artifact_size": 3547,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/data-integration-contracts@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "636f010ab8385f8366f4bb306498ac74e663038ccf700cb9dedae0037ec26c91",
+      "package_digest": "2a5614c9aff917cd7fc6f98d1a10bde9fe47431846c4445355cfb7450a213cb4",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/data-integration-assistant@1.0.0"
+    },
+    {
+      "archive_sha256": "2f9668784a26a6553c469c66cccc7d7be46e75e0197b5bcf807c7d4b02d87cfb",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/filter-result-bias-diagnosis-1.0.0.zip",
+      "artifact_size": 4134,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.returned-filter-comparison"
+        ],
+        "models": [],
+        "operators": [
+          "operator://gravity/returned-dimension-change@1"
+        ],
+        "semantics": []
+      },
+      "manifest_digest": "756840bdd784d694622c6d2d8eeab91a73ba196895fbad9b73826fb402d851c7",
+      "package_digest": "e55378b50ca318a3c64918d2c49ae7d1f124be8d647d0f8d34a114e127250828",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/filter-result-bias-diagnosis@1.0.0"
+    },
+    {
+      "archive_sha256": "d4df45043886c7213f7ab0740ca74539546a7c985efaed18d38164a39cb02ca3",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/first-purchase-analysis-1.0.0.zip",
+      "artifact_size": 3660,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/first-purchase@1"
+        ]
+      },
+      "manifest_digest": "e3d3cf9d8104a8191f87850badfa1d9b49ab6bcce2ac47f3f788c5cdf4b6bdcb",
+      "package_digest": "e0f017c34126095ea9b68fb8ecdd30d62bc8aec6ca71c79e1a6ec3d465b835f1",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/first-purchase-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "d74af7b8f28ed0de7f89a5392ac1e90527c1db3ccf735120cb50e569782f70e8",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/funnel-analysis-misunderstanding-diagnosis-1.0.0.zip",
+      "artifact_size": 3806,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/funnel-diagnosis@1"
+        ],
+        "semantics": [
+          "metric://project/funnel-contract@1"
+        ]
+      },
+      "manifest_digest": "779041d4909153fca367c713a52d749e0e60413b29fcb4d8f1433ee6fa7c0ae0",
+      "package_digest": "b32d7b9a737782b039e095bc74b1251773d409d1c84b3ee18edf971459e06175",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/funnel-analysis-misunderstanding-diagnosis@1.0.0"
+    },
+    {
+      "archive_sha256": "6f16b42d1dd67b7354d4dd83c6ff2f1b9497b2f94be3af6aabf23de1dfbd0345",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/game-campaign-effect-evaluation-1.0.0.zip",
+      "artifact_size": 3839,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "metric-anomaly-localization@1"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/campaign-calendar@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/campaign-outcome-evaluation@1"
+        ],
+        "semantics": [
+          "metric://project/campaign-outcome@1"
+        ]
+      },
+      "manifest_digest": "f1159a87106c416e45614886d5a4c983e473ff4a3bc3a0ae013033038b475262",
+      "package_digest": "ccbfd4cd8f3b9ff10848ecc98ccb7012baaba74b5159153f1e284cd4f0359e33",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/game-campaign-effect-evaluation@1.0.0"
+    },
+    {
+      "archive_sha256": "7b7afac4fb5353b0a38172fac13418af4b1a9bac399ec8b3bc46a69c0a93047d",
+      "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/game-revenue-forecast-1.0.0.zip",
+      "artifact_size": 4080,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "composite",
+            "minimum_trust": "stable",
+            "selector": "composite:business_pulse"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [
+          "analysis.thinkingai.revenue-forecast-readiness"
+        ],
+        "models": [
+          "model://gravity/game-revenue-forecast@1"
+        ],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "fc125c689547f36a4b124d5aed4ad5b0d697c293746ca220e8ff0c3ffddee2b5",
+      "package_digest": "4e982c53b33994e97e7d7fa3d944ba7401876938d780ea675a46a3a8f8de83cd",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/game-revenue-forecast@1.0.0"
+    },
+    {
+      "archive_sha256": "704d77f1438d91fbb1d50cb702a30adcea4fc25dbca307a5c2c2dc4ee83a020a",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-package-push-strategy-1.0.0.zip",
+      "artifact_size": 3812,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "composite",
+            "minimum_trust": "stable",
+            "selector": "composite:business_pulse"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/gift-campaign-policy@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/gift-offer-value@1"
+        ]
+      },
+      "manifest_digest": "c9e1c78acfcc98595946f428013d39f2409daa21a0245a64acd120c202791d7e",
+      "package_digest": "f1cf027044a5a553b1f6d7b688376eff85e9f07816909113c36fbf52f6814564",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/gift-package-push-strategy@1.0.0"
+    },
+    {
+      "archive_sha256": "000c7c7a92eb0527e6b0adc7a79eff87bf4ec6b16324ebdb6b1af66a6819e8ba",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-penetration-optimization-1.0.0.zip",
+      "artifact_size": 3708,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/metric-decomposition@1"
+        ],
+        "semantics": [
+          "metric://project/gift-penetration@1"
+        ]
+      },
+      "manifest_digest": "be8a13f8474587196dfd53fb212a4ccd53b9e79f4330aa8d90f4333e4597d5d3",
+      "package_digest": "4d77b9b6ab2b2e6534964d8b6ff058d8d7c47d284daa37b0d2552af4988999a9",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/gift-penetration-optimization@1.0.0"
+    },
+    {
+      "archive_sha256": "6b9c9fa12844d398316d10b9e4b193ece9a85dadfa6f3ede40784ab79859532b",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/level-churn-diagnosis-1.0.0.zip",
+      "artifact_size": 3719,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/funnel-diagnosis@1"
+        ],
+        "semantics": [
+          "metric://project/level-progression@1"
+        ]
+      },
+      "manifest_digest": "efd1c280ed3ef2db945f804c03f9566db5bcb7c872e13daff42478e876bc4e0b",
+      "package_digest": "5018228c48c84bb46d74cde8b8bd28b1c126df429361345fd778acc584a65294",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/level-churn-diagnosis@1.0.0"
+    },
+    {
+      "archive_sha256": "b7d1de33f2ceb741ee2f262e060731f373a1d24207055110a62d5e8470c65e13",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/lt-prediction-1.0.0.zip",
+      "artifact_size": 3741,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [
+          "model://gravity/player-lifetime@1"
+        ],
+        "operators": [],
+        "semantics": [
+          "metric://project/player-lifetime@1"
+        ]
+      },
+      "manifest_digest": "a2febcc315de0e341cd1e992e57c2d33180f073441e0572f08f49ebd73a1e4b9",
+      "package_digest": "82a8d553e2564a09e52e31de0a034d878199ec18906e5c71341b644f3a2c5c49",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/lt-prediction@1.0.0"
+    },
+    {
+      "archive_sha256": "b8c3e3dee832ded0eed746668dc426ee815f4816027b1519b5f743f6b5089f3e",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-analysis-monitoring-1.0.0.zip",
+      "artifact_size": 3747,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "composite",
+            "minimum_trust": "stable",
+            "selector": "composite:business_pulse"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [
+          "model://gravity/ltv-curve@1"
+        ],
+        "operators": [],
+        "semantics": [
+          "metric://project/lifetime-value@1"
+        ]
+      },
+      "manifest_digest": "61cacac61ecfed08b4b85185bd52992d64b3c07e0cd5fb930d580fca7b265849",
+      "package_digest": "42a1a0b58a62c53fa86ca91c1925120b1865b177b684359efefb0fec82a0ca93",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/ltv-analysis-monitoring@1.0.0"
+    },
+    {
+      "archive_sha256": "31a8bf686e97268aa030f696ecc2acbae3ccd466274f62e964d0fa05af0e90bc",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-curve-fitting-segmented-calculation-1.0.0.zip",
+      "artifact_size": 3859,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [
+          "model://gravity/segmented-ltv-curve@1"
+        ],
+        "operators": [],
+        "semantics": [
+          "metric://project/segmented-lifetime-value@1"
+        ]
+      },
+      "manifest_digest": "14fba63e1cf06014a457ba2d5ef695ea57d15fe30eeb52529dba530df5a8228f",
+      "package_digest": "589a6f8cff22e9f36dbc030c762ae5bb688de8db73ac034d7f5b8ef047acceb7",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/ltv-curve-fitting-segmented-calculation@1.0.0"
+    },
+    {
+      "archive_sha256": "2fbf9fa34551bb1e36d72fbc9ac5f48b5e008bc16dc77554101fb21c101289d0",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-dashboard-setup-1.0.0.zip",
+      "artifact_size": 3732,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "composite",
+            "minimum_trust": "stable",
+            "selector": "composite:business_pulse"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [
+          "model://gravity/ltv-curve@1"
+        ],
+        "operators": [],
+        "semantics": [
+          "metric://project/lifetime-value@1"
+        ]
+      },
+      "manifest_digest": "3cc99b33b88adacc149f8f8d823febecb1edf8b33c0cd359b6e71cc76b0a8122",
+      "package_digest": "63cbe11ba24fbf5fb82740716df613af0645b9fc21c8f2f618b1a61381f6de5d",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/ltv-dashboard-setup@1.0.0"
+    },
+    {
+      "archive_sha256": "4bfd8c05f79b0df4f32a559c9108d2e4737113583b915cfd2c5b7ad78236beac",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-payback-period-prediction-1.0.0.zip",
+      "artifact_size": 3769,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "composite",
+            "minimum_trust": "stable",
+            "selector": "composite:business_pulse"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [
+          "model://gravity/ltv-payback@1"
+        ],
+        "operators": [],
+        "semantics": [
+          "metric://project/acquisition-payback@1"
+        ]
+      },
+      "manifest_digest": "eac08e5d0e5d08ddfe66bbfff8528a1291f8414f1180a354c87ce67c09b1e183",
+      "package_digest": "250b04c7e424cc1634452becd939655ed1de08ee47062985007c637f551406c1",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/ltv-payback-period-prediction@1.0.0"
+    },
+    {
+      "archive_sha256": "dbe1bc69d3f7f30d3e79aa178144ebc88013f683d9174116cd6edce60e9cc411",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/new-hero-launch-insight-1.0.0.zip",
+      "artifact_size": 3774,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "metric-anomaly-localization@1"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/release-calendar@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/content-launch-outcome@1"
+        ]
+      },
+      "manifest_digest": "02bc9316740dd125f0db2f1151675431b05051fb3a6cfcdfec98451666849ae8",
+      "package_digest": "eeeedcd3dc34e5e9542591bbece0b8127495b82052bcdb4f60eb1c460da90ea3",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/new-hero-launch-insight@1.0.0"
+    },
+    {
+      "archive_sha256": "235f0ae7d76571cd0630f2869e373e7caee204fd76081d74def3b086710a12b7",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/operation-journey-canvas-creation-1.0.0.zip",
+      "artifact_size": 3623,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/contact-policy@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "cohort://project/operations-journey-entry@1"
+        ]
+      },
+      "manifest_digest": "7d63917dfda9a2588fdc37a7231f9093ee60826dbb5374e29fb99ab2f0c3becf",
+      "package_digest": "a37c766df8b9f0c12b4a33d2c18ce3fbf8f874e634f115c8b0c89b1185b578e4",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/operation-journey-canvas-creation@1.0.0"
+    },
+    {
+      "archive_sha256": "111a0a5c58c6361d191e6a6f447c3a627f2f9bbe9438f7f90515c0df64bf1960",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-attribution-analysis-1.0.0.zip",
+      "artifact_size": 3671,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "metric-anomaly-localization@1"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/payment-attribution@1"
+        ]
+      },
+      "manifest_digest": "fa5f64d29cd7e696d454320e571f4187133c57c5ff02c92fc0263ba6504d42b6",
+      "package_digest": "d2ad3d6bcd7c020b1bd3a2be916acab3bc09dbf6e1878ed641e79e8971f5852d",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/payment-attribution-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "92990e91a0c3301769939a6b37b24da0f955189fcea4434e779d9d7191177355",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-conversion-funnel-1.0.0.zip",
+      "artifact_size": 3756,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/funnel-diagnosis@1"
+        ],
+        "semantics": [
+          "metric://project/payment-funnel@1"
+        ]
+      },
+      "manifest_digest": "aec24bf2b48c40268f3d8e140859a6584996876619c29ee7970ddad3147ac45e",
+      "package_digest": "9d2304db7779cfa3708460853f834106aa1fe9b461999a4ca4cb534582ceb2cb",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/payment-conversion-funnel@1.0.0"
+    },
+    {
+      "archive_sha256": "c72c62430a74b71185c3fa1b1c6bdf402a5f32a1cd6eeb2e12e214f38f2cf1da",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-funnel-setup-1.0.0.zip",
+      "artifact_size": 3686,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/payment-funnel@1"
+        ]
+      },
+      "manifest_digest": "14ee2d3b1ce92b7344caa9ff9515ba0eb830c614cd76c4e8fa7300ccf15e316c",
+      "package_digest": "89a8e807e2e2b85b8a259f133f280d8c163b68ed01ddcb14ff3eb4bf09c7bf11",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/payment-funnel-setup@1.0.0"
+    },
+    {
+      "archive_sha256": "e44c733f8162662910cd96a9a1c931613f83f7a2bb99348755e8054054d6668f",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-rate-anomaly-diagnosis-1.0.0.zip",
+      "artifact_size": 3703,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "metric-anomaly-localization@1"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/payment-rate@1"
+        ]
+      },
+      "manifest_digest": "06204191e9e09cad369e667a20571445dd0e6e8692615364c9918d2133b27beb",
+      "package_digest": "659b203174ef0f102ee37f023352dbaa38f66e3655b22d4ac68d81be169f9e29",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/payment-rate-anomaly-diagnosis@1.0.0"
+    },
+    {
+      "archive_sha256": "d005dbf4f863208b5e4f7360e05cf7bc35872a56d275032e03194ee850a89c98",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/product-pricing-optimization-1.0.0.zip",
+      "artifact_size": 3805,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/product-catalog@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/price-elasticity@1"
+        ],
+        "semantics": [
+          "metric://project/price-response@1"
+        ]
+      },
+      "manifest_digest": "b00c28b98eed058123ad9cecef72c135908e45a6f2f1d2c40b8fafab9f59b7fc",
+      "package_digest": "af7852b4ab3d113e16b4117dec4fd6367e047e9683780f9249fe3e43c6e9f134",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/product-pricing-optimization@1.0.0"
+    },
+    {
+      "archive_sha256": "fbcf0980d1bd89eff62baa0436cffce96c9e2067b5910232d7b940c3c3f14ea4",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/pvp-win-rate-analysis-1.0.0.zip",
+      "artifact_size": 3670,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/competitive-win-rate@1"
+        ]
+      },
+      "manifest_digest": "98d5a07b51f5c28a5300a8a2be2450857c49dd54fc710f537c2fba7b5d53466a",
+      "package_digest": "5688d174c2ac3ada5699d128b3d7d682d8060f52b3f3e0eaf21b567232c53f7f",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/pvp-win-rate-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "560b1d3c8c1667fe493aa2694810f417b7be7929b3dcdb78165b7315e5c07b5e",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/repurchase-analysis-1.0.0.zip",
+      "artifact_size": 3611,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "metric://project/repurchase@1"
+        ]
+      },
+      "manifest_digest": "bb517bf5059d1aa06355a4a00e2602bfc9bbfed0f2809bfb1dc931705da7ca81",
+      "package_digest": "acbad45401c4a472184cf78a4a0ad3d2ddaae22f5c50f7d385b7a1fe716c7c20",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/repurchase-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "58e53313c5454495a0c00ab26ea54dae1a57c07361fa89ad013e7b88618192b2",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/retention-analysis-data-verification-1.0.0.zip",
+      "artifact_size": 3719,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [
+          "operator://gravity/retention-curve@1"
+        ],
+        "semantics": [
+          "metric://project/retention@1"
+        ]
+      },
+      "manifest_digest": "d3098a1085e97951be8102fba3e9141e4675ddf188f96e782276c7638a89c0bf",
+      "package_digest": "fabfc736e03a1d029807eda2f1598cb5591db47b9aac4e2dbaca8f59099610e6",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/retention-analysis-data-verification@1.0.0"
+    },
+    {
+      "archive_sha256": "8439eea739eb1155aab04a701b5255c35238858116085e3a714765668fa97ce7",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/single-user-behavior-analysis-1.0.0.zip",
+      "artifact_size": 3775,
+      "dependencies": {
+        "capabilities": [
+          {
+            "completeness": "unknown",
+            "contract_version": "1",
+            "data_quality": "pass",
+            "identity_kind": "product",
+            "minimum_trust": "stable",
+            "selector": "analysis.query.spec:event"
+          }
+        ],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "entity://project/authorized-subject@1"
+        ]
+      },
+      "manifest_digest": "7952a489b29049514333bb2911caccb676961f532c0c0346a8e5763309b0605f",
+      "package_digest": "2894d2c246e2539cb17bf746ee2e64f3ef304564ba18880cc56009dc01536041",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/single-user-behavior-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "74758733179fff679b2477de06d4f7ee6d54ac68547c9956faed02322eb4f520",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/sql-performance-optimization-1.0.0.zip",
+      "artifact_size": 3609,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/database-query-plan@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "b76a40965bc57e1131f0fdc5cad6c745cb2ded5bc5e91dd7f568565bc9f0933d",
+      "package_digest": "014d599ab4a34d0297dabc17407a620034f2304bd8e24125c92e4d3ecfb5ec2b",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/sql-performance-optimization@1.0.0"
+    },
+    {
+      "archive_sha256": "e372d3a56796efeeb49e7ae1bb5594ccb7ce65149a1eef5d680630f692439496",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/system-field-reference-guide-1.0.0.zip",
+      "artifact_size": 3569,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/field-contracts@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "9ee7c2162ea2b8ad410c162239066e4a0eac093f9094c4c19dc505a85c778b8f",
+      "package_digest": "f8246534cb04a99f0c9979549ba054262800dd3578ecd7c1d4cdaf937afa7ad3",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/system-field-reference-guide@1.0.0"
+    },
+    {
+      "archive_sha256": "b6b28c57887c9e89a8cc0251fc34c11fc8f71d168f93dd12c1633669104dbd7a",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/trino-metadata-query-analysis-1.0.0.zip",
+      "artifact_size": 3508,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": []
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": []
+      },
+      "manifest_digest": "0ddf5f578413fcc2321c932d0169c067e81cb630304e393b051c7b7c5afc9863",
+      "package_digest": "d079724c8c9b1e482ca4f6764238460a1fdb17a39bc72a19b75c6cdf01f9ee0a",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/trino-metadata-query-analysis@1.0.0"
+    },
+    {
+      "archive_sha256": "036b115c4b37529d6d6cfe95b554c4a2f5f56c1086a6f1c08b1e094d5dcdefd8",
+      "artifact_path": "content/thinkingai/full/hub/artifacts/skills/user-tag-system-design-1.0.0.zip",
+      "artifact_size": 3626,
+      "dependencies": {
+        "capabilities": [],
+        "context": {
+          "optional": [],
+          "required": [
+            "context://project/tag-governance@1"
+          ]
+        },
+        "journeys": [],
+        "models": [],
+        "operators": [],
+        "semantics": [
+          "entity://project/tag-subject@1"
+        ]
+      },
+      "manifest_digest": "b94048eb2afc674e6aaf0402954d28be2027d823077834e10c44078581ed1e00",
+      "package_digest": "aa80c8459d8c49455747af3efb7f9fb32656b8ac2140851bab0dc06ba0dfa652",
+      "runtime_requires": ">=0.3,<0.4",
+      "skill_uri": "skill://gravity.game/user-tag-system-design@1.0.0"
+    }
+  ],
+  "source": {
+    "index_digest": "ae40a656675a8b9a71a0322358f7d0c7a36b79fa75eb48781b8872c499d0b038",
+    "source_descriptor_digest": "24ee80a0813aa50fad5adf5e1c7695032c6add1c9b91b172fa77de8a24dcc73d",
+    "source_id": "hub-source://gravity/thinkingai-full@1",
+    "source_revision": "4309b7f74b8e8d38fa5bae5bdcf3f3a292cdc6fc",
+    "transport": "git"
+  }
+}

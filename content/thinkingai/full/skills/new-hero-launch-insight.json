@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-player-population",
+      "launch-incrementality"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/release-calendar@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "Align content identity, release timing and approved behavior metrics before comparing bounded observations.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use for one project content launch with exact entity, release and observation-window definitions.",
+    "context_boundary": "Release notes establish timing and scope only; they do not prove that the launch caused behavior changes.",
+    "steps": [
+      "Resolve content identity, eligible population, release window and approved engagement/value metrics.",
+      "Align release Context with governed returned observations and preserve completeness and quality limits.",
+      "Report temporal associations, excluded concurrent changes and hypotheses without causal attribution."
+    ],
+    "title": "New content launch evidence review"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://new-hero-launch-insight",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/content-launch-outcome@1"
+  ],
+  "skill_id": "new-hero-launch-insight",
+  "specification": "specified",
+  "summary": "Relate returned behavior to a project launch without claiming launch causality.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

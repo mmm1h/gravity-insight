@@ -1,0 +1,72 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "membership-write-authorized",
+      "sensitive-trait-inference",
+      "tag-population-complete"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/tag-governance@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "Define purpose, owner, population, fields, refresh, privacy and conflict rules before proposing implementation.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use when the project can supply authoritative taxonomy, identity and governance requirements.",
+    "context_boundary": "Documentation cannot authorize identity joins, membership mutation or sensitive trait derivation.",
+    "steps": [
+      "Resolve tag purpose, owner, subject identity, eligible population, inputs, refresh and retention policy.",
+      "Check semantic conflicts, sensitivity, versioning and measurement requirements against project Context.",
+      "Return a value-free contract proposal; require separate governed computation and Action preview for membership changes."
+    ],
+    "title": "User tag contract proposal"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://user-tag-system-design",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 0,
+    "known_requests_min": 0,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 0
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "unknown"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "entity://project/tag-subject@1"
+  ],
+  "skill_id": "user-tag-system-design",
+  "specification": "specified",
+  "summary": "Design a project tag contract without computing or writing tag membership.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}
