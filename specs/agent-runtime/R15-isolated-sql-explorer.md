@@ -3,11 +3,16 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress` |
 | Track | Isolated exploratory product |
 | Dependencies | R02, R05 |
 | Parallel group | `isolated-product` |
 | Shared-spine integration | Required and serialized |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@f29f493c73179efc55692f500a935002b04d915c` |
+| Branch / worktree | `codex/r15-isolated-sql-explorer` / `D:\git-pjt\gravity-sdk-wt\r15-isolated-sql-explorer` |
+| First dialect / parser | SQLite / `sqlglot==30.17.0` |
+| Production requests | `0`; temporary local SQLite only |
 
 ## Outcome
 
@@ -16,6 +21,40 @@ An explicit caller-provided SQL statement can run in an isolated exploratory ses
 ## Current Baseline
 
 The current SQL surface executes only workspace-registered products with reviewed SQL, fixed parameters, aggregation privacy and output projection. Arbitrary SQL and automatic Text-to-SQL are intentionally unavailable.
+
+## Plan Owner Verdict And Ready Binding
+
+R02 and R05 are `fixed_dev`. Under the user's continuous implementation
+authorization, the plan owner reviewed
+`tmp/r15-isolated-sql-explorer-proposal.md` and its architecture conflict ledger,
+bound the dialect/parser/identity/budgets/write scope/gates, and advanced R15
+through `reviewed` and `ready` to `in_progress`. This does not authorize a
+production database, Gravity SQL, credentials, network calls, release or `main`.
+
+- Support exactly SQLite with `sqlglot==30.17.0`; parse one explicit SQLite
+  `Select` AST, reject comments and all non-query/set-operation forms, and use
+  exact relation/function/output allowlists. No prefix or regex authorizer exists.
+- Require an absolute regular database file opened only through generated URI
+  `mode=ro`, verified `query_only`, disabled trusted schema/mmap, one read
+  transaction and a connection authorizer retained through execution.
+- Require engine `setlimit` and progress-handler enforcement. Bound SQL/value/
+  column/expression/compound/attach/variable/VDBE/worker resources, statement
+  time or VM steps, outer rows, cell bytes and total JSON bytes. Never label a
+  client estimate as enforced scan budget.
+- Add explicit lazy SDK and `gravity sql explorer inspect|execute|promote` only.
+  Local SQLite produces no Runtime transport request; registered SQL and all
+  Agent/Plan routing remain unchanged.
+- Every result is `exploratory`, completeness `unknown`, allowed claims empty
+  and unavailable to stable dependencies. SQL/path/parameters never enter safe
+  session/error/promotion metadata or public Receipts.
+- Promotion requires a successful value-free source, explicit approval and
+  independent review-evidence digest. It validates and returns a versioned normal
+  `custom-sql` workspace product plus consumer contract, but performs no install
+  and grants no stable Trust.
+- Acceptance binds the attack corpus, direct database mutation defense with AST
+  bypassed, fake-clock/resource/output budgets, privacy snapshots, promotion
+  lifecycle, registered-SQL no-fallback regression, full gates, isolated wheel
+  and canonical consumer. Active human docs remain exactly 5,500 lines.
 
 ## Scope
 
