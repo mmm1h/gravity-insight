@@ -1,6 +1,6 @@
 {
   "network_called": false,
-  "row_count": 64,
+  "row_count": 69,
   "rows": [
     {
       "blocker_note": "2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=[\"/app\"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。2026-08-19 #222：组/身份不变量按响应形状生效，新同形 route 不再靠手写 operation_id。2026-08-19 #226：host `boundaries` 改为卡上 owner 字段，加载缺字段即红；不改状态、不改冻结 case。2026-08-19 #227：带 UV 的分维结果信封现有 `interpretation.metrics[].additivity=non_additive`；投放中 App `29034827` 同窗生产确认声明与响应一致。2026-08-19 #229：`NO_CANDIDATE` 信封另带 8 条已登记可执行问法；2026-08-19 #228：跨进程磁盘命中后冷启动 metadata HTTP 不再每进程重打；十人合计 metadata 从 20 降到 2。不改状态、不改冻结 case。2026-08-20 #22：条件 `type=user_property` 改为离线拒绝，`global_filters` 与 `steps[].conditions` 两处都在发请求前失败，错误指向条件路径而不是上游误报的 `group_by_list`；`type=user` 行为不变。`spec-schema` 的 `type` 枚举跨 kind 共用，未收窄，限制只加在编译期的 event/funnel 上。不改状态、不改冻结 case。2026-08-20 #23：上游反报编译器自己生成的 `create_time/day` 分组\"缺失\"时，不再让调用方重加已发的分组，改判 `upstream` + `retryable`（同一请求实测可在另一次执行成功）；未分类的 analysis 拒绝也不再默认把 `field` 说成 `group_by_list`。`SemanticRejectedError` 的\"确定性\"前提对这类自相矛盾的拒绝不成立。不改状态、不改冻结 case。",
@@ -1217,10 +1217,105 @@
         "raw": "有 / 有 / 设计不适用 / 有",
         "sdk": "有"
       }
+    },
+    {
+      "blocker_note": "CT02 独立作者 Team Skill 只读取明确事件指标与设备分组，复用 `analysis.query.spec:event`；完整性保持 unknown，不声明完整设备总体或因果。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Review one declared event metric by device segment",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "Review one declared event metric by device segment",
+      "request_budget": {
+        "raw": "1 / 2（精确输入 / 目录发现）"
+      },
+      "row_digest": "f51ba79f7f463ccbd0435e6db04cd181410672f1de0da3d72bce8d6fa3ee1240",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CT02 独立作者 Team Skill 要求 `metric://project/primary-analysis-metric@1`；未提供项目 Definition/Binding 时以 `SEMANTIC_DEFINITION_MISSING` 阻断，不从字段名或第三方文本推断。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Validate one project metric definition before analysis",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "Validate one project metric definition before analysis",
+      "request_budget": {
+        "raw": "1 / 2（绑定已知 / 绑定发现）"
+      },
+      "row_digest": "91ea6299736f692f02ab701e87d4c3b438b1eb6232b8c8fd70e549822e3330a7",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CT02 独立作者 Team Skill 复用 event Product 与 `operator://gravity/returned-dimension-change@1`，只比较匹配的返回行；不推断未返回总体或因果。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Compare returned rows to diagnose filter selection bias",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "Compare returned rows to diagnose filter selection bias",
+      "request_budget": {
+        "raw": "1 / 2（精确输入 / 目录发现）"
+      },
+      "row_digest": "bb4d67c1addd9a1f19890ab9a192f53b73922c36d3320f356b737602d43b428f",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CT02 package 可发现，但 `context://project/community-signal@1` 缺失时以 `CONTEXT_REQUIRED_MISSING` 阻断；Context 固定为 data，不能选择 selector、授权或覆盖 claim policy。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Relate returned behavior observations to bounded community context",
+      "ledger_status": "完全缺失（依赖阻断）",
+      "legacy_display_key": "Relate returned behavior observations to bounded community context",
+      "request_budget": {
+        "raw": "0 / 0"
+      },
+      "row_digest": "769216ebd06d4ea6ce81f115d19d83c48cc236930ac3cc6f1c14fbb7daeac9de",
+      "surfaces": {
+        "agent": "无",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 无",
+        "sdk": "无"
+      }
+    },
+    {
+      "blocker_note": "CT02 package 可发现，但 `model://gravity/game-revenue-forecast@1` 无 trusted pack、lineage/evaluation/approval/expiry/horizon，以 `HUB_TRUSTED_PACK_MISSING` / `MODEL_UNVALIDATED` 阻断且禁止 forecast claim。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Assess whether a revenue forecast has validated model support",
+      "ledger_status": "完全缺失（依赖阻断）",
+      "legacy_display_key": "Assess whether a revenue forecast has validated model support",
+      "request_budget": {
+        "raw": "0 / 0"
+      },
+      "row_digest": "cccf380b13651a05718efec3baa615669f58419220b492b6d359c5c33e623ca8",
+      "surfaces": {
+        "agent": "无",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 无",
+        "sdk": "无"
+      }
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "a29871887246c531f3ffebf695776811f82ec64212cbde45b8ed8165a2c4b88c",
+  "snapshot_digest": "282fd5d12ca8d7d3311242bb2a08f24678e8d193be6d9a80567b4bc7ebec3674",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "fbad3574e14b76df42d2917598fd11fbabbd6919e91fa1aeb6cc45214f1c2733"
+  "source_sha256": "17dd2ffb8f91691ece7bfe288c0c39d7d3488c9546dd13253b3b37bdec0ed5d6"
 }

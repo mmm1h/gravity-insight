@@ -1,0 +1,44 @@
+{
+  "artifact_kind": "journey",
+  "schema_version": "gravity.journey.v1",
+  "journey_id": "analysis.thinkingai.project-metric-contract-check",
+  "version": 1,
+  "display_name": "Validate one project metric definition before analysis",
+  "display_binding": {"legacy_display_key": "Validate one project metric definition before analysis"},
+  "lifecycle": "active",
+  "owner": "gravity-content/thinkingai",
+  "calling_project": "gravity-content/ct02",
+  "required_capabilities": [
+    {
+      "identity_kind": "product",
+      "selector": "analysis.query.spec:event",
+      "contract_version": "1",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "required_semantics": ["metric://project/primary-analysis-metric@1"],
+  "required_operators": [],
+  "required_models": [],
+  "required_context": [],
+  "required_skill": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
+  "surfaces": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
+  "request_budget": {
+    "known_requests_min": 1,
+    "known_requests_max": 1,
+    "unknown_discovery_max": 2,
+    "acceptance_production_requests": 0,
+    "runtime_additional_requests": 0
+  },
+  "claim_policy": {
+    "allowed": ["returned-event-metric-observation"],
+    "forbidden": ["inferred-metric-definition", "causality"]
+  },
+  "execution": {
+    "mode": "plan",
+    "owner": "analysis_query",
+    "path": ["analysis.query.spec:event", "gravity.plan.v1", "analysis.event.query"]
+  },
+  "project_contract_path": "content/thinkingai/reference-project/analysis-metric-definition-alignment.overlay.json"
+}

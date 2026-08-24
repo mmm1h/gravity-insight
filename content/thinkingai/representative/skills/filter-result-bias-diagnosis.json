@@ -1,0 +1,66 @@
+{
+  "artifact_kind": "skill",
+  "schema_version": "gravity.skill.v1",
+  "namespace": "gravity.game",
+  "skill_id": "filter-result-bias-diagnosis",
+  "version": "1.0.0",
+  "specification": "specified",
+  "lifecycle": "reviewed",
+  "readiness": "executable",
+  "validation": "validated",
+  "summary": "Compare explicit returned groups to test whether a filter changes the observed slice.",
+  "description": "Run the same governed event definition for two bounded windows or selections, then use the registered deterministic row-change Operator on matched returned keys only.",
+  "runtime_requires": ">=0.3,<0.4",
+  "covers_journeys": ["analysis.thinkingai.returned-filter-comparison"],
+  "capability_dependencies": [
+    {
+      "identity_kind": "product",
+      "selector": "analysis.query.spec:event",
+      "contract_version": "1",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "semantic_dependencies": [],
+  "operator_dependencies": ["operator://gravity/returned-dimension-change@1"],
+  "model_dependencies": [],
+  "context_dependencies": {"required": [], "optional": []},
+  "routing": {
+    "product_hints": ["analysis.query.spec:event"],
+    "host_catalog_required": true,
+    "recognizer_fallback_allowed": true
+  },
+  "requirements": {"completeness": "unknown", "data_quality": "pass"},
+  "claim_policy": {
+    "allowed": ["returned-event-metric-observation", "returned-dimension-change"],
+    "forbidden": ["complete-population", "causality", "unreturned-values"],
+    "forbidden_without_context": []
+  },
+  "effects": ["read"],
+  "request_budget": {
+    "known_requests_min": 1,
+    "known_requests_max": 1,
+    "unknown_discovery_max": 2,
+    "runtime_additional_requests": 0
+  },
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://filter-result-bias-diagnosis",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2",
+    "authorship": "independently_authored",
+    "license_review": "approved_internal"
+  },
+  "guide": {
+    "title": "Returned-filter comparison",
+    "applicability": "Use when the same exact metric can be compared across explicit filter selections or windows and only returned rows need evaluation.",
+    "steps": [
+      "Freeze one event definition, metric, grouping, unit, and comparison scope.",
+      "Execute through the existing event-analysis owner and preserve completeness and data-quality state for each result.",
+      "Apply the registered returned-dimension-change Operator only when its row, unit, additivity, and cross-check assumptions hold.",
+      "Report matched returned-key changes and excluded rows; do not infer the unreturned population or a causal filter effect."
+    ],
+    "context_boundary": "No narrative context can change Operator inputs, assumptions, cross-checks, or the prohibition on unreturned and causal claims."
+  }
+}
