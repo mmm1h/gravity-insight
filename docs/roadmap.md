@@ -25,7 +25,7 @@
 4. **R03 Built-in Skill Package / R04 Team Skill Hub Stage A（fixed-dev）**：Built-in 与团队无代码 Skill 共用 Manifest/Render Model；显式 Git/static HTTPS Source、exact lock、独立 CAS/offline materialize 已闭合，Trusted Pack 只生成外部 Installer Plan 并做 exact startup verification，未接入 Runtime 执行。
 5. **R05 Business Semantic Registry（fixed-dev）**：versioned Definition/Binding/Source、formula/unit/additivity/time/effective-range/conflict 门禁与离线 `SemanticRegistry`/复数 CLI 已集成；Runtime 只含通用 App Entity，Merge2 指标与 App/physical binding 已迁移到 work-dashboard 独立 Source。R01 仍因完整性 unknown 而零请求阻断。
 6. **R06 Operator / Model Contracts（fixed-dev）**：唯一 R01 deterministic Operator 已迁移到闭合 Registry 与 input/output/assumption/claim/golden/资源门禁；Model Registry 不内置模型，且要求 trusted digest + lineage/evaluation/approval/expiry/horizon 后才允许生产 claims，LTV gap 未提升；R04 trusted-pack descriptor 已冻结。
-7. **R07-R13C Runtime/Action/Artifact/Analysis Delivery（fixed-dev）；R14-A Governor Observation（in-progress）**：Dashboard Connector 保持显式 note-only 单写；R14-A 只在既有请求计数边界记录值无关 latency/status/budget，不改变 limiter、semaphore、retry、请求数或顺序。
+7. **R07-R13C Runtime/Action/Artifact/Analysis Delivery、R14-A Governor Observation（fixed-dev）**：R14-A 只在既有请求计数边界记录 scope-private、值无关 latency/status/static-budget；limiter、semaphore、retry、请求数/顺序与 HTTP Receipt 不变，R14-B 才允许激活自适应策略。
 8. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
 9. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
 

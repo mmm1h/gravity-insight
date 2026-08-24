@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A internally approved 2026-08-24 |
+| Status | `in_progress`; R14-A `fixed_dev` 2026-08-24 |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A `in_progress`; R14-B/C/D `specified` |
+| Milestones | R14-A `fixed_dev`; R14-B/C/D `specified` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | Production requests | `0`; fake Runtime HTTP only |
@@ -73,6 +73,69 @@ or `main` promotion.
   status/retry/budget/privacy/scope/bound tests, current transport/SQL/Plan/
   Receipt/multi-account regressions, full gates, wheel and canonical consumer,
   with zero production HTTP. Active human docs remain exactly 5,500 lines.
+
+## R14-A Fixed Dev Evidence
+
+- Feature `aaf363259ce9ad8b442ccb2f00bd541d2dad8597` was merged as
+  `dev@7c3ae590d8c39995bde821ae0fec7284e4a9f9e1`. Observation wraps the
+  existing `perform_http_request()` callable only after the canonical request
+  counter increments; it does not change method/URL/headers/query/body/timeout,
+  limiter reservation, semaphore acquisition, retry/auth refresh or request
+  count. A fake-clock 503→200 workload produced identical serialized request
+  bytes/order, two requests, sleeps and result under `disabled` and `observe`.
+- `gravity.governor-observation.v1` records only SHA-256 host key, bounded
+  operation/profile/method, response/transport outcome, status class/code,
+  capped latency/rate delay, actual attempt/attempt budget and declared current
+  24-business/two-SQL/timeout budgets. Tests cover 2xx, 4xx, 429, 5xx,
+  transport error and retry attempts. URL/path/query/body/response/credential,
+  principal and Runtime scope material are absent even for signed Artifact URLs.
+- `gravity.governor-observation-snapshot.v1` uses private scope partitions,
+  ascending non-skipping cursor pages, at most 4,096 observations and 64 scopes,
+  explicit dropped/truncated/has-more state and `network_called=false`.
+  `GravitySDK.governor.observations()` reuses the same environment Runtime
+  closure and is lazy/cached; unbound direct SDKs fail with
+  `GOVERNOR_SCOPE_UNBOUND` without constructing Insight or SQL.
+- Durable `gravity.http-receipt.v1`, its retention/query/storage and all public
+  result envelopes remain unchanged. Runtime-owned Artifact/blob HTTP enters a
+  private process observation partition; R08 Provider RPC produces no Runtime
+  HTTP observation and continues to report internal network as not observable.
+- The existing Host Rate Limiter moved byte-for-byte into
+  `host_rate_limiter.py` and remains re-exported from `http_runtime.py`.
+  Existing limiter/cooldown/concurrency tests pass. This reduced
+  `http_runtime.py` AST from `3643` to `2907` and requester complexity from
+  `22` to `20`; the quality baseline was tightened rather than raised. The
+  process 24/two semaphores, outer SQL two-slot guard and Plan reentrant worker
+  budget were not removed or adapted. The Plan peak fixture now uses a
+  deterministic first-wave barrier instead of timing-based `sleep` overlap.
+- R14-A focused coverage is `11 tests, 6 subtests`; merge-head transport/Plan/
+  scope/Provider/public/documentation coverage is `76 tests, 21 subtests`.
+  Complete gates passed `1707` unittest tests and `1707 passed, 3895 subtests`
+  under pytest. Compiler remains `237 operations, 11 manifests`; quality, all
+  three deterministic generators, root CLI help, diff checks and touched-file
+  Ruff passed. Public root exports are additive at `138` lazy entries / `139`
+  `__all__` names. Active human docs remain exactly `5500` lines.
+- Actionable errors are `1339 = 1172 A + 167 B + 0 C`. Development usability
+  remains selection `296/336`, fillability `248/248`, offline terminal `53/53`,
+  recovery `5/5`, security violations `0`, skipped production cases `283` and
+  production HTTP requests `0`.
+- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `ac48e6323530dbd9f14801df29eabc50e44c680c8a1f44ef3a81dee827f9e970`.
+  External `site-packages` loaded all three root exports, both packaged schemas
+  and validated an offline bounded snapshot. Canonical
+  `work-dashboard@d1915a18278fca8823782a7d13e691a6d5702ad2` remains clean and
+  passed `11 tests, 94 subtests`; no consumer migration was required.
+- Production probes, external/provider calls, Runtime HTTP, remote writes,
+  releases and `main` promotion performed by R14-A: `0`.
+
+## R14-A Known Limits
+
+- Observation history is process-local and in-memory; restart/disable clears or
+  stops the baseline. R14-A reports declared static budgets but does not persist
+  metrics or estimate active leases, queue depth, fairness or capacity policy.
+- No observation changes scheduling. AIMD, circuit, backpressure, single-flight,
+  cancellation-aware leases and Journey fairness belong only to R14-B. Variant
+  contracts/characterization/selection remain R14-C/D and cannot consume
+  latency as a Trust substitute.
 
 ## Scope
 
