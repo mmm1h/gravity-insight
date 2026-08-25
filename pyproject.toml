@@ -58,3 +58,8 @@ gravity_sdk = [
 
 [tool.ruff.lint]
 select = ["F"]
+
+[tool.pytest.ini_options]
+# Transient codex worktrees live at the repository root and duplicate every
+# tests/ basename, which breaks pytest collection with import file mismatch.
+norecursedirs = ["_wt_*", ".venv", "build", "dist", "tmp"]
