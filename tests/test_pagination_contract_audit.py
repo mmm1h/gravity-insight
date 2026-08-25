@@ -59,18 +59,18 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual({"complete": 60, "unknown": 177}, reconciled["current_completeness"])
         self.assertEqual(
             {
-                "collect_production_or_wire": 86,
+                "collect_production_or_wire": 85,
                 "not_scheduled_non_stable": 9,
-                "not_scheduled_without_new_signal": 82,
+                "not_scheduled_without_new_signal": 83,
             },
             reconciled["unknown_evidence_actions"],
         )
-        self.assertEqual(86, len(reconciled["production_evidence_targets"]))
-        self.assertEqual(82, len(reconciled["permanent_unknown"]))
+        self.assertEqual(85, len(reconciled["production_evidence_targets"]))
+        self.assertEqual(83, len(reconciled["permanent_unknown"]))
         self.assertEqual(
             {
                 "no_falsifiable_completeness_signal": 36,
-                "not_collection_semantics": 46,
+                "not_collection_semantics": 47,
             },
             reconciled["permanent_unknown_dispositions"],
         )
@@ -120,6 +120,12 @@ class PaginationContractAuditTests(unittest.TestCase):
             by_id["analysis.dashboard.detail"]["unknown_evidence_disposition"],
         )
         self.assertEqual(
+            "not_collection_semantics",
+            by_id["analysis.segment.evaluate_percent"][
+                "unknown_evidence_disposition"
+            ],
+        )
+        self.assertEqual(
             "no_falsifiable_completeness_signal",
             by_id["analysis.default_val.list"]["unknown_evidence_disposition"],
         )
@@ -157,6 +163,18 @@ class PaginationContractAuditTests(unittest.TestCase):
         changed_by_id = {item["operation_id"]: item for item in changed["records"]}
         self.assertIsNone(
             changed_by_id["analysis.dashboard.tree"]["unknown_evidence_disposition"]
+        )
+
+        collection_evaluation = deepcopy(current)
+        collection_evaluation["analysis.segment.evaluate_percent"][
+            "_evidence_context"
+        ]["response_scalar_only"] = False
+        changed = reconcile_pagination_audit(audit, collection_evaluation)
+        changed_by_id = {item["operation_id"]: item for item in changed["records"]}
+        self.assertIsNone(
+            changed_by_id["analysis.segment.evaluate_percent"][
+                "unknown_evidence_disposition"
+            ]
         )
 
     def test_undeclared_kind_change_is_unexpected_drift(self) -> None:
