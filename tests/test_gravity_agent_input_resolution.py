@@ -10,6 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import ANY, patch
 from gravity_sdk import GravitySDK
+from gravity_sdk import agent_input_catalogs
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_input_catalogs import live_catalog_for_card
 from gravity_sdk.agent_input_resolution import resolve_capabilities
@@ -80,6 +81,16 @@ def _catalog() -> dict:
 
 class AgentInputResolutionTests(unittest.TestCase):
     def test_seven_live_catalog_paths_lower_only_the_resolved_scenario(self) -> None:
+        self.assertEqual(
+            {
+                "analysis_template",
+                "dashboard_analysis",
+                "dashboard_snapshot",
+                "saved_analysis",
+                "segment_snapshot",
+            },
+            agent_input_catalogs._REFERENCE_COMPOSITES,
+        )
         cases = (
             ("composite:saved_analysis", {"app": "1"}, "unknown_reference"),
             ("composite:dashboard_analysis", {"app": "1"}, "unknown_reference"),

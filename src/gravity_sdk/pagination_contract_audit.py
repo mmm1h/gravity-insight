@@ -22,6 +22,16 @@ OPERATIONS_ROOT = Path(__file__).resolve().parent / "contracts" / "operations"
 
 _DISPOSITION_STATUSES = frozenset({"repaired", "drifted"})
 _UNPROVEN_EVIDENCE = frozenset({"template_default"})
+_COMPLETENESS_SIGNAL_FIELDS = frozenset({
+    "has_more",
+    "next_page",
+    "page_info",
+    "total",
+    "total_number",
+    "total_page",
+})
+_NOT_COLLECTION = "not_collection_semantics"
+_NO_FALSIFIABLE_SIGNAL = "no_falsifiable_completeness_signal"
 
 
 def load_pagination_audit(path: Path | None = None) -> dict[str, Any]:
@@ -31,7 +41,7 @@ def load_pagination_audit(path: Path | None = None) -> dict[str, Any]:
 
 
 def current_operation_pagination() -> dict[str, dict[str, Any]]:
-    """Read ``pagination`` from every current operation contract."""
+    """Read pagination and its evidence context from current contracts."""
 
     current: dict[str, dict[str, Any]] = {}
     for path in sorted(OPERATIONS_ROOT.glob("*.json")):
@@ -40,7 +50,29 @@ def current_operation_pagination() -> dict[str, dict[str, Any]]:
         pagination = operation.get("pagination")
         if not isinstance(pagination, Mapping):
             pagination = {}
-        current[str(operation["operation_id"])] = dict(pagination)
+        request = operation.get("request")
+        projection = operation.get("response_projection")
+        request_fields = set()
+        if isinstance(request, Mapping):
+            for field in ("body_fields", "path_fields", "query_fields"):
+                values = request.get(field)
+                if isinstance(values, Sequence) and not isinstance(values, (str, bytes)):
+                    request_fields.update(str(item) for item in values)
+        current[str(operation["operation_id"])] = {
+            **dict(pagination),
+            "_evidence_context": {
+                "action": operation.get("action"),
+                "effect": operation.get("effect"),
+                "projected_fields": sorted(_field_names(projection)),
+                "request_fields": sorted(request_fields),
+                "response_data_shape": (
+                    projection.get("data_shape")
+                    if isinstance(projection, Mapping)
+                    else None
+                ),
+                "stability": operation.get("stability"),
+            },
+        }
     return current
 
 
@@ -91,6 +123,7 @@ def reconcile_pagination_audit(
         "current_pagination_evidence": _dimension_counts(
             records, "pagination_evidence"
         ),
+        **_evidence_reconciliation(records),
         "page_info_shapes": dict(snapshot.get("summary", {}).get("page_info_shapes") or {}),
         "unproven_page_info": sorted(
             item["operation_id"]
@@ -131,6 +164,11 @@ def _reconcile_record(
     current_kind = None if pagination is None else pagination.get("kind")
     disposition = record.get("declared_kind_disposition")
     status = _disposition_status(record)
+    context = (
+        pagination.get("_evidence_context")
+        if isinstance(pagination, Mapping)
+        else None
+    )
     expected = (
         disposition.get("current_kind")
         if isinstance(disposition, Mapping)
@@ -146,10 +184,134 @@ def _reconcile_record(
         "pagination_evidence": (
             None if pagination is None else pagination.get("pagination_evidence")
         ),
+        "current_stability": (
+            context.get("stability") if isinstance(context, Mapping) else None
+        ),
         "disposition_status": status,
         "kind_alignment": _alignment(declared, current_kind, status, expected),
         "shape_unproven": pagination_shape_unproven(record, current_kind),
+        "unknown_evidence_disposition": _unknown_evidence_disposition(
+            record, pagination
+        ),
     }
+
+
+def _unknown_evidence_disposition(
+    record: Mapping[str, Any], pagination: Mapping[str, Any] | None
+) -> str | None:
+    context = _permanent_unknown_context(pagination)
+    if context is None:
+        return None
+    review_status = record.get("review_status")
+    if review_status == "not_collection_semantics":
+        return _static_unknown_disposition(context)
+    if _production_no_signal(record, pagination):
+        return _NO_FALSIFIABLE_SIGNAL
+    return None
+
+
+def _permanent_unknown_context(
+    pagination: Mapping[str, Any] | None,
+) -> Mapping[str, Any] | None:
+    if not isinstance(pagination, Mapping):
+        return None
+    context = pagination.get("_evidence_context")
+    expected = (
+        pagination.get("kind") == "none",
+        pagination.get("completeness") == "unknown",
+        isinstance(context, Mapping),
+    )
+    if not all(expected) or context.get("stability") != "stable":
+        return None
+    return context
+
+
+def _static_unknown_disposition(context: Mapping[str, Any]) -> str | None:
+    detail_read = (
+        context.get("effect") == "read"
+        and context.get("action") in {"detail", "get"}
+        and context.get("response_data_shape") != "list"
+    )
+    if context.get("effect") == "mutation" or detail_read:
+        return _NOT_COLLECTION
+    unpageable_list = (
+        context.get("effect") == "read"
+        and context.get("response_data_shape") == "list"
+        and not _has_completeness_signal(context)
+    )
+    return _NO_FALSIFIABLE_SIGNAL if unpageable_list else None
+
+
+def _production_no_signal(
+    record: Mapping[str, Any], pagination: Mapping[str, Any]
+) -> bool:
+    review_status = record.get("review_status")
+    supported_status = (
+        review_status == "no_page_info_in_observed_response"
+        or review_status == "shape_verified" and record.get("observed_shape") == "B"
+    )
+    return (
+        supported_status
+        and record.get("evidence_level") == "production"
+        and pagination.get("pagination_evidence") == "production"
+    )
+
+
+def _has_completeness_signal(context: Mapping[str, Any]) -> bool:
+    request = set(context.get("request_fields") or ())
+    projected = set(context.get("projected_fields") or ())
+    return bool({"page", "page_size"} & request or _COMPLETENESS_SIGNAL_FIELDS & projected)
+
+
+def _unknown_evidence_action(record: Mapping[str, Any]) -> str | None:
+    if record.get("completeness") != "unknown":
+        return None
+    if record.get("current_stability") != "stable":
+        return "not_scheduled_non_stable"
+    if record.get("unknown_evidence_disposition") is not None:
+        return "not_scheduled_without_new_signal"
+    return "collect_production_or_wire"
+
+
+def _evidence_reconciliation(
+    records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    permanent_unknown = [
+        item for item in records
+        if item["unknown_evidence_disposition"] is not None
+    ]
+    actions = [
+        action for item in records
+        if (action := _unknown_evidence_action(item)) is not None
+    ]
+    return {
+        "permanent_unknown": sorted(
+            item["operation_id"] for item in permanent_unknown
+        ),
+        "permanent_unknown_dispositions": _dimension_counts(
+            permanent_unknown, "unknown_evidence_disposition"
+        ),
+        "production_evidence_targets": sorted(
+            item["operation_id"]
+            for item in records
+            if _unknown_evidence_action(item) == "collect_production_or_wire"
+        ),
+        "unknown_evidence_actions": dict(sorted(Counter(actions).items())),
+    }
+
+
+def _field_names(value: Any) -> set[str]:
+    if isinstance(value, Mapping):
+        result = {str(key) for key in value}
+        for nested in value.values():
+            result.update(_field_names(nested))
+        return result
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        result: set[str] = set()
+        for nested in value:
+            result.update(_field_names(nested))
+        return result
+    return {str(value)} if isinstance(value, str) else set()
 
 
 def _disposition_status(record: Mapping[str, Any]) -> str | None:

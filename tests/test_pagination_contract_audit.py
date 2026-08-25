@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -57,6 +58,23 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual([], reconciled["coverage"]["missing_from_contracts"])
         self.assertEqual({"complete": 60, "unknown": 177}, reconciled["current_completeness"])
         self.assertEqual(
+            {
+                "collect_production_or_wire": 86,
+                "not_scheduled_non_stable": 9,
+                "not_scheduled_without_new_signal": 82,
+            },
+            reconciled["unknown_evidence_actions"],
+        )
+        self.assertEqual(86, len(reconciled["production_evidence_targets"]))
+        self.assertEqual(82, len(reconciled["permanent_unknown"]))
+        self.assertEqual(
+            {
+                "no_falsifiable_completeness_signal": 36,
+                "not_collection_semantics": 46,
+            },
+            reconciled["permanent_unknown_dispositions"],
+        )
+        self.assertEqual(
             {"production": 97, "template": 131, "wire": 9},
             reconciled["current_pagination_evidence"],
         )
@@ -86,6 +104,60 @@ class PaginationContractAuditTests(unittest.TestCase):
         ]
         self.assertEqual(60, len(shape_a))
         self.assertTrue(all(item["current_total_page_field"] == "total_page" for item in shape_a))
+
+    def test_permanent_unknown_requires_a_narrow_reproducible_reason(self) -> None:
+        audit = load_pagination_audit()
+        current = current_operation_pagination()
+        reconciled = reconcile_pagination_audit(audit, current)
+        by_id = {item["operation_id"]: item for item in reconciled["records"]}
+
+        self.assertEqual(
+            "no_falsifiable_completeness_signal",
+            by_id["analysis.dashboard.tree"]["unknown_evidence_disposition"],
+        )
+        self.assertEqual(
+            "not_collection_semantics",
+            by_id["analysis.dashboard.detail"]["unknown_evidence_disposition"],
+        )
+        self.assertEqual(
+            "no_falsifiable_completeness_signal",
+            by_id["analysis.default_val.list"]["unknown_evidence_disposition"],
+        )
+        root = Path(__file__).resolve().parents[1]
+        for item in by_id.values():
+            if (
+                item["unknown_evidence_disposition"]
+                == "no_falsifiable_completeness_signal"
+                and item["review_status"]
+                in {"no_page_info_in_observed_response", "shape_verified"}
+            ):
+                self.assertEqual("production", item["evidence_level"])
+                self.assertTrue(all(
+                    (root / source.split("#", 1)[0]).is_file()
+                    for source in item["evidence_sources"]
+                ))
+
+        weakened_audit = deepcopy(audit)
+        default_value = next(
+            item for item in weakened_audit["records"]
+            if item["operation_id"] == "analysis.default_val.list"
+        )
+        default_value["evidence_level"] = "template_default"
+        weakened = reconcile_pagination_audit(weakened_audit, current)
+        weakened_by_id = {item["operation_id"]: item for item in weakened["records"]}
+        self.assertIsNone(
+            weakened_by_id["analysis.default_val.list"]["unknown_evidence_disposition"]
+        )
+
+        pageable_tree = deepcopy(current)
+        pageable_tree["analysis.dashboard.tree"]["_evidence_context"][
+            "request_fields"
+        ].append("page")
+        changed = reconcile_pagination_audit(audit, pageable_tree)
+        changed_by_id = {item["operation_id"]: item for item in changed["records"]}
+        self.assertIsNone(
+            changed_by_id["analysis.dashboard.tree"]["unknown_evidence_disposition"]
+        )
 
     def test_undeclared_kind_change_is_unexpected_drift(self) -> None:
         audit = load_pagination_audit()
