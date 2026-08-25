@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Mapping
-import math
 import re
 from typing import Any
 
+from .bounded_json_scalar import is_bounded_json_scalar
 from .component_aggregate import (
     aggregate_exit_code,
     aggregate_status,
@@ -176,7 +176,7 @@ def _safe_rows(value: Any) -> list[dict[str, Any]] | None:
             return None
         row: dict[str, Any] = {}
         for key, field_value in item.items():
-            if not _json_scalar(field_value):
+            if not is_bounded_json_scalar(field_value):
                 return None
             row[str(key)] = copy.deepcopy(field_value)
         rows.append(row)
@@ -417,16 +417,6 @@ def _failure_matches(status: str, code: str) -> bool:
     if expected is not None:
         return code in expected
     return code not in _SPECIAL_FAILURE_CODES
-
-
-def _json_scalar(value: Any) -> bool:
-    if value is None or isinstance(value, bool):
-        return True
-    if isinstance(value, str):
-        return len(value) <= 8_192
-    if type(value) is int:
-        return value.bit_length() <= 256
-    return isinstance(value, float) and math.isfinite(value)
 
 
 __all__ = [
