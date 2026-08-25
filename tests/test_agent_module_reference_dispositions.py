@@ -17,14 +17,20 @@ from scripts.audit_agent_module_references import (
     is_generated_governance_artifact,
 )
 from scripts.generate_agent_module_reference_dispositions import (
+    ACTIVE_BARE_FILES,
+    AMBIGUOUS_REFERENCE,
+    DATED_DECISION_RECORD,
+    DELETED_MODULE_RECORD,
+    RUNTIME_CONSUMER,
     build_document,
+    classify_active_bare_context,
     render_document,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
-LEDGER_SHA256 = "a55e131fe32a81efa71d365fcf85de3ba36d0d218952de7f3d411dcd12f2877f"
+LEDGER_SHA256 = "f47bd399f1ae6f7c6f4d32bf360c244360fb6ac5034cfd777e1bbcc6785d131b"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
     "bare_agent_string": 101,
@@ -33,9 +39,8 @@ EXPECTED_CATEGORIES = {
     "non_string_patch_expression": 117,
 }
 EXPECTED_DISPOSITIONS = {
-    "no_migration_effect": 219,
-    "rewrite_consolidated_reference": 3,
-    "rewrite_reference": 15,
+    "no_migration_effect": 224,
+    "rewrite_reference": 13,
     "rewrite_selector_data": 1,
 }
 ALLOWED_DISPOSITIONS = {
@@ -201,6 +206,64 @@ def validate_ledger(document: dict[str, Any]) -> None:
         if reference.get("old_module") == RETAINED_MODULE:
             _require(disposition == "no_migration_effect", f"retained owner moved at {key}")
 
+        old_value = source_site.get("old_value")
+        old_module = f"gravity_sdk.{old_value}"
+        if category == "bare_agent_string" and source_site.get("file") in ACTIVE_BARE_FILES:
+            context = source_site.get("audit_context")
+            snippet = source_site.get("audit_snippet")
+            _require(isinstance(context, str) and bool(context), f"missing context at {key}")
+            _require(
+                isinstance(snippet, str) and snippet in context,
+                f"source snippet is outside bounded context at {key}",
+            )
+            context_kind = classify_active_bare_context(old_module, context)
+            if old_module == PAGINATION_MODULE:
+                if context_kind == DELETED_MODULE_RECORD:
+                    _require(
+                        disposition == "no_migration_effect"
+                        and site.get("reason_code") == "deleted_module_governance_fact"
+                        and reference
+                        == {
+                            "old_module": PAGINATION_MODULE,
+                            "candidate_new_module": PAGINATION_TARGET,
+                        },
+                        f"deleted-module fact must remain unchanged at {key}",
+                    )
+                elif context_kind == RUNTIME_CONSUMER:
+                    _require(
+                        disposition in {"rewrite_consolidated_reference", "blocker"},
+                        f"pagination consumer must rewrite or block at {key}",
+                    )
+                else:
+                    _require(
+                        context_kind == AMBIGUOUS_REFERENCE and disposition == "blocker",
+                        f"ambiguous pagination reference must block at {key}",
+                    )
+            elif context_kind == DATED_DECISION_RECORD and old_module in old_targets:
+                _require(
+                    disposition == "no_migration_effect"
+                    and site.get("reason_code")
+                    == "dated_governance_decision_evidence"
+                    and reference
+                    == {
+                        "old_module": old_module,
+                        "candidate_new_module": move_mapping[old_module],
+                    },
+                    f"dated decision evidence must remain unchanged at {key}",
+                )
+        elif old_module == PAGINATION_MODULE:
+            if str(source_site.get("file", "")).startswith("docs/archive/"):
+                _require(
+                    disposition == "no_migration_effect"
+                    and site.get("reason_code") == "frozen_historical_text",
+                    f"archived pagination evidence must remain unchanged at {key}",
+                )
+            else:
+                _require(
+                    disposition in {"rewrite_consolidated_reference", "blocker"},
+                    f"pagination consumer must rewrite or block at {key}",
+                )
+
     _require(dict(categories) == EXPECTED_CATEGORIES, "audit denominator changed")
     _require(dict(dispositions) == EXPECTED_DISPOSITIONS, "dispositions changed")
     summary = document.get("summary", {})
@@ -261,6 +324,104 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             "from gravity_sdk.agent_sources import snapshot_recipe_cards\n",
         )
         self.assertEqual(["static_import"], [item.category for item in references])
+        pagination_scanner = ReferenceScanner({PAGINATION_MODULE: PAGINATION_TARGET})
+        references, _ = pagination_scanner.scan_python(
+            "src/gravity_sdk/real_pagination_consumer.py",
+            "from .agent_pagination import compact_pagination\n",
+        )
+        self.assertEqual(
+            [("static_import", PAGINATION_MODULE, PAGINATION_TARGET)],
+            [(item.category, item.old_value, item.new_value) for item in references],
+        )
+
+    def test_bare_context_classifier_separates_records_from_consumers(self) -> None:
+        pagination_rows = [
+            site
+            for site in self.document["sites"]
+            if site["source"].get("old_value") == "agent_pagination"
+        ]
+        self.assertEqual(3, len(pagination_rows))
+        self.assertEqual(
+            {DELETED_MODULE_RECORD},
+            {
+                classify_active_bare_context(
+                    PAGINATION_MODULE,
+                    site["source"]["audit_context"],
+                )
+                for site in pagination_rows
+            },
+        )
+        for context in (
+            '"consolidated_deleted_modules": [\n  "agent_pagination"\n]',
+            "The deleted module is `agent_pagination.py`; keep the retained owner.",
+        ):
+            self.assertEqual(
+                DELETED_MODULE_RECORD,
+                classify_active_bare_context(PAGINATION_MODULE, context),
+            )
+        for context in (
+            "from gravity_sdk.agent_pagination import compact_pagination",
+            "from .agent_pagination import compact_pagination",
+            "from gravity_sdk import agent_pagination",
+            "import gravity_sdk.agent_pagination",
+            "gravity_sdk.agent_pagination.compact_pagination(items)",
+        ):
+            self.assertEqual(
+                RUNTIME_CONSUMER,
+                classify_active_bare_context(PAGINATION_MODULE, context),
+            )
+        self.assertEqual(
+            AMBIGUOUS_REFERENCE,
+            classify_active_bare_context(
+                PAGINATION_MODULE,
+                "Review agent_pagination before R17 starts.",
+            ),
+        )
+        dated_rows = {
+            site["source"]["old_value"]: site
+            for site in self.document["sites"]
+            if site["source"].get("file")
+            == "docs/maintainers/technical-debt.md"
+            and site["source"].get("old_value")
+            in {"agent_batch", "agent_input_resolution"}
+        }
+        self.assertEqual({"agent_batch", "agent_input_resolution"}, set(dated_rows))
+        for site in dated_rows.values():
+            self.assertEqual("no_migration_effect", site["disposition"])
+            self.assertEqual(
+                "dated_governance_decision_evidence",
+                site["reason_code"],
+            )
+            self.assertEqual({"kind": "none"}, site["migration_action"])
+        list_item_start = next(
+            site["source"]
+            for site in self.document["sites"]
+            if str(site["source"].get("audit_snippet", "")).lstrip().startswith(
+                "- **\u9000\u51fa\u6761\u4ef6**"
+            )
+            and site["source"].get("old_value") == "agent_runtime_contracts"
+        )
+        self.assertTrue(
+            list_item_start["audit_context"].startswith(
+                list_item_start["audit_snippet"]
+            )
+        )
+
+    def test_validator_rejects_consumer_disguised_as_no_effect(self) -> None:
+        injected = copy.deepcopy(self.document)
+        site = next(
+            item
+            for item in injected["sites"]
+            if item["source"].get("old_value") == "agent_pagination"
+        )
+        consumer = "from gravity_sdk.agent_pagination import compact_pagination"
+        site["source"]["audit_snippet"] = consumer
+        site["source"]["audit_context"] = consumer
+        with self.assertRaisesRegex(
+            AssertionError,
+            "pagination consumer must rewrite or block",
+        ):
+            validate_ledger(injected)
 
     def test_validator_rejects_required_regressions(self) -> None:
         mutations: dict[str, Any] = {}

@@ -7,6 +7,7 @@ from dataclasses import asdict
 import hashlib
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -42,9 +43,8 @@ EXPECTED_AUDIT_CATEGORIES = {
     "non_string_patch_expression": 117,
 }
 EXPECTED_DISPOSITIONS = {
-    "no_migration_effect": 219,
-    "rewrite_consolidated_reference": 3,
-    "rewrite_reference": 15,
+    "no_migration_effect": 224,
+    "rewrite_reference": 13,
     "rewrite_selector_data": 1,
 }
 ACTIVE_BARE_FILES = {
@@ -57,6 +57,51 @@ ACTIVE_BARE_FILES = {
 RETAINED_MODULE = "gravity_sdk.agent_runtime_contracts"
 PAGINATION_MODULE = "gravity_sdk.agent_pagination"
 PAGINATION_TARGET = "gravity_sdk.pagination_completeness"
+DELETED_MODULE_RECORD = "deleted_module_governance_record"
+DATED_DECISION_RECORD = "dated_governance_decision_record"
+RUNTIME_CONSUMER = "runtime_consumer"
+AMBIGUOUS_REFERENCE = "ambiguous_reference"
+ACTIVE_REFERENCE = "active_reference"
+
+_MARKDOWN_RECORD_START = re.compile(r"^\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|```)")
+_JSON_MEMBER_START = re.compile(r'^(?P<indent>\s*)"[^"]+"\s*:')
+_DATED_DECISION_PATTERN = re.compile(
+    r"(?:\u7acb\u9879|decision(?:\s+record)?)\s*[\uff08(]"
+    r"\d{4}-\d{2}-\d{2}[\uff09)]",
+    re.IGNORECASE,
+)
+_PAGINATION_CONSUMER_PATTERN = re.compile(
+    r"(?:\bfrom\s+(?:(?:gravity_sdk\.)?\.?agent_pagination\s+import\b"
+    r"|gravity_sdk\s+import\s+agent_pagination\b)"
+    r"|\bimport\s+(?:gravity_sdk\.)?agent_pagination\b"
+    r"|(?:gravity_sdk\.)?agent_pagination\s*\.(?!py\b)[A-Za-z_]"
+    r"|(?:import_module|__import__|patch(?:\.object)?|monkeypatch\.setattr)"
+    r"\s*\([^\n)]*agent_pagination"
+    r"|\b(?:consumer|caller|call|invoke|use|import|patch)\b"
+    r"[^\n]{0,80}\bagent_pagination\b"
+    r"|(?:\u8c03\u7528|\u5bfc\u5165)\s*`?"
+    r"(?:gravity_sdk\.)?agent_pagination(?![A-Za-z0-9_]))",
+    re.IGNORECASE,
+)
+_PAGINATION_DELETION_PATTERNS = (
+    re.compile(
+        r'"consolidated_deleted_modules"\s*:\s*\[[^\]]*'
+        r'"agent_pagination"',
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        r"agent_pagination[\s\S]{0,120}"
+        r"(?:\u5408\u5e76\u5220\u9664|consolidat(?:e[sd]?|ion)"
+        r"[\s\S]{0,40}(?:delet|remov)|\b(?:deleted|removed)\b)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?:\u5408\u5e76\u5220\u9664|consolidat(?:e[sd]?|ion)"
+        r"[\s\S]{0,40}(?:delet|remov)|\b(?:deleted|removed)\s+modules?\b)"
+        r"[\s\S]{0,120}agent_pagination",
+        re.IGNORECASE,
+    ),
+)
 
 
 def _sha256(path: Path) -> str:
@@ -169,9 +214,61 @@ def _replacement_texts(row: Finding, snippet: str, new_module: str) -> tuple[str
     return old_short, new_module.removeprefix("gravity_sdk.")
 
 
+def _logical_source_context(row: Finding) -> str:
+    """Return the bounded governance record containing a bare module name."""
+
+    lines = (ROOT / row.file).read_text(encoding="utf-8").splitlines()
+    index = row.line - 1
+    if index < 0 or index >= len(lines):
+        raise ValueError(f"source line is outside file: {source_key(row)}")
+    if Path(row.file).suffix == ".json":
+        start = index
+        while start > 0 and not _JSON_MEMBER_START.match(lines[start]):
+            start -= 1
+        member = _JSON_MEMBER_START.match(lines[start])
+        if member is None:
+            raise ValueError(f"JSON reference has no containing member: {source_key(row)}")
+        indent = len(member.group("indent"))
+        end = start + 1
+        while end < len(lines):
+            following = _JSON_MEMBER_START.match(lines[end])
+            if following is not None and len(following.group("indent")) <= indent:
+                break
+            end += 1
+        return "\n".join(lines[start:end])
+
+    start = index
+    if not _MARKDOWN_RECORD_START.match(lines[start]):
+        while start > 0 and lines[start - 1].strip():
+            start -= 1
+            if _MARKDOWN_RECORD_START.match(lines[start]):
+                break
+    end = index + 1
+    while end < len(lines) and lines[end].strip():
+        if _MARKDOWN_RECORD_START.match(lines[end]):
+            break
+        end += 1
+    return "\n".join(lines[start:end])
+
+
+def classify_active_bare_context(old_module: str, context: str) -> str:
+    """Classify an active governance mention without relying on coordinates."""
+
+    if old_module == PAGINATION_MODULE:
+        if _PAGINATION_CONSUMER_PATTERN.search(context):
+            return RUNTIME_CONSUMER
+        if any(pattern.search(context) for pattern in _PAGINATION_DELETION_PATTERNS):
+            return DELETED_MODULE_RECORD
+        return AMBIGUOUS_REFERENCE
+    if _DATED_DECISION_PATTERN.search(context):
+        return DATED_DECISION_RECORD
+    return ACTIVE_REFERENCE
+
+
 def _classify_bare(
     row: Finding,
     snippet: str,
+    context: str,
     move_mapping: dict[str, str],
 ) -> dict[str, Any]:
     old_module = f"gravity_sdk.{row.old_value}"
@@ -195,7 +292,28 @@ def _classify_bare(
         )
         item["module_reference"] = _module_reference(old_module, move_mapping)
         return item
+    context_kind = classify_active_bare_context(old_module, context)
     if old_module == PAGINATION_MODULE:
+        if context_kind == DELETED_MODULE_RECORD:
+            item = _none(
+                "deleted_module_governance_fact",
+                "The bounded governance record identifies agent_pagination as the "
+                "module consolidated and deleted. Replacing it with the retained "
+                "pagination_completeness owner would invert the recorded fact.",
+                "governance_record_semantics",
+            )
+            item["module_reference"] = _module_reference(old_module, move_mapping)
+            return item
+        if context_kind == AMBIGUOUS_REFERENCE:
+            return {
+                "disposition": "blocker",
+                "reason_code": "ambiguous_deleted_module_reference",
+                "migration_action": {"kind": "block"},
+                "basis": "The active reference names the deleted module but its "
+                "bounded record proves neither a deletion fact nor runtime consumer "
+                "syntax; R17 must stop for classification.",
+                "evidence_kind": "audited_source_context",
+            }
         old_text, new_text = _replacement_texts(row, snippet, PAGINATION_TARGET)
         return {
             "disposition": "rewrite_consolidated_reference",
@@ -213,6 +331,16 @@ def _classify_bare(
         }
     if old_module not in move_mapping:
         raise ValueError(f"active bare string is not an R17 move: {source_key(row)}")
+    if context_kind == DATED_DECISION_RECORD:
+        item = _none(
+            "dated_governance_decision_evidence",
+            "The dated establishment record preserves the baseline graph-node name "
+            "used by its recorded inbound-edge measurement; it is evidence rather "
+            "than an executable or current path.",
+            "governance_record_semantics",
+        )
+        item["module_reference"] = _module_reference(old_module, move_mapping)
+        return item
     old_text, new_text = _replacement_texts(row, snippet, move_mapping[old_module])
     return {
         "disposition": "rewrite_reference",
@@ -407,9 +535,14 @@ def build_document() -> dict[str, Any]:
             if reference_key not in snippets:
                 raise ValueError(f"missing reference evidence: {source_key(row)}")
             source["audit_snippet"] = snippets[reference_key]
+            context = snippets[reference_key]
+            if row.file in ACTIVE_BARE_FILES:
+                context = _logical_source_context(row)
+                source["audit_context"] = context
             disposition = _classify_bare(
                 row,
                 snippets[reference_key],
+                context,
                 move_mapping,
             )
         elif category == "dynamic_import":
@@ -479,12 +612,12 @@ def build_document() -> dict[str, Any]:
             "rewrite_reference": "Replace the exact active source text with its one-to-one moved owner.",
             "rewrite_selector_data": "Keep the dynamic import expression but rewrite all six exact lazy-owner selector values.",
             "rewrite_consolidated_reference": "Replace agent_pagination with pagination_completeness before deleting the old module.",
-            "no_migration_effect": "Make no edit; the recorded basis proves the site is historical, object-bound, deliberately retained, or outside the R17 selector domain.",
+            "no_migration_effect": "Make no edit; the recorded basis proves the site is historical, a governance fact/evidence record, object-bound, deliberately retained, or outside the R17 selector domain.",
             "runtime_verification_required": "Run the bounded verification before migration; failure becomes a blocker.",
             "blocker": "Do not start R17 until the ownership or selector proposition is resolved.",
         },
         "classification_method": {
-            "bare_agent_string": "Classify frozen archive text, retained/consolidated owners, and every active governance path separately.",
+            "bare_agent_string": "Classify each bounded Markdown record or JSON field: freeze dated decision evidence and explicit consolidated/deleted-module facts, rewrite consumer syntax and active one-to-one paths, and block ambiguous deleted-module mentions.",
             "agent_prefix_template": "Retain only the two migration-characterization sentinels that deliberately detect both legacy and target owners.",
             "non_string_patch_expression": "Separate object APIs from dotted-string APIs and inspect every finite producer/call domain.",
             "dynamic_import": "Trace each expression to finite inputs; rewrite the root lazy selector and reject unknown domains.",

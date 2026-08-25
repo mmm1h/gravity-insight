@@ -7,7 +7,7 @@
     "scanner_path": "scripts/audit_agent_module_references.py",
     "scanner_sha256": "d0016c5fd5c54e93bc1d770dae7ffc2d68c5108910a374f3b81e3bdab404e20b",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
-    "generator_sha256": "e9378d9d0f62a4300ff297cb2bfc2050c93ad0d360051eaab2e29bbdd69ca11d",
+    "generator_sha256": "ea8b47a5391d0b06292efb210c8d67981b86a722ef01b06d138609478ae2dc3c",
     "candidate_map_sha256": "9ecd2ccc7b170546b2ef3f01e9b40eeb8401e23bc69f7190301fc8d0c60cfb0b",
     "reference_evidence_sha256": "c0d70d28a7dfa6e0dd01ac073055ba1051279dceb9ed71056a26d40f52c199fd",
     "manual_review_sha256": "1a0d7004e10241e1f4424328af8380caaf9213e5d820795989d8c46f5ef2e795",
@@ -366,12 +366,12 @@
     "rewrite_reference": "Replace the exact active source text with its one-to-one moved owner.",
     "rewrite_selector_data": "Keep the dynamic import expression but rewrite all six exact lazy-owner selector values.",
     "rewrite_consolidated_reference": "Replace agent_pagination with pagination_completeness before deleting the old module.",
-    "no_migration_effect": "Make no edit; the recorded basis proves the site is historical, object-bound, deliberately retained, or outside the R17 selector domain.",
+    "no_migration_effect": "Make no edit; the recorded basis proves the site is historical, a governance fact/evidence record, object-bound, deliberately retained, or outside the R17 selector domain.",
     "runtime_verification_required": "Run the bounded verification before migration; failure becomes a blocker.",
     "blocker": "Do not start R17 until the ownership or selector proposition is resolved."
   },
   "classification_method": {
-    "bare_agent_string": "Classify frozen archive text, retained/consolidated owners, and every active governance path separately.",
+    "bare_agent_string": "Classify each bounded Markdown record or JSON field: freeze dated decision evidence and explicit consolidated/deleted-module facts, rewrite consumer syntax and active one-to-one paths, and block ambiguous deleted-module mentions.",
     "agent_prefix_template": "Retain only the two migration-characterization sentinels that deliberately detect both legacy and target owners.",
     "non_string_patch_expression": "Separate object APIs from dotted-string APIs and inspect every finite producer/call domain.",
     "dynamic_import": "Trace each expression to finite inputs; rewrite the root lazy selector and reject unknown domains.",
@@ -390,12 +390,11 @@
       "non_string_patch_expression": 117
     },
     "dispositions": {
-      "no_migration_effect": 219,
-      "rewrite_consolidated_reference": 3,
-      "rewrite_reference": 15,
+      "no_migration_effect": 224,
+      "rewrite_reference": 13,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "38e0f7227e42f93e087901418b216ef3d07b1ce11de72d549f4156c8c8f59118"
+    "sites_sha256": "9430d21c8b439d064c6ca8a638c4a0fbf64dd1828de484e306e53fa14d51e1dd"
   },
   "blockers": [],
   "sites": [
@@ -409,7 +408,8 @@
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,"
+        "audit_snippet": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,",
+        "audit_context": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,\n`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve\ntheir characterized behavior unless the active requirement explicitly migrates\nit; do not create wrappers merely to avoid an approved structural change.\nSerialize the final wiring of every unit that touches the spine through a single\nintegrator. Domain cores, contract research, and evidence gathering may run in\nparallel. Regenerate compiler, provenance, and coverage artifacts serially."
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -433,7 +433,8 @@
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve"
+        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve",
+        "audit_context": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,\n`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve\ntheir characterized behavior unless the active requirement explicitly migrates\nit; do not create wrappers merely to avoid an approved structural change.\nSerialize the final wiring of every unit that touches the spine through a single\nintegrator. Domain cores, contract research, and evidence gathering may run in\nparallel. Regenerate compiler, provenance, and coverage artifacts serially."
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -457,7 +458,8 @@
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve"
+        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve",
+        "audit_context": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,\n`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve\ntheir characterized behavior unless the active requirement explicitly migrates\nit; do not create wrappers merely to avoid an approved structural change.\nSerialize the final wiring of every unit that touches the spine through a single\nintegrator. Domain cores, contract research, and evidence gathering may run in\nparallel. Regenerate compiler, provenance, and coverage artifacts serially."
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2377,7 +2379,8 @@
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
         "audit_proposed_value": "runtime_contracts",
-        "audit_snippet": "  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade"
+        "audit_snippet": "  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
       },
       "disposition": "no_migration_effect",
       "reason_code": "retained_module_reference",
@@ -2400,19 +2403,20 @@
         "form": "bare text module string",
         "old_value": "agent_pagination",
         "audit_proposed_value": "pagination",
-        "audit_snippet": "  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade"
+        "audit_snippet": "  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
       },
-      "disposition": "rewrite_consolidated_reference",
-      "reason_code": "pagination_consolidation_reference",
+      "disposition": "no_migration_effect",
+      "reason_code": "deleted_module_governance_fact",
       "migration_action": {
-        "kind": "replace_module",
-        "old_text": "agent_pagination",
-        "new_text": "pagination_completeness",
-        "old_module": "gravity_sdk.agent_pagination",
-        "new_module": "gravity_sdk.pagination_completeness"
+        "kind": "none"
       },
-      "basis": "The active governance source names the module that R17 consolidates into pagination_completeness and deletes.",
-      "evidence_kind": "r17_scope_contract"
+      "basis": "The bounded governance record identifies agent_pagination as the module consolidated and deleted. Replacing it with the retained pagination_completeness owner would invert the recorded fact.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_pagination",
+        "candidate_new_module": "gravity_sdk.pagination_completeness"
+      }
     },
     {
       "source_key": "docs/maintainers/technical-debt.md:73:45:bare text module string",
@@ -2424,19 +2428,20 @@
         "form": "bare text module string",
         "old_value": "agent_batch",
         "audit_proposed_value": "batch",
-        "audit_snippet": "  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、"
+        "audit_snippet": "  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
       },
-      "disposition": "rewrite_reference",
-      "reason_code": "active_governance_path",
+      "disposition": "no_migration_effect",
+      "reason_code": "dated_governance_decision_evidence",
       "migration_action": {
-        "kind": "replace_text",
-        "old_text": "agent_batch",
-        "new_text": "agents.batch",
-        "old_module": "gravity_sdk.agent_batch",
-        "new_module": "gravity_sdk.agents.batch"
+        "kind": "none"
       },
-      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
-      "evidence_kind": "audited_source_context"
+      "basis": "The dated establishment record preserves the baseline graph-node name used by its recorded inbound-edge measurement; it is evidence rather than an executable or current path.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_batch",
+        "candidate_new_module": "gravity_sdk.agents.batch"
+      }
     },
     {
       "source_key": "docs/maintainers/technical-debt.md:74:4:bare text module string",
@@ -2448,19 +2453,20 @@
         "form": "bare text module string",
         "old_value": "agent_input_resolution",
         "audit_proposed_value": "input_resolution",
-        "audit_snippet": "  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
+        "audit_snippet": "  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
       },
-      "disposition": "rewrite_reference",
-      "reason_code": "active_governance_path",
+      "disposition": "no_migration_effect",
+      "reason_code": "dated_governance_decision_evidence",
       "migration_action": {
-        "kind": "replace_text",
-        "old_text": "agent_input_resolution",
-        "new_text": "agents.input_resolution",
-        "old_module": "gravity_sdk.agent_input_resolution",
-        "new_module": "gravity_sdk.agents.input_resolution"
+        "kind": "none"
       },
-      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
-      "evidence_kind": "audited_source_context"
+      "basis": "The dated establishment record preserves the baseline graph-node name used by its recorded inbound-edge measurement; it is evidence rather than an executable or current path.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_input_resolution",
+        "candidate_new_module": "gravity_sdk.agents.input_resolution"
+      }
     },
     {
       "source_key": "docs/maintainers/technical-debt.md:77:51:bare text module string",
@@ -2472,7 +2478,8 @@
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
         "audit_proposed_value": "runtime_contracts",
-        "audit_snippet": "- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 496、"
+        "audit_snippet": "- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 496、",
+        "audit_context": "- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 496、\n  `agents/` 含 81 个实现模块、147 lazy owner 与 148 `__all__` 不变、迁移宇宙 eager SCC 为 0；不得以改名或空目录关闭。"
       },
       "disposition": "no_migration_effect",
       "reason_code": "retained_module_reference",
@@ -2533,7 +2540,8 @@
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "C. Plan-backed path（agent_handoff → validation → binding → preflight → execution）"
+        "audit_snippet": "C. Plan-backed path（agent_handoff → validation → binding → preflight → execution）",
+        "audit_context": "```text\nA. exact selector / direct run\nB. Direct Bounded Composite（如 composite:business_pulse → runtime.call_batch）\nC. Plan-backed path（agent_handoff → validation → binding → preflight → execution）\nD. host-generated Plan（source assessment → execute_host_plan → Plan facade）"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2557,7 +2565,8 @@
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
+        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。",
+        "audit_context": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2581,7 +2590,8 @@
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
+        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。",
+        "audit_context": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2605,7 +2615,8 @@
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
+        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。",
+        "audit_context": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2629,7 +2640,8 @@
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "    \"src/gravity_sdk/agent_capabilities.py\","
+        "audit_snippet": "    \"src/gravity_sdk/agent_capabilities.py\",",
+        "audit_context": "  \"shared_spine\": [\n    \"src/gravity_sdk/plan_adapters.py\",\n    \"src/gravity_sdk/agent_capabilities.py\",\n    \"src/gravity_sdk/agent_composite.py\",\n    \"src/gravity_sdk/agent_handoff.py\",\n    \"src/gravity_sdk/cli.py\",\n    \"src/gravity_sdk/__main__.py\"\n  ],"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2653,7 +2665,8 @@
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "    \"src/gravity_sdk/agent_composite.py\","
+        "audit_snippet": "    \"src/gravity_sdk/agent_composite.py\",",
+        "audit_context": "  \"shared_spine\": [\n    \"src/gravity_sdk/plan_adapters.py\",\n    \"src/gravity_sdk/agent_capabilities.py\",\n    \"src/gravity_sdk/agent_composite.py\",\n    \"src/gravity_sdk/agent_handoff.py\",\n    \"src/gravity_sdk/cli.py\",\n    \"src/gravity_sdk/__main__.py\"\n  ],"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2677,7 +2690,8 @@
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "    \"src/gravity_sdk/agent_handoff.py\","
+        "audit_snippet": "    \"src/gravity_sdk/agent_handoff.py\",",
+        "audit_context": "  \"shared_spine\": [\n    \"src/gravity_sdk/plan_adapters.py\",\n    \"src/gravity_sdk/agent_capabilities.py\",\n    \"src/gravity_sdk/agent_composite.py\",\n    \"src/gravity_sdk/agent_handoff.py\",\n    \"src/gravity_sdk/cli.py\",\n    \"src/gravity_sdk/__main__.py\"\n  ],"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2701,19 +2715,20 @@
         "form": "bare text module string",
         "old_value": "agent_pagination",
         "audit_proposed_value": "pagination",
-        "audit_snippet": "        \"consolidated_deleted_modules\": [\"agent_pagination\"],"
+        "audit_snippet": "        \"consolidated_deleted_modules\": [\"agent_pagination\"],",
+        "audit_context": "        \"consolidated_deleted_modules\": [\"agent_pagination\"],"
       },
-      "disposition": "rewrite_consolidated_reference",
-      "reason_code": "pagination_consolidation_reference",
+      "disposition": "no_migration_effect",
+      "reason_code": "deleted_module_governance_fact",
       "migration_action": {
-        "kind": "replace_module",
-        "old_text": "agent_pagination",
-        "new_text": "pagination_completeness",
-        "old_module": "gravity_sdk.agent_pagination",
-        "new_module": "gravity_sdk.pagination_completeness"
+        "kind": "none"
       },
-      "basis": "The active governance source names the module that R17 consolidates into pagination_completeness and deletes.",
-      "evidence_kind": "r17_scope_contract"
+      "basis": "The bounded governance record identifies agent_pagination as the module consolidated and deleted. Replacing it with the retained pagination_completeness owner would invert the recorded fact.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_pagination",
+        "candidate_new_module": "gravity_sdk.pagination_completeness"
+      }
     },
     {
       "source_key": "specs/agent-runtime/index.json:55:31:bare text module string",
@@ -2725,7 +2740,8 @@
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
         "audit_proposed_value": "runtime_contracts",
-        "audit_snippet": "        \"excluded_modules\": [\"agent_runtime_contracts\"],"
+        "audit_snippet": "        \"excluded_modules\": [\"agent_runtime_contracts\"],",
+        "audit_context": "        \"excluded_modules\": [\"agent_runtime_contracts\"],"
       },
       "disposition": "no_migration_effect",
       "reason_code": "retained_module_reference",
@@ -2748,7 +2764,8 @@
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
         "audit_proposed_value": "runtime_contracts",
-        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`"
+        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`",
+        "audit_context": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`\n必须成为绑定实施基线的祖先并绑定精确测试证据；动态导入审计的 227 个候选点必须全部得到复核处置，未分类数从 227 降为 0 并绑定分类账本路径与 SHA-256；独立复核必须给出 `ready` 裁决。内部两阶段不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
       },
       "disposition": "no_migration_effect",
       "reason_code": "retained_module_reference",
@@ -2771,19 +2788,20 @@
         "form": "bare text module string",
         "old_value": "agent_pagination",
         "audit_proposed_value": "pagination",
-        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`"
+        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`",
+        "audit_context": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`\n必须成为绑定实施基线的祖先并绑定精确测试证据；动态导入审计的 227 个候选点必须全部得到复核处置，未分类数从 227 降为 0 并绑定分类账本路径与 SHA-256；独立复核必须给出 `ready` 裁决。内部两阶段不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
       },
-      "disposition": "rewrite_consolidated_reference",
-      "reason_code": "pagination_consolidation_reference",
+      "disposition": "no_migration_effect",
+      "reason_code": "deleted_module_governance_fact",
       "migration_action": {
-        "kind": "replace_module",
-        "old_text": "agent_pagination",
-        "new_text": "pagination_completeness",
-        "old_module": "gravity_sdk.agent_pagination",
-        "new_module": "gravity_sdk.pagination_completeness"
+        "kind": "none"
       },
-      "basis": "The active governance source names the module that R17 consolidates into pagination_completeness and deletes.",
-      "evidence_kind": "r17_scope_contract"
+      "basis": "The bounded governance record identifies agent_pagination as the module consolidated and deleted. Replacing it with the retained pagination_completeness owner would invert the recorded fact.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_pagination",
+        "candidate_new_module": "gravity_sdk.pagination_completeness"
+      }
     },
     {
       "source_key": "specs/agent-runtime/index.md:84:17:bare text module string",
@@ -2795,7 +2813,8 @@
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "src/gravity_sdk/agent_capabilities.py"
+        "audit_snippet": "src/gravity_sdk/agent_capabilities.py",
+        "audit_context": "```text\nsrc/gravity_sdk/plan_adapters.py\nsrc/gravity_sdk/agent_capabilities.py\nsrc/gravity_sdk/agent_composite.py\nsrc/gravity_sdk/agent_handoff.py\nsrc/gravity_sdk/cli.py\nsrc/gravity_sdk/__main__.py"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2819,7 +2838,8 @@
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "src/gravity_sdk/agent_composite.py"
+        "audit_snippet": "src/gravity_sdk/agent_composite.py",
+        "audit_context": "```text\nsrc/gravity_sdk/plan_adapters.py\nsrc/gravity_sdk/agent_capabilities.py\nsrc/gravity_sdk/agent_composite.py\nsrc/gravity_sdk/agent_handoff.py\nsrc/gravity_sdk/cli.py\nsrc/gravity_sdk/__main__.py"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2843,7 +2863,8 @@
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "src/gravity_sdk/agent_handoff.py"
+        "audit_snippet": "src/gravity_sdk/agent_handoff.py",
+        "audit_context": "```text\nsrc/gravity_sdk/plan_adapters.py\nsrc/gravity_sdk/agent_capabilities.py\nsrc/gravity_sdk/agent_composite.py\nsrc/gravity_sdk/agent_handoff.py\nsrc/gravity_sdk/cli.py\nsrc/gravity_sdk/__main__.py"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
