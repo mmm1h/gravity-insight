@@ -46,12 +46,15 @@
       "consumed_by": null,
       "consumed_at_checkpoint": null
     },
-    "allowed_source_replacements": [
-      {"old":"`agent_capabilities.py`","new":"`agents/capabilities.py`","count":1},
-      {"old":"`agent_composite.py`","new":"`agents/composite.py`","count":1},
-      {"old":"`agent_handoff.py`","new":"`agents/handoff.py`","count":1},
-      {"old":"Plan-backed path（agent_handoff →","new":"Plan-backed path（agents.handoff →","count":1}
-    ],
+    "allowed_source_replacements": {
+      "derivation": "ledger_rewrite_actions_at_exact_source_coordinates",
+      "ledger_role": "r17_checked_in_governance_evidence",
+      "ledger_schema_version": "gravity.agent-module-reference-dispositions.v2",
+      "source_file": "specs/agent-runtime/architecture-source.md",
+      "disposition": "rewrite_reference",
+      "required_action_kind": "replace_text",
+      "required_count": 4
+    },
     "allowed_version_metadata_changes": [
       {"operation":"insert_before","anchor":"## v9.2 修订摘要","text":"## v9.3 修订摘要\n\nfour physical path corrections; no architectural semantic change\n\n","count":1},
       {"old":"gravity-agent-runtime / v9.2","new":"gravity-agent-runtime / v9.3","count":1},

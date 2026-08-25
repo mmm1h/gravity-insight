@@ -28,11 +28,20 @@ from scripts.generate_agent_module_reference_dispositions import (
     classify_active_bare_context as generator_classify_active_bare_context,
     render_document,
 )
+from scripts.validate_r17_canonical_source_errata import (
+    ErrataValidationError,
+    build_expected_source,
+    derive_source_replacements,
+    load_git_baseline,
+    validate_final_state,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
-LEDGER_SHA256 = "b8757f005b89508e5b94d167b5c30725aa6c2ec38f064780ce6e0acf2ea2ac9f"
+DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
+CANONICAL_SOURCE = ROOT / "specs/agent-runtime/architecture-source.md"
+LEDGER_SHA256 = "2d69b014bb35d77860bc3dde686017a8c5041cbcdda112eeb683925c3cfb84b9"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
     "bare_agent_string": 101,
@@ -374,6 +383,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.raw = LEDGER.read_bytes()
         cls.document = json.loads(cls.raw)
+        cls.directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
 
     def test_reviewed_fixture_sha256_is_bound(self) -> None:
         self.assertEqual(LEDGER_SHA256, hashlib.sha256(self.raw).hexdigest())
@@ -383,6 +393,178 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
 
     def test_repository_scan_reproduces_the_checked_in_ledger(self) -> None:
         self.assertEqual(self.raw, render_document(build_document()))
+
+    def test_canonical_errata_replacements_are_derived_only_from_ledger(self) -> None:
+        declaration = self.directive["canonical_source_errata"][
+            "allowed_source_replacements"
+        ]
+        self.assertIsInstance(declaration, dict)
+        self.assertNotIn("old", declaration)
+        self.assertNotIn("new", declaration)
+        self.assertNotIn("ledger_path", declaration)
+        replacements = derive_source_replacements(self.directive, self.document)
+        selected_rows = [
+            site
+            for site in self.document["sites"]
+            if site["disposition"] == declaration["disposition"]
+            and site["source"]["file"] == declaration["source_file"]
+        ]
+        self.assertEqual(4, len(replacements))
+        self.assertEqual(
+            {site["source_key"] for site in selected_rows},
+            {replacement["source_key"] for replacement in replacements},
+        )
+        self.assertEqual(
+            {
+                (
+                    site["source"]["line"],
+                    site["source"]["column"],
+                    site["migration_action"]["old_text"],
+                    site["migration_action"]["new_text"],
+                )
+                for site in selected_rows
+            },
+            {
+                (
+                    replacement["line"],
+                    replacement["column"],
+                    replacement["old_text"],
+                    replacement["new_text"],
+                )
+                for replacement in replacements
+            },
+        )
+
+    def test_canonical_errata_derivation_fails_closed_on_ledger_drift(self) -> None:
+        extra = copy.deepcopy(self.document)
+        extra["sites"].append(copy.deepcopy(extra["sites"][0]))
+        injected = next(
+            site
+            for site in extra["sites"]
+            if site["disposition"] == "rewrite_reference"
+            and site["source"]["file"]
+            == "specs/agent-runtime/architecture-source.md"
+        )
+        extra["sites"][-1] = copy.deepcopy(injected)
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "must contain exactly 4 rows; found 5",
+        ):
+            derive_source_replacements(self.directive, extra)
+
+        missing = copy.deepcopy(self.document)
+        missing["sites"].remove(
+            next(
+                site
+                for site in missing["sites"]
+                if site["disposition"] == "rewrite_reference"
+                and site["source"]["file"]
+                == "specs/agent-runtime/architecture-source.md"
+            )
+        )
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "must contain exactly 4 rows; found 3",
+        ):
+            derive_source_replacements(self.directive, missing)
+
+        self_loop = copy.deepcopy(self.document)
+        loop_row = next(
+            site
+            for site in self_loop["sites"]
+            if site["disposition"] == "rewrite_reference"
+            and site["source"]["file"]
+            == "specs/agent-runtime/architecture-source.md"
+        )
+        loop_row["migration_action"]["new_text"] = loop_row["migration_action"][
+            "old_text"
+        ]
+        with self.assertRaisesRegex(ErrataValidationError, "self-loop"):
+            derive_source_replacements(self.directive, self_loop)
+
+    def test_canonical_errata_final_assertion_is_full_text_and_one_shot(self) -> None:
+        baseline = load_git_baseline(self.directive)
+        expected = build_expected_source(self.directive, self.document, baseline)
+        final_directive = copy.deepcopy(self.directive)
+        transition = final_directive["canonical_source_errata"]["transition"]
+        final_directive["version"] = transition["to_version"]
+        final_directive["supersedes"] = {
+            "version": transition["from_version"],
+            "sha256": transition["from_sha256"],
+        }
+        final_directive["canonical_source"]["sha256"] = hashlib.sha256(
+            expected
+        ).hexdigest()
+        final_directive["canonical_source_errata"]["one_shot"] = {
+            "state": "consumed",
+            "reusable": False,
+            "consumed_by": "R17",
+            "consumed_at_checkpoint": "R17-phase-2-core",
+        }
+        result = validate_final_state(
+            final_directive, self.document, expected, baseline
+        )
+        self.assertEqual(4, result["source_replacements"])
+
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "diff exceeds the ledger-derived errata",
+        ):
+            validate_final_state(
+                final_directive,
+                self.document,
+                expected + b"unexpected second source change\n",
+                baseline,
+            )
+
+        ledger_drift = copy.deepcopy(self.document)
+        drift_row = next(
+            site
+            for site in ledger_drift["sites"]
+            if site["source"].get("old_value") == "agent_handoff"
+            and site["migration_action"].get("old_text") == "agent_handoff"
+        )
+        drift_row["migration_action"].update(
+            {
+                "new_text": "agents.handoff_next",
+                "new_module": "gravity_sdk.agents.handoff_next",
+            }
+        )
+        drift_expected = build_expected_source(
+            self.directive, ledger_drift, baseline
+        )
+        self.assertNotEqual(expected, drift_expected)
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "diff exceeds the ledger-derived errata",
+        ):
+            validate_final_state(
+                final_directive, ledger_drift, expected, baseline
+            )
+
+        reused = copy.deepcopy(final_directive)
+        reused["canonical_source_errata"]["one_shot"]["consumed_by"] = "R18"
+        with self.assertRaisesRegex(ErrataValidationError, "exactly once by R17"):
+            validate_final_state(reused, self.document, expected, baseline)
+
+        second_transition = copy.deepcopy(final_directive)
+        second_transition["canonical_source_errata"]["transition"].update(
+            {"from_version": "v9.3", "to_version": "v9.4"}
+        )
+        with self.assertRaisesRegex(
+            ErrataValidationError, "must remain v9.2 to v9.3"
+        ):
+            validate_final_state(
+                second_transition, self.document, expected, baseline
+            )
+
+    def test_current_canonical_source_still_matches_v92_binding(self) -> None:
+        source = CANONICAL_SOURCE.read_bytes()
+        self.assertEqual(load_git_baseline(self.directive), source)
+        self.assertEqual(
+            self.directive["canonical_source"]["sha256"],
+            hashlib.sha256(source).hexdigest(),
+        )
 
     def test_governance_exclusion_is_narrow_and_explicit(self) -> None:
         for path in GENERATED_GOVERNANCE_FILES:

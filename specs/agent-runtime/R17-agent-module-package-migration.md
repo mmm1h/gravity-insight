@@ -555,8 +555,11 @@ the move set does not erase an audit site.
   `owner_review: pending`; R17 must not elevate that review state. The allowlist
   is initially `unconsumed`; the
   core commit must atomically mark it `consumed` by R17 with `reusable: false`.
-  Its fixed source revision, versions, digest, four source replacements, and
-  three metadata edits cannot authorize another transition. Any reuse or other
+  Its fixed source revision, versions, digest, four source replacements derived
+  from the checked-in disposition ledger, and three inline metadata edits
+  cannot authorize another transition. The derivation selects every
+  `rewrite_reference` row for `architecture-source.md`, requires exactly four,
+  and applies each action at its audited line and column. Any reuse or other
   change requires a new owner approval and separately revised directive; the
   rule also does not authorize implementation before `ready`, a release, or
   `main` promotion.
@@ -976,74 +979,7 @@ if ($LASTEXITCODE) { throw 'gravity CLI help failed' }
 ### Canonical Source Errata Binding
 
 ```powershell
-$code = @'
-import difflib, hashlib, json, subprocess
-from pathlib import Path
-
-source_path = Path('specs/agent-runtime/architecture-source.md')
-directive_path = Path('specs/agent-runtime/directive.json')
-source_bytes = source_path.read_bytes()
-source = source_bytes.decode('utf-8')
-directive = json.loads(directive_path.read_text(encoding='utf-8'))
-baseline_revision = '24f16c667d80107e4149cf76742eab4ada564197'
-baseline_path = 'specs/agent-runtime/architecture-source.md'
-baseline_bytes = subprocess.check_output(['git', 'show', f'{baseline_revision}:{baseline_path}'])
-baseline = baseline_bytes.decode('utf-8')
-baseline_sha = hashlib.sha256(baseline_bytes).hexdigest()
-expected_v9_2_sha = '54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c'
-assert baseline_sha == expected_v9_2_sha, f'Git-bound v9.2 source SHA mismatch: expected={expected_v9_2_sha}, actual={baseline_sha}'
-
-source_replacements = [
-    {'old': '`agent_capabilities.py`', 'new': '`agents/capabilities.py`', 'count': 1},
-    {'old': '`agent_composite.py`', 'new': '`agents/composite.py`', 'count': 1},
-    {'old': '`agent_handoff.py`', 'new': '`agents/handoff.py`', 'count': 1},
-    {'old': 'Plan-backed path（agent_handoff →', 'new': 'Plan-backed path（agents.handoff →', 'count': 1},
-]
-version_changes = [
-    {'operation': 'insert_before', 'anchor': '## v9.2 修订摘要', 'text': '## v9.3 修订摘要\n\nfour physical path corrections; no architectural semantic change\n\n', 'count': 1},
-    {'old': 'gravity-agent-runtime / v9.2', 'new': 'gravity-agent-runtime / v9.3', 'count': 1},
-    {'old': '唯一架构总纲 v9.2（repository canonical source）', 'new': '唯一架构总纲 v9.3（repository canonical source）', 'count': 1},
-]
-expected = baseline
-for change in source_replacements:
-    assert expected.count(change['old']) == change['count'], f"v9.2 source replacement cardinality mismatch: {change}"
-    expected = expected.replace(change['old'], change['new'], change['count'])
-insert = version_changes[0]
-assert expected.count(insert['anchor']) == insert['count'], f'v9.3 summary anchor cardinality mismatch: {insert}'
-expected = expected.replace(insert['anchor'], insert['text'] + insert['anchor'], insert['count'])
-for change in version_changes[1:]:
-    assert expected.count(change['old']) == change['count'], f"version replacement cardinality mismatch: {change}"
-    expected = expected.replace(change['old'], change['new'], change['count'])
-if source != expected:
-    delta = ''.join(difflib.unified_diff(expected.splitlines(True), source.splitlines(True), fromfile='allowlisted-v9.3', tofile='actual-v9.3', n=2))
-    raise AssertionError(f'canonical v9.2 -> v9.3 diff exceeds exact R17 allowlist:\n{delta[:8000]}')
-
-actual_sha = hashlib.sha256(source_bytes).hexdigest()
-bound_sha = directive['canonical_source']['sha256']
-assert actual_sha == bound_sha, f'canonical SHA mismatch: actual={actual_sha}, directive={bound_sha}'
-assert directive['version'] == 'v9.3', f"directive version must be v9.3, got {directive['version']}"
-expected_supersedes = {'version': 'v9.2', 'sha256': expected_v9_2_sha}
-assert directive['supersedes'] == expected_supersedes, f"supersedes mismatch: expected={expected_supersedes}, actual={directive['supersedes']}"
-errata = directive.get('canonical_source_errata', {})
-expected_transition = {'from_version': 'v9.2', 'from_sha256': expected_v9_2_sha, 'from_git_revision': baseline_revision, 'to_version': 'v9.3'}
-expected_one_shot = {'state': 'consumed', 'reusable': False, 'consumed_by': 'R17', 'consumed_at_checkpoint': 'R17-phase-2-core'}
-expected_keys = {'rule', 'requirement_id', 'authorized_by', 'owner_review', 'transition', 'one_shot', 'allowed_source_replacements', 'allowed_version_metadata_changes', 'requires', 'does_not_authorize'}
-expected_requires = ['full_source_bytes_equal_v9_2_baseline_after_exact_allowlist', 'update_version_supersedes_digest_and_self_references_atomically', 'transition_one_shot_state_from_unconsumed_to_consumed']
-expected_forbidden = ['reuse_for_any_other_requirement_or_version_transition', 'any_source_change_outside_the_exact_allowlist', 'architectural_semantic_changes', 'a_claim_of_new_or_owner_approval', 'implementation_before_the_requirement_is_ready', 'release_or_main_promotion']
-assert set(errata) == expected_keys, f'errata object has missing or additional authority fields: expected={sorted(expected_keys)}, actual={sorted(errata)}'
-assert errata.get('rule') == 'r17_v9_2_to_v9_3_one_shot_allowlist', f"errata rule mismatch: {errata.get('rule')}"
-assert errata.get('requirement_id') == 'R17', f"errata requirement mismatch: {errata.get('requirement_id')}"
-assert errata.get('authorized_by') == 'agent_under_standing_owner_delegation', f"errata authorization provenance mismatch: {errata.get('authorized_by')}"
-assert errata.get('owner_review') == 'pending', f"errata owner review must remain pending: {errata.get('owner_review')}"
-assert errata.get('transition') == expected_transition, f"errata transition mismatch: {errata.get('transition')}"
-assert errata.get('one_shot') == expected_one_shot, f"errata one-shot consumption mismatch: expected={expected_one_shot}, actual={errata.get('one_shot')}"
-assert errata.get('allowed_source_replacements') == source_replacements, 'directive source allowlist differs from the independently frozen four replacements'
-assert errata.get('allowed_version_metadata_changes') == version_changes, 'directive metadata allowlist differs from the independently frozen three changes'
-assert errata.get('requires') == expected_requires, f"errata requirements changed: {errata.get('requires')}"
-assert errata.get('does_not_authorize') == expected_forbidden, f"errata forbidden-action list changed: {errata.get('does_not_authorize')}"
-print(f'canonical errata binding passed: transition=v9.2->v9.3; source_replacements=4; metadata_changes=3; one_shot=consumed; sha256={actual_sha}')
-'@
-& ./.venv/Scripts/python.exe -c $code
+& ./.venv/Scripts/python.exe scripts/validate_r17_canonical_source_errata.py
 if ($LASTEXITCODE) { throw 'canonical source errata binding assertion failed' }
 ```
 
