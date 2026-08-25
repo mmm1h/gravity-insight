@@ -15,6 +15,14 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[1]
+FROZEN_SCOPE_LEDGER = PurePosixPath(
+    "tests/fixtures/agent_module_reference_dispositions.json"
+)
+EXPECTED_OWNER_STATES = {
+    "baseline": (81, 0, True),
+    "phase_1": (34, 47, False),
+    "phase_2": (0, 81, False),
+}
 GENERATED_GOVERNANCE_FILES = frozenset(
     {
         "scripts/audit_agent_module_references.py",
@@ -234,18 +242,130 @@ def _category_for_python_literal(relative: str) -> str:
     return "string_reference"
 
 
+def _module_file(root: Path, module: str) -> Path:
+    return root / "src" / Path(*module.split(".")).with_suffix(".py")
+
+
+def _frozen_module_scope(root: Path) -> list[tuple[str, str]]:
+    path = root / FROZEN_SCOPE_LEDGER
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"cannot load frozen R17 scope ledger: {path}") from exc
+    if document.get("schema_version") != "gravity.agent-module-reference-dispositions.v2":
+        raise RuntimeError("frozen R17 scope ledger schema is not dispositions.v2")
+    scope = document.get("scope")
+    if not isinstance(scope, dict):
+        raise RuntimeError("frozen R17 scope ledger has no scope object")
+    moves = scope.get("one_to_one_moves")
+    if not isinstance(moves, list) or len(moves) != 81:
+        raise RuntimeError("frozen R17 scope must contain 81 one-to-one moves")
+    result: list[tuple[str, str]] = []
+    for move in moves:
+        if not isinstance(move, dict):
+            raise RuntimeError("frozen R17 move must be an object")
+        old = move.get("old_module")
+        new = move.get("new_module")
+        if (
+            not isinstance(old, str)
+            or not old.startswith("gravity_sdk.agent_")
+            or new
+            != f"gravity_sdk.agents.{old.removeprefix('gravity_sdk.agent_')}"
+        ):
+            raise RuntimeError(f"invalid frozen R17 move: {old!r} -> {new!r}")
+        result.append((old, new))
+    if len({old for old, _ in result}) != 81 or len({new for _, new in result}) != 81:
+        raise RuntimeError("frozen R17 move owners must be unique")
+    consolidation = scope.get("consolidate_delete")
+    if consolidation != {
+        "old_module": "gravity_sdk.agent_pagination",
+        "new_module": "gravity_sdk.pagination_completeness",
+        "symbol": "compact_pagination",
+    }:
+        raise RuntimeError("frozen R17 pagination consolidation changed")
+    if scope.get("retained_modules") != ["gravity_sdk.agent_runtime_contracts"]:
+        raise RuntimeError("frozen R17 retained owner changed")
+    result.extend(
+        [
+            (
+                consolidation["old_module"],
+                consolidation["new_module"],
+            ),
+            (
+                "gravity_sdk.agent_runtime_contracts",
+                "gravity_sdk.agent_runtime_contracts",
+            ),
+        ]
+    )
+    return result
+
+
 def make_module_map(root: Path = ROOT) -> tuple[list[ModuleMap], dict[str, str]]:
-    source = root / "src/gravity_sdk"
-    files = sorted(source.glob("agent_*.py"))
-    if len(files) != 83:
-        raise RuntimeError(f"expected 83 agent modules, found {len(files)}")
-    old_names = [path.stem for path in files]
-    targets = [name.removeprefix("agent_") for name in old_names]
-    target_counts = Counter(target.casefold() for target in targets)
+    frozen_scope = _frozen_module_scope(root)
+    move_scope = frozen_scope[:81]
+    old_move_count = sum(_module_file(root, old).is_file() for old, _ in move_scope)
+    new_move_count = sum(_module_file(root, new).is_file() for _, new in move_scope)
+    overlaps = [
+        old
+        for old, new in move_scope
+        if _module_file(root, old).is_file() and _module_file(root, new).is_file()
+    ]
+    missing = [
+        old
+        for old, new in move_scope
+        if not _module_file(root, old).is_file()
+        and not _module_file(root, new).is_file()
+    ]
+    if overlaps or missing:
+        raise RuntimeError(
+            "R17 frozen owners must exist at exactly one old/new path: "
+            f"overlaps={overlaps[:5]}, missing={missing[:5]}"
+        )
+    pagination_old = _module_file(
+        root, "gravity_sdk.agent_pagination"
+    ).is_file()
+    if not _module_file(root, "gravity_sdk.pagination_completeness").is_file():
+        raise RuntimeError("R17 pagination consolidation target is missing")
+    if not _module_file(root, "gravity_sdk.agent_runtime_contracts").is_file():
+        raise RuntimeError("R17 retained owner is missing")
+    owner_state = (old_move_count, new_move_count, pagination_old)
+    state_name = next(
+        (
+            name
+            for name, expected in EXPECTED_OWNER_STATES.items()
+            if expected == owner_state
+        ),
+        None,
+    )
+    if state_name is None:
+        raise RuntimeError(
+            "unsupported R17 frozen-owner state: "
+            f"old_moves={old_move_count}, new_moves={new_move_count}, "
+            f"pagination_old={pagination_old}"
+        )
+    expected_root_owners = {
+        old for old, _ in move_scope if _module_file(root, old).is_file()
+    }
+    if pagination_old:
+        expected_root_owners.add("gravity_sdk.agent_pagination")
+    expected_root_owners.add("gravity_sdk.agent_runtime_contracts")
+    actual_root_owners = {
+        f"gravity_sdk.{path.stem}"
+        for path in (root / "src/gravity_sdk").glob("agent_*.py")
+    }
+    if actual_root_owners != expected_root_owners:
+        raise RuntimeError(
+            f"unexpected root agent owner in R17 {state_name} state: "
+            f"extra={sorted(actual_root_owners - expected_root_owners)}, "
+            f"missing={sorted(expected_root_owners - actual_root_owners)}"
+        )
+    target_counts = Counter(new.rsplit(".", 1)[1].casefold() for _, new in frozen_scope)
     stdlib = getattr(sys, "stdlib_module_names", frozenset())
     mappings: list[ModuleMap] = []
-    for path, old_name, target in zip(files, old_names, targets, strict=True):
-        target_file = source / "agents" / f"{target}.py"
+    for old_module, new_module in frozen_scope:
+        old_file = _module_file(root, old_module)
+        target_file = _module_file(root, new_module)
+        target = new_module.rsplit(".", 1)[1]
         notes: list[str] = []
         if target_counts[target.casefold()] > 1:
             notes.append("case-insensitive target collision")
@@ -255,10 +375,10 @@ def make_module_map(root: Path = ROOT) -> tuple[list[ModuleMap], dict[str, str]]
             notes.append("basename matches stdlib module")
         mappings.append(
             ModuleMap(
-                old_module=f"gravity_sdk.{old_name}",
-                new_module=f"gravity_sdk.agents.{target}",
-                old_file=_relative(root, path),
-                new_file=f"src/gravity_sdk/agents/{target}.py",
+                old_module=old_module,
+                new_module=new_module,
+                old_file=_relative(root, old_file),
+                new_file=_relative(root, target_file),
                 target_exists=target_file.exists(),
                 casefold_target_collision=target_counts[target.casefold()] > 1,
                 stdlib_basename_collision=target in stdlib,

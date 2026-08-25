@@ -5,12 +5,12 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "d0016c5fd5c54e93bc1d770dae7ffc2d68c5108910a374f3b81e3bdab404e20b",
+    "scanner_sha256": "e87ef3c47b670f45a34f6641ac4e58051adcbe2a758f7331d67a5c2b99eabb82",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "fcefd630e671c675d444da88e56bb1b0ba72e173d34e781c4fc2a7942eca0902",
-    "candidate_map_sha256": "9ecd2ccc7b170546b2ef3f01e9b40eeb8401e23bc69f7190301fc8d0c60cfb0b",
-    "reference_evidence_sha256": "408aec50d1a2a55797defc248394c96cf76667af20166ac09f484f04eaea68ea",
-    "manual_review_sha256": "f0d2399e4c0f7bee4a7d47dd2b8d82c214ec484ec9a232f7e0cb91fb1d3a0ac6",
+    "candidate_map_sha256": "3698454d0cfd80f216e66ade482a58a8b0710c9ee36ce1510f1d93a11dbcbff6",
+    "reference_evidence_sha256": "40b88c84f65c35091deb011c6ab3b782eafa5fa23afa10dd24db080276ef3550",
+    "manual_review_sha256": "c001eac9b80faf34473788fff0dae45277db6d71ffd3768d62a6d5a2e2250567",
     "version_controlled_file_count": 3110,
     "scanned_file_count": 3103,
     "excluded_files": [
@@ -394,7 +394,7 @@
       "rewrite_reference": 13,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "edc8dca0f221c05f13fce6c912c35fae7be3f13449cf8045e1bf3706a640e647"
+    "sites_sha256": "cb4d8c40cb1b6b61f41d2fa4987ad187773d0045661a311be7efd755edf1e64e"
   },
   "blockers": [],
   "sites": [
@@ -2378,7 +2378,7 @@
         "column": 33,
         "form": "bare text module string",
         "old_value": "agent_pagination",
-        "audit_proposed_value": "pagination",
+        "audit_proposed_value": "pagination_completeness",
         "audit_snippet": "  队列内 82 个候选内聚，其中一对一迁移 81、合并删除 `agent_pagination` 1、排除 1，不证明完整 Agent domain。",
         "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。前缀先定义 83 个 `agent_*` 候选队列；facade 可达性只证明\n  队列内 82 个候选内聚，其中一对一迁移 81、合并删除 `agent_pagination` 1、排除 1，不证明完整 Agent domain。\n  `agent_runtime_contracts` 因队列内 0 入边、队列外 55 入边且 facade 不可达而留根；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
       },
@@ -2403,7 +2403,7 @@
         "column": 4,
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
-        "audit_proposed_value": "runtime_contracts",
+        "audit_proposed_value": "agent_runtime_contracts",
         "audit_snippet": "  `agent_runtime_contracts` 因队列内 0 入边、队列外 55 入边且 facade 不可达而留根；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、",
         "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。前缀先定义 83 个 `agent_*` 候选队列；facade 可达性只证明\n  队列内 82 个候选内聚，其中一对一迁移 81、合并删除 `agent_pagination` 1、排除 1，不证明完整 Agent domain。\n  `agent_runtime_contracts` 因队列内 0 入边、队列外 55 入边且 facade 不可达而留根；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
       },
@@ -2477,7 +2477,7 @@
         "column": 51,
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
-        "audit_proposed_value": "runtime_contracts",
+        "audit_proposed_value": "agent_runtime_contracts",
         "audit_snippet": "- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 496、",
         "audit_context": "- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 496、\n  `agents/` 含 81 个实现模块、147 lazy owner 与 148 `__all__` 不变、迁移宇宙 eager SCC 为 0；不得以改名或空目录关闭。"
       },
@@ -2714,7 +2714,7 @@
         "column": 43,
         "form": "bare text module string",
         "old_value": "agent_pagination",
-        "audit_proposed_value": "pagination",
+        "audit_proposed_value": "pagination_completeness",
         "audit_snippet": "        \"consolidated_deleted_modules\": [\"agent_pagination\"],",
         "audit_context": "        \"consolidated_deleted_modules\": [\"agent_pagination\"],"
       },
@@ -2739,7 +2739,7 @@
         "column": 31,
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
-        "audit_proposed_value": "runtime_contracts",
+        "audit_proposed_value": "agent_runtime_contracts",
         "audit_snippet": "        \"excluded_modules\": [\"agent_runtime_contracts\"],",
         "audit_context": "        \"excluded_modules\": [\"agent_runtime_contracts\"],"
       },
@@ -2763,7 +2763,7 @@
         "column": 26,
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
-        "audit_proposed_value": "runtime_contracts",
+        "audit_proposed_value": "agent_runtime_contracts",
         "audit_snippet": "`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且",
         "audit_context": "R17 只有一个 leaf 状态和一个实施分支/Worktree。它只在基线的 83 个根目录 `agent_*.py`\n遗留前缀候选内应用 facade 可达性：82 个候选可达，其中 81 个一对一迁移，\n`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且\nfacade 不可达而留在根目录。这证明前缀候选内的内聚与排除，不证明该候选集是完整\nAgent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 的绑定已\n满足，但 SCC 自环与精确迁移集合语义复核尚未通过。实施绑定为\n`dev@24f16c667d80107e4149cf76742eab4ada564197`、无 GitHub Issue（内部结构债禁止\n自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。\n机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=false`、\n`schema=gravity.agent-module-reference-dispositions.v2`、`candidate_sites=238`、\n`classified_sites=238`、`unclassified_sites=0`、`blocking_sites=0`；独立复核仍为\n`not_ready`。两个内部阶段只是同一分支上的串行提交/回滚 checkpoint，不获得独立\n状态，也不能独立使 R17 到达 `fixed_dev`。"
       },
@@ -2787,7 +2787,7 @@
         "column": 2,
         "form": "bare text module string",
         "old_value": "agent_pagination",
-        "audit_proposed_value": "pagination",
+        "audit_proposed_value": "pagination_completeness",
         "audit_snippet": "`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且",
         "audit_context": "R17 只有一个 leaf 状态和一个实施分支/Worktree。它只在基线的 83 个根目录 `agent_*.py`\n遗留前缀候选内应用 facade 可达性：82 个候选可达，其中 81 个一对一迁移，\n`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且\nfacade 不可达而留在根目录。这证明前缀候选内的内聚与排除，不证明该候选集是完整\nAgent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 的绑定已\n满足，但 SCC 自环与精确迁移集合语义复核尚未通过。实施绑定为\n`dev@24f16c667d80107e4149cf76742eab4ada564197`、无 GitHub Issue（内部结构债禁止\n自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。\n机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=false`、\n`schema=gravity.agent-module-reference-dispositions.v2`、`candidate_sites=238`、\n`classified_sites=238`、`unclassified_sites=0`、`blocking_sites=0`；独立复核仍为\n`not_ready`。两个内部阶段只是同一分支上的串行提交/回滚 checkpoint，不获得独立\n状态，也不能独立使 R17 到达 `fixed_dev`。"
       },

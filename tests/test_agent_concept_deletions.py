@@ -106,35 +106,133 @@ def _bound_names(node: ast.AST) -> set[str]:
     return set()
 
 
-def _is_module_expression(node: ast.AST, module_expressions: set[str]) -> bool:
+def _string_values(
+    node: ast.AST, bindings: Mapping[str, set[str]]
+) -> set[str]:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return {node.value}
+    if isinstance(node, ast.Name):
+        return set(bindings.get(node.id, ()))
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return {
+            left + right
+            for left in _string_values(node.left, bindings)
+            for right in _string_values(node.right, bindings)
+        }
+    if isinstance(node, ast.JoinedStr):
+        chunks: list[str] = []
+        for value in node.values:
+            if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
+                return set()
+            chunks.append(value.value)
+        return {"".join(chunks)}
+    return set()
+
+
+def _is_named_expression(node: ast.AST, names: set[str]) -> bool:
     dotted = _dotted_name(node)
-    return dotted in module_expressions if dotted is not None else False
+    return dotted in names if dotted is not None else False
+
+
+def _is_module_expression(
+    node: ast.AST,
+    *,
+    target_module: str,
+    module_expressions: set[str],
+    import_loaders: set[str],
+    module_registries: set[str],
+    string_bindings: Mapping[str, set[str]],
+) -> bool:
+    if _is_named_expression(node, module_expressions):
+        return True
+    if isinstance(node, ast.Call) and _is_named_expression(
+        node.func, import_loaders
+    ):
+        return bool(node.args) and target_module in _string_values(
+            node.args[0], string_bindings
+        )
+    if isinstance(node, ast.Subscript) and _is_named_expression(
+        node.value, module_registries
+    ):
+        return target_module in _string_values(node.slice, string_bindings)
+    return False
 
 
 def _is_symbol_expression(
     node: ast.AST,
     *,
+    target_module: str,
     symbol: str,
     symbol_names: set[str],
     module_expressions: set[str],
+    import_loaders: set[str],
+    module_registries: set[str],
+    getattr_functions: set[str],
+    string_bindings: Mapping[str, set[str]],
 ) -> bool:
     if isinstance(node, ast.Name):
         return node.id in symbol_names
     if isinstance(node, ast.Attribute):
         return node.attr == symbol and _is_module_expression(
-            node.value, module_expressions
+            node.value,
+            target_module=target_module,
+            module_expressions=module_expressions,
+            import_loaders=import_loaders,
+            module_registries=module_registries,
+            string_bindings=string_bindings,
         )
     if (
         isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Name)
-        and node.func.id == "getattr"
+        and _is_named_expression(node.func, getattr_functions)
         and len(node.args) >= 2
-        and _is_module_expression(node.args[0], module_expressions)
-        and isinstance(node.args[1], ast.Constant)
-        and node.args[1].value == symbol
+        and _is_module_expression(
+            node.args[0],
+            target_module=target_module,
+            module_expressions=module_expressions,
+            import_loaders=import_loaders,
+            module_registries=module_registries,
+            string_bindings=string_bindings,
+        )
+        and symbol in _string_values(node.args[1], string_bindings)
     ):
         return True
     return False
+
+
+def _is_string_patch_reference(
+    node: ast.Call,
+    *,
+    target_module: str,
+    symbol: str,
+    module_expressions: set[str],
+    import_loaders: set[str],
+    module_registries: set[str],
+    patch_functions: set[str],
+    patch_object_functions: set[str],
+    string_bindings: Mapping[str, set[str]],
+) -> bool:
+    called = _dotted_name(node.func)
+    if called in patch_functions or (called or "").endswith(".setattr"):
+        if not node.args:
+            return False
+        values = _string_values(node.args[0], string_bindings)
+        if f"{target_module}.{symbol}" in values:
+            return True
+        return (
+            len(node.args) >= 2
+            and target_module in values
+            and symbol in _string_values(node.args[1], string_bindings)
+        )
+    if called not in patch_object_functions or len(node.args) < 2:
+        return False
+    return _is_module_expression(
+        node.args[0],
+        target_module=target_module,
+        module_expressions=module_expressions,
+        import_loaders=import_loaders,
+        module_registries=module_registries,
+        string_bindings=string_bindings,
+    ) and symbol in _string_values(node.args[1], string_bindings)
 
 
 def _location(module: _ModuleSource, node: ast.AST, kind: str) -> str:
@@ -150,22 +248,53 @@ def _target_usage(
     for module in modules:
         symbol_names = {symbol} if module.module == target_module else set()
         module_expressions: set[str] = set()
+        import_loaders = {"__import__", "importlib.import_module"}
+        module_registries = {"sys.modules"}
+        getattr_functions = {"getattr"}
+        patch_functions = {
+            "patch",
+            "mock.patch",
+            "unittest.mock.patch",
+            "monkeypatch.setattr",
+        }
+        patch_object_functions = {
+            "patch.object",
+            "mock.patch.object",
+            "unittest.mock.patch.object",
+        }
+        string_bindings: dict[str, set[str]] = {}
         for node in ast.walk(module.tree):
             if isinstance(node, ast.ImportFrom):
                 resolved = _resolve_from_import(module, node)
                 for alias in node.names:
+                    bound = alias.asname or alias.name
                     imported_module = f"{resolved}.{alias.name}" if resolved else alias.name
                     if resolved == target_module and alias.name == symbol:
-                        symbol_names.add(alias.asname or alias.name)
+                        symbol_names.add(bound)
                         imports.add(_location(module, node, "import"))
                     elif resolved == target_module and alias.name == "*":
                         imports.add(_location(module, node, "star-import"))
                     elif imported_module == target_module:
-                        module_expressions.add(alias.asname or alias.name)
+                        module_expressions.add(bound)
+                    if resolved == "importlib" and alias.name == "import_module":
+                        import_loaders.add(bound)
+                    elif resolved == "sys" and alias.name == "modules":
+                        module_registries.add(bound)
+                    elif resolved in {"unittest.mock", "mock"} and alias.name == "patch":
+                        patch_functions.add(bound)
+                        patch_object_functions.add(f"{bound}.object")
             elif isinstance(node, ast.Import):
                 for alias in node.names:
+                    bound = alias.asname or alias.name.split(".", 1)[0]
                     if alias.name == target_module:
                         module_expressions.add(alias.asname or alias.name)
+                    if alias.name == "importlib":
+                        import_loaders.add(f"{bound}.import_module")
+                    elif alias.name == "sys":
+                        module_registries.add(f"{bound}.modules")
+                    elif alias.name in {"unittest.mock", "mock"}:
+                        patch_functions.add(f"{bound}.patch")
+                        patch_object_functions.add(f"{bound}.patch.object")
 
         changed = True
         while changed:
@@ -190,19 +319,48 @@ def _target_usage(
                     value = node.value
                 if value is None or not targets:
                     continue
-                if _is_module_expression(value, module_expressions):
+                values = _string_values(value, string_bindings)
+                for target in targets:
+                    previous = len(string_bindings.get(target, ()))
+                    string_bindings.setdefault(target, set()).update(values)
+                    changed = changed or len(string_bindings[target]) != previous
+                if _is_module_expression(
+                    value,
+                    target_module=target_module,
+                    module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    string_bindings=string_bindings,
+                ):
                     before = len(module_expressions)
                     module_expressions.update(targets)
                     changed = changed or len(module_expressions) != before
                 if _is_symbol_expression(
                     value,
+                    target_module=target_module,
                     symbol=symbol,
                     symbol_names=symbol_names,
                     module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    getattr_functions=getattr_functions,
+                    string_bindings=string_bindings,
                 ):
                     before = len(symbol_names)
                     symbol_names.update(targets)
                     changed = changed or len(symbol_names) != before
+                dotted = _dotted_name(value)
+                for bindings in (
+                    import_loaders,
+                    module_registries,
+                    getattr_functions,
+                    patch_functions,
+                    patch_object_functions,
+                ):
+                    if dotted in bindings if dotted is not None else False:
+                        before = len(bindings)
+                        bindings.update(targets)
+                        changed = changed or len(bindings) != before
 
         for node in ast.walk(module.tree):
             if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
@@ -211,24 +369,51 @@ def _target_usage(
             elif isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Load):
                 if _is_symbol_expression(
                     node,
+                    target_module=target_module,
                     symbol=symbol,
                     symbol_names=symbol_names,
                     module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    getattr_functions=getattr_functions,
+                    string_bindings=string_bindings,
                 ):
                     references.add(_location(module, node, "attribute-reference"))
             elif isinstance(node, ast.Call):
                 if _is_symbol_expression(
                     node,
+                    target_module=target_module,
                     symbol=symbol,
                     symbol_names=symbol_names,
                     module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    getattr_functions=getattr_functions,
+                    string_bindings=string_bindings,
                 ):
                     references.add(_location(module, node, "reflective-reference"))
+                if _is_string_patch_reference(
+                    node,
+                    target_module=target_module,
+                    symbol=symbol,
+                    module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    patch_functions=patch_functions,
+                    patch_object_functions=patch_object_functions,
+                    string_bindings=string_bindings,
+                ):
+                    references.add(_location(module, node, "patch-reference"))
                 if _is_symbol_expression(
                     node.func,
+                    target_module=target_module,
                     symbol=symbol,
                     symbol_names=symbol_names,
                     module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    getattr_functions=getattr_functions,
+                    string_bindings=string_bindings,
                 ):
                     calls.add(_location(module, node, "call"))
     return _TargetUsage(
@@ -404,6 +589,30 @@ class AgentConceptDeletionTests(unittest.TestCase):
             ):
                 _compact_pagination_contract(_synthetic_modules(sources))
 
+    def test_compact_pagination_guard_rejects_dynamic_extra_consumer(self) -> None:
+        sources = {
+            NEW_PAGINATION_OWNER: (
+                "def compact_pagination(value):\n"
+                "    return value\n"
+            ),
+            NEW_PAGINATION_CONSUMER: (
+                f"from {NEW_PAGINATION_OWNER} import compact_pagination\n"
+                "result = compact_pagination(None)\n"
+            ),
+            "gravity_sdk.extra_consumer": (
+                "from importlib import import_module\n"
+                f"module_name = {NEW_PAGINATION_OWNER!r}\n"
+                "loader = import_module\n"
+                "owner = loader(module_name)\n"
+                "getattr(owner, 'compact_pagination')(None)\n"
+            ),
+        }
+        with self.assertRaisesRegex(
+            AssertionError,
+            "compact_pagination must have only the exact source consumer",
+        ):
+            _compact_pagination_contract(_synthetic_modules(sources))
+
     def test_metadata_inventory_wrapper_has_no_callers(self) -> None:
         modules = _repository_modules()
         _metadata_inventory_contract(modules)
@@ -496,6 +705,67 @@ class AgentConceptDeletionTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(AssertionError, "metadata_inventory.*references"):
             _assert_metadata_inventory_has_no_callers(sources)
+
+    def test_metadata_inventory_guard_rejects_dynamic_terminal_caller(self) -> None:
+        sources = {
+            NEW_METADATA_OWNER: (
+                "def metadata_inventory_state(warnings):\n"
+                "    return (), True\n"
+            ),
+            "gravity_sdk.extra_consumer": (
+                "loader = __import__\n"
+                f"module_name = {NEW_METADATA_OWNER!r}\n"
+                "owner = loader(module_name, fromlist=['metadata_inventory'])\n"
+                "getattr(owner, 'metadata_inventory')([])\n"
+            ),
+        }
+        with self.assertRaisesRegex(AssertionError, "metadata_inventory.*references"):
+            _metadata_inventory_contract(_synthetic_modules(sources))
+
+    def test_dynamic_symbol_guard_covers_enumerated_loader_shapes(self) -> None:
+        cases = {
+            "import_module": (
+                "from importlib import import_module as load\n"
+                f"path = {NEW_METADATA_OWNER!r}\n"
+                "module = load(path)\n"
+                "getattr(module, 'metadata_inventory')([])\n"
+            ),
+            "dunder_import": (
+                "load = __import__\n"
+                f"path = {NEW_METADATA_OWNER!r}\n"
+                "module = load(path, fromlist=['metadata_inventory'])\n"
+                "function = module.metadata_inventory\n"
+                "function([])\n"
+            ),
+            "sys_modules": (
+                "import sys as runtime\n"
+                "registry = runtime.modules\n"
+                f"path = {NEW_METADATA_OWNER!r}\n"
+                "module = registry[path]\n"
+                "function = getattr(module, 'metadata_inventory')\n"
+                "function([])\n"
+            ),
+            "string_patch": (
+                "from unittest.mock import patch as replace\n"
+                f"target = {f'{NEW_METADATA_OWNER}.metadata_inventory'!r}\n"
+                "replace(target)\n"
+            ),
+            "module_object_patch": (
+                "from importlib import import_module\n"
+                "from unittest.mock import patch\n"
+                f"path = {NEW_METADATA_OWNER!r}\n"
+                "module = import_module(path)\n"
+                "patch.object(module, 'metadata_inventory')\n"
+            ),
+        }
+        for label, source in cases.items():
+            with self.subTest(label=label), self.assertRaisesRegex(
+                AssertionError, "metadata_inventory.*references"
+            ):
+                _assert_metadata_inventory_has_no_callers(
+                    {"gravity_sdk.extra_consumer": source},
+                    target_module=NEW_METADATA_OWNER,
+                )
 
     def test_compact_pagination_output_contract_is_locked(self) -> None:
         modules = _repository_modules()
