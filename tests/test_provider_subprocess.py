@@ -95,6 +95,36 @@ else:
 '''
 
 
+class FakeStream:
+    def __init__(self) -> None:
+        self.writes: list[bytes] = []
+        self.closed = False
+
+    def write(self, content: bytes) -> None:
+        self.writes.append(content)
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class FakeWindowsProcess:
+    def __init__(self) -> None:
+        self.pid = 4242
+        self.returncode: int | None = None
+        self.stdin = FakeStream()
+        self.stdout = FakeStream()
+        self.stderr = FakeStream()
+
+    def poll(self) -> int | None:
+        return self.returncode
+
+    def wait(self, timeout: float | None = None) -> int:
+        del timeout
+        if self.returncode is None:
+            raise AssertionError("fake process was not terminated")
+        return self.returncode
+
+
 class ProviderSubprocessTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -231,6 +261,103 @@ class ProviderSubprocessTests(unittest.TestCase):
         self.assertLess(elapsed, 1.5)
         time.sleep(0.6)
         self.assertFalse(escaped.exists())
+
+    def test_windows_job_binding_failure_is_local_and_reaps_before_rpc(self) -> None:
+        process = FakeWindowsProcess()
+        descriptor = self.descriptor("success")
+        descriptor["rpc"]["max_attempts"] = 2
+
+        def terminate(*_args: object, **_kwargs: object) -> object:
+            process.returncode = -1
+            return object()
+
+        with (
+            patch("gravity_sdk.provider_rpc_transport.os.name", "nt"),
+            patch(
+                "gravity_sdk.provider_rpc_transport.subprocess.Popen",
+                return_value=process,
+            ) as launch,
+            patch(
+                "gravity_sdk.provider_rpc_transport.subprocess.run",
+                side_effect=terminate,
+            ),
+            patch(
+                "gravity_sdk.provider_rpc_transport.attach_windows_job",
+                return_value=False,
+            ),
+            patch(
+                "gravity_sdk.provider_rpc_transport.resume_windows_job_process"
+            ) as resume,
+            patch(
+                "gravity_sdk.provider_rpc_transport.close_windows_job",
+                return_value=False,
+            ),
+        ):
+            provider = subprocess_context_provider(descriptor, work_root=self.root)
+            result = provider.read("provider://team/docs/fact")
+
+        self.assertEqual(
+            ["PROVIDER_RPC_ISOLATION_FAILED"], result["reason_codes"]
+        )
+        self.assertEqual(1, result["enforced_rpc"]["transport_attempts"])
+        self.assertEqual(-1, process.poll())
+        self.assertEqual([], process.stdin.writes)
+        self.assertTrue(
+            all(
+                stream.closed
+                for stream in (process.stdin, process.stdout, process.stderr)
+            )
+        )
+        self.assertEqual(1, launch.call_count)
+        self.assertTrue(launch.call_args.kwargs["creationflags"] & 0x00000004)
+        resume.assert_not_called()
+
+    def test_windows_binding_precedes_resume_and_non_windows_skips_job(self) -> None:
+        transport = SubprocessProviderTransport(
+            self.descriptor("success"), work_root=self.root
+        )
+        process = FakeWindowsProcess()
+        events: list[str] = []
+
+        with (
+            patch("gravity_sdk.provider_rpc_transport.os.name", "nt"),
+            patch(
+                "gravity_sdk.provider_rpc_transport.subprocess.Popen",
+                return_value=process,
+            ) as windows_launch,
+            patch(
+                "gravity_sdk.provider_rpc_transport.attach_windows_job",
+                side_effect=lambda _process: events.append("attach") or True,
+            ),
+            patch(
+                "gravity_sdk.provider_rpc_transport.resume_windows_job_process",
+                side_effect=lambda _process: events.append("resume") or True,
+            ),
+        ):
+            self.assertIs(process, transport._launch(1000))
+        self.assertEqual(["attach", "resume"], events)
+        self.assertTrue(
+            windows_launch.call_args.kwargs["creationflags"] & 0x00000004
+        )
+
+        with (
+            patch("gravity_sdk.provider_rpc_transport.os.name", "posix"),
+            patch(
+                "gravity_sdk.provider_rpc_transport.subprocess.Popen",
+                return_value=process,
+            ) as posix_launch,
+            patch(
+                "gravity_sdk.provider_rpc_transport.attach_windows_job"
+            ) as attach,
+            patch(
+                "gravity_sdk.provider_rpc_transport.resume_windows_job_process"
+            ) as resume,
+        ):
+            self.assertIs(process, transport._launch(1000))
+        self.assertTrue(posix_launch.call_args.kwargs["start_new_session"])
+        self.assertNotIn("creationflags", posix_launch.call_args.kwargs)
+        attach.assert_not_called()
+        resume.assert_not_called()
 
     def test_work_root_and_cwd_reject_escape_and_links(self) -> None:
         outside = Path(tempfile.mkdtemp()).resolve()

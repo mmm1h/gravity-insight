@@ -519,6 +519,30 @@ class RepoContextProviderTests(unittest.TestCase):
         ), self.assertRaisesRegex(ContextContractError, "CONTEXT_SNAPSHOT_CHANGED"):
             self.provider.index()
 
+    def test_index_detects_ignore_rule_appearance_during_build(self) -> None:
+        from gravity_sdk import repo_context_index
+
+        original_read = repo_context_index._read_utf8
+        changed = False
+
+        def read_with_drift(path: Path) -> tuple[str, bytes]:
+            nonlocal changed
+            result = original_read(path)
+            if not changed and path.name == "README.md":
+                changed = True
+                self.repo.write(".gravityignore", "docs/\n")
+            return result
+
+        try:
+            with patch(
+                "gravity_sdk.repo_context_index._read_utf8",
+                side_effect=read_with_drift,
+            ), self.assertRaises(ContextContractError) as raised:
+                self.provider.index()
+            self.assertEqual("CONTEXT_SNAPSHOT_CHANGED", raised.exception.reason_code)
+        finally:
+            (self.repo.root / ".gravityignore").unlink(missing_ok=True)
+
 
 class RepoContextSafetyCorpusTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -570,6 +594,78 @@ class RepoContextSafetyCorpusTests(unittest.TestCase):
         for secret in ("ignored.md", "project.md", "token.md", "secret"):
             self.assertNotIn(secret, rendered)
         self.assertTrue(all(set(item) == {"path_digest", "reason_code"} for item in index["excluded"]))
+
+    def test_ignore_rules_are_bound_to_index_and_drift_fails_closed(self) -> None:
+        index = self.provider.index()
+        rules = index["snapshot"]["ignore_rules"]
+        for name in (".gitignore", ".gravityignore"):
+            original = (self.repo.root / name).read_bytes()
+            self.assertEqual(
+                {
+                    "present": True,
+                    "content_hash": hashlib.sha256(original).hexdigest(),
+                },
+                rules[name],
+            )
+            with self.subTest(name=name):
+                self.repo.write(name, original + b"# changed\n")
+                with self.assertRaises(ContextContractError) as raised:
+                    self.provider.search("Kept")
+                self.assertEqual(
+                    "CONTEXT_SNAPSHOT_CHANGED", raised.exception.reason_code
+                )
+                self.repo.write(name, original)
+
+    def test_invalid_ignore_rules_fail_closed_with_stable_reason(self) -> None:
+        from gravity_sdk import repo_context_ignore
+
+        original_read = repo_context_ignore._read_utf8
+        for name in (".gitignore", ".gravityignore"):
+            original = (self.repo.root / name).read_bytes()
+            with self.subTest(name=name, failure="utf8"):
+                self.repo.write(name, b"\xff\xfe")
+                with self.assertRaises(ContextContractError) as raised:
+                    self.provider.index()
+                self.assertEqual(
+                    "CONTEXT_IGNORE_RULES_INVALID", raised.exception.reason_code
+                )
+                self.repo.write(name, original)
+
+            def unreadable(
+                path: Path, *, selected: str = name
+            ) -> tuple[str, bytes]:
+                if path.name == selected:
+                    raise PermissionError("injected unreadable ignore rule")
+                return original_read(path)
+
+            with self.subTest(name=name, failure="unreadable"), patch(
+                "gravity_sdk.repo_context_ignore._read_utf8",
+                side_effect=unreadable,
+            ), self.assertRaises(ContextContractError) as raised:
+                self.provider.index()
+            self.assertEqual(
+                "CONTEXT_IGNORE_RULES_INVALID", raised.exception.reason_code
+            )
+
+    def test_linked_ignore_rule_fails_closed_when_supported(self) -> None:
+        rule = self.repo.root / ".gravityignore"
+        original = rule.read_bytes()
+        target = self.repo.write("ignore-target", "private/\n")
+        rule.unlink()
+        try:
+            rule.symlink_to(target)
+        except OSError as exc:
+            rule.write_bytes(original)
+            self.skipTest(f"ignore rule symlinks unavailable: {exc}")
+        try:
+            with self.assertRaises(ContextContractError) as raised:
+                self.provider.index()
+            self.assertEqual(
+                "CONTEXT_IGNORE_RULES_INVALID", raised.exception.reason_code
+            )
+        finally:
+            rule.unlink(missing_ok=True)
+            rule.write_bytes(original)
 
     def test_dirty_and_untracked_files_never_enter_index(self) -> None:
         self.repo.write("kept.blocked.md", "# Dirty\n")

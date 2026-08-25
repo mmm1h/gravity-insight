@@ -60,20 +60,6 @@ category→exit；两产品仍各自拥有 operation、字段和文案。
 - **退出条件**：取得触发证据后，从合同派生 opaque 边界并施加独立深度/元素/序列化大小上限；未登记字段、类型变化
   和非 opaque 标量规则继续 fail-closed，不能放宽为任意值。
 
-### 9. Windows Provider RPC 在 Job Object 绑定失败后仍可启动
-- **可测事实**：`provider_rpc_transport.py:228` 忽略 `attach_windows_job(process)` 的 `False`；绑定失败后 RPC 继续运行，
-  子进程及后代不受 Job 关闭约束，可越过 timeout/会话生命周期。
-- **影响边界**：仅 Windows Provider RPC 且 Job 无法绑定的子进程；不改变调用方授权模型。
-- **退出条件**：绑定失败须在 RPC 前以稳定本地错误终止，并有测试证明不留可运行 Provider 子进程；成功绑定的 timeout、
-  取消和关闭语义不变。
-
-### 10. Repo Context 的忽略规则读取会静默退化为空集
-- **可测事实**：`repo_context_index.py:279-286` 对链接、不可读或非 UTF-8 的 `.gravityignore` 返回空规则；`.gitignore`
-  未绑定索引快照，读取失效或漂移时路径过滤可无报告退化。
-- **影响边界**：已批准的按路径过滤模型不变；只有规则不可靠或未快照绑定时，可能纳入本应排除的路径。
-- **退出条件**：把两个 ignore 文件的可读、非链接、UTF-8 内容/摘要绑定快照；任一条件不满足或使用前变更时 stable
-  fail-closed，并有测试。
-
 ### 11. `gravity_sdk` 根目录模块扁平化扩大了变更定位范围
 - **可测事实**：`src/gravity_sdk/` 平铺 574 个 Python 模块，本轮 `dev` 改动涉及 142 个；领域边界主要靠命名而非子包，
   跨领域定位和审查集中在根目录。
@@ -94,3 +80,5 @@ category→exit；两产品仍各自拥有 operation、字段和文案。
   `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
 - 2026-08-20：Agent 有界无 spec 路由改用 `NO_SPEC_PRODUCTS`，`REPORT_PRODUCTS` 保留同对象兼容别名。
 - 2026-08-25：CT03 跨产物绑定、exact revision/index 与跨 Python archive 确定性缺口关闭。
+- 2026-08-25：Windows Provider Job 绑定债关闭：挂起启动，绑定/恢复失败以 `PROVIDER_RPC_ISOLATION_FAILED` 在 RPC 前回收。
+- 2026-08-25：Repo Context ignore 债关闭：两份规则绑定存在性/SHA-256，无效或漂移均 stable fail-closed。

@@ -15,7 +15,12 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 
 from .external_context_contract import compile_external_provider
-from .provider_windows_job import attach_windows_job, close_windows_job
+from .provider_windows_job import (
+    attach_windows_job,
+    close_windows_job,
+    resume_windows_job_process,
+    windows_job_creation_flags,
+)
 
 
 ProviderHandler = Callable[[Mapping[str, Any], threading.Event], Mapping[str, Any] | bytes]
@@ -175,7 +180,7 @@ class SubprocessProviderTransport:
         cancel_event: threading.Event,
     ) -> bytes:
         request_id = str(request["request_id"])
-        process = self._launch()
+        process = self._launch(cancellation_grace_ms)
         with self._guard:
             self._processes[request_id] = process
         capture = _start_capture(process, max_output_bytes)
@@ -208,11 +213,12 @@ class SubprocessProviderTransport:
                 self._processes.pop(request_id, None)
             _close_process_streams(process)
 
-    def _launch(self) -> subprocess.Popen[bytes]:
+    def _launch(self, cancellation_grace_ms: int) -> subprocess.Popen[bytes]:
         flags: dict[str, Any] = {"start_new_session": True}
         if os.name == "nt":
             flags = {
                 "creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                | windows_job_creation_flags()
             }
         try:
             process = subprocess.Popen(
@@ -225,7 +231,13 @@ class SubprocessProviderTransport:
                 shell=False,
                 **flags,
             )
-            attach_windows_job(process)
+            if os.name == "nt" and not _bind_windows_isolation(
+                process, cancellation_grace_ms
+            ):
+                raise ProviderTransportError(
+                    "PROVIDER_RPC_ISOLATION_FAILED",
+                    "Provider process isolation could not be established",
+                )
             return process
         except OSError as exc:
             raise ProviderTransportError(
@@ -330,10 +342,23 @@ def _validated_process_output(
 
 
 def _close_process_streams(process: subprocess.Popen[bytes]) -> None:
-    for stream in (process.stdout, process.stderr):
+    for stream in (process.stdin, process.stdout, process.stderr):
         if stream is not None:
-            stream.close()
+            try:
+                stream.close()
+            except OSError:
+                pass
     close_windows_job(process)
+
+
+def _bind_windows_isolation(
+    process: subprocess.Popen[bytes], grace_ms: int
+) -> bool:
+    if attach_windows_job(process) and resume_windows_job_process(process):
+        return True
+    _terminate_process_tree(process, grace_ms)
+    _close_process_streams(process)
+    return False
 
 
 def _read_stream(
