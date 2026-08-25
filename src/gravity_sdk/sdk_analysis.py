@@ -102,6 +102,92 @@ class AnalysisSdkMixin:
         max_workers: int = 2,
         workspace: Any | None = None,
         output_fields: Sequence[str] | None = None,
+        pinned_variant_uri: str | None = None,
+    ) -> dict[str, Any]:
+        from .execution_variant_contract import (
+            DIRECT_VARIANT_URI,
+            PLAN_VARIANT_URI,
+            PRODUCT_SELECTOR,
+            ExecutionVariantContractError,
+        )
+
+        direct_options = {
+            "app": app,
+            "start": start,
+            "end": end,
+            "compare_start": compare_start,
+            "compare_end": compare_end,
+            "max_workers": max_workers,
+            "workspace": workspace,
+            "output_fields": output_fields,
+        }
+        if kind != "event":
+            if pinned_variant_uri is not None:
+                self.execution_variants.select(
+                    f"analysis.query.spec:{kind}",
+                    pinned_variant_uri=pinned_variant_uri,
+                )
+            return self._analysis_query_direct(kind, spec, **direct_options)
+
+        selection = self.execution_variants.select(
+            PRODUCT_SELECTOR,
+            pinned_variant_uri=pinned_variant_uri,
+        )
+        selected_variant_uri = selection.get("selected_variant_uri")
+        if selected_variant_uri == DIRECT_VARIANT_URI:
+            result = self._analysis_query_direct(kind, spec, **direct_options)
+            if selection.get("selection_status") == "canonical_fallback":
+                return result
+            from .plan_analysis_adapter import safe_analysis_envelope
+
+            return safe_analysis_envelope(result)
+        if selected_variant_uri != PLAN_VARIANT_URI:
+            raise ExecutionVariantContractError(
+                "EXECUTION_VARIANT_SELECTION_INVALID",
+                "selected Variant is not one of the fixed execution owners",
+            )
+
+        from .plan import AdapterContext
+        from .plan_analysis_adapter import (
+            ANALYSIS_QUERY_NAME, execute_analysis_query_plan,
+        )
+
+        selected_workspace = self._select_workspace(workspace)
+        request = {
+            "name": ANALYSIS_QUERY_NAME,
+            "kind": kind,
+            "app": app,
+            "spec": spec,
+            "start": start,
+            "end": end,
+            "compare_start": compare_start,
+            "compare_end": compare_end,
+        }
+        context = AdapterContext(
+            "execution_variant",
+            "execution_variant",
+            "composite",
+            selected_workspace,
+            tuple(output_fields or ()),
+            (),
+            5,
+            200,
+        )
+        return execute_analysis_query_plan(self, request, context)
+
+    def _analysis_query_direct(
+        self,
+        kind: str,
+        spec: Mapping[str, Any],
+        *,
+        app: str | int | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        compare_start: str | None = None,
+        compare_end: str | None = None,
+        max_workers: int = 2,
+        workspace: Any | None = None,
+        output_fields: Sequence[str] | None = None,
     ) -> dict[str, Any]:
         if (compare_start is None) != (compare_end is None):
             from .errors import InputValidationError
