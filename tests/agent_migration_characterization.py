@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+from collections.abc import Iterable
 import importlib.util
 import json
 from pathlib import Path
@@ -14,6 +15,18 @@ PUBLIC_API_BASELINE = ROOT / "tests" / "fixtures" / "public_api_exports.json"
 OWNER_MIGRATIONS = ROOT / "tests/fixtures/public_api_owner_migrations.json"
 
 INTERNAL_AGENT_PREFIXES = ("gravity_sdk.agent_", "gravity_sdk.agents")
+KNOWN_ROOT_EXPORT_MODULE_COLLISIONS = frozenset(
+    {
+        "analysis_query_batch_schema",
+        "bilibili_account_performance",
+        "business_pulse",
+        "company_usage",
+        "dashboard_snapshot",
+        "monetization_detail",
+        "order_directory",
+        "promotion_performance",
+    }
+)
 
 
 def expected_public_exports(
@@ -40,6 +53,36 @@ def expected_public_exports(
             raise AssertionError(f"owner migration {index} must use relative owners")
         exports[symbol][0] = migration["to"]
     return dict(sorted(exports.items()))
+
+
+def root_export_module_collisions(
+    package_root: Path = PACKAGE_ROOT,
+    exports: Iterable[str] | None = None,
+) -> list[str]:
+    """Return public names also occupied by an importable root child module."""
+
+    public_names = set(expected_public_exports() if exports is None else exports)
+    root_modules = {
+        path.stem
+        for path in package_root.glob("*.py")
+        if path.name != "__init__.py"
+    }
+    root_modules.update(
+        path.name
+        for path in package_root.iterdir()
+        if path.is_dir() and (path / "__init__.py").is_file()
+    )
+    return sorted(public_names & root_modules)
+
+
+def unexpected_root_export_module_collisions(
+    package_root: Path = PACKAGE_ROOT,
+    exports: Iterable[str] | None = None,
+) -> list[str]:
+    return sorted(
+        set(root_export_module_collisions(package_root, exports))
+        - KNOWN_ROOT_EXPORT_MODULE_COLLISIONS
+    )
 
 
 def agent_path_references(roots: tuple[Path, ...]) -> list[tuple[Path, int, str]]:
