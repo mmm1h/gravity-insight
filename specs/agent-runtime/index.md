@@ -36,7 +36,7 @@ R02 → R14-C
 R14-B + R14-C → R14-D
 
 R04 → R16 (conditional)
-[R17 ready prerequisites: M0 satisfied; dynamic-audit rebind + independent ready review pending] ⇢ R17 leaf (81 moves + 1 consolidation; 1 infrastructure exclusion)
+[R17 ready prerequisites: M0 binding satisfied but SCC semantics review pending; dynamic-audit semantics + independent ready review pending] ⇢ R17 leaf (81 moves + 1 consolidation; 1 infrastructure exclusion)
 R00 → CT01
 CT01 + R09B → CT02 → CT03
 ```
@@ -103,11 +103,15 @@ R17 只有一个 leaf 状态和一个实施分支/Worktree。它只在基线的 
 遗留前缀候选内应用 facade 可达性：82 个候选可达，其中 81 个一对一迁移，
 `agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且
 facade 不可达而留在根目录。这证明前缀候选内的内聚与排除，不证明该候选集是完整
-Agent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 已在
-`dev@3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515` 绑定并满足；动态导入审计因现有
-227 行账本只来自 `01e20b4` 的 gitignored tmp 审计而尚未重绑定，仍为未满足；独立
-复核的当前裁决为 `not_ready`，亦未满足。两个内部阶段只是同一分支上的串行提交/
-回滚 checkpoint，不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。
+Agent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 的绑定已
+满足，但 SCC 自环与精确迁移集合语义复核尚未通过。实施绑定为
+`dev@24f16c667d80107e4149cf76742eab4ada564197`、无 GitHub Issue（内部结构债禁止
+自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。
+机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=false`、
+`schema=gravity.agent-module-reference-dispositions.v2`、`candidate_sites=238`、
+`classified_sites=238`、`unclassified_sites=0`、`blocking_sites=0`；独立复核仍为
+`not_ready`。两个内部阶段只是同一分支上的串行提交/回滚 checkpoint，不获得独立
+状态，也不能独立使 R17 到达 `fixed_dev`。
 
 The user approved the R01 binding and designated the Requirement document as
 the internal program delivery ledger on 2026-08-21. The same authorization lets

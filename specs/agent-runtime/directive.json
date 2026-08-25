@@ -30,16 +30,41 @@
     "internal_delivery_ledger": "requirement_document"
   },
   "canonical_source_errata": {
-    "rule": "errata_inherits_approval",
+    "rule": "r17_v9_2_to_v9_3_one_shot_allowlist",
+    "requirement_id": "R17",
     "authorized_by": "agent_under_standing_owner_delegation",
     "owner_review": "pending",
-    "scope": "physical_repository_path_corrections_that_do_not_change_architectural_semantics",
+    "transition": {
+      "from_version": "v9.2",
+      "from_sha256": "54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c",
+      "from_git_revision": "24f16c667d80107e4149cf76742eab4ada564197",
+      "to_version": "v9.3"
+    },
+    "one_shot": {
+      "state": "unconsumed",
+      "reusable": false,
+      "consumed_by": null,
+      "consumed_at_checkpoint": null
+    },
+    "allowed_source_replacements": [
+      {"old":"`agent_capabilities.py`","new":"`agents/capabilities.py`","count":1},
+      {"old":"`agent_composite.py`","new":"`agents/composite.py`","count":1},
+      {"old":"`agent_handoff.py`","new":"`agents/handoff.py`","count":1},
+      {"old":"Plan-backed path（agent_handoff →","new":"Plan-backed path（agents.handoff →","count":1}
+    ],
+    "allowed_version_metadata_changes": [
+      {"operation":"insert_before","anchor":"## v9.2 修订摘要","text":"## v9.3 修订摘要\n\nfour physical path corrections; no architectural semantic change\n\n","count":1},
+      {"old":"gravity-agent-runtime / v9.2","new":"gravity-agent-runtime / v9.3","count":1},
+      {"old":"唯一架构总纲 v9.2（repository canonical source）","new":"唯一架构总纲 v9.3（repository canonical source）","count":1}
+    ],
     "requires": [
-      "add_a_new_versioned_errata_summary_and_preserve_prior_summaries",
-      "update_version_supersedes_digest_and_all_version_self_references_atomically",
-      "machine_assert_canonical_digest_and_version_consistency"
+      "full_source_bytes_equal_v9_2_baseline_after_exact_allowlist",
+      "update_version_supersedes_digest_and_self_references_atomically",
+      "transition_one_shot_state_from_unconsumed_to_consumed"
     ],
     "does_not_authorize": [
+      "reuse_for_any_other_requirement_or_version_transition",
+      "any_source_change_outside_the_exact_allowlist",
       "architectural_semantic_changes",
       "a_claim_of_new_or_owner_approval",
       "implementation_before_the_requirement_is_ready",

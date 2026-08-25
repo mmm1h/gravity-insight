@@ -46,6 +46,13 @@
       "parallel_group": "structural-migration",
       "shared_spine": true,
       "delivery_mode": "leaf",
+      "implementation_binding": {
+        "dev_baseline": "24f16c667d80107e4149cf76742eab4ada564197",
+        "github_issue": null,
+        "issue_binding": "not_applicable_internal_structural_debt_issue_creation_prohibited_by_docs_maintainers_issues",
+        "branch": "codex/r17-migration",
+        "worktree": "D:/git-pjt/gravity-sdk-r17-migration"
+      },
       "scope": {
         "classifier": "legacy_agent_prefix_cohort_facade_reachable_static_import_closure_v1",
         "boundary_claim": "cohesion_within_the_legacy_agent_prefix_cohort_only",
@@ -70,6 +77,7 @@
           "satisfied_by": "agent_under_standing_owner_delegation",
           "owner_review": "pending",
           "bound_implementation_baseline": "3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515",
+          "review_note": "binding_complete_but_scc_semantics_review_not_passed_self_loop_and_exact_move_set_fixes_pending",
           "ancestor_candidate_commit": "088d1606127439943cab0b79c8cdbdf516af4839",
           "bound_artifact_sha256": {
             "tests/agent_migration_characterization.py": "edad06dacc70c749de8e1c8e87f00cbfc69d5f2e8b52b41f961fc6dee72f3e81",
@@ -90,7 +98,7 @@
           "ledger_regenerated_from": "scripts/generate_agent_module_reference_dispositions.py, which scans git-tracked files directly; the prior gitignored tmp audit is no longer an input",
           "ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
           "ledger_sha256": "f20c0c0eaeec9e72a3be49a8d6ddfd1f2828be7741a68b80fe59b6aa023857ef",
-          "required_schema_version": "gravity.agent-module-reference-dispositions.v1",
+          "required_schema_version": "gravity.agent-module-reference-dispositions.v2",
           "candidate_sites": 238,
           "classified_sites": 238,
           "unclassified_sites": 0,
