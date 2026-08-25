@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import math
 from collections.abc import Mapping
 from typing import Any
 
@@ -17,18 +16,25 @@ from .composite_batch import (
 )
 from .composite_catalog import stable_operation
 from .errors import ErrorCode, ErrorDetail, InputValidationError
+from .models import load_operation_manifest
+from .paths import MANIFEST_ROOT
+from .promotion_performance_rows import safe_promotion_rows
 from .result_audit import project_result_audit
 from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.title-package.v1"
-OPERATION_IDS = {
+_TITLE_PACKAGE_OPERATIONS = {
     "regular": stable_operation(
         "material", "bytedance_asset_text_title_package", action="list"
-    ).operation_id,
+    ),
     "standard": stable_operation(
         "material", "bytedance_std_asset_text_title_package", action="list"
-    ).operation_id,
+    ),
+}
+OPERATION_IDS = {
+    kind: operation.operation_id
+    for kind, operation in _TITLE_PACKAGE_OPERATIONS.items()
 }
 TITLE_PACKAGE_FIELDS = frozenset({
     "app_id", "cid", "create_time", "create_user_id", "create_user_name",
@@ -69,6 +75,36 @@ _BUILTIN_CODES = frozenset(code.value for code in ErrorCode)
 _SPECIAL_CODES = frozenset(
     code for codes in _FAILURE_CODES.values() for code in codes
 )
+
+
+def _opaque_fields_by_operation() -> dict[str, frozenset[str]]:
+    """Derive Title Package opaque row boundaries from its compiled contract."""
+
+    operations = {
+        operation.operation_id: operation
+        for operation in load_operation_manifest(MANIFEST_ROOT / "material.json")
+    }
+    opaque_by_operation: dict[str, frozenset[str]] = {}
+    for operation_id in OPERATION_IDS.values():
+        operation = operations.get(operation_id)
+        if operation is None:
+            raise RuntimeError(
+                "compiled material manifest is missing title-package operation"
+            )
+        projection = operation.response_projection
+        opaque = frozenset(projection.opaque_json_item_keys)
+        if (
+            not opaque <= set(projection.item_keys)
+            or not opaque <= TITLE_PACKAGE_FIELDS
+        ):
+            raise RuntimeError(
+                "title-package opaque JSON fields are not registered item keys"
+            )
+        opaque_by_operation[operation_id] = opaque
+    return opaque_by_operation
+
+
+_OPAQUE_FIELDS_BY_OPERATION = _opaque_fields_by_operation()
 
 
 def title_packages(
@@ -155,7 +191,7 @@ def _safe_result(value: Mapping[str, Any], operation_id: str) -> dict[str, Any]:
     assert isinstance(native, Mapping)
     if status == "contract_changed_additive":
         return _contract_result(operation_id)
-    data = _safe_data(native.get("data"))
+    data = _safe_data(native.get("data"), operation_id)
     if data is None or (status == "empty") != (not data["list"]):
         return _contract_result(operation_id)
     page = _safe_page(native.get("page"), len(data["list"]))
@@ -198,18 +234,18 @@ def _valid_native(value: Any, operation_id: str, status: Any) -> bool:
     )
 
 
-def _safe_data(value: Any) -> dict[str, Any] | None:
+def _safe_data(value: Any, operation_id: str) -> dict[str, Any] | None:
     if not isinstance(value, Mapping) or "list" not in value:
         return None
     if set(value) - {"list", "page_info"} or not isinstance(value["list"], list):
         return None
-    rows: list[dict[str, Any]] = []
-    for item in value["list"]:
-        if not isinstance(item, Mapping) or set(item) - TITLE_PACKAGE_FIELDS:
-            return None
-        if any(not _scalar(field) for field in item.values()):
-            return None
-        rows.append(copy.deepcopy(dict(item)))
+    rows, failure = safe_promotion_rows(
+        value["list"],
+        allowed_fields=TITLE_PACKAGE_FIELDS,
+        opaque_fields=_OPAQUE_FIELDS_BY_OPERATION.get(operation_id, frozenset()),
+    )
+    if failure is not None or rows is None:
+        return None
     result: dict[str, Any] = {"list": rows}
     if "page_info" in value:
         info = _safe_page_info(value["page_info"])
@@ -331,16 +367,6 @@ def _item_count(value: Mapping[str, Any]) -> int:
     data = native.get("data") if isinstance(native, Mapping) else None
     rows = data.get("list") if isinstance(data, Mapping) else None
     return len(rows) if isinstance(rows, list) else 0
-
-
-def _scalar(value: Any) -> bool:
-    if value is None or isinstance(value, bool):
-        return True
-    if isinstance(value, str):
-        return len(value) <= 8_192
-    if type(value) is int:
-        return value.bit_length() <= 256
-    return isinstance(value, float) and math.isfinite(value)
 
 
 __all__ = [

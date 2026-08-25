@@ -59,6 +59,21 @@ class Client:
                 "create_user_name": "registered creator",
                 "update_user_id": 4,
             })
+        if self.mode == "opaque_list":
+            rows[0]["title_list"] = ["nested title", {"language": "zh"}]
+        if self.mode == "opaque_dict":
+            rows[0]["title_list"] = {"titles": ["nested title"]}
+        if self.mode == "opaque_too_deep":
+            opaque: object = "nested title"
+            for _ in range(9):
+                opaque = [opaque]
+            rows[0]["title_list"] = opaque
+        if self.mode == "opaque_too_many":
+            rows[0]["title_list"] = ["nested title"] * 256
+        if self.mode == "opaque_too_large":
+            rows[0]["title_list"] = ["x" * 8_192] * 5
+        if self.mode == "non_opaque_collection":
+            rows[0]["title_package_name"] = ["not scalar"]
         truncated = self.mode == "partial"
         status = "empty" if self.mode == "empty" else "success"
         native = {
@@ -145,6 +160,36 @@ class TitlePackageTests(unittest.TestCase):
         row = opened["results"][0]["data"]["data"]["list"][0]
         self.assertEqual("registered title", row["title_list"])
         self.assertIsInstance(row["create_user_id"], int)
+
+    def test_opaque_title_list_accepts_bounded_list_and_dict(self):
+        for mode, expected in (
+            ("opaque_list", ["nested title", {"language": "zh"}]),
+            ("opaque_dict", {"titles": ["nested title"]}),
+        ):
+            for kind in OPERATION_IDS:
+                with self.subTest(mode=mode, kind=kind):
+                    result = title_packages(Client(mode), 101, kind)
+                    self.assertEqual("success", result["status"])
+                    self.assertEqual(
+                        expected,
+                        result["results"][0]["data"]["data"]["list"][0]["title_list"],
+                    )
+
+    def test_opaque_title_list_bounds_fail_closed(self):
+        for mode in ("opaque_too_deep", "opaque_too_many", "opaque_too_large"):
+            with self.subTest(mode=mode):
+                result = title_packages(Client(mode), 101, "standard")
+                self.assertEqual(
+                    (False, "contract_changed"),
+                    (result["ok"], result["status"]),
+                )
+
+    def test_non_opaque_title_package_fields_still_require_scalars(self):
+        result = title_packages(Client("non_opaque_collection"), 101, "regular")
+        self.assertEqual(
+            (False, "contract_changed"),
+            (result["ok"], result["status"]),
+        )
     def test_sdk_cli_plan_and_agent_use_the_same_product(self):
         sdk = GravitySDK(insight=Client(), workspace=Workspace())
         self.assertEqual(
