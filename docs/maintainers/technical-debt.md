@@ -6,7 +6,8 @@
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
 ### 2. legacy promotion snapshot 的兼容分支仍缺正式绑定
 **状态（2026-08-25）**：除 `primary` 21 平台外，`bytedance/project`、`honor/ad_group`、`honor/campaign`、
-`kuaishou/ad_unit` 也已复用 Promotion Performance 的 App、日期、平台/指标、分页和结果绑定；32 个组合仍兼容读取。
+`kuaishou/ad_unit`、`ubix/group` 已复用 Promotion Performance 的 App、日期、平台/指标、分页和结果绑定。逐条重列
+发现原记 32 实为 33：漏记的 `ubix/group` 五项条件全满足，已转正；其余 32 个组合的卡点逐条复核后全部仍准确。
 - **转正证据**：四项 stable contract 均有必填 `date_list`、App 等值 `filters`、动态 `query_fields`、同构
   `page_info` 和登记行投影；合同漂移 fail-closed。同一 canonical 输入经原 inventory 内核与正式入口产生完全相同的
   operation payload 和原生行，正式结果使用 `gravity-insight.promotion-performance.v1`，不再携带 compatibility marker。
@@ -15,7 +16,8 @@
 - **其余层级卡点**：`bilibili/account` 无动态指标；`bytedance/advertiser_performance` 无 App/动态指标；
   `tencent/tencent_adgroup_v2` 虽接收 `query_fields` 但结果未登记动态字段。其余 25 个 account/config/parent 层级
   无必填日期和动态指标（多项也无 App）：bytedance 除 project/advertiser/performance 外 9 项、honor/account、
-  huya/account、kuaishou/account+account_company、8 个其他 account、tencent 的 3 个配置层级及 xiaohongshu/developer。
+  huya/account、kuaishou/account+account_company、oppo/qihu360/sigmob/ubix/vivo/weibo/xiaomi/youdao 八项 account、
+  tencent 的 3 个配置层级及 xiaohongshu/developer。
 - **兼容边界**：上述 32 项仍从 stable inventory 精确匹配后透传 raw input，保持
   `gravity-insight.composite.promotion.v1` 和 `formal_binding_validation=not_performed`；零匹配 unavailable，多匹配或
   不适用 shortcut 执行前失败。`query_fields` 仍过 `FieldPolicy`；无消费者遥测时不得删除，Agent/Plan 仍不宣传。
@@ -30,7 +32,10 @@
   item sketch，故只能证明“Runtime 当前没有可用版本标识”，不能证明实际上游响应绝对没有。
 - **未扩散**：`_REFERENCE_COMPOSITES` 自首次实现仍精确为原 5 个；唯一 `live_catalog_for_card` 调用链仍由
   `resolve_capabilities` 降次。后来加入 call-bound 的 Segment members/Attribution detail 保持 3 次；测试锁住集合。
-- **触发条件**：观察到 ID 复用，或上游提供 revision/ETag/版本号。
+- **设计逃逸复核（2026-08-25）**：携带目录解析身份只省去执行前重读，Dashboard detail、Segment detail/history/result、
+  Saved detail 仍按同一 ID 寻址，风险后移而非消除。目录全投影指纹能检测投影漂移，却不能证明同一 incarnation：
+  Saved 目录行不交付 `config`，Segment 的 `origin_query` 被明确排除在 v1 投影外，故相同投影不蕴含相同执行状态。
+  若所有执行相关状态完全相同，删除重建在语义上不可观测；但 Runtime 证不了这个前提。维持原退出条件。
 - **退出/取证**：对 6 个 exact method+path 采 body field sketch 及 ETag/Last-Modified；须取得覆盖目录变更的 revision
   或删除重建必变的 item incarnation token（时间戳不算），再由获批测试对象生命周期或上游语义证明。首次目录交付
   token、执行前重读并比较，漂移/复用 fail-closed 后才能关闭；此前不扩大该模式。
@@ -46,11 +51,17 @@
 - **静态复核与处置（2026-08-25）**：`reconcile_pagination_audit` 现把 177 unknown 显式分为 86 条
   `collect_production_or_wire`、82 条 `not_scheduled_without_new_signal`、9 条 non-stable。82 条均站得住、0 退回，
   但 `analysis.dashboard.tree` 是 list，不是非集合；修正后为 46 条非集合（38 mutation + 8 detail/get）和 36 条
-  无可证伪信号（1 静态 tree + 34 条既存 exact production observation + 1 条 shape B）。降债数字未变。
-- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 的 86 条仍分 60、26 两批；改 unknown 分页、
+  无可证伪信号（1 静态 tree + 34 条既存 exact production observation + 1 条 shape B）。
+- **设计逃逸复核（2026-08-25）**：随真实请求被动记录响应形状不属于被禁的“全量生产探测”，但**技术可行不等于该做**——
+  单次观测证不了字段跨租户/权限/灰度恒存，缓存学错后 `read_all` 会按错误 `total_page` 停止并把截断结果标为 complete，
+  而 agent 不会质疑，Plan/composite 继续传播；此静默错误比现有 capability gap 更危险，据此否决，未实现。
+  同轮把 `analysis.segment.evaluate_percent` 转为永久 unknown（响应严格为 `part/percent/total` 三个必需数值标量，
+  根本无集合语义；237 条中仅此 1 条通过该谓词），机器处置变为 `85 collect / 83 no-new-signal / 9 non-stable`，
+  永久 unknown 为 `47 非集合 + 36 无信号`。完整性总账仍是 `60 complete / 177 unknown`，不伪装成 complete。
+- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 的 85 条分 59、26 两批；改 unknown 分页、
   新产品依赖其全集或 exact method+path 取得新 production/wire 字段证据时触发。
 - **退出条件**：逐条以同 method+path production sketch/wire 字段把 58 条 stable `page_info` unknown 归入真实形状
-  并修正合同；另 28 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
+  并修正合同；另 27 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
   短页、满页启发式提级或全量生产探测。
 
 ### 11. `gravity_sdk` 根目录模块扁平化扩大了变更定位范围

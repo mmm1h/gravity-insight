@@ -2,8 +2,8 @@
 
 本页是生产证据的执行清单，不是执行记录，也不授权登录、Probe 或 HTTP。当前基线为
 `dev@b7c15ed`：237 个 operation 中 177 个 `completeness=unknown`，其中 stable 为 168 个；stable
-`page_info` unknown 实际为 58 个，不是 59 个。机器复核将 unknown 分为 `86 collect / 82 no-new-signal`
-与 `9 non-stable`；82 条是 46 个非集合与 36 个当前无可证伪信号。输入来自
+`page_info` unknown 实际为 58 个，不是 59 个。机器复核将 unknown 分为 `85 collect / 83 no-new-signal`
+与 `9 non-stable`；83 条是 47 个非集合与 36 个当前无可证伪信号。输入来自
 `D:/git-pjt/tmp/arch-batch-2026-08-20/contract-audit.json`，并逐条与当前
 `src/gravity_sdk/contracts/operations/` 对账。
 
@@ -11,11 +11,11 @@
 
 | 顺序 | 采集动作 | 同一上下文内的目标 | 最多可降低 | 最少目标 HTTP |
 | --- | --- | ---: | ---: | ---: |
-| P0 | 一个具备合法父项的 evidence App，先父后子采集分析、素材、报表、归因和 App 读 | 60 | 60 | 60 |
+| P0 | 一个具备合法父项的 evidence App，先父后子采集分析、素材、报表、归因和 App 读 | 59 | 59 | 59 |
 | P1 | 同一 evidence App 的已绑定推广平台，按平台复用日期窗和账号上下文 | 26 | 26 | 26 |
-| 不采 | 非集合语义或已证实没有可用终止信号 | 82 | 0 | 0 |
+| 不采 | 非集合语义或已证实没有可用终止信号 | 83 | 0 | 0 |
 
-86 个待采 operation 的 exact `method + path` 全部唯一，所以一个目标响应不能同时证明两个合同；上表的
+85 个待采 operation 的 exact `method + path` 全部唯一，所以一个目标响应不能同时证明两个合同；上表的
 “一次”是一次受控采集批次，不是一条 HTTP。可以复用的是 App、日期窗和父项发现：例如
 `analysis.segment.list` 自己的响应既是分页证据，也可提供后续 segment operation 的合法父项。父项调用
 只有在它本身列于目标表时才计入降低数。
@@ -47,7 +47,7 @@
 同时给出可证伪的全集信号才另行修正合同；短页、空页、HTTP 200 和 `returned_items=reported_total` 本身
 都不能证明完整。没有终止信号时将该 operation 转入永久 `unknown`。
 
-## P0：App 内核心批次（最多 60）
+## P0：App 内核心批次（最多 59）
 
 需要一个获批的只读 evidence App，并预先确认表中 parent source 能返回合法父项。含敏感输入的
 `client_id`、`device_id`、订单 trace 等只在内存中绑定，证据仅记“由哪个 parent 字段取得”。
@@ -69,7 +69,6 @@
 | `analysis.report.hidden_property.list` | `none` / `template` | app_id, report_id | analysis.report_config.list, app.list |
 | `analysis.retention.query` | `none` / `template` | app_id, date_list, query_id, query_item_list | analysis.event.list |
 | `analysis.scatter.query` | `none` / `template` | app_id, date_list, query_id, query_item_list | analysis.event.list |
-| `analysis.segment.evaluate_percent` | `none` / `template` | app_id, date_range, name | analysis.event_property.list, analysis.event.info, analysis.event.list, analysis.segment.list, analysis.user_property.list, app.list |
 | `analysis.segment.history_version.list` | `page_info` / `template` | segment_id | analysis.segment.list |
 | `analysis.segment.list` | `page_info` / `template` | app_id | app.list |
 | `analysis.segment.uid_result.list` | `page_info` / `template` | date, segment_id | analysis.segment.list |
@@ -149,12 +148,14 @@
 | `promotion.youdao.account.list` | `page_info` / `template` | none | none |
 | `promotion.youdao.advertiser.list` | `page_info` / `template` | date_list | none |
 
-## 永久 unknown：不再采集（82）
+## 永久 unknown：不再采集（83）
 
 下列结论只表示“在当前上游合同与完整性模型下没有可用的分页降债动作”。只有 exact method+path 的新
 wire/production 合同出现总数或终止信号时才重开；重复采短页、空页或相同 response sketch 不重开。
 
-- `not_collection_semantics`（46）：这些是 8 个 detail/scalar 或 38 个 mutation，不属于集合分页证据待办。尤其 38 个
+- `not_collection_semantics`（47）：这些是 9 个 detail/scalar 或 38 个 mutation，不属于集合分页证据待办。新增
+  `analysis.segment.evaluate_percent`：响应严格为 `part`/`percent`/`total` 三个必需顶层数值标量，根本无集合语义，
+  故从 P0 移入本节；判据要求全部 data key 均为必需数值标量，任一 item/list/nested/dynamic 投影即 fail-closed。尤其 38 个
   mutation 只能走产品自有 dry-run/execute，绝不能为分页取证走 read probe：
   `analysis.dashboard.condition_favourite.default_to_me.get`, `analysis.dashboard.detail`,
   `analysis.dataanalysis.segment.update`,
