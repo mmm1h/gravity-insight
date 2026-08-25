@@ -38,27 +38,39 @@ independently reach `fixed_dev`, close technical debt #11, or satisfy R17.
 
 ## Ready Prerequisites
 
-`index.json.ready_prerequisites` is the machine authority. All three entries
-currently have `satisfied: false`:
+`index.json.ready_prerequisites` is the machine authority.
 
-1. The M0 candidate commit
-   `088d1606127439943cab0b79c8cdbdf516af4839` must be an ancestor of the
-   bound implementation baseline. Review must bind its exact test IDs, fixture
-   paths, and digests; a commit on another branch is evidence, not a satisfied
-   gate by itself.
-2. The local candidate audit at
-   `D:/git-pjt/gravity-sdk-dev/tmp/codex/dyn-audit/` contains 227 unclassified
-   sites: 11 dynamic imports, 117 non-string patch expressions, 92 bare
-   `agent_x` strings, and 7 `__module__` receivers. Before `ready`, all 227
-   must have reviewed dispositions under unique source keys in
-   `tests/fixtures/agent_module_reference_dispositions.json`; its SHA-256 must
-   be bound, and `unclassified_sites` must equal 0. References to retained
-   `agent_runtime_contracts` use `no_migration_effect`; references to deleted
-   `agent_pagination` must migrate to `pagination_completeness` or block R17.
-3. An independent reviewer must accept the scope, measurement definitions,
-   proposed owner changes, two explicit concept deletions, and exact acceptance
-   commands and return a `ready` verdict. This specification cannot satisfy
-   that prerequisite itself.
+1. **Satisfied at `dev@3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515`.** The M0
+   candidate commit `088d1606127439943cab0b79c8cdbdf516af4839` is an ancestor
+   of that baseline. M0 content changed after that commit, so the bound
+   artefacts are the baseline copies, not the candidate copies:
+
+   | Artefact | SHA-256 |
+   | --- | --- |
+   | `tests/agent_migration_characterization.py` | `edad06dacc70c749de8e1c8e87f00cbfc69d5f2e8b52b41f961fc6dee72f3e81` |
+   | `tests/test_agent_module_migration_characterization.py` | `a792c4b303f476b44de6e30f4d37bc0c34f4a7f3c72752354eaab4133c3b5468` |
+   | `tests/test_installed_wheel.py` | `bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117` |
+   | `tests/fixtures/public_api_owner_migrations.json` | `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570` |
+   | `tests/fixtures/public_api_exports.json` | `d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053` |
+
+   The eager-graph gate computes real Tarjan SCCs over the full 642-module
+   package and rejects only components intersecting the move set; the two
+   pre-existing `prober` and `sql` components are therefore tolerated and must
+   not be used to widen or narrow the gate.
+2. **Satisfied at the same baseline.** All 227 audit sites carry reviewed
+   dispositions in `tests/fixtures/agent_module_reference_dispositions.json`
+   (SHA-256 `6bd35c5d914e751a048d138e1e6770244a68273761528acaa9be5d4d41716661`,
+   schema `gravity.agent-module-reference-dispositions.v1`): 227 unique source
+   keys, `unclassified_sites = 0`, `blocker_count = 0`, split
+   `213 no_migration_effect / 13 rewrite_reference / 1 rewrite_selector_data`.
+   Zero sites reference `agent_pagination` or `agent_runtime_contracts`; the
+   ledger validator still forces `no_migration_effect` for any future
+   `agent_runtime_contracts` row and `pagination_completeness` for any future
+   `agent_pagination` row.
+3. **Not satisfied.** An independent reviewer must accept the scope,
+   measurement definitions, proposed owner changes, two explicit concept
+   deletions, and exact acceptance commands and return a `ready` verdict. This
+   specification cannot satisfy that prerequisite itself.
 
 The candidate audit also reports 83/83 old-path smoke imports successful and
 zero naming collisions. Those facts do not classify any of the 227 sites.
@@ -463,6 +475,26 @@ an audit site.
 - Move `agent_capabilities.py`, `agent_composite.py`, and `agent_handoff.py` in
   the core phase; serialize their integration and update `cli.py` imports and
   the Requirement Index shared-spine paths in the same phase.
+- Execute the 14 governance-document rewrites the disposition ledger records,
+  all in the core phase because all of them name the three agent spine files:
+  three in `AGENTS.md`, four in
+  `specs/agent-runtime/architecture-source.md`, three in
+  `specs/agent-runtime/index.json`, three in `specs/agent-runtime/index.md`,
+  and the single `_EXPORTS` selector-data rewrite in
+  `src/gravity_sdk/__init__.py`. `AGENTS.md` edits are in-place replacements and
+  must not grow the documentation budget.
+- **Rewriting `architecture-source.md` breaks its digest binding.** That file is
+  bound by `directive.json.canonical_source.sha256`, and the canonical source
+  itself requires revising the source together with the directive digest. The
+  core phase must therefore, in one commit: apply the four path rewrites,
+  recompute the file SHA-256, write it into
+  `directive.json.canonical_source.sha256`, advance `directive.json.version`,
+  move the superseded version and digest into `directive.json.supersedes`, and
+  update the three in-document version self-references — the `## v9.x 修订摘要`
+  heading, the `Directive ID / Version` line, and the reading-order diagram
+  line. Acceptance fails if the recomputed digest and the directive value
+  differ. No new approval record may be created by this rewrite; it is an
+  errata sync, not a re-approval.
 - Add or retain characterization, installed-wheel, owner-migration,
   consumer-census, boundary, concept-deletion, and eager-graph gates.
 - `agent_runtime_contracts.py`, `plan_adapters.py`, and `__main__.py` do not

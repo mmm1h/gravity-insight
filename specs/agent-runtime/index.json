@@ -64,9 +64,18 @@
       "ready_prerequisites": [
         {
           "id": "m0_characterization",
-          "satisfied": false,
-          "candidate_branch": "codex/m0-characterization",
-          "candidate_commit": "088d1606127439943cab0b79c8cdbdf516af4839",
+          "satisfied": true,
+          "satisfied_by": "agent_under_standing_owner_delegation",
+          "owner_review": "pending",
+          "bound_implementation_baseline": "3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515",
+          "ancestor_candidate_commit": "088d1606127439943cab0b79c8cdbdf516af4839",
+          "bound_artifact_sha256": {
+            "tests/agent_migration_characterization.py": "edad06dacc70c749de8e1c8e87f00cbfc69d5f2e8b52b41f961fc6dee72f3e81",
+            "tests/test_agent_module_migration_characterization.py": "a792c4b303f476b44de6e30f4d37bc0c34f4a7f3c72752354eaab4133c3b5468",
+            "tests/test_installed_wheel.py": "bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117",
+            "tests/fixtures/public_api_owner_migrations.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+            "tests/fixtures/public_api_exports.json": "d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053"
+          },
           "requires": [
             "candidate_commit_is_ancestor_of_bound_implementation_baseline",
             "exact_test_ids_fixture_paths_and_digests_are_bound"
@@ -74,17 +83,22 @@
         },
         {
           "id": "dynamic_import_audit_classification",
-          "satisfied": false,
-          "candidate_evidence": {
-            "kind": "local_uncommitted",
-            "path": "D:/git-pjt/gravity-sdk-dev/tmp/codex/dyn-audit",
-            "canonical": false
-          },
-          "required_ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
+          "satisfied": true,
+          "satisfied_by": "agent_under_standing_owner_delegation",
+          "owner_review": "pending",
+          "bound_implementation_baseline": "3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515",
+          "ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
+          "ledger_sha256": "6bd35c5d914e751a048d138e1e6770244a68273761528acaa9be5d4d41716661",
           "required_schema_version": "gravity.agent-module-reference-dispositions.v1",
           "candidate_sites": 227,
-          "classified_sites": 0,
-          "unclassified_sites": 227,
+          "classified_sites": 227,
+          "unclassified_sites": 0,
+          "blocking_sites": 0,
+          "disposition_counts": {
+            "no_migration_effect": 213,
+            "rewrite_reference": 13,
+            "rewrite_selector_data": 1
+          },
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "requires": [
