@@ -1,6 +1,10 @@
 # Gravity Agent Runtime：产品方向、产品形态、目标架构与 Codex 开发总纲
 
 
+## v9.2 修订摘要
+
+本版相对 v9.1 只含一处事实性勘误：需求家族枚举由 `R00-R16` 更新为 `R00-R17`，因新增 R17 `agent_*` 模块打包迁移需求（交付模式为 leaf）。产品方向、架构边界、交付模式规则（强制顺序子阶段仍仅限 R12、R14）与依赖图均未改变；v9.1 全部条目继续有效。
+
 ## v9.1 修订摘要
 
 本版在 v9 完成产品重定位、需求拆分和主分支冻结后，根据首轮需求图复核进一步收口可访问架构源、Semantic 所有权和独立交付边界：
@@ -21,7 +25,7 @@
 
 > 仓库：`mmm1h/gravity-sdk`
 > 本版审阅基线：`main@b9c029db7f41fa90d04b4e019a892cba25eb9230`（实施前必须重新读取当前 HEAD）
-> Directive ID / Version：`gravity-agent-runtime / v9.1`
+> Directive ID / Version：`gravity-agent-runtime / v9.2`
 > 批准状态：用户已于 2026-08-21 明确批准总纲定稿与需求拆分；具体功能施工仍按派生需求的 `ready` 状态启动
 > Canonical repository path：`specs/agent-runtime/architecture-source.md`
 > 文档性质：仓库内唯一产品总纲 + 目标架构 + 演进路线 + Codex 开发约束
@@ -235,7 +239,7 @@ Codex 必须按以下顺序读取：
 总纲只冻结跨需求共享的产品目标、职责、术语、架构不变量和依赖顺序。具体实现必须拆成有界需求规格：
 
 ```text
-唯一架构总纲 v9.1（repository canonical source）
+唯一架构总纲 v9.2（repository canonical source）
 → specs/agent-runtime/directive.json 绑定批准版本与 digest
 → specs/agent-runtime/index.json / index.md 定义依赖图和状态
 → R00-R17 family leaves / CT01-CT03 细化单一交付单元

@@ -5,7 +5,7 @@
   "status": "approved",
   "canonical_source": {
     "repository_path": "architecture-source.md",
-    "sha256": "21adb0faf2e98121dd19ce78864b790a60ae42aeea30d13a5279f29ba5095e17",
+    "sha256": "54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c",
     "format": "markdown",
     "retrieval": "repository_relative_to_directive"
   },
