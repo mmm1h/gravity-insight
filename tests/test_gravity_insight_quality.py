@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import ast
+from contextlib import redirect_stdout
 from dataclasses import replace
+import io
 import json
 import tempfile
 import unittest
@@ -24,6 +26,7 @@ from gravity_sdk.quality import (
     evaluate_slope,
     hardcoded_exit_code_errors,
     inspect_repository,
+    main as quality_main,
     migration_source_errors,
     render_markdown,
     validate,
@@ -360,7 +363,7 @@ def sample(value):
         baseline = debt_snapshot(
             _profile(file_sloc=550, ast_nodes=count_ast_nodes(expanded))
         )
-        packed_profile = _profile(file_sloc=549, ast_nodes=count_ast_nodes(packed))
+        packed_profile = _profile(file_sloc=550, ast_nodes=count_ast_nodes(packed))
         self.assertEqual([], evaluate_ratchet(packed_profile, baseline))
 
     def test_fifty_added_code_lines_exceed_legacy_ast_hard_limit(self) -> None:
@@ -383,22 +386,66 @@ def sample(value):
         )
         self.assertTrue(any("AST nodes current=" in item and "hard limit=" in item for item in errors))
 
-    def test_bounded_ast_growth_requires_an_append_only_reason(self) -> None:
+    def test_ast_improvement_cannot_rebound_with_a_growth_reason(self) -> None:
         path = "src/gravity_sdk/sample.py"
         base_profile = _profile(file_sloc=550, ast_nodes=100)
         base = debt_snapshot(base_profile)
-        current = debt_snapshot(
-            _profile(file_sloc=550, ast_nodes=110),
-            base,
-            {path: "add one request-bound result field"},
+        improved = debt_snapshot(_profile(file_sloc=550, ast_nodes=60), base)
+        self.assertEqual(60, improved["legacy_files"][path]["ast_hard_limit"])
+        self.assertEqual([], compare_baselines(improved, base))
+
+        with self.assertRaisesRegex(ValueError, "AST growth reasons are no longer supported"):
+            debt_snapshot(
+                _profile(file_sloc=550, ast_nodes=140),
+                improved,
+                {path: "rebound inside the old hard limit"},
+            )
+        with self.assertRaisesRegex(ValueError, "AST nodes exceed"):
+            debt_snapshot(_profile(file_sloc=550, ast_nodes=140), improved)
+
+    def test_sloc_hard_limit_uses_sloc_and_tightens_after_improvement(self) -> None:
+        path = "src/gravity_sdk/sample.py"
+        base = debt_snapshot(_profile(file_sloc=550, file_lines=600))
+        self.assertEqual(550, base["legacy_files"][path]["sloc_hard_limit"])
+
+        improved = debt_snapshot(_profile(file_sloc=525, file_lines=600), base)
+        self.assertEqual(525, improved["legacy_files"][path]["sloc_hard_limit"])
+        self.assertEqual([], compare_baselines(improved, base))
+        with self.assertRaisesRegex(ValueError, "SLOC exceeds"):
+            debt_snapshot(_profile(file_sloc=526, file_lines=600), improved)
+
+    def test_v2_migration_replaces_physical_limit_with_current_sloc(self) -> None:
+        path = "src/gravity_sdk/sample.py"
+        v2 = debt_snapshot(_profile(file_sloc=550, file_lines=600, ast_nodes=100))
+        v2["baseline_version"] = 2
+        v2["legacy_files"][path].update(
+            ast_hard_limit=150,
+            sloc_hard_limit=600,
         )
-        self.assertEqual([], compare_baselines(current, base))
-        with self.assertRaisesRegex(ValueError, "AST growth requires"):
-            debt_snapshot(_profile(file_sloc=550, ast_nodes=111), current)
+
+        migrated = debt_snapshot(_profile(file_sloc=550, file_lines=600, ast_nodes=90), v2)
+        entry = migrated["legacy_files"][path]
+        self.assertEqual(550, entry["sloc_hard_limit"])
+        self.assertEqual(90, entry["ast_hard_limit"])
+        self.assertEqual([], compare_baselines(migrated, v2))
+
+    def test_v3_historical_growth_ledger_is_immutable(self) -> None:
+        base = debt_snapshot(_profile(file_sloc=550, ast_nodes=100))
+        proposed = json.loads(json.dumps(base))
+        proposed["growth_ledger"].append(
+            {
+                "path": "src/gravity_sdk/sample.py",
+                "from": 100,
+                "to": 101,
+                "reason": "attempted rebound",
+            }
+        )
+        errors = compare_baselines(proposed, base)
+        self.assertTrue(any("historical growth ledger is immutable" in item for item in errors))
 
     def test_migration_hard_limits_are_derived_from_base_source(self) -> None:
         path = "src/gravity_sdk/sample.py"
-        source = "# formatting reserve\n" * 599 + "value = 1\n"
+        source = "# formatting reserve\n" * 50 + "value = 1\n" * 550
         baseline = debt_snapshot(
             _profile(
                 file_sloc=550,
@@ -409,6 +456,22 @@ def sample(value):
         self.assertEqual([], migration_source_errors(baseline, {path: source}))
         baseline["legacy_files"][path]["sloc_hard_limit"] += 1
         self.assertTrue(migration_source_errors(baseline, {path: source}))
+
+    def test_green_cli_output_reports_outstanding_debt(self) -> None:
+        profile = _profile(file_sloc=550, function_sloc=90, complexity=18, literals=2)
+        output = io.StringIO()
+        with (
+            mock.patch("gravity_sdk.quality.validate", return_value=[]),
+            mock.patch("gravity_sdk.quality.inspect_repository", return_value=profile),
+            redirect_stdout(output),
+        ):
+            exit_code = quality_main(["--root", str(ROOT), "check"])
+        self.assertEqual(0, exit_code)
+        self.assertIn(
+            "debt_files=1 (+50 SLOC), debt_functions=1 (+10 SLOC), "
+            "debt_complexity=1 (+3), debt_operation_literals=2",
+            output.getvalue(),
+        )
 
     def test_contract_expansion_requires_zero_src_python_slope(self) -> None:
         profile = replace(
@@ -440,6 +503,8 @@ def sample(value):
         self.assertEqual(profile.operation_count, profile.provenance_covered)
         self.assertEqual("PASS", profile.compiler_check)
         self.assertFalse(profile.scan_errors, profile.scan_errors)
+        self.assertIn("src/gravity_sdk/compiler.py", profile.file_sloc)
+        self.assertIn("src/gravity_sdk/quality.py", profile.file_sloc)
         self.assertTrue(any(item.value == "app.list" for item in profile.operation_literals))
         self.assertFalse(any(item.value == "gravity_sdk" for item in profile.operation_literals))
 
