@@ -3,15 +3,17 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.2` via `directive.json`; canonical architecture source is v9.2 |
-| Status | `specified`; M0 characterization is satisfied, while dynamic-audit rebinding and independent ready review are unsatisfied |
+| Status | `specified`; M0 binding is satisfied, while SCC semantics, dynamic-audit semantics, and independent ready review remain unresolved |
 | Track | Structural migration / technical debt #11 |
 | Requirement dependencies | None |
 | Parallel group | `structural-migration` |
 | Shared-spine integration | Required and serialized |
 | Delivery mode | `leaf`; one implementation branch/worktree with two serial commit and rollback checkpoints |
-| Measurement baseline | `codex/gov-staged-epic@aa46ddf3343d8fb8ea0162b7806403527a2d79d9`; exact implementation baseline remains unbound |
+| Measurement baseline | `codex/gov-staged-epic@aa46ddf3343d8fb8ea0162b7806403527a2d79d9` |
+| Implementation baseline | `dev@24f16c667d80107e4149cf76742eab4ada564197` |
 | M0 evidence candidate | `codex/m0-characterization@088d1606127439943cab0b79c8cdbdf516af4839` |
-| Implementation Issue / branch / worktree | One `codex/r17-*` branch/worktree, unbound until independent review advances R17 to `ready` |
+| Implementation Issue | `none`; internal structural debt must not receive a self-created GitHub Issue under `docs/maintainers/issues.md` |
+| Implementation branch / worktree | `codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration` |
 | Production requests | `0`; structural migration only |
 | Main integration | Frozen; adding R17 extends `all_index_requirements_fixed_dev` |
 
@@ -62,23 +64,24 @@ debt #11, or satisfy R17.
    | `tests/fixtures/public_api_owner_migrations.json` | `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570` |
    | `tests/fixtures/public_api_exports.json` | `d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053` |
 
-   The eager-graph gate computes real Tarjan SCCs over the full 642-module
-   package and rejects only components intersecting the move set; the two
-   pre-existing `prober` and `sql` components are therefore tolerated and must
-   not be used to widen or narrow the gate.
-2. **Not satisfied.** The 227-row
+   The artefact binding is complete, so this prerequisite remains satisfied.
+   Its SCC semantics review has not passed: the current visitor drops
+   self-edges and the migration predicate includes the excluded contracts
+   module. The parallel gate-fix unit must restore the intended full-graph SCC
+   rule before `ready`; the unrelated `prober` and `sql` components remain
+   comparison facts, not exclusions from the graph.
+2. **Not satisfied.** The 238-row
    `tests/fixtures/agent_module_reference_dispositions.json` ledger (SHA-256
-   `6bd35c5d914e751a048d138e1e6770244a68273761528acaa9be5d4d41716661`,
-   schema `gravity.agent-module-reference-dispositions.v1`) is internally
-   complete, with 227 unique source keys, `unclassified_sites = 0`,
-   `blocker_count = 0`, split `213 no_migration_effect / 13 rewrite_reference /
-   1 rewrite_selector_data`. Its source audit is a gitignored tmp artefact from
-   `01e20b4`, before R17 and the ledger existed, so it does not cover the bound
-   `3fa8fe6` implementation baseline. The parallel ledger-rebinding unit must
-   either bind and test an explicit governance-artefact exclusion rule or
-   classify the additional source keys, then replace this prerequisite's
-   baseline and digest. Until then, the valid 227 dispositions are evidence,
-   not a satisfied ready prerequisite.
+   `f20c0c0eaeec9e72a3be49a8d6ddfd1f2828be7741a68b80fe59b6aa023857ef`,
+   schema `gravity.agent-module-reference-dispositions.v2`) is internally
+   complete, with 238 unique source keys, `unclassified_sites = 0`,
+   `blocker_count = 0`, split `224 no_migration_effect / 13 rewrite_reference /
+   1 rewrite_selector_data`. It remains unsatisfied because six spine rewrites
+   target bare filenames instead of `agents/...`, and dated-evidence context
+   can misclassify a real import. The parallel gate-fix unit must correct and
+   independently test those semantics before replacing this prerequisite's
+   digest. Until then, the 238 dispositions are evidence, not a satisfied ready
+   prerequisite.
 3. **Not satisfied.** An independent reviewer must accept the scope,
    measurement definitions, proposed owner changes, two explicit concept
    deletions, and exact acceptance commands and return a `ready` verdict. This
@@ -87,6 +90,19 @@ debt #11, or satisfy R17.
 The historical candidate audit also reports 83/83 old-path smoke imports
 successful and zero naming collisions. Those facts do not classify any source
 site and do not repair the baseline mismatch above.
+
+Machine state shared by this Requirement and `index.md`: `status=specified`;
+`dynamic_import_audit_classification.satisfied=false`;
+`schema=gravity.agent-module-reference-dispositions.v2`; `candidate_sites=238`;
+`classified_sites=238`; `unclassified_sites=0`; `blocking_sites=0`.
+
+The required cross-file state gate is
+`tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_index_and_specification_state_agree`.
+It must load both JSON files as UTF-8 and assert that the R17 Index entry, this
+Requirement, and `index.md` all report `specified`, schema v2, 238 candidate and
+classified sites, zero unclassified and blocking sites, and an unsatisfied
+dynamic-audit prerequisite; it must also reject any previous-generation site
+count or ledger-schema claim in the three R17 state representations.
 
 ## Legacy Prefix Cohort Selection Rule
 
@@ -489,13 +505,11 @@ facts, not exclusions from the graph and not reasons to widen or narrow R17.
 The baseline and each serial checkpoint must report no SCC intersecting the
 migration set.
 
-The historical local dynamic-audit artefact records 83 modules and 227
-manual-review sites with zero collisions, 83 successful smoke imports, and zero
-smoke failures. Before `ready`, the parallel rebinding unit must establish the
-exact current scanner denominator, classify every included source key, report
-zero unclassified rows and zero blockers, and bind the ledger path, baseline,
-scanner rule, and SHA-256. The existing 227 reviewed dispositions remain rows;
-narrowing the move set does not erase an audit site.
+The bound dynamic-audit artefact records 83 modules and 238 manual-review sites
+under schema v2, with zero collisions, 83 successful smoke imports, zero smoke
+failures, zero unclassified rows, and zero blockers. Its classification
+semantics remain an unsatisfied prerequisite for the reasons above; narrowing
+the move set does not erase an audit site.
 
 ## Write Scope
 
@@ -521,7 +535,8 @@ narrowing the move set does not erase an audit site.
   must not grow the documentation budget.
 - **Rewriting `architecture-source.md` breaks its digest binding.** That file is
   bound by `directive.json.canonical_source.sha256`. At the core checkpoint,
-  one atomic commit must apply only the four physical path corrections; add a
+  one atomic commit must apply only the four allowlisted physical path
+  corrections; add a
   new `## v9.3 修订摘要` stating "four physical path corrections; no
   architectural semantic change" while preserving the existing `## v9.2
   修订摘要` and its body; update the `Directive ID / Version` line and the
@@ -530,18 +545,21 @@ narrowing the move set does not erase an audit site.
   advance `directive.json.version` to `v9.3`; and set
   `directive.json.supersedes` to version `v9.2` and digest
   `54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c`.
-  The final machine assertion below must fail on any digest, version,
-  supersedes, summary-preservation, or self-reference mismatch.
+  The final machine assertion below reconstructs the complete expected v9.3
+  bytes from the Git-bound v9.2 bytes and must fail on any additional deletion,
+  insertion, replacement, digest, version, supersedes, or self-reference.
 
   `directive.json.canonical_source_errata` records the delegated
-  `errata_inherits_approval` decision as
+  `r17_v9_2_to_v9_3_one_shot_allowlist` decision as
   `authorized_by: agent_under_standing_owner_delegation` with
-  `owner_review: pending`. This is the plan owner's delegated decision, not a
-  claim that the owner approved the errata. It applies only to physical
-  repository path corrections that do not change architectural semantics. Any
-  semantic change requires a new owner approval and a separately revised
-  directive; the rule also does not authorize implementation before `ready`, a
-  release, or `main` promotion.
+  `owner_review: pending`; R17 must not elevate that review state. The allowlist
+  is initially `unconsumed`; the
+  core commit must atomically mark it `consumed` by R17 with `reusable: false`.
+  Its fixed source revision, versions, digest, four source replacements, and
+  three metadata edits cannot authorize another transition. Any reuse or other
+  change requires a new owner approval and separately revised directive; the
+  rule also does not authorize implementation before `ready`, a release, or
+  `main` promotion.
 - Add or retain characterization, installed-wheel, owner-migration,
   consumer-census, boundary, concept-deletion, and eager-graph gates.
 - `agent_runtime_contracts.py`, `plan_adapters.py`, and `__main__.py` do not
@@ -604,10 +622,173 @@ serialized through one integrator.
 
 ## Acceptance Commands
 
-Run these commands in order from the R17 implementation worktree root with no
-`PYTHONPATH`. Every assertion names the mismatched contract. The two complete
-collectors are intentionally separate because CI gates on pytest while
-unittest discovery remains a required parity collector.
+Run the four Phase 1 commands in order on the clean Phase 1 checkpoint commit
+and retain their output with that commit SHA. After Phase 2, run every command
+from `Structural Exit And Reviewed Owners` onward on the clean final commit.
+Do not substitute the final tree for Phase 1 evidence. Run from the R17
+implementation worktree root with no `PYTHONPATH`; every assertion names the
+mismatched contract. The two complete collectors are intentionally separate
+because CI gates on pytest while unittest discovery remains a required parity
+collector.
+
+### Phase 1 Structural Checkpoint
+
+This command is expected to fail on the unmigrated baseline with a
+`Phase 1 structural checkpoint not reached` count diff. It passes only after
+the 47 peripheral moves and pagination consolidation are physically complete.
+
+```powershell
+$code = @'
+import json
+from pathlib import Path
+import gravity_sdk
+
+root = Path('src/gravity_sdk')
+agents = root / 'agents'
+ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
+moves = ledger['scope']['one_to_one_moves']
+core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
+phase1 = {row['new_module'].rsplit('.', 1)[1] for row in moves} - core
+assert len(moves) == 81 and len(core) == 34 and len(phase1) == 47, f'Phase 1 reviewed set mismatch: moves={len(moves)}, core={len(core)}, phase1={len(phase1)}'
+snapshot = json.loads(Path('tests/fixtures/public_api_exports.json').read_text(encoding='utf-8'))
+actual = {
+    'root_py': len(list(root.glob('*.py'))),
+    'root_agent_py': len(list(root.glob('agent_*.py'))),
+    'package_py': len(list(root.rglob('*.py'))),
+    'agents_implementation_py': len([p for p in agents.glob('*.py') if p.name != '__init__.py']),
+    'lazy_snapshot': len(snapshot),
+    'runtime_exports': len(gravity_sdk._EXPORTS),
+    'root_all': len(gravity_sdk.__all__),
+}
+expected = {'root_py': 530, 'root_agent_py': 35, 'package_py': 642, 'agents_implementation_py': 47, 'lazy_snapshot': 147, 'runtime_exports': 147, 'root_all': 148}
+assert actual == expected, f'Phase 1 structural checkpoint not reached: expected={expected}, actual={actual}'
+actual_agents = {p.stem for p in agents.glob('*.py') if p.name != '__init__.py'}
+assert actual_agents == phase1, f'Phase 1 agents set mismatch: missing={sorted(phase1-actual_agents)}, extra={sorted(actual_agents-phase1)}'
+expected_root = sorted([f'agent_{name}.py' for name in core] + ['agent_runtime_contracts.py'])
+actual_root = sorted(p.name for p in root.glob('agent_*.py'))
+assert actual_root == expected_root, f'Phase 1 root agent set mismatch: missing={sorted(set(expected_root)-set(actual_root))}, extra={sorted(set(actual_root)-set(expected_root))}'
+assert not (root / 'agent_pagination.py').exists(), 'Phase 1 pagination consolidation incomplete: agent_pagination.py still exists'
+print(json.dumps({'checkpoint': 'phase-1', 'counts': actual, 'phase1_modules': len(actual_agents)}, sort_keys=True))
+'@
+& ./.venv/Scripts/python.exe -c $code
+if ($LASTEXITCODE) { throw 'R17 Phase 1 structural checkpoint assertion failed' }
+```
+
+### Phase 1 SCC Checkpoint
+
+This uses the checked-in complete-package eager graph, but intersects its SCCs
+with the exact 81 ledger moves plus the pagination consolidation owner. The
+target-presence precondition distinguishes an unmigrated tree from an SCC bug.
+
+```powershell
+$code = @'
+import json
+from pathlib import Path
+from tests.agent_migration_characterization import eager_import_sccs
+
+root = Path('src/gravity_sdk')
+ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
+moves = ledger['scope']['one_to_one_moves']
+core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
+phase1 = [row for row in moves if row['new_module'].rsplit('.', 1)[1] not in core]
+def module_path(module):
+    return root.joinpath(*module.removeprefix('gravity_sdk.').split('.')).with_suffix('.py')
+missing = [row['new_module'] for row in phase1 if not module_path(row['new_module']).is_file()]
+old = [row['old_module'] for row in phase1 if module_path(row['old_module']).exists()]
+assert not missing and not old and not (root/'agent_pagination.py').exists(), f'Phase 1 SCC precondition not reached: missing_new={len(missing)} {missing[:5]}, old_present={len(old)} {old[:5]}, pagination_old={(root/"agent_pagination.py").exists()}'
+migration = {'gravity_sdk.pagination_completeness'}
+for row in moves:
+    present = [module for module in (row['old_module'], row['new_module']) if module_path(module).is_file()]
+    assert len(present) == 1, f'migration owner must be unique for SCC check: row={row}, present={present}'
+    migration.add(present[0])
+components = eager_import_sccs(root)
+crossing = [component for component in components if set(component) & migration]
+assert not crossing, f'Phase 1 migration-related eager SCCs remain: {crossing}'
+print(json.dumps({'checkpoint': 'phase-1', 'complete_graph_sccs': components, 'migration_related_sccs': crossing}, sort_keys=True))
+'@
+& ./.venv/Scripts/python.exe -c $code
+if ($LASTEXITCODE) { throw 'R17 Phase 1 SCC checkpoint assertion failed' }
+```
+
+### Phase 1 Consumer Checkpoint
+
+The runtime import scan rejects exact old owners for the 47 Phase 1 moves. The
+independent disposition generator covers dynamic, test, script, and governance
+sites; the fixed-revision census covers the canonical consumer.
+
+```powershell
+$code = @'
+import ast, importlib.util, json
+from pathlib import Path
+
+ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
+core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
+old = {row['old_module'] for row in ledger['scope']['one_to_one_moves'] if row['new_module'].rsplit('.', 1)[1] not in core}
+hits = []
+for path in sorted(Path('src').rglob('*.py')):
+    tree = ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
+    parts = list(path.relative_to('src').with_suffix('').parts)
+    if parts[-1] == '__init__': parts.pop()
+    module = '.'.join(parts)
+    package = module if path.name == '__init__.py' else module.rpartition('.')[0]
+    for node in ast.walk(tree):
+        values = []
+        if isinstance(node, ast.Import): values = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                base_module = importlib.util.resolve_name('.' * node.level + (node.module or ''), package)
+            else: base_module = node.module or ''
+            values = [base_module] + [f'{base_module}.{alias.name}' for alias in node.names if alias.name != '*']
+        for value in values:
+            if any(value == owner or value.startswith(owner + '.') for owner in old):
+                hits.append(f'{path}:{node.lineno}:{value}')
+assert not hits, f'Phase 1 runtime imports still target migrated old modules: count={len(hits)}, sample={hits[:20]}'
+print('Phase 1 runtime import scan passed: old_owner_hits=0')
+'@
+& ./.venv/Scripts/python.exe -c $code
+if ($LASTEXITCODE) { throw 'R17 Phase 1 runtime import assertion failed' }
+& ./.venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check
+if ($LASTEXITCODE) { throw 'R17 Phase 1 disposition ledger check failed' }
+$consumerRoot = Resolve-Path '../work-dashboard'
+$consumerRevision = 'd1915a18278fca8823782a7d13e691a6d5702ad2'
+& git -C $consumerRoot cat-file -e "$consumerRevision`^{commit}"
+if ($LASTEXITCODE) { throw "canonical consumer commit is unavailable: $consumerRevision" }
+$legacyPattern = 'gravity_sdk\.agent_[[:alnum:]_]+|src/gravity_sdk/agent_(capabilities|composite|handoff)\.py'
+$legacyHits = & git -C $consumerRoot grep -n -E $legacyPattern $consumerRevision -- '*.py' '*.md' '*.json' '*.toml' '*.yaml' '*.yml'
+$grepExit = $LASTEXITCODE
+if ($grepExit -eq 0) { $legacyHits; throw "canonical consumer still references an R17 legacy path at $consumerRevision" }
+if ($grepExit -ne 1) { throw "canonical consumer census failed to execute: git grep exit $grepExit" }
+Write-Output "Phase 1 consumer checkpoint passed: runtime_old_owner_hits=0; classified_dynamic_sites=clean; canonical_legacy_hits=0; revision=$consumerRevision"
+```
+
+### Phase 1 Rollback Checkpoint
+
+Phase 1 is one commit carrying fixed trailers. The reverse-apply check proves
+that commit can be removed mechanically without altering the worktree.
+
+```powershell
+$expectedBranch = 'codex/r17-migration'
+$baseline = '24f16c667d80107e4149cf76742eab4ada564197'
+$actualBranch = & git branch --show-current
+if ($actualBranch -ne $expectedBranch) { throw "Phase 1 checkpoint branch mismatch: expected=$expectedBranch actual=$actualBranch" }
+$dirty = @(& git status --porcelain)
+if ($dirty.Count) { throw "Phase 1 checkpoint requires a clean tree: $dirty" }
+$phase1Checkpoint = & git rev-parse HEAD
+$checkpointParent = & git rev-parse "$phase1Checkpoint^"
+$message = & git show -s --format=%B $phase1Checkpoint
+if ($message -notmatch '(?m)^R17-Checkpoint: phase-1\r?$') { throw 'Phase 1 commit lacks exact R17-Checkpoint: phase-1 trailer' }
+if ($message -notmatch "(?m)^R17-Baseline: $baseline\r?$") { throw "Phase 1 commit lacks exact R17-Baseline: $baseline trailer" }
+& git merge-base --is-ancestor $baseline $checkpointParent
+if ($LASTEXITCODE) { throw "R17 baseline is not an ancestor of the Phase 1 checkpoint parent: baseline=$baseline parent=$checkpointParent" }
+$rollbackDir = 'tmp/r17-acceptance'
+New-Item -ItemType Directory -Force $rollbackDir | Out-Null
+$rollbackPatch = "$rollbackDir/phase1-$phase1Checkpoint.rollback.patch"
+& git diff --binary --output=$rollbackPatch "$checkpointParent..$phase1Checkpoint"
+if ($LASTEXITCODE) { throw 'Phase 1 rollback patch generation failed' }
+& git apply --reverse --check $rollbackPatch
+if ($LASTEXITCODE) { throw "Phase 1 reverse-apply check failed: $rollbackPatch" }
+Write-Output "Phase 1 rollback checkpoint passed: baseline=$baseline; parent=$checkpointParent; checkpoint=$phase1Checkpoint; reverse_apply=clean"
+```
 
 ### Structural Exit And Reviewed Owners
 
@@ -684,6 +865,7 @@ if ($LASTEXITCODE) { throw 'R17 structural exit or reviewed-owner assertion fail
 ```powershell
 $focused = @(
   'tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_current_ledger_satisfies_the_machine_contract',
+  'tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_index_and_specification_state_agree',
   'tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_reviewed_fixture_sha256_is_bound',
   'tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_validator_rejects_required_regressions',
   'tests/test_agent_module_migration_characterization.py::AgentModuleMigrationCharacterizationTests::test_agent_deep_paths_are_explicitly_public_or_internal',
@@ -721,7 +903,7 @@ currently has; the command reads the exact Git object. Run the same census at
 both serial checkpoints.
 
 ```powershell
-$consumerRoot = Resolve-Path '../../work-dashboard'
+$consumerRoot = Resolve-Path '../work-dashboard'
 $consumerRevision = 'd1915a18278fca8823782a7d13e691a6d5702ad2'
 & git -C $consumerRoot cat-file -e "$consumerRevision`^{commit}"
 if ($LASTEXITCODE) { throw "canonical consumer commit is unavailable: $consumerRevision" }
@@ -795,7 +977,7 @@ if ($LASTEXITCODE) { throw 'gravity CLI help failed' }
 
 ```powershell
 $code = @'
-import hashlib, json
+import difflib, hashlib, json, subprocess
 from pathlib import Path
 
 source_path = Path('specs/agent-runtime/architecture-source.md')
@@ -803,25 +985,63 @@ directive_path = Path('specs/agent-runtime/directive.json')
 source_bytes = source_path.read_bytes()
 source = source_bytes.decode('utf-8')
 directive = json.loads(directive_path.read_text(encoding='utf-8'))
+baseline_revision = '24f16c667d80107e4149cf76742eab4ada564197'
+baseline_path = 'specs/agent-runtime/architecture-source.md'
+baseline_bytes = subprocess.check_output(['git', 'show', f'{baseline_revision}:{baseline_path}'])
+baseline = baseline_bytes.decode('utf-8')
+baseline_sha = hashlib.sha256(baseline_bytes).hexdigest()
+expected_v9_2_sha = '54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c'
+assert baseline_sha == expected_v9_2_sha, f'Git-bound v9.2 source SHA mismatch: expected={expected_v9_2_sha}, actual={baseline_sha}'
+
+source_replacements = [
+    {'old': '`agent_capabilities.py`', 'new': '`agents/capabilities.py`', 'count': 1},
+    {'old': '`agent_composite.py`', 'new': '`agents/composite.py`', 'count': 1},
+    {'old': '`agent_handoff.py`', 'new': '`agents/handoff.py`', 'count': 1},
+    {'old': 'Plan-backed path（agent_handoff →', 'new': 'Plan-backed path（agents.handoff →', 'count': 1},
+]
+version_changes = [
+    {'operation': 'insert_before', 'anchor': '## v9.2 修订摘要', 'text': '## v9.3 修订摘要\n\nfour physical path corrections; no architectural semantic change\n\n', 'count': 1},
+    {'old': 'gravity-agent-runtime / v9.2', 'new': 'gravity-agent-runtime / v9.3', 'count': 1},
+    {'old': '唯一架构总纲 v9.2（repository canonical source）', 'new': '唯一架构总纲 v9.3（repository canonical source）', 'count': 1},
+]
+expected = baseline
+for change in source_replacements:
+    assert expected.count(change['old']) == change['count'], f"v9.2 source replacement cardinality mismatch: {change}"
+    expected = expected.replace(change['old'], change['new'], change['count'])
+insert = version_changes[0]
+assert expected.count(insert['anchor']) == insert['count'], f'v9.3 summary anchor cardinality mismatch: {insert}'
+expected = expected.replace(insert['anchor'], insert['text'] + insert['anchor'], insert['count'])
+for change in version_changes[1:]:
+    assert expected.count(change['old']) == change['count'], f"version replacement cardinality mismatch: {change}"
+    expected = expected.replace(change['old'], change['new'], change['count'])
+if source != expected:
+    delta = ''.join(difflib.unified_diff(expected.splitlines(True), source.splitlines(True), fromfile='allowlisted-v9.3', tofile='actual-v9.3', n=2))
+    raise AssertionError(f'canonical v9.2 -> v9.3 diff exceeds exact R17 allowlist:\n{delta[:8000]}')
+
 actual_sha = hashlib.sha256(source_bytes).hexdigest()
 bound_sha = directive['canonical_source']['sha256']
 assert actual_sha == bound_sha, f'canonical SHA mismatch: actual={actual_sha}, directive={bound_sha}'
 assert directive['version'] == 'v9.3', f"directive version must be v9.3, got {directive['version']}"
-expected_supersedes = {'version': 'v9.2', 'sha256': '54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c'}
+expected_supersedes = {'version': 'v9.2', 'sha256': expected_v9_2_sha}
 assert directive['supersedes'] == expected_supersedes, f"supersedes mismatch: expected={expected_supersedes}, actual={directive['supersedes']}"
-assert source.count('## v9.3 修订摘要') == 1, 'v9.3 errata summary heading must occur exactly once'
-assert 'four physical path corrections; no architectural semantic change' in source, 'v9.3 summary does not state the bounded non-semantic errata'
-assert source.count('## v9.2 修订摘要') == 1, 'the original v9.2 summary heading was not preserved exactly once'
-old_summary = '本版相对 v9.1 只含一处事实性勘误：需求家族枚举由 `R00-R16` 更新为 `R00-R17`'
-assert old_summary in source, 'the original v9.2 summary body was not preserved'
-assert '> Directive ID / Version：`gravity-agent-runtime / v9.3`' in source, 'Directive ID / Version self-reference is not v9.3'
-assert '唯一架构总纲 v9.3（repository canonical source）' in source, 'reading-order self-reference is not v9.3'
 errata = directive.get('canonical_source_errata', {})
-assert errata.get('rule') == 'errata_inherits_approval', f"errata rule mismatch: {errata.get('rule')}"
+expected_transition = {'from_version': 'v9.2', 'from_sha256': expected_v9_2_sha, 'from_git_revision': baseline_revision, 'to_version': 'v9.3'}
+expected_one_shot = {'state': 'consumed', 'reusable': False, 'consumed_by': 'R17', 'consumed_at_checkpoint': 'R17-phase-2-core'}
+expected_keys = {'rule', 'requirement_id', 'authorized_by', 'owner_review', 'transition', 'one_shot', 'allowed_source_replacements', 'allowed_version_metadata_changes', 'requires', 'does_not_authorize'}
+expected_requires = ['full_source_bytes_equal_v9_2_baseline_after_exact_allowlist', 'update_version_supersedes_digest_and_self_references_atomically', 'transition_one_shot_state_from_unconsumed_to_consumed']
+expected_forbidden = ['reuse_for_any_other_requirement_or_version_transition', 'any_source_change_outside_the_exact_allowlist', 'architectural_semantic_changes', 'a_claim_of_new_or_owner_approval', 'implementation_before_the_requirement_is_ready', 'release_or_main_promotion']
+assert set(errata) == expected_keys, f'errata object has missing or additional authority fields: expected={sorted(expected_keys)}, actual={sorted(errata)}'
+assert errata.get('rule') == 'r17_v9_2_to_v9_3_one_shot_allowlist', f"errata rule mismatch: {errata.get('rule')}"
+assert errata.get('requirement_id') == 'R17', f"errata requirement mismatch: {errata.get('requirement_id')}"
 assert errata.get('authorized_by') == 'agent_under_standing_owner_delegation', f"errata authorization provenance mismatch: {errata.get('authorized_by')}"
 assert errata.get('owner_review') == 'pending', f"errata owner review must remain pending: {errata.get('owner_review')}"
-assert 'architectural_semantic_changes' in errata.get('does_not_authorize', []), 'errata rule must reject semantic changes'
-print(f'canonical errata binding passed: version=v9.3; sha256={actual_sha}; supersedes=v9.2')
+assert errata.get('transition') == expected_transition, f"errata transition mismatch: {errata.get('transition')}"
+assert errata.get('one_shot') == expected_one_shot, f"errata one-shot consumption mismatch: expected={expected_one_shot}, actual={errata.get('one_shot')}"
+assert errata.get('allowed_source_replacements') == source_replacements, 'directive source allowlist differs from the independently frozen four replacements'
+assert errata.get('allowed_version_metadata_changes') == version_changes, 'directive metadata allowlist differs from the independently frozen three changes'
+assert errata.get('requires') == expected_requires, f"errata requirements changed: {errata.get('requires')}"
+assert errata.get('does_not_authorize') == expected_forbidden, f"errata forbidden-action list changed: {errata.get('does_not_authorize')}"
+print(f'canonical errata binding passed: transition=v9.2->v9.3; source_replacements=4; metadata_changes=3; one_shot=consumed; sha256={actual_sha}')
 '@
 & ./.venv/Scripts/python.exe -c $code
 if ($LASTEXITCODE) { throw 'canonical source errata binding assertion failed' }
@@ -858,7 +1078,9 @@ branch when:
 - shared-spine paths point to `agents/capabilities.py`,
   `agents/composite.py`, and `agents/handoff.py`, while `plan_adapters.py` and
   `__main__.py` remain in place; and
-- every command in `Acceptance Commands` passes without substitution.
+- all four Phase 1 commands passed on the trailer-bound Phase 1 checkpoint, and
+  every command from `Structural Exit And Reviewed Owners` onward passes on the
+  final Phase 2 checkpoint without substitution.
 
 Technical debt #11 closes only when this leaf reaches `fixed_dev`. Closure is
 an 82-module high-coupling legacy-cohort transformation with 81 physical moves

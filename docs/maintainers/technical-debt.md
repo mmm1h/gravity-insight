@@ -67,10 +67,9 @@
 ### 11. `gravity_sdk` 根目录模块扁平化扩大了变更定位范围
 - **可测事实**：`src/gravity_sdk/` 平铺 578 个 Python 模块；领域边界主要靠命名而非子包，跨领域定位和审查集中在根目录。
 - **影响边界**：不改公开导入或运行时行为；只增加所有权辨识、审查和后续迁移成本。
-- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`
-  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1
-  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade
-  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、
+- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。前缀先定义 83 个 `agent_*` 候选队列；facade 可达性只证明
+  队列内 82 个候选内聚，其中一对一迁移 81、合并删除 `agent_pagination` 1、排除 1，不证明完整 Agent domain。
+  `agent_runtime_contracts` 因队列内 0 入边、队列外 55 入边且 facade 不可达而留根；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、
   `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。
 - **未纳入的更大目标**：跨 plan/analysis/metadata/kanban 执行核心的大环优先级更高，但各方图口径不一致
   （AST-only、含 `_EXPORTS` 字符串边、含 package parent 边分别得出不同 SCC 规模），须先统一图定义再立项。
