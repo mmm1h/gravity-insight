@@ -85,9 +85,8 @@
         },
         {
           "id": "dynamic_import_audit_classification",
-          "satisfied": true,
-          "satisfied_by": "agent_under_standing_owner_delegation",
-          "owner_review": "pending",
+          "satisfied": false,
+          "unsatisfied_reason": "second ready review found the ledger still unsound: 6 spine rewrites target bare capabilities.py/composite.py/handoff.py instead of agents/..., and an unrelated src/gravity_sdk/composite.py already exists; the dated-evidence classifier also freezes real imports whose context contains a decision-record line",
           "ledger_regenerated_from": "scripts/generate_agent_module_reference_dispositions.py, which scans git-tracked files directly; the prior gitignored tmp audit is no longer an input",
           "ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
           "ledger_sha256": "f20c0c0eaeec9e72a3be49a8d6ddfd1f2828be7741a68b80fe59b6aa023857ef",
@@ -105,7 +104,7 @@
           "required_blocking_sites": 0,
           "requires": [
             "all_candidate_sites_have_reviewed_dispositions",
-            "classification_ledger_has_227_unique_source_keys",
+            "classification_ledger_key_count_matches_the_bound_site_count",
             "classification_ledger_path_and_sha256_are_bound"
           ]
         },
