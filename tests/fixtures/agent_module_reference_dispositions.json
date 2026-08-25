@@ -7,10 +7,10 @@
     "scanner_path": "scripts/audit_agent_module_references.py",
     "scanner_sha256": "d0016c5fd5c54e93bc1d770dae7ffc2d68c5108910a374f3b81e3bdab404e20b",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
-    "generator_sha256": "ea8b47a5391d0b06292efb210c8d67981b86a722ef01b06d138609478ae2dc3c",
+    "generator_sha256": "fcefd630e671c675d444da88e56bb1b0ba72e173d34e781c4fc2a7942eca0902",
     "candidate_map_sha256": "9ecd2ccc7b170546b2ef3f01e9b40eeb8401e23bc69f7190301fc8d0c60cfb0b",
-    "reference_evidence_sha256": "2db0ad441e0ef1af8a02cb7d3373ced0e76c2297894bd28d32e48d52e5280f04",
-    "manual_review_sha256": "6ca6db3603b6be549ac08b19692b933314a51e18bb4a43ece923ddfbf5cae8d4",
+    "reference_evidence_sha256": "8cf2145ef891d8a005212c163602c3449b77d2f7fcfeafabf8e2ae9bb84f9dd9",
+    "manual_review_sha256": "4be03d94ac6b4ea18a19b66a0dadb4ac173902fa4c26d771cead29d021db302c",
     "version_controlled_file_count": 3109,
     "scanned_file_count": 3102,
     "excluded_files": [
@@ -371,8 +371,8 @@
     "blocker": "Do not start R17 until the ownership or selector proposition is resolved."
   },
   "classification_method": {
-    "bare_agent_string": "Classify each bounded Markdown record or JSON field: freeze dated decision evidence and explicit consolidated/deleted-module facts, rewrite consumer syntax and active one-to-one paths, and block ambiguous deleted-module mentions.",
-    "agent_prefix_template": "Retain only the two migration-characterization sentinels that deliberately detect both legacy and target owners.",
+    "bare_agent_string": "Classify each bounded Markdown record or JSON field: recognize consumer/current-path syntax before considering dated evidence, freeze only non-consumer dated decisions and explicit consolidated/deleted-module facts, rewrite active one-to-one paths, and block ambiguous deleted-module mentions.",
+    "agent_prefix_template": "Retain only the two characterization uses that classify legacy deep paths and validate old-module ledger shape; SCC membership is ledger-defined.",
     "non_string_patch_expression": "Separate object APIs from dotted-string APIs and inspect every finite producer/call domain.",
     "dynamic_import": "Trace each expression to finite inputs; rewrite the root lazy selector and reject unknown domains.",
     "module_owner_receiver": "Trace every receiver binding and retain only owners outside the R17 move set."
@@ -394,7 +394,7 @@
       "rewrite_reference": 13,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "889524c3421d14aca7700d026747a099d3a40b9aeed821fdaf30050cf3859e43"
+    "sites_sha256": "eff280aa38077a12a54a29f85134678d3f1299b43bfe24af0f7bf7af06e0688b"
   },
   "blockers": [],
   "sites": [
@@ -416,7 +416,7 @@
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_capabilities.py",
-        "new_text": "capabilities.py",
+        "new_text": "agents/capabilities.py",
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
       },
@@ -441,7 +441,7 @@
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_handoff.py",
-        "new_text": "handoff.py",
+        "new_text": "agents/handoff.py",
         "old_module": "gravity_sdk.agent_handoff",
         "new_module": "gravity_sdk.agents.handoff"
       },
@@ -466,7 +466,7 @@
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_composite.py",
-        "new_text": "composite.py",
+        "new_text": "agents/composite.py",
         "old_module": "gravity_sdk.agent_composite",
         "new_module": "gravity_sdk.agents.composite"
       },
@@ -2573,7 +2573,7 @@
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_handoff.py",
-        "new_text": "handoff.py",
+        "new_text": "agents/handoff.py",
         "old_module": "gravity_sdk.agent_handoff",
         "new_module": "gravity_sdk.agents.handoff"
       },
@@ -2598,7 +2598,7 @@
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_capabilities.py",
-        "new_text": "capabilities.py",
+        "new_text": "agents/capabilities.py",
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
       },
@@ -2623,7 +2623,7 @@
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_composite.py",
-        "new_text": "composite.py",
+        "new_text": "agents/composite.py",
         "old_module": "gravity_sdk.agent_composite",
         "new_module": "gravity_sdk.agents.composite"
       },
@@ -3215,11 +3215,11 @@
       "evidence_kind": "finite_input_dataflow"
     },
     {
-      "source_key": "tests/agent_migration_characterization.py:17:28:python string literal",
+      "source_key": "tests/agent_migration_characterization.py:20:28:python string literal",
       "audit_category": "agent_prefix_template",
       "source": {
         "file": "tests/agent_migration_characterization.py",
-        "line": 17,
+        "line": 20,
         "column": 28,
         "form": "python string literal",
         "old_value": "gravity_sdk.agent_",
@@ -3230,16 +3230,16 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The characterization helper intentionally recognizes both the legacy gravity_sdk.agent_ prefix and the target gravity_sdk.agents package so its terminal-state checks detect any stale old owner. It does not import or select a runtime module.",
+      "basis": "The characterization helper uses the legacy prefix only to classify deep path references and validate ledger row shape. SCC membership comes from the exact 81 move rows plus pagination consolidation, not this prefix.",
       "evidence_kind": "migration_characterization_contract"
     },
     {
-      "source_key": "tests/agent_migration_characterization.py:267:27:python string literal",
+      "source_key": "tests/agent_migration_characterization.py:21:30:python string literal",
       "audit_category": "agent_prefix_template",
       "source": {
         "file": "tests/agent_migration_characterization.py",
-        "line": 267,
-        "column": 27,
+        "line": 21,
+        "column": 30,
         "form": "python string literal",
         "old_value": "gravity_sdk.agent_",
         "audit_proposed_value": ""
@@ -3249,7 +3249,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The characterization helper intentionally recognizes both the legacy gravity_sdk.agent_ prefix and the target gravity_sdk.agents package so its terminal-state checks detect any stale old owner. It does not import or select a runtime module.",
+      "basis": "The characterization helper uses the legacy prefix only to classify deep path references and validate ledger row shape. SCC membership comes from the exact 81 move rows plus pagination consolidation, not this prefix.",
       "evidence_kind": "migration_characterization_contract"
     },
     {

@@ -13,8 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "src" / "gravity_sdk"
 PUBLIC_API_BASELINE = ROOT / "tests" / "fixtures" / "public_api_exports.json"
 OWNER_MIGRATIONS = ROOT / "tests/fixtures/public_api_owner_migrations.json"
+REFERENCE_DISPOSITIONS = (
+    ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
+)
 
 INTERNAL_AGENT_PREFIXES = ("gravity_sdk.agent_", "gravity_sdk.agents")
+LEGACY_AGENT_LEDGER_PREFIX = "gravity_sdk.agent_"
 KNOWN_ROOT_EXPORT_MODULE_COLLISIONS = frozenset(
     {
         "analysis_query_batch_schema",
@@ -157,16 +161,22 @@ class _EagerImportVisitor(ast.NodeVisitor):
         self.modules = modules
         self.targets: set[str] = set()
 
-    def _record(self, target: str | None) -> None:
+    def _record(self, target: str | None, *, allow_exact_self: bool = False) -> None:
         if not target or not target.startswith("gravity_sdk"):
             return
         parts = target.split(".")
         candidates = {
             ".".join(parts[:index]) for index in range(1, len(parts) + 1)
         }
-        self.targets.update(candidate for candidate in candidates if (
-            candidate in self.modules and candidate != self.current
-        ))
+        self.targets.update(
+            candidate
+            for candidate in candidates
+            if candidate in self.modules
+            and (
+                candidate != self.current
+                or (allow_exact_self and candidate == target)
+            )
+        )
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         return
@@ -187,7 +197,7 @@ class _EagerImportVisitor(ast.NodeVisitor):
 
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
-            self._record(alias.name)
+            self._record(alias.name, allow_exact_self=True)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.level:
@@ -195,10 +205,13 @@ class _EagerImportVisitor(ast.NodeVisitor):
             base = importlib.util.resolve_name(relative, self.current_package)
         else:
             base = node.module
-        self._record(base)
+        self._record(
+            base,
+            allow_exact_self=self.current != self.current_package,
+        )
         for alias in node.names:
             if alias.name != "*" and base:
-                self._record(f"{base}.{alias.name}")
+                self._record(f"{base}.{alias.name}", allow_exact_self=True)
 
 
 def _eager_import_graph(package_root: Path) -> dict[str, set[str]]:
@@ -262,19 +275,60 @@ def eager_import_sccs(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
     return _strongly_connected_components(_eager_import_graph(package_root))
 
 
-def _is_agent_migration_module(module: str) -> bool:
-    return (
-        module.startswith("gravity_sdk.agent_")
-        or module == "gravity_sdk.agents"
-        or module.startswith("gravity_sdk.agents.")
-    )
+def migration_module_names(
+    ledger: Path = REFERENCE_DISPOSITIONS,
+) -> frozenset[str]:
+    """Return the exact old/new owners touched by the reviewed R17 ledger."""
+
+    document = json.loads(ledger.read_text(encoding="utf-8"))
+    scope = document.get("scope", {})
+    moves = scope.get("one_to_one_moves")
+    if not isinstance(moves, list) or len(moves) != 81:
+        raise AssertionError("R17 migration ledger must contain exactly 81 moves")
+    modules: set[str] = set()
+    for index, move in enumerate(moves):
+        if not isinstance(move, dict):
+            raise AssertionError(f"R17 move {index} is not an object")
+        old_module = move.get("old_module")
+        new_module = move.get("new_module")
+        if not (
+            isinstance(old_module, str)
+            and old_module.startswith(LEGACY_AGENT_LEDGER_PREFIX)
+            and isinstance(new_module, str)
+            and new_module
+            == "gravity_sdk.agents."
+            + old_module.removeprefix(LEGACY_AGENT_LEDGER_PREFIX)
+        ):
+            raise AssertionError(
+                f"R17 move {index} has an invalid owner pair: "
+                f"{old_module!r} -> {new_module!r}"
+            )
+        modules.update((old_module, new_module))
+    if len(modules) != 162:
+        raise AssertionError("R17 move ledger must contain 81 unique old/new pairs")
+
+    consolidation = scope.get("consolidate_delete")
+    expected_fields = {"old_module", "new_module", "symbol"}
+    if not isinstance(consolidation, dict) or set(consolidation) != expected_fields:
+        raise AssertionError("R17 consolidation ledger has invalid fields")
+    old_module = consolidation.get("old_module")
+    new_module = consolidation.get("new_module")
+    if not (
+        isinstance(old_module, str)
+        and isinstance(new_module, str)
+        and consolidation.get("symbol") == "compact_pagination"
+    ):
+        raise AssertionError("R17 pagination consolidation is invalid")
+    modules.update((old_module, new_module))
+    return frozenset(modules)
 
 
 def eager_import_cycles(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
     """Return complete-graph cycles that cross the agent migration boundary."""
 
+    migration_modules = migration_module_names()
     return [
         component
         for component in eager_import_sccs(package_root)
-        if any(_is_agent_migration_module(module) for module in component)
+        if any(module in migration_modules for module in component)
     ]

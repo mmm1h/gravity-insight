@@ -70,6 +70,25 @@ _DATED_DECISION_PATTERN = re.compile(
     r"\d{4}-\d{2}-\d{2}[\uff09)]",
     re.IGNORECASE,
 )
+
+
+def _has_current_path_semantics(old_module: str, context: str) -> bool:
+    """Recognize executable/current-path syntax before historical evidence."""
+
+    short = re.escape(old_module.removeprefix("gravity_sdk."))
+    qualified = rf"(?:(?:gravity_sdk\.)?{short}|\.{short})"
+    patterns = (
+        rf"\bfrom\s+{qualified}\s+import\b",
+        rf"\bimport\s+{qualified}\b",
+        rf"{qualified}\s*\.(?!py\b)[A-Za-z_]\w*",
+        rf"{qualified}\s*\(",
+        rf"(?:import_module|__import__|patch(?:\.object)?|monkeypatch\.setattr|"
+        rf"getattr)\s*\([^\n)]{{0,160}}{qualified}",
+        rf"\b(?:consumer|caller|call|invoke|use|import|patch)\b"
+        rf"[^\n]{{0,120}}{qualified}",
+        rf"(?:src/gravity_sdk/)?{short}\.py",
+    )
+    return any(re.search(pattern, context, re.IGNORECASE) for pattern in patterns)
 _PAGINATION_CONSUMER_PATTERN = re.compile(
     r"(?:\bfrom\s+(?:(?:gravity_sdk\.)?\.?agent_pagination\s+import\b"
     r"|gravity_sdk\s+import\s+agent_pagination\b)"
@@ -210,7 +229,7 @@ def _replacement_texts(row: Finding, snippet: str, new_module: str) -> tuple[str
     if full_source in snippet:
         return full_source, "src/" + new_module.replace(".", "/") + ".py"
     if f"{old_short}.py" in snippet:
-        return f"{old_short}.py", f"{short}.py"
+        return f"{old_short}.py", f"agents/{short}.py"
     return old_short, new_module.removeprefix("gravity_sdk.")
 
 
@@ -260,6 +279,8 @@ def classify_active_bare_context(old_module: str, context: str) -> str:
         if any(pattern.search(context) for pattern in _PAGINATION_DELETION_PATTERNS):
             return DELETED_MODULE_RECORD
         return AMBIGUOUS_REFERENCE
+    if _has_current_path_semantics(old_module, context):
+        return ACTIVE_REFERENCE
     if _DATED_DECISION_PATTERN.search(context):
         return DATED_DECISION_RECORD
     return ACTIVE_REFERENCE
@@ -496,10 +517,9 @@ def _classify_owner(row: Finding) -> dict[str, Any]:
 def _classify_prefix(row: Finding) -> dict[str, Any]:
     return _none(
         "legacy_prefix_migration_sentinel",
-        "The characterization helper intentionally recognizes both the legacy "
-        "gravity_sdk.agent_ prefix and the target gravity_sdk.agents package so its "
-        "terminal-state checks detect any stale old owner. It does not import or "
-        "select a runtime module.",
+        "The characterization helper uses the legacy prefix only to classify deep "
+        "path references and validate ledger row shape. SCC membership comes from "
+        "the exact 81 move rows plus pagination consolidation, not this prefix.",
         "migration_characterization_contract",
     )
 
@@ -617,8 +637,8 @@ def build_document() -> dict[str, Any]:
             "blocker": "Do not start R17 until the ownership or selector proposition is resolved.",
         },
         "classification_method": {
-            "bare_agent_string": "Classify each bounded Markdown record or JSON field: freeze dated decision evidence and explicit consolidated/deleted-module facts, rewrite consumer syntax and active one-to-one paths, and block ambiguous deleted-module mentions.",
-            "agent_prefix_template": "Retain only the two migration-characterization sentinels that deliberately detect both legacy and target owners.",
+            "bare_agent_string": "Classify each bounded Markdown record or JSON field: recognize consumer/current-path syntax before considering dated evidence, freeze only non-consumer dated decisions and explicit consolidated/deleted-module facts, rewrite active one-to-one paths, and block ambiguous deleted-module mentions.",
+            "agent_prefix_template": "Retain only the two characterization uses that classify legacy deep paths and validate old-module ledger shape; SCC membership is ledger-defined.",
             "non_string_patch_expression": "Separate object APIs from dotted-string APIs and inspect every finite producer/call domain.",
             "dynamic_import": "Trace each expression to finite inputs; rewrite the root lazy selector and reject unknown domains.",
             "module_owner_receiver": "Trace every receiver binding and retain only owners outside the R17 move set.",
