@@ -81,16 +81,10 @@ category→exit；两产品仍各自拥有 operation、字段和文案。
 - **退出条件**：获批结构迁移 Requirement 记录写入范围、现状刻画、消费者迁移/回滚，并迁入至少一个经证明的高耦合领域，
   同时保持公开 surface 与能力；不得以改名或空目录关闭。
 
-### 12. Provider 与 Adaptive Governor 测试仍含全量门禁顺序相关的计时 oracle
-- **可测事实**：Provider 私有 gap 测试单跑约 0.30s 全过；全量时共享 `timeout_ms: 200` 与 Python 冷启动竞争，
-  `PROVIDER_RPC_TIMEOUT` 会误成 `PROVIDER_RPC_MALFORMED`；`test_adaptive_governor.py:483` 也把 0.5 秒真实等待
-  当 oracle。修复进行中，未实际关闭前保留。
-- **影响边界**：只影响全量测试确定性和失败分类，不改变产品授权或功能语义。
-- **退出条件**：以同步事件/可控时钟替代真实等待，Provider fixture 不再竞争冷启动超时，相关测试在完整门禁稳定给出
-  预期分类；关闭时删除正文并在下方留一行历史。
 ## 已关闭
 2026-08-19 以前关闭项见[清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)。
 - 2026-08-20：Census POST 读词元债关闭，`uncovered_read` 仅保留安全方法/exact 静态确认，其余为
   `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
 - 2026-08-20：Agent 有界无 spec 路由改用 `NO_SPEC_PRODUCTS`，`REPORT_PRODUCTS` 保留同对象兼容别名。
 - 2026-08-25：CT03 跨产物绑定、exact revision/index 与跨 Python archive 确定性缺口关闭。
+- 2026-08-25：Provider 与 Adaptive Governor 全量门禁计时 oracle 债关闭；并发测试均改为同步握手与 30 秒死锁保险。

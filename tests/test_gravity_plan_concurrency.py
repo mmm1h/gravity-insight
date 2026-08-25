@@ -358,7 +358,7 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
                     call = self.calls
                 if call == 1:
                     first_http.set()
-                    case.assertTrue(return_429.wait(1))
+                    case.assertTrue(return_429.wait(30))
                     return Response(429, {"Retry-After": "3"})
                 return Response(200)
 
@@ -375,7 +375,7 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
             delays.append(delay)
             if len(delays) == 1:
                 waiting.set()
-                self.assertTrue(release.wait(1))
+                self.assertTrue(release.wait(30))
             now[0] += delay
 
         runtime = GravityHttpRuntime(
@@ -400,13 +400,17 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             first = pool.submit(request)
-            self.assertTrue(first_http.wait(1))
-            second = pool.submit(request)
-            self.assertTrue(waiting.wait(1))
-            return_429.set()
-            self.assertEqual(429, first.result(timeout=2).status_code)
-            release.set()
-            self.assertEqual(200, second.result(timeout=2).status_code)
+            try:
+                self.assertTrue(first_http.wait(30))
+                second = pool.submit(request)
+                self.assertTrue(waiting.wait(30))
+                return_429.set()
+                self.assertEqual(429, first.result(timeout=30).status_code)
+                release.set()
+                self.assertEqual(200, second.result(timeout=30).status_code)
+            finally:
+                return_429.set()
+                release.set()
         self.assertGreaterEqual(sum(delays), 3.0)
         self.assertEqual(2, len(delays))
         self.assertEqual(2, session.calls)
