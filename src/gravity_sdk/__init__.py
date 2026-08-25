@@ -6,7 +6,9 @@ before any workspace-dependent module is imported.
 
 from __future__ import annotations
 
+import sys
 from importlib import import_module
+from types import ModuleType
 from typing import Any
 
 
@@ -261,14 +263,29 @@ for _sql_error_name in (
     _EXPORTS[_sql_error_name] = (".error_sql", _sql_error_name)
 
 
-def __getattr__(name: str) -> Any:
+_MISSING_EXPORT = object()
+
+
+def _is_shadowing_module(name: str, value: Any) -> bool:
+    return isinstance(value, ModuleType) and value.__name__ == f"{__name__}.{name}"
+
+
+def _load_export(name: str) -> Any:
     try:
         module_name, attribute = _EXPORTS[name]
     except KeyError as exc:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
     value = getattr(import_module(module_name, __name__), attribute)
+    if _is_shadowing_module(name, value):
+        raise TypeError(
+            f"public export {__name__}.{name} resolved to its shadowing module"
+        )
     globals()[name] = value
     return value
+
+
+def __getattr__(name: str) -> Any:
+    return _load_export(name)
 
 
 def __dir__() -> list[str]:
@@ -276,3 +293,21 @@ def __dir__() -> list[str]:
 
 
 __all__ = [*_EXPORTS, "__version__"]
+
+
+class _ExportAwareModule(ModuleType):
+    """Keep declared root exports authoritative over child-module bindings."""
+
+    def __getattribute__(self, name: str) -> Any:
+        namespace = ModuleType.__getattribute__(self, "__dict__")
+        exports = namespace["_EXPORTS"]
+        if name in exports:
+            missing = namespace["_MISSING_EXPORT"]
+            value = namespace.get(name, missing)
+            if value is missing or namespace["_is_shadowing_module"](name, value):
+                return namespace["_load_export"](name)
+            return value
+        return ModuleType.__getattribute__(self, name)
+
+
+sys.modules[__name__].__class__ = _ExportAwareModule
