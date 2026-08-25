@@ -47,9 +47,11 @@
       "shared_spine": true,
       "delivery_mode": "leaf",
       "scope": {
-        "classifier": "facade_reachable_static_import_closure_v1",
+        "classifier": "legacy_agent_prefix_cohort_facade_reachable_static_import_closure_v1",
+        "boundary_claim": "cohesion_within_the_legacy_agent_prefix_cohort_only",
+        "complete_agent_domain_proven": false,
         "candidate_root_modules": 83,
-        "agent_domain_modules": 82,
+        "facade_reachable_candidate_modules": 82,
         "migrated_modules": 81,
         "consolidated_deleted_modules": ["agent_pagination"],
         "excluded_modules": ["agent_runtime_contracts"],
