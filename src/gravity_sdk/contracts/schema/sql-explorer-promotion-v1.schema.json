@@ -10,7 +10,7 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {"const": "gravity.sql-explorer-promotion.v1"},
-    "status": {"const": "ready_for_workspace_install"},
+    "status": {"const": "installed"},
     "source": {"type": "object"},
     "review": {
       "type": "object",

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import copy
+from datetime import date
 import json
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -23,6 +25,7 @@ from gravity_sdk import (
 from gravity_sdk.capability_trust import CapabilityTrustService
 from gravity_sdk.agent_runtime_contracts import canonical_digest
 from gravity_sdk.sql.__main__ import build_parser
+from gravity_sdk.sql.products import build_sql, day_window
 from gravity_sdk.sql_explorer_contract import (
     SqlExplorerContractError,
     promotion_digest,
@@ -32,6 +35,7 @@ from gravity_sdk.sql_explorer_contract import (
 from gravity_sdk.sql_explorer_policy import compile_sql_explorer_statement
 from gravity_sdk.sql_explorer_sqlite import _SqliteReadOnlySession
 import gravity_sdk.sql_explorer_sqlite as sqlite_adapter_module
+import gravity_sdk.workspace_sql_product_install as workspace_install_module
 from gravity_sdk.workspace import (
     load_workspace,
     validate_registered_sql_product_definition,
@@ -142,6 +146,10 @@ class SqlExplorerTests(unittest.TestCase):
         connection.executemany("INSERT INTO events VALUES (?, ?, ?, ?)", rows)
         connection.commit()
         connection.close()
+        self.workspace_root = Path(self.temporary.name) / "workspace"
+        shutil.copytree(EXAMPLE_WORKSPACE, self.workspace_root)
+        self.workspace_path = self.workspace_root / "gravity.toml"
+        self.cache_root = Path(self.temporary.name) / "cache"
         self.service = SqlExplorerService()
 
     def tearDown(self) -> None:
@@ -375,12 +383,17 @@ class SqlExplorerTests(unittest.TestCase):
         with self.assertRaises(SqlExplorerContractError):
             validate_sql_explorer_result(changed)
 
-    def test_promotion_yields_normal_product_but_never_stable_identity(self) -> None:
-        workspace = load_workspace(EXAMPLE_WORKSPACE)
+    def test_promotion_installs_normal_product_but_never_stable_identity(self) -> None:
+        workspace = load_workspace(
+            self.workspace_path, environ={}, cache_root=self.cache_root
+        )
         service = SqlExplorerService(workspace)
         executed = service.execute(_request(self.database))
         original_names = workspace.product_names
         promoted = service.promote(_promotion_request(executed["promotion_source"]))
+        installed = load_workspace(
+            self.workspace_path, environ={}, cache_root=self.cache_root
+        )
 
         self.assertEqual(promoted, validate_sql_explorer_promotion(promoted))
         definition = promoted["product"]["definition"]
@@ -395,6 +408,18 @@ class SqlExplorerTests(unittest.TestCase):
             definition["privacy"],
             definition["review_evidence_sha256"],
         ))
+        self.assertEqual("installed", promoted["status"])
+        self.assertEqual(
+            tuple(sorted((*original_names, "explored-summary-v1"))),
+            installed.product_names,
+        )
+        self.assertEqual(definition, installed.product("explored-summary-v1"))
+        start_at, end_at = day_window(date(2026, 8, 1))
+        rendered_sql = build_sql(
+            "explored-summary-v1", start_at, end_at, (), installed
+        )
+        self.assertIn("app_id IN (1001)", rendered_sql)
+        self.assertIn("LIMIT 101", rendered_sql)
         self.assertEqual((False, False, False), (
             promoted["installation"]["automatic"],
             promoted["trust"]["stable_identity_granted"],
@@ -406,15 +431,47 @@ class SqlExplorerTests(unittest.TestCase):
         )
         self.assertNotEqual("stable", missing["trust_status"])
 
-        existing = _promotion_request(
-            executed["promotion_source"], name="daily-event-summary"
-        )
         with self.assertRaises(SqlExplorerContractError) as raised:
-            service.promote(existing)
+            service.promote(_promotion_request(executed["promotion_source"]))
         self.assertEqual("SQL_EXPLORER_PROMOTION_PRODUCT_EXISTS", raised.exception.code)
 
+    def test_promotion_readback_failure_rolls_back_workspace_install(self) -> None:
+        workspace = load_workspace(
+            self.workspace_path, environ={}, cache_root=self.cache_root
+        )
+        service = SqlExplorerService(workspace)
+        source = service.execute(_request(self.database))["promotion_source"]
+        original = self.workspace_path.read_bytes()
+        replace = workspace_install_module.replace_atomic_durable
+        corrupted = False
+
+        def corrupt_first_commit(source_path, target_path):
+            nonlocal corrupted
+            replace(source_path, target_path)
+            if target_path == self.workspace_path and not corrupted:
+                corrupted = True
+                target_path.write_text("schema_version =", encoding="utf-8")
+
+        with patch(
+            "gravity_sdk.workspace_sql_product_install.replace_atomic_durable",
+            side_effect=corrupt_first_commit,
+        ), self.assertRaises(SqlExplorerContractError) as raised:
+            service.promote(_promotion_request(source, name="rollback-summary-v1"))
+
+        self.assertEqual(
+            "SQL_EXPLORER_PROMOTION_INSTALL_FAILED", raised.exception.code
+        )
+        self.assertTrue(corrupted)
+        self.assertEqual(original, self.workspace_path.read_bytes())
+        restored = load_workspace(
+            self.workspace_path, environ={}, cache_root=self.cache_root
+        )
+        self.assertNotIn("rollback-summary-v1", restored.product_names)
+
     def test_promotion_semantic_tamper_fails_even_after_digest_recomputation(self) -> None:
-        workspace = load_workspace(EXAMPLE_WORKSPACE)
+        workspace = load_workspace(
+            self.workspace_path, environ={}, cache_root=self.cache_root
+        )
         service = SqlExplorerService(workspace)
         source = service.execute(_request(self.database))["promotion_source"]
         promoted = service.promote(_promotion_request(source))
@@ -528,7 +585,7 @@ class SqlExplorerTests(unittest.TestCase):
         self.assertEqual("success", payload["status"])
         self.assertFalse(payload["network_called"])
 
-    def test_cli_promotion_writes_only_to_the_explicit_output(self) -> None:
+    def test_cli_promotion_installs_workspace_and_writes_explicit_artifact(self) -> None:
         source = self.service.execute(_request(self.database))["promotion_source"]
         promotion_input = Path(self.temporary.name) / "promotion.json"
         promotion_output = Path(self.temporary.name) / "reviewed-product.json"
@@ -536,9 +593,8 @@ class SqlExplorerTests(unittest.TestCase):
             json.dumps(_promotion_request(source)), encoding="utf-8"
         )
         environment = os.environ.copy()
-        environment["GRAVITY_WORKSPACE"] = str(
-            EXAMPLE_WORKSPACE / "gravity.toml"
-        )
+        environment["GRAVITY_WORKSPACE"] = str(self.workspace_path)
+        environment["GRAVITY_CACHE_HOME"] = str(self.cache_root)
         environment["PYTHONPATH"] = str(ROOT / "src")
         result = subprocess.run(
             [
@@ -565,7 +621,11 @@ class SqlExplorerTests(unittest.TestCase):
         receipt = json.loads(result.stdout)
         artifact = json.loads(promotion_output.read_text(encoding="utf-8"))
         self.assertTrue(receipt["ok"])
-        self.assertEqual("ready_for_workspace_install", artifact["status"])
+        self.assertEqual("installed", artifact["status"])
+        installed = load_workspace(
+            self.workspace_path, environ={}, cache_root=self.cache_root
+        )
+        self.assertIn("explored-summary-v1", installed.product_names)
         self.assertNotIn(artifact["product"]["definition"]["sql"], result.stdout)
         self.assertEqual(
             (False, False),
