@@ -412,7 +412,7 @@ def _validate_promotion_shape(value: Mapping[str, Any]) -> None:
         "trust_status": "not_evaluated",
         "stable_identity_granted": False,
         "stable_dependency_allowed": False,
-        "next_action": "Install the reviewed product, then create same-layer Validation before stable use.",
+        "next_action": "Create same-layer Validation before stable Skill or Journey use.",
     }:
         _promotion_invalid("promotion Trust boundary changed")
 

@@ -1,4 +1,4 @@
-"""Read-only Gravity workspace discovery and validation."""
+"""Gravity workspace discovery, validation, and governed product registration."""
 
 from __future__ import annotations
 
@@ -209,32 +209,8 @@ def load_workspace(
             semantic_context=None,
         )
 
-    try:
-        data = tomllib.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
-        raise WorkspaceError(f"cannot read Gravity workspace {path}: {exc}") from exc
-    (
-        apps,
-        defaults,
-        datasources,
-        products,
-        recipes,
-        plan_recipes,
-        semantic_context,
-    ) = _validate_workspace(data, path)
     state_root = _workspace_state_root(selected_cache, path)
-    return Workspace(
-        path=path,
-        root=path.parent,
-        state_root=state_root,
-        apps=apps,
-        defaults=defaults,
-        datasources=datasources,
-        products=products,
-        recipes=recipes,
-        plan_recipes=plan_recipes,
-        semantic_context=semantic_context,
-    )
+    return _read_workspace_path(path, state_root)
 
 
 def require_products(workspace: Workspace | None = None) -> tuple[str, ...]:
@@ -473,6 +449,26 @@ def validate_registered_sql_product_definition(
         path,
     )
     return dict(selected[name])
+
+
+def _read_workspace_path(path: Path, state_root: Path) -> Workspace:
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        raise WorkspaceError(f"cannot read Gravity workspace {path}: {exc}") from exc
+    validated = _validate_workspace(data, path)
+    return Workspace(
+        path=path,
+        root=path.parent,
+        state_root=state_root,
+        apps=validated[0],
+        defaults=validated[1],
+        datasources=validated[2],
+        products=validated[3],
+        recipes=validated[4],
+        plan_recipes=validated[5],
+        semantic_context=validated[6],
+    )
 
 
 def _validate_product_promotion_provenance(

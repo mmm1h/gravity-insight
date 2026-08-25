@@ -35,7 +35,7 @@ def add_sql_explorer_commands(commands: Any) -> None:
         parser.set_defaults(network_required=False)
     promote = actions.add_parser(
         "promote",
-        help="Compile an explicitly reviewed normal registered SQL product.",
+        help="Atomically install an explicitly reviewed registered SQL product.",
     )
     promote.add_argument(
         "--input",

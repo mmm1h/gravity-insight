@@ -28,10 +28,14 @@ from .workspace import (
     WorkspaceError,
     validate_registered_sql_product_definition,
 )
+from .workspace_sql_product_install import (
+    WorkspaceProductExistsError,
+    install_registered_sql_product,
+)
 
 
 class SqlExplorerService:
-    """Run only explicit SQLite exploration and compile inert promotions."""
+    """Run explicit SQLite exploration and install reviewed promotions."""
 
     def __init__(
         self,
@@ -65,15 +69,6 @@ class SqlExplorerService:
             )
         approval = selected["approval"]
         name = approval["product_name"]
-        if name in workspace.products:
-            raise SqlExplorerContractError(
-                "SQL_EXPLORER_PROMOTION_PRODUCT_EXISTS",
-                "promotion cannot replace an existing registered SQL product",
-                stage="promotion",
-                field="approval.product_name",
-                category="policy",
-                next_action="Choose a new versioned product name; do not overwrite automatically.",
-            )
         definition = {
             **copy.deepcopy(approval["registered_product"]),
             "contract_version": approval["contract_version"],
@@ -93,8 +88,30 @@ class SqlExplorerService:
                 category="policy",
                 next_action="Correct the registered SQL product review, then retry.",
             ) from exc
-        result = _promotion(selected, name, definition)
-        return validate_sql_explorer_promotion(result)
+        result = validate_sql_explorer_promotion(
+            _promotion(selected, name, definition)
+        )
+        try:
+            install_registered_sql_product(workspace, name, definition)
+        except WorkspaceProductExistsError as exc:
+            raise SqlExplorerContractError(
+                "SQL_EXPLORER_PROMOTION_PRODUCT_EXISTS",
+                "promotion cannot replace an existing registered SQL product",
+                stage="promotion",
+                field="approval.product_name",
+                category="policy",
+                next_action="Choose a new versioned product name; do not overwrite automatically.",
+            ) from exc
+        except WorkspaceError as exc:
+            raise SqlExplorerContractError(
+                "SQL_EXPLORER_PROMOTION_INSTALL_FAILED",
+                "reviewed product installation did not complete and was rolled back",
+                stage="promotion",
+                field="workspace",
+                category="local",
+                next_action="Inspect the workspace path and retry the explicit promotion.",
+            ) from exc
+        return result
 
     def _run(
         self, operation: str, request: Mapping[str, Any]
@@ -207,7 +224,7 @@ def _promotion(
     approval = request["approval"]
     result = {
         "schema_version": PROMOTION_SCHEMA_VERSION,
-        "status": "ready_for_workspace_install",
+        "status": "installed",
         "source": copy.deepcopy(request["source"]),
         "review": {
             "decision": "approved",
@@ -229,6 +246,8 @@ def _promotion(
             "privacy": definition["privacy"],
             "forbidden_claims": copy.deepcopy(definition["forbidden_claims"]),
         },
+        # Installation is explicit because this promote call requested it; it is
+        # not an unattended or fallback registration.
         "installation": {
             "automatic": False,
             "target": f"workspace.products.{name}",
@@ -238,7 +257,7 @@ def _promotion(
             "trust_status": "not_evaluated",
             "stable_identity_granted": False,
             "stable_dependency_allowed": False,
-            "next_action": "Install the reviewed product, then create same-layer Validation before stable use.",
+            "next_action": "Create same-layer Validation before stable Skill or Journey use.",
         },
         "network_called": False,
     }
