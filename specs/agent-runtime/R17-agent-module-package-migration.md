@@ -1,9 +1,9 @@
-# R17 Legacy Agent Prefix Cohort Package Migration
+# R17 Compact Agent Interaction Package Migration
 
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.2` via `directive.json`; canonical architecture source is v9.2 |
-| Status | `specified`; M0 binding is satisfied, while SCC semantics, dynamic-audit semantics, and independent ready review remain unresolved |
+| Status | `specified`; M0 characterization and dynamic-audit classification are satisfied under standing delegation with owner review pending; independent ready review remains unresolved |
 | Track | Structural migration / technical debt #11 |
 | Requirement dependencies | None |
 | Parallel group | `structural-migration` |
@@ -19,24 +19,26 @@
 
 ## Outcome
 
-Create a minimal `gravity_sdk/agents/` package by migrating a bounded legacy
-prefix cohort. Of the 83 root `agent_*.py` candidates at the measurement
-baseline, 82 are reachable from the stable `gravity_sdk.agent` facade through
-candidate-to-candidate import edges. R17 moves 81 of those modules one for one,
-consolidates the single-caller `agent_pagination` helper into the canonical
+Create a minimal `gravity_sdk/agents/` package by migrating the compact Agent
+interaction responsibility set. An independent inventory seeded from
+responsibilities rather than filenames, paths, or prefixes retained all 81
+previous moves, found zero false inclusions, and added the internal
+`gravity_sdk.relative_date_agent` owner. R17 therefore moves 82 modules one for
+one, consolidates the single-caller `agent_pagination` helper into the canonical
 `pagination_completeness.py` owner and deletes that module, and leaves the
 unreachable `agent_runtime_contracts.py` infrastructure module at the root.
 
-This result proves cohesion and one exclusion **within the legacy
-`agent_*.py` prefix cohort only**. The prefix defines the candidate queue; no
-independent ownership inventory proves that the queue contains every Agent
-domain module. A responsibility-preserving rename such as `agent_sources.py`
-to `sources.py` would remove the module from the queue. R17 therefore does not
-claim a complete Agent domain boundary and does not claim to pass the canonical
-architecture's counter-path-dependence boundary test. It is an explicitly
-bounded migration of a high-coupling legacy cohort.
+The independent inventory supports this adjusted 82-move ownership boundary,
+including the continued exclusion of `agent_runtime_contracts` and `find.py`.
+It does not prove a complete Agent domain or fully pass the canonical
+counter-path-dependence test: the full-scope facade SCC, unrestricted facade
+closure, import-graph minimum-conductance cut, and co-change graph returned 40,
+308, 495, and 549 modules respectively and did not converge. No threshold was
+tuned to reproduce the previous 81. R17 remains a bounded structural migration
+whose exact ledger, preservation gates, and independent ready review must still
+be accepted before implementation.
 
-The root package falls from 578 to 496 Python files. The complete package stays
+The root package falls from 578 to 495 Python files. The complete package stays
 at 642 Python files because deleting `agent_pagination.py` offsets the new
 `agents/__init__.py`. Runtime responses, request volume, privacy, execution
 ownership, supported capability, and the actual 148-name `gravity_sdk.__all__`
@@ -51,37 +53,33 @@ debt #11, or satisfy R17.
 
 `index.json.ready_prerequisites` is the machine authority.
 
-1. **Satisfied at `dev@3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515`.** The M0
+1. **Satisfied at `dev@113176a381b6d232e95a112d78d1d2f4bc5ac024`.** The M0
    candidate commit `088d1606127439943cab0b79c8cdbdf516af4839` is an ancestor
    of that baseline. M0 content changed after that commit, so the bound
    artefacts are the baseline copies, not the candidate copies:
 
    | Artefact | SHA-256 |
    | --- | --- |
-   | `tests/agent_migration_characterization.py` | `edad06dacc70c749de8e1c8e87f00cbfc69d5f2e8b52b41f961fc6dee72f3e81` |
-   | `tests/test_agent_module_migration_characterization.py` | `a792c4b303f476b44de6e30f4d37bc0c34f4a7f3c72752354eaab4133c3b5468` |
+   | `tests/agent_migration_characterization.py` | `97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640` |
+   | `tests/test_agent_module_migration_characterization.py` | `6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc` |
    | `tests/test_installed_wheel.py` | `bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117` |
    | `tests/fixtures/public_api_owner_migrations.json` | `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570` |
    | `tests/fixtures/public_api_exports.json` | `d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053` |
 
-   The artefact binding is complete, so this prerequisite remains satisfied.
-   Its SCC semantics review has not passed: the current visitor drops
-   self-edges and the migration predicate includes the excluded contracts
-   module. The parallel gate-fix unit must restore the intended full-graph SCC
-   rule before `ready`; the unrelated `prober` and `sql` components remain
-   comparison facts, not exclusions from the graph.
-2. **Not satisfied.** The 238-row
-   `tests/fixtures/agent_module_reference_dispositions.json` ledger (SHA-256
-   `2d69b014bb35d77860bc3dde686017a8c5041cbcdda112eeb683925c3cfb84b9`,
-   schema `gravity.agent-module-reference-dispositions.v2`) is internally
-   complete, with 238 unique source keys, `unclassified_sites = 0`,
-   `blocker_count = 0`, split `224 no_migration_effect / 13 rewrite_reference /
-   1 rewrite_selector_data`. The third ready review reproduced false negatives
-   for `importlib.import_module`, `__import__`, `sys.modules`, indirect string
-   variables, and string patch targets. The parallel gate-fix unit must harden
-   both the generator and independent validator, add mutation coverage, and
-   rebind the resulting ledger before this prerequisite can become satisfied.
-   Until then, the 238 dispositions are evidence, not a satisfied prerequisite.
+   The bound visitor now retains self-loops and intersects the exact ledger move
+   set plus pagination consolidation; the excluded contracts owner does not
+   enter that predicate. This prerequisite remains satisfied with
+   `owner_review: pending`.
+2. **Satisfied under standing delegation; owner review remains pending.** The
+   immutable 238-row errata ledger (SHA-256
+   `9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`,
+   schema `gravity.agent-module-reference-dispositions.v2`) remains separate
+   from the live checkpoint receipt. The live scanner covers static references,
+   dynamic loaders, indirect variables, string patch targets, and opaque forms;
+   all 908 current tracked sites have dispositions, with zero unclassified sites
+   and zero blockers. This is the original 903-site denominator plus five sites
+   exposed by the expanded scope and current index text. Unknown module names and cross-function loaders remain
+   real blockers rather than exclusions.
 3. **Not satisfied.** An independent reviewer must accept the scope,
    measurement definitions, proposed owner changes, two explicit concept
    deletions, and exact acceptance commands and return a `ready` verdict. This
@@ -92,47 +90,60 @@ successful and zero naming collisions. Those facts do not classify any source
 site and do not repair the baseline mismatch above.
 
 Machine state shared by this Requirement and `index.md`: `status=specified`;
-`dynamic_import_audit_classification.satisfied=false`;
+`dynamic_import_audit_classification.satisfied=true`;
 `schema=gravity.agent-module-reference-dispositions.v2`; `candidate_sites=238`;
 `classified_sites=238`; `unclassified_sites=0`; `blocking_sites=0`.
+
+`m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
+`m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
+`ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
+`live_checkpoint_sha256=4c46e7d343749cba164f60ef0059d2a7734444e0f2d32a975c130e4b24b6e399`;
+`live_checkpoint_tracked_sites=908`.
 
 The required cross-file state gate is
 `tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_index_and_specification_state_agree`.
 It must load both JSON files as UTF-8 and assert that the R17 Index entry, this
 Requirement, and `index.md` all report `specified`, schema v2, 238 candidate and
-classified sites, zero unclassified and blocking sites, and an unsatisfied
+classified sites, zero unclassified and blocking sites, and a satisfied
 dynamic-audit prerequisite; it must also reject any previous-generation site
 count or ledger-schema claim in the three R17 state representations.
 
-## Legacy Prefix Cohort Selection Rule
+## Responsibility Inventory And Target Naming Rule
 
-The candidate universe is the 83 files matched by
-`src/gravity_sdk/agent_*.py` at the bound baseline. It does not include the
-stable `src/gravity_sdk/agent.py` facade.
+The exact machine scope is the 84 decisions in the checked-in ledger: 82
+one-to-one moves, the pagination consolidation, and the retained Runtime
+contracts owner. Its ownership basis is an independent responsibility inventory
+that did not seed discovery from filenames, paths, or the `agent_*` prefix. The
+inventory retained every prior move and added `relative_date_agent`, whose only
+source consumer is `agent_handoff`, whose only public symbol is
+`fill_agent_relative_dates`, and which is not a root lazy public owner.
 
-For each candidate `m`, build a directed source-import graph over every Python
-module under `src/gravity_sdk`: parse imports in all scopes with Python `ast`;
-resolve relative and absolute imports to the longest existing in-package
-module; resolve root lazy exports through
-`tests/fixtures/public_api_exports.json`; deduplicate `(source, target)` edges;
-then compute `d(m)`, the shortest path from `gravity_sdk.agent` to `m` while
-allowing only the facade as the start node and candidates as later nodes.
+Target names apply one rule to all 82 moves: after placing a compact Agent
+interaction owner under `gravity_sdk.agents`, remove exactly one redundant
+`agent` boundary token adjacent to the responsibility name. A leading
+`agent_` becomes no prefix (`agent_sources` -> `agents.sources`); a trailing
+`_agent` becomes no suffix (`relative_date_agent` -> `agents.relative_date`).
+The target basename must not collide, including case-insensitively, with any
+other move target or with an unrelated existing root module. There is no
+existing `gravity_sdk.relative_date` or `gravity_sdk.agents.relative_date`
+module at the bound baseline.
 
-**Selection rule (verbatim): a member of the legacy prefix cohort is selected
-for R17 migration if and only if `d(m)` is finite.** No line-count threshold,
-inbound-ratio threshold, or allowlist can make an unreachable candidate part of
-this migration. The rule is valid inside the prefix-defined candidate queue;
-it says nothing about modules outside that queue.
+The original 83-file `agent_*.py` graph remains supporting evidence rather than
+the selector. For each prefix candidate `m`, `d(m)` is the shortest path from
+`gravity_sdk.agent` through prefix candidates. It reproduces 82 reachable
+members: 81 moves plus pagination, while `agent_runtime_contracts` remains
+unreachable with 0 compact-cohort and 55 external direct consumers. The
+independent inventory separately reproduces that exclusion: its direct
+consumers belong to broader Skill, Context, Capability, Receipt, Artifact,
+Journey, Operator/Model, and SQL Explorer Runtime layers, with zero compact
+Agent-domain direct consumers. `find.py` also remains out because its own
+`gravity.find.v1` and CLI surfaces plus mixed Agent/CLI/SQL consumers make the
+coupling bidirectional rather than Agent-owned.
 
-The ledger also records `A`, unique direct inbound sources from the candidates
-plus facade, and `X`, unique direct inbound sources from all other
-`src/gravity_sdk` modules. `A:X` is evidence, not a threshold: CLI, SDK, Plan
-adapters, and root facades are valid consumers of cohort entry points. `X` is
-also the exact number of cohort-external-to-`agents` source edges introduced by
-moving that target. Facade reachability remains useful evidence that
-`agent_runtime_contracts` does not cohere with the selected cohort, but the
-prefix-defined candidate queue means this analysis does not establish the same
-boundary independently of current filenames or layout.
+The legacy ledger columns below retain `A`, unique direct inbound sources from
+the prefix candidates plus facade, `X`, other `src/gravity_sdk` sources, and
+`d`. They are evidence, not thresholds, and cover the original prefix cohort;
+the separately inventoried `relative_date_agent` row follows the table.
 
 ### Baseline Classification Ledger
 
@@ -227,16 +238,18 @@ this migration because `d` is absent; it does not prove a final domain owner.
 | `agent_user_journey` | 4 | 0 | 4:0 | 2 | move |
 | `agent_vocabulary` | 3 | 1 | 3:1 | 2 | move |
 
-The ledger contains 81 `move`, one `consolidate/delete`, and one `exclude`
-decision. The facade-reachable portion of the prefix cohort has 82 modules; 81
-become implementation modules under `agents/`. The graph induced by the facade
-plus those 82 members has 340 directed internal edges: the ledger's `A` column
-sums to 335 inbound edges to selected modules, and five selected-module edges
-target the facade. The 81 move rows have 334 cohort/facade inbound edges and 17
-cohort-external inbound edges. Those 17 consumer edges change target path but
-do not change ownership; the excluded contracts module instead has 0
-cohort/facade and 55 cohort-external inbound edges. This is high-coupling
-evidence for the bounded cohort, not proof of a complete domain.
+The independent inventory adds `relative_date_agent` as a move with one direct
+compact-Agent source consumer (`agent_handoff`) and zero other source consumers;
+its target is `gravity_sdk.agents.relative_date`.
+
+The ledger contains 82 `move`, one `consolidate/delete`, and one `exclude`
+decision. The original facade-reachable prefix cohort still has 82 modules: 81
+moves plus pagination. Adding the responsibility-inventoried relative-date
+owner yields 341 internal facade/scope edges. The 82 move rows have 335
+scope/facade inbound edges and 17 scope-external inbound edges. Those 17
+consumer edges change target path but not ownership; the excluded contracts
+module instead has 0 compact-Agent and 55 broader-Runtime inbound consumers.
+This supports the bounded 82-move scope but is not proof of a complete domain.
 
 ## Explicit Concept Deletions
 
@@ -254,7 +267,7 @@ not callers. Phase 2 deletes only this wrapper while retaining
 ledger and bound consumer census must also find no real dynamic caller; any
 such caller returns R17 to `specified` instead of gaining a shim.
 
-These are the only consolidation/deletion actions. The remaining 47 peripheral
+These are the only consolidation/deletion actions. The remaining 48 peripheral
 modules move one for one; no recognizer is merged or generalized into a
 data-driven registry.
 
@@ -274,11 +287,11 @@ and Phase 2 are ordered commits on that branch. The accepted Phase 1 commit and
 the final Phase 2 commit are recorded as rollback checkpoints; neither creates
 another branch, Requirement node, or independently releasable unit.
 
-### Phase 1: Peripheral 47 And Pagination Consolidation
+### Phase 1: Peripheral 48 And Pagination Consolidation
 
 The first serial checkpoint starts from the reviewed R17 baseline on the single
 implementation branch. It creates a minimal `gravity_sdk/agents/__init__.py`,
-migrates the following 47 modules, consolidates `agent_pagination`, and migrates
+migrates the following 48 modules, consolidates `agent_pagination`, and migrates
 every classified repository and canonical-consumer reference:
 
 ```text
@@ -296,11 +309,11 @@ agent_realtime_event_catalog agent_report_directory agent_report_mutation
 agent_saved_analysis agent_saved_analysis_mutation agent_segment_members
 agent_segment_snapshot agent_semantic_compose agent_sql_product_gap
 agent_title_package agent_unavailable_promotion agent_unavailable_report
-agent_user_journey agent_vocabulary
+agent_user_journey agent_vocabulary relative_date_agent
 ```
 
-Phase 1 acceptance requires 530 root Python files, 35 remaining root
-`agent_*.py` files, exactly 47 migrated implementation modules under `agents/`,
+Phase 1 acceptance requires 529 root Python files, 35 remaining root
+`agent_*.py` files, exactly 48 migrated implementation modules under `agents/`,
 no `agent_pagination.py`, an unchanged 642-file complete package, 148 root
 `__all__` names, 147 lazy owners, zero unresolved classified references, and
 zero full-graph SCCs intersecting the migration set. Its accepted commit becomes
@@ -308,7 +321,7 @@ the rollback checkpoint and base of Phase 2 but receives no independent
 Requirement state.
 
 Rollback from Phase 1 reverts the single Phase 1 commit to the reviewed baseline
-checkpoint, restoring all 47 root modules, `agent_pagination.py`, its caller,
+checkpoint, restoring all 48 root modules, `agent_pagination.py`, its caller,
 and every mapped consumer before removing package targets. It does not switch,
 delete, or reset a phase branch because no phase branch exists.
 
@@ -331,10 +344,10 @@ agent_sources agent_sql_product_discovery agent_table_lineage agent_unavailable
 agent_unavailable_analysis
 ```
 
-The baseline cohort split is 34 core plus 48 peripheral modules, including
-`agent_pagination`: 153 unique core-to-peripheral edges and zero reverse edges.
-The physical move split is 34 core plus 47 peripheral modules; removing the
-sole `agent_sources -> agent_pagination` edge gives 152 core-to-moved-peripheral
+The reviewed scope split is 34 core plus 49 peripheral modules, including
+`agent_pagination`: 154 unique core-to-peripheral edges and zero reverse edges.
+The physical move split is 34 core plus 48 peripheral modules; removing the
+sole `agent_sources -> agent_pagination` edge gives 153 core-to-moved-peripheral
 edges and zero reverse edges.
 
 Phase 2 updates `cli.py`, the facade, lazy owners, remaining consumers, and the
@@ -453,8 +466,8 @@ print(json.dumps({'implementation_modules':len(nodes),'core':len(nodes&core),'pe
 & ./.venv/Scripts/python.exe -c $code
 ```
 
-Final required output is `implementation_modules=81`, `core=34`,
-`peripheral=47`, `core_to_peripheral=152`, and `peripheral_to_core=0`.
+Final required output is `implementation_modules=82`, `core=34`,
+`peripheral=48`, `core_to_peripheral=153`, and `peripheral_to_core=0`.
 
 ### File And Public-Surface Counts
 
@@ -464,10 +477,10 @@ Final required output is `implementation_modules=81`, `core=34`,
 
 | Metric | Baseline | Final exit |
 | --- | ---: | ---: |
-| Root Python files | 578 | 496 |
+| Root Python files | 578 | 495 |
 | Root `agent_*.py` | 83 | 1 |
 | Complete-package Python files | 642 | 642 |
-| `agents/` implementation modules | 0 | 81 |
+| `agents/` implementation modules | 0 | 82 |
 | Lazy fixture / runtime owners | 147 / 147 | 147 / 147 |
 | Root `__all__` | 148 | 148 |
 
@@ -505,16 +518,17 @@ facts, not exclusions from the graph and not reasons to widen or narrow R17.
 The baseline and each serial checkpoint must report no SCC intersecting the
 migration set.
 
-The bound dynamic-audit artefact records 83 modules and 238 manual-review sites
-under schema v2, with zero collisions, 83 successful smoke imports, zero smoke
-failures, zero unclassified rows, and zero blockers. Its classification
-semantics remain an unsatisfied prerequisite for the reasons above; narrowing
-the move set does not erase an audit site.
+The immutable dynamic-audit ledger records 84 reviewed modules and 238
+manual-review sites under schema v2. The separate live checkpoint scans the
+complete tracked reference denominator and fails closed on opaque forms. Both
+currently have zero unclassified rows and zero blockers; owner review remains
+pending and no count is maintained by narrowing the scanner.
 
 ## Write Scope
 
-- Move exactly the 81 `move` rows to one-for-one
-  `src/gravity_sdk/agents/<name-without-agent-prefix>.py` targets and add a
+- Move exactly the 82 `move` rows to one-for-one
+  `src/gravity_sdk/agents/<responsibility-name>.py` targets under the single
+  adjacent-boundary-token removal rule and add a
   minimal package initializer.
 - Consolidate `compact_pagination` into `pagination_completeness.py`, delete
   `agent_pagination.py`, and delete only the zero-caller `metadata_inventory()`
@@ -572,7 +586,7 @@ the move set does not erase an audit site.
 
 - No rename or relocation of `agent_runtime_contracts`; no migration of other
   prefix families, `blob_*` pilot, or broad root cleanup.
-- No merge of the 47 peripheral recognizers, data-driven recognizer registry,
+- No merge of the 48 peripheral modules, data-driven recognizer registry,
   layer redesign, second execution path, compatibility alias, or parallel
   facade.
 - No `runtime.py` / `to_jsonable()` SCC work. Its disputed graph result and
@@ -584,7 +598,7 @@ the move set does not erase an audit site.
 
 ## Machine Contract
 
-- The 81 `move` rows map one for one; `agent_pagination` is deleted after
+- The 82 `move` rows map one for one; `agent_pagination` is deleted after
   consolidation; `agent_runtime_contracts.py` remains at its root path;
   `gravity_sdk.agent` remains the stable facade.
 - `gravity_sdk.agents.__init__` imports no business module and exposes no
@@ -595,7 +609,7 @@ the move set does not erase an audit site.
   `agents/`.
 - `gravity_sdk.__all__` remains 148 names; the lazy fixture and runtime map
   remain 147 entries; only the six reviewed owner routes may change.
-- The installed package contains all 81 migrated modules, the canonical
+- The installed package contains all 82 migrated modules, the canonical
   pagination helper, and retained contracts module. Tarjan over the complete
   642-module graph has no SCC intersecting the R17 migration set; the unrelated
   pre-existing 10-module `prober` and 8-module `sql` SCCs remain permitted.
@@ -639,7 +653,7 @@ collector.
 
 This command is expected to fail on the unmigrated baseline with a
 `Phase 1 structural checkpoint not reached` count diff. It passes only after
-the 47 peripheral moves and pagination consolidation are physically complete.
+the 48 peripheral moves and pagination consolidation are physically complete.
 
 ```powershell
 $code = @'
@@ -653,7 +667,7 @@ ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.jso
 moves = ledger['scope']['one_to_one_moves']
 core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
 phase1 = {row['new_module'].rsplit('.', 1)[1] for row in moves} - core
-assert len(moves) == 81 and len(core) == 34 and len(phase1) == 47, f'Phase 1 reviewed set mismatch: moves={len(moves)}, core={len(core)}, phase1={len(phase1)}'
+assert len(moves) == 82 and len(core) == 34 and len(phase1) == 48, f'Phase 1 reviewed set mismatch: moves={len(moves)}, core={len(core)}, phase1={len(phase1)}'
 snapshot = json.loads(Path('tests/fixtures/public_api_exports.json').read_text(encoding='utf-8'))
 actual = {
     'root_py': len(list(root.glob('*.py'))),
@@ -664,7 +678,7 @@ actual = {
     'runtime_exports': len(gravity_sdk._EXPORTS),
     'root_all': len(gravity_sdk.__all__),
 }
-expected = {'root_py': 530, 'root_agent_py': 35, 'package_py': 642, 'agents_implementation_py': 47, 'lazy_snapshot': 147, 'runtime_exports': 147, 'root_all': 148}
+expected = {'root_py': 529, 'root_agent_py': 35, 'package_py': 642, 'agents_implementation_py': 48, 'lazy_snapshot': 147, 'runtime_exports': 147, 'root_all': 148}
 assert actual == expected, f'Phase 1 structural checkpoint not reached: expected={expected}, actual={actual}'
 actual_agents = {p.stem for p in agents.glob('*.py') if p.name != '__init__.py'}
 assert actual_agents == phase1, f'Phase 1 agents set mismatch: missing={sorted(phase1-actual_agents)}, extra={sorted(actual_agents-phase1)}'
@@ -681,7 +695,7 @@ if ($LASTEXITCODE) { throw 'R17 Phase 1 structural checkpoint assertion failed' 
 ### Phase 1 SCC Checkpoint
 
 This uses the checked-in complete-package eager graph, but intersects its SCCs
-with the exact 81 ledger moves plus the pagination consolidation owner. The
+with the exact 82 ledger moves plus the pagination consolidation owner. The
 target-presence precondition distinguishes an unmigrated tree from an SCC bug.
 
 ```powershell
@@ -716,7 +730,7 @@ if ($LASTEXITCODE) { throw 'R17 Phase 1 SCC checkpoint assertion failed' }
 
 ### Phase 1 Consumer Checkpoint
 
-The runtime import scan rejects exact old owners for the 47 Phase 1 moves. The
+The runtime import scan rejects exact old owners for the 48 Phase 1 moves. The
 independent disposition generator covers dynamic, test, script, and governance
 sites; the fixed-revision census covers the canonical consumer.
 
@@ -919,7 +933,7 @@ actual = {
     'runtime_exports': len(gravity_sdk._EXPORTS),
     'root_all': len(gravity_sdk.__all__),
 }
-expected = {'root_py': 496, 'root_agent_py': 1, 'package_py': 642, 'agents_implementation_py': 81, 'lazy_snapshot': 147, 'runtime_exports': 147, 'root_all': 148}
+expected = {'root_py': 495, 'root_agent_py': 1, 'package_py': 642, 'agents_implementation_py': 82, 'lazy_snapshot': 147, 'runtime_exports': 147, 'root_all': 148}
 assert actual == expected, f'structural/public counts mismatch: expected={expected}, actual={actual}'
 root_agent_files = sorted(p.name for p in root.glob('agent_*.py'))
 assert root_agent_files == ['agent_runtime_contracts.py'], f'unexpected root agent files: {root_agent_files}'
@@ -928,7 +942,7 @@ paths = {path.stem: path for path in agents.glob('*.py') if path.name != '__init
 nodes = set(paths); edges = set()
 dispositions = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
 expected_nodes = {row['new_module'].removeprefix('gravity_sdk.agents.') for row in dispositions['scope']['one_to_one_moves']}
-assert nodes == expected_nodes, f'agents module set differs from the 81 reviewed move rows: missing={sorted(expected_nodes - nodes)}, extra={sorted(nodes - expected_nodes)}'
+assert nodes == expected_nodes, f'agents module set differs from the 82 reviewed move rows: missing={sorted(expected_nodes - nodes)}, extra={sorted(nodes - expected_nodes)}'
 for source, path in paths.items():
     for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'), filename=str(path))):
         targets = []
@@ -945,7 +959,7 @@ for source, path in paths.items():
 core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
 peripheral = nodes - core
 graph_actual = {'implementation_modules': len(nodes), 'core': len(nodes & core), 'peripheral': len(peripheral), 'core_to_peripheral': sum(u in core and v in peripheral for u, v in edges), 'peripheral_to_core': sum(u in peripheral and v in core for u, v in edges)}
-graph_expected = {'implementation_modules': 81, 'core': 34, 'peripheral': 47, 'core_to_peripheral': 152, 'peripheral_to_core': 0}
+graph_expected = {'implementation_modules': 82, 'core': 34, 'peripheral': 48, 'core_to_peripheral': 153, 'peripheral_to_core': 0}
 assert graph_actual == graph_expected, f'physical cohort graph mismatch: expected={graph_expected}, actual={graph_actual}'
 
 owner_ledger = json.loads(Path('tests/fixtures/public_api_owner_migrations.json').read_text(encoding='utf-8'))
@@ -1101,10 +1115,10 @@ if ($LASTEXITCODE) { throw 'git diff --check failed' }
 R17 exits only at the final Phase 2 checkpoint on the single implementation
 branch when:
 
-- root Python files equal 496; root `agent_*.py` equals the sole retained
-  `agent_runtime_contracts.py`; `agents/` has exactly 81 implementation modules;
+- root Python files equal 495; root `agent_*.py` equals the sole retained
+  `agent_runtime_contracts.py`; `agents/` has exactly 82 implementation modules;
   the complete package has 642 Python files;
-- the physical cohort graph has 34 core and 47 peripheral modules, 152 unique
+- the physical cohort graph has 34 core and 48 peripheral modules, 153 unique
   core-to-peripheral edges, and zero reverse edges; no `agents/` module falls
   outside the selected facade-reachable cohort;
 - `agent_pagination.py` and `metadata_inventory()` are absent;
@@ -1125,7 +1139,7 @@ branch when:
   Reviewed Owners` onward pass on the final checkpoint without substitution.
 
 Technical debt #11 closes only when this leaf reaches `fixed_dev`. Closure is
-an 82-module high-coupling legacy-cohort transformation with 81 physical moves
+an 83-module compact-Agent transformation with 82 physical moves
 and two explicit concept deletions, not proof of the complete Agent domain, a
 prefix rename, or an empty package. `main` remains frozen until the complete
 program is green and the user gives new explicit approval.

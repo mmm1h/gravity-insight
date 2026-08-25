@@ -282,8 +282,8 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                 scope["consolidate_delete"]["new_module"],
             )
         )
-        self.assertEqual(81, len(scope["one_to_one_moves"]))
-        self.assertEqual(164, len(expected))
+        self.assertEqual(82, len(scope["one_to_one_moves"]))
+        self.assertEqual(166, len(expected))
         self.assertEqual(expected, migration_module_names())
         self.assertTrue(
             set(scope["retained_modules"]).isdisjoint(migration_module_names())

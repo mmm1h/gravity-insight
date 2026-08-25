@@ -36,7 +36,7 @@ R02 → R14-C
 R14-B + R14-C → R14-D
 
 R04 → R16 (conditional)
-[R17 ready prerequisites: M0 binding satisfied but SCC semantics review pending; dynamic-audit classification unsatisfied; independent ready review pending] ⇢ R17 leaf (81 moves + 1 consolidation; 1 infrastructure exclusion)
+[R17 ready prerequisites: M0 binding and SCC semantics satisfied; dynamic-audit classification satisfied; independent ready review pending] ⇢ R17 leaf (82 moves + 1 consolidation; 1 infrastructure exclusion)
 R00 → CT01
 CT01 + R09B → CT02 → CT03
 ```
@@ -68,7 +68,7 @@ R17 行中的方括号内容是 `ready_prerequisites`，不是 Requirement 或 m
 | [R14](R14-adaptive-governor-variants.md) | Adaptive Governor and Execution Variants | R02 | `fixed_dev` (A/B/C/D) | Staged epic A→B, C, then D |
 | [R15](R15-isolated-sql-explorer.md) | Isolated SQL Explorer | R02, R05 | `fixed_dev` | Leaf |
 | [R16](R16-control-plane-stage-b.md) | Control Plane Stage B | R04 + trigger | `specified` | Conditional leaf |
-| [R17](R17-agent-module-package-migration.md) | Legacy `agent_*` prefix cohort package migration | -; machine-readable ready prerequisites | `specified` | Leaf with two serial checkpoints on one branch |
+| [R17](R17-agent-module-package-migration.md) | Compact Agent interaction package migration | -; machine-readable ready prerequisites | `specified` | Leaf with two serial checkpoints on one branch |
 | [CT01](CT01-thinkingai-inventory.md) | ThinkingAI source inventory | R00 | `fixed_dev` | Parallel content |
 | [CT02](CT02-thinkingai-representative-skills.md) | Representative ThinkingAI Skills | CT01, R09B | `fixed_dev` | Content validation |
 | [CT03](CT03-thinkingai-full-specification.md) | Full independent Skill specifications | CT02 | `fixed_dev` | Content expansion |
@@ -88,7 +88,7 @@ src/gravity_sdk/cli.py
 src/gravity_sdk/__main__.py
 ```
 
-R17's 81-module facade-reachable legacy-prefix move set includes the three `agent_*` spine modules; its core implementation checkpoint moves them to
+R17's 82-module responsibility-inventoried move set includes the three `agent_*` spine modules; its core implementation checkpoint moves them to
 `src/gravity_sdk/agents/{capabilities,composite,handoff}.py` and must update the
 machine list atomically with that code move. Until the core phase lands, the paths above
 remain authoritative.
@@ -99,19 +99,25 @@ Requirement branches implement domain cores and focused tests first. A named int
 
 `specified` means scope and dependency boundaries exist. Before changing a leaf or epic milestone to `ready`, the plan owner must fill unresolved decisions, bind a current baseline SHA and Issue, confirm write scope/worktree, and approve exact acceptance commands.
 
-R17 只有一个 leaf 状态和一个实施分支/Worktree。它只在基线的 83 个根目录 `agent_*.py`
-遗留前缀候选内应用 facade 可达性：82 个候选可达，其中 81 个一对一迁移，
-`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且
-facade 不可达而留在根目录。这证明前缀候选内的内聚与排除，不证明该候选集是完整
-Agent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 的绑定已
-满足，但 SCC 自环与精确迁移集合语义复核尚未通过。实施绑定为
+R17 只有一个 leaf 状态和一个实施分支/Worktree。独立职责清单保留原 81 个 move、零误纳，
+并补入唯一由 `agent_handoff` 消费的 `relative_date_agent`，形成 82 个一对一迁移；
+`agent_pagination` 合并删除，`agent_runtime_contracts` 与 `find.py` 仍不纳入。前缀图继续
+复现 contracts 排除，但四种全作用域图判据没有收敛，所以当前证据支撑调整后的有界范围，
+不证明完整 Agent domain，也不声称完全通过总纲的反路径依赖门槛。M0 characterization
+与 dynamic-audit classification 均已满足，owner review 仍为 `pending`。实施绑定为
 `dev@24f16c667d80107e4149cf76742eab4ada564197`、无 GitHub Issue（内部结构债禁止
 自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。
-机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=false`、
+机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=true`、
 `schema=gravity.agent-module-reference-dispositions.v2`、`candidate_sites=238`、
 `classified_sites=238`、`unclassified_sites=0`、`blocking_sites=0`；独立复核仍为
 `not_ready`。两个内部阶段只是同一分支上的串行提交/回滚 checkpoint，不获得独立
 状态，也不能独立使 R17 到达 `fixed_dev`。
+
+`m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
+`m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
+`ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
+`live_checkpoint_sha256=4c46e7d343749cba164f60ef0059d2a7734444e0f2d32a975c130e4b24b6e399`；
+`live_checkpoint_tracked_sites=908`。
 
 The user approved the R01 binding and designated the Requirement document as
 the internal program delivery ledger on 2026-08-21. The same authorization lets

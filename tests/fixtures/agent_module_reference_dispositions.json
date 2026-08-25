@@ -26,7 +26,7 @@
     "source_key_format": "{file}:{line}:{column}:{form}"
   },
   "scope": {
-    "audit_candidate_modules": 83,
+    "audit_candidate_modules": 84,
     "one_to_one_moves": [
       {
         "old_module": "gravity_sdk.agent_advertiser_profile",
@@ -351,6 +351,10 @@
       {
         "old_module": "gravity_sdk.agent_vocabulary",
         "new_module": "gravity_sdk.agents.vocabulary"
+      },
+      {
+        "old_module": "gravity_sdk.relative_date_agent",
+        "new_module": "gravity_sdk.agents.relative_date"
       }
     ],
     "consolidate_delete": {
