@@ -25,7 +25,7 @@
 4. **R03 Built-in Skill Package / R04 Team Skill Hub Stage A（fixed-dev）**：Built-in 与团队无代码 Skill 共用 Manifest/Render Model；显式 Git/static HTTPS Source、exact lock、独立 CAS/offline materialize 已闭合，Trusted Pack 只生成外部 Installer Plan 并做 exact startup verification，未接入 Runtime 执行。
 5. **R05 Business Semantic Registry（fixed-dev）**：versioned Definition/Binding/Source、formula/unit/additivity/time/effective-range/conflict 门禁与离线 `SemanticRegistry`/复数 CLI 已集成；Runtime 只含通用 App Entity，Merge2 指标与 App/physical binding 已迁移到 work-dashboard 独立 Source。R01 仍因完整性 unknown 而零请求阻断。
 6. **R06 Operator / Model Contracts（fixed-dev）**：唯一 R01 deterministic Operator 已迁移到闭合 Registry 与 input/output/assumption/claim/golden/资源门禁；Model Registry 不内置模型，且要求 trusted digest + lineage/evaluation/approval/expiry/horizon 后才允许生产 claims，LTV gap 未提升；R04 trusted-pack descriptor 已冻结。
-7. **R07-R15、CT01-CT03（fixed-dev）；R10/R16（conditional, not triggered）**：当前 CT01 snapshot 已由独立 Skill 规格或安全替代零遗漏覆盖；Team Hub exact lock 绑定 revision 上的精确 index，stored archives 已经 Python 3.11/3.14 确定性门禁；readiness/validation 只按现有证据派生。
+7. **R07-R13、CT01-CT03（fixed-dev）；R14（in-progress，R14-D 尚未接入执行链）；R15（in-progress，promotion 尚未注册产品）；R10/R16（conditional, not triggered）**：当前 CT01 snapshot 已由独立 Skill 规格或安全替代零遗漏覆盖；Team Hub exact lock 绑定 revision 上的精确 index，stored archives 已经 Python 3.11/3.14 确定性门禁；readiness/validation 只按现有证据派生。
 8. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
 9. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
 
@@ -54,6 +54,11 @@
 - 媒体报表 gap owner 仅在紧邻“报表/投放报表”的领域短语内将“煤体”归一为“媒体”；明确“不要/别混入素材表现”时仍由 `MEDIA_REPORT_ITEM_SCHEMA_MISSING` 优先交接，不扩展全局模糊匹配。
 - 分析默认值 owner 仅在紧邻“字典”的领域短语内将“默人值”归一为“默认值”；不扩展全局编辑距离或通用错字表。
 - 归因表现 owner 仅在“归音”紧邻“表现/汇总/聚合”时将其归一为“归因”；配置否定仍由原有 affirmative-intent 解析，其他“归音”语境不参与全局模糊匹配。
+- **已批准的授权边界**：SDK 可由调用方在请求中承担授权决策；该边界覆盖调用方提供数据库路径与 `allowed_relations`（`sql_explorer_policy.py:158`）、原始行返回及作为标签的 `trust` / `allowed_claims`（`sql_explorer.py:137`）、Hub source 的 `index_url` / `artifact_base_url`（`skill_hub_contract.py:221`），以及按路径过滤敏感内容（`repo_context_index.py:349`）。这是一项设计决策，不作为技术债登记。
+
+## 待裁定设计
+
+- **Artifact transfer 的主机授权来源**：`artifact_transfer.py:152-156` 以 `replace()` 将上游素材响应中的 host 写入 `allowed_hosts`、`allowed_redirect_hosts` 和根路径前缀。该授权来自上游响应而非调用方，不在“调用方承担授权决策”的已批准边界内；所有者需单独裁定是否接受此信任来源，并据裁定保留受控边界或改为调用方/固定合同授权。
 
 ## 明确不做
 

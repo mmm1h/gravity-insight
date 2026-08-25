@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `fixed_dev`; R14-A/B/C/D `fixed_dev` |
+| Status | `in_progress`; R14-A/B/C `fixed_dev`, R14-D `in_progress` |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A/B/C/D `fixed_dev` |
+| Milestones | R14-A/B/C `fixed_dev`; R14-D `in_progress` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
@@ -363,7 +363,7 @@ probes, Variant execution, release or `main`.
   canonical consumer with zero production HTTP/RPC. Active docs remain exactly
   5,500 lines.
 
-## R14-D Fixed Dev Evidence
+## R14-D Implemented Portion
 
 - Feature `4ab0b45adfe14d23af4e9dad08569fbd617f51cc` was merged as
   `dev@9ef948bd3ef7e3e8298c9b6a8cb42038fe4fdd3c`; the merge tree is byte-identical
@@ -418,9 +418,11 @@ probes, Variant execution, release or `main`.
 
 ## R14-D Known Limits
 
-- Selection returns a fixed Variant identity and explanation; it does not add
-  an execute method or alter either existing execution owner. Only the
-  characterized event Analysis Product can be selected.
+- Selection returns a fixed Variant identity and explanation, but neither
+  existing execution owner consumes `selected_variant_uri`. It therefore does
+  not yet select an execution path. R14-D remains `in_progress` until automatic
+  selection is consumed by the existing execution chain without adding a second
+  execution owner. Only the characterized event Analysis Product is in scope.
 - Default current Product Trust remains blocked, so the current environment
   returns Direct fallback. A stable automatic decision also remains Direct
   until governed evidence proves a truthful secondary advantage for Plan.
@@ -432,7 +434,9 @@ probes, Variant execution, release or `main`.
 - R14-A extends current instrumentation and records value-free host/operation latency, status and budget observations without changing scheduling.
 - R14-B governs Runtime-owned Adapter, Composite, Plan, SQL Runtime and Artifact I/O with evidence-backed AIMD, circuit breaker, backpressure, single-flight and Journey fairness.
 - R14-C defines variant semantics and proves at least one real Product has two equivalent fixed variants.
-- R14-D adds explainable automatic selection with Trust as a hard gate and explicit pin/kill switch.
+- R14-D specifies explainable automatic selection with Trust as a hard gate and
+  explicit pin/kill switch. The implemented decision result is not yet wired
+  into execution.
 
 ## Non-goals
 

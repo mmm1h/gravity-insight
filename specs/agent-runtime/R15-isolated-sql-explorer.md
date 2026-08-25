@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `fixed_dev` |
+| Status | `in_progress` |
 | Track | Isolated exploratory product |
 | Dependencies | R02, R05 |
 | Parallel group | `isolated-product` |
@@ -49,15 +49,16 @@ production database, Gravity SQL, credentials, network calls, release or `main`.
   and unavailable to stable dependencies. SQL/path/parameters never enter safe
   session/error/promotion metadata or public Receipts.
 - Promotion requires a successful value-free source, explicit approval and
-  independent review-evidence digest. It validates and returns a versioned normal
-  `custom-sql` workspace product plus consumer contract, but performs no install
-  and grants no stable Trust.
+  independent review-evidence digest. It validates and returns an inert
+  installation artifact containing a versioned `custom-sql` definition and
+  consumer contract; it does not install or register the product and grants no
+  stable Trust.
 - Acceptance binds the attack corpus, direct database mutation defense with AST
   bypassed, fake-clock/resource/output budgets, privacy snapshots, promotion
   lifecycle, registered-SQL no-fallback regression, full gates, isolated wheel
   and canonical consumer. Active human docs remain exactly 5,500 lines.
 
-## Fixed Dev Evidence
+## Implemented Portion
 
 - Feature `5dbf33bad14a8ce13250d28d337e2e71cb9d8dff` was merged as
   `dev@a0033700ca9e78b964fd3cf2855f391310bb1f1e`; the merge tree is byte-identical
@@ -144,6 +145,9 @@ production database, Gravity SQL, credentials, network calls, release or `main`.
 - Promotion review evidence is external and the Runtime does not infer semantic
   equivalence between SQLite exploration and reviewed registered SQL. The
   artifact is inert until explicit workspace install and same-layer Validation.
+  Promotion does not currently add it to `workspace.product_names`; R15 remains
+  `in_progress` until the reviewed definition is registered through an explicit
+  governed installation lifecycle.
 
 ## Scope
 
@@ -151,7 +155,9 @@ production database, Gravity SQL, credentials, network calls, release or `main`.
 - Require a separate database-enforced read-only identity and read-only transaction.
 - Parse exactly one statement; allow only approved relation/view/function forms.
 - Enforce statement timeout and database-supported scan/resource limits plus row/byte output limits.
-- Return an exploratory envelope and implement a deterministic review/promote path to Registered SQL Product.
+- Return an exploratory envelope and implement a deterministic review/promotion
+  path that registers a Registered SQL Product through an explicit governed
+  installation lifecycle.
 
 ## Non-goals
 
@@ -165,7 +171,7 @@ Session records dialect, parser/version, policy digest, identity class and enfor
 
 ## Migration And Compatibility
 
-Registered SQL remains the only trusted repeatable SQL product. Explorer is a separate explicit command/service and never intercepts Insight or registered SQL failures. Promotion creates a reviewed versioned product and consumer contract.
+Registered SQL remains the only trusted repeatable SQL product. Explorer is a separate explicit command/service and never intercepts Insight or registered SQL failures. Promotion currently produces a reviewed versioned installation artifact and consumer contract; installation registers the product.
 
 ## Safety And Operations
 
@@ -177,7 +183,7 @@ Use a proven parser library; do not hand-roll prefix/regex parsing. Relation and
 - Database identity cannot mutate even if parser policy fails.
 - Timeout/scan/row/byte limits are tested against the selected dialect adapter.
 - Explorer output cannot satisfy stable dependencies.
-- Promotion yields a normal Registered SQL Product with reviewed projection/privacy.
+- Promotion registers a normal Registered SQL Product with reviewed projection/privacy through the explicit installation lifecycle.
 
 ## Verification
 

@@ -159,9 +159,10 @@ python -m gravity_sdk --help
 git diff --check
 ```
 
-CI runs `pytest`, not `unittest discover`. The two collect different counts
-(946 vs 715 at `8fd278e`) because of how subtests are reported, so a green
-`unittest` run alone does not prove CI will pass. Run both.
+CI runs `pytest`, not `unittest discover`. The `946 vs 715` counts at `8fd278e`
+are a historical example, not the current baseline: both runners now collect
+1774 tests, plus 4375 subtests reported only by pytest. Re-derive the baseline
+from the latest fully green gate, and run both — CI gates on `pytest` alone.
 
 Tests isolate the developer's private cache in `tests/__init__.py`; without it a
 machine holding a real metadata cache fails discovery-ordering tests that pass
