@@ -28,8 +28,10 @@
     "program_implementation_scope": "all indexed requirements after dependencies and machine gates are satisfied",
     "repeat_requirement_approval_required": false,
     "internal_delivery_ledger": "requirement_document",
-    "delivery_mode_policy_authorized_by": "user",
-    "delivery_mode_policy_authorized_at": "2026-08-25"
+    "delivery_mode_policy_authorized_by": "agent_under_standing_owner_delegation",
+    "delivery_mode_policy_authorized_at": "2026-08-25",
+    "delivery_mode_policy_owner_review": "pending",
+    "delivery_mode_policy_delegation_basis": "owner directed autonomous decision-making for this round and deferred review to its completion; the owner has not read this policy text"
   },
   "delivery_mode_policy": {
     "schema_version": "gravity.agent-runtime-delivery-mode-policy.v1",
