@@ -8,6 +8,7 @@ import copy
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import tempfile
 from typing import Any
 import unittest
 
@@ -29,6 +30,7 @@ class _ModuleSource:
     source: str
     tree: ast.Module
     is_package: bool = False
+    is_native_extension: bool = False
 
 
 def _module_name(path: Path, package_root: Path) -> tuple[str, bool]:
@@ -42,16 +44,25 @@ def _module_name(path: Path, package_root: Path) -> tuple[str, bool]:
 
 def _repository_modules(package_root: Path = PACKAGE_ROOT) -> list[_ModuleSource]:
     result: list[_ModuleSource] = []
-    for path in sorted(package_root.rglob("*.py")):
+    paths = set(package_root.rglob("*.py"))
+    for pattern in ("*.pyd", "*.so", "*.dll", "*.dylib"):
+        paths.update(package_root.rglob(pattern))
+    for path in sorted(paths):
         module, is_package = _module_name(path, package_root)
-        source = path.read_text(encoding="utf-8")
+        native = path.suffix.lower() != ".py"
+        source = "" if native else path.read_text(encoding="utf-8")
+        try:
+            relative = path.relative_to(ROOT).as_posix()
+        except ValueError:
+            relative = path.relative_to(package_root.parent).as_posix()
         result.append(
             _ModuleSource(
                 module=module,
-                relative=path.relative_to(ROOT).as_posix(),
+                relative=relative,
                 source=source,
                 tree=ast.parse(source, filename=str(path)),
                 is_package=is_package,
+                is_native_extension=native,
             )
         )
     return result
@@ -96,6 +107,34 @@ class _TargetUsage:
     imports: tuple[str, ...]
     references: tuple[str, ...]
     calls: tuple[str, ...]
+    blockers: tuple[str, ...]
+
+
+_REVIEWED_OPAQUE_IMPORT_EXPRESSIONS = {
+    "gravity_sdk": {"module_name"},
+    "gravity_sdk.runtime": {"name"},
+    "gravity_sdk.prober.cli": {'sdk.__name__ + ".errors"'},
+    "gravity_sdk.prober.export_verify": {'f"{base}.{name}"'},
+    "gravity_sdk.prober.transport": {
+        'base + ".models"',
+        'base + ".registry"',
+        'base + ".executor"',
+        'base + ".transport"',
+        'base + ".http_runtime"',
+        'base + ".credentials"',
+    },
+}
+
+
+def _source_expression(module: _ModuleSource, node: ast.AST) -> str:
+    value = ast.get_source_segment(module.source, node)
+    return value if value is not None else ast.unparse(node)
+
+
+def _reviewed_opaque_import(module: _ModuleSource, expression: ast.AST) -> bool:
+    return _source_expression(module, expression) in _REVIEWED_OPAQUE_IMPORT_EXPRESSIONS.get(
+        module.module, set()
+    )
 
 
 def _bound_names(node: ast.AST) -> set[str]:
@@ -245,7 +284,11 @@ def _target_usage(
     imports: set[str] = set()
     references: set[str] = set()
     calls: set[str] = set()
+    blockers: set[str] = set()
     for module in modules:
+        if module.is_native_extension:
+            blockers.add(f"{module.relative}:0:blocker:native-extension-module")
+            continue
         symbol_names = {symbol} if module.module == target_module else set()
         module_expressions: set[str] = set()
         import_loaders = {"__import__", "importlib.import_module"}
@@ -362,6 +405,116 @@ def _target_usage(
                         bindings.update(targets)
                         changed = changed or len(bindings) != before
 
+        loader_wrappers = {
+            node.name
+            for node in ast.walk(module.tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and any(
+                isinstance(descendant, ast.Call)
+                and _is_named_expression(descendant.func, import_loaders)
+                for descendant in ast.walk(node)
+            )
+        }
+        known_callback_targets = {
+            *import_loaders,
+            *getattr_functions,
+            *patch_functions,
+            *patch_object_functions,
+            *loader_wrappers,
+        }
+
+        for node in ast.walk(module.tree):
+            dotted = _dotted_name(node)
+            if dotted == "meta_path" or (dotted or "").endswith(".meta_path"):
+                blockers.add(_location(module, node, "blocker:meta-path-import-hook"))
+            if not isinstance(node, ast.Call):
+                continue
+            called = _dotted_name(node.func)
+            if called in {"eval", "exec", "builtins.eval", "builtins.exec"}:
+                blockers.add(_location(module, node, f"blocker:{called}-execution"))
+            if called in import_loaders:
+                values = _string_values(node.args[0], string_bindings) if node.args else set()
+                if not values and (
+                    not node.args or not _reviewed_opaque_import(module, node.args[0])
+                ):
+                    blockers.add(
+                        _location(module, node, "blocker:opaque-module-name")
+                    )
+            if called in loader_wrappers:
+                values = {
+                    value
+                    for argument in node.args
+                    for value in _string_values(argument, string_bindings)
+                }
+                if target_module in values:
+                    blockers.add(
+                        _location(module, node, "blocker:cross-function-loader")
+                    )
+            if called not in known_callback_targets and any(
+                _is_module_expression(
+                    argument,
+                    target_module=target_module,
+                    module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    string_bindings=string_bindings,
+                )
+                for argument in node.args
+            ):
+                blockers.add(
+                    _location(module, node, "blocker:module-object-callback")
+                )
+
+        for node in ast.walk(module.tree):
+            container_values: list[ast.AST] = []
+            if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+                container_values = list(node.elts)
+            elif isinstance(node, ast.Dict):
+                container_values = [*node.keys, *node.values]
+            if any(
+                value is not None
+                and _is_module_expression(
+                    value,
+                    target_module=target_module,
+                    module_expressions=module_expressions,
+                    import_loaders=import_loaders,
+                    module_registries=module_registries,
+                    string_bindings=string_bindings,
+                )
+                for value in container_values
+            ):
+                blockers.add(
+                    _location(module, node, "blocker:module-object-container")
+                )
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                returns_module = any(
+                    isinstance(descendant, ast.Return)
+                    and descendant.value is not None
+                    and _is_module_expression(
+                        descendant.value,
+                        target_module=target_module,
+                        module_expressions=module_expressions,
+                        import_loaders=import_loaders,
+                        module_registries=module_registries,
+                        string_bindings=string_bindings,
+                    )
+                    for descendant in ast.walk(node)
+                )
+                contains_lambda = isinstance(node, ast.Lambda) or any(
+                    isinstance(descendant, ast.Lambda)
+                    for descendant in ast.walk(node)
+                    if descendant is not node
+                )
+                closes_over_module = contains_lambda and any(
+                    isinstance(descendant, ast.Name)
+                    and descendant.id in module_expressions
+                    for descendant in ast.walk(node)
+                )
+                if returns_module or closes_over_module:
+                    blockers.add(
+                        _location(module, node, "blocker:module-object-closure")
+                    )
+
         for node in ast.walk(module.tree):
             if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
                 if node.id in symbol_names:
@@ -420,6 +573,7 @@ def _target_usage(
         imports=tuple(sorted(imports)),
         references=tuple(sorted(references)),
         calls=tuple(sorted(calls)),
+        blockers=tuple(sorted(blockers)),
     )
 
 
@@ -470,7 +624,7 @@ def _compact_pagination_contract(
     usage = _target_usage(modules, expected_owner, "compact_pagination")
     external = tuple(
         location
-        for location in (*usage.imports, *usage.references, *usage.calls)
+        for location in (*usage.imports, *usage.references, *usage.calls, *usage.blockers)
         if location.rsplit(":", 2)[0] != owner.relative
     )
     consumer_file = by_name[expected_consumer].relative
@@ -497,7 +651,7 @@ def _assert_metadata_inventory_has_no_callers(
     usage = _target_usage(
         _synthetic_modules(sources), target_module, "metadata_inventory"
     )
-    found = (*usage.imports, *usage.references, *usage.calls)
+    found = (*usage.imports, *usage.references, *usage.calls, *usage.blockers)
     if found:
         raise AssertionError(f"metadata_inventory references remain: {found}")
 
@@ -542,7 +696,7 @@ def _metadata_inventory_contract(modules: list[_ModuleSource]) -> None:
     found: list[str] = []
     for owner in (OLD_METADATA_OWNER, NEW_METADATA_OWNER):
         usage = _target_usage(modules, owner, "metadata_inventory")
-        found.extend((*usage.imports, *usage.references, *usage.calls))
+        found.extend((*usage.imports, *usage.references, *usage.calls, *usage.blockers))
     if found:
         raise AssertionError(
             f"metadata_inventory references remain: {sorted(set(found))}"
@@ -766,6 +920,66 @@ class AgentConceptDeletionTests(unittest.TestCase):
                     {"gravity_sdk.extra_consumer": source},
                     target_module=NEW_METADATA_OWNER,
                 )
+
+    def test_dynamic_symbol_guard_blocks_untrackable_flows(self) -> None:
+        cases = {
+            "cross_function_loader": (
+                "from importlib import import_module\n"
+                "def acquire(name):\n    return import_module(name)\n"
+                f"owner = acquire({NEW_METADATA_OWNER!r})\n"
+                "getattr(owner, 'metadata_inventory')([])\n"
+            ),
+            "opaque_module_name": (
+                "from importlib import import_module\n"
+                "owner = import_module(runtime_name)\n"
+                "getattr(owner, 'metadata_inventory')([])\n"
+            ),
+            "module_container": (
+                "from importlib import import_module\n"
+                f"owner = import_module({NEW_METADATA_OWNER!r})\n"
+                "registry = [owner]\n"
+                "getattr(registry[0], 'metadata_inventory')([])\n"
+            ),
+            "module_closure": (
+                "from importlib import import_module\n"
+                f"owner = import_module({NEW_METADATA_OWNER!r})\n"
+                "def factory():\n    return lambda: owner\n"
+                "getattr(factory()(), 'metadata_inventory')([])\n"
+            ),
+            "module_callback": (
+                "from importlib import import_module\n"
+                f"owner = import_module({NEW_METADATA_OWNER!r})\n"
+                "def consume(value):\n"
+                "    return getattr(value, 'metadata_inventory')([])\n"
+                "dispatch(consume, owner)\n"
+            ),
+            "eval": "eval(\"metadata_inventory([])\")\n",
+            "exec": "exec(\"metadata_inventory([])\")\n",
+            "meta_path": "import sys\nsys.meta_path.insert(0, finder)\n",
+        }
+        for label, source in cases.items():
+            with self.subTest(label=label), self.assertRaisesRegex(
+                AssertionError, "metadata_inventory.*blocker"
+            ):
+                _assert_metadata_inventory_has_no_callers(
+                    {"gravity_sdk.extra_consumer": source},
+                    target_module=NEW_METADATA_OWNER,
+                )
+
+    def test_dynamic_symbol_guard_blocks_native_extension_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "gravity_sdk"
+            owner = package / "agents" / "batch_sources.py"
+            owner.parent.mkdir(parents=True)
+            owner.write_text(
+                "def metadata_inventory_state(warnings):\n    return (), True\n",
+                encoding="utf-8",
+            )
+            (package / "opaque_loader.pyd").write_bytes(b"synthetic")
+            with self.assertRaisesRegex(
+                AssertionError, "metadata_inventory.*native-extension"
+            ):
+                _metadata_inventory_contract(_repository_modules(package))
 
     def test_compact_pagination_output_contract_is_locked(self) -> None:
         modules = _repository_modules()
