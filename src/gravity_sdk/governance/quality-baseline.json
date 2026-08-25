@@ -1,5 +1,5 @@
 {
-  "baseline_version": 2,
+  "baseline_version": 3,
   "debt": {
     "cyclomatic_complexity": {
       "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
@@ -25,6 +25,7 @@
       "src/gravity_sdk/cli.py::_analysis": 19,
       "src/gravity_sdk/cli.py::run": 21,
       "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
+      "src/gravity_sdk/compiler.py::JsonSchemaValidator._validate": 50,
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
       "src/gravity_sdk/governance/stable_privacy.py::operation_exposure_paths": 32,
@@ -49,6 +50,10 @@
       "src/gravity_sdk/prober/promotion.py::reevaluate_drafts": 23,
       "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 25,
       "src/gravity_sdk/prober/reprobe.py::run_scoped_reprobes": 18,
+      "src/gravity_sdk/quality.py::compare_baselines": 25,
+      "src/gravity_sdk/quality.py::debt_snapshot": 24,
+      "src/gravity_sdk/quality.py::evaluate_ratchet": 22,
+      "src/gravity_sdk/quality.py::main": 17,
       "src/gravity_sdk/registry.py::_request_parts": 25,
       "src/gravity_sdk/sql/client.py::_extract_rows": 23,
       "src/gravity_sdk/sql/credentials.py::self_test": 16,
@@ -82,6 +87,8 @@
       "src/gravity_sdk/prober/promotion.py::reevaluate_drafts": 101,
       "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 127,
       "src/gravity_sdk/prober/reprobe.py::run_scoped_reprobes": 93,
+      "src/gravity_sdk/quality.py::evaluate_ratchet": 93,
+      "src/gravity_sdk/quality.py::render_markdown": 81,
       "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 108
     },
     "operation_literals": {
@@ -226,99 +233,110 @@
   ],
   "legacy_files": {
     "src/gravity_sdk/catalog.py": {
-      "ast_hard_limit": 5332,
+      "ast_hard_limit": 5284,
       "ast_nodes": 5284,
       "migration_sloc": 664,
-      "sloc_hard_limit": 722
+      "sloc_hard_limit": 665
     },
     "src/gravity_sdk/census/coverage.py": {
-      "ast_hard_limit": 5950,
+      "ast_hard_limit": 5585,
       "ast_nodes": 5585,
       "migration_sloc": 890,
-      "sloc_hard_limit": 928
+      "sloc_hard_limit": 793
     },
     "src/gravity_sdk/census/params.py": {
-      "ast_hard_limit": 11818,
+      "ast_hard_limit": 11768,
       "ast_nodes": 11768,
       "migration_sloc": 1568,
-      "sloc_hard_limit": 1701
+      "sloc_hard_limit": 1568
     },
     "src/gravity_sdk/census/response.py": {
-      "ast_hard_limit": 4085,
+      "ast_hard_limit": 4035,
       "ast_nodes": 4035,
       "migration_sloc": 551,
-      "sloc_hard_limit": 593
+      "sloc_hard_limit": 551
     },
     "src/gravity_sdk/cli.py": {
-      "ast_hard_limit": 4167,
+      "ast_hard_limit": 3822,
       "ast_nodes": 3822,
       "migration_sloc": 715,
-      "sloc_hard_limit": 788
+      "sloc_hard_limit": 671
     },
     "src/gravity_sdk/client.py": {
-      "ast_hard_limit": 6765,
+      "ast_hard_limit": 4148,
       "ast_nodes": 4148,
       "migration_sloc": 1087,
-      "sloc_hard_limit": 1161
+      "sloc_hard_limit": 730
+    },
+    "src/gravity_sdk/compiler.py": {
+      "ast_hard_limit": 5347,
+      "ast_nodes": 5347,
+      "migration_sloc": 662,
+      "sloc_hard_limit": 662
     },
     "src/gravity_sdk/executor.py": {
-      "ast_hard_limit": 9149,
+      "ast_hard_limit": 4588,
       "ast_nodes": 4588,
       "migration_sloc": 1330,
-      "sloc_hard_limit": 1430
+      "sloc_hard_limit": 720
     },
     "src/gravity_sdk/http_runtime.py": {
-      "ast_hard_limit": 3815,
+      "ast_hard_limit": 2901,
       "ast_nodes": 2901,
       "migration_sloc": 675,
-      "sloc_hard_limit": 751
+      "sloc_hard_limit": 572
     },
     "src/gravity_sdk/models.py": {
-      "ast_hard_limit": 8647,
+      "ast_hard_limit": 6225,
       "ast_nodes": 6225,
       "migration_sloc": 1071,
-      "sloc_hard_limit": 1158
+      "sloc_hard_limit": 858
     },
     "src/gravity_sdk/prober/batch.py": {
-      "ast_hard_limit": 3802,
+      "ast_hard_limit": 3750,
       "ast_nodes": 3750,
       "migration_sloc": 585,
-      "sloc_hard_limit": 626
+      "sloc_hard_limit": 583
     },
     "src/gravity_sdk/prober/drafts.py": {
-      "ast_hard_limit": 13109,
+      "ast_hard_limit": 13059,
       "ast_nodes": 13059,
       "migration_sloc": 1805,
-      "sloc_hard_limit": 1931
+      "sloc_hard_limit": 1805
     },
     "src/gravity_sdk/prober/export_verify.py": {
-      "ast_hard_limit": 4541,
+      "ast_hard_limit": 4491,
       "ast_nodes": 4491,
       "migration_sloc": 655,
-      "sloc_hard_limit": 708
+      "sloc_hard_limit": 655
     },
     "src/gravity_sdk/prober/promotion.py": {
-      "ast_hard_limit": 4432,
+      "ast_hard_limit": 4382,
       "ast_nodes": 4382,
       "migration_sloc": 581,
-      "sloc_hard_limit": 627
+      "sloc_hard_limit": 581
+    },
+    "src/gravity_sdk/quality.py": {
+      "ast_hard_limit": 8462,
+      "ast_nodes": 8462,
+      "migration_sloc": 1022,
+      "sloc_hard_limit": 1022
     },
     "src/gravity_sdk/registry.py": {
-      "ast_hard_limit": 4798,
+      "ast_hard_limit": 4751,
       "ast_nodes": 4751,
       "migration_sloc": 746,
-      "sloc_hard_limit": 822
+      "sloc_hard_limit": 747
     },
     "src/gravity_sdk/sql/products.py": {
-      "ast_hard_limit": 3672,
+      "ast_hard_limit": 3622,
       "ast_nodes": 3622,
       "migration_sloc": 533,
-      "sloc_hard_limit": 602
+      "sloc_hard_limit": 539
     }
   },
   "scope": [
-    "src/gravity_sdk/**/*.py",
-    "src/gravity_sdk/*.py (runtime CLI; excluding compiler.py and quality.py)"
+    "src/gravity_sdk/**/*.py (including compiler.py and quality.py)"
   ],
   "thresholds": {
     "cyclomatic_complexity": 15,
