@@ -2,7 +2,8 @@
 
 本页是生产证据的执行清单，不是执行记录，也不授权登录、Probe 或 HTTP。当前基线为
 `dev@b7c15ed`：237 个 operation 中 177 个 `completeness=unknown`，其中 stable 为 168 个；stable
-`page_info` unknown 实际为 58 个，不是 59 个。输入来自
+`page_info` unknown 实际为 58 个，不是 59 个。机器复核将 unknown 分为 `86 collect / 82 no-new-signal`
+与 `9 non-stable`；82 条是 46 个非集合与 36 个当前无可证伪信号。输入来自
 `D:/git-pjt/tmp/arch-batch-2026-08-20/contract-audit.json`，并逐条与当前
 `src/gravity_sdk/contracts/operations/` 对账。
 
@@ -153,10 +154,10 @@
 下列结论只表示“在当前上游合同与完整性模型下没有可用的分页降债动作”。只有 exact method+path 的新
 wire/production 合同出现总数或终止信号时才重开；重复采短页、空页或相同 response sketch 不重开。
 
-- `not_collection_semantics`（47）：这些是 detail/scalar 或 mutation，不属于集合分页证据待办。尤其 38 个
+- `not_collection_semantics`（46）：这些是 8 个 detail/scalar 或 38 个 mutation，不属于集合分页证据待办。尤其 38 个
   mutation 只能走产品自有 dry-run/execute，绝不能为分页取证走 read probe：
   `analysis.dashboard.condition_favourite.default_to_me.get`, `analysis.dashboard.detail`,
-  `analysis.dashboard.tree`, `analysis.dataanalysis.segment.update`,
+  `analysis.dataanalysis.segment.update`,
   `analysis.datamanageconfig.kanban.dashboard.copy`, `analysis.datamanageconfig.kanban.dashboard.create`,
   `analysis.datamanageconfig.kanban.dashboard.dc7858a7.update`,
   `analysis.datamanageconfig.kanban.dashboard.delete`, `analysis.datamanageconfig.kanban.dashboard.move`,
@@ -176,8 +177,8 @@ wire/production 合同出现总数或终止信号时才重开；重复采短页�
   `report.confmetric.custom.metric.8ef6d12d.delete`, `report.confmetric.custom.metric.update`,
   `report.multidim.template.preset.get`, `report.report.update`, `report.subscribe.create`,
   `report.subscribe.delete`, `report.template.create`, `report.template.update`。
-- `no_page_info_in_observed_response`（34）：已有 production observation，重复一次不能证明服务端不截断；
-  `report.get.query` 仅有 `page_info.total`，其余也没有可用 `total_page`：
+- `no_falsifiable_completeness_signal`（36）：`analysis.dashboard.tree` 的静态 list 合同无页输入/终止输出；以下 34 条
+  有 exact production observation，但重复一次不能证明服务端不截断，且 `report.get.query` 仅有 `page_info.total`：
   `analysis.dashboard.event_list_info.get`, `analysis.default_val.list`, `analysis.event.info`,
   `analysis.realtime_event.list`, `app.app_info.get`, `app.capacity.get`, `app.permission_menu.list`,
   `app.realtime_event.list`, `app.role.detail`, `attribution.attribution.query`, `material.album.tree`,
@@ -189,9 +190,8 @@ wire/production 合同出现总数或终止信号时才重开；重复采短页�
   `promotion.kuaishou.account_company.list`, `promotion.latest_account_status.get`, `promotion.metric.list`,
   `promotion.tencent.account_company.list`, `promotion.tencent.medium_adgroup.list`, `report.get.query`,
   `report.hour_comparison.query`, `report.multidim.media_enum.list`, `report.my_template.detail`,
-  `report.overview.query`, `report.report.detail`。
-- `shape_verified=B`（1）：`report.multidim.query` 已证实只有总数而没有 `total_page`，维持单响应
-  `unknown`，不再作为生产采集待办。
+  `report.overview.query`, `report.report.detail`。`report.multidim.query` 的 shape B 也只有总数而没有 `total_page`，
+  维持单响应 `unknown`；这两条静态/shape-B 子类均不得以 `returned_items=reported_total` 提级。
 
 另有 9 个 non-stable/non-executable unknown 不进入生产计划：`account.department.list`,
 `analysis.ai.conversation.list`, `analysis.ai.message.list`, `candidate.account.user_operation_log.list`,

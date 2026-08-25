@@ -32,10 +32,16 @@ category→exit；两产品仍各自拥有 operation、字段和文案。
   后删除；不得以 raw `promotion query` 替代 snapshot 聚合职责。
 
 ### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
-- **证据**：9 条动线首次交付能力/完整目录、第二次在线重解析后执行；调用方按稳定 ID 选择，但上游无 revision/ETag，
-  不能证明已删对象的 ID 永不复用。
+- **静态复核（2026-08-25）**：风险实际覆盖 5 个引用型 composite 的 6 个目录 operation。按版本词、结构化
+  `response_projection` 和 exact operation/evidence 三路复核，只有 `create_time`/`modify_time` 等普通时间字段；
+  它们没有不复用/单调语义，不能代替 revision/ETag/incarnation token。Dashboard/Segment 又无 production/wire
+  item sketch，故只能证明“Runtime 当前没有可用版本标识”，不能证明实际上游响应绝对没有。
+- **未扩散**：`_REFERENCE_COMPOSITES` 自首次实现仍精确为原 5 个；唯一 `live_catalog_for_card` 调用链仍由
+  `resolve_capabilities` 降次。后来加入 call-bound 的 Segment members/Attribution detail 保持 3 次；测试锁住集合。
 - **触发条件**：观察到 ID 复用，或上游提供 revision/ETag/版本号。
-- **退出条件**：把可校验版本标识纳入第二次解析前置校验，使 ID 复用 fail-closed；此前不扩大该模式。
+- **退出/取证**：对 6 个 exact method+path 采 body field sketch 及 ETag/Last-Modified；须取得覆盖目录变更的 revision
+  或删除重建必变的 item incarnation token（时间戳不算），再由获批测试对象生命周期或上游语义证明。首次目录交付
+  token、执行前重读并比较，漂移/复用 fail-closed 后才能关闭；此前不扩大该模式。
 
 ### 7. 稳定 operation 的分页形状仍有系统性证据债
 - **证据**：当前 237 条编译 operation 为 `60 complete / 177 unknown`，228 条 stable 为 `60 / 168`，stable
@@ -45,9 +51,12 @@ category→exit；两产品仍各自拥有 operation、字段和文案。
   composite 均传播它，`all_pages` 遇未知/前缀返回 capability gap。已确认 A 的自动读取为 Multidim metadata、
   Material Performance、Business Pulse；两个 report query 均按实测 B 不续页。缺 `total_page` 的 `read_all`
   停第一页并标 `unknown`，满页续读须 `continue_without_total`；单次无 `page_info` 不能证明永不截断。
-- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 将 168 条 stable unknown 分为 86 条
-  可证伪目标（60、26 两批）和 82 条永久 unknown（47 非集合、35 无终止/总数信号）；改 unknown 分页、
-  新产品依赖其全集或取得 production/wire 字段证据时触发。
+- **静态复核与处置（2026-08-25）**：`reconcile_pagination_audit` 现把 177 unknown 显式分为 86 条
+  `collect_production_or_wire`、82 条 `not_scheduled_without_new_signal`、9 条 non-stable。82 条均站得住、0 退回，
+  但 `analysis.dashboard.tree` 是 list，不是非集合；修正后为 46 条非集合（38 mutation + 8 detail/get）和 36 条
+  无可证伪信号（1 静态 tree + 34 条既存 exact production observation + 1 条 shape B）。降债数字未变。
+- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 的 86 条仍分 60、26 两批；改 unknown 分页、
+  新产品依赖其全集或 exact method+path 取得新 production/wire 字段证据时触发。
 - **退出条件**：逐条以同 method+path production sketch/wire 字段把 58 条 stable `page_info` unknown 归入真实形状
   并修正合同；另 28 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
   短页、满页启发式提级或全量生产探测。
