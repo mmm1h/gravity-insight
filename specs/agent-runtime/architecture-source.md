@@ -1,6 +1,10 @@
 # Gravity Agent Runtime：产品方向、产品形态、目标架构与 Codex 开发总纲
 
 
+## v9.2 修订摘要
+
+本版相对 v9.1 只含一处事实性勘误：需求家族枚举由 `R00-R16` 更新为 `R00-R17`，因新增 R17 `agent_*` 模块打包迁移需求（交付模式为 leaf）。产品方向、架构边界、交付模式规则（强制顺序子阶段仍仅限 R12、R14）与依赖图均未改变；v9.1 全部条目继续有效。
+
 ## v9.1 修订摘要
 
 本版在 v9 完成产品重定位、需求拆分和主分支冻结后，根据首轮需求图复核进一步收口可访问架构源、Semantic 所有权和独立交付边界：
@@ -13,7 +17,7 @@
 6. **Runtime / Control Plane、隔离 SQL Explorer、Provider 边界和可复现 Lock 的判断保留**。同时要求进程外 Provider 声明自身能力和返回可审计统计，Runtime 只对 RPC 边界执行强制治理。
 7. **Codex 提示词改为“目标架构优先、当前事实校验、旧假设显式迁移”**。不得因先读旧版 `AGENTS.md`、roadmap、测试或文件结构，就把新架构压回旧产品思路；也不得借此绕过安全、权限、隐私和消费者迁移约束。
 8. **单总纲原则不变**。后续只更新这一份产品与架构总纲；工作提案和冲突台账属于 `tmp/` 中的过程 Artifact，不构成第二份总纲。
-9. **允许并要求派生有界需求规格**。总纲定义产品目标、架构边界、术语和依赖图；`specs/agent-runtime/` 下的 R00-R16、CT01-CT03 负责具体合同、迁移、验收和回滚。需求规格必须绑定总纲版本与 digest，不得反向修改架构。
+9. **允许并要求派生有界需求规格**。总纲定义产品目标、架构边界、术语和依赖图；`specs/agent-runtime/` 下的 R00-R17、CT01-CT03 负责具体合同、迁移、验收和回滚。需求规格必须绑定总纲版本与 digest，不得反向修改架构。
 10. **冻结本次主分支集成策略**。各需求单元在独立 `codex/<unit>` 分支开发并合入 `dev`；在全部计划需求完成、整体验收通过且用户另行批准前，不把本计划的开发工作合入 `main`。
 11. **完整总纲进入仓库**。`specs/agent-runtime/architecture-source.md` 是唯一 canonical architecture source；directive 通过仓库相对路径、格式、检索规则和 digest 绑定它，本机下载文件只保留为来源记录。
 12. **拆除大爆炸集成点**。R09 拆为 Core Skill Runtime、Team Hub Binding、External Context Binding；R13 拆为 Artifact Transfer、Analysis Artifact/Renderer、Gravity Dashboard Connector。外部 Hub/Provider/Action 不再阻塞基础 Runtime 或素材传输。
@@ -21,7 +25,7 @@
 
 > 仓库：`mmm1h/gravity-sdk`
 > 本版审阅基线：`main@b9c029db7f41fa90d04b4e019a892cba25eb9230`（实施前必须重新读取当前 HEAD）
-> Directive ID / Version：`gravity-agent-runtime / v9.1`
+> Directive ID / Version：`gravity-agent-runtime / v9.2`
 > 批准状态：用户已于 2026-08-21 明确批准总纲定稿与需求拆分；具体功能施工仍按派生需求的 `ready` 状态启动
 > Canonical repository path：`specs/agent-runtime/architecture-source.md`
 > 文档性质：仓库内唯一产品总纲 + 目标架构 + 演进路线 + Codex 开发约束
@@ -235,10 +239,10 @@ Codex 必须按以下顺序读取：
 总纲只冻结跨需求共享的产品目标、职责、术语、架构不变量和依赖顺序。具体实现必须拆成有界需求规格：
 
 ```text
-唯一架构总纲 v9.1（repository canonical source）
+唯一架构总纲 v9.2（repository canonical source）
 → specs/agent-runtime/directive.json 绑定批准版本与 digest
 → specs/agent-runtime/index.json / index.md 定义依赖图和状态
-→ R00-R16 family leaves / CT01-CT03 细化单一交付单元
+→ R00-R17 family leaves / CT01-CT03 细化单一交付单元
 → Issue / codex/<unit> worktree / implementation / validation
 → dev 集成
 → 全计划完成后才允许另行评估 main promotion

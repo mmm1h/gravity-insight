@@ -38,6 +38,71 @@
     {"id":"R14","path":"R14-adaptive-governor-variants.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"runtime-infrastructure","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R14-A","status":"fixed_dev","dependencies":[]},{"id":"R14-B","status":"fixed_dev","dependencies":["R14-A"]},{"id":"R14-C","status":"fixed_dev","dependencies":[]},{"id":"R14-D","status":"fixed_dev","dependencies":["R14-B","R14-C"]}]},
     {"id":"R15","path":"R15-isolated-sql-explorer.md","status":"fixed_dev","dependencies":["R02","R05"],"parallel_group":"isolated-product","shared_spine":true},
     {"id":"R16","path":"R16-control-plane-stage-b.md","status":"specified","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
+    {
+      "id": "R17",
+      "path": "R17-agent-module-package-migration.md",
+      "status": "specified",
+      "dependencies": [],
+      "parallel_group": "structural-migration",
+      "shared_spine": true,
+      "delivery_mode": "leaf",
+      "scope": {
+        "classifier": "facade_reachable_static_import_closure_v1",
+        "candidate_root_modules": 83,
+        "agent_domain_modules": 82,
+        "migrated_modules": 81,
+        "consolidated_deleted_modules": ["agent_pagination"],
+        "excluded_modules": ["agent_runtime_contracts"],
+        "final_root_python_files": 496,
+        "final_root_agent_prefixed_modules": 1,
+        "core_modules": 34,
+        "moved_peripheral_modules": 47,
+        "core_to_moved_peripheral_edges": 152,
+        "moved_peripheral_to_core_edges": 0,
+        "non_agent_to_moved_module_edges": 17
+      },
+      "ready_prerequisites": [
+        {
+          "id": "m0_characterization",
+          "satisfied": false,
+          "candidate_branch": "codex/m0-characterization",
+          "candidate_commit": "088d1606127439943cab0b79c8cdbdf516af4839",
+          "requires": [
+            "candidate_commit_is_ancestor_of_bound_implementation_baseline",
+            "exact_test_ids_fixture_paths_and_digests_are_bound"
+          ]
+        },
+        {
+          "id": "dynamic_import_audit_classification",
+          "satisfied": false,
+          "candidate_evidence": {
+            "kind": "local_uncommitted",
+            "path": "D:/git-pjt/gravity-sdk-dev/tmp/codex/dyn-audit",
+            "canonical": false
+          },
+          "required_ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
+          "required_schema_version": "gravity.agent-module-reference-dispositions.v1",
+          "candidate_sites": 227,
+          "classified_sites": 0,
+          "unclassified_sites": 227,
+          "required_unclassified_sites": 0,
+          "required_blocking_sites": 0,
+          "requires": [
+            "all_candidate_sites_have_reviewed_dispositions",
+            "classification_ledger_has_227_unique_source_keys",
+            "classification_ledger_path_and_sha256_are_bound"
+          ]
+        },
+        {
+          "id": "independent_ready_review",
+          "satisfied": false,
+          "required_verdict": "ready",
+          "requires": [
+            "reviewer_accepts_scope_measurements_owner_changes_and_exact_acceptance_commands"
+          ]
+        }
+      ]
+    },
     {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
     {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"fixed_dev","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
     {"id":"CT03","path":"CT03-thinkingai-full-specification.md","status":"fixed_dev","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}

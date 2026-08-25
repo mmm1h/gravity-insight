@@ -1,11 +1,11 @@
 {
   "schema_version": "gravity.agent-runtime-directive.v1",
   "directive_id": "gravity-agent-runtime",
-  "version": "v9.1",
+  "version": "v9.2",
   "status": "approved",
   "canonical_source": {
     "repository_path": "architecture-source.md",
-    "sha256": "a15c76d8b55376a5c05769f53f07b6f21ef4a527edfa9ed8e715c3da32f12ec4",
+    "sha256": "54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c",
     "format": "markdown",
     "retrieval": "repository_relative_to_directive"
   },
@@ -15,8 +15,8 @@
     "authority": "provenance_only"
   },
   "supersedes": {
-    "version": "v9",
-    "sha256": "bafee3deeb3268fdfe17845f8e9925a509db1b1a04aa15babc7ce38c01d3a46f"
+    "version": "v9.1",
+    "sha256": "a15c76d8b55376a5c05769f53f07b6f21ef4a527edfa9ed8e715c3da32f12ec4"
   },
   "approval": {
     "approved_by": "user",
