@@ -415,7 +415,7 @@ class ProviderRpcGuard:
             self._state.increment("permission_filtered", filtered)
         resources: list[dict[str, Any]] = []
         context_items: list[dict[str, Any]] = []
-        next_cursor = response["next_cursor"] if allowed else None
+        next_cursor = _paged_next_cursor(operation, response, allowed)
         if operation == "read" and response["status"] == "success":
             expected = request["payload"]["resource_uri"]
             if len(allowed) != 1 or allowed[0]["uri"] != expected:
@@ -507,6 +507,14 @@ class ProviderRpcGuard:
                 self.descriptor["rpc"]["cancellation_grace_ms"] / 1000,
             )
         )
+
+
+def _paged_next_cursor(
+    operation: str, response: Mapping[str, Any], allowed: list[Any]
+) -> str | None:
+    if operation == "read" and not allowed:
+        return None
+    return response["next_cursor"]
 
 
 def _transport_reason(value: BaseException) -> str:

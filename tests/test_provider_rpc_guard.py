@@ -106,6 +106,42 @@ class ProviderRpcGuardTests(unittest.TestCase):
         self.assertEqual(["provider://team/docs/fact"], [item["uri"] for item in listed["resources"]])
         self.assertEqual(1, listed["enforced_rpc"]["permission_filtered"])
 
+    def test_permission_filtered_empty_page_preserves_cursor_to_reach_allowed_next_page(
+        self,
+    ) -> None:
+        cursors: list[str | None] = []
+
+        def handler(request, _cancel):
+            cursor = request["payload"].get("cursor")
+            cursors.append(cursor)
+            if cursor == "allowed-page":
+                return response(request["request_id"], resources=[resource()])
+            hidden = resource(content="restricted body")
+            hidden["uri"] = "provider://other/secret/resource"
+            hidden["title"] = "Hidden customer name"
+            return {
+                **response(request["request_id"], resources=[hidden]),
+                "next_cursor": "allowed-page",
+            }
+
+        provider = ExternalContextProvider(
+            provider_descriptor(), CallableProviderTransport("host", handler)
+        )
+        first = provider.list()
+        second = provider.list(cursor=first["next_cursor"])
+
+        self.assertEqual([None, "allowed-page"], cursors)
+        self.assertEqual("empty", first["status"])
+        self.assertEqual([], first["resources"])
+        self.assertEqual([], first["context_items"])
+        self.assertEqual("allowed-page", first["next_cursor"])
+        self.assertNotIn("Hidden customer name", json.dumps(first))
+        self.assertNotIn("restricted body", json.dumps(first))
+        self.assertEqual(
+            ["provider://team/docs/fact"],
+            [item["uri"] for item in second["resources"]],
+        )
+
     def test_unsupported_and_non_read_operations_never_reach_transport(self) -> None:
         calls = 0
 
