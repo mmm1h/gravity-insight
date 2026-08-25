@@ -49,6 +49,9 @@
     "allowed_source_replacements": {
       "derivation": "ledger_rewrite_actions_at_exact_source_coordinates",
       "ledger_role": "r17_checked_in_governance_evidence",
+      "ledger_repository_path": "tests/fixtures/agent_module_reference_dispositions.json",
+      "ledger_git_revision": "9dce147cd4e5e7d59b243111506db87135932069",
+      "ledger_sha256": "cff0dda6ed24a8139f607819d7579b4c83fc437f721201c6d57c9e4b2cd7d98b",
       "ledger_schema_version": "gravity.agent-module-reference-dispositions.v2",
       "source_file": "specs/agent-runtime/architecture-source.md",
       "disposition": "rewrite_reference",
