@@ -460,7 +460,7 @@ class AdaptiveGovernorSingleFlightTests(unittest.TestCase):
                 calls += 1
                 if calls == 2:
                     both_entered.set()
-            release.wait(2)
+            release.wait(30)
             return _Response()
 
         def call(kwargs: dict[str, object]) -> _Response:
@@ -480,10 +480,11 @@ class AdaptiveGovernorSingleFlightTests(unittest.TestCase):
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             futures = [pool.submit(call, item) for item in options]
-            entered = both_entered.wait(0.5)
-            release.set()
+            try:
+                self.assertTrue(both_entered.wait(20))
+            finally:
+                release.set()
             self.assertTrue(all(item.result(timeout=3).status_code == 200 for item in futures))
-        self.assertTrue(entered)
         return calls
 
     def test_failed_leader_releases_follower_to_its_normal_attempt_path(self) -> None:

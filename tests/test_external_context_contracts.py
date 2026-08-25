@@ -50,7 +50,7 @@ def provider_descriptor(
         "rpc": {
             "max_concurrency": 2,
             "max_calls_per_session": 10,
-            "timeout_ms": 200,
+            "timeout_ms": 20_000,
             "cancellation_grace_ms": 25,
             "max_attempts": 2,
             "max_output_bytes": 65536,
