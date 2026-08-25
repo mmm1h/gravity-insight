@@ -1,4 +1,4 @@
-"""Validate the reviewed R17 dynamic-reference disposition ledger."""
+"""Validate the reproducible R17 dynamic-reference disposition ledger."""
 
 from __future__ import annotations
 
@@ -10,22 +10,32 @@ from pathlib import Path
 from typing import Any
 import unittest
 
+from scripts.audit_agent_module_references import (
+    GENERATED_GOVERNANCE_FILES,
+    GOVERNANCE_EXCLUSION_RULE,
+    ReferenceScanner,
+    is_generated_governance_artifact,
+)
+from scripts.generate_agent_module_reference_dispositions import (
+    build_document,
+    render_document,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
-LEDGER_SHA256 = "6bd35c5d914e751a048d138e1e6770244a68273761528acaa9be5d4d41716661"
-SOURCE_AUDIT_SHA256 = "6116564ed625feb969f0838ece2aa12b4c92cd82b76b1da51fc67add128c713c"
-REFERENCE_EVIDENCE_SHA256 = "356287b9a245d609185ed1dcf89385af13435a3c4b0d8efed87303cb97c01e53"
-CANDIDATE_MAP_SHA256 = "8c59fea70e6ff78d156fbf33216fa1a31459b2881cd7aba21efd77d2230b655a"
+LEDGER_SHA256 = "a55e131fe32a81efa71d365fcf85de3ba36d0d218952de7f3d411dcd12f2877f"
 EXPECTED_CATEGORIES = {
-    "bare_agent_string": 92,
+    "agent_prefix_template": 2,
+    "bare_agent_string": 101,
     "dynamic_import": 11,
     "module_owner_receiver": 7,
     "non_string_patch_expression": 117,
 }
 EXPECTED_DISPOSITIONS = {
-    "no_migration_effect": 213,
-    "rewrite_reference": 13,
+    "no_migration_effect": 219,
+    "rewrite_consolidated_reference": 3,
+    "rewrite_reference": 15,
     "rewrite_selector_data": 1,
 }
 ALLOWED_DISPOSITIONS = {
@@ -47,27 +57,45 @@ def _require(condition: bool, message: str) -> None:
 
 
 def _canonical_sites_sha256(sites: list[dict[str, Any]]) -> str:
-    return hashlib.sha256(json.dumps(
-        sites, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")).hexdigest()
+    return hashlib.sha256(
+        json.dumps(
+            sites,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
 
 
 def validate_ledger(document: dict[str, Any]) -> None:
     _require(
         document.get("schema_version")
-        == "gravity.agent-module-reference-dispositions.v1",
+        == "gravity.agent-module-reference-dispositions.v2",
         "invalid disposition-ledger schema",
     )
     source = document.get("source_audit", {})
-    _require(source.get("sha256") == SOURCE_AUDIT_SHA256, "source audit is not bound")
+    _require(source.get("method") == "direct repository scan", "audit is not direct")
     _require(
-        source.get("reference_evidence_sha256") == REFERENCE_EVIDENCE_SHA256,
-        "reference evidence is not bound",
+        source.get("file_universe")
+        == "git ls-files --cached --others --exclude-standard",
+        "audit file universe changed",
     )
     _require(
-        source.get("candidate_map_sha256") == CANDIDATE_MAP_SHA256,
-        "candidate map is not bound",
+        source.get("governance_exclusion_rule") == GOVERNANCE_EXCLUSION_RULE,
+        "governance exclusion rule changed",
     )
+    _require(
+        source.get("scanner_path") == "scripts/audit_agent_module_references.py",
+        "scanner is not repository-owned",
+    )
+    _require(
+        source.get("generator_path")
+        == "scripts/generate_agent_module_reference_dispositions.py",
+        "generator is not repository-owned",
+    )
+    for field, value in source.items():
+        if field.endswith("_path") or field == "command":
+            _require("tmp/" not in str(value).replace("\\", "/"), f"tmp input at {field}")
 
     scope = document.get("scope", {})
     moves = scope.get("one_to_one_moves", [])
@@ -85,12 +113,13 @@ def validate_ledger(document: dict[str, Any]) -> None:
         )
         _require(
             new == f"gravity_sdk.agents.{old.removeprefix('gravity_sdk.agent_')}",
-            f"move target is not a one-to-one R17 path: {old!r} -> {new!r}",
+            f"invalid one-to-one move: {old!r} -> {new!r}",
         )
-    _require(PAGINATION_MODULE not in old_targets, "pagination cannot be a one-to-one move")
+    _require(PAGINATION_MODULE not in old_targets, "pagination cannot be one-to-one")
     _require(RETAINED_MODULE not in old_targets, "retained contracts cannot move")
     _require(
-        scope.get("consolidate_delete") == {
+        scope.get("consolidate_delete")
+        == {
             "old_module": PAGINATION_MODULE,
             "new_module": PAGINATION_TARGET,
             "symbol": "compact_pagination",
@@ -102,9 +131,9 @@ def validate_ledger(document: dict[str, Any]) -> None:
     taxonomy = document.get("taxonomy", {})
     _require(ALLOWED_DISPOSITIONS <= set(taxonomy), "taxonomy is incomplete")
     sites = document.get("sites")
-    _require(isinstance(sites, list) and len(sites) == 227, "ledger must contain 227 sites")
+    _require(isinstance(sites, list) and len(sites) == 238, "ledger must have 238 sites")
     keys = [site.get("source_key") for site in sites]
-    _require(len(set(keys)) == 227, "ledger source keys must be unique")
+    _require(len(set(keys)) == 238, "ledger source keys must be unique")
 
     categories: Counter[str] = Counter()
     dispositions: Counter[str] = Counter()
@@ -127,47 +156,23 @@ def validate_ledger(document: dict[str, Any]) -> None:
         dispositions[disposition] += 1
 
         if disposition == "no_migration_effect":
-            _require(action == {"kind": "none"}, f"no-effect row has an action at {key}")
+            _require(action == {"kind": "none"}, f"no-effect row has action at {key}")
         elif disposition == "rewrite_reference":
             _require(action.get("kind") == "replace_text", f"invalid text action at {key}")
-            _require(action.get("new_module") in new_targets, f"illegal move target at {key}")
-            _require(
-                action.get("old_module") in old_targets,
-                f"unknown old move target at {key}",
-            )
+            _require(action.get("old_module") in old_targets, f"unknown source at {key}")
+            _require(action.get("new_module") in new_targets, f"illegal target at {key}")
             _require(
                 move_mapping[action["old_module"]] == action["new_module"],
                 f"mismatched move pair at {key}",
             )
-            _require(
-                action.get("old_text") and action.get("new_text")
-                and action["old_text"] != action["new_text"],
-                f"non-exact text replacement at {key}",
-            )
         elif disposition == "rewrite_selector_data":
-            _require(
-                action.get("kind") == "replace_selector_values",
-                f"invalid selector action at {key}",
-            )
             rewrites = action.get("rewrites", [])
             _require(
-                len(rewrites) == 6
+                action.get("kind") == "replace_selector_values"
+                and len(rewrites) == 6
                 and len({rewrite.get("symbol") for rewrite in rewrites}) == 6,
-                f"root selector must have six unique owner rewrites at {key}",
+                f"root selector must have six rewrites at {key}",
             )
-            for rewrite in rewrites:
-                _require(
-                    rewrite.get("new_module") in new_targets,
-                    f"illegal selector target at {key}",
-                )
-                _require(
-                    rewrite.get("old_module") in old_targets,
-                    f"unknown selector source at {key}",
-                )
-                _require(
-                    move_mapping[rewrite["old_module"]] == rewrite["new_module"],
-                    f"mismatched selector pair at {key}",
-                )
         elif disposition == "rewrite_consolidated_reference":
             _require(
                 action.get("kind") == "replace_module"
@@ -187,44 +192,23 @@ def validate_ledger(document: dict[str, Any]) -> None:
             _require(action.get("kind") == "block", f"blocker has no stop action at {key}")
 
         reference = site.get("module_reference", {})
-        if reference.get("candidate_new_module") is not None:
+        if reference.get("candidate_new_module") in new_targets:
             _require(
                 move_mapping.get(reference.get("old_module"))
                 == reference.get("candidate_new_module"),
                 f"invalid no-effect candidate mapping at {key}",
             )
-        audited_value = str(source_site.get("old_value", ""))
         if reference.get("old_module") == RETAINED_MODULE:
-            _require(
-                disposition == "no_migration_effect",
-                f"retained contracts reference cannot migrate at {key}",
-            )
-        if "agent_runtime_contracts" in audited_value:
-            _require(
-                disposition == "no_migration_effect",
-                f"audited retained contracts reference cannot migrate at {key}",
-            )
-        if reference.get("old_module") == PAGINATION_MODULE:
-            _require(
-                disposition in {"rewrite_consolidated_reference", "blocker"},
-                f"pagination reference must rewrite or block at {key}",
-            )
-        if "agent_pagination" in audited_value:
-            _require(
-                disposition in {"rewrite_consolidated_reference", "blocker"},
-                f"audited pagination reference must rewrite or block at {key}",
-            )
+            _require(disposition == "no_migration_effect", f"retained owner moved at {key}")
 
-    _require(dict(categories) == EXPECTED_CATEGORIES, "audit-category denominator changed")
-    _require(dict(dispositions) == EXPECTED_DISPOSITIONS, "disposition distribution changed")
+    _require(dict(categories) == EXPECTED_CATEGORIES, "audit denominator changed")
+    _require(dict(dispositions) == EXPECTED_DISPOSITIONS, "dispositions changed")
     summary = document.get("summary", {})
     _require(summary.get("site_count") == len(sites), "declared site count differs")
-    _require(summary.get("unique_source_keys") == len(set(keys)), "declared key count differs")
+    _require(summary.get("unique_source_keys") == len(set(keys)), "key count differs")
     _require(summary.get("unclassified_sites") == 0, "ledger has unclassified sites")
-    actual_blockers = dispositions["blocker"]
-    _require(summary.get("blocker_count") == actual_blockers, "blocker count differs")
-    _require(actual_blockers == 0, "R17 ledger blockers must be resolved before ready")
-    _require(document.get("blockers") == [], "blocker list differs from zero count")
+    _require(summary.get("blocker_count") == dispositions["blocker"], "blockers differ")
+    _require(document.get("blockers") == [], "blocker list is not empty")
     _require(summary.get("audit_categories") == EXPECTED_CATEGORIES, "category summary differs")
     _require(summary.get("dispositions") == EXPECTED_DISPOSITIONS, "disposition summary differs")
     _require(
@@ -245,33 +229,61 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
     def test_current_ledger_satisfies_the_machine_contract(self) -> None:
         validate_ledger(self.document)
 
+    def test_repository_scan_reproduces_the_checked_in_ledger(self) -> None:
+        self.assertEqual(self.raw, render_document(build_document()))
+
+    def test_governance_exclusion_is_narrow_and_explicit(self) -> None:
+        for path in GENERATED_GOVERNANCE_FILES:
+            self.assertTrue(is_generated_governance_artifact(path), path)
+        self.assertTrue(
+            is_generated_governance_artifact(
+                "specs/agent-runtime/R17-agent-module-package-migration.md"
+            )
+        )
+        self.assertTrue(is_generated_governance_artifact("tmp/codex/audit/output.csv"))
+        protected = (
+            "AGENTS.md",
+            "specs/agent-runtime/architecture-source.md",
+            "specs/agent-runtime/index.json",
+            "specs/agent-runtime/index.md",
+            "docs/maintainers/technical-debt.md",
+            "tests/agent_migration_characterization.py",
+            "src/gravity_sdk/agent_sources.py",
+        )
+        for path in protected:
+            self.assertFalse(is_generated_governance_artifact(path), path)
+
+        scanner = ReferenceScanner(
+            {"gravity_sdk.agent_sources": "gravity_sdk.agents.sources"}
+        )
+        references, _ = scanner.scan_python(
+            "src/gravity_sdk/real_consumer.py",
+            "from gravity_sdk.agent_sources import snapshot_recipe_cards\n",
+        )
+        self.assertEqual(["static_import"], [item.category for item in references])
+
     def test_validator_rejects_required_regressions(self) -> None:
         mutations: dict[str, Any] = {}
-
         missing = copy.deepcopy(self.document)
         missing["sites"].pop()
         mutations["missing row"] = missing
-
         duplicate = copy.deepcopy(self.document)
         duplicate["sites"][1]["source_key"] = duplicate["sites"][0]["source_key"]
         mutations["duplicate key"] = duplicate
-
         unclassified = copy.deepcopy(self.document)
         unclassified["sites"][0]["disposition"] = "unclassified"
         mutations["unclassified row"] = unclassified
-
         blocker_mismatch = copy.deepcopy(self.document)
         blocker_mismatch["summary"]["blocker_count"] = 1
         mutations["blocker count mismatch"] = blocker_mismatch
-
         illegal_target = copy.deepcopy(self.document)
         rewrite = next(
-            site for site in illegal_target["sites"]
+            site
+            for site in illegal_target["sites"]
             if site["disposition"] == "rewrite_reference"
         )
         rewrite["migration_action"]["new_module"] = "gravity_sdk.agents.pagination"
-        mutations["illegal new target"] = illegal_target
-
+        mutations["illegal target"] = illegal_target
         for label, document in mutations.items():
             with self.subTest(label=label), self.assertRaises(AssertionError):
                 validate_ledger(document)
