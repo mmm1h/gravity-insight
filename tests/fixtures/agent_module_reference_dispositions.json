@@ -1,13 +1,28 @@
 {
-  "schema_version": "gravity.agent-module-reference-dispositions.v1",
+  "schema_version": "gravity.agent-module-reference-dispositions.v2",
   "source_audit": {
-    "path": "tmp/codex/dyn-audit/dyn_audit_manual_review.csv",
-    "sha256": "6116564ed625feb969f0838ece2aa12b4c92cd82b76b1da51fc67add128c713c",
-    "reference_evidence_path": "tmp/codex/dyn-audit/dyn_audit_references.csv",
-    "reference_evidence_sha256": "356287b9a245d609185ed1dcf89385af13435a3c4b0d8efed87303cb97c01e53",
-    "candidate_map_path": "tmp/codex/dyn-audit/dyn_audit_module_map.csv",
-    "candidate_map_sha256": "8c59fea70e6ff78d156fbf33216fa1a31459b2881cd7aba21efd77d2230b655a",
-    "audit_baseline_head": "01e20b49a73f17b8e0c8e76d6a9bc17f4974322b",
+    "method": "direct repository scan",
+    "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
+    "file_universe": "git ls-files --cached --others --exclude-standard",
+    "scanner_path": "scripts/audit_agent_module_references.py",
+    "scanner_sha256": "d0016c5fd5c54e93bc1d770dae7ffc2d68c5108910a374f3b81e3bdab404e20b",
+    "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
+    "generator_sha256": "ea8b47a5391d0b06292efb210c8d67981b86a722ef01b06d138609478ae2dc3c",
+    "candidate_map_sha256": "9ecd2ccc7b170546b2ef3f01e9b40eeb8401e23bc69f7190301fc8d0c60cfb0b",
+    "reference_evidence_sha256": "c0d70d28a7dfa6e0dd01ac073055ba1051279dceb9ed71056a26d40f52c199fd",
+    "manual_review_sha256": "1a0d7004e10241e1f4424328af8380caaf9213e5d820795989d8c46f5ef2e795",
+    "version_controlled_file_count": 3109,
+    "scanned_file_count": 3102,
+    "excluded_files": [
+      "scripts/audit_agent_module_references.py",
+      "scripts/generate_agent_module_reference_dispositions.py",
+      "specs/agent-runtime/R17-agent-module-package-migration.md",
+      "tests/fixtures/agent_module_reference_dispositions.json",
+      "tests/test_agent_module_reference_dispositions.py",
+      "tmp/.gitkeep",
+      "tmp/codex/r17-disposition-ledger/generate_reference_dispositions.py"
+    ],
+    "governance_exclusion_rule": "Exclude only tmp/**, direct specs/agent-runtime/R17-*.md migration specifications, the checked-in disposition fixture and its validator, and the two scripts that produce this audit. These paths define, generate, or validate R17 governance metadata rather than consume migrated runtime modules. Do not exclude AGENTS.md; specs/agent-runtime/architecture-source.md, index.json, or index.md; docs/maintainers/technical-debt.md; tests/agent_migration_characterization.py; or any other src, docs, specs, or tests path.",
     "source_key_format": "{file}:{line}:{column}:{form}"
   },
   "scope": {
@@ -345,47 +360,41 @@
     },
     "retained_modules": [
       "gravity_sdk.agent_runtime_contracts"
-    ],
-    "old_mapping_difference": {
-      "audit_assumption": "83 one-to-one moves",
-      "current_scope": "81 one-to-one moves + agent_pagination consolidate/delete + agent_runtime_contracts retained",
-      "literal_manual_review_rows_affected": {
-        "gravity_sdk.agent_pagination": 0,
-        "gravity_sdk.agent_runtime_contracts": 0
-      }
-    }
+    ]
   },
   "taxonomy": {
-    "rewrite_reference": "At migration, replace migration_action.old_text with new_text at this source site; new_module is the required owner.",
-    "rewrite_selector_data": "Keep the dynamic import expression, but apply every exact selector-value rewrite before removing old module paths.",
-    "rewrite_consolidated_reference": "Replace an agent_pagination selector with gravity_sdk.pagination_completeness; inability to do so is a blocker.",
-    "no_migration_effect": "Make no edit at this source site; basis proves it is historical text, an object-identity patch, or a selector whose complete input domain excludes R17 modules.",
-    "runtime_verification_required": "Run the row's bounded verification method before migration; a failing or unavailable result becomes blocker, never no_migration_effect.",
-    "blocker": "Do not start R17 until the stated ownership or selector proposition is resolved and an exact action replaces this disposition."
+    "rewrite_reference": "Replace the exact active source text with its one-to-one moved owner.",
+    "rewrite_selector_data": "Keep the dynamic import expression but rewrite all six exact lazy-owner selector values.",
+    "rewrite_consolidated_reference": "Replace agent_pagination with pagination_completeness before deleting the old module.",
+    "no_migration_effect": "Make no edit; the recorded basis proves the site is historical, a governance fact/evidence record, object-bound, deliberately retained, or outside the R17 selector domain.",
+    "runtime_verification_required": "Run the bounded verification before migration; failure becomes a blocker.",
+    "blocker": "Do not start R17 until the ownership or selector proposition is resolved."
   },
   "classification_method": {
-    "bare_agent_string": "Join each row to its audited source snippet. Frozen docs/archive references stay unchanged; every active governance reference receives a context-exact text replacement and an 81-target module rewrite.",
-    "non_string_patch_expression": "Separate object APIs from dotted-string APIs. Object forms carry identity across a moved static import; for string-producing forms, exhaustively inspect the finite producer/call domain.",
-    "dynamic_import": "Trace each expression to its finite inputs/callers. The root lazy loader has six exact owner-data rewrites; all other input domains are explicitly non-agent.",
-    "module_owner_receiver": "Trace every receiver binding to its defining/imported owner and retain only owners outside the R17 move set."
+    "bare_agent_string": "Classify each bounded Markdown record or JSON field: freeze dated decision evidence and explicit consolidated/deleted-module facts, rewrite consumer syntax and active one-to-one paths, and block ambiguous deleted-module mentions.",
+    "agent_prefix_template": "Retain only the two migration-characterization sentinels that deliberately detect both legacy and target owners.",
+    "non_string_patch_expression": "Separate object APIs from dotted-string APIs and inspect every finite producer/call domain.",
+    "dynamic_import": "Trace each expression to finite inputs; rewrite the root lazy selector and reject unknown domains.",
+    "module_owner_receiver": "Trace every receiver binding and retain only owners outside the R17 move set."
   },
   "summary": {
-    "site_count": 227,
-    "unique_source_keys": 227,
+    "site_count": 238,
+    "unique_source_keys": 238,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "audit_categories": {
-      "bare_agent_string": 92,
+      "agent_prefix_template": 2,
+      "bare_agent_string": 101,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
       "non_string_patch_expression": 117
     },
     "dispositions": {
-      "no_migration_effect": 213,
+      "no_migration_effect": 224,
       "rewrite_reference": 13,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "9617f751b294e028199ec9b9aeb0ae9f1fe5df52c2ccc319cd5420a030572815"
+    "sites_sha256": "9430d21c8b439d064c6ca8a638c4a0fbf64dd1828de484e306e53fa14d51e1dd"
   },
   "blockers": [],
   "sites": [
@@ -399,18 +408,19 @@
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,"
+        "audit_snippet": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,",
+        "audit_context": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,\n`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve\ntheir characterized behavior unless the active requirement explicitly migrates\nit; do not create wrappers merely to avoid an approved structural change.\nSerialize the final wiring of every unit that touches the spine through a single\nintegrator. Domain cores, contract research, and evidence gathering may run in\nparallel. Regenerate compiler, provenance, and coverage artifacts serially."
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_capabilities.py",
-        "new_text": "agents/capabilities.py",
+        "new_text": "capabilities.py",
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
@@ -423,18 +433,19 @@
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve"
+        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve",
+        "audit_context": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,\n`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve\ntheir characterized behavior unless the active requirement explicitly migrates\nit; do not create wrappers merely to avoid an approved structural change.\nSerialize the final wiring of every unit that touches the spine through a single\nintegrator. Domain cores, contract research, and evidence gathering may run in\nparallel. Regenerate compiler, provenance, and coverage artifacts serially."
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_handoff.py",
-        "new_text": "agents/handoff.py",
+        "new_text": "handoff.py",
         "old_module": "gravity_sdk.agent_handoff",
         "new_module": "gravity_sdk.agents.handoff"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
@@ -447,18 +458,19 @@
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve"
+        "audit_snippet": "`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve",
+        "audit_context": "The shared spine is `plan_adapters.py`, `agent_capabilities.py`,\n`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve\ntheir characterized behavior unless the active requirement explicitly migrates\nit; do not create wrappers merely to avoid an approved structural change.\nSerialize the final wiring of every unit that touches the spine through a single\nintegrator. Domain cores, contract research, and evidence gathering may run in\nparallel. Regenerate compiler, provenance, and coverage artifacts serially."
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_composite.py",
-        "new_text": "agents/composite.py",
+        "new_text": "composite.py",
         "old_module": "gravity_sdk.agent_composite",
         "new_module": "gravity_sdk.agents.composite"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
@@ -2358,6 +2370,129 @@
       }
     },
     {
+      "source_key": "docs/maintainers/technical-debt.md:72:31:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "docs/maintainers/technical-debt.md",
+        "line": 72,
+        "column": 31,
+        "form": "bare text module string",
+        "old_value": "agent_runtime_contracts",
+        "audit_proposed_value": "runtime_contracts",
+        "audit_snippet": "  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "retained_module_reference",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; this active governance reference names that unchanged terminal owner.",
+      "evidence_kind": "r17_scope_contract",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_runtime_contracts"
+      }
+    },
+    {
+      "source_key": "docs/maintainers/technical-debt.md:72:5:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "docs/maintainers/technical-debt.md",
+        "line": 72,
+        "column": 5,
+        "form": "bare text module string",
+        "old_value": "agent_pagination",
+        "audit_proposed_value": "pagination",
+        "audit_snippet": "  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "deleted_module_governance_fact",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "The bounded governance record identifies agent_pagination as the module consolidated and deleted. Replacing it with the retained pagination_completeness owner would invert the recorded fact.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_pagination",
+        "candidate_new_module": "gravity_sdk.pagination_completeness"
+      }
+    },
+    {
+      "source_key": "docs/maintainers/technical-debt.md:73:45:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "docs/maintainers/technical-debt.md",
+        "line": 73,
+        "column": 45,
+        "form": "bare text module string",
+        "old_value": "agent_batch",
+        "audit_proposed_value": "batch",
+        "audit_snippet": "  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "dated_governance_decision_evidence",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "The dated establishment record preserves the baseline graph-node name used by its recorded inbound-edge measurement; it is evidence rather than an executable or current path.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_batch",
+        "candidate_new_module": "gravity_sdk.agents.batch"
+      }
+    },
+    {
+      "source_key": "docs/maintainers/technical-debt.md:74:4:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "docs/maintainers/technical-debt.md",
+        "line": 74,
+        "column": 4,
+        "form": "bare text module string",
+        "old_value": "agent_input_resolution",
+        "audit_proposed_value": "input_resolution",
+        "audit_snippet": "  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。",
+        "audit_context": "- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。**边界判据不是前缀而是 facade 可达性**：从 `gravity_sdk.agent`\n  出发、中间节点仅限 83 个 `agent_*` 候选时最短距离有限者纳入。据此候选 83 → 领域 82 → 一对一迁移 81 + 合并删除 1\n  （`agent_pagination`）→ 排除 1。`agent_runtime_contracts` 由判据自动排除（0 条 agent 入边、55 条外部入边、facade\n  不可达），留在根目录属 R17 终态；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、\n  `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "dated_governance_decision_evidence",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "The dated establishment record preserves the baseline graph-node name used by its recorded inbound-edge measurement; it is evidence rather than an executable or current path.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_input_resolution",
+        "candidate_new_module": "gravity_sdk.agents.input_resolution"
+      }
+    },
+    {
+      "source_key": "docs/maintainers/technical-debt.md:77:51:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "docs/maintainers/technical-debt.md",
+        "line": 77,
+        "column": 51,
+        "form": "bare text module string",
+        "old_value": "agent_runtime_contracts",
+        "audit_proposed_value": "runtime_contracts",
+        "audit_snippet": "- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 496、",
+        "audit_context": "- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 496、\n  `agents/` 含 81 个实现模块、147 lazy owner 与 148 `__all__` 不变、迁移宇宙 eager SCC 为 0；不得以改名或空目录关闭。"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "retained_module_reference",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; this active governance reference names that unchanged terminal owner.",
+      "evidence_kind": "r17_scope_contract",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_runtime_contracts"
+      }
+    },
+    {
       "source_key": "scripts/agent_usability_eval.py:706:29:patch.object",
       "audit_category": "non_string_patch_expression",
       "source": {
@@ -2373,7 +2508,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'socket.socket'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'socket.socket'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -2392,20 +2527,21 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'socket.socket'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'socket.socket'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
-      "source_key": "specs/agent-runtime/architecture-source.md:1113:21:bare text module string",
+      "source_key": "specs/agent-runtime/architecture-source.md:1117:21:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/architecture-source.md",
-        "line": 1113,
+        "line": 1117,
         "column": 21,
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "C. Plan-backed path（agent_handoff → validation → binding → preflight → execution）"
+        "audit_snippet": "C. Plan-backed path（agent_handoff → validation → binding → preflight → execution）",
+        "audit_context": "```text\nA. exact selector / direct run\nB. Direct Bounded Composite（如 composite:business_pulse → runtime.call_batch）\nC. Plan-backed path（agent_handoff → validation → binding → preflight → execution）\nD. host-generated Plan（source assessment → execute_host_plan → Plan facade）"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2416,79 +2552,82 @@
         "old_module": "gravity_sdk.agent_handoff",
         "new_module": "gravity_sdk.agents.handoff"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "specs/agent-runtime/architecture-source.md:264:105:bare text module string",
+      "source_key": "specs/agent-runtime/architecture-source.md:268:105:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/architecture-source.md",
-        "line": 264,
+        "line": 268,
         "column": 105,
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
+        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。",
+        "audit_context": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_handoff.py",
-        "new_text": "agents/handoff.py",
+        "new_text": "handoff.py",
         "old_module": "gravity_sdk.agent_handoff",
         "new_module": "gravity_sdk.agents.handoff"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "specs/agent-runtime/architecture-source.md:264:60:bare text module string",
+      "source_key": "specs/agent-runtime/architecture-source.md:268:60:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/architecture-source.md",
-        "line": 264,
+        "line": 268,
         "column": 60,
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
+        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。",
+        "audit_context": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_capabilities.py",
-        "new_text": "agents/capabilities.py",
+        "new_text": "capabilities.py",
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "specs/agent-runtime/architecture-source.md:264:84:bare text module string",
+      "source_key": "specs/agent-runtime/architecture-source.md:268:84:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/architecture-source.md",
-        "line": 264,
+        "line": 268,
         "column": 84,
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
+        "audit_snippet": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。",
+        "audit_context": "并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
       "migration_action": {
         "kind": "replace_text",
         "old_text": "agent_composite.py",
-        "new_text": "agents/composite.py",
+        "new_text": "composite.py",
         "old_module": "gravity_sdk.agent_composite",
         "new_module": "gravity_sdk.agents.composite"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
@@ -2501,7 +2640,8 @@
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "    \"src/gravity_sdk/agent_capabilities.py\","
+        "audit_snippet": "    \"src/gravity_sdk/agent_capabilities.py\",",
+        "audit_context": "  \"shared_spine\": [\n    \"src/gravity_sdk/plan_adapters.py\",\n    \"src/gravity_sdk/agent_capabilities.py\",\n    \"src/gravity_sdk/agent_composite.py\",\n    \"src/gravity_sdk/agent_handoff.py\",\n    \"src/gravity_sdk/cli.py\",\n    \"src/gravity_sdk/__main__.py\"\n  ],"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2512,7 +2652,7 @@
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
@@ -2525,7 +2665,8 @@
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "    \"src/gravity_sdk/agent_composite.py\","
+        "audit_snippet": "    \"src/gravity_sdk/agent_composite.py\",",
+        "audit_context": "  \"shared_spine\": [\n    \"src/gravity_sdk/plan_adapters.py\",\n    \"src/gravity_sdk/agent_capabilities.py\",\n    \"src/gravity_sdk/agent_composite.py\",\n    \"src/gravity_sdk/agent_handoff.py\",\n    \"src/gravity_sdk/cli.py\",\n    \"src/gravity_sdk/__main__.py\"\n  ],"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2536,7 +2677,7 @@
         "old_module": "gravity_sdk.agent_composite",
         "new_module": "gravity_sdk.agents.composite"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
@@ -2549,7 +2690,8 @@
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "    \"src/gravity_sdk/agent_handoff.py\","
+        "audit_snippet": "    \"src/gravity_sdk/agent_handoff.py\",",
+        "audit_context": "  \"shared_spine\": [\n    \"src/gravity_sdk/plan_adapters.py\",\n    \"src/gravity_sdk/agent_capabilities.py\",\n    \"src/gravity_sdk/agent_composite.py\",\n    \"src/gravity_sdk/agent_handoff.py\",\n    \"src/gravity_sdk/cli.py\",\n    \"src/gravity_sdk/__main__.py\"\n  ],"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2560,20 +2702,119 @@
         "old_module": "gravity_sdk.agent_handoff",
         "new_module": "gravity_sdk.agents.handoff"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "specs/agent-runtime/index.md:80:17:bare text module string",
+      "source_key": "specs/agent-runtime/index.json:54:43:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "specs/agent-runtime/index.json",
+        "line": 54,
+        "column": 43,
+        "form": "bare text module string",
+        "old_value": "agent_pagination",
+        "audit_proposed_value": "pagination",
+        "audit_snippet": "        \"consolidated_deleted_modules\": [\"agent_pagination\"],",
+        "audit_context": "        \"consolidated_deleted_modules\": [\"agent_pagination\"],"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "deleted_module_governance_fact",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "The bounded governance record identifies agent_pagination as the module consolidated and deleted. Replacing it with the retained pagination_completeness owner would invert the recorded fact.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_pagination",
+        "candidate_new_module": "gravity_sdk.pagination_completeness"
+      }
+    },
+    {
+      "source_key": "specs/agent-runtime/index.json:55:31:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "specs/agent-runtime/index.json",
+        "line": 55,
+        "column": 31,
+        "form": "bare text module string",
+        "old_value": "agent_runtime_contracts",
+        "audit_proposed_value": "runtime_contracts",
+        "audit_snippet": "        \"excluded_modules\": [\"agent_runtime_contracts\"],",
+        "audit_context": "        \"excluded_modules\": [\"agent_runtime_contracts\"],"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "retained_module_reference",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; this active governance reference names that unchanged terminal owner.",
+      "evidence_kind": "r17_scope_contract",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_runtime_contracts"
+      }
+    },
+    {
+      "source_key": "specs/agent-runtime/index.md:102:109:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/index.md",
-        "line": 80,
+        "line": 102,
+        "column": 109,
+        "form": "bare text module string",
+        "old_value": "agent_runtime_contracts",
+        "audit_proposed_value": "runtime_contracts",
+        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`",
+        "audit_context": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`\n必须成为绑定实施基线的祖先并绑定精确测试证据；动态导入审计的 227 个候选点必须全部得到复核处置，未分类数从 227 降为 0 并绑定分类账本路径与 SHA-256；独立复核必须给出 `ready` 裁决。内部两阶段不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "retained_module_reference",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; this active governance reference names that unchanged terminal owner.",
+      "evidence_kind": "r17_scope_contract",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_runtime_contracts"
+      }
+    },
+    {
+      "source_key": "specs/agent-runtime/index.md:102:85:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "specs/agent-runtime/index.md",
+        "line": 102,
+        "column": 85,
+        "form": "bare text module string",
+        "old_value": "agent_pagination",
+        "audit_proposed_value": "pagination",
+        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`",
+        "audit_context": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`\n必须成为绑定实施基线的祖先并绑定精确测试证据；动态导入审计的 227 个候选点必须全部得到复核处置，未分类数从 227 降为 0 并绑定分类账本路径与 SHA-256；独立复核必须给出 `ready` 裁决。内部两阶段不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "deleted_module_governance_fact",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "The bounded governance record identifies agent_pagination as the module consolidated and deleted. Replacing it with the retained pagination_completeness owner would invert the recorded fact.",
+      "evidence_kind": "governance_record_semantics",
+      "module_reference": {
+        "old_module": "gravity_sdk.agent_pagination",
+        "candidate_new_module": "gravity_sdk.pagination_completeness"
+      }
+    },
+    {
+      "source_key": "specs/agent-runtime/index.md:84:17:bare text module string",
+      "audit_category": "bare_agent_string",
+      "source": {
+        "file": "specs/agent-runtime/index.md",
+        "line": 84,
         "column": 17,
         "form": "bare text module string",
         "old_value": "agent_capabilities",
         "audit_proposed_value": "capabilities",
-        "audit_snippet": "src/gravity_sdk/agent_capabilities.py"
+        "audit_snippet": "src/gravity_sdk/agent_capabilities.py",
+        "audit_context": "```text\nsrc/gravity_sdk/plan_adapters.py\nsrc/gravity_sdk/agent_capabilities.py\nsrc/gravity_sdk/agent_composite.py\nsrc/gravity_sdk/agent_handoff.py\nsrc/gravity_sdk/cli.py\nsrc/gravity_sdk/__main__.py"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2584,20 +2825,21 @@
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "specs/agent-runtime/index.md:81:17:bare text module string",
+      "source_key": "specs/agent-runtime/index.md:85:17:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/index.md",
-        "line": 81,
+        "line": 85,
         "column": 17,
         "form": "bare text module string",
         "old_value": "agent_composite",
         "audit_proposed_value": "composite",
-        "audit_snippet": "src/gravity_sdk/agent_composite.py"
+        "audit_snippet": "src/gravity_sdk/agent_composite.py",
+        "audit_context": "```text\nsrc/gravity_sdk/plan_adapters.py\nsrc/gravity_sdk/agent_capabilities.py\nsrc/gravity_sdk/agent_composite.py\nsrc/gravity_sdk/agent_handoff.py\nsrc/gravity_sdk/cli.py\nsrc/gravity_sdk/__main__.py"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2608,20 +2850,21 @@
         "old_module": "gravity_sdk.agent_composite",
         "new_module": "gravity_sdk.agents.composite"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "specs/agent-runtime/index.md:82:17:bare text module string",
+      "source_key": "specs/agent-runtime/index.md:86:17:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/index.md",
-        "line": 82,
+        "line": 86,
         "column": 17,
         "form": "bare text module string",
         "old_value": "agent_handoff",
         "audit_proposed_value": "handoff",
-        "audit_snippet": "src/gravity_sdk/agent_handoff.py"
+        "audit_snippet": "src/gravity_sdk/agent_handoff.py",
+        "audit_context": "```text\nsrc/gravity_sdk/plan_adapters.py\nsrc/gravity_sdk/agent_capabilities.py\nsrc/gravity_sdk/agent_composite.py\nsrc/gravity_sdk/agent_handoff.py\nsrc/gravity_sdk/cli.py\nsrc/gravity_sdk/__main__.py"
       },
       "disposition": "rewrite_reference",
       "reason_code": "active_governance_path",
@@ -2632,15 +2875,15 @@
         "old_module": "gravity_sdk.agent_handoff",
         "new_module": "gravity_sdk.agents.handoff"
       },
-      "basis": "The active governance source names the physical/shared-spine owner, so the reference must follow the one-to-one package move.",
+      "basis": "The active governance source names a physical/shared-spine owner, so the reference must follow the one-to-one package move.",
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "src/gravity_sdk/__init__.py:269:21:import_module",
+      "source_key": "src/gravity_sdk/__init__.py:278:21:import_module",
       "audit_category": "dynamic_import",
       "source": {
         "file": "src/gravity_sdk/__init__.py",
-        "line": 269,
+        "line": 278,
         "column": 21,
         "form": "import_module",
         "old_value": "module_name",
@@ -2721,7 +2964,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The receiver is a locally enumerated error compatibility symbol and the assignment explicitly normalizes its owner to gravity_sdk.errors.",
+      "basis": "The receiver is a locally enumerated error compatibility symbol whose owner is normalized to gravity_sdk.errors.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -2740,7 +2983,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The receiver is a locally enumerated error compatibility symbol and the assignment explicitly normalizes its owner to gravity_sdk.errors.",
+      "basis": "The receiver is a locally enumerated error compatibility symbol whose owner is normalized to gravity_sdk.errors.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -2759,7 +3002,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The receiver is a locally enumerated error compatibility symbol and the assignment explicitly normalizes its owner to gravity_sdk.errors.",
+      "basis": "The receiver is a locally enumerated error compatibility symbol whose owner is normalized to gravity_sdk.errors.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -2778,7 +3021,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The receiver is a locally enumerated error compatibility symbol and the assignment explicitly normalizes its owner to gravity_sdk.errors.",
+      "basis": "The receiver is a locally enumerated error compatibility symbol whose owner is normalized to gravity_sdk.errors.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -2816,7 +3059,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "All _sdk_module call sites pass one of export_policy, registry, blob, export_models, or export_privacy; none is an agent module.",
+      "basis": "All _sdk_module call sites pass export_policy, registry, blob, export_models, or export_privacy; none is an agent module.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -2835,7 +3078,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The six expressions append the fixed root-module suffixes models, registry, executor, transport, http_runtime, and credentials.",
+      "basis": "The six expressions append fixed root-module suffixes outside R17.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -2854,7 +3097,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The six expressions append the fixed root-module suffixes models, registry, executor, transport, http_runtime, and credentials.",
+      "basis": "The six expressions append fixed root-module suffixes outside R17.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -2873,7 +3116,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The six expressions append the fixed root-module suffixes models, registry, executor, transport, http_runtime, and credentials.",
+      "basis": "The six expressions append fixed root-module suffixes outside R17.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -2892,7 +3135,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The six expressions append the fixed root-module suffixes models, registry, executor, transport, http_runtime, and credentials.",
+      "basis": "The six expressions append fixed root-module suffixes outside R17.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -2911,7 +3154,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The six expressions append the fixed root-module suffixes models, registry, executor, transport, http_runtime, and credentials.",
+      "basis": "The six expressions append fixed root-module suffixes outside R17.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -2930,7 +3173,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The six expressions append the fixed root-module suffixes models, registry, executor, transport, http_runtime, and credentials.",
+      "basis": "The six expressions append fixed root-module suffixes outside R17.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -2968,8 +3211,46 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "__name__ is gravity_sdk.sql.credentials. The resulting target is outside the R17 module set.",
+      "basis": "__name__ is gravity_sdk.sql.credentials. The target is outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "source_key": "tests/agent_migration_characterization.py:17:28:python string literal",
+      "audit_category": "agent_prefix_template",
+      "source": {
+        "file": "tests/agent_migration_characterization.py",
+        "line": 17,
+        "column": 28,
+        "form": "python string literal",
+        "old_value": "gravity_sdk.agent_",
+        "audit_proposed_value": ""
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "legacy_prefix_migration_sentinel",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "The characterization helper intentionally recognizes both the legacy gravity_sdk.agent_ prefix and the target gravity_sdk.agents package so its terminal-state checks detect any stale old owner. It does not import or select a runtime module.",
+      "evidence_kind": "migration_characterization_contract"
+    },
+    {
+      "source_key": "tests/agent_migration_characterization.py:267:27:python string literal",
+      "audit_category": "agent_prefix_template",
+      "source": {
+        "file": "tests/agent_migration_characterization.py",
+        "line": 267,
+        "column": 27,
+        "form": "python string literal",
+        "old_value": "gravity_sdk.agent_",
+        "audit_proposed_value": ""
+      },
+      "disposition": "no_migration_effect",
+      "reason_code": "legacy_prefix_migration_sentinel",
+      "migration_action": {
+        "kind": "none"
+      },
+      "basis": "The characterization helper intentionally recognizes both the legacy gravity_sdk.agent_ prefix and the target gravity_sdk.agents package so its terminal-state checks detect any stale old owner. It does not import or select a runtime module.",
+      "evidence_kind": "migration_characterization_contract"
     },
     {
       "source_key": "tests/test_agent_host_selection.py:143:14:patch.object",
@@ -2987,7 +3268,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client._executor._transport'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client._executor._transport'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3006,7 +3287,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.subject'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.subject'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3025,7 +3306,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.subject'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.subject'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3044,7 +3325,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.subject'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.subject'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3063,7 +3344,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'tempfile._TemporaryFileWrapper'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'tempfile._TemporaryFileWrapper'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3082,7 +3363,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "error_type is selected from gravity_sdk.errors and asserted to retain that owner. That owner is outside the R17 move set.",
+      "basis": "error_type is selected from gravity_sdk.errors. That owner is outside the R17 move set.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -3101,7 +3382,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "ExecutionVariantService is statically imported from gravity_sdk.execution_variant. That owner is outside the R17 move set.",
+      "basis": "ExecutionVariantService is imported from gravity_sdk.execution_variant. That owner is outside the R17 move set.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -3120,7 +3401,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'service'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'service'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3139,7 +3420,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'sdk'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'sdk'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3158,7 +3439,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'sdk'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'sdk'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3177,7 +3458,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'StaticFetcher'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'StaticFetcher'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3196,7 +3477,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'runtime_module.os'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'runtime_module.os'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3215,7 +3496,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3234,7 +3515,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'runtime'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3253,7 +3534,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'runtime'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3272,7 +3553,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'runtime'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3291,7 +3572,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'runtime'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3310,7 +3591,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'runtime'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3329,7 +3610,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3348,7 +3629,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3367,7 +3648,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3386,7 +3667,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3405,7 +3686,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3424,7 +3705,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3443,7 +3724,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'blob_module'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'blob_module'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3462,7 +3743,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3481,7 +3762,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'runtime'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3500,7 +3781,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'runtime'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3519,7 +3800,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3538,7 +3819,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3557,7 +3838,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "_atomic_update_env is owned by gravity_sdk.credentials. The resulting target is outside the R17 module set.",
+      "basis": "_atomic_update_env is owned by gravity_sdk.credentials. The target is outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -3576,7 +3857,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "_atomic_update_env is statically imported from gravity_sdk.credentials. That owner is outside the R17 move set.",
+      "basis": "_atomic_update_env is imported from gravity_sdk.credentials. That owner is outside the R17 move set.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -3595,7 +3876,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'content_encoding'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'content_encoding'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3614,7 +3895,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'content_encoding'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'content_encoding'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3633,7 +3914,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'content_encoding'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'content_encoding'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3652,7 +3933,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3671,7 +3952,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'GravityInsightClient'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'GravityInsightClient'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3690,7 +3971,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'registry.time'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'registry.time'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3709,7 +3990,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'registry.secrets'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'registry.secrets'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3728,7 +4009,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'nonempty_support' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'nonempty_support' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -3747,7 +4028,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'nonempty_runtime' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'nonempty_runtime' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -3766,7 +4047,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'nonempty_runtime' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'nonempty_runtime' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -3785,7 +4066,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'nonempty_runtime' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'nonempty_runtime' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -3804,7 +4085,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'nonempty_runtime' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'nonempty_runtime' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -3842,7 +4123,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'target'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'target'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3861,7 +4142,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3880,7 +4161,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3899,7 +4180,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3918,7 +4199,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3937,7 +4218,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3956,7 +4237,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3975,7 +4256,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -3994,7 +4275,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4013,7 +4294,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4032,7 +4313,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'self.client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4051,7 +4332,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4070,7 +4351,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4089,7 +4370,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4108,7 +4389,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4127,7 +4408,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4146,7 +4427,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4165,7 +4446,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4184,7 +4465,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'draft_probe'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4222,7 +4503,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'target'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'target'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4241,7 +4522,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'online'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'online'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4260,7 +4541,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'online'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'online'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4279,7 +4560,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'online' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'online' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -4298,7 +4579,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'online' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'online' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -4317,7 +4598,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'prober_batch' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'prober_batch' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -4336,7 +4617,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'prober_batch' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'prober_batch' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -4355,7 +4636,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The reviewed first argument 'prober_cli.runtime' is a bound module/object and the call supplies a separate attribute name; no dotted import target is assembled at this site.",
+      "basis": "The reviewed first argument 'prober_cli.runtime' is a bound object and the call supplies a separate attribute name.",
       "evidence_kind": "binding_and_patch_api_semantics"
     },
     {
@@ -4374,7 +4655,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "The local modules tuple contains seven non-agent result/product modules; the separately imported directory module is also non-agent.",
+      "basis": "The local module tuple and separately imported directory module are all outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -4393,7 +4674,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'SDK'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'SDK'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4412,7 +4693,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'SDK'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'SDK'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4431,7 +4712,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4450,7 +4731,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4469,7 +4750,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4488,7 +4769,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'unified_cli'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'unified_cli'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4507,7 +4788,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'unified_cli'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'unified_cli'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4526,7 +4807,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'unified_cli'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'unified_cli'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4545,7 +4826,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "module ranges only over order_trace_cli and order_directory_cli. The resulting target is outside the R17 module set.",
+      "basis": "module ranges only over order_trace_cli and order_directory_cli. The target is outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -4564,7 +4845,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'sql_client'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'sql_client'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4583,7 +4864,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "stage ranges only over _project and _enforce_semantic_rules. The resulting target is outside the R17 module set.",
+      "basis": "stage ranges only over _project and _enforce_semantic_rules. The target is outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -4602,7 +4883,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'receipt_retention.os'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'receipt_retention.os'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4621,7 +4902,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'sdk'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'sdk'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4640,7 +4921,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'changed'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'changed'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4659,7 +4940,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'SubprocessProviderTransport'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'SubprocessProviderTransport'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4678,7 +4959,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'transport_module'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'transport_module'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4697,7 +4978,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'transport_module.os'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'transport_module.os'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4716,7 +4997,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'transport_module'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'transport_module'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4735,7 +5016,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'transport_module.subprocess'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'transport_module.subprocess'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4754,7 +5035,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'tempfile._TemporaryFileWrapper'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'tempfile._TemporaryFileWrapper'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4773,7 +5054,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'sqlite_adapter_module.sqlite3'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'sqlite_adapter_module.sqlite3'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4792,7 +5073,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch.object receives the runtime object expression 'SqlExplorerService'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "patch.object receives runtime object expression 'SqlExplorerService'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4811,7 +5092,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'provenance'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'provenance'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4830,7 +5111,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.credentials'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.credentials'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4849,7 +5130,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.credentials.subprocess'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.credentials.subprocess'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4868,7 +5149,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4887,7 +5168,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4906,7 +5187,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4925,7 +5206,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4944,7 +5225,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4963,7 +5244,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -4982,7 +5263,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5001,7 +5282,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5020,7 +5301,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5039,7 +5320,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5058,7 +5339,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5077,7 +5358,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5096,7 +5377,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5115,7 +5396,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "patch_target ranges only over verify_all and credentials.pull. The resulting target is outside the R17 module set.",
+      "basis": "patch_target ranges only over verify_all and credentials.pull. The target is outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -5134,7 +5415,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5153,7 +5434,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5172,7 +5453,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5191,7 +5472,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'gravity_cli.sys'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -5210,7 +5491,7 @@
       "migration_action": {
         "kind": "none"
       },
-      "basis": "mock.patch.object receives the runtime object expression 'provenance'; this API does not resolve a dotted module string. Any owner import moves through the separately audited static-import migration.",
+      "basis": "mock.patch.object receives runtime object expression 'provenance'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     }
   ]
