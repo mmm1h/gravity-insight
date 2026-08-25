@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import tempfile
 from typing import Any
 import unittest
 
@@ -16,6 +17,7 @@ from scripts.audit_agent_module_references import (
     GOVERNANCE_EXCLUSION_RULE,
     ReferenceScanner,
     is_generated_governance_artifact,
+    make_module_map,
 )
 from scripts.generate_agent_module_reference_dispositions import (
     ACTIVE_BARE_FILES,
@@ -41,7 +43,10 @@ ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
 CANONICAL_SOURCE = ROOT / "specs/agent-runtime/architecture-source.md"
-LEDGER_SHA256 = "2d69b014bb35d77860bc3dde686017a8c5041cbcdda112eeb683925c3cfb84b9"
+INDEX_JSON = ROOT / "specs/agent-runtime/index.json"
+INDEX_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
+R17_SPECIFICATION = ROOT / "specs/agent-runtime/R17-agent-module-package-migration.md"
+LEDGER_SHA256 = "cff0dda6ed24a8139f607819d7579b4c83fc437f721201c6d57c9e4b2cd7d98b"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
     "bare_agent_string": 101,
@@ -394,6 +399,124 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
     def test_repository_scan_reproduces_the_checked_in_ledger(self) -> None:
         self.assertEqual(self.raw, render_document(build_document()))
 
+    def test_index_and_specification_state_agree(self) -> None:
+        index_text = INDEX_JSON.read_text(encoding="utf-8")
+        index = json.loads(index_text)
+        index_markdown = INDEX_MARKDOWN.read_text(encoding="utf-8")
+        specification = R17_SPECIFICATION.read_text(encoding="utf-8")
+        requirement = next(
+            item for item in index["requirements"] if item.get("id") == "R17"
+        )
+        self.assertEqual("specified", requirement["status"])
+        prerequisite = next(
+            item
+            for item in requirement["ready_prerequisites"]
+            if item.get("id") == "dynamic_import_audit_classification"
+        )
+        summary = self.document["summary"]
+        actual_evidence = (
+            prerequisite["required_schema_version"]
+            == self.document["schema_version"]
+            and prerequisite["candidate_sites"] == len(self.document["sites"])
+            and prerequisite["classified_sites"]
+            == len(self.document["sites"]) - summary["unclassified_sites"]
+            and prerequisite["unclassified_sites"] == 0
+            and summary["unclassified_sites"] == 0
+            and prerequisite["blocking_sites"] == 0
+            and summary["blocker_count"] == 0
+            and self.document["blockers"] == []
+        )
+        self.assertEqual(actual_evidence, prerequisite["satisfied"])
+        self.assertEqual(
+            prerequisite["required_schema_version"],
+            self.document["schema_version"],
+        )
+        self.assertEqual(
+            prerequisite["candidate_sites"], prerequisite["classified_sites"]
+        )
+        self.assertEqual(prerequisite["candidate_sites"], summary["site_count"])
+        self.assertEqual(0, prerequisite["unclassified_sites"])
+        self.assertEqual(0, prerequisite["blocking_sites"])
+
+        marker_names = (
+            "status",
+            "dynamic_import_audit_classification.satisfied",
+            "schema",
+            "candidate_sites",
+            "classified_sites",
+            "unclassified_sites",
+            "blocking_sites",
+        )
+
+        def marker(text: str) -> dict[str, str]:
+            result: dict[str, str] = {}
+            for name in marker_names:
+                values = set(
+                    re.findall(
+                        rf"(?<![A-Za-z0-9_.]){re.escape(name)}=([A-Za-z0-9._-]+)",
+                        text,
+                    )
+                )
+                self.assertEqual(1, len(values), f"ambiguous {name} marker: {values}")
+                result[name] = values.pop()
+            return result
+
+        self.assertEqual(marker(specification), marker(index_markdown))
+        combined = "\n".join((index_text, index_markdown, specification))
+        for residue in (
+            "gravity.agent-module-reference-dispositions.v1",
+            "candidate_sites=227",
+            "classified_sites=227",
+            '"candidate_sites": 227',
+            '"classified_sites": 227',
+            '"site_count": 227',
+        ):
+            self.assertNotIn(residue, combined, f"previous ledger residue: {residue}")
+
+    def test_frozen_scope_supports_all_three_owner_states(self) -> None:
+        moves = self.document["scope"]["one_to_one_moves"]
+        states = {
+            "baseline": (81, True),
+            "phase_1": (34, False),
+            "phase_2": (0, False),
+        }
+        for label, (old_count, pagination_old) in states.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                ledger = root / "tests/fixtures/agent_module_reference_dispositions.json"
+                ledger.parent.mkdir(parents=True)
+                ledger.write_bytes(self.raw)
+                pagination_target = (
+                    root / "src/gravity_sdk/pagination_completeness.py"
+                )
+                pagination_target.parent.mkdir(parents=True)
+                pagination_target.write_text("", encoding="utf-8")
+                retained = root / "src/gravity_sdk/agent_runtime_contracts.py"
+                retained.write_text("", encoding="utf-8")
+                if pagination_old:
+                    (root / "src/gravity_sdk/agent_pagination.py").write_text(
+                        "", encoding="utf-8"
+                    )
+                for index, move in enumerate(moves):
+                    module = (
+                        move["old_module"]
+                        if index < old_count
+                        else move["new_module"]
+                    )
+                    path = root / "src" / Path(*module.split(".")).with_suffix(".py")
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("", encoding="utf-8")
+                mappings, mapping = make_module_map(root)
+                self.assertEqual(83, len(mappings))
+                self.assertEqual(83, len(mapping))
+                self.assertEqual(
+                    81,
+                    sum(
+                        item.new_module.startswith("gravity_sdk.agents.")
+                        for item in mappings
+                    ),
+                )
+
     def test_canonical_errata_replacements_are_derived_only_from_ledger(self) -> None:
         declaration = self.directive["canonical_source_errata"][
             "allowed_source_replacements"
@@ -401,7 +524,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertIsInstance(declaration, dict)
         self.assertNotIn("old", declaration)
         self.assertNotIn("new", declaration)
-        self.assertNotIn("ledger_path", declaration)
+        self.assertEqual(
+            "tests/fixtures/agent_module_reference_dispositions.json",
+            declaration["ledger_repository_path"],
+        )
+        self.assertRegex(declaration["ledger_git_revision"], r"^[0-9a-f]{40}$")
+        self.assertEqual(LEDGER_SHA256, declaration["ledger_sha256"])
         replacements = derive_source_replacements(self.directive, self.document)
         selected_rows = [
             site
@@ -448,7 +576,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         extra["sites"][-1] = copy.deepcopy(injected)
         with self.assertRaisesRegex(
             ErrataValidationError,
-            "must contain exactly 4 rows; found 5",
+            "directive-bound ledger object",
         ):
             derive_source_replacements(self.directive, extra)
 
@@ -464,7 +592,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(
             ErrataValidationError,
-            "must contain exactly 4 rows; found 3",
+            "directive-bound ledger object",
         ):
             derive_source_replacements(self.directive, missing)
 
@@ -479,7 +607,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         loop_row["migration_action"]["new_text"] = loop_row["migration_action"][
             "old_text"
         ]
-        with self.assertRaisesRegex(ErrataValidationError, "self-loop"):
+        with self.assertRaisesRegex(ErrataValidationError, "directive-bound ledger object"):
             derive_source_replacements(self.directive, self_loop)
 
     def test_canonical_errata_final_assertion_is_full_text_and_one_shot(self) -> None:
@@ -530,16 +658,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 "new_module": "gravity_sdk.agents.handoff_next",
             }
         )
-        drift_expected = build_expected_source(
-            self.directive, ledger_drift, baseline
-        )
-        self.assertNotEqual(expected, drift_expected)
         with self.assertRaisesRegex(
             ErrataValidationError,
-            "diff exceeds the ledger-derived errata",
+            "directive-bound ledger object",
         ):
-            validate_final_state(
-                final_directive, ledger_drift, expected, baseline
+            build_expected_source(
+                self.directive, ledger_drift, baseline
             )
 
         reused = copy.deepcopy(final_directive)
@@ -557,6 +681,32 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             validate_final_state(
                 second_transition, self.document, expected, baseline
             )
+
+    def test_canonical_errata_rejects_forged_move_with_synced_source_digest(self) -> None:
+        forged = copy.deepcopy(self.document)
+        row = next(
+            site
+            for site in forged["sites"]
+            if site["source"].get("file")
+            == "specs/agent-runtime/architecture-source.md"
+            and site["migration_action"].get("old_module")
+            == "gravity_sdk.agent_capabilities"
+        )
+        row["migration_action"].update(
+            {
+                "new_module": "gravity_sdk.agents.unrelated_owner",
+                "new_text": "agents/unrelated_owner.py",
+            }
+        )
+        forged["summary"]["sites_sha256"] = _canonical_sites_sha256(
+            forged["sites"]
+        )
+        baseline = load_git_baseline(self.directive)
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "supplied ledger bytes differ from the directive-bound ledger object",
+        ):
+            build_expected_source(self.directive, forged, baseline)
 
     def test_current_canonical_source_still_matches_v92_binding(self) -> None:
         source = CANONICAL_SOURCE.read_bytes()

@@ -31,6 +31,9 @@ EXPECTED_ERRATA_KEYS = {
 EXPECTED_DERIVATION_KEYS = {
     "derivation",
     "ledger_role",
+    "ledger_repository_path",
+    "ledger_git_revision",
+    "ledger_sha256",
     "ledger_schema_version",
     "source_file",
     "disposition",
@@ -143,6 +146,26 @@ def source_replacement_derivation(
         derivation.get("ledger_role") == "r17_checked_in_governance_evidence",
         "source replacements must use the R17 checked-in governance evidence",
     )
+    ledger_path = _repository_path(
+        derivation.get("ledger_repository_path"),
+        field="ledger_repository_path",
+    )
+    _require(
+        ledger_path == LEDGER_PATH.relative_to(ROOT).as_posix(),
+        "errata derivation must bind the R17 disposition ledger path",
+    )
+    ledger_revision = derivation.get("ledger_git_revision")
+    _require(
+        isinstance(ledger_revision, str)
+        and re.fullmatch(r"[0-9a-f]{40}", ledger_revision) is not None,
+        "errata ledger revision must be a full Git SHA",
+    )
+    ledger_sha256 = derivation.get("ledger_sha256")
+    _require(
+        isinstance(ledger_sha256, str)
+        and re.fullmatch(r"[0-9a-f]{64}", ledger_sha256) is not None,
+        "errata ledger SHA-256 must be a lowercase digest",
+    )
     source_file = _repository_path(
         derivation.get("source_file"), field="source_file"
     )
@@ -165,6 +188,98 @@ def source_replacement_derivation(
     return derivation
 
 
+def _git_object_bytes(revision: str, repository_path: str) -> bytes:
+    completed = subprocess.run(
+        ["git", "show", f"{revision}:{repository_path}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return completed.stdout
+
+
+def _render_ledger(ledger: dict[str, Any]) -> bytes:
+    return (json.dumps(ledger, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def validate_bound_ledger(
+    directive: dict[str, Any],
+    ledger: dict[str, Any],
+    *,
+    ledger_bytes: bytes | None = None,
+) -> bytes:
+    """Require the exact ledger object named by the directive's immutable binding."""
+
+    derivation = source_replacement_derivation(directive)
+    bound = _git_object_bytes(
+        derivation["ledger_git_revision"], derivation["ledger_repository_path"]
+    )
+    expected_sha = derivation["ledger_sha256"]
+    _require(
+        hashlib.sha256(bound).hexdigest() == expected_sha,
+        "Git-bound ledger SHA-256 differs from the errata declaration",
+    )
+    supplied = _render_ledger(ledger) if ledger_bytes is None else ledger_bytes
+    _require(
+        hashlib.sha256(supplied).hexdigest() == expected_sha and supplied == bound,
+        "supplied ledger bytes differ from the directive-bound ledger object",
+    )
+    _require(
+        _render_ledger(ledger) == bound,
+        "parsed ledger semantics differ from the directive-bound ledger object",
+    )
+    return bound
+
+
+def _ledger_move_mapping(ledger: dict[str, Any]) -> dict[str, str]:
+    scope = ledger.get("scope")
+    _require(isinstance(scope, dict), "bound ledger scope must be an object")
+    moves = scope.get("one_to_one_moves")
+    _require(
+        isinstance(moves, list) and len(moves) == 81,
+        "bound ledger scope must contain exactly 81 one-to-one moves",
+    )
+    mapping: dict[str, str] = {}
+    targets: set[str] = set()
+    for move in moves:
+        _require(isinstance(move, dict), "bound ledger move must be an object")
+        old = move.get("old_module")
+        new = move.get("new_module")
+        old_parts = old.split(".") if isinstance(old, str) else []
+        old_name = old_parts[1] if len(old_parts) == 2 else ""
+        _require(
+            isinstance(old, str)
+            and old_parts[0] == "gravity_sdk"
+            and old_name.startswith("agent" + "_")
+            and new
+            == f"gravity_sdk.agents.{old_name.removeprefix('agent' + '_')}",
+            f"bound ledger contains an illegal move: {old!r} -> {new!r}",
+        )
+        _require(old not in mapping and new not in targets, "bound ledger moves repeat")
+        mapping[old] = new
+        targets.add(new)
+    consolidation = scope.get("consolidate_delete")
+    _require(
+        isinstance(consolidation, dict)
+        and consolidation.get("old_module", "").rsplit(".", 1)[-1]
+        == "agent" + "_pagination"
+        and consolidation.get("new_module")
+        == "gravity_sdk.pagination_completeness"
+        and consolidation.get("symbol") == "compact_pagination",
+        "bound ledger pagination consolidation changed",
+    )
+    retained = scope.get("retained_modules")
+    _require(
+        isinstance(retained, list)
+        and len(retained) == 1
+        and retained[0].rsplit(".", 1)[-1]
+        == "agent" + "_runtime_contracts",
+        "bound ledger retained owner changed",
+    )
+    return mapping
+
+
 def canonical_source_path(directive: dict[str, Any]) -> Path:
     return ROOT / _canonical_source_file(directive)
 
@@ -175,6 +290,8 @@ def derive_source_replacements(
     """Select every canonical-source rewrite and bind its exact coordinates."""
 
     derivation = source_replacement_derivation(directive)
+    validate_bound_ledger(directive, ledger)
+    move_mapping = _ledger_move_mapping(ledger)
     _require(
         ledger.get("schema_version") == derivation["ledger_schema_version"],
         "ledger schema differs from the errata derivation",
@@ -247,6 +364,10 @@ def derive_source_replacements(
             and bool(new_module)
             and old_module != new_module,
             f"invalid module move at {source_key}",
+        )
+        _require(
+            move_mapping.get(old_module) == new_module,
+            f"module move is outside the bound R17 mapping at {source_key}",
         )
         old_short = old_module.removeprefix("gravity_sdk.")
         new_short = new_module.removeprefix("gravity_sdk.")
@@ -498,6 +619,11 @@ def main() -> int:
     try:
         directive = load_json(DIRECTIVE_PATH)
         ledger = load_json(LEDGER_PATH)
+        validate_bound_ledger(
+            directive,
+            ledger,
+            ledger_bytes=LEDGER_PATH.read_bytes(),
+        )
         source_bytes = canonical_source_path(directive).read_bytes()
         baseline_bytes = load_git_baseline(directive)
         result = validate_final_state(directive, ledger, source_bytes, baseline_bytes)
