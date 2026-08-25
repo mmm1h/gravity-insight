@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 from typing import Any
 
@@ -33,20 +34,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SCANNER = ROOT / "scripts/audit_agent_module_references.py"
 GENERATOR = ROOT / "scripts/generate_agent_module_reference_dispositions.py"
 PUBLIC_EXPORTS = ROOT / "tests/fixtures/public_api_exports.json"
-OUTPUT = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
-
-EXPECTED_AUDIT_CATEGORIES = {
-    "agent_prefix_template": 2,
-    "bare_agent_string": 101,
-    "dynamic_import": 11,
-    "module_owner_receiver": 7,
-    "non_string_patch_expression": 117,
-}
-EXPECTED_DISPOSITIONS = {
-    "no_migration_effect": 224,
-    "rewrite_reference": 13,
-    "rewrite_selector_data": 1,
-}
+DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
+BASELINE_LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
+OUTPUT = ROOT / "tests/fixtures/agent_module_reference_checkpoint.json"
 ACTIVE_BARE_FILES = {
     "AGENTS.md",
     "docs/maintainers/technical-debt.md",
@@ -62,6 +52,19 @@ DATED_DECISION_RECORD = "dated_governance_decision_record"
 RUNTIME_CONSUMER = "runtime_consumer"
 AMBIGUOUS_REFERENCE = "ambiguous_reference"
 ACTIVE_REFERENCE = "active_reference"
+CHECKPOINT_SITE_FIELDS = (
+    "source_key",
+    "tracked_sources",
+    "audit_category",
+    "old_value",
+    "audit_proposed_value",
+    "reference_category",
+    "reference_certainty",
+    "disposition",
+    "reason_code",
+    "basis_id",
+    "migration_action",
+)
 
 _MARKDOWN_RECORD_START = re.compile(r"^\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|```)")
 _JSON_MEMBER_START = re.compile(r'^(?P<indent>\s*)"[^"]+"\s*:')
@@ -179,12 +182,26 @@ def _reference_snippets(references: tuple[Finding, ...]) -> dict[tuple[str, ...]
     return result
 
 
-def _selector_rewrites(move_mapping: dict[str, str]) -> list[dict[str, str]]:
-    exports = json.loads(PUBLIC_EXPORTS.read_text(encoding="utf-8"))
+def _selector_rewrites(
+    move_mapping: dict[str, str], exports: dict[str, Any] | None = None
+) -> tuple[str, list[dict[str, str]]]:
+    exports = (
+        json.loads(PUBLIC_EXPORTS.read_text(encoding="utf-8"))
+        if exports is None
+        else exports
+    )
     rewrites: list[dict[str, str]] = []
+    owner_states: set[str] = set()
+    reverse_mapping = {new: old for old, new in move_mapping.items()}
     for symbol, (owner, attribute) in exports.items():
-        old_module = f"gravity_sdk{owner}"
-        if old_module not in move_mapping:
+        current_module = f"gravity_sdk{owner}"
+        if current_module in move_mapping:
+            old_module = current_module
+            owner_states.add("legacy")
+        elif current_module in reverse_mapping:
+            old_module = reverse_mapping[current_module]
+            owner_states.add("migrated")
+        else:
             continue
         new_module = move_mapping[old_module]
         rewrites.append(
@@ -200,7 +217,8 @@ def _selector_rewrites(move_mapping: dict[str, str]) -> list[dict[str, str]]:
     rewrites.sort(key=lambda item: item["symbol"])
     if len(rewrites) != 6:
         raise ValueError("the lazy selector must have exactly six moved owners")
-    return rewrites
+    state = next(iter(owner_states)) if len(owner_states) == 1 else "mixed"
+    return state, rewrites
 
 
 def _none(reason_code: str, basis: str, evidence_kind: str) -> dict[str, Any]:
@@ -208,6 +226,16 @@ def _none(reason_code: str, basis: str, evidence_kind: str) -> dict[str, Any]:
         "disposition": "no_migration_effect",
         "reason_code": reason_code,
         "migration_action": {"kind": "none"},
+        "basis": basis,
+        "evidence_kind": evidence_kind,
+    }
+
+
+def _blocker(reason_code: str, basis: str, evidence_kind: str) -> dict[str, Any]:
+    return {
+        "disposition": "blocker",
+        "reason_code": reason_code,
+        "migration_action": {"kind": "block"},
         "basis": basis,
         "evidence_kind": evidence_kind,
     }
@@ -233,10 +261,10 @@ def _replacement_texts(row: Finding, snippet: str, new_module: str) -> tuple[str
     return old_short, new_module.removeprefix("gravity_sdk.")
 
 
-def _logical_source_context(row: Finding) -> str:
+def _logical_source_context(row: Finding, root: Path = ROOT) -> str:
     """Return the bounded governance record containing a bare module name."""
 
-    lines = (ROOT / row.file).read_text(encoding="utf-8").splitlines()
+    lines = (root / row.file).read_text(encoding="utf-8").splitlines()
     index = row.line - 1
     if index < 0 or index >= len(lines):
         raise ValueError(f"source line is outside file: {source_key(row)}")
@@ -295,7 +323,7 @@ def _classify_bare(
     old_module = f"gravity_sdk.{row.old_value}"
     if row.file.startswith("docs/archive/"):
         item = _none(
-            "frozen_historical_text",
+            "frozen_historical_exact_reference",
             "The occurrence is in docs/archive, which AGENTS.md defines as "
             "non-normative history rather than a current interface or consumer.",
             "repository_policy",
@@ -303,10 +331,15 @@ def _classify_bare(
         item["module_reference"] = _module_reference(old_module, move_mapping)
         return item
     if row.file not in ACTIVE_BARE_FILES:
-        raise ValueError(f"unreviewed active bare string: {source_key(row)}")
+        return _blocker(
+            "unreviewed_active_bare_reference",
+            "This active bare module reference is outside the reviewed governance "
+            "record set and has no safe migration interpretation.",
+            "unresolved_source_context",
+        )
     if old_module == RETAINED_MODULE:
         item = _none(
-            "retained_module_reference",
+            "retained_exact_reference",
             "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; "
             "this active governance reference names that unchanged terminal owner.",
             "r17_scope_contract",
@@ -338,7 +371,7 @@ def _classify_bare(
         old_text, new_text = _replacement_texts(row, snippet, PAGINATION_TARGET)
         return {
             "disposition": "rewrite_consolidated_reference",
-            "reason_code": "pagination_consolidation_reference",
+            "reason_code": "pagination_consolidation_exact_reference",
             "migration_action": {
                 "kind": "replace_module",
                 "old_text": old_text,
@@ -351,7 +384,12 @@ def _classify_bare(
             "evidence_kind": "r17_scope_contract",
         }
     if old_module not in move_mapping:
-        raise ValueError(f"active bare string is not an R17 move: {source_key(row)}")
+        return _blocker(
+            "bare_reference_outside_frozen_scope",
+            "The active bare module reference is neither retained, consolidated, "
+            "nor present in the exact 81-move scope.",
+            "frozen_scope_mismatch",
+        )
     if context_kind == DATED_DECISION_RECORD:
         item = _none(
             "dated_governance_decision_evidence",
@@ -380,9 +418,23 @@ def _classify_bare(
 
 
 def _classify_dynamic(
-    row: Finding, selector_rewrites: list[dict[str, str]]
+    row: Finding, selector_state: str, selector_rewrites: list[dict[str, str]]
 ) -> dict[str, Any]:
     if row.file == "src/gravity_sdk/__init__.py":
+        if selector_state == "migrated":
+            return _none(
+                "root_lazy_export_owner_map_migrated",
+                "All six finite _EXPORTS owner values already name their terminal "
+                "gravity_sdk.agents owners.",
+                "finite_selector_dataflow",
+            )
+        if selector_state != "legacy":
+            return _blocker(
+                "mixed_root_lazy_export_owner_map",
+                "The six finite _EXPORTS owner values mix legacy and terminal "
+                "owners; the selector must transition atomically.",
+                "finite_selector_dataflow",
+            )
         return {
             "disposition": "rewrite_selector_data",
             "reason_code": "root_lazy_export_owner_map",
@@ -422,8 +474,13 @@ def _classify_dynamic(
     }
     try:
         reason, basis = basis_by_file[row.file]
-    except KeyError as exc:
-        raise ValueError(f"unreviewed dynamic import: {source_key(row)}") from exc
+    except KeyError:
+        return _blocker(
+            "unreviewed_dynamic_import_domain",
+            "The dynamic import producer has no finite, reviewed input domain; "
+            "R17 cannot prove that it excludes a moved or deleted owner.",
+            "unresolved_dynamic_dataflow",
+        )
     return _none(reason, basis, "finite_input_dataflow")
 
 
@@ -476,7 +533,12 @@ def _classify_patch(row: Finding) -> dict[str, Any]:
     }
     key = (row.file, row.old_value)
     if key not in fixed_non_agent:
-        raise ValueError(f"unreviewed string-producing patch: {source_key(row)}")
+        return _blocker(
+            "unreviewed_patch_target_domain",
+            "The string-producing patch target has no finite, reviewed producer "
+            "domain; migration ownership is not statically provable.",
+            "unresolved_dynamic_dataflow",
+        )
     return _none(
         "fixed_non_agent_patch_path",
         fixed_non_agent[key] + " The target is outside the R17 module set.",
@@ -506,7 +568,12 @@ def _classify_owner(row: Finding) -> dict[str, Any]:
             "_atomic_update_env is imported from gravity_sdk.credentials.",
     }
     if row.file not in basis_by_file:
-        raise ValueError(f"unreviewed owner receiver: {source_key(row)}")
+        return _blocker(
+            "unreviewed_owner_receiver",
+            "The __module__/__qualname__ receiver owner is not in the reviewed "
+            "binding census.",
+            "unresolved_receiver_binding",
+        )
     return _none(
         "receiver_owner_outside_r17",
         basis_by_file[row.file] + " That owner is outside the R17 move set.",
@@ -524,17 +591,248 @@ def _classify_prefix(row: Finding) -> dict[str, Any]:
     )
 
 
-def build_document() -> dict[str, Any]:
-    audit = scan_repository(ROOT)
-    manual = list(audit.manual_review)
-    if len({source_key(row) for row in manual}) != len(manual):
+def _finding_identity(row: Finding) -> tuple[str, int, int, str, str, str]:
+    return (
+        row.file,
+        row.line,
+        row.column,
+        row.form,
+        row.old_value,
+        row.new_value,
+    )
+
+
+def _old_module_for_reference(
+    row: Finding, complete_mapping: dict[str, str]
+) -> str | None:
+    if row.old_value in complete_mapping:
+        return row.old_value
+    for old_module in complete_mapping:
+        if row.old_value == "src/" + old_module.replace(".", "/") + ".py":
+            return old_module
+    return None
+
+
+def _classify_reference(
+    row: Finding,
+    move_mapping: dict[str, str],
+    complete_mapping: dict[str, str],
+) -> dict[str, Any]:
+    old_module = _old_module_for_reference(row, complete_mapping)
+    if row.certainty not in {"exact", "constant-folded"} or old_module is None:
+        return _blocker(
+            "unreviewed_reference_evidence",
+            "The scanner emitted a reference without an exact owner mapping or a "
+            "manual-review disposition.",
+            "reference_denominator",
+        )
+    if row.file.startswith("docs/archive/"):
+        item = _none(
+            "frozen_historical_text",
+            "The exact reference is in docs/archive, which is non-normative history "
+            "and must preserve the recorded path.",
+            "repository_policy",
+        )
+        item["module_reference"] = _module_reference(old_module, move_mapping)
+        return item
+    if (
+        row.file == "tests/test_agent_concept_deletions.py"
+        and row.category == "string_reference"
+    ):
+        item = _none(
+            "phase_state_contract_sentinel",
+            "The concept-deletion gate intentionally names old and terminal owners "
+            "to validate baseline, Phase 1, and Phase 2 states from one test.",
+            "three_state_gate_contract",
+        )
+        item["module_reference"] = _module_reference(old_module, move_mapping)
+        return item
+    if old_module == RETAINED_MODULE:
+        item = _none(
+            "retained_module_reference",
+            "R17 retains gravity_sdk.agent_runtime_contracts at the root, so this "
+            "exact reference remains unchanged.",
+            "r17_scope_contract",
+        )
+        item["module_reference"] = _module_reference(old_module, move_mapping)
+        return item
+    if old_module == PAGINATION_MODULE:
+        return {
+            "disposition": "rewrite_consolidated_reference",
+            "reason_code": "pagination_consolidation_reference",
+            "migration_action": {
+                "kind": "replace_module",
+                "old_text": row.old_value,
+                "new_text": row.new_value,
+                "old_module": PAGINATION_MODULE,
+                "new_module": PAGINATION_TARGET,
+            },
+            "basis": "The exact reference names the owner R17 consolidates into "
+            "pagination_completeness and deletes.",
+            "evidence_kind": "exact_reference_mapping",
+        }
+    if old_module not in move_mapping:
+        return _blocker(
+            "reference_outside_frozen_scope",
+            "The exact reference is neither retained, consolidated, nor present in "
+            "the immutable 81-move scope.",
+            "frozen_scope_mismatch",
+        )
+    return {
+        "disposition": "rewrite_reference",
+        "reason_code": "exact_owner_reference",
+        "migration_action": {
+            "kind": "replace_text",
+            "old_text": row.old_value,
+            "new_text": row.new_value,
+            "old_module": old_module,
+            "new_module": move_mapping[old_module],
+        },
+        "basis": "The scanner resolved this exact reference to one immutable R17 "
+        "move pair; the reference must follow that owner.",
+        "evidence_kind": "exact_reference_mapping",
+    }
+
+
+def _classify_manual(
+    row: Finding,
+    source: dict[str, Any],
+    snippets: dict[tuple[str, ...], str],
+    selector_state: str,
+    selector_rewrites: list[dict[str, str]],
+    move_mapping: dict[str, str],
+    root: Path,
+) -> tuple[str, dict[str, Any]]:
+    category = _audit_category(row)
+    if category == "bare_agent_string":
+        reference_key = (
+            row.file,
+            str(row.line),
+            str(row.column),
+            row.form,
+            row.old_value,
+            row.new_value,
+        )
+        if reference_key not in snippets:
+            return category, _blocker(
+                "missing_reference_evidence",
+                "The manual-review row has no corresponding scanner reference.",
+                "reference_denominator",
+            )
+        source["audit_snippet"] = snippets[reference_key]
+        context = snippets[reference_key]
+        if row.file in ACTIVE_BARE_FILES:
+            context = _logical_source_context(row, root)
+            source["audit_context"] = context
+        return category, _classify_bare(
+            row, snippets[reference_key], context, move_mapping
+        )
+    if category == "dynamic_import":
+        return category, _classify_dynamic(row, selector_state, selector_rewrites)
+    if category == "non_string_patch_expression":
+        return category, _classify_patch(row)
+    if category == "module_owner_receiver":
+        return category, _classify_owner(row)
+    return category, _classify_prefix(row)
+
+
+def _immutable_baseline_binding() -> dict[str, Any]:
+    directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
+    derivation = directive["canonical_source_errata"]["allowed_source_replacements"]
+    repository_path = BASELINE_LEDGER.relative_to(ROOT).as_posix()
+    if derivation.get("ledger_repository_path") != repository_path:
+        raise ValueError("directive no longer binds the immutable R17 baseline ledger")
+    revision = derivation.get("ledger_git_revision")
+    expected_sha = derivation.get("ledger_sha256")
+    completed = subprocess.run(
+        ["git", "show", f"{revision}:{repository_path}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    bound = completed.stdout
+    if hashlib.sha256(bound).hexdigest() != expected_sha:
+        raise ValueError("immutable baseline Git object differs from directive digest")
+    if BASELINE_LEDGER.read_bytes() != bound:
+        raise ValueError("working-tree baseline ledger differs from immutable Git object")
+    return {
+        "role": "errata_source_only_immutable_baseline",
+        "repository_path": repository_path,
+        "git_revision": revision,
+        "sha256": expected_sha,
+        "schema_version": derivation.get("ledger_schema_version"),
+    }
+
+
+def checkpoint_sites(document: dict[str, Any]) -> list[dict[str, Any]]:
+    if tuple(document.get("site_fields", ())) != CHECKPOINT_SITE_FIELDS:
+        raise ValueError("checkpoint site field schema changed")
+    tracked_sources = {
+        "r": ["reference"],
+        "m": ["manual_review"],
+        "rm": ["reference", "manual_review"],
+    }
+    result: list[dict[str, Any]] = []
+    for record in document.get("sites", []):
+        if not isinstance(record, list) or len(record) != len(CHECKPOINT_SITE_FIELDS):
+            raise ValueError("invalid checkpoint site record")
+        values = dict(zip(CHECKPOINT_SITE_FIELDS, record))
+        key = values["source_key"]
+        if not isinstance(key, str):
+            raise ValueError("checkpoint source key must be a string")
+        file, line, column, form = key.split(":", 3)
+        source = {
+            "file": file,
+            "line": int(line),
+            "column": int(column),
+            "form": form,
+            "old_value": values["old_value"],
+            "audit_proposed_value": values["audit_proposed_value"],
+        }
+        if values["reference_category"] is not None:
+            source["reference_category"] = values["reference_category"]
+            source["reference_certainty"] = values["reference_certainty"]
+        result.append(
+            {
+                "source_key": key,
+                "tracked_sources": tracked_sources[values["tracked_sources"]],
+                "audit_category": values["audit_category"],
+                "source": source,
+                "disposition": values["disposition"],
+                "reason_code": values["reason_code"],
+                "basis_id": values["basis_id"],
+                "migration_action": values["migration_action"],
+            }
+        )
+    return result
+
+
+def build_document(
+    *,
+    root: Path = ROOT,
+    audit: Any | None = None,
+    public_exports: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    audit = scan_repository(root) if audit is None else audit
+    references = {_finding_identity(row): row for row in audit.references}
+    manual = {_finding_identity(row): row for row in audit.manual_review}
+    if len(references) != len(audit.references):
+        raise ValueError("reference source keys are not unique")
+    if len(manual) != len(audit.manual_review):
         raise ValueError("manual-review source keys are not unique")
     moves, move_mapping = _module_universe(audit.mappings)
+    complete_mapping = {row.old_module: row.new_module for row in audit.mappings}
     snippets = _reference_snippets(audit.references)
-    selector_rewrites = _selector_rewrites(move_mapping)
+    selector_state, selector_rewrites = _selector_rewrites(
+        move_mapping, public_exports
+    )
     sites: list[dict[str, Any]] = []
-    for row in manual:
-        category = _audit_category(row)
+    for identity in sorted(set(references) | set(manual)):
+        reference_row = references.get(identity)
+        manual_row = manual.get(identity)
+        row = reference_row or manual_row
+        assert row is not None
         source = {
             "file": row.file,
             "line": row.line,
@@ -543,61 +841,127 @@ def build_document() -> dict[str, Any]:
             "old_value": row.old_value,
             "audit_proposed_value": row.new_value,
         }
-        if category == "bare_agent_string":
-            reference_key = (
-                row.file,
-                str(row.line),
-                str(row.column),
-                row.form,
-                row.old_value,
-                row.new_value,
-            )
-            if reference_key not in snippets:
-                raise ValueError(f"missing reference evidence: {source_key(row)}")
-            source["audit_snippet"] = snippets[reference_key]
-            context = snippets[reference_key]
-            if row.file in ACTIVE_BARE_FILES:
-                context = _logical_source_context(row)
-                source["audit_context"] = context
-            disposition = _classify_bare(
-                row,
-                snippets[reference_key],
-                context,
+        tracked_sources: list[str] = []
+        if reference_row is not None:
+            tracked_sources.append("reference")
+            source["reference_category"] = reference_row.category
+            source["reference_certainty"] = reference_row.certainty
+            source["audit_snippet"] = reference_row.details
+        if manual_row is not None:
+            tracked_sources.append("manual_review")
+            audit_category, disposition = _classify_manual(
+                manual_row,
+                source,
+                snippets,
+                selector_state,
+                selector_rewrites,
                 move_mapping,
+                root,
             )
-        elif category == "dynamic_import":
-            disposition = _classify_dynamic(row, selector_rewrites)
-        elif category == "non_string_patch_expression":
-            disposition = _classify_patch(row)
-        elif category == "module_owner_receiver":
-            disposition = _classify_owner(row)
         else:
-            disposition = _classify_prefix(row)
+            audit_category = "exact_reference"
+            assert reference_row is not None
+            disposition = _classify_reference(
+                reference_row, move_mapping, complete_mapping
+            )
         sites.append(
             {
                 "source_key": source_key(row),
-                "audit_category": category,
+                "tracked_sources": tracked_sources,
+                "audit_category": audit_category,
                 "source": source,
                 **disposition,
             }
         )
     sites.sort(key=lambda item: item["source_key"])
-    categories = Counter(item["audit_category"] for item in sites)
+    manual_categories = Counter(
+        item["audit_category"]
+        for item in sites
+        if "manual_review" in item["tracked_sources"]
+    )
+    reference_categories = Counter(row.category for row in audit.references)
     dispositions = Counter(item["disposition"] for item in sites)
-    if dict(categories) != EXPECTED_AUDIT_CATEGORIES:
-        raise ValueError(f"audit category drift: {dict(categories)}")
-    if dict(dispositions) != EXPECTED_DISPOSITIONS:
-        raise ValueError(f"disposition drift: {dict(dispositions)}")
+    actionable = sum(
+        disposition.startswith("rewrite_") for disposition in dispositions.elements()
+    )
+    blockers = [
+        {
+            "source_key": item["source_key"],
+            "reason_code": item["reason_code"],
+            "basis": item["basis"],
+        }
+        for item in sites
+        if item["disposition"] == "blocker"
+    ]
+    if audit.owner_state == "phase_2" and actionable:
+        blockers.append(
+            {
+                "source_key": None,
+                "reason_code": "phase_2_actionable_reference_residue",
+                "basis": f"Phase 2 still has {actionable} rewrite dispositions.",
+            }
+        )
+    classification_basis_by_key: dict[str, dict[str, str]] = {}
+    for site in sites:
+        reason_code = site["reason_code"]
+        basis = {
+            "basis": site.pop("basis"),
+            "evidence_kind": site.pop("evidence_kind"),
+        }
+        basis_key = reason_code + ":" + hashlib.sha256(
+            json.dumps(basis, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()[:12]
+        site["basis_id"] = basis_key
+        classification_basis_by_key.setdefault(basis_key, basis)
+        source = site["source"]
+        source.pop("audit_snippet", None)
+        source.pop("audit_context", None)
+        action = site["migration_action"]
+        if site["audit_category"] == "exact_reference" and action.get("kind") in {
+            "replace_text",
+            "replace_module",
+        }:
+            action.pop("old_text", None)
+            action.pop("new_text", None)
+        site.pop("module_reference", None)
+    basis_keys = sorted(classification_basis_by_key)
+    basis_ids = {key: index for index, key in enumerate(basis_keys)}
+    for site in sites:
+        site["basis_id"] = basis_ids[site["basis_id"]]
+    site_records = [
+        [
+            site["source_key"],
+            "rm"
+            if set(site["tracked_sources"]) == {"reference", "manual_review"}
+            else "r"
+            if site["tracked_sources"] == ["reference"]
+            else "m",
+            site["audit_category"],
+            site["source"]["old_value"],
+            site["source"]["audit_proposed_value"],
+            site["source"].get("reference_category"),
+            site["source"].get("reference_certainty"),
+            site["disposition"],
+            site["reason_code"],
+            site["basis_id"],
+            site["migration_action"],
+        ]
+        for site in sites
+    ]
     sites_sha256 = hashlib.sha256(
         json.dumps(
-            sites,
+            site_records,
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
     return {
-        "schema_version": "gravity.agent-module-reference-dispositions.v2",
+        "schema_version": "gravity.agent-module-reference-checkpoint.v1",
+        "receipt_role": (
+            "live_checkpoint_scan_only; not authority for canonical errata replacements"
+        ),
+        "immutable_baseline_ledger": _immutable_baseline_binding(),
         "source_audit": {
             "method": "direct repository scan",
             "command": (
@@ -612,6 +976,7 @@ def build_document() -> dict[str, Any]:
             "candidate_map_sha256": canonical_sha256(audit.mappings),
             "reference_evidence_sha256": canonical_sha256(audit.references),
             "manual_review_sha256": canonical_sha256(audit.manual_review),
+            "owner_state": audit.owner_state,
             "version_controlled_file_count": audit.version_controlled_file_count,
             "scanned_file_count": audit.scanned_file_count,
             "excluded_files": list(audit.excluded_files),
@@ -637,23 +1002,35 @@ def build_document() -> dict[str, Any]:
             "blocker": "Do not start R17 until the ownership or selector proposition is resolved.",
         },
         "classification_method": {
+            "exact_reference": "Every scanner reference receives a coordinate-bound disposition. Exact moved owners rewrite, the retained owner remains, pagination consolidates, archive evidence remains frozen, and unknown mappings block.",
             "bare_agent_string": "Classify each bounded Markdown record or JSON field: recognize consumer/current-path syntax before considering dated evidence, freeze only non-consumer dated decisions and explicit consolidated/deleted-module facts, rewrite active one-to-one paths, and block ambiguous deleted-module mentions.",
             "agent_prefix_template": "Retain only the two characterization uses that classify legacy deep paths and validate old-module ledger shape; SCC membership is ledger-defined.",
             "non_string_patch_expression": "Separate object APIs from dotted-string APIs and inspect every finite producer/call domain.",
             "dynamic_import": "Trace each expression to finite inputs; rewrite the root lazy selector and reject unknown domains.",
             "module_owner_receiver": "Trace every receiver binding and retain only owners outside the R17 move set.",
         },
+        "classification_basis": [
+            classification_basis_by_key[key] for key in basis_keys
+        ],
         "summary": {
-            "site_count": len(sites),
+            "tracked_site_count": len(sites),
+            "reference_site_count": len(references),
+            "manual_review_site_count": len(manual),
+            "reference_manual_overlap_count": len(set(references) & set(manual)),
+            "manual_only_site_count": len(set(manual) - set(references)),
             "unique_source_keys": len({item["source_key"] for item in sites}),
             "unclassified_sites": 0,
-            "blocker_count": dispositions["blocker"],
-            "audit_categories": dict(sorted(categories.items())),
+            "blocker_count": len(blockers),
+            "site_blocker_count": dispositions["blocker"],
+            "actionable_site_count": actionable,
+            "reference_categories": dict(sorted(reference_categories.items())),
+            "manual_review_categories": dict(sorted(manual_categories.items())),
             "dispositions": dict(sorted(dispositions.items())),
             "sites_sha256": sites_sha256,
         },
-        "blockers": [],
-        "sites": sites,
+        "blockers": blockers,
+        "site_fields": list(CHECKPOINT_SITE_FIELDS),
+        "sites": site_records,
     }
 
 
@@ -667,15 +1044,34 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(
             "usage: generate_agent_module_reference_dispositions.py [--check]"
         )
-    rendered = render_document(build_document())
+    try:
+        document = build_document()
+        rendered = render_document(document)
+    except (KeyError, OSError, RuntimeError, subprocess.CalledProcessError, ValueError) as exc:
+        print(f"R17 checkpoint generation failed: {exc}", file=sys.stderr)
+        return 1
     if args == ["--check"]:
         if not OUTPUT.exists() or OUTPUT.read_bytes() != rendered:
-            print(f"stale generated ledger: {OUTPUT.relative_to(ROOT)}", file=sys.stderr)
+            print(f"stale checkpoint receipt: {OUTPUT.relative_to(ROOT)}", file=sys.stderr)
+            return 1
+        if document["blockers"]:
+            print(
+                "checkpoint blockers: "
+                + json.dumps(document["blockers"], ensure_ascii=False),
+                file=sys.stderr,
+            )
             return 1
         print(hashlib.sha256(rendered).hexdigest())
         return 0
     OUTPUT.write_bytes(rendered)
     print(hashlib.sha256(rendered).hexdigest())
+    if document["blockers"]:
+        print(
+            "checkpoint blockers: "
+            + json.dumps(document["blockers"], ensure_ascii=False),
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

@@ -4,20 +4,26 @@ from __future__ import annotations
 
 from collections import Counter
 import copy
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 from typing import Any
 import unittest
+from unittest.mock import patch
 
+import scripts.generate_agent_module_reference_dispositions as checkpoint_generator
 from scripts.audit_agent_module_references import (
     GENERATED_GOVERNANCE_FILES,
     GOVERNANCE_EXCLUSION_RULE,
     ReferenceScanner,
     is_generated_governance_artifact,
     make_module_map,
+    scan_repository,
+    source_key,
 )
 from scripts.generate_agent_module_reference_dispositions import (
     ACTIVE_BARE_FILES,
@@ -27,6 +33,7 @@ from scripts.generate_agent_module_reference_dispositions import (
     DELETED_MODULE_RECORD,
     RUNTIME_CONSUMER,
     build_document,
+    checkpoint_sites,
     classify_active_bare_context as generator_classify_active_bare_context,
     render_document,
 )
@@ -41,6 +48,7 @@ from scripts.validate_r17_canonical_source_errata import (
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
+CHECKPOINT = ROOT / "tests/fixtures/agent_module_reference_checkpoint.json"
 DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
 CANONICAL_SOURCE = ROOT / "specs/agent-runtime/architecture-source.md"
 INDEX_JSON = ROOT / "specs/agent-runtime/index.json"
@@ -70,6 +78,16 @@ ALLOWED_DISPOSITIONS = {
 PAGINATION_MODULE = "gravity_sdk.agent_pagination"
 PAGINATION_TARGET = "gravity_sdk.pagination_completeness"
 RETAINED_MODULE = "gravity_sdk.agent_runtime_contracts"
+FROZEN_BASELINE_EXCLUSION_RULE = (
+    "Exclude only tmp/**, direct specs/agent-runtime/R17-*.md migration "
+    "specifications, the checked-in disposition fixture and its validator, and "
+    "the two scripts that produce this audit. These paths define, generate, or "
+    "validate R17 governance metadata rather than consume migrated runtime "
+    "modules. Do not exclude AGENTS.md; specs/agent-runtime/architecture-source.md, "
+    "index.json, or index.md; docs/maintainers/technical-debt.md; "
+    "tests/agent_migration_characterization.py; or any other src, docs, specs, "
+    "or tests path."
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -150,7 +168,7 @@ def validate_ledger(document: dict[str, Any]) -> None:
         "audit file universe changed",
     )
     _require(
-        source.get("governance_exclusion_rule") == GOVERNANCE_EXCLUSION_RULE,
+        source.get("governance_exclusion_rule") == FROZEN_BASELINE_EXCLUSION_RULE,
         "governance exclusion rule changed",
     )
     _require(
@@ -383,11 +401,186 @@ def validate_ledger(document: dict[str, Any]) -> None:
     )
 
 
+def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
+    _require(
+        document.get("schema_version")
+        == "gravity.agent-module-reference-checkpoint.v1",
+        "invalid checkpoint schema",
+    )
+    _require(
+        document.get("receipt_role")
+        == "live_checkpoint_scan_only; not authority for canonical errata replacements",
+        "checkpoint role changed",
+    )
+    baseline = document.get("immutable_baseline_ledger", {})
+    directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
+    derivation = directive["canonical_source_errata"]["allowed_source_replacements"]
+    expected_binding = {
+        "role": "errata_source_only_immutable_baseline",
+        "repository_path": derivation["ledger_repository_path"],
+        "git_revision": derivation["ledger_git_revision"],
+        "sha256": derivation["ledger_sha256"],
+        "schema_version": derivation["ledger_schema_version"],
+    }
+    _require(baseline == expected_binding, "checkpoint baseline binding changed")
+    bound = subprocess.run(
+        [
+            "git",
+            "show",
+            f"{baseline['git_revision']}:{baseline['repository_path']}",
+        ],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+    ).stdout
+    _require(bound == LEDGER.read_bytes(), "baseline ledger is not the bound Git object")
+    _require(
+        hashlib.sha256(bound).hexdigest() == baseline["sha256"],
+        "baseline ledger digest changed",
+    )
+
+    scope = document.get("scope", {})
+    moves = scope.get("one_to_one_moves", [])
+    move_mapping = {
+        item.get("old_module"): item.get("new_module") for item in moves
+    }
+    _require(len(move_mapping) == 81, "checkpoint move scope changed")
+    site_records = document.get("sites")
+    _require(isinstance(site_records, list), "checkpoint sites must be a list")
+    sites = checkpoint_sites(document)
+    classification_basis = document.get("classification_basis")
+    _require(
+        isinstance(classification_basis, list) and classification_basis,
+        "checkpoint classification basis is missing",
+    )
+    keys = [site.get("source_key") for site in sites]
+    _require(len(keys) == len(set(keys)), "checkpoint source keys repeat")
+    dispositions: Counter[str] = Counter()
+    reference_categories: Counter[str] = Counter()
+    manual_categories: Counter[str] = Counter()
+    reference_count = 0
+    manual_count = 0
+    overlap_count = 0
+    for site in sites:
+        key = site.get("source_key")
+        source = site.get("source", {})
+        expected_key = (
+            f"{source.get('file')}:{source.get('line')}:"
+            f"{source.get('column')}:{source.get('form')}"
+        )
+        _require(key == expected_key, f"checkpoint coordinate key drifted at {key}")
+        tracked = site.get("tracked_sources")
+        _require(
+            isinstance(tracked, list)
+            and tracked
+            and set(tracked) <= {"reference", "manual_review"},
+            f"invalid tracked denominator at {key}",
+        )
+        disposition = site.get("disposition")
+        _require(disposition in ALLOWED_DISPOSITIONS, f"unknown disposition at {key}")
+        basis_id = site.get("basis_id")
+        basis = (
+            classification_basis[basis_id]
+            if isinstance(basis_id, int) and 0 <= basis_id < len(classification_basis)
+            else {}
+        )
+        _require(bool(basis.get("basis")), f"missing basis at {key}")
+        _require(bool(basis.get("evidence_kind")), f"missing evidence kind at {key}")
+        dispositions[disposition] += 1
+        if "reference" in tracked:
+            reference_count += 1
+            category = source.get("reference_category")
+            _require(isinstance(category, str) and bool(category), f"missing reference category at {key}")
+            reference_categories[category] += 1
+        if "manual_review" in tracked:
+            manual_count += 1
+            manual_categories[site.get("audit_category")] += 1
+        if set(tracked) == {"reference", "manual_review"}:
+            overlap_count += 1
+
+        action = site.get("migration_action", {})
+        if disposition == "no_migration_effect":
+            _require(action == {"kind": "none"}, f"no-effect action at {key}")
+        elif disposition == "rewrite_reference":
+            old = action.get("old_module")
+            _require(
+                action.get("kind") == "replace_text"
+                and move_mapping.get(old) == action.get("new_module"),
+                f"invalid exact move at {key}",
+            )
+        elif disposition == "rewrite_consolidated_reference":
+            _require(
+                action.get("kind") == "replace_module"
+                and action.get("old_module") == PAGINATION_MODULE
+                and action.get("new_module") == PAGINATION_TARGET,
+                f"invalid consolidation at {key}",
+            )
+        elif disposition == "rewrite_selector_data":
+            _require(
+                action.get("kind") == "replace_selector_values"
+                and len(action.get("rewrites", [])) == 6,
+                f"invalid selector rewrite at {key}",
+            )
+        elif disposition == "blocker":
+            _require(action == {"kind": "block"}, f"invalid blocker action at {key}")
+
+        if site.get("audit_category") == "exact_reference":
+            file = str(source.get("file", ""))
+            old_value = source.get("old_value")
+            old_module = old_value if old_value in move_mapping else None
+            if old_module is None and isinstance(old_value, str):
+                old_module = next(
+                    (
+                        old
+                        for old in [*move_mapping, PAGINATION_MODULE, RETAINED_MODULE]
+                        if old_value == "src/" + old.replace(".", "/") + ".py"
+                    ),
+                    old_value
+                    if old_value in {PAGINATION_MODULE, RETAINED_MODULE}
+                    else None,
+                )
+            sentinel = (
+                file == "tests/test_agent_concept_deletions.py"
+                and source.get("reference_category") == "string_reference"
+            )
+            if file.startswith("docs/archive/") or sentinel or old_module == RETAINED_MODULE:
+                _require(disposition == "no_migration_effect", f"frozen exact reference moved at {key}")
+            elif old_module == PAGINATION_MODULE:
+                _require(
+                    disposition in {"rewrite_consolidated_reference", "blocker"},
+                    f"pagination exact reference escaped at {key}",
+                )
+            else:
+                _require(
+                    old_module in move_mapping
+                    and disposition in {"rewrite_reference", "blocker"},
+                    f"moved exact reference escaped at {key}",
+                )
+
+    summary = document.get("summary", {})
+    _require(summary.get("tracked_site_count") == len(sites), "tracked count drifted")
+    _require(summary.get("reference_site_count") == reference_count, "reference denominator drifted")
+    _require(summary.get("manual_review_site_count") == manual_count, "manual denominator drifted")
+    _require(summary.get("reference_manual_overlap_count") == overlap_count, "overlap drifted")
+    _require(summary.get("manual_only_site_count") == manual_count - overlap_count, "manual-only count drifted")
+    _require(summary.get("reference_categories") == dict(sorted(reference_categories.items())), "reference categories drifted")
+    _require(summary.get("manual_review_categories") == dict(sorted(manual_categories.items())), "manual categories drifted")
+    _require(summary.get("dispositions") == dict(sorted(dispositions.items())), "dispositions drifted")
+    _require(summary.get("unique_source_keys") == len(set(keys)), "unique key count drifted")
+    _require(summary.get("unclassified_sites") == 0, "checkpoint has unclassified sites")
+    _require(summary.get("sites_sha256") == _canonical_sites_sha256(site_records), "checkpoint digest drifted")
+    blockers = document.get("blockers")
+    _require(isinstance(blockers, list), "checkpoint blockers must be a list")
+    _require(summary.get("blocker_count") == len(blockers), "checkpoint blocker count drifted")
+
+
 class AgentModuleReferenceDispositionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.raw = LEDGER.read_bytes()
         cls.document = json.loads(cls.raw)
+        cls.checkpoint_raw = CHECKPOINT.read_bytes()
+        cls.checkpoint = json.loads(cls.checkpoint_raw)
         cls.directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
 
     def test_reviewed_fixture_sha256_is_bound(self) -> None:
@@ -396,8 +589,90 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
     def test_current_ledger_satisfies_the_machine_contract(self) -> None:
         validate_ledger(self.document)
 
-    def test_repository_scan_reproduces_the_checked_in_ledger(self) -> None:
-        self.assertEqual(self.raw, render_document(build_document()))
+    def test_checkpoint_receipt_satisfies_the_machine_contract(self) -> None:
+        validate_checkpoint_receipt(self.checkpoint)
+
+    def test_repository_scan_reproduces_the_checked_in_checkpoint(self) -> None:
+        self.assertEqual(self.checkpoint_raw, render_document(build_document()))
+
+    def test_checkpoint_dispositions_cover_both_scan_denominators(self) -> None:
+        audit = scan_repository()
+        reference_keys = {source_key(row) for row in audit.references}
+        manual_keys = {source_key(row) for row in audit.manual_review}
+        checkpoint_reference_keys = {
+            site["source_key"]
+            for site in checkpoint_sites(self.checkpoint)
+            if "reference" in site["tracked_sources"]
+        }
+        checkpoint_manual_keys = {
+            site["source_key"]
+            for site in checkpoint_sites(self.checkpoint)
+            if "manual_review" in site["tracked_sources"]
+        }
+        self.assertEqual(reference_keys, checkpoint_reference_keys)
+        self.assertEqual(manual_keys, checkpoint_manual_keys)
+        summary = self.checkpoint["summary"]
+        self.assertEqual(summary["reference_site_count"], len(reference_keys))
+        self.assertEqual(summary["manual_review_site_count"], len(manual_keys))
+        self.assertEqual(summary["reference_manual_overlap_count"], len(reference_keys & manual_keys))
+        self.assertEqual(summary["tracked_site_count"], len(reference_keys | manual_keys))
+        if self.checkpoint["source_audit"]["owner_state"] == "baseline":
+            self.assertEqual((901, 238, 236, 903), (
+                len(reference_keys),
+                len(manual_keys),
+                len(reference_keys & manual_keys),
+                len(reference_keys | manual_keys),
+            ))
+
+    def test_new_exact_dynamic_and_alias_loader_sites_cannot_escape_disposition(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tests", prefix="r17-tracked-") as temp:
+            attack = Path(temp) / "attack.py"
+            attack.write_text(
+                "import importlib\n"
+                'dynamic = importlib.import_module("gravity_sdk.agent_sources")\n'
+                'alias = acquire("gravity_sdk.agent_sources")\n',
+                encoding="utf-8",
+            )
+            generated = build_document()
+            relative = attack.relative_to(ROOT).as_posix()
+            sites = [
+                site
+                for site in checkpoint_sites(generated)
+                if site["source"]["file"] == relative
+            ]
+        self.assertEqual(3, len(sites))
+        self.assertEqual(
+            {"dynamic_import", "string_reference"},
+            {site["source"]["reference_category"] for site in sites},
+        )
+        self.assertTrue(all(site["disposition"] == "rewrite_reference" for site in sites))
+        self.assertTrue(all(site["tracked_sources"] == ["reference"] for site in sites))
+
+    def test_unknown_dynamic_domain_remains_a_blocker_after_regeneration(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tests", prefix="r17-blocker-") as temp:
+            attack = Path(temp) / "attack.py"
+            attack.write_text(
+                "from importlib import import_module\n"
+                "owner = import_module(runtime_module_name)\n",
+                encoding="utf-8",
+            )
+            generated = build_document()
+            relative = attack.relative_to(ROOT).as_posix()
+            blockers = [
+                site
+                for site in checkpoint_sites(generated)
+                if site["source"]["file"] == relative
+                and site["disposition"] == "blocker"
+            ]
+        self.assertEqual(1, len(blockers))
+        self.assertEqual("unreviewed_dynamic_import_domain", blockers[0]["reason_code"])
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "checkpoint.json"
+            output.write_bytes(render_document(generated))
+            with patch.object(
+                checkpoint_generator, "build_document", return_value=generated
+            ), patch.object(checkpoint_generator, "OUTPUT", output):
+                self.assertEqual(1, checkpoint_generator.main(["--check"]))
 
     def test_index_and_specification_state_agree(self) -> None:
         index_text = INDEX_JSON.read_text(encoding="utf-8")
@@ -681,6 +956,105 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             validate_final_state(
                 second_transition, self.document, expected, baseline
             )
+
+    def test_canonical_errata_rejects_semantic_change_hidden_as_metadata(self) -> None:
+        malicious = copy.deepcopy(self.directive)
+        malicious["canonical_source_errata"]["allowed_version_metadata_changes"][0][
+            "text"
+        ] = "ARCHITECTURAL SEMANTIC CHANGE: widen the execution boundary.\n\n"
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "version metadata allowlist changed from the exact three literals",
+        ):
+            build_expected_source(
+                malicious,
+                self.document,
+                load_git_baseline(malicious),
+            )
+
+    def test_phase2_checkpoint_and_immutable_errata_gate_pass_together(self) -> None:
+        audit = scan_repository()
+        baseline_receipt = build_document(audit=audit)
+        actionable_keys = {
+            site["source_key"]
+            for site in checkpoint_sites(baseline_receipt)
+            if site["disposition"].startswith("rewrite_")
+        }
+
+        def remains_in_terminal(row: Any) -> bool:
+            return source_key(row) not in actionable_keys or (
+                row.file == "src/gravity_sdk/__init__.py"
+                and row.form == "import_module"
+            )
+
+        terminal_audit = replace(
+            audit,
+            references=tuple(row for row in audit.references if remains_in_terminal(row)),
+            manual_review=tuple(
+                row for row in audit.manual_review if remains_in_terminal(row)
+            ),
+            owner_state="phase_2",
+        )
+        exports = json.loads(
+            (ROOT / "tests/fixtures/public_api_exports.json").read_text(encoding="utf-8")
+        )
+        move_mapping = {
+            move["old_module"]: move["new_module"]
+            for move in baseline_receipt["scope"]["one_to_one_moves"]
+        }
+        for value in exports.values():
+            owner = f"gravity_sdk{value[0]}"
+            if owner in move_mapping:
+                value[0] = move_mapping[owner].removeprefix("gravity_sdk")
+
+        terminal_receipt = build_document(
+            audit=terminal_audit,
+            public_exports=exports,
+        )
+        validate_checkpoint_receipt(terminal_receipt)
+        self.assertEqual("phase_2", terminal_receipt["source_audit"]["owner_state"])
+        self.assertEqual(0, terminal_receipt["summary"]["actionable_site_count"])
+        self.assertEqual([], terminal_receipt["blockers"])
+
+        with tempfile.TemporaryDirectory() as temp:
+            receipt_path = Path(temp) / "checkpoint.json"
+            exports_path = Path(temp) / "public_api_exports.json"
+            exports_path.write_text(json.dumps(exports), encoding="utf-8")
+            with patch.object(
+                checkpoint_generator, "scan_repository", return_value=terminal_audit
+            ), patch.object(
+                checkpoint_generator, "PUBLIC_EXPORTS", exports_path
+            ), patch.object(
+                checkpoint_generator, "OUTPUT", receipt_path
+            ):
+                self.assertEqual(0, checkpoint_generator.main([]))
+                self.assertEqual(0, checkpoint_generator.main(["--check"]))
+
+        baseline = load_git_baseline(self.directive)
+        expected = build_expected_source(self.directive, self.document, baseline)
+        final_directive = copy.deepcopy(self.directive)
+        transition = final_directive["canonical_source_errata"]["transition"]
+        final_directive["version"] = transition["to_version"]
+        final_directive["supersedes"] = {
+            "version": transition["from_version"],
+            "sha256": transition["from_sha256"],
+        }
+        final_directive["canonical_source"]["sha256"] = hashlib.sha256(
+            expected
+        ).hexdigest()
+        final_directive["canonical_source_errata"]["one_shot"] = {
+            "state": "consumed",
+            "reusable": False,
+            "consumed_by": "R17",
+            "consumed_at_checkpoint": "R17-phase-2-core",
+        }
+        result = validate_final_state(
+            final_directive,
+            self.document,
+            expected,
+            baseline,
+        )
+        self.assertEqual("v9.2->v9.3", result["transition"])
 
     def test_canonical_errata_rejects_forged_move_with_synced_source_digest(self) -> None:
         forged = copy.deepcopy(self.document)

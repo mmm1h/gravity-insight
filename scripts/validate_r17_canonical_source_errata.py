@@ -53,6 +53,27 @@ EXPECTED_FORBIDDEN = [
     "implementation_before_the_requirement_is_ready",
     "release_or_main_promotion",
 ]
+EXPECTED_VERSION_METADATA_CHANGES = [
+    {
+        "operation": "insert_before",
+        "anchor": "## v9.2 修订摘要",
+        "text": (
+            "## v9.3 修订摘要\n\n"
+            "four physical path corrections; no architectural semantic change\n\n"
+        ),
+        "count": 1,
+    },
+    {
+        "old": "gravity-agent-runtime / v9.2",
+        "new": "gravity-agent-runtime / v9.3",
+        "count": 1,
+    },
+    {
+        "old": "唯一架构总纲 v9.2（repository canonical source）",
+        "new": "唯一架构总纲 v9.3（repository canonical source）",
+        "count": 1,
+    },
+]
 
 
 class ErrataValidationError(AssertionError):
@@ -454,8 +475,8 @@ def apply_coordinate_replacements(
 
 def apply_version_metadata_changes(source: str, changes: Any) -> str:
     _require(
-        isinstance(changes, list) and len(changes) == 3,
-        "R17 must retain exactly three inline version metadata changes",
+        changes == EXPECTED_VERSION_METADATA_CHANGES,
+        "R17 version metadata allowlist changed from the exact three literals",
     )
     expected = source
     for index, change in enumerate(changes):

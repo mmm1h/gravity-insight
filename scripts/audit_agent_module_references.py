@@ -27,13 +27,15 @@ GENERATED_GOVERNANCE_FILES = frozenset(
     {
         "scripts/audit_agent_module_references.py",
         "scripts/generate_agent_module_reference_dispositions.py",
+        "tests/fixtures/agent_module_reference_checkpoint.json",
         "tests/fixtures/agent_module_reference_dispositions.json",
         "tests/test_agent_module_reference_dispositions.py",
     }
 )
 GOVERNANCE_EXCLUSION_RULE = (
     "Exclude only tmp/**, direct specs/agent-runtime/R17-*.md migration "
-    "specifications, the checked-in disposition fixture and its validator, and "
+    "specifications, the checked-in baseline disposition fixture, live checkpoint "
+    "receipt and their validator, and "
     "the two scripts that produce this audit. These paths define, generate, or "
     "validate R17 governance metadata rather than consume migrated runtime "
     "modules. Do not exclude AGENTS.md; specs/agent-runtime/architecture-source.md, "
@@ -79,6 +81,7 @@ class AuditResult:
     version_controlled_file_count: int
     scanned_file_count: int
     excluded_files: tuple[str, ...]
+    owner_state: str
 
     def summary(self) -> dict[str, Any]:
         reference_counts = Counter(item.category for item in self.references)
@@ -90,6 +93,7 @@ class AuditResult:
             "module_count": len(self.mappings),
             "reference_count": len(self.references),
             "manual_review_count": len(self.manual_review),
+            "owner_state": self.owner_state,
             "reference_categories": dict(sorted(reference_counts.items())),
             "manual_review_forms": dict(sorted(manual_counts.items())),
             "governance_exclusion_rule": GOVERNANCE_EXCLUSION_RULE,
@@ -953,6 +957,17 @@ def scan_repository(root: Path = ROOT) -> AuditResult:
                 )
             )
     manual = _de_duplicate(manual)
+    one_to_one = [
+        item for item in mappings if item.new_module.startswith("gravity_sdk.agents.")
+    ]
+    owner_shape = (
+        sum((root / item.old_file).is_file() for item in one_to_one),
+        sum((root / item.new_file).is_file() for item in one_to_one),
+        _module_file(root, "gravity_sdk.agent_pagination").is_file(),
+    )
+    owner_state = next(
+        name for name, expected in EXPECTED_OWNER_STATES.items() if expected == owner_shape
+    )
     versioned_count = len(files) + len(excluded)
     return AuditResult(
         mappings=tuple(mappings),
@@ -961,6 +976,7 @@ def scan_repository(root: Path = ROOT) -> AuditResult:
         version_controlled_file_count=versioned_count,
         scanned_file_count=len(files),
         excluded_files=tuple(excluded),
+        owner_state=owner_state,
     )
 
 
