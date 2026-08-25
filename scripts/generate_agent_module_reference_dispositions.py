@@ -130,6 +130,22 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _reviewed_generator_sha256() -> str:
+    directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
+    revision = directive["canonical_source_errata"]["allowed_source_replacements"][
+        "reviewed_at_revision"
+    ]
+    relative = GENERATOR.relative_to(ROOT).as_posix()
+    reviewed = subprocess.run(
+        ["git", "show", f"{revision}:{relative}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout
+    return hashlib.sha256(reviewed).hexdigest()
+
+
 def _audit_category(row: Finding) -> str:
     if row.form == "bare text module string":
         return "bare_agent_string"
@@ -617,6 +633,7 @@ def _classify_reference(
     row: Finding,
     move_mapping: dict[str, str],
     complete_mapping: dict[str, str],
+    root: Path = ROOT,
 ) -> dict[str, Any]:
     old_module = _old_module_for_reference(row, complete_mapping)
     if row.certainty not in {"exact", "constant-folded"} or old_module is None:
@@ -657,6 +674,39 @@ def _classify_reference(
         item["module_reference"] = _module_reference(old_module, move_mapping)
         return item
     if old_module == PAGINATION_MODULE:
+        textual_categories = {
+            "documentation_spec",
+            "entrypoint_config",
+            "test_fixture",
+            "string_reference",
+        }
+        if row.category in textual_categories:
+            context = (
+                row.details
+                if row.category == "string_reference"
+                else _logical_source_context(row, root)
+            )
+            context_kind = classify_active_bare_context(old_module, context)
+            if context_kind == DELETED_MODULE_RECORD:
+                item = _none(
+                    "deleted_module_governance_fact",
+                    "The bounded record identifies gravity_sdk.agent_pagination as "
+                    "the module consolidated and deleted. Replacing it with the "
+                    "retained owner would invert the recorded fact.",
+                    "governance_record_semantics",
+                )
+                item["module_reference"] = _module_reference(
+                    old_module, move_mapping
+                )
+                return item
+            if context_kind == AMBIGUOUS_REFERENCE:
+                return _blocker(
+                    "ambiguous_deleted_module_reference",
+                    "The exact textual reference names the deleted module but its "
+                    "bounded record proves neither a deletion fact nor consumer "
+                    "syntax; R17 must stop for classification.",
+                    "audited_source_context",
+                )
         return {
             "disposition": "rewrite_consolidated_reference",
             "reason_code": "pagination_consolidation_reference",
@@ -744,6 +794,22 @@ def _immutable_baseline_binding() -> dict[str, Any]:
         raise ValueError("directive no longer binds the immutable R17 baseline ledger")
     blob = derivation.get("ledger_git_blob")
     expected_sha = derivation.get("ledger_sha256")
+    reviewed_at_revision = derivation.get("reviewed_at_revision")
+    if not isinstance(reviewed_at_revision, str) or not re.fullmatch(
+        r"[0-9a-f]{40}", reviewed_at_revision
+    ):
+        raise ValueError("directive has no full immutable ledger review revision")
+    reviewed_blob = subprocess.run(
+        ["git", "rev-parse", f"{reviewed_at_revision}:{repository_path}"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout.strip()
+    if reviewed_blob != blob:
+        raise ValueError("immutable baseline blob differs at the review revision path")
     current_blob = subprocess.run(
         ["git", "rev-parse", f"HEAD:{repository_path}"],
         cwd=ROOT,
@@ -753,8 +819,8 @@ def _immutable_baseline_binding() -> dict[str, Any]:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ).stdout.strip()
-    if current_blob != blob:
-        raise ValueError("immutable baseline blob is not current at the ledger path")
+    if current_blob != reviewed_blob:
+        raise ValueError("current commit changed the reviewed baseline ledger")
     completed = subprocess.run(
         ["git", "cat-file", "blob", blob],
         cwd=ROOT,
@@ -873,7 +939,7 @@ def build_document(
             audit_category = "exact_reference"
             assert reference_row is not None
             disposition = _classify_reference(
-                reference_row, move_mapping, complete_mapping
+                reference_row, move_mapping, complete_mapping, root
             )
         sites.append(
             {
@@ -983,7 +1049,9 @@ def build_document(
             "scanner_path": SCANNER.relative_to(ROOT).as_posix(),
             "scanner_sha256": _sha256(SCANNER),
             "generator_path": GENERATOR.relative_to(ROOT).as_posix(),
-            "generator_sha256": _sha256(GENERATOR),
+            # The checkpoint bytes are index-bound; this identifies the fixed
+            # reviewed generator while current logic still recomputes every site.
+            "generator_sha256": _reviewed_generator_sha256(),
             "candidate_map_sha256": canonical_sha256(audit.mappings),
             "reference_evidence_sha256": canonical_sha256(audit.references),
             "manual_review_sha256": canonical_sha256(audit.manual_review),

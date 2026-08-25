@@ -639,7 +639,7 @@ serialized through one integrator.
 
 ## Acceptance Commands
 
-Run the four Phase 1 commands in order on the clean Phase 1 checkpoint commit
+Run the five Phase 1 commands in order on the clean Phase 1 checkpoint commit
 and retain their output with that commit SHA. After Phase 2, run both Phase 2
 rollback commands and every command from `Structural Exit And Reviewed Owners`
 onward on the clean final commit.
@@ -777,6 +777,58 @@ $grepExit = $LASTEXITCODE
 if ($grepExit -eq 0) { $legacyHits; throw "canonical consumer still references an R17 legacy path at $consumerRevision" }
 if ($grepExit -ne 1) { throw "canonical consumer census failed to execute: git grep exit $grepExit" }
 Write-Output "Phase 1 consumer checkpoint passed: runtime_old_owner_hits=0; classified_dynamic_sites=clean; canonical_legacy_hits=0; revision=$consumerRevision"
+```
+
+### Phase 1 M0 And Representative Behavior Checkpoint
+
+This gate is intentionally Phase 1-aware: the precondition accepts only the
+mixed 34-old/48-new owner state after pagination consolidation. An earlier tree
+fails with `Phase 1 behavior checkpoint not reached`; once that precondition is
+true, canonical authority drift and behavior failures use separate regression
+messages. The M0 and public-API files run in full. The focused cases then cover
+CLI exit behavior, SDK and Agent routing, Plan dry-run, partial completeness,
+failure isolation, and offline unknown-selector behavior without requiring the
+34 Phase 2 owners to have moved.
+
+```powershell
+$code = @'
+import json
+from pathlib import Path
+
+root = Path('src/gravity_sdk')
+ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
+core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
+def module_path(module):
+    return root.joinpath(*module.removeprefix('gravity_sdk.').split('.')).with_suffix('.py')
+moves = ledger['scope']['one_to_one_moves']
+old = sum(module_path(row['old_module']).is_file() for row in moves)
+new = sum(module_path(row['new_module']).is_file() for row in moves)
+pagination_old = (root / 'agent_pagination.py').is_file()
+actual = {'old_moves': old, 'new_moves': new, 'pagination_old': pagination_old}
+expected = {'old_moves': 34, 'new_moves': 48, 'pagination_old': False}
+assert actual == expected, f'Phase 1 behavior checkpoint not reached: expected={expected}, actual={actual}'
+print(json.dumps({'checkpoint': 'phase-1', 'behavior_precondition': actual}, sort_keys=True))
+'@
+& ./.venv/Scripts/python.exe -c $code
+if ($LASTEXITCODE) { throw 'Phase 1 behavior checkpoint not reached: mixed owner precondition failed' }
+
+& ./.venv/Scripts/python.exe scripts/validate_r17_canonical_source_errata.py --phase-1
+if ($LASTEXITCODE) { throw 'R17 Phase 1 canonical authority regression after checkpoint preconditions passed' }
+
+$behavior = @(
+  'tests/test_agent_module_migration_characterization.py',
+  'tests/test_public_api_snapshot.py',
+  'tests/test_gravity_insight_agent_surface.py::GravityInsightAgentSurfaceTests::test_cli_all_pages_guard_and_exit_codes_are_stable',
+  'tests/test_gravity_sdk.py::GravitySDKTests::test_segment_spec_sdk_and_plan_share_one_safe_execution_path',
+  'tests/test_gravity_sdk.py::GravitySDKTests::test_agent_facade_discovers_then_runs_without_cli_argument_ceremony',
+  'tests/test_gravity_plan.py::PlanValidationTests::test_dry_run_calls_validation_but_never_execution',
+  'tests/test_gravity_plan.py::PlanExecutionTests::test_failure_isolated_sanitized_and_local_exit_wins',
+  'tests/test_gravity_plan.py::PlanExecutionTests::test_all_pages_unknown_completeness_is_preserved_capability_gap',
+  'tests/test_agent_catalog.py::AgentCatalogTests::test_existing_agent_protocol_is_unchanged',
+  'tests/test_agent_catalog.py::AgentCatalogTests::test_unknown_category_and_selector_point_at_catalog_browse'
+)
+& ./.venv/Scripts/python.exe -m pytest -q $behavior
+if ($LASTEXITCODE) { throw 'R17 Phase 1 behavior regression after checkpoint preconditions passed' }
 ```
 
 ### Phase 1 Rollback Checkpoint
