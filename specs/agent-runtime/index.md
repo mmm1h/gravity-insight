@@ -36,7 +36,7 @@ R02 → R14-C
 R14-B + R14-C → R14-D
 
 R04 → R16 (conditional)
-[R17 ready prerequisites: M0 binding satisfied but SCC semantics review pending; dynamic-audit semantics + independent ready review pending] ⇢ R17 leaf (81 moves + 1 consolidation; 1 infrastructure exclusion)
+[R17 ready prerequisites: M0 binding satisfied but SCC semantics review pending; dynamic-audit classification unsatisfied; independent ready review pending] ⇢ R17 leaf (81 moves + 1 consolidation; 1 infrastructure exclusion)
 R00 → CT01
 CT01 + R09B → CT02 → CT03
 ```

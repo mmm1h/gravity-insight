@@ -46,8 +46,8 @@
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
-- R17 移除 82 个旧 deep module path（81 迁移 + pagination 删除）且不设 shim；固定 consumer census 为零命中，M0/回归/wheel 门禁锁定 root facade、
-  CLI/SDK/Plan/Agent 读取面、148 个 `__all__` 与请求行为，故不损失读取能力；任一差异都阻断迁移。
+- R17 终态须移除 82 个旧 deep module path（81 迁移 + pagination 删除）且不设 shim；仅在固定 consumer census 零命中，且 M0/回归/wheel 门禁锁定 root facade、
+  CLI/SDK/Plan/Agent 读取面、148 个 `__all__` 与请求行为无差异后，才证明读取能力无损；任一差异都阻断迁移。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、
   聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。
 - 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。
