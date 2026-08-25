@@ -68,7 +68,8 @@
 - **可测事实**：`src/gravity_sdk/` 平铺 578 个 Python 模块；领域边界主要靠命名而非子包，跨领域定位和审查集中在根目录。
 - **影响边界**：不改公开导入或运行时行为；只增加所有权辨识、审查和后续迁移成本。
 - **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。前缀先定义 83 个 `agent_*` 候选队列；facade 可达性只证明
-  队列内 82 个候选内聚，其中一对一迁移 82、合并删除 `agent_pagination` 1、排除 1，不证明完整 Agent domain。
+  队列内 82 个候选内聚（一对一迁移 81 + 合并删除 `agent_pagination` 1），排除 1；另有队列外的 `relative_date_agent`
+  经独立职责清单补入（`agent` 在名字末尾，前缀判据看不见），故一对一迁移合计 82。不证明完整 Agent domain。
   `agent_runtime_contracts` 因队列内 0 入边、队列外 55 入边且 facade 不可达而留根；其新归属需另行决策。未采用入边比例阈值，因 `agent_batch`(1:2)、
   `agent_input_resolution`(1:1) 均为合法 Agent 入口——外围消费者数量不能决定 owner。
 - **未纳入的更大目标**：跨 plan/analysis/metadata/kanban 执行核心的大环优先级更高，但各方图口径不一致
