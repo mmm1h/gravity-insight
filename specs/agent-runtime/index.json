@@ -83,10 +83,8 @@
         },
         {
           "id": "dynamic_import_audit_classification",
-          "satisfied": true,
-          "satisfied_by": "agent_under_standing_owner_delegation",
-          "owner_review": "pending",
-          "bound_implementation_baseline": "3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515",
+          "satisfied": false,
+          "unsatisfied_reason": "the 227-row ledger is derived from a gitignored tmp audit taken at 01e20b4, before R17 and the ledger itself existed; re-running that scanner on the current tree yields ~490 further source keys. Either bind a scanner rule that excludes generated governance artefacts and prove it by test, or classify the new keys, then rebind against the implementation baseline",
           "ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
           "ledger_sha256": "6bd35c5d914e751a048d138e1e6770244a68273761528acaa9be5d4d41716661",
           "required_schema_version": "gravity.agent-module-reference-dispositions.v1",
