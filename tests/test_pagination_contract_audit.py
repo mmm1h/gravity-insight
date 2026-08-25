@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from gravity_sdk.pagination_contract_audit import (
     OPERATIONS_ROOT,
+    _response_scalar_only,
     current_operation_pagination,
     load_pagination_audit,
     reconcile_pagination_audit,
@@ -17,6 +18,80 @@ from gravity_sdk.pagination_contract_audit import (
 
 
 class PaginationContractAuditTests(unittest.TestCase):
+    def test_response_scalar_only_rejects_all_missed_collection_capabilities(
+        self,
+    ) -> None:
+        scalar_projection = {
+            "data_keys": ["a"],
+            "required_data_keys": ["a"],
+            "numeric_paths": ["a"],
+        }
+        missed_capabilities = {
+            "data_path_item_keys": {"a.items": ["id"]},
+            "known_omitted_data_keys": ["omitted"],
+            "known_omitted_item_keys": ["omitted"],
+            "known_omitted_nested_item_keys": {"item": ["omitted"]},
+            "known_omitted_data_item_keys": {"a": ["omitted"]},
+            "opaque_json_item_keys": ["payload"],
+            "unreliable_item_keys": {
+                "value": {"reason": "unstable", "use_instead": "stable_value"}
+            },
+            "scalar_list_item_types": {"values": "number"},
+        }
+
+        self.assertTrue(_response_scalar_only(scalar_projection))
+        for field, capability in missed_capabilities.items():
+            with self.subTest(field=field):
+                self.assertFalse(
+                    _response_scalar_only(
+                        {**scalar_projection, field: capability}
+                    )
+                )
+
+    def test_response_scalar_only_fails_closed_for_invalid_or_unknown_shape(
+        self,
+    ) -> None:
+        scalar_projection = {
+            "data_keys": ["a"],
+            "required_data_keys": ["a"],
+            "numeric_paths": ["a"],
+        }
+        invalid_projections = {
+            "invalid data shape": {**scalar_projection, "data_shape": "array"},
+            "unknown model field": {
+                **scalar_projection,
+                "future_collection_capability": ["item"],
+            },
+            "non-string field": {
+                "data_keys": [1],
+                "required_data_keys": [1],
+                "numeric_paths": [1],
+            },
+            "duplicate field": {
+                "data_keys": ["a", "a"],
+                "required_data_keys": ["a", "a"],
+                "numeric_paths": ["a", "a"],
+            },
+        }
+
+        for case, projection in invalid_projections.items():
+            with self.subTest(case=case):
+                self.assertFalse(_response_scalar_only(projection))
+
+    def test_only_current_scalar_only_contract_is_segment_evaluate_percent(
+        self,
+    ) -> None:
+        current = current_operation_pagination()
+
+        self.assertEqual(
+            ["analysis.segment.evaluate_percent"],
+            sorted(
+                operation_id
+                for operation_id, pagination in current.items()
+                if pagination["_evidence_context"]["response_scalar_only"]
+            ),
+        )
+
     def test_snapshot_is_a_historical_verdict_joined_to_current_contracts(self) -> None:
         audit = load_pagination_audit()
         records = audit["records"]

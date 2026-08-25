@@ -12,8 +12,12 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Mapping, Sequence
+from dataclasses import fields
 from pathlib import Path
 from typing import Any
+
+from .errors import ManifestError
+from .models import ResponseProjection
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,16 +36,8 @@ _COMPLETENESS_SIGNAL_FIELDS = frozenset({
 })
 _NOT_COLLECTION = "not_collection_semantics"
 _NO_FALSIFIABLE_SIGNAL = "no_falsifiable_completeness_signal"
-_COLLECTION_PROJECTION_FIELDS = (
-    "data_dynamic_item_fields",
-    "data_item_keys",
-    "data_numeric_suffix_item_fields",
-    "data_scalar_list_types",
-    "dynamic_item_fields",
-    "item_keys",
-    "nested_item_keys",
-    "numeric_suffix_item_fields",
-    "recursive_data_item_keys",
+_RESPONSE_PROJECTION_FIELD_NAMES = frozenset(
+    item.name for item in fields(ResponseProjection)
 )
 
 
@@ -340,20 +336,20 @@ def _field_names(value: Any) -> set[str]:
 
 
 def _response_scalar_only(value: Any) -> bool:
-    if not isinstance(value, Mapping) or value.get("data_shape") == "list":
+    if (
+        not isinstance(value, Mapping)
+        or set(value) - _RESPONSE_PROJECTION_FIELD_NAMES
+    ):
         return False
-    data_keys = _string_values(value.get("data_keys"))
-    required_keys = _string_values(value.get("required_data_keys"))
-    numeric_paths = _string_values(value.get("numeric_paths"))
-    if not data_keys or data_keys != required_keys or data_keys != numeric_paths:
+    try:
+        projection = ResponseProjection.from_dict(value)
+    except ManifestError:
         return False
-    return not any(value.get(field) for field in _COLLECTION_PROJECTION_FIELDS)
-
-
-def _string_values(value: Any) -> set[str]:
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
-        return set()
-    return {str(item) for item in value}
+    return bool(projection.data_keys) and projection == ResponseProjection(
+        data_keys=projection.data_keys,
+        required_data_keys=projection.data_keys,
+        numeric_paths=projection.data_keys,
+    )
 
 
 def _disposition_status(record: Mapping[str, Any]) -> str | None:
