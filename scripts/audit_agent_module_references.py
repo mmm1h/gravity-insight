@@ -19,9 +19,9 @@ FROZEN_SCOPE_LEDGER = PurePosixPath(
     "tests/fixtures/agent_module_reference_dispositions.json"
 )
 EXPECTED_OWNER_STATES = {
-    "baseline": (81, 0, True),
-    "phase_1": (34, 47, False),
-    "phase_2": (0, 81, False),
+    "baseline": (82, 0, True),
+    "phase_1": (34, 48, False),
+    "phase_2": (0, 82, False),
 }
 GENERATED_GOVERNANCE_FILES = frozenset(
     {
@@ -250,6 +250,20 @@ def _module_file(root: Path, module: str) -> Path:
     return root / "src" / Path(*module.split(".")).with_suffix(".py")
 
 
+def _moved_agent_target(old_module: str) -> str | None:
+    parts = old_module.split(".")
+    if len(parts) != 2 or parts[0] != "gravity_sdk":
+        return None
+    name = parts[1]
+    if name.startswith("agent_"):
+        responsibility = name.removeprefix("agent_")
+    elif name.endswith("_agent"):
+        responsibility = name.removesuffix("_agent")
+    else:
+        return None
+    return f"gravity_sdk.agents.{responsibility}" if responsibility else None
+
+
 def _frozen_module_scope(root: Path) -> list[tuple[str, str]]:
     path = root / FROZEN_SCOPE_LEDGER
     try:
@@ -262,8 +276,8 @@ def _frozen_module_scope(root: Path) -> list[tuple[str, str]]:
     if not isinstance(scope, dict):
         raise RuntimeError("frozen R17 scope ledger has no scope object")
     moves = scope.get("one_to_one_moves")
-    if not isinstance(moves, list) or len(moves) != 81:
-        raise RuntimeError("frozen R17 scope must contain 81 one-to-one moves")
+    if not isinstance(moves, list) or len(moves) != 82:
+        raise RuntimeError("frozen R17 scope must contain 82 one-to-one moves")
     result: list[tuple[str, str]] = []
     for move in moves:
         if not isinstance(move, dict):
@@ -272,13 +286,11 @@ def _frozen_module_scope(root: Path) -> list[tuple[str, str]]:
         new = move.get("new_module")
         if (
             not isinstance(old, str)
-            or not old.startswith("gravity_sdk.agent_")
-            or new
-            != f"gravity_sdk.agents.{old.removeprefix('gravity_sdk.agent_')}"
+            or new != _moved_agent_target(old)
         ):
             raise RuntimeError(f"invalid frozen R17 move: {old!r} -> {new!r}")
         result.append((old, new))
-    if len({old for old, _ in result}) != 81 or len({new for _, new in result}) != 81:
+    if len({old for old, _ in result}) != 82 or len({new for _, new in result}) != 82:
         raise RuntimeError("frozen R17 move owners must be unique")
     consolidation = scope.get("consolidate_delete")
     if consolidation != {
@@ -306,7 +318,7 @@ def _frozen_module_scope(root: Path) -> list[tuple[str, str]]:
 
 def make_module_map(root: Path = ROOT) -> tuple[list[ModuleMap], dict[str, str]]:
     frozen_scope = _frozen_module_scope(root)
-    move_scope = frozen_scope[:81]
+    move_scope = frozen_scope[:82]
     old_move_count = sum(_module_file(root, old).is_file() for old, _ in move_scope)
     new_move_count = sum(_module_file(root, new).is_file() for _, new in move_scope)
     overlaps = [
@@ -348,7 +360,10 @@ def make_module_map(root: Path = ROOT) -> tuple[list[ModuleMap], dict[str, str]]
             f"pagination_old={pagination_old}"
         )
     expected_root_owners = {
-        old for old, _ in move_scope if _module_file(root, old).is_file()
+        old
+        for old, _ in move_scope
+        if old.rsplit(".", 1)[-1].startswith("agent_")
+        and _module_file(root, old).is_file()
     }
     if pagination_old:
         expected_root_owners.add("gravity_sdk.agent_pagination")

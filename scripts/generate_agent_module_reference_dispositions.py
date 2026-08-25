@@ -151,8 +151,8 @@ def _audit_category(row: Finding) -> str:
 def _module_universe(
     mappings: tuple[Any, ...],
 ) -> tuple[list[dict[str, str]], dict[str, str]]:
-    if len(mappings) != 83 or len({row.old_module for row in mappings}) != 83:
-        raise ValueError("the repository scan must find 83 unique agent modules")
+    if len(mappings) != 84 or len({row.old_module for row in mappings}) != 84:
+        raise ValueError("the repository scan must find 84 unique reviewed modules")
     moves: list[dict[str, str]] = []
     mapping: dict[str, str] = {}
     for row in mappings:
@@ -162,8 +162,8 @@ def _module_universe(
         moves.append({"old_module": old, "new_module": row.new_module})
         mapping[old] = row.new_module
     moves.sort(key=lambda item: item["old_module"])
-    if len(moves) != 81:
-        raise ValueError("current R17 scope must contain 81 one-to-one moves")
+    if len(moves) != 82:
+        raise ValueError("current R17 scope must contain 82 one-to-one moves")
     return moves, mapping
 
 
@@ -387,7 +387,7 @@ def _classify_bare(
         return _blocker(
             "bare_reference_outside_frozen_scope",
             "The active bare module reference is neither retained, consolidated, "
-            "nor present in the exact 81-move scope.",
+            "nor present in the exact 82-move scope.",
             "frozen_scope_mismatch",
         )
     if context_kind == DATED_DECISION_RECORD:
@@ -586,7 +586,7 @@ def _classify_prefix(row: Finding) -> dict[str, Any]:
         "legacy_prefix_migration_sentinel",
         "The characterization helper uses the legacy prefix only to classify deep "
         "path references and validate ledger row shape. SCC membership comes from "
-        "the exact 81 move rows plus pagination consolidation, not this prefix.",
+        "the exact 82 move rows plus pagination consolidation, not this prefix.",
         "migration_characterization_contract",
     )
 
@@ -675,7 +675,7 @@ def _classify_reference(
         return _blocker(
             "reference_outside_frozen_scope",
             "The exact reference is neither retained, consolidated, nor present in "
-            "the immutable 81-move scope.",
+            "the immutable 82-move scope.",
             "frozen_scope_mismatch",
         )
     return {
@@ -742,10 +742,21 @@ def _immutable_baseline_binding() -> dict[str, Any]:
     repository_path = BASELINE_LEDGER.relative_to(ROOT).as_posix()
     if derivation.get("ledger_repository_path") != repository_path:
         raise ValueError("directive no longer binds the immutable R17 baseline ledger")
-    revision = derivation.get("ledger_git_revision")
+    blob = derivation.get("ledger_git_blob")
     expected_sha = derivation.get("ledger_sha256")
+    current_blob = subprocess.run(
+        ["git", "rev-parse", f"HEAD:{repository_path}"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout.strip()
+    if current_blob != blob:
+        raise ValueError("immutable baseline blob is not current at the ledger path")
     completed = subprocess.run(
-        ["git", "show", f"{revision}:{repository_path}"],
+        ["git", "cat-file", "blob", blob],
         cwd=ROOT,
         check=True,
         stdout=subprocess.PIPE,
@@ -759,7 +770,7 @@ def _immutable_baseline_binding() -> dict[str, Any]:
     return {
         "role": "errata_source_only_immutable_baseline",
         "repository_path": repository_path,
-        "git_revision": revision,
+        "git_blob": blob,
         "sha256": expected_sha,
         "schema_version": derivation.get("ledger_schema_version"),
     }
@@ -984,7 +995,7 @@ def build_document(
             "source_key_format": "{file}:{line}:{column}:{form}",
         },
         "scope": {
-            "audit_candidate_modules": 83,
+            "audit_candidate_modules": 84,
             "one_to_one_moves": moves,
             "consolidate_delete": {
                 "old_module": PAGINATION_MODULE,

@@ -283,29 +283,37 @@ def migration_module_names(
     document = json.loads(ledger.read_text(encoding="utf-8"))
     scope = document.get("scope", {})
     moves = scope.get("one_to_one_moves")
-    if not isinstance(moves, list) or len(moves) != 81:
-        raise AssertionError("R17 migration ledger must contain exactly 81 moves")
+    if not isinstance(moves, list) or len(moves) != 82:
+        raise AssertionError("R17 migration ledger must contain exactly 82 moves")
     modules: set[str] = set()
     for index, move in enumerate(moves):
         if not isinstance(move, dict):
             raise AssertionError(f"R17 move {index} is not an object")
         old_module = move.get("old_module")
         new_module = move.get("new_module")
+        old_name = (
+            old_module.removeprefix("gravity_sdk.")
+            if isinstance(old_module, str)
+            else ""
+        )
+        if old_name.startswith("agent_"):
+            responsibility = old_name.removeprefix("agent_")
+        elif old_name.endswith("_agent"):
+            responsibility = old_name.removesuffix("_agent")
+        else:
+            responsibility = ""
         if not (
-            isinstance(old_module, str)
-            and old_module.startswith(LEGACY_AGENT_LEDGER_PREFIX)
-            and isinstance(new_module, str)
-            and new_module
-            == "gravity_sdk.agents."
-            + old_module.removeprefix(LEGACY_AGENT_LEDGER_PREFIX)
+            isinstance(new_module, str)
+            and bool(responsibility)
+            and new_module == f"gravity_sdk.agents.{responsibility}"
         ):
             raise AssertionError(
                 f"R17 move {index} has an invalid owner pair: "
                 f"{old_module!r} -> {new_module!r}"
             )
         modules.update((old_module, new_module))
-    if len(modules) != 162:
-        raise AssertionError("R17 move ledger must contain 81 unique old/new pairs")
+    if len(modules) != 164:
+        raise AssertionError("R17 move ledger must contain 82 unique old/new pairs")
 
     consolidation = scope.get("consolidate_delete")
     expected_fields = {"old_module", "new_module", "symbol"}

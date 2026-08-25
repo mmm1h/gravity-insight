@@ -54,7 +54,7 @@ CANONICAL_SOURCE = ROOT / "specs/agent-runtime/architecture-source.md"
 INDEX_JSON = ROOT / "specs/agent-runtime/index.json"
 INDEX_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
 R17_SPECIFICATION = ROOT / "specs/agent-runtime/R17-agent-module-package-migration.md"
-LEDGER_SHA256 = "cff0dda6ed24a8139f607819d7579b4c83fc437f721201c6d57c9e4b2cd7d98b"
+LEDGER_SHA256 = "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
     "bare_agent_string": 101,
@@ -186,20 +186,24 @@ def validate_ledger(document: dict[str, Any]) -> None:
 
     scope = document.get("scope", {})
     moves = scope.get("one_to_one_moves", [])
-    _require(len(moves) == 81, "R17 must have exactly 81 one-to-one targets")
+    _require(len(moves) == 82, "R17 must have exactly 82 one-to-one targets")
     old_targets = {item.get("old_module") for item in moves}
     new_targets = {item.get("new_module") for item in moves}
     move_mapping = {item.get("old_module"): item.get("new_module") for item in moves}
-    _require(len(old_targets) == len(new_targets) == 81, "move targets must be unique")
+    _require(len(old_targets) == len(new_targets) == 82, "move targets must be unique")
     for item in moves:
         old = item.get("old_module")
         new = item.get("new_module")
+        old_name = old.removeprefix("gravity_sdk.") if isinstance(old, str) else ""
+        if old_name.startswith("agent_"):
+            responsibility = old_name.removeprefix("agent_")
+        elif old_name.endswith("_agent"):
+            responsibility = old_name.removesuffix("_agent")
+        else:
+            responsibility = ""
         _require(
-            isinstance(old, str) and old.startswith("gravity_sdk.agent_"),
-            f"invalid old move target: {old!r}",
-        )
-        _require(
-            new == f"gravity_sdk.agents.{old.removeprefix('gravity_sdk.agent_')}",
+            bool(responsibility)
+            and new == f"gravity_sdk.agents.{responsibility}",
             f"invalid one-to-one move: {old!r} -> {new!r}",
         )
     _require(PAGINATION_MODULE not in old_targets, "pagination cannot be one-to-one")
@@ -418,16 +422,26 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
     expected_binding = {
         "role": "errata_source_only_immutable_baseline",
         "repository_path": derivation["ledger_repository_path"],
-        "git_revision": derivation["ledger_git_revision"],
+        "git_blob": derivation["ledger_git_blob"],
         "sha256": derivation["ledger_sha256"],
         "schema_version": derivation["ledger_schema_version"],
     }
     _require(baseline == expected_binding, "checkpoint baseline binding changed")
+    current_blob = subprocess.run(
+        ["git", "rev-parse", f"HEAD:{baseline['repository_path']}"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+    ).stdout.strip()
+    _require(current_blob == baseline["git_blob"], "baseline blob is not current")
     bound = subprocess.run(
         [
             "git",
-            "show",
-            f"{baseline['git_revision']}:{baseline['repository_path']}",
+            "cat-file",
+            "blob",
+            baseline["git_blob"],
         ],
         cwd=ROOT,
         check=True,
@@ -444,7 +458,7 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
     move_mapping = {
         item.get("old_module"): item.get("new_module") for item in moves
     }
-    _require(len(move_mapping) == 81, "checkpoint move scope changed")
+    _require(len(move_mapping) == 82, "checkpoint move scope changed")
     site_records = document.get("sites")
     _require(isinstance(site_records, list), "checkpoint sites must be a list")
     sites = checkpoint_sites(document)
@@ -751,7 +765,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
     def test_frozen_scope_supports_all_three_owner_states(self) -> None:
         moves = self.document["scope"]["one_to_one_moves"]
         states = {
-            "baseline": (81, True),
+            "baseline": (82, True),
             "phase_1": (34, False),
             "phase_2": (0, False),
         }
@@ -782,10 +796,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text("", encoding="utf-8")
                 mappings, mapping = make_module_map(root)
-                self.assertEqual(83, len(mappings))
-                self.assertEqual(83, len(mapping))
+                self.assertEqual(84, len(mappings))
+                self.assertEqual(84, len(mapping))
                 self.assertEqual(
-                    81,
+                    82,
                     sum(
                         item.new_module.startswith("gravity_sdk.agents.")
                         for item in mappings
@@ -803,7 +817,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             "tests/fixtures/agent_module_reference_dispositions.json",
             declaration["ledger_repository_path"],
         )
-        self.assertRegex(declaration["ledger_git_revision"], r"^[0-9a-f]{40}$")
+        self.assertRegex(declaration["ledger_git_blob"], r"^[0-9a-f]{40}$")
         self.assertEqual(LEDGER_SHA256, declaration["ledger_sha256"])
         replacements = derive_source_replacements(self.directive, self.document)
         selected_rows = [

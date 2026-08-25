@@ -32,7 +32,7 @@ EXPECTED_DERIVATION_KEYS = {
     "derivation",
     "ledger_role",
     "ledger_repository_path",
-    "ledger_git_revision",
+    "ledger_git_blob",
     "ledger_sha256",
     "ledger_schema_version",
     "source_file",
@@ -175,11 +175,11 @@ def source_replacement_derivation(
         ledger_path == LEDGER_PATH.relative_to(ROOT).as_posix(),
         "errata derivation must bind the R17 disposition ledger path",
     )
-    ledger_revision = derivation.get("ledger_git_revision")
+    ledger_blob = derivation.get("ledger_git_blob")
     _require(
-        isinstance(ledger_revision, str)
-        and re.fullmatch(r"[0-9a-f]{40}", ledger_revision) is not None,
-        "errata ledger revision must be a full Git SHA",
+        isinstance(ledger_blob, str)
+        and re.fullmatch(r"[0-9a-f]{40}", ledger_blob) is not None,
+        "errata ledger blob must be a full Git object ID",
     )
     ledger_sha256 = derivation.get("ledger_sha256")
     _require(
@@ -209,15 +209,28 @@ def source_replacement_derivation(
     return derivation
 
 
-def _git_object_bytes(revision: str, repository_path: str) -> bytes:
+def _git_blob_bytes(blob: str) -> bytes:
     completed = subprocess.run(
-        ["git", "show", f"{revision}:{repository_path}"],
+        ["git", "cat-file", "blob", blob],
         cwd=ROOT,
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     return completed.stdout
+
+
+def _current_tree_blob(repository_path: str) -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", f"HEAD:{repository_path}"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return completed.stdout.strip()
 
 
 def _render_ledger(ledger: dict[str, Any]) -> bytes:
@@ -233,9 +246,12 @@ def validate_bound_ledger(
     """Require the exact ledger object named by the directive's immutable binding."""
 
     derivation = source_replacement_derivation(directive)
-    bound = _git_object_bytes(
-        derivation["ledger_git_revision"], derivation["ledger_repository_path"]
+    ledger_blob = derivation["ledger_git_blob"]
+    _require(
+        _current_tree_blob(derivation["ledger_repository_path"]) == ledger_blob,
+        "errata ledger blob is not the object at the current commit path",
     )
+    bound = _git_blob_bytes(ledger_blob)
     expected_sha = derivation["ledger_sha256"]
     _require(
         hashlib.sha256(bound).hexdigest() == expected_sha,
@@ -258,8 +274,8 @@ def _ledger_move_mapping(ledger: dict[str, Any]) -> dict[str, str]:
     _require(isinstance(scope, dict), "bound ledger scope must be an object")
     moves = scope.get("one_to_one_moves")
     _require(
-        isinstance(moves, list) and len(moves) == 81,
-        "bound ledger scope must contain exactly 81 one-to-one moves",
+        isinstance(moves, list) and len(moves) == 82,
+        "bound ledger scope must contain exactly 82 one-to-one moves",
     )
     mapping: dict[str, str] = {}
     targets: set[str] = set()
@@ -269,12 +285,17 @@ def _ledger_move_mapping(ledger: dict[str, Any]) -> dict[str, str]:
         new = move.get("new_module")
         old_parts = old.split(".") if isinstance(old, str) else []
         old_name = old_parts[1] if len(old_parts) == 2 else ""
+        if old_name.startswith("agent_"):
+            responsibility = old_name.removeprefix("agent_")
+        elif old_name.endswith("_agent"):
+            responsibility = old_name.removesuffix("_agent")
+        else:
+            responsibility = ""
         _require(
             isinstance(old, str)
             and old_parts[0] == "gravity_sdk"
-            and old_name.startswith("agent" + "_")
-            and new
-            == f"gravity_sdk.agents.{old_name.removeprefix('agent' + '_')}",
+            and bool(responsibility)
+            and new == f"gravity_sdk.agents.{responsibility}",
             f"bound ledger contains an illegal move: {old!r} -> {new!r}",
         )
         _require(old not in mapping and new not in targets, "bound ledger moves repeat")
