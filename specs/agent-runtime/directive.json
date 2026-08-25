@@ -29,6 +29,23 @@
     "repeat_requirement_approval_required": false,
     "internal_delivery_ledger": "requirement_document"
   },
+  "canonical_source_errata": {
+    "rule": "errata_inherits_approval",
+    "authorized_by": "agent_under_standing_owner_delegation",
+    "owner_review": "pending",
+    "scope": "physical_repository_path_corrections_that_do_not_change_architectural_semantics",
+    "requires": [
+      "add_a_new_versioned_errata_summary_and_preserve_prior_summaries",
+      "update_version_supersedes_digest_and_all_version_self_references_atomically",
+      "machine_assert_canonical_digest_and_version_consistency"
+    ],
+    "does_not_authorize": [
+      "architectural_semantic_changes",
+      "a_claim_of_new_or_owner_approval",
+      "implementation_before_the_requirement_is_ready",
+      "release_or_main_promotion"
+    ]
+  },
   "review_baseline": {
     "branch": "main",
     "sha": "b9c029db7f41fa90d04b4e019a892cba25eb9230"

@@ -36,7 +36,7 @@ R02 → R14-C
 R14-B + R14-C → R14-D
 
 R04 → R16 (conditional)
-[R17 ready prerequisites: M0 evidence + 227/227 sites classified] ⇢ R17 leaf (81 moves + 1 consolidation; 1 infrastructure exclusion)
+[R17 ready prerequisites: M0 satisfied; dynamic-audit rebind + independent ready review pending] ⇢ R17 leaf (81 moves + 1 consolidation; 1 infrastructure exclusion)
 R00 → CT01
 CT01 + R09B → CT02 → CT03
 ```
@@ -68,7 +68,7 @@ R17 行中的方括号内容是 `ready_prerequisites`，不是 Requirement 或 m
 | [R14](R14-adaptive-governor-variants.md) | Adaptive Governor and Execution Variants | R02 | `fixed_dev` (A/B/C/D) | Staged epic A→B, C, then D |
 | [R15](R15-isolated-sql-explorer.md) | Isolated SQL Explorer | R02, R05 | `fixed_dev` | Leaf |
 | [R16](R16-control-plane-stage-b.md) | Control Plane Stage B | R04 + trigger | `specified` | Conditional leaf |
-| [R17](R17-agent-module-package-migration.md) | Agent domain package migration | -; machine-readable ready prerequisites | `specified` | Leaf with two internal implementation branches |
+| [R17](R17-agent-module-package-migration.md) | Legacy `agent_*` prefix cohort package migration | -; machine-readable ready prerequisites | `specified` | Leaf with two serial checkpoints on one branch |
 | [CT01](CT01-thinkingai-inventory.md) | ThinkingAI source inventory | R00 | `fixed_dev` | Parallel content |
 | [CT02](CT02-thinkingai-representative-skills.md) | Representative ThinkingAI Skills | CT01, R09B | `fixed_dev` | Content validation |
 | [CT03](CT03-thinkingai-full-specification.md) | Full independent Skill specifications | CT02 | `fixed_dev` | Content expansion |
@@ -88,7 +88,7 @@ src/gravity_sdk/cli.py
 src/gravity_sdk/__main__.py
 ```
 
-R17's 81-module facade-reachable move set includes the three `agent_*` spine modules; its core implementation phase moves them to
+R17's 81-module facade-reachable legacy-prefix move set includes the three `agent_*` spine modules; its core implementation checkpoint moves them to
 `src/gravity_sdk/agents/{capabilities,composite,handoff}.py` and must update the
 machine list atomically with that code move. Until the core phase lands, the paths above
 remain authoritative.
@@ -99,8 +99,15 @@ Requirement branches implement domain cores and focused tests first. A named int
 
 `specified` means scope and dependency boundaries exist. Before changing a leaf or epic milestone to `ready`, the plan owner must fill unresolved decisions, bind a current baseline SHA and Issue, confirm write scope/worktree, and approve exact acceptance commands.
 
-R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`
-必须成为绑定实施基线的祖先并绑定精确测试证据；动态导入审计的 227 个候选点必须全部得到复核处置，未分类数从 227 降为 0 并绑定分类账本路径与 SHA-256；独立复核必须给出 `ready` 裁决。内部两阶段不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。
+R17 只有一个 leaf 状态和一个实施分支/Worktree。它只在基线的 83 个根目录 `agent_*.py`
+遗留前缀候选内应用 facade 可达性：82 个候选可达，其中 81 个一对一迁移，
+`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且
+facade 不可达而留在根目录。这证明前缀候选内的内聚与排除，不证明该候选集是完整
+Agent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 已在
+`dev@3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515` 绑定并满足；动态导入审计因现有
+227 行账本只来自 `01e20b4` 的 gitignored tmp 审计而尚未重绑定，仍为未满足；独立
+复核的当前裁决为 `not_ready`，亦未满足。两个内部阶段只是同一分支上的串行提交/
+回滚 checkpoint，不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。
 
 The user approved the R01 binding and designated the Requirement document as
 the internal program delivery ledger on 2026-08-21. The same authorization lets
