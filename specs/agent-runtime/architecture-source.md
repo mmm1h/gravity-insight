@@ -13,7 +13,7 @@
 6. **Runtime / Control Plane、隔离 SQL Explorer、Provider 边界和可复现 Lock 的判断保留**。同时要求进程外 Provider 声明自身能力和返回可审计统计，Runtime 只对 RPC 边界执行强制治理。
 7. **Codex 提示词改为“目标架构优先、当前事实校验、旧假设显式迁移”**。不得因先读旧版 `AGENTS.md`、roadmap、测试或文件结构，就把新架构压回旧产品思路；也不得借此绕过安全、权限、隐私和消费者迁移约束。
 8. **单总纲原则不变**。后续只更新这一份产品与架构总纲；工作提案和冲突台账属于 `tmp/` 中的过程 Artifact，不构成第二份总纲。
-9. **允许并要求派生有界需求规格**。总纲定义产品目标、架构边界、术语和依赖图；`specs/agent-runtime/` 下的 R00-R16、CT01-CT03 负责具体合同、迁移、验收和回滚。需求规格必须绑定总纲版本与 digest，不得反向修改架构。
+9. **允许并要求派生有界需求规格**。总纲定义产品目标、架构边界、术语和依赖图；`specs/agent-runtime/` 下的 R00-R17、CT01-CT03 负责具体合同、迁移、验收和回滚。需求规格必须绑定总纲版本与 digest，不得反向修改架构。
 10. **冻结本次主分支集成策略**。各需求单元在独立 `codex/<unit>` 分支开发并合入 `dev`；在全部计划需求完成、整体验收通过且用户另行批准前，不把本计划的开发工作合入 `main`。
 11. **完整总纲进入仓库**。`specs/agent-runtime/architecture-source.md` 是唯一 canonical architecture source；directive 通过仓库相对路径、格式、检索规则和 digest 绑定它，本机下载文件只保留为来源记录。
 12. **拆除大爆炸集成点**。R09 拆为 Core Skill Runtime、Team Hub Binding、External Context Binding；R13 拆为 Artifact Transfer、Analysis Artifact/Renderer、Gravity Dashboard Connector。外部 Hub/Provider/Action 不再阻塞基础 Runtime 或素材传输。
@@ -238,7 +238,7 @@ Codex 必须按以下顺序读取：
 唯一架构总纲 v9.1（repository canonical source）
 → specs/agent-runtime/directive.json 绑定批准版本与 digest
 → specs/agent-runtime/index.json / index.md 定义依赖图和状态
-→ R00-R16 family leaves / CT01-CT03 细化单一交付单元
+→ R00-R17 family leaves / CT01-CT03 细化单一交付单元
 → Issue / codex/<unit> worktree / implementation / validation
 → dev 集成
 → 全计划完成后才允许另行评估 main promotion

@@ -5,7 +5,7 @@
   "status": "approved",
   "canonical_source": {
     "repository_path": "architecture-source.md",
-    "sha256": "a15c76d8b55376a5c05769f53f07b6f21ef4a527edfa9ed8e715c3da32f12ec4",
+    "sha256": "21adb0faf2e98121dd19ce78864b790a60ae42aeea30d13a5279f29ba5095e17",
     "format": "markdown",
     "retrieval": "repository_relative_to_directive"
   },
@@ -15,8 +15,8 @@
     "authority": "provenance_only"
   },
   "supersedes": {
-    "version": "v9",
-    "sha256": "bafee3deeb3268fdfe17845f8e9925a509db1b1a04aa15babc7ce38c01d3a46f"
+    "version": "v9.1",
+    "sha256": "a15c76d8b55376a5c05769f53f07b6f21ef4a527edfa9ed8e715c3da32f12ec4"
   },
   "approval": {
     "approved_by": "user",
@@ -27,48 +27,7 @@
     "program_implementation_authorized_at": "2026-08-21",
     "program_implementation_scope": "all indexed requirements after dependencies and machine gates are satisfied",
     "repeat_requirement_approval_required": false,
-    "internal_delivery_ledger": "requirement_document",
-    "delivery_mode_policy_authorized_by": "agent_under_standing_owner_delegation",
-    "delivery_mode_policy_authorized_at": "2026-08-25",
-    "delivery_mode_policy_owner_review": "pending",
-    "delivery_mode_policy_delegation_basis": "owner directed autonomous decision-making for this round and deferred review to its completion; the owner has not read this policy text"
-  },
-  "delivery_mode_policy": {
-    "schema_version": "gravity.agent-runtime-delivery-mode-policy.v1",
-    "evaluation_point": "before a requirement advances beyond specified",
-    "missing_or_ambiguous_evidence": false,
-    "decision_rule": "Evaluate a candidate in this order, treating every missing or ambiguous predicate as false: (1) use sibling_requirements when the candidate contains two or more end-to-end outcomes, each has its own acceptance and rollback, and the approved target permits at least one outcome to reach and remain fixed_dev while another is permanently absent, blocked, or superseded; (2) otherwise use staged_epic only when the candidate has exactly one parent outcome and one final exit, has two or more named mandatory milestones in a finite acyclic graph, no milestone may be permanently omitted, every milestone is separately branchable, mergeable, acceptance-testable, and revertible, every proper intermediate state is supported without a compatibility shim, and recorded dependency, evidence, or rollback facts prove that one-branch delivery is unsafe; (3) otherwise use leaf.",
-    "sibling_requirements": {
-      "index_representation": "each outcome is an indexed requirement; any legacy parent is a non-executable superseded navigation record",
-      "required_evidence": [
-        "two_or_more_end_to_end_outcomes",
-        "acceptance_and_rollback_per_outcome",
-        "permanent_omission_of_a_sibling_is_compatible_with_the_approved_target"
-      ]
-    },
-    "staged_epic": {
-      "index_representation": "one indexed parent with a finite acyclic milestones list; the parent reaches fixed_dev only after every milestone reaches fixed_dev",
-      "required_evidence": [
-        "exactly_one_parent_outcome_and_final_exit",
-        "two_or_more_named_mandatory_milestones",
-        "separate_branch_commit_acceptance_and_rollback_per_milestone",
-        "supported_shim_free_intermediate_state",
-        "recorded_reason_one_branch_delivery_is_unsafe"
-      ]
-    },
-    "leaf": {
-      "index_representation": "one indexed requirement and one end-to-end delivery unit",
-      "default": true
-    },
-    "does_not_authorize": [
-      "using milestones for optional outcomes that meet the sibling_requirements predicates",
-      "using milestones only to separate characterization, tests, core, surface, documentation, staffing, or calendar phases without a supported intermediate state",
-      "combining multiple milestones in one issue, branch, commit, acceptance, or rollback unit",
-      "advancing requirement or milestone status beyond specified",
-      "starting implementation before ready gates are satisfied",
-      "main integration, release, production probes, external writes, or safety exceptions"
-    ],
-    "implementation_authorization_effect": "Selecting a compliant delivery mode is authorized for indexed requirements, but implementation still requires the existing dependency, review, ready, worktree, write-scope, and machine-gate bindings."
+    "internal_delivery_ledger": "requirement_document"
   },
   "review_baseline": {
     "branch": "main",
