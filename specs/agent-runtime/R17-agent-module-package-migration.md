@@ -72,16 +72,16 @@ debt #11, or satisfy R17.
    comparison facts, not exclusions from the graph.
 2. **Not satisfied.** The 238-row
    `tests/fixtures/agent_module_reference_dispositions.json` ledger (SHA-256
-   `f20c0c0eaeec9e72a3be49a8d6ddfd1f2828be7741a68b80fe59b6aa023857ef`,
+   `2d69b014bb35d77860bc3dde686017a8c5041cbcdda112eeb683925c3cfb84b9`,
    schema `gravity.agent-module-reference-dispositions.v2`) is internally
    complete, with 238 unique source keys, `unclassified_sites = 0`,
    `blocker_count = 0`, split `224 no_migration_effect / 13 rewrite_reference /
-   1 rewrite_selector_data`. It remains unsatisfied because six spine rewrites
-   target bare filenames instead of `agents/...`, and dated-evidence context
-   can misclassify a real import. The parallel gate-fix unit must correct and
-   independently test those semantics before replacing this prerequisite's
-   digest. Until then, the 238 dispositions are evidence, not a satisfied ready
-   prerequisite.
+   1 rewrite_selector_data`. The third ready review reproduced false negatives
+   for `importlib.import_module`, `__import__`, `sys.modules`, indirect string
+   variables, and string patch targets. The parallel gate-fix unit must harden
+   both the generator and independent validator, add mutation coverage, and
+   rebind the resulting ledger before this prerequisite can become satisfied.
+   Until then, the 238 dispositions are evidence, not a satisfied prerequisite.
 3. **Not satisfied.** An independent reviewer must accept the scope,
    measurement definitions, proposed owner changes, two explicit concept
    deletions, and exact acceptance commands and return a `ready` verdict. This
@@ -307,7 +307,7 @@ zero full-graph SCCs intersecting the migration set. Its accepted commit becomes
 the rollback checkpoint and base of Phase 2 but receives no independent
 Requirement state.
 
-Rollback from Phase 1 reverts the Phase 1 commit(s) to the reviewed baseline
+Rollback from Phase 1 reverts the single Phase 1 commit to the reviewed baseline
 checkpoint, restoring all 47 root modules, `agent_pagination.py`, its caller,
 and every mapped consumer before removing package targets. It does not switch,
 delete, or reset a phase branch because no phase branch exists.
@@ -339,7 +339,7 @@ edges and zero reverse edges.
 
 Phase 2 updates `cli.py`, the facade, lazy owners, remaining consumers, and the
 three physical paths in `index.json.shared_spine`. Phase 2 rollback reverts its
-commit(s) to the recorded Phase 1 checkpoint, restoring the 34 core files,
+single commit to the recorded Phase 1 checkpoint, restoring the 34 core files,
 wrapper, owners, imports, consumers, and shared-spine paths. Full R17 rollback
 then reverts Phase 1 to the reviewed baseline checkpoint.
 
@@ -626,8 +626,9 @@ serialized through one integrator.
 ## Acceptance Commands
 
 Run the four Phase 1 commands in order on the clean Phase 1 checkpoint commit
-and retain their output with that commit SHA. After Phase 2, run every command
-from `Structural Exit And Reviewed Owners` onward on the clean final commit.
+and retain their output with that commit SHA. After Phase 2, run both Phase 2
+rollback commands and every command from `Structural Exit And Reviewed Owners`
+onward on the clean final commit.
 Do not substitute the final tree for Phase 1 evidence. Run from the R17
 implementation worktree root with no `PYTHONPATH`; every assertion names the
 mismatched contract. The two complete collectors are intentionally separate
@@ -766,31 +767,136 @@ Write-Output "Phase 1 consumer checkpoint passed: runtime_old_owner_hits=0; clas
 
 ### Phase 1 Rollback Checkpoint
 
-Phase 1 is one commit carrying fixed trailers. The reverse-apply check proves
-that commit can be removed mechanically without altering the worktree.
+The first three Phase 1 commands establish the complete Phase 1 tree. This
+command then requires one single-parent commit whose parent is exactly the
+reviewed baseline, so every baseline-to-checkpoint change is in that commit.
+It reverse-applies the complete binary diff in a temporary Git index and
+requires the simulated result tree to equal the baseline tree exactly; the
+real index and worktree are not changed.
 
 ```powershell
 $expectedBranch = 'codex/r17-migration'
 $baseline = '24f16c667d80107e4149cf76742eab4ada564197'
-$actualBranch = & git branch --show-current
-if ($actualBranch -ne $expectedBranch) { throw "Phase 1 checkpoint branch mismatch: expected=$expectedBranch actual=$actualBranch" }
-$dirty = @(& git status --porcelain)
-if ($dirty.Count) { throw "Phase 1 checkpoint requires a clean tree: $dirty" }
-$phase1Checkpoint = & git rev-parse HEAD
-$checkpointParent = & git rev-parse "$phase1Checkpoint^"
-$message = & git show -s --format=%B $phase1Checkpoint
-if ($message -notmatch '(?m)^R17-Checkpoint: phase-1\r?$') { throw 'Phase 1 commit lacks exact R17-Checkpoint: phase-1 trailer' }
-if ($message -notmatch "(?m)^R17-Baseline: $baseline\r?$") { throw "Phase 1 commit lacks exact R17-Baseline: $baseline trailer" }
-& git merge-base --is-ancestor $baseline $checkpointParent
-if ($LASTEXITCODE) { throw "R17 baseline is not an ancestor of the Phase 1 checkpoint parent: baseline=$baseline parent=$checkpointParent" }
+$actualBranch = (& git branch --show-current).Trim()
+if ($actualBranch -ne $expectedBranch) { throw "Phase 1 rollback checkpoint not reached: branch mismatch; expected=$expectedBranch actual=$actualBranch" }
+$dirty = @(& git status --porcelain --untracked-files=all)
+if ($dirty.Count) { throw "Phase 1 rollback checkpoint not reached: clean tree required; changes=$dirty" }
+$phase1Checkpoint = (& git rev-parse HEAD).Trim()
+$parents = @(((& git show -s --format=%P $phase1Checkpoint).Trim() -split '\s+') | Where-Object { $_ })
+if ($parents.Count -ne 1) { throw "Phase 1 rollback checkpoint not reached: commit must have exactly one parent; checkpoint=$phase1Checkpoint parents=$($parents -join ',')" }
+$checkpointParent = $parents[0]
+if ($checkpointParent -ne $baseline) { throw "Phase 1 rollback checkpoint not reached: parent must equal reviewed baseline; expected=$baseline actual=$checkpointParent" }
+$rangeCount = [int]((& git rev-list --count "$baseline..$phase1Checkpoint").Trim())
+if ($rangeCount -ne 1) { throw "Phase 1 rollback checkpoint not reached: baseline range must contain exactly one commit; count=$rangeCount" }
+$message = (& git show -s --format=%B $phase1Checkpoint) -join "`n"
+if ([regex]::Matches($message, '(?m)^R17-Checkpoint: phase-1\r?$').Count -ne 1) { throw 'Phase 1 rollback checkpoint not reached: requires one exact R17-Checkpoint: phase-1 trailer' }
+if ([regex]::Matches($message, "(?m)^R17-Baseline: $baseline\r?$").Count -ne 1) { throw "Phase 1 rollback checkpoint not reached: requires one exact R17-Baseline: $baseline trailer" }
 $rollbackDir = 'tmp/r17-acceptance'
 New-Item -ItemType Directory -Force $rollbackDir | Out-Null
 $rollbackPatch = "$rollbackDir/phase1-$phase1Checkpoint.rollback.patch"
-& git diff --binary --output=$rollbackPatch "$checkpointParent..$phase1Checkpoint"
+& git diff --binary --full-index --no-renames --output=$rollbackPatch "$baseline..$phase1Checkpoint"
 if ($LASTEXITCODE) { throw 'Phase 1 rollback patch generation failed' }
-& git apply --reverse --check $rollbackPatch
-if ($LASTEXITCODE) { throw "Phase 1 reverse-apply check failed: $rollbackPatch" }
-Write-Output "Phase 1 rollback checkpoint passed: baseline=$baseline; parent=$checkpointParent; checkpoint=$phase1Checkpoint; reverse_apply=clean"
+$temporaryIndex = [System.IO.Path]::GetFullPath("$rollbackDir/phase1-$phase1Checkpoint.index")
+$previousIndex = $env:GIT_INDEX_FILE
+try {
+    Remove-Item -LiteralPath $temporaryIndex -Force -ErrorAction SilentlyContinue
+    $env:GIT_INDEX_FILE = $temporaryIndex
+    & git read-tree $phase1Checkpoint
+    if ($LASTEXITCODE) { throw 'Phase 1 temporary index initialization failed' }
+    & git apply --cached --reverse --check $rollbackPatch
+    if ($LASTEXITCODE) { throw "Phase 1 reverse-apply check failed: $rollbackPatch" }
+    & git apply --cached --reverse $rollbackPatch
+    if ($LASTEXITCODE) { throw "Phase 1 reverse-apply simulation failed: $rollbackPatch" }
+    $rolledBackTree = (& git write-tree).Trim()
+    $baselineTree = (& git rev-parse "$baseline`^{tree}").Trim()
+    if ($rolledBackTree -ne $baselineTree) { throw "Phase 1 rollback tree mismatch: expected=$baselineTree actual=$rolledBackTree" }
+} finally {
+    $env:GIT_INDEX_FILE = $previousIndex
+    Remove-Item -LiteralPath $temporaryIndex -Force -ErrorAction SilentlyContinue
+}
+Write-Output "Phase 1 rollback checkpoint passed: baseline=$baseline; parent=$checkpointParent; checkpoint=$phase1Checkpoint; simulated_tree=$rolledBackTree"
+```
+
+### Phase 2 Rollback Checkpoints
+
+Phase 2 is also exactly one commit. Its `R17-Phase-1` trailer binds the accepted
+Phase 1 SHA; its only parent must equal that SHA, and the Phase 1 commit must in
+turn have the reviewed baseline as its only parent. The helper below simulates
+each rollback in a temporary index. The `phase-1` invocation proves the final
+commit returns exactly to the Phase 1 tree. The `baseline` invocation proves
+the required ordered rollback, first Phase 2 to Phase 1 and then Phase 1 to the
+baseline; it rejects retaining Phase 2 while removing Phase 1.
+
+```powershell
+function Test-R17Phase2Rollback {
+    param([Parameter(Mandatory)][ValidateSet('phase-1', 'baseline')][string]$Target)
+    $expectedBranch = 'codex/r17-migration'
+    $baseline = '24f16c667d80107e4149cf76742eab4ada564197'
+    $actualBranch = (& git branch --show-current).Trim()
+    if ($actualBranch -ne $expectedBranch) { throw "Phase 2 rollback checkpoint not reached: branch mismatch; expected=$expectedBranch actual=$actualBranch target=$Target" }
+    $dirty = @(& git status --porcelain --untracked-files=all)
+    if ($dirty.Count) { throw "Phase 2 rollback checkpoint not reached: clean tree required; target=$Target changes=$dirty" }
+    $phase2Checkpoint = (& git rev-parse HEAD).Trim()
+    $phase2Message = (& git show -s --format=%B $phase2Checkpoint) -join "`n"
+    if ([regex]::Matches($phase2Message, '(?m)^R17-Checkpoint: phase-2\r?$').Count -ne 1) { throw 'Phase 2 rollback checkpoint not reached: requires one exact R17-Checkpoint: phase-2 trailer' }
+    if ([regex]::Matches($phase2Message, "(?m)^R17-Baseline: $baseline\r?$").Count -ne 1) { throw "Phase 2 rollback checkpoint not reached: requires one exact R17-Baseline: $baseline trailer" }
+    $phase1Trailer = [regex]::Matches($phase2Message, '(?m)^R17-Phase-1: ([0-9a-f]{40})\r?$')
+    if ($phase1Trailer.Count -ne 1) { throw 'Phase 2 rollback checkpoint not reached: requires one exact R17-Phase-1: <40-hex-sha> trailer' }
+    $phase1Checkpoint = $phase1Trailer[0].Groups[1].Value
+    $phase2Parents = @(((& git show -s --format=%P $phase2Checkpoint).Trim() -split '\s+') | Where-Object { $_ })
+    if ($phase2Parents.Count -ne 1 -or $phase2Parents[0] -ne $phase1Checkpoint) { throw "Phase 2 rollback checkpoint not reached: only parent must equal trailer-bound Phase 1; expected=$phase1Checkpoint actual=$($phase2Parents -join ',')" }
+    $phase1Parents = @(((& git show -s --format=%P $phase1Checkpoint).Trim() -split '\s+') | Where-Object { $_ })
+    if ($phase1Parents.Count -ne 1 -or $phase1Parents[0] -ne $baseline) { throw "Phase 2 rollback checkpoint not reached: Phase 1 only parent must equal reviewed baseline; expected=$baseline actual=$($phase1Parents -join ',')" }
+    $phase1Message = (& git show -s --format=%B $phase1Checkpoint) -join "`n"
+    if ([regex]::Matches($phase1Message, '(?m)^R17-Checkpoint: phase-1\r?$').Count -ne 1) { throw 'Phase 2 rollback checkpoint not reached: parent lacks one exact R17-Checkpoint: phase-1 trailer' }
+    if ([regex]::Matches($phase1Message, "(?m)^R17-Baseline: $baseline\r?$").Count -ne 1) { throw "Phase 2 rollback checkpoint not reached: Phase 1 lacks one exact R17-Baseline: $baseline trailer" }
+    $phase1Count = [int]((& git rev-list --count "$baseline..$phase1Checkpoint").Trim())
+    $phase2Count = [int]((& git rev-list --count "$phase1Checkpoint..$phase2Checkpoint").Trim())
+    $fullCount = [int]((& git rev-list --count "$baseline..$phase2Checkpoint").Trim())
+    if ($phase1Count -ne 1 -or $phase2Count -ne 1 -or $fullCount -ne 2) { throw "Phase 2 rollback checkpoint not reached: chain must be exactly two serial commits; phase1_count=$phase1Count phase2_count=$phase2Count full_count=$fullCount" }
+    $rollbackDir = 'tmp/r17-acceptance'
+    New-Item -ItemType Directory -Force $rollbackDir | Out-Null
+    $phase2Patch = "$rollbackDir/phase2-$phase2Checkpoint.rollback.patch"
+    $phase1Patch = "$rollbackDir/phase1-$phase1Checkpoint.rollback.patch"
+    & git diff --binary --full-index --no-renames --output=$phase2Patch "$phase1Checkpoint..$phase2Checkpoint"
+    if ($LASTEXITCODE) { throw 'Phase 2 rollback patch generation failed' }
+    if ($Target -eq 'baseline') {
+        & git diff --binary --full-index --no-renames --output=$phase1Patch "$baseline..$phase1Checkpoint"
+        if ($LASTEXITCODE) { throw 'Phase 1 rollback patch generation failed during full rollback validation' }
+    }
+    $temporaryIndex = [System.IO.Path]::GetFullPath("$rollbackDir/phase2-$phase2Checkpoint-$Target.index")
+    $previousIndex = $env:GIT_INDEX_FILE
+    try {
+        Remove-Item -LiteralPath $temporaryIndex -Force -ErrorAction SilentlyContinue
+        $env:GIT_INDEX_FILE = $temporaryIndex
+        & git read-tree $phase2Checkpoint
+        if ($LASTEXITCODE) { throw 'Phase 2 temporary index initialization failed' }
+        & git apply --cached --reverse --check $phase2Patch
+        if ($LASTEXITCODE) { throw "Phase 2 reverse-apply check failed: $phase2Patch" }
+        & git apply --cached --reverse $phase2Patch
+        if ($LASTEXITCODE) { throw "Phase 2 reverse-apply simulation failed: $phase2Patch" }
+        $rolledBackTree = (& git write-tree).Trim()
+        $phase1Tree = (& git rev-parse "$phase1Checkpoint`^{tree}").Trim()
+        if ($rolledBackTree -ne $phase1Tree) { throw "Phase 2 to Phase 1 tree mismatch: expected=$phase1Tree actual=$rolledBackTree" }
+        if ($Target -eq 'baseline') {
+            & git apply --cached --reverse --check $phase1Patch
+            if ($LASTEXITCODE) { throw "Full rollback Phase 1 reverse-apply check failed: $phase1Patch" }
+            & git apply --cached --reverse $phase1Patch
+            if ($LASTEXITCODE) { throw "Full rollback Phase 1 reverse-apply simulation failed: $phase1Patch" }
+            $rolledBackTree = (& git write-tree).Trim()
+            $baselineTree = (& git rev-parse "$baseline`^{tree}").Trim()
+            if ($rolledBackTree -ne $baselineTree) { throw "Full rollback baseline tree mismatch: expected=$baselineTree actual=$rolledBackTree" }
+        }
+    } finally {
+        $env:GIT_INDEX_FILE = $previousIndex
+        Remove-Item -LiteralPath $temporaryIndex -Force -ErrorAction SilentlyContinue
+    }
+    Write-Output "Phase 2 rollback checkpoint passed: target=$Target; baseline=$baseline; phase1=$phase1Checkpoint; phase2=$phase2Checkpoint; simulated_tree=$rolledBackTree"
+}
+
+# Run these as two separate acceptance commands after loading the helper.
+Test-R17Phase2Rollback -Target phase-1
+Test-R17Phase2Rollback -Target baseline
 ```
 
 ### Structural Exit And Reviewed Owners
@@ -1014,9 +1120,9 @@ branch when:
 - shared-spine paths point to `agents/capabilities.py`,
   `agents/composite.py`, and `agents/handoff.py`, while `plan_adapters.py` and
   `__main__.py` remain in place; and
-- all four Phase 1 commands passed on the trailer-bound Phase 1 checkpoint, and
-  every command from `Structural Exit And Reviewed Owners` onward passes on the
-  final Phase 2 checkpoint without substitution.
+- all four Phase 1 commands passed on the trailer-bound Phase 1 checkpoint;
+  both Phase 2 rollback targets and every command from `Structural Exit And
+  Reviewed Owners` onward pass on the final checkpoint without substitution.
 
 Technical debt #11 closes only when this leaf reaches `fixed_dev`. Closure is
 an 82-module high-coupling legacy-cohort transformation with 81 physical moves

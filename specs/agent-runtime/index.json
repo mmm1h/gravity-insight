@@ -93,10 +93,10 @@
         },
         {
           "id": "dynamic_import_audit_classification",
-          "satisfied": true,
-          "satisfied_by": "agent_under_standing_owner_delegation",
+          "satisfied": false,
+          "satisfied_by": null,
           "owner_review": "pending",
-          "second_review_gaps_closed": "spine rewrites now target agents/...; consumer syntax is classified before dated evidence; the validator applies an independent conservative rule and fails closed on disagreement; the errata allowlist is derived from this ledger instead of duplicating it",
+          "review_note": "third_ready_review_reproduced_false_negatives_for_importlib_import_module_dunder_import_sys_modules_indirect_string_variables_and_string_patch_targets_parallel_gate_fix_and_rebinding_pending",
           "ledger_regenerated_from": "scripts/generate_agent_module_reference_dispositions.py, which scans git-tracked files directly; the prior gitignored tmp audit is no longer an input",
           "ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
           "ledger_sha256": "2d69b014bb35d77860bc3dde686017a8c5041cbcdda112eeb683925c3cfb84b9",
