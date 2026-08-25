@@ -12,12 +12,14 @@ import unittest
 from tests.agent_migration_characterization import (
     KNOWN_ROOT_EXPORT_MODULE_COLLISIONS,
     PACKAGE_ROOT,
+    REFERENCE_DISPOSITIONS,
     ROOT,
     agent_path_classification,
     agent_path_references,
     eager_import_cycles,
     eager_import_sccs,
     expected_public_exports,
+    migration_module_names,
     root_export_module_collisions,
     unexpected_root_export_module_collisions,
 )
@@ -232,11 +234,87 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
     def test_eager_module_import_graph_has_no_migration_related_component(self) -> None:
         self.assertEqual([], eager_import_cycles(PACKAGE_ROOT))
 
+    def test_eager_detector_reports_a_migration_module_self_loop(self) -> None:
+        files = {
+            "__init__.py": "",
+            "agents/__init__.py": "",
+            "agents/batch.py": "import gravity_sdk.agents.batch\n",
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            package = Path(raw) / "gravity_sdk"
+            for relative, content in files.items():
+                path = package / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+
+            expected = [["gravity_sdk.agents.batch"]]
+            self.assertEqual(expected, eager_import_sccs(package))
+            self.assertEqual(expected, eager_import_cycles(package))
+
+    def test_eager_detector_does_not_invent_a_package_parent_self_loop(self) -> None:
+        files = {
+            "__init__.py": "",
+            "agents/__init__.py": "from . import batch\n",
+            "agents/batch.py": "",
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            package = Path(raw) / "gravity_sdk"
+            for relative, content in files.items():
+                path = package / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+
+            self.assertEqual([], eager_import_sccs(package))
+            self.assertEqual([], eager_import_cycles(package))
+
+    def test_eager_detector_uses_the_exact_reviewed_migration_ledger(self) -> None:
+        scope = json.loads(
+            REFERENCE_DISPOSITIONS.read_text(encoding="utf-8")
+        )["scope"]
+        expected = {
+            module
+            for move in scope["one_to_one_moves"]
+            for module in (move["old_module"], move["new_module"])
+        }
+        expected.update(
+            (
+                scope["consolidate_delete"]["old_module"],
+                scope["consolidate_delete"]["new_module"],
+            )
+        )
+        self.assertEqual(81, len(scope["one_to_one_moves"]))
+        self.assertEqual(164, len(expected))
+        self.assertEqual(expected, migration_module_names())
+        self.assertTrue(
+            set(scope["retained_modules"]).isdisjoint(migration_module_names())
+        )
+
+    def test_eager_detector_ignores_a_retained_only_component(self) -> None:
+        retained = "agent_" + "runtime_contracts"
+        files = {
+            "__init__.py": "",
+            f"{retained}.py": "from . import retained_peer\n",
+            "retained_peer.py": f"from . import {retained}\n",
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            package = Path(raw) / "gravity_sdk"
+            for relative, content in files.items():
+                path = package / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+
+            retained_component = [[
+                f"gravity_sdk.{retained}",
+                "gravity_sdk.retained_peer",
+            ]]
+            self.assertEqual(retained_component, eager_import_sccs(package))
+            self.assertEqual([], eager_import_cycles(package))
+
     def test_eager_detector_scopes_complete_graph_cycles_to_agent_modules(self) -> None:
         files = {
             "__init__.py": "",
             "agents/__init__.py": "",
-            "agents/bridge.py": "from ..sql import catalog\n",
+            "agents/batch.py": "from ..sql import catalog\n",
             "sql/__init__.py": "from . import catalog\n",
             "sql/catalog.py": "from . import products\n",
             "sql/products.py": "from . import query\n",
@@ -262,13 +340,13 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
 
             verification = package / "sql" / "verification.py"
             verification.write_text(
-                "from . import query\nfrom ..agents import bridge\n",
+                "from . import query\nfrom ..agents import batch\n",
                 encoding="utf-8",
             )
             crossing = eager_import_cycles(package)
 
         self.assertEqual([sorted([
-            "gravity_sdk.agents.bridge", *sql_component[0],
+            "gravity_sdk.agents.batch", *sql_component[0],
         ])], crossing)
 
 

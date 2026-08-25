@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Any
 import unittest
 
@@ -18,19 +19,20 @@ from scripts.audit_agent_module_references import (
 )
 from scripts.generate_agent_module_reference_dispositions import (
     ACTIVE_BARE_FILES,
+    ACTIVE_REFERENCE,
     AMBIGUOUS_REFERENCE,
     DATED_DECISION_RECORD,
     DELETED_MODULE_RECORD,
     RUNTIME_CONSUMER,
     build_document,
-    classify_active_bare_context,
+    classify_active_bare_context as generator_classify_active_bare_context,
     render_document,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
-LEDGER_SHA256 = "f20c0c0eaeec9e72a3be49a8d6ddfd1f2828be7741a68b80fe59b6aa023857ef"
+LEDGER_SHA256 = "b8757f005b89508e5b94d167b5c30725aa6c2ec38f064780ce6e0acf2ea2ac9f"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
     "bare_agent_string": 101,
@@ -70,6 +72,54 @@ def _canonical_sites_sha256(sites: list[dict[str, Any]]) -> str:
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
+
+
+def _validator_has_current_path_semantics(old_module: str, context: str) -> bool:
+    """Conservatively detect consumers without using the generator classifier."""
+
+    short = re.escape(old_module.removeprefix("gravity_sdk."))
+    names = rf"(?:(?:gravity_sdk\.)?{short}|\.{short})"
+    checks = (
+        rf"\b(?:from|import)\s+{names}(?:\s+import\b|\b)",
+        rf"{names}\s*\.(?!py\b)[A-Za-z_]\w*",
+        rf"{names}\s*\(",
+        rf"\b(?:getattr|__import__|import_module|patch|setattr)\s*\("
+        rf"[^\n)]{{0,160}}{names}",
+        rf"(?:src/gravity_sdk/)?{short}\.py",
+    )
+    return any(re.search(check, context, re.IGNORECASE) for check in checks)
+
+
+def _validator_is_dated_decision(context: str) -> bool:
+    return bool(
+        re.search(
+            r"(?:\u7acb\u9879|decision(?:\s+record)?)\s*[\uff08(]"
+            r"\d{4}-\d{2}-\d{2}[\uff09)]",
+            context,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _validator_is_deleted_module_fact(old_module: str, context: str) -> bool:
+    short = old_module.removeprefix("gravity_sdk.")
+    if '"consolidated_deleted_modules"' in context and f'"{short}"' in context:
+        return True
+    normalized = " ".join(context.lower().split())
+    position = normalized.find(short.lower())
+    if position < 0:
+        return False
+    window = normalized[max(0, position - 120):position + len(short) + 120]
+    return any(
+        marker in window
+        for marker in (
+            "\u5408\u5e76\u5220\u9664",
+            "consolidate/delete",
+            "consolidated and deleted",
+            "deleted module",
+            "removed module",
+        )
+    )
 
 
 def validate_ledger(document: dict[str, Any]) -> None:
@@ -170,6 +220,28 @@ def validate_ledger(document: dict[str, Any]) -> None:
                 move_mapping[action["old_module"]] == action["new_module"],
                 f"mismatched move pair at {key}",
             )
+            old_text = action.get("old_text")
+            new_text = action.get("new_text")
+            if isinstance(old_text, str) and old_text.endswith(".py"):
+                target_name = action["new_module"].removeprefix(
+                    "gravity_sdk.agents."
+                )
+                expected_text = (
+                    f"src/gravity_sdk/agents/{target_name}.py"
+                    if old_text.startswith("src/gravity_sdk/")
+                    else f"agents/{target_name}.py"
+                )
+                _require(
+                    new_text == expected_text,
+                    f"file rewrite target is ambiguous at {key}: {new_text!r}",
+                )
+                root_peer = ROOT / "src/gravity_sdk" / f"{target_name}.py"
+                root_peer_module = f"gravity_sdk.{target_name}"
+                if root_peer.is_file() and root_peer_module not in old_targets:
+                    _require(
+                        new_text != root_peer.name,
+                        f"rewrite target aliases unrelated root file at {key}",
+                    )
         elif disposition == "rewrite_selector_data":
             rewrites = action.get("rewrites", [])
             _require(
@@ -216,9 +288,17 @@ def validate_ledger(document: dict[str, Any]) -> None:
                 isinstance(snippet, str) and snippet in context,
                 f"source snippet is outside bounded context at {key}",
             )
-            context_kind = classify_active_bare_context(old_module, context)
+            current_path = _validator_has_current_path_semantics(
+                old_module, context
+            )
             if old_module == PAGINATION_MODULE:
-                if context_kind == DELETED_MODULE_RECORD:
+                if current_path:
+                    _require(
+                        disposition
+                        in {"rewrite_consolidated_reference", "blocker"},
+                        f"active consumer syntax must rewrite or block at {key}",
+                    )
+                elif _validator_is_deleted_module_fact(old_module, context):
                     _require(
                         disposition == "no_migration_effect"
                         and site.get("reason_code") == "deleted_module_governance_fact"
@@ -229,28 +309,28 @@ def validate_ledger(document: dict[str, Any]) -> None:
                         },
                         f"deleted-module fact must remain unchanged at {key}",
                     )
-                elif context_kind == RUNTIME_CONSUMER:
-                    _require(
-                        disposition in {"rewrite_consolidated_reference", "blocker"},
-                        f"pagination consumer must rewrite or block at {key}",
-                    )
                 else:
                     _require(
-                        context_kind == AMBIGUOUS_REFERENCE and disposition == "blocker",
+                        disposition == "blocker",
                         f"ambiguous pagination reference must block at {key}",
                     )
-            elif context_kind == DATED_DECISION_RECORD and old_module in old_targets:
-                _require(
-                    disposition == "no_migration_effect"
-                    and site.get("reason_code")
-                    == "dated_governance_decision_evidence"
-                    and reference
-                    == {
-                        "old_module": old_module,
-                        "candidate_new_module": move_mapping[old_module],
-                    },
-                    f"dated decision evidence must remain unchanged at {key}",
-                )
+            elif old_module in old_targets:
+                if current_path:
+                    _require(
+                        disposition in {"rewrite_reference", "blocker"},
+                        f"active consumer syntax must rewrite or block at {key}",
+                    )
+                elif site.get("reason_code") == "dated_governance_decision_evidence":
+                    _require(
+                        _validator_is_dated_decision(context)
+                        and disposition == "no_migration_effect"
+                        and reference
+                        == {
+                            "old_module": old_module,
+                            "candidate_new_module": move_mapping[old_module],
+                        },
+                        f"dated decision evidence must remain unchanged at {key}",
+                    )
         elif old_module == PAGINATION_MODULE:
             if str(source_site.get("file", "")).startswith("docs/archive/"):
                 _require(
@@ -266,6 +346,15 @@ def validate_ledger(document: dict[str, Any]) -> None:
 
     _require(dict(categories) == EXPECTED_CATEGORIES, "audit denominator changed")
     _require(dict(dispositions) == EXPECTED_DISPOSITIONS, "dispositions changed")
+    reason_counts = Counter(site.get("reason_code") for site in sites)
+    _require(
+        reason_counts["deleted_module_governance_fact"] == 3,
+        "deleted-module governance facts changed",
+    )
+    _require(
+        reason_counts["dated_governance_decision_evidence"] == 2,
+        "dated governance decision evidence changed",
+    )
     summary = document.get("summary", {})
     _require(summary.get("site_count") == len(sites), "declared site count differs")
     _require(summary.get("unique_source_keys") == len(set(keys)), "key count differs")
@@ -344,7 +433,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertEqual(
             {DELETED_MODULE_RECORD},
             {
-                classify_active_bare_context(
+                generator_classify_active_bare_context(
                     PAGINATION_MODULE,
                     site["source"]["audit_context"],
                 )
@@ -357,7 +446,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         ):
             self.assertEqual(
                 DELETED_MODULE_RECORD,
-                classify_active_bare_context(PAGINATION_MODULE, context),
+                generator_classify_active_bare_context(PAGINATION_MODULE, context),
             )
         for context in (
             "from gravity_sdk.agent_pagination import compact_pagination",
@@ -368,11 +457,11 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         ):
             self.assertEqual(
                 RUNTIME_CONSUMER,
-                classify_active_bare_context(PAGINATION_MODULE, context),
+                generator_classify_active_bare_context(PAGINATION_MODULE, context),
             )
         self.assertEqual(
             AMBIGUOUS_REFERENCE,
-            classify_active_bare_context(
+            generator_classify_active_bare_context(
                 PAGINATION_MODULE,
                 "Review agent_pagination before R17 starts.",
             ),
@@ -407,6 +496,76 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             )
         )
 
+    def test_consumer_syntax_takes_precedence_over_dated_evidence(self) -> None:
+        consumers = {
+            "import": "from gravity_sdk.agent_batch import capabilities_many",
+            "call": "gravity_sdk.agent_batch.capabilities_many([])",
+            "patch": "patch('gravity_sdk.agent_batch.capabilities_many')",
+            "attribute": "handler = gravity_sdk.agent_batch.capabilities_many",
+        }
+        for form, consumer in consumers.items():
+            context = f"Decision record (2026-08-26)\n{consumer}"
+            with self.subTest(form=form):
+                self.assertEqual(
+                    ACTIVE_REFERENCE,
+                    generator_classify_active_bare_context(
+                        "gravity_sdk.agent_batch", context
+                    ),
+                )
+
+    def test_six_short_spine_rewrites_keep_the_agents_directory(self) -> None:
+        paths = {"AGENTS.md", "specs/agent-runtime/architecture-source.md"}
+        rows = [
+            site
+            for site in self.document["sites"]
+            if site["source"].get("file") in paths
+            and site["migration_action"].get("old_module")
+            in {
+                "gravity_sdk.agent_capabilities",
+                "gravity_sdk.agent_composite",
+                "gravity_sdk.agent_handoff",
+            }
+            and site["migration_action"].get("old_text", "").endswith(".py")
+        ]
+        self.assertEqual(6, len(rows))
+        self.assertEqual(
+            {
+                "agents/capabilities.py",
+                "agents/composite.py",
+                "agents/handoff.py",
+            },
+            {site["migration_action"]["new_text"] for site in rows},
+        )
+
+    def test_rewrite_targets_cannot_alias_unrelated_existing_root_files(self) -> None:
+        conflicts: list[str] = []
+        for site in self.document["sites"]:
+            action = site.get("migration_action", {})
+            new_text = str(action.get("new_text", "")).replace("\\", "/")
+            new_module = action.get("new_module")
+            if not new_text.endswith(".py") or not isinstance(new_module, str):
+                continue
+            root_peer = ROOT / "src/gravity_sdk" / Path(new_text).name
+            root_peer_module = f"gravity_sdk.{Path(new_text).stem}"
+            related = {
+                PAGINATION_TARGET,
+                *{
+                    move["old_module"]
+                    for move in self.document["scope"]["one_to_one_moves"]
+                },
+                *{
+                    move["new_module"]
+                    for move in self.document["scope"]["one_to_one_moves"]
+                },
+            }
+            if (
+                root_peer.is_file()
+                and root_peer_module not in related
+                and new_text == Path(new_text).name
+            ):
+                conflicts.append(f"{site['source_key']} -> {new_text}")
+        self.assertEqual([], conflicts, f"ambiguous root-file rewrite targets: {conflicts}")
+
     def test_validator_rejects_consumer_disguised_as_no_effect(self) -> None:
         injected = copy.deepcopy(self.document)
         site = next(
@@ -419,9 +578,40 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         site["source"]["audit_context"] = consumer
         with self.assertRaisesRegex(
             AssertionError,
-            "pagination consumer must rewrite or block",
+            "active consumer syntax must rewrite or block",
         ):
             validate_ledger(injected)
+
+    def test_validator_independently_rejects_dated_consumer_syntax(self) -> None:
+        injected = copy.deepcopy(self.document)
+        site = next(
+            item
+            for item in injected["sites"]
+            if item.get("reason_code") == "dated_governance_decision_evidence"
+            and item["source"].get("old_value") == "agent_batch"
+        )
+        consumers = {
+            "import": "from gravity_sdk.agent_batch import capabilities_many",
+            "call": "gravity_sdk.agent_batch.capabilities_many([])",
+            "patch": "patch('gravity_sdk.agent_batch.capabilities_many')",
+            "attribute": "handler = gravity_sdk.agent_batch.capabilities_many",
+        }
+        for form, consumer in consumers.items():
+            mutated = copy.deepcopy(injected)
+            mutated_site = next(
+                item
+                for item in mutated["sites"]
+                if item["source_key"] == site["source_key"]
+            )
+            mutated_site["source"]["audit_snippet"] = consumer
+            mutated_site["source"]["audit_context"] = (
+                f"Decision record (2026-08-26)\n{consumer}"
+            )
+            with self.subTest(form=form), self.assertRaisesRegex(
+                AssertionError,
+                "active consumer syntax must rewrite or block",
+            ):
+                validate_ledger(mutated)
 
     def test_validator_rejects_required_regressions(self) -> None:
         mutations: dict[str, Any] = {}
