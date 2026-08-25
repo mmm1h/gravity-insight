@@ -45,6 +45,22 @@
       "dependencies": [],
       "parallel_group": "structural-migration",
       "shared_spine": true,
+      "delivery_mode": "leaf",
+      "scope": {
+        "classifier": "facade_reachable_static_import_closure_v1",
+        "candidate_root_modules": 83,
+        "agent_domain_modules": 82,
+        "migrated_modules": 81,
+        "consolidated_deleted_modules": ["agent_pagination"],
+        "excluded_modules": ["agent_runtime_contracts"],
+        "final_root_python_files": 496,
+        "final_root_agent_prefixed_modules": 1,
+        "core_modules": 34,
+        "moved_peripheral_modules": 47,
+        "core_to_moved_peripheral_edges": 152,
+        "moved_peripheral_to_core_edges": 0,
+        "non_agent_to_moved_module_edges": 17
+      },
       "ready_prerequisites": [
         {
           "id": "m0_characterization",
