@@ -4,21 +4,6 @@
 
 ## 当前条目
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
-### 1. Material/Promotion 重复实现多平台结果重建
-**状态（2026-08-20）**：`component_aggregate.py` 已下沉 `aggregate_status`、`aggregate_exit_code` 与单组件
-category→exit；两产品仍各自拥有 operation、字段和文案。
-- **已证实的分叉**：Material receipt 接受 `size=1..1000` 且非空 totals 可大于观察值；Promotion 固定 `size=10`
-  且 totals 必须等于观察值。`safe_component`/`_safe_success`、`product_envelope` 分别持有单/多 operation、
-  Promotion App/window/metrics binding、允许 data 字段和领域结果字段。
-- **剩余证据债**：Material `_safe_rows` 是固定字段/scalar/key 规范化；Promotion `safe_promotion_rows` 合并
-  平台和 request metrics、拒绝非字符串 key，并对合同派生 opaque JSON 实施独立深度/元素/大小边界和无值失败。
-  `_primary_error` 缺失 error 时各自调用 `contract_component`，operation identity 和文案不同。现有 characterization
-  未覆盖全部 Mapping/key/scalar 与 malformed-error 边界。
-- **触发条件**：任一产品改标量 row copy/primary error selection，或出现第三个同类多平台产品；page receipt
-  已确认是领域差异，单侧改动不触发。
-- **退出条件**：仅在 characterization 覆盖两边全部上述边界时，下沉一个已证明等价的窄操作；allowlist、
-  operation identity 和 fallback 文案留在 owner。不能无 mode/callback 直调就保留分叉；不统一整文件或造 DSL。
-
 ### 2. legacy promotion snapshot 的兼容分支仍缺正式绑定
 **状态（2026-08-20）**：`primary` 的 21 个正式平台复用 Promotion Performance 的 App、日期、平台/指标和结果
 绑定；其余层级及 `bing/xiaohongshu/taptap/wechat_video` 仍走兼容读取。
@@ -94,3 +79,4 @@ category→exit；两产品仍各自拥有 operation、字段和文案。
   `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
 - 2026-08-20：Agent 有界无 spec 路由改用 `NO_SPEC_PRODUCTS`，`REPORT_PRODUCTS` 保留同对象兼容别名。
 - 2026-08-25：CT03 跨产物绑定、exact revision/index 与跨 Python archive 确定性缺口关闭。
+- 2026-08-25：Material/Promotion 行与 malformed-error 边界 characterization 补齐，仅下沉等价的有界 JSON scalar 谓词。
