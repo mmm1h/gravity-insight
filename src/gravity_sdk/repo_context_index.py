@@ -20,6 +20,10 @@ from .repo_context_git import (
     git_snapshot,
     tracked_files as _tracked_files,
 )
+from .repo_context_ignore import (
+    assert_ignore_rules as _assert_ignore_rules,
+    read_ignore_rules as _ignore_rules,
+)
 from .repo_context_structure import extract_structure
 
 
@@ -44,6 +48,8 @@ _SENSITIVE_PARTS = frozenset(
     }
 )
 _SENSITIVE_SUFFIXES = frozenset({".pem", ".key", ".p12", ".pfx", ".xlsx", ".csv"})
+
+
 def build_repo_index(
     root: Path,
     *,
@@ -54,8 +60,10 @@ def build_repo_index(
     limits = provider["contract"]["limits"]
     tracked = _tracked_files(root)
     dirty = _dirty_files(root)
+    ignore_snapshot, gravity_ignored = _ignore_rules(root)
     git_ignored = _git_ignored(root, tracked)
-    gravity_ignored = _gravity_ignore_patterns(root)
+    _assert_ignore_rules(root, ignore_snapshot)
+    snapshot = {**snapshot, "ignore_rules": ignore_snapshot}
     entries: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
     total_bytes = 0
@@ -86,9 +94,11 @@ def build_repo_index(
             continue
         entries.append(entry)
         total_bytes += entry["size_bytes"]
-    if _dirty_files(root) != dirty or git_snapshot(root)["source_revision"] != snapshot[
-        "source_revision"
-    ]:
+    _assert_ignore_rules(root, snapshot["ignore_rules"])
+    if (
+        _dirty_files(root) != dirty
+        or git_snapshot(root)["source_revision"] != snapshot["source_revision"]
+    ):
         raise ContextContractError(
             "CONTEXT_SNAPSHOT_CHANGED", "Repository changed while indexing"
         )
@@ -174,7 +184,7 @@ def search_repo_index(
     maximum: int,
     excerpt_lines: int,
 ) -> dict[str, Any]:
-    _assert_index_revision(root, index)
+    _assert_index_snapshot(root, index)
     assert_clean_paths(root, [entry["path"] for entry in index["entries"]])
     tokens = _query_tokens(query)
     candidates: list[tuple[int, str, int, dict[str, Any]]] = []
@@ -214,7 +224,7 @@ def search_repo_index(
                 candidates.append((score, entry["path"], 1, result))
     ordered = sorted(candidates, key=lambda item: (-item[0], item[1], item[2]))
     results = [result for _score, _path, _line, result in ordered[:maximum]]
-    _assert_index_revision(root, index)
+    _assert_index_snapshot(root, index)
     assert_clean_paths(root, [entry["path"] for entry in index["entries"]])
     return {
         "schema_version": "gravity.repo-context-search.v1",
@@ -235,7 +245,7 @@ def get_repo_resource(
     *,
     maximum_lines: int,
 ) -> dict[str, Any]:
-    _assert_index_revision(root, index)
+    _assert_index_snapshot(root, index)
     entry, start, end = _select_uri(index, uri, maximum_lines)
     assert_clean_paths(root, [entry["path"]])
     path = root.joinpath(*PurePosixPath(entry["path"]).parts)
@@ -257,7 +267,7 @@ def get_repo_resource(
         raise ContextContractError(
             "CONTEXT_SNAPSHOT_CHANGED", "Repository resource changed after indexing"
         )
-    _assert_index_revision(root, index)
+    _assert_index_snapshot(root, index)
     assert_clean_paths(root, [entry["path"]])
     lines = content.splitlines()
     selected = "\n".join(lines[start - 1 : end])
@@ -276,19 +286,14 @@ def get_repo_resource(
     }
 
 
-def _gravity_ignore_patterns(root: Path) -> tuple[str, ...]:
-    path = root / ".gravityignore"
-    if not path.is_file() or path.is_symlink():
-        return ()
-    try:
-        content, _encoded = _read_utf8(path)
-    except (OSError, UnicodeError):
-        return ()
-    return tuple(
-        line.strip().lstrip("/")
-        for line in content.splitlines()
-        if line.strip() and not line.lstrip().startswith(("#", "!"))
-    )
+def _assert_index_snapshot(root: Path, index: Mapping[str, Any]) -> None:
+    _assert_index_revision(root, index)
+    expected = index.get("snapshot", {}).get("ignore_rules")
+    if not isinstance(expected, Mapping):
+        raise ContextContractError(
+            "CONTEXT_SNAPSHOT_CHANGED", "Repository ignore rule snapshot is missing"
+        )
+    _assert_ignore_rules(root, expected)
 
 
 def read_context_file(
@@ -302,12 +307,15 @@ def read_context_file(
     relative = normalized_requirement_path(relative)
     path = PurePosixPath(relative)
     dirty = _dirty_files(root) if require_tracked else set()
+    ignore_snapshot, gravity_ignored = _ignore_rules(root)
+    git_ignored = _git_ignored(root, [relative]) if require_tracked else set()
+    _assert_ignore_rules(root, ignore_snapshot)
     reason = _path_exclusion(
         relative,
         set(),
-        _gravity_ignore_patterns(root),
+        gravity_ignored,
         {"max_path_depth": max_depth},
-        git_ignored=_git_ignored(root, [relative]) if require_tracked else set(),
+        git_ignored=git_ignored,
     )
     if reason is not None:
         raise ContextContractError(reason, "Context resource is not readable")
