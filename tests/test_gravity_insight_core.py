@@ -2595,6 +2595,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         }
         authorization = policy._prepare_request(operation.operation_id, caller_inputs)
         failure = []
+        finished = threading.Event()
 
         def send():
             try:
@@ -2608,14 +2609,19 @@ class GravityInsightCoreTests(unittest.TestCase):
                 )
             except BaseException as exc:  # pragma: no cover - asserted below
                 failure.append(exc)
+            finally:
+                finished.set()
 
         thread = threading.Thread(target=send)
         thread.start()
-        self.assertTrue(entered.wait(2))
-        caller_inputs["filters"][0]["field"] = "new_sensitive_field"
-        authorization.body["filters"][0]["field"] = "new_sensitive_field"
-        release.set()
-        thread.join(2)
+        try:
+            self.assertTrue(entered.wait(30))
+            caller_inputs["filters"][0]["field"] = "new_sensitive_field"
+            authorization.body["filters"][0]["field"] = "new_sensitive_field"
+        finally:
+            release.set()
+        self.assertTrue(finished.wait(30))
+        thread.join()
         self.assertFalse(thread.is_alive())
         self.assertEqual([], failure)
         self.assertEqual("id", session.wire_body["filters"][0]["field"])

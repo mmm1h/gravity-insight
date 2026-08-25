@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import socket
 import sys
 import tempfile
 import threading
@@ -11,6 +12,7 @@ import unittest
 from unittest.mock import patch
 
 from gravity_sdk.external_context_provider import subprocess_context_provider
+from gravity_sdk import provider_rpc_transport as transport_module
 from gravity_sdk.provider_rpc_transport import SubprocessProviderTransport
 from tests.test_external_context_contracts import provider_descriptor
 
@@ -23,6 +25,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import socket
 
 request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
 mode = sys.argv[1]
@@ -81,10 +84,9 @@ elif mode == "failure":
     sys.stderr.flush()
     raise SystemExit(7)
 elif mode == "wait":
-    ready, done = Path(sys.argv[2]), Path(sys.argv[3])
-    ready.write_text("ready", encoding="utf-8")
-    time.sleep(1)
-    done.write_text("done", encoding="utf-8")
+    with socket.create_connection(("127.0.0.1", int(sys.argv[2]))) as ready:
+        ready.sendall(b"ready")
+        ready.recv(1)
 elif mode == "tree-timeout":
     marker = Path(sys.argv[2])
     child = "import time; from pathlib import Path; time.sleep(0.4); Path(r'" + str(marker) + "').write_text('escaped', encoding='utf-8')"
@@ -135,7 +137,7 @@ class ProviderSubprocessTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def descriptor(self, mode: str, *arguments: Path) -> dict:
+    def descriptor(self, mode: str, *arguments: str | Path) -> dict:
         binding = {
             "executable": str(Path(sys.executable).resolve()),
             "arguments": [str(self.script), mode, *(str(item) for item in arguments)],
@@ -215,36 +217,61 @@ class ProviderSubprocessTests(unittest.TestCase):
                 self.assertNotIn("private-provider-secret", json.dumps(result))
 
     def test_cancellation_terminates_the_fixture_before_it_can_finish(self) -> None:
-        ready = self.root / "ready"
-        done = self.root / "done"
-        descriptor = self.descriptor("wait", ready, done)
-        descriptor["rpc"]["timeout_ms"] = 2000
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
+        listener.settimeout(30)
+        port = str(listener.getsockname()[1])
+        descriptor = self.descriptor("wait", port)
+        descriptor["rpc"]["timeout_ms"] = 30_000
         descriptor["rpc"]["cancellation_grace_ms"] = 1000
         cancellation = threading.Event()
         provider = subprocess_context_provider(descriptor, work_root=self.root)
         holder: dict[str, dict] = {}
-        thread = threading.Thread(
-            target=lambda: holder.setdefault(
-                "result",
-                provider.read(
-                    "provider://team/docs/fact", cancellation=cancellation
-                ),
-            )
-        )
-        thread.start()
-        deadline = time.monotonic() + 1
-        while not ready.exists() and time.monotonic() < deadline:
-            time.sleep(0.01)
-        self.assertTrue(ready.exists())
-        cancellation.set()
-        thread.join(timeout=2)
+        completed = threading.Event()
+        processes = []
+        launch = transport_module.subprocess.Popen
 
-        self.assertFalse(thread.is_alive())
-        self.assertEqual(
-            ["PROVIDER_RPC_CANCELLED"], holder["result"]["reason_codes"]
-        )
-        time.sleep(1.1)
-        self.assertFalse(done.exists())
+        def record_launch(*args, **kwargs):
+            process = launch(*args, **kwargs)
+            processes.append(process)
+            return process
+
+        def read() -> None:
+            try:
+                holder["result"] = provider.read(
+                    "provider://team/docs/fact", cancellation=cancellation
+                )
+            finally:
+                completed.set()
+
+        connection = None
+        with patch.object(transport_module.subprocess, "Popen", side_effect=record_launch):
+            thread = threading.Thread(target=read)
+            thread.start()
+            try:
+                connection, _address = listener.accept()
+                self.assertEqual(b"ready", connection.recv(5))
+                cancellation.set()
+                self.assertTrue(completed.wait(30))
+                thread.join()
+                self.assertEqual(
+                    ["PROVIDER_RPC_CANCELLED"], holder["result"]["reason_codes"]
+                )
+                self.assertEqual(1, len(processes))
+                self.assertIsNotNone(processes[0].poll())
+            finally:
+                cancellation.set()
+                if connection is not None:
+                    try:
+                        connection.sendall(b"x")
+                    except OSError:
+                        pass
+                    connection.close()
+                listener.close()
+                if thread.is_alive():
+                    self.assertTrue(completed.wait(30))
+                    thread.join()
 
     def test_timeout_terminates_the_entire_spawned_process_tree(self) -> None:
         escaped = self.root / "child-escaped"

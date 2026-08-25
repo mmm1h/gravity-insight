@@ -212,15 +212,18 @@ class GravityHttpRuntimeTests(unittest.TestCase):
                 first_sleep = len(delays) == 1
             if first_sleep:
                 initial_sleep_entered.set()
-                self.assertTrue(release_initial_sleep.wait(2))
+                self.assertTrue(release_initial_sleep.wait(30))
             now[0] += delay
 
         with ThreadPoolExecutor(max_workers=1) as pool:
             waiting = pool.submit(limiter.acquire, GRAVITY_HOST, sleep)
-            self.assertTrue(initial_sleep_entered.wait(2))
-            limiter.defer(GRAVITY_HOST, 3.0)
-            release_initial_sleep.set()
-            total_delay = waiting.result(timeout=3)
+            try:
+                self.assertTrue(initial_sleep_entered.wait(30))
+                limiter.defer(GRAVITY_HOST, 3.0)
+                release_initial_sleep.set()
+                total_delay = waiting.result(timeout=30)
+            finally:
+                release_initial_sleep.set()
 
         self.assertGreaterEqual(total_delay, 3.0)
         self.assertEqual(2, len(delays))

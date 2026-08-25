@@ -60,13 +60,6 @@
 - **退出条件**：获批结构迁移 Requirement 记录写入范围、现状刻画、消费者迁移/回滚，并迁入至少一个经证明的高耦合领域，
   同时保持公开 surface 与能力；不得以改名或空目录关闭。
 
-### 12. Provider 与 Adaptive Governor 测试仍含全量门禁顺序相关的计时 oracle
-- **可测事实**：Provider 私有 gap 测试单跑约 0.30s 全过；全量时共享 `timeout_ms: 200` 与 Python 冷启动竞争，
-  `PROVIDER_RPC_TIMEOUT` 会误成 `PROVIDER_RPC_MALFORMED`；`test_adaptive_governor.py:483` 也把 0.5 秒真实等待
-  当 oracle。修复进行中，未实际关闭前保留。
-- **影响边界**：只影响全量测试确定性和失败分类，不改变产品授权或功能语义。
-- **退出条件**：以同步事件/可控时钟替代真实等待，Provider fixture 不再竞争冷启动超时，相关测试在完整门禁稳定给出
-  预期分类；关闭时删除正文并在下方留一行历史。
 ## 已关闭
 
 - 2026-08-25：#8 Title Package 已从编译合同派生 opaque JSON 字段，复用有界深度、元素和大小投影；未登记和非 opaque 标量规则仍 fail-closed。
@@ -78,3 +71,4 @@
 - 2026-08-25：Material/Promotion 行与 malformed-error 边界 characterization 补齐，仅下沉等价的有界 JSON scalar 谓词。
 - 2026-08-25：Windows Provider Job 绑定债关闭：挂起启动，绑定/恢复失败以 `PROVIDER_RPC_ISOLATION_FAILED` 在 RPC 前回收。
 - 2026-08-25：Repo Context ignore 债关闭：两份规则绑定存在性/SHA-256，无效或漂移均 stable fail-closed。
+- 2026-08-25：Provider 与 Adaptive Governor 全量门禁计时 oracle 债关闭；并发测试均改为同步握手与 30 秒死锁保险。

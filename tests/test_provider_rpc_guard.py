@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import json
 import threading
-import time
 import unittest
 
 from gravity_sdk.external_context_contract import ExternalContextContractError
@@ -222,51 +221,66 @@ class ProviderRpcGuardTests(unittest.TestCase):
         timeout_descriptor = provider_descriptor()
         timeout_descriptor["rpc"]["timeout_ms"] = 30
         timeout_descriptor["rpc"]["max_attempts"] = 1
+        cancelled = threading.Event()
+        release = threading.Event()
         completed = threading.Event()
 
         def slow(request, cancel):
-            cancel.wait(1)
+            cancel.wait()
+            cancelled.set()
+            release.wait(30)
             completed.set()
             return response(request["request_id"])
 
         timeout_guard = ProviderRpcGuard(
             timeout_descriptor, CallableProviderTransport("host", slow)
         )
-        started = time.monotonic()
-        timed_out = timeout_guard.invoke(
-            "read", {"resource_uri": "provider://team/docs/fact"}
-        )
-        elapsed = time.monotonic() - started
-        self.assertLess(elapsed, 0.3)
-        self.assertEqual(["PROVIDER_RPC_TIMEOUT"], timed_out["reason_codes"])
-        self.assertTrue(completed.wait(0.5))
+        try:
+            timed_out = timeout_guard.invoke(
+                "read", {"resource_uri": "provider://team/docs/fact"}
+            )
+            self.assertEqual(["PROVIDER_RPC_TIMEOUT"], timed_out["reason_codes"])
+            self.assertTrue(cancelled.wait(30))
+            self.assertFalse(completed.is_set())
+        finally:
+            release.set()
+        self.assertTrue(completed.wait(30))
 
         cancellation = threading.Event()
         entered = threading.Event()
 
         def cancellable(request, cancel):
             entered.set()
-            cancel.wait(1)
+            cancel.wait()
             return response(request["request_id"])
 
         cancel_guard = ProviderRpcGuard(
             provider_descriptor(), CallableProviderTransport("host", cancellable)
         )
         holder: dict[str, dict] = {}
-        thread = threading.Thread(
-            target=lambda: holder.setdefault(
-                "result",
-                cancel_guard.invoke(
+        finished = threading.Event()
+
+        def invoke() -> None:
+            try:
+                holder["result"] = cancel_guard.invoke(
                     "read",
                     {"resource_uri": "provider://team/docs/fact"},
                     cancellation=cancellation,
-                ),
-            )
+                )
+            finally:
+                finished.set()
+
+        thread = threading.Thread(
+            target=invoke,
         )
         thread.start()
-        self.assertTrue(entered.wait(0.5))
-        cancellation.set()
-        thread.join(timeout=0.5)
+        try:
+            self.assertTrue(entered.wait(30))
+            cancellation.set()
+            self.assertTrue(finished.wait(30))
+        finally:
+            cancellation.set()
+        thread.join()
         self.assertFalse(thread.is_alive())
         self.assertEqual(
             ["PROVIDER_RPC_CANCELLED"], holder["result"]["reason_codes"]
