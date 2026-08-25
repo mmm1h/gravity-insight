@@ -36,6 +36,7 @@ from gravity_sdk.execution_variant_contract import (
 )
 from gravity_sdk.execution_variant_selection import selection_digest
 from gravity_sdk.plan import AdapterContext
+from gravity_sdk.plan_analysis_adapter import execute_analysis_query_plan
 from gravity_sdk.workspace import load_workspace
 from scripts.generate_execution_variant_characterization import (
     PRIVATE_EVENT,
@@ -368,6 +369,131 @@ class ExecutionVariantServiceTests(unittest.TestCase):
                         ],
                     )
                     self.assertFalse(result["automatic_selection"])
+
+    def test_public_analysis_entry_executes_the_selected_direct_or_plan_owner(self) -> None:
+        workspace = load_workspace(ROOT / "examples" / "workspace")
+        request = _request()
+        owner_calls = []
+        outputs = []
+
+        with patch.dict(
+            os.environ,
+            {"GRAVITY_EXECUTION_VARIANT_MODE": "automatic"},
+            clear=True,
+        ):
+            for uri in (DIRECT_VARIANT_URI, PLAN_VARIANT_URI):
+                insight = _FixtureInsight(_result("success"))
+                sdk = GravitySDK(insight=insight, workspace=workspace)
+                service = _selection_service()
+                sdk._execution_variants_service = service
+                with (
+                    patch.object(
+                        service, "select", wraps=service.select
+                    ) as select_owner,
+                    patch.object(
+                        sdk,
+                        "_analysis_query_direct",
+                        wraps=sdk._analysis_query_direct,
+                    ) as direct_owner,
+                    patch(
+                        "gravity_sdk.plan_analysis_adapter.execute_analysis_query_plan",
+                        wraps=execute_analysis_query_plan,
+                    ) as plan_owner,
+                ):
+                    result = sdk.analysis_query(
+                        request["kind"],
+                        copy.deepcopy(request["spec"]),
+                        app=request["app"],
+                        pinned_variant_uri=uri,
+                    )
+
+                with self.subTest(uri=uri):
+                    self.assertEqual("success", result["status"])
+                    select_owner.assert_called_once_with(
+                        PRODUCT_SELECTOR, pinned_variant_uri=uri
+                    )
+                    self.assertEqual(1, direct_owner.call_count)
+                    self.assertEqual(uri == PLAN_VARIANT_URI, plan_owner.called)
+                    self.assertEqual(1, len(insight.reads))
+                    self.assertEqual(
+                        "analysis.event.query", insight.reads[0]["operation_id"]
+                    )
+                owner_calls.append((direct_owner.call_count, plan_owner.call_count))
+                outputs.append(result)
+
+        self.assertEqual([(1, 0), (1, 1)], owner_calls)
+        self.assertEqual(outputs[0], outputs[1])
+        self.assertNotIn("request", outputs[0])
+
+    def test_public_analysis_entry_applies_trust_and_kill_switch_before_plan(self) -> None:
+        workspace = load_workspace(ROOT / "examples" / "workspace")
+        request = _request()
+        cases = (
+            ("blocked", "automatic"),
+            ("stable", "disabled"),
+        )
+        for trust_status, mode in cases:
+            insight = _FixtureInsight(_result("success"))
+            sdk = GravitySDK(insight=insight, workspace=workspace)
+            sdk._execution_variants_service = _selection_service(
+                trust_status, ("CAPABILITY_VALIDATION_MISSING",)
+            )
+            with (
+                patch.dict(
+                    os.environ,
+                    {"GRAVITY_EXECUTION_VARIANT_MODE": mode},
+                    clear=True,
+                ),
+                patch.object(
+                    sdk,
+                    "_analysis_query_direct",
+                    wraps=sdk._analysis_query_direct,
+                ) as direct_owner,
+                patch(
+                    "gravity_sdk.plan_analysis_adapter.execute_analysis_query_plan",
+                    wraps=execute_analysis_query_plan,
+                ) as plan_owner,
+            ):
+                result = sdk.analysis_query(
+                    request["kind"],
+                    copy.deepcopy(request["spec"]),
+                    app=request["app"],
+                    pinned_variant_uri=PLAN_VARIANT_URI,
+                )
+
+            with self.subTest(trust_status=trust_status, mode=mode):
+                self.assertEqual("success", result["status"])
+                self.assertEqual(1, direct_owner.call_count)
+                self.assertFalse(plan_owner.called)
+                self.assertEqual(1, len(insight.reads))
+
+    def test_public_analysis_entry_fails_closed_before_invalid_selection_executes(self) -> None:
+        workspace = load_workspace(ROOT / "examples" / "workspace")
+        request = _request()
+        cases = (
+            ("automatic", "gravity.execution-variant/unknown/path@1"),
+            ("experimental", PLAN_VARIANT_URI),
+        )
+        for mode, uri in cases:
+            insight = _FixtureInsight(_result("success"))
+            sdk = GravitySDK(insight=insight, workspace=workspace)
+            sdk._execution_variants_service = _selection_service()
+            with (
+                patch.dict(
+                    os.environ,
+                    {"GRAVITY_EXECUTION_VARIANT_MODE": mode},
+                    clear=True,
+                ),
+                self.assertRaises(InputValidationError),
+            ):
+                sdk.analysis_query(
+                    request["kind"],
+                    copy.deepcopy(request["spec"]),
+                    app=request["app"],
+                    pinned_variant_uri=uri,
+                )
+            with self.subTest(mode=mode, uri=uri):
+                self.assertEqual([], insight.reads)
 
     def test_disabled_mode_is_canonical_and_unknown_mode_fails_after_trust(self) -> None:
         calls = []

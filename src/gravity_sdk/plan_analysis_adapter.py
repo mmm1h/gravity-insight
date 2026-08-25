@@ -268,13 +268,16 @@ def execute_analysis_query_plan(
         "output_fields": context.output_fields or None,
     }
     snapshot = request.get("metadata_snapshot")
+    query_owner = getattr(sdk, "_analysis_query_direct", None)
+    if not callable(query_owner):
+        query_owner = sdk.analysis_query
     if snapshot is None:
-        result = sdk.analysis_query(
+        result = query_owner(
             request.get("kind"), request.get("spec"), **options
         )
     else:
         with use_field_metadata_loader(metadata_snapshot_loader(snapshot)):
-            result = sdk.analysis_query(
+            result = query_owner(
                 request.get("kind"), request.get("spec"), **options
             )
     return safe_analysis_envelope(
