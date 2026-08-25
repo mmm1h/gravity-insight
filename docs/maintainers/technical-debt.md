@@ -53,14 +53,6 @@
   并修正合同；另 28 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
   短页、满页启发式提级或全量生产探测。
 
-### 8. Title Package 的行校验会拒绝合同已声明的 opaque JSON 字段
-- **证据**：两项 Title Package operation 将 `title_list` 同时登记为 `item_keys`/`opaque_json_item_keys`，但
-  `title_package.py` 对每个行字段做 `_scalar`，非空 list/dict 因而整批 `return None`。代码能证明该条件，
-  不能证明生产响应实际非空；#27 有生产复现而本条没有。
-- **触发条件**：生产 `title_list` 为非空 list/dict，或调用方报告产品拒绝单跑成功的 operation。
-- **退出条件**：取得触发证据后，从合同派生 opaque 边界并施加独立深度/元素/序列化大小上限；未登记字段、类型变化
-  和非 opaque 标量规则继续 fail-closed，不能放宽为任意值。
-
 ### 9. Windows Provider RPC 在 Job Object 绑定失败后仍可启动
 - **可测事实**：`provider_rpc_transport.py:228` 忽略 `attach_windows_job(process)` 的 `False`；绑定失败后 RPC 继续运行，
   子进程及后代不受 Job 关闭约束，可越过 timeout/会话生命周期。
@@ -90,6 +82,8 @@
 - **退出条件**：以同步事件/可控时钟替代真实等待，Provider fixture 不再竞争冷启动超时，相关测试在完整门禁稳定给出
   预期分类；关闭时删除正文并在下方留一行历史。
 ## 已关闭
+
+- 2026-08-25：#8 Title Package 已从编译合同派生 opaque JSON 字段，复用有界深度、元素和大小投影；未登记和非 opaque 标量规则仍 fail-closed。
 2026-08-19 以前关闭项见[清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)。
 - 2026-08-20：Census POST 读词元债关闭，`uncovered_read` 仅保留安全方法/exact 静态确认，其余为
   `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
