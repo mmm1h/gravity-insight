@@ -16,9 +16,11 @@ import unittest
 from unittest.mock import patch
 
 import scripts.generate_agent_module_reference_dispositions as checkpoint_generator
+import scripts.validate_r17_canonical_source_errata as errata_validator
 from scripts.audit_agent_module_references import (
     GENERATED_GOVERNANCE_FILES,
     GOVERNANCE_EXCLUSION_RULE,
+    Finding,
     ReferenceScanner,
     is_generated_governance_artifact,
     make_module_map,
@@ -35,6 +37,7 @@ from scripts.generate_agent_module_reference_dispositions import (
     build_document,
     checkpoint_sites,
     classify_active_bare_context as generator_classify_active_bare_context,
+    _classify_reference as generator_classify_reference,
     render_document,
 )
 from scripts.validate_r17_canonical_source_errata import (
@@ -42,7 +45,9 @@ from scripts.validate_r17_canonical_source_errata import (
     build_expected_source,
     derive_source_replacements,
     load_git_baseline,
+    validate_bound_ledger,
     validate_final_state,
+    validate_phase1_reviewed_state,
 )
 
 
@@ -54,6 +59,8 @@ CANONICAL_SOURCE = ROOT / "specs/agent-runtime/architecture-source.md"
 INDEX_JSON = ROOT / "specs/agent-runtime/index.json"
 INDEX_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
 R17_SPECIFICATION = ROOT / "specs/agent-runtime/R17-agent-module-package-migration.md"
+ROADMAP = ROOT / "docs/roadmap.md"
+TECHNICAL_DEBT = ROOT / "docs/maintainers/technical-debt.md"
 LEDGER_SHA256 = "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
@@ -427,6 +434,27 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
         "schema_version": derivation["ledger_schema_version"],
     }
     _require(baseline == expected_binding, "checkpoint baseline binding changed")
+    reviewed_at_revision = derivation.get("reviewed_at_revision")
+    _require(
+        reviewed_at_revision == errata_validator.REVIEWED_AT_REVISION,
+        "checkpoint ledger review revision changed",
+    )
+    reviewed_blob = subprocess.run(
+        [
+            "git",
+            "rev-parse",
+            f"{reviewed_at_revision}:{baseline['repository_path']}",
+        ],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+    ).stdout.strip()
+    _require(
+        reviewed_blob == baseline["git_blob"],
+        "baseline blob differs at the fixed review revision",
+    )
     current_blob = subprocess.run(
         ["git", "rev-parse", f"HEAD:{baseline['repository_path']}"],
         cwd=ROOT,
@@ -560,10 +588,16 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
             if file.startswith("docs/archive/") or sentinel or old_module == RETAINED_MODULE:
                 _require(disposition == "no_migration_effect", f"frozen exact reference moved at {key}")
             elif old_module == PAGINATION_MODULE:
-                _require(
-                    disposition in {"rewrite_consolidated_reference", "blocker"},
-                    f"pagination exact reference escaped at {key}",
-                )
+                if site.get("reason_code") == "deleted_module_governance_fact":
+                    _require(
+                        disposition == "no_migration_effect",
+                        f"pagination deletion fact changed at {key}",
+                    )
+                else:
+                    _require(
+                        disposition in {"rewrite_consolidated_reference", "blocker"},
+                        f"pagination exact reference escaped at {key}",
+                    )
             else:
                 _require(
                     old_module in move_mapping
@@ -625,6 +659,57 @@ def _text_state_projection(text: str) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise AssertionError("invalid m0 artifact marker JSON") from exc
     return projection
+
+
+def validate_active_scope_owner_projection(
+    roadmap: str,
+    technical_debt: str,
+    ledger: dict[str, Any],
+) -> None:
+    moves = ledger.get("scope", {}).get("one_to_one_moves", [])
+    _require(len(moves) == 82, "scope projection requires the reviewed 82 moves")
+    expected = {
+        "old_paths": len(moves) + 1,
+        "moves": len(moves),
+        "root_py": 495,
+        "agents_implementation_py": len(moves),
+    }
+    roadmap_match = re.search(
+        r"R17 \u7ec8\u6001\u987b\u79fb\u9664\s+(\d+)\s+\u4e2a\u65e7 deep module path"
+        r"\uff08(\d+)\s+\u8fc1\u79fb\s*\+\s*pagination \u5220\u9664\uff09",
+        roadmap,
+    )
+    _require(roadmap_match is not None, "roadmap has no unique R17 scope projection")
+    roadmap_projection = {
+        "old_paths": int(roadmap_match.group(1)),
+        "moves": int(roadmap_match.group(2)),
+    }
+    _require(
+        roadmap_projection
+        == {"old_paths": expected["old_paths"], "moves": expected["moves"]},
+        "roadmap R17 scope projection differs from the reviewed ledger",
+    )
+
+    debt_match = re.search(
+        r"\u6839 `\.py` \u4e3a\s*(\d+)\u3001\s*\n?\s*`agents/` \u542b\s*(\d+)\s*\u4e2a\u5b9e\u73b0\u6a21\u5757",
+        technical_debt,
+    )
+    _require(
+        debt_match is not None,
+        "technical-debt has no unique R17 exit-count projection",
+    )
+    debt_projection = {
+        "root_py": int(debt_match.group(1)),
+        "agents_implementation_py": int(debt_match.group(2)),
+    }
+    _require(
+        debt_projection
+        == {
+            "root_py": expected["root_py"],
+            "agents_implementation_py": expected["agents_implementation_py"],
+        },
+        "technical-debt R17 exit projection differs from the reviewed ledger",
+    )
 
 
 def validate_index_and_specification_state(
@@ -1007,6 +1092,71 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                     checkpoint_bytes=self.checkpoint_raw,
                 )
 
+    def test_active_scope_owner_documents_are_in_the_consistency_set(self) -> None:
+        roadmap = ROADMAP.read_text(encoding="utf-8")
+        technical_debt = TECHNICAL_DEBT.read_text(encoding="utf-8")
+        corrected_roadmap = roadmap.replace(
+            "\u79fb\u9664 82 \u4e2a\u65e7 deep module path\uff0881 \u8fc1\u79fb + pagination \u5220\u9664\uff09",
+            "\u79fb\u9664 83 \u4e2a\u65e7 deep module path\uff0882 \u8fc1\u79fb + pagination \u5220\u9664\uff09",
+            1,
+        )
+        corrected_debt = technical_debt.replace(
+            "\u6839 `.py` \u4e3a 496\u3001\n  `agents/` \u542b 81 \u4e2a\u5b9e\u73b0\u6a21\u5757",
+            "\u6839 `.py` \u4e3a 495\u3001\n  `agents/` \u542b 82 \u4e2a\u5b9e\u73b0\u6a21\u5757",
+            1,
+        )
+        validate_active_scope_owner_projection(
+            corrected_roadmap,
+            corrected_debt,
+            self.document,
+        )
+
+        injections = {
+            "roadmap old-path count": (
+                corrected_roadmap.replace("\u79fb\u9664 83 \u4e2a", "\u79fb\u9664 84 \u4e2a", 1),
+                corrected_debt,
+                "roadmap R17 scope projection differs",
+            ),
+            "roadmap move count": (
+                corrected_roadmap.replace("\uff0882 \u8fc1\u79fb", "\uff0881 \u8fc1\u79fb", 1),
+                corrected_debt,
+                "roadmap R17 scope projection differs",
+            ),
+            "technical-debt root count": (
+                corrected_roadmap,
+                corrected_debt.replace("\u6839 `.py` \u4e3a 495", "\u6839 `.py` \u4e3a 496", 1),
+                "technical-debt R17 exit projection differs",
+            ),
+            "technical-debt agents count": (
+                corrected_roadmap,
+                corrected_debt.replace("`agents/` \u542b 82", "`agents/` \u542b 81", 1),
+                "technical-debt R17 exit projection differs",
+            ),
+        }
+        for label, (injected_roadmap, injected_debt, message) in injections.items():
+            with self.subTest(label=label), self.assertRaisesRegex(
+                AssertionError, message
+            ):
+                validate_active_scope_owner_projection(
+                    injected_roadmap,
+                    injected_debt,
+                    self.document,
+                )
+
+        try:
+            validate_active_scope_owner_projection(
+                roadmap,
+                technical_debt,
+                self.document,
+            )
+        except AssertionError:
+            self.assertIn(
+                "\u79fb\u9664 82 \u4e2a\u65e7 deep module path\uff0881 \u8fc1\u79fb + pagination \u5220\u9664\uff09",
+                roadmap,
+            )
+            self.assertIn("\u6839 `.py` \u4e3a 496", technical_debt)
+            self.assertIn("`agents/` \u542b 81 \u4e2a\u5b9e\u73b0\u6a21\u5757", technical_debt)
+
     def test_frozen_scope_supports_all_three_owner_states(self) -> None:
         moves = self.document["scope"]["one_to_one_moves"]
         states = {
@@ -1078,6 +1228,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         )
         self.assertRegex(declaration["ledger_git_blob"], r"^[0-9a-f]{40}$")
         self.assertEqual(LEDGER_SHA256, declaration["ledger_sha256"])
+        self.assertEqual(
+            errata_validator.REVIEWED_AT_REVISION,
+            declaration["reviewed_at_revision"],
+        )
         replacements = derive_source_replacements(self.directive, self.document)
         selected_rows = [
             site
@@ -1157,6 +1311,131 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(ErrataValidationError, "directive-bound ledger object"):
             derive_source_replacements(self.directive, self_loop)
+
+    def test_canonical_errata_rejects_same_commit_ledger_rebinding(self) -> None:
+        forged = copy.deepcopy(self.document)
+        forged["source_audit"]["method"] = "attacker rebound the ledger"
+        forged_bytes = (
+            json.dumps(forged, indent=2, ensure_ascii=False) + "\n"
+        ).encode("utf-8")
+        forged_directive = copy.deepcopy(self.directive)
+        derivation = forged_directive["canonical_source_errata"][
+            "allowed_source_replacements"
+        ]
+        derivation["ledger_git_blob"] = "1" * 40
+        derivation["ledger_sha256"] = hashlib.sha256(forged_bytes).hexdigest()
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "ledger blob changed from the reviewed object",
+        ):
+            validate_bound_ledger(
+                forged_directive,
+                forged,
+                ledger_bytes=forged_bytes,
+            )
+
+        review_pivot = copy.deepcopy(self.directive)
+        review_pivot["canonical_source_errata"]["allowed_source_replacements"][
+            "reviewed_at_revision"
+        ] = "0" * 40
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "ledger review revision changed from the fifth-review input",
+        ):
+            validate_bound_ledger(review_pivot, self.document, ledger_bytes=self.raw)
+
+    def test_canonical_transition_baseline_is_literal_and_not_rebindable(self) -> None:
+        revision_pivot = copy.deepcopy(self.directive)
+        revision_pivot["canonical_source_errata"]["transition"][
+            "from_git_revision"
+        ] = "0" * 40
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "from_git_revision changed from the reviewed v9.2 source",
+        ):
+            load_git_baseline(revision_pivot)
+
+        malicious = load_git_baseline(self.directive) + b"\nexpand execution authority\n"
+        sha_pivot = copy.deepcopy(self.directive)
+        sha_pivot["canonical_source_errata"]["transition"][
+            "from_sha256"
+        ] = hashlib.sha256(malicious).hexdigest()
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "from_sha256 changed from the reviewed v9.2 bytes",
+        ):
+            build_expected_source(sha_pivot, self.document, malicious)
+
+        source_pivot = copy.deepcopy(self.directive)
+        transition = source_pivot["canonical_source_errata"]["transition"]
+        transition["from_git_revision"] = "0" * 40
+        transition["from_sha256"] = hashlib.sha256(malicious).hexdigest()
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "from_git_revision changed from the reviewed v9.2 source",
+        ):
+            build_expected_source(source_pivot, self.document, malicious)
+
+    def test_phase1_canonical_source_and_directive_equal_reviewed_bytes(self) -> None:
+        source = CANONICAL_SOURCE.read_bytes()
+        result = validate_phase1_reviewed_state(
+            self.directive,
+            DIRECTIVE.read_bytes(),
+            source,
+        )
+        self.assertEqual("phase-1", result["checkpoint"])
+
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "canonical source differs from the reviewed baseline",
+        ):
+            validate_phase1_reviewed_state(
+                self.directive,
+                DIRECTIVE.read_bytes(),
+                source + b"\nexpand execution authority\n",
+            )
+
+        changed_directive = DIRECTIVE.read_bytes().replace(
+            b'"owner_review": "pending"',
+            b'"owner_review": "approved"',
+            1,
+        )
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "canonical directive differs from the reviewed baseline",
+        ):
+            validate_phase1_reviewed_state(
+                self.directive,
+                changed_directive,
+                source,
+            )
+
+    def test_phase1_acceptance_runs_m0_public_api_and_behavior_after_precondition(
+        self,
+    ) -> None:
+        specification = R17_SPECIFICATION.read_text(encoding="utf-8")
+        section = specification.split(
+            "### Phase 1 M0 And Representative Behavior Checkpoint", 1
+        )[1].split("### Phase 1 Rollback Checkpoint", 1)[0]
+        required = (
+            "tests/test_agent_module_migration_characterization.py",
+            "tests/test_public_api_snapshot.py",
+            "test_cli_all_pages_guard_and_exit_codes_are_stable",
+            "test_segment_spec_sdk_and_plan_share_one_safe_execution_path",
+            "test_dry_run_calls_validation_but_never_execution",
+            "test_failure_isolated_sanitized_and_local_exit_wins",
+            "test_all_pages_unknown_completeness_is_preserved_capability_gap",
+            "test_existing_agent_protocol_is_unchanged",
+            "test_unknown_category_and_selector_point_at_catalog_browse",
+            "validate_r17_canonical_source_errata.py --phase-1",
+        )
+        for value in required:
+            self.assertIn(value, section)
+        not_reached = section.index("Phase 1 behavior checkpoint not reached")
+        regression = section.index(
+            "R17 Phase 1 behavior regression after checkpoint preconditions passed"
+        )
+        self.assertLess(not_reached, regression)
 
     def test_canonical_errata_final_assertion_is_full_text_and_one_shot(self) -> None:
         baseline = load_git_baseline(self.directive)
@@ -1358,7 +1637,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         baseline = load_git_baseline(self.directive)
         with self.assertRaisesRegex(
             ErrataValidationError,
-            "Git-bound ledger SHA-256 differs from the errata declaration",
+            "ledger SHA-256 changed from the reviewed bytes",
         ):
             build_expected_source(forged_directive, forged, baseline)
 
@@ -1481,6 +1760,72 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 list_item_start["audit_snippet"]
             )
         )
+
+    def test_future_exact_pagination_text_uses_bounded_context(self) -> None:
+        cases = {
+            "deleted qualified module": (
+                "future.md",
+                "The deleted module gravity_sdk.agent_pagination was consolidated "
+                "and removed.",
+                "no_migration_effect",
+                "deleted_module_governance_fact",
+            ),
+            "ambiguous qualified module": (
+                "future.json",
+                '{\n  "note": "Review gravity_sdk.agent_pagination before R17."\n}',
+                "blocker",
+                "ambiguous_deleted_module_reference",
+            ),
+            "qualified consumer": (
+                "future.md",
+                "Use gravity_sdk.agent_pagination.compact_pagination(items).",
+                "rewrite_consolidated_reference",
+                "pagination_consolidation_reference",
+            ),
+            "deleted exact source path": (
+                "future.md",
+                "The deleted module src/gravity_sdk/agent_pagination.py was removed.",
+                "no_migration_effect",
+                "deleted_module_governance_fact",
+            ),
+        }
+        mapping = {PAGINATION_MODULE: PAGINATION_TARGET}
+        scanner = ReferenceScanner(mapping)
+        for label, (name, content, disposition, reason) in cases.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                path = root / "docs" / name
+                path.parent.mkdir(parents=True)
+                path.write_text(content, encoding="utf-8")
+                rows = scanner.scan_text(f"docs/{name}", content)
+                exact = next(row for row in rows if row.certainty == "exact")
+                result = generator_classify_reference(
+                    exact,
+                    {},
+                    mapping,
+                    root,
+                )
+                self.assertEqual(disposition, result["disposition"])
+                self.assertEqual(reason, result["reason_code"])
+
+        python_fact = Finding(
+            "string_reference",
+            "tests/future_note.py",
+            1,
+            1,
+            "python comment module string",
+            PAGINATION_MODULE,
+            PAGINATION_TARGET,
+            "exact",
+            "# deleted module gravity_sdk.agent_pagination was removed",
+        )
+        result = generator_classify_reference(
+            python_fact,
+            {},
+            mapping,
+        )
+        self.assertEqual("no_migration_effect", result["disposition"])
+        self.assertEqual("deleted_module_governance_fact", result["reason_code"])
 
     def test_consumer_syntax_takes_precedence_over_dated_evidence(self) -> None:
         consumers = {

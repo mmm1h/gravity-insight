@@ -56,7 +56,8 @@
       "source_file": "specs/agent-runtime/architecture-source.md",
       "disposition": "rewrite_reference",
       "required_action_kind": "replace_text",
-      "required_count": 4
+      "required_count": 4,
+      "reviewed_at_revision": "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
     },
     "allowed_version_metadata_changes": [
       {"operation":"insert_before","anchor":"## v9.2 修订摘要","text":"## v9.3 修订摘要\n\nfour physical path corrections; no architectural semantic change\n\n","count":1},

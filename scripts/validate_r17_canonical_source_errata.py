@@ -16,6 +16,12 @@ ROOT = Path(__file__).resolve().parents[1]
 DIRECTIVE_PATH = ROOT / "specs/agent-runtime/directive.json"
 LEDGER_PATH = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 
+REVIEWED_AT_REVISION = "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
+CANONICAL_FROM_GIT_REVISION = "24f16c667d80107e4149cf76742eab4ada564197"
+CANONICAL_FROM_SHA256 = "54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c"
+REVIEWED_LEDGER_GIT_BLOB = "0fcfa6c85e07c7cc901530ed8c2fe7516203e986"
+REVIEWED_LEDGER_SHA256 = "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20"
+
 EXPECTED_ERRATA_KEYS = {
     "rule",
     "requirement_id",
@@ -39,6 +45,7 @@ EXPECTED_DERIVATION_KEYS = {
     "disposition",
     "required_action_kind",
     "required_count",
+    "reviewed_at_revision",
 }
 EXPECTED_REQUIRES = [
     "full_source_bytes_equal_v9_2_baseline_after_exact_allowlist",
@@ -181,11 +188,24 @@ def source_replacement_derivation(
         and re.fullmatch(r"[0-9a-f]{40}", ledger_blob) is not None,
         "errata ledger blob must be a full Git object ID",
     )
+    _require(
+        ledger_blob == REVIEWED_LEDGER_GIT_BLOB,
+        "errata ledger blob changed from the reviewed object",
+    )
     ledger_sha256 = derivation.get("ledger_sha256")
     _require(
         isinstance(ledger_sha256, str)
         and re.fullmatch(r"[0-9a-f]{64}", ledger_sha256) is not None,
         "errata ledger SHA-256 must be a lowercase digest",
+    )
+    _require(
+        ledger_sha256 == REVIEWED_LEDGER_SHA256,
+        "errata ledger SHA-256 changed from the reviewed bytes",
+    )
+    reviewed_at_revision = derivation.get("reviewed_at_revision")
+    _require(
+        reviewed_at_revision == REVIEWED_AT_REVISION,
+        "errata ledger review revision changed from the fifth-review input",
     )
     source_file = _repository_path(
         derivation.get("source_file"), field="source_file"
@@ -220,9 +240,9 @@ def _git_blob_bytes(blob: str) -> bytes:
     return completed.stdout
 
 
-def _current_tree_blob(repository_path: str) -> str:
+def _tree_blob_at_revision(revision: str, repository_path: str) -> str:
     completed = subprocess.run(
-        ["git", "rev-parse", f"HEAD:{repository_path}"],
+        ["git", "rev-parse", f"{revision}:{repository_path}"],
         cwd=ROOT,
         check=True,
         text=True,
@@ -231,6 +251,21 @@ def _current_tree_blob(repository_path: str) -> str:
         stderr=subprocess.PIPE,
     )
     return completed.stdout.strip()
+
+
+def _git_file_bytes(revision: str, repository_path: str) -> bytes:
+    completed = subprocess.run(
+        ["git", "show", f"{revision}:{repository_path}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return completed.stdout
+
+
+def _current_tree_blob(repository_path: str) -> str:
+    return _tree_blob_at_revision("HEAD", repository_path)
 
 
 def _render_ledger(ledger: dict[str, Any]) -> bytes:
@@ -247,9 +282,15 @@ def validate_bound_ledger(
 
     derivation = source_replacement_derivation(directive)
     ledger_blob = derivation["ledger_git_blob"]
+    repository_path = derivation["ledger_repository_path"]
     _require(
-        _current_tree_blob(derivation["ledger_repository_path"]) == ledger_blob,
-        "errata ledger blob is not the object at the current commit path",
+        _tree_blob_at_revision(derivation["reviewed_at_revision"], repository_path)
+        == ledger_blob,
+        "errata ledger blob is not the object at the fixed review revision path",
+    )
+    _require(
+        _current_tree_blob(repository_path) == ledger_blob,
+        "current commit changed the reviewed errata ledger bytes",
     )
     bound = _git_blob_bytes(ledger_blob)
     expected_sha = derivation["ledger_sha256"]
@@ -552,18 +593,11 @@ def load_git_baseline(directive: dict[str, Any]) -> bytes:
     _require(isinstance(transition, dict), "errata transition must be an object")
     revision = transition.get("from_git_revision")
     _require(
-        isinstance(revision, str) and re.fullmatch(r"[0-9a-f]{40}", revision) is not None,
-        "errata baseline revision must be a full Git SHA",
+        revision == CANONICAL_FROM_GIT_REVISION,
+        "errata canonical from_git_revision changed from the reviewed v9.2 source",
     )
     source_file = _canonical_source_file(directive)
-    completed = subprocess.run(
-        ["git", "show", f"{revision}:{source_file}"],
-        cwd=ROOT,
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    return completed.stdout
+    return _git_file_bytes(revision, source_file)
 
 
 def build_expected_source(
@@ -582,6 +616,14 @@ def build_expected_source(
         and transition.get("to_version") == "v9.3",
         "errata transition must remain v9.2 to v9.3",
     )
+    _require(
+        transition.get("from_git_revision") == CANONICAL_FROM_GIT_REVISION,
+        "errata canonical from_git_revision changed from the reviewed v9.2 source",
+    )
+    _require(
+        transition.get("from_sha256") == CANONICAL_FROM_SHA256,
+        "errata canonical from_sha256 changed from the reviewed v9.2 bytes",
+    )
     baseline_sha = hashlib.sha256(baseline_bytes).hexdigest()
     _require(
         baseline_sha == transition.get("from_sha256"),
@@ -594,6 +636,60 @@ def build_expected_source(
         expected, errata.get("allowed_version_metadata_changes")
     )
     return expected.encode("utf-8")
+
+
+def _reviewed_phase1_directive_bytes() -> bytes:
+    relative = DIRECTIVE_PATH.relative_to(ROOT).as_posix()
+    reviewed = _git_file_bytes(REVIEWED_AT_REVISION, relative)
+    needle = b'      "required_count": 4\n'
+    replacement = (
+        b'      "required_count": 4,\n'
+        b'      "reviewed_at_revision": "'
+        + REVIEWED_AT_REVISION.encode("ascii")
+        + b'"\n'
+    )
+    _require(
+        reviewed.count(needle) == 1,
+        "reviewed directive cannot derive the Phase 1 anchor field exactly once",
+    )
+    return reviewed.replace(needle, replacement, 1)
+
+
+def validate_phase1_reviewed_state(
+    directive: dict[str, Any],
+    directive_bytes: bytes,
+    source_bytes: bytes,
+) -> dict[str, Any]:
+    """Reject any canonical or errata-authority change at the Phase 1 checkpoint."""
+
+    source_replacement_derivation(directive)
+    transition = _errata(directive).get("transition", {})
+    _require(
+        transition.get("from_git_revision") == CANONICAL_FROM_GIT_REVISION
+        and transition.get("from_sha256") == CANONICAL_FROM_SHA256,
+        "Phase 1 changed the canonical transition baseline",
+    )
+    expected_directive = _reviewed_phase1_directive_bytes()
+    _require(
+        directive_bytes == expected_directive,
+        "Phase 1 canonical directive differs from the reviewed baseline",
+    )
+    source_file = _canonical_source_file(directive)
+    reviewed_source = _git_file_bytes(REVIEWED_AT_REVISION, source_file)
+    _require(
+        source_bytes == reviewed_source,
+        "Phase 1 canonical source differs from the reviewed baseline",
+    )
+    _require(
+        hashlib.sha256(source_bytes).hexdigest() == CANONICAL_FROM_SHA256,
+        "Phase 1 canonical source digest differs from the reviewed v9.2 bytes",
+    )
+    return {
+        "checkpoint": "phase-1",
+        "canonical_source": "reviewed-bytes-unchanged",
+        "canonical_directive": "reviewed-bytes-unchanged",
+        "reviewed_at_revision": REVIEWED_AT_REVISION,
+    }
 
 
 def validate_final_state(
@@ -657,7 +753,8 @@ def validate_final_state(
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    arguments = sys.argv[1:] if argv is None else argv
     try:
         directive = load_json(DIRECTIVE_PATH)
         ledger = load_json(LEDGER_PATH)
@@ -667,8 +764,16 @@ def main() -> int:
             ledger_bytes=LEDGER_PATH.read_bytes(),
         )
         source_bytes = canonical_source_path(directive).read_bytes()
-        baseline_bytes = load_git_baseline(directive)
-        result = validate_final_state(directive, ledger, source_bytes, baseline_bytes)
+        if arguments == ["--phase-1"]:
+            result = validate_phase1_reviewed_state(
+                directive,
+                DIRECTIVE_PATH.read_bytes(),
+                source_bytes,
+            )
+        else:
+            _require(not arguments, f"unknown arguments: {arguments}")
+            baseline_bytes = load_git_baseline(directive)
+            result = validate_final_state(directive, ledger, source_bytes, baseline_bytes)
     except (
         ErrataValidationError,
         json.JSONDecodeError,
