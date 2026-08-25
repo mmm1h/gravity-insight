@@ -37,6 +37,8 @@ _SAFE_AMBIENT_KEYS = (
     "LC_ALL",
 )
 _STDERR_LIMIT = 64 * 1024
+_TERMINATION_LOCK_ATTRIBUTE = "_gravity_provider_termination_lock"
+_TERMINATION_LOCK_CREATION_GUARD = threading.Lock()
 
 
 class ProviderTransportError(RuntimeError):
@@ -385,6 +387,22 @@ def _read_stream(
 
 
 def _terminate_process_tree(process: subprocess.Popen[bytes], grace_ms: int) -> None:
+    with _process_termination_lock(process):
+        _terminate_process_tree_locked(process, grace_ms)
+
+
+def _process_termination_lock(process: subprocess.Popen[bytes]) -> Any:
+    with _TERMINATION_LOCK_CREATION_GUARD:
+        guard = getattr(process, _TERMINATION_LOCK_ATTRIBUTE, None)
+        if guard is None:
+            guard = threading.Lock()
+            setattr(process, _TERMINATION_LOCK_ATTRIBUTE, guard)
+        return guard
+
+
+def _terminate_process_tree_locked(
+    process: subprocess.Popen[bytes], grace_ms: int
+) -> None:
     if process.poll() is not None:
         close_windows_job(process)
         return

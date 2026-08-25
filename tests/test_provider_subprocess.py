@@ -229,13 +229,21 @@ class ProviderSubprocessTests(unittest.TestCase):
         provider = subprocess_context_provider(descriptor, work_root=self.root)
         holder: dict[str, dict] = {}
         completed = threading.Event()
+        streams_closed = threading.Event()
         processes = []
-        launch = transport_module.subprocess.Popen
+        launch = SubprocessProviderTransport._launch
+        close_streams = transport_module._close_process_streams
 
-        def record_launch(*args, **kwargs):
-            process = launch(*args, **kwargs)
+        def record_launch(transport, cancellation_grace_ms):
+            process = launch(transport, cancellation_grace_ms)
             processes.append(process)
             return process
+
+        def record_stream_close(process):
+            try:
+                close_streams(process)
+            finally:
+                streams_closed.set()
 
         def read() -> None:
             try:
@@ -246,7 +254,16 @@ class ProviderSubprocessTests(unittest.TestCase):
                 completed.set()
 
         connection = None
-        with patch.object(transport_module.subprocess, "Popen", side_effect=record_launch):
+        with patch.object(
+            SubprocessProviderTransport,
+            "_launch",
+            autospec=True,
+            side_effect=record_launch,
+        ), patch.object(
+            transport_module,
+            "_close_process_streams",
+            side_effect=record_stream_close,
+        ):
             thread = threading.Thread(target=read)
             thread.start()
             try:
@@ -259,7 +276,9 @@ class ProviderSubprocessTests(unittest.TestCase):
                     ["PROVIDER_RPC_CANCELLED"], holder["result"]["reason_codes"]
                 )
                 self.assertEqual(1, len(processes))
-                self.assertIsNotNone(processes[0].poll())
+                self.assertTrue(streams_closed.wait(30))
+                for process in processes:
+                    self.assertIsNotNone(process.poll())
             finally:
                 cancellation.set()
                 if connection is not None:
@@ -272,6 +291,96 @@ class ProviderSubprocessTests(unittest.TestCase):
                 if thread.is_alive():
                     self.assertTrue(completed.wait(30))
                     thread.join()
+                if processes:
+                    streams_closed.wait(30)
+
+    def test_concurrent_windows_termination_serializes_job_cleanup(self) -> None:
+        class BlockingWaitProcess(FakeWindowsProcess):
+            def __init__(self) -> None:
+                super().__init__()
+                self.wait_started = threading.Event()
+                self.release_wait = threading.Event()
+
+            def wait(self, timeout: float | None = None) -> int:
+                del timeout
+                self.wait_started.set()
+                if not self.release_wait.wait(30):
+                    raise AssertionError("fake process wait was not released")
+                self.returncode = -1
+                return self.returncode
+
+        class ObservedLock:
+            def __init__(self) -> None:
+                self._lock = threading.Lock()
+                self._attempt_guard = threading.Lock()
+                self._attempts = 0
+                self.second_attempt = threading.Event()
+
+            def __enter__(self):
+                with self._attempt_guard:
+                    self._attempts += 1
+                    if self._attempts == 2:
+                        self.second_attempt.set()
+                self._lock.acquire()
+                return self
+
+            def __exit__(self, *_args) -> None:
+                self._lock.release()
+
+        process = BlockingWaitProcess()
+        termination_lock = ObservedLock()
+        setattr(
+            process,
+            transport_module._TERMINATION_LOCK_ATTRIBUTE,
+            termination_lock,
+        )
+        job_available = True
+        job_guard = threading.Lock()
+
+        def close_job(_process) -> bool:
+            nonlocal job_available
+            with job_guard:
+                if not job_available:
+                    return False
+                job_available = False
+                return True
+
+        errors = []
+
+        def terminate() -> None:
+            try:
+                transport_module._terminate_process_tree(process, 1000)
+            except BaseException as exc:
+                errors.append(exc)
+
+        with (
+            patch.object(transport_module.os, "name", "nt"),
+            patch.object(
+                transport_module,
+                "close_windows_job",
+                side_effect=close_job,
+            ) as close_job_mock,
+            patch.object(transport_module.subprocess, "run") as taskkill,
+        ):
+            first = threading.Thread(target=terminate)
+            second = threading.Thread(target=terminate)
+            first.start()
+            self.assertTrue(process.wait_started.wait(30))
+            second.start()
+            try:
+                self.assertTrue(termination_lock.second_attempt.wait(30))
+                self.assertTrue(second.is_alive())
+            finally:
+                process.release_wait.set()
+            first.join(30)
+            second.join(30)
+
+        self.assertFalse(first.is_alive())
+        self.assertFalse(second.is_alive())
+        self.assertEqual([], errors)
+        self.assertEqual(-1, process.poll())
+        self.assertEqual(2, close_job_mock.call_count)
+        taskkill.assert_not_called()
 
     def test_timeout_terminates_the_entire_spawned_process_tree(self) -> None:
         escaped = self.root / "child-escaped"
