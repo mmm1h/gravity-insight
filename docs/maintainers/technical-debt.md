@@ -20,13 +20,20 @@ category→exit；两产品仍各自拥有 operation、字段和文案。
   operation identity 和 fallback 文案留在 owner。不能无 mode/callback 直调就保留分叉；不统一整文件或造 DSL。
 
 ### 2. legacy promotion snapshot 的兼容分支仍缺正式绑定
-**状态（2026-08-20）**：`primary` 的 21 个正式平台复用 Promotion Performance 的 App、日期、平台/指标和结果
-绑定；其余层级及 `bing/xiaohongshu/taptap/wechat_video` 仍走兼容读取。
-
-- **证据与边界**：兼容路径从 stable inventory 精确匹配后透传 raw input，返回
-  `gravity-insight.composite.promotion.v1` 和 `formal_binding_validation=not_performed`；零匹配 unavailable，
-  多匹配或不适用 shortcut 执行前失败。`query_fields` 仍过 `FieldPolicy`，但无正式 App/日期/指标必填和结果绑定。
-  无消费者遥测时删除会损失读取能力，且 Agent/Plan 不宣传该路径。
+**状态（2026-08-25）**：除 `primary` 21 平台外，`bytedance/project`、`honor/ad_group`、`honor/campaign`、
+`kuaishou/ad_unit` 也已复用 Promotion Performance 的 App、日期、平台/指标、分页和结果绑定；32 个组合仍兼容读取。
+- **转正证据**：四项 stable contract 均有必填 `date_list`、App 等值 `filters`、动态 `query_fields`、同构
+  `page_info` 和登记行投影；合同漂移 fail-closed。同一 canonical 输入经原 inventory 内核与正式入口产生完全相同的
+  operation payload 和原生行，正式结果使用 `gravity-insight.promotion-performance.v1`，不再携带 compatibility marker。
+- **primary 卡点**：`bing/advertiser`、`xiaohongshu/advertiser` 无日期/动态指标；`taptap/group`、
+  `wechat_video/report` 有 App/日期但无 `query_fields` 与动态指标结果绑定。
+- **其余层级卡点**：`bilibili/account` 无动态指标；`bytedance/advertiser_performance` 无 App/动态指标；
+  `tencent/tencent_adgroup_v2` 虽接收 `query_fields` 但结果未登记动态字段。其余 25 个 account/config/parent 层级
+  无必填日期和动态指标（多项也无 App）：bytedance 除 project/advertiser/performance 外 9 项、honor/account、
+  huya/account、kuaishou/account+account_company、8 个其他 account、tencent 的 3 个配置层级及 xiaohongshu/developer。
+- **兼容边界**：上述 32 项仍从 stable inventory 精确匹配后透传 raw input，保持
+  `gravity-insight.composite.promotion.v1` 和 `formal_binding_validation=not_performed`；零匹配 unavailable，多匹配或
+  不适用 shortcut 执行前失败。`query_fields` 仍过 `FieldPolicy`；无消费者遥测时不得删除，Agent/Plan 仍不宣传。
 - **触发条件**：兼容平台/层级出现第二个同资源 stable read，取得正式输入/结果绑定，或能证明无消费者。
 - **退出条件**：为所有保留兼容平台/层级建立不损失读取能力的正式请求/结果绑定并移入正式路径，或证实无消费者
   后删除；不得以 raw `promotion query` 替代 snapshot 聚合职责。

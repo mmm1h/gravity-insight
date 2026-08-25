@@ -7,7 +7,7 @@ import unittest
 
 from gravity_sdk.composite import CompositeService
 from gravity_sdk.composite_result import bounded_structural_drift_diagnostics
-from gravity_sdk.domains import PROMOTION_PRIMARY_OPERATIONS
+from gravity_sdk.domains import PROMOTION_PLATFORMS, PROMOTION_PRIMARY_OPERATIONS
 from gravity_sdk.errors import (
     GravityInsightError, InputValidationError, LocalIOError, PaginationError)
 from gravity_sdk.promotion_performance import (
@@ -21,11 +21,16 @@ from gravity_sdk.promotion_performance_result import (
     PROMOTION_ROW_FIELDS,
     safe_component,
 )
+from gravity_sdk.promotion_performance_snapshot import (
+    PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS,
+    promotion_component_binding,
+)
 from gravity_sdk.promotion_performance_rows import (
     MAX_JSON_STRING_LENGTH,
     MAX_OPAQUE_JSON_DEPTH,
     MAX_OPAQUE_JSON_ELEMENTS,
 )
+from gravity_sdk.promotion_snapshot_compat import _compatibility_snapshot
 
 
 def _safe(value, metrics=("stat_cost",)):
@@ -171,6 +176,34 @@ class _InventoryBatchClient(_CompatBatchClient):
         ]
 
 
+class _BoundInventoryBatchClient(_InventoryBatchClient):
+    def __init__(self, operations, *, app_id="17", row=None):
+        super().__init__(operations)
+        self.app_id = app_id
+        self.row = row
+
+    def batch(self, requests, **options):
+        self.calls.append((copy.deepcopy(requests), dict(options)))
+        return [
+            {
+                "operation_id": request["operation_id"],
+                "request_id": request["request_id"],
+                "ok": True,
+                "status": "success",
+                "data": _read_envelope(
+                    request["operation_id"],
+                    [copy.deepcopy(self.row) if self.row is not None else {
+                        "app_id": self.app_id,
+                        "date": "2026-08-01",
+                        "stat_cost": 1.5,
+                    }],
+                ),
+                "error": None,
+            }
+            for request in reversed(requests)
+        ]
+
+
 def _inventory_operation(platform, resource, operation_id):
     return {
         "operation_id": operation_id,
@@ -180,6 +213,29 @@ def _inventory_operation(platform, resource, operation_id):
         "action": "list",
         "stability": "stable",
     }
+
+
+def _registered_operation_row(operation_id):
+    contract = (
+        Path(__file__).parents[1]
+        / "src"
+        / "gravity_sdk"
+        / "contracts"
+        / "operations"
+        / f"{operation_id}.json"
+    )
+    operation = json.loads(contract.read_text(encoding="utf-8"))["operation"]
+    projection = operation["response_projection"]
+    row = {field: f"{field}-value" for field in projection["item_keys"]}
+    for field in ("date", "day", "stat_date"):
+        if field in row:
+            row[field] = "2026-08-01"
+    if "app_id" in row:
+        row["app_id"] = "17"
+    for field in projection.get("opaque_json_item_keys", []):
+        row[field] = [{"registered": ["value"]}]
+    row["stat_cost"] = 1.5
+    return row
 
 
 class PromotionPerformanceTests(unittest.TestCase):
@@ -270,6 +326,117 @@ class PromotionPerformanceTests(unittest.TestCase):
                     operation["response_projection"]["dynamic_item_fields"],
                 )
                 self.assertEqual("page_info", operation["pagination"]["kind"])
+
+    def test_formal_snapshot_resources_match_stable_contracts(self):
+        expected = {
+            "project": {
+                "bytedance": "promotion.bytedance.project.list",
+            },
+            "ad_group": {
+                "honor": "promotion.honor.ad_group.list",
+            },
+            "campaign": {
+                "honor": "promotion.honor.campaign.list",
+            },
+            "ad_unit": {
+                "kuaishou": "promotion.kuaishou.ad_unit.list",
+            },
+        }
+        self.assertEqual(
+            expected,
+            {
+                resource: dict(operations)
+                for resource, operations in PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS.items()
+            },
+        )
+        contracts = (
+            Path(__file__).parents[1]
+            / "src"
+            / "gravity_sdk"
+            / "contracts"
+            / "operations"
+        )
+        for resource, operations in expected.items():
+            for platform, operation_id in operations.items():
+                with self.subTest(platform=platform, resource=resource):
+                    operation = json.loads(
+                        (contracts / f"{operation_id}.json").read_text(
+                            encoding="utf-8"
+                        )
+                    )["operation"]
+                    self.assertEqual(
+                        {
+                            "date_list", "filtering", "filters", "order_by",
+                            "page", "page_size", "query_fields",
+                        },
+                        set(operation["input_fields"]),
+                    )
+                    self.assertEqual(
+                        ["date_list"],
+                        [
+                            name
+                            for name, field in operation["input_fields"].items()
+                            if field.get("required")
+                        ],
+                    )
+                    self.assertEqual(
+                        ["query_fields"],
+                        operation["response_projection"]["dynamic_item_fields"],
+                    )
+                    self.assertEqual(
+                        ["list", "page_info", "total", "update_at"],
+                        operation["response_projection"]["data_keys"],
+                    )
+                    self.assertEqual("page_info", operation["pagination"]["kind"])
+                    self.assertEqual(
+                        "internal_business",
+                        operation["privacy_policy"]["classification"],
+                    )
+                    binding = promotion_component_binding(
+                        platform, resource, operation_id
+                    )
+                    self.assertEqual(
+                        set(operation["response_projection"]["item_keys"]),
+                        set(binding.row_fields),
+                    )
+                    self.assertEqual(
+                        PROMOTION_PLATFORMS[platform][resource],
+                        binding.operation_id,
+                    )
+
+    def test_all_remaining_snapshot_pairs_lack_dynamic_result_binding(self):
+        formal_pairs = {
+            (platform, resource)
+            for resource, operations in PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS.items()
+            for platform in operations
+        }
+        remaining = []
+        for platform, resources in PROMOTION_PLATFORMS.items():
+            for resource, operation_id in resources.items():
+                formal_primary = (
+                    platform in SUPPORTED_PLATFORMS
+                    and operation_id == PROMOTION_PRIMARY_OPERATIONS[platform]
+                )
+                if not formal_primary and (platform, resource) not in formal_pairs:
+                    remaining.append((platform, resource, operation_id))
+        self.assertEqual(32, len(remaining))
+        contracts = (
+            Path(__file__).parents[1]
+            / "src"
+            / "gravity_sdk"
+            / "contracts"
+            / "operations"
+        )
+        for platform, resource, operation_id in remaining:
+            with self.subTest(platform=platform, resource=resource):
+                operation = json.loads(
+                    (contracts / f"{operation_id}.json").read_text(encoding="utf-8")
+                )["operation"]
+                self.assertEqual("stable", operation["stability"])
+                self.assertNotIn(
+                    "query_fields",
+                    operation["response_projection"]["dynamic_item_fields"],
+                )
 
     def test_all_local_rules_fail_before_batch(self):
         cases = (
@@ -684,18 +851,18 @@ class PromotionPerformanceTests(unittest.TestCase):
         self.assertEqual(formal_client.calls, legacy_client.calls)
 
     def test_legacy_snapshot_reads_non_primary_resource_with_compatibility_marker(self):
-        operation_id = "promotion.bytedance.project.list"
+        operation_id = "promotion.bytedance.account.list"
         client = _InventoryBatchClient([
-            _inventory_operation("bytedance", "project", operation_id)
+            _inventory_operation("bytedance", "account", operation_id)
         ])
         result = CompositeService(client).promotion_snapshot(
             ("bytedance",),
-            resource="project",
-            common_inputs={"project_ref": "fixture-parent"},
+            resource="account",
+            common_inputs={"page": 1, "page_size": 10},
         )
         requests, options = client.calls[0]
         self.assertEqual(operation_id, requests[0]["operation_id"])
-        self.assertEqual({"project_ref": "fixture-parent"}, requests[0]["inputs"])
+        self.assertEqual({"page": 1, "page_size": 10}, requests[0]["inputs"])
         self.assertEqual({"max_workers": 6}, options)
         self.assertEqual(
             [{"row": "bytedance"}], result["results"][0]["data"]["list"]
@@ -703,6 +870,99 @@ class PromotionPerformanceTests(unittest.TestCase):
         self.assertEqual(
             {"mode": "inventory", "formal_binding_validation": "not_performed"},
             result["compatibility"],
+        )
+
+    def test_four_non_primary_resources_keep_rows_when_formally_bound(self):
+        common_inputs = {
+            "date_list": ["2026-08-01", "2026-08-07"],
+            "query_fields": ["stat_cost"],
+            "filters": [
+                {"field": "app_id", "operator": 1, "values": ["17"]}
+            ],
+            "page": 1,
+            "page_size": 10,
+        }
+        for resource, operations in PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS.items():
+            platform, operation_id = next(iter(operations.items()))
+            inventory = [_inventory_operation(platform, resource, operation_id)]
+            expected_row = _registered_operation_row(operation_id)
+            compatibility_client = _BoundInventoryBatchClient(
+                inventory, row=expected_row
+            )
+            formal_client = _BoundInventoryBatchClient(inventory, row=expected_row)
+            with self.subTest(platform=platform, resource=resource):
+                compatibility = _compatibility_snapshot(
+                    compatibility_client,
+                    [platform],
+                    resource=resource,
+                    shared=copy.deepcopy(common_inputs),
+                    platform_inputs={},
+                    read_all=True,
+                    max_workers=6,
+                )
+                formal = CompositeService(formal_client).promotion_snapshot(
+                    (platform,),
+                    resource=resource,
+                    common_inputs=copy.deepcopy(common_inputs),
+                    read_all=True,
+                )
+                self.assertEqual(
+                    compatibility_client.calls[0][0], formal_client.calls[0][0]
+                )
+                self.assertEqual(
+                    compatibility["results"][0]["data"]["data"]["list"],
+                    formal["results"][0]["data"]["list"],
+                )
+                self.assertEqual([expected_row], formal["results"][0]["data"]["list"])
+                self.assertEqual(
+                    compatibility["results"][0]["data"]["page"],
+                    formal["results"][0]["page"],
+                )
+                self.assertEqual(
+                    (
+                        compatibility["results"][0]["operation_id"],
+                        compatibility["results"][0]["status"],
+                    ),
+                    (
+                        formal["results"][0]["operation_id"],
+                        formal["results"][0]["status"],
+                    ),
+                )
+                self.assertEqual(
+                    "gravity-insight.promotion-performance.v1",
+                    formal["schema_version"],
+                )
+                self.assertEqual(
+                    (resource, operation_id),
+                    (
+                        formal["results"][0]["resource"],
+                        formal["results"][0]["operation_id"],
+                    ),
+                )
+                self.assertNotIn("compatibility", formal)
+
+    def test_formal_non_primary_result_rejects_wrong_app_binding(self):
+        operation_id = PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS["project"][
+            "bytedance"
+        ]
+        client = _BoundInventoryBatchClient(
+            [_inventory_operation("bytedance", "project", operation_id)],
+            app_id="18",
+        )
+        result = CompositeService(client).promotion_snapshot(
+            ("bytedance",),
+            resource="project",
+            common_inputs={
+                "app_id": 17,
+                "date_list": ["2026-08-01", "2026-08-07"],
+                "query_fields": ["stat_cost"],
+            },
+        )
+        self.assertEqual("contract_changed", result["status"])
+        failure = result["results"][0]["drift_diagnostics"]["failures"][0]
+        self.assertEqual(
+            ("request_binding", "$.data.data.list[0].app_id"),
+            (failure["check"], failure["path"]),
         )
 
     def test_legacy_snapshot_reads_four_heterogeneous_primary_platforms(self):
@@ -728,20 +988,20 @@ class PromotionPerformanceTests(unittest.TestCase):
 
     def test_legacy_snapshot_rejects_ambiguous_inventory_without_executing(self):
         client = _InventoryBatchClient([
-            _inventory_operation("bytedance", "project", operation_id)
+            _inventory_operation("bytedance", "site", operation_id)
             for operation_id in (
-                "promotion.bytedance.project.list",
-                "promotion.bytedance.project.query",
+                "promotion.bytedance.site.list",
+                "promotion.bytedance.site.query",
             )
         ])
         with self.assertRaises(InputValidationError) as raised:
             CompositeService(client).promotion_snapshot(
-                ("bytedance",), resource="project"
+                ("bytedance",), resource="site"
             )
         self.assertEqual("resource", raised.exception.field)
         self.assertIn("actual value:", str(raised.exception))
-        self.assertIn("promotion.bytedance.project.list", str(raised.exception))
-        self.assertIn("promotion.bytedance.project.query", str(raised.exception))
+        self.assertIn("promotion.bytedance.site.list", str(raised.exception))
+        self.assertIn("promotion.bytedance.site.query", str(raised.exception))
         self.assertTrue(raised.exception.next_action)
         self.assertEqual([], client.calls)
 

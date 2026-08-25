@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
@@ -85,6 +86,14 @@ PROMOTION_PLATFORM_RESOURCES = MappingProxyType(
     }
 )
 
+@dataclass(frozen=True)
+class PromotionComponentBinding:
+    platform: str
+    resource: str
+    operation_id: str
+    row_fields: frozenset[str]
+    opaque_json_fields: frozenset[str]
+
 PROMOTION_ROW_FIELDS = promotion_row_fields(SUPPORTED_PLATFORMS)
 PROMOTION_OPAQUE_JSON_FIELDS = promotion_opaque_json_fields(SUPPORTED_PLATFORMS)
 # Identity, time, hierarchy and status fields are useful native output columns,
@@ -140,23 +149,43 @@ def safe_component(
 ) -> dict[str, Any]:
     """Project one batch result against its request-bound identity."""
 
-    operation_id = PROMOTION_PLATFORM_OPERATIONS.get(platform)
-    if operation_id is None or not isinstance(value, Mapping):
-        return _contract_failure(platform, "component_shape", "$")
+    return safe_bound_component(
+        value,
+        _primary_binding(platform),
+        metrics=metrics,
+        expected_app_id=expected_app_id,
+        expected_window=expected_window,
+        max_pages=max_pages,
+    )
+
+
+def safe_bound_component(
+    value: Any,
+    binding: PromotionComponentBinding,
+    *,
+    metrics: Sequence[str],
+    expected_app_id: str,
+    expected_window: tuple[str, str],
+    max_pages: int,
+) -> dict[str, Any]:
+    """Project one result against an explicit stable operation binding."""
+
+    if binding.operation_id == "unknown" or not isinstance(value, Mapping):
+        return _contract_failure(binding, "component_shape", "$")
     if (
-        value.get("operation_id") != operation_id
-        or value.get("request_id") != platform
+        value.get("operation_id") != binding.operation_id
+        or value.get("request_id") != binding.platform
     ):
         return _contract_failure(
-            platform, "component_identity", "$.operation_id_or_request_id"
+            binding, "component_identity", "$.operation_id_or_request_id"
         )
     status = value.get("status")
     if not isinstance(status, str):
-        return _contract_failure(platform, "component_status_type", "$.status")
+        return _contract_failure(binding, "component_status_type", "$.status")
     if value.get("ok") is True and status in _SUCCESS_STATUSES:
         return _safe_success(
             value,
-            platform,
+            binding,
             status,
             metrics=metrics,
             expected_app_id=expected_app_id,
@@ -164,15 +193,15 @@ def safe_component(
             max_pages=max_pages,
         )
     if value.get("ok") is False and status in _FAILURE_STATUSES:
-        error = _safe_error(value.get("error"), platform)
+        error = _safe_error(value.get("error"), binding.platform)
         if error is None or not _failure_matches(status, error["code"]):
-            return _contract_failure(platform, "component_error", "$.error")
+            return _contract_failure(binding, "component_error", "$.error")
         if error["code"] == ErrorCode.CONTRACT_CHANGED.value:
             return _contract_failure(
-                platform, "component_contract_status", "$.status"
+                binding, "component_contract_status", "$.status"
             )
         return {
-            **_component_identity(platform),
+            **_component_identity(binding),
             "ok": False,
             "status": status,
             "exit_code": _error_exit_code(error),
@@ -182,12 +211,12 @@ def safe_component(
             "returned_items": 0,
             "error": error,
         }
-    return _contract_failure(platform, "component_status", "$.status")
+    return _contract_failure(binding, "component_status", "$.status")
 
 
 def _safe_success(
     value: Mapping[str, Any],
-    platform: str,
+    binding: PromotionComponentBinding,
     status: str,
     *,
     metrics: Sequence[str],
@@ -195,22 +224,21 @@ def _safe_success(
     expected_window: tuple[str, str],
     max_pages: int,
 ) -> dict[str, Any]:
-    operation_id = PROMOTION_PLATFORM_OPERATIONS[platform]
     if value.get("error") not in (None, {}):
-        return _contract_failure(platform, "success_error", "$.error")
+        return _contract_failure(binding, "success_error", "$.error")
     envelope = value.get("data")
     if not isinstance(envelope, Mapping):
-        return _contract_failure(platform, "read_envelope_type", "$.data")
+        return _contract_failure(binding, "read_envelope_type", "$.data")
     if (
         envelope.get("schema_version") != "gravity-insight.read.v1"
-        or envelope.get("operation_id") != operation_id
+        or envelope.get("operation_id") != binding.operation_id
         or envelope.get("status") != status
         or envelope.get("error") not in (None, {})
     ):
-        return _contract_failure(platform, "read_envelope_identity", "$.data")
+        return _contract_failure(binding, "read_envelope_identity", "$.data")
     rows, failure = _success_rows(
         envelope,
-        platform=platform,
+        binding=binding,
         status=status,
         metrics=metrics,
         expected_app_id=expected_app_id,
@@ -218,12 +246,12 @@ def _safe_success(
     )
     if failure is not None or rows is None:
         check, path = failure or ("row_projection", "$.data.data.list")
-        return _contract_failure(platform, check, path)
+        return _contract_failure(binding, check, path)
     page = _safe_page(envelope.get("page"), len(rows), max_pages=max_pages)
     if page is None:
-        return _contract_failure(platform, "page_receipt", "$.data.page")
+        return _contract_failure(binding, "page_receipt", "$.data.page")
     return {
-        **_component_identity(platform),
+        **_component_identity(binding),
         "ok": True,
         "status": status,
         "exit_code": 0,
@@ -238,7 +266,7 @@ def _safe_success(
 def _success_rows(
     envelope: Mapping[str, Any],
     *,
-    platform: str,
+    binding: PromotionComponentBinding,
     status: str,
     metrics: Sequence[str],
     expected_app_id: str,
@@ -251,11 +279,11 @@ def _success_rows(
         return None, ("read_data_required", "$.data.data.list")
     if set(data) - {"list", "page_info", "total", "update_at"}:
         return None, ("read_data_registration", "$.data.data.<unregistered>")
-    allowed_fields = PROMOTION_ROW_FIELDS[platform] | frozenset(metrics)
+    allowed_fields = binding.row_fields | frozenset(metrics)
     rows, row_failure = safe_promotion_rows(
         data.get("list"),
         allowed_fields=allowed_fields,
-        opaque_fields=PROMOTION_OPAQUE_JSON_FIELDS[platform],
+        opaque_fields=binding.opaque_json_fields,
     )
     if row_failure is not None or rows is None:
         return None, row_failure or ("row_projection", "$.data.data.list")
@@ -269,13 +297,23 @@ def _success_rows(
     return rows, None
 
 
-def _component_identity(platform: str) -> dict[str, str]:
-    operation_id = PROMOTION_PLATFORM_OPERATIONS.get(platform)
-    resource = PROMOTION_PLATFORM_RESOURCES.get(platform)
+def _primary_binding(platform: str) -> PromotionComponentBinding:
+    operation_id = PROMOTION_PLATFORM_OPERATIONS.get(platform, "unknown")
+    resource = PROMOTION_PLATFORM_RESOURCES.get(platform, "unknown")
+    return PromotionComponentBinding(
+        platform=platform,
+        resource=resource,
+        operation_id=operation_id,
+        row_fields=PROMOTION_ROW_FIELDS.get(platform, frozenset()),
+        opaque_json_fields=PROMOTION_OPAQUE_JSON_FIELDS.get(platform, frozenset()),
+    )
+
+
+def _component_identity(binding: PromotionComponentBinding) -> dict[str, str]:
     return {
-        "platform": platform,
-        "resource": resource or "unknown",
-        "operation_id": operation_id or "unknown",
+        "platform": binding.platform,
+        "resource": binding.resource,
+        "operation_id": binding.operation_id,
     }
 
 
@@ -370,18 +408,25 @@ def _optional_exact_total(value: Any, expected: int) -> bool:
 def contract_component(
     platform: str, *, failure: tuple[str, str] | None = None
 ) -> dict[str, Any]:
-    operation_id = PROMOTION_PLATFORM_OPERATIONS.get(platform)
+    return _bound_contract_component(_primary_binding(platform), failure=failure)
+
+
+def _bound_contract_component(
+    binding: PromotionComponentBinding, *, failure: tuple[str, str] | None = None
+) -> dict[str, Any]:
     detail = ErrorDetail.create(
         ErrorCode.CONTRACT_CHANGED,
-        f"Promotion performance result contract changed for {platform}.",
-        operation_id=operation_id,
+        f"Promotion performance result contract changed for {binding.platform}.",
+        operation_id=(
+            None if binding.operation_id == "unknown" else binding.operation_id
+        ),
         next_action=(
             "Stop this promotion performance automation until the stable "
             "platform result contract is re-verified."
         ),
     )
     result = {
-        **_component_identity(platform),
+        **_component_identity(binding),
         "ok": False,
         "status": "contract_changed",
         "exit_code": exit_code_for_error(detail),
@@ -393,13 +438,15 @@ def contract_component(
     }
     if failure is not None:
         result["drift_diagnostics"] = bounded_structural_drift_diagnostics(
-            operation_id or "unknown", [failure]
+            binding.operation_id, [failure]
         )
     return result
 
 
-def _contract_failure(platform: str, check: str, path: str) -> dict[str, Any]:
-    return contract_component(platform, failure=(check, path))
+def _contract_failure(
+    binding: PromotionComponentBinding, check: str, path: str
+) -> dict[str, Any]:
+    return _bound_contract_component(binding, failure=(check, path))
 
 
 def contract_result() -> dict[str, Any]:
@@ -492,10 +539,12 @@ __all__ = [
     "PROMOTION_ROW_FIELDS",
     "SCHEMA_VERSION",
     "SUPPORTED_PLATFORMS",
+    "PromotionComponentBinding",
     "contract_component",
     "contract_result",
     "product_envelope",
     "promotion_component_item_count",
     "promotion_performance_item_count",
+    "safe_bound_component",
     "safe_component",
 ]
