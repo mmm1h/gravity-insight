@@ -5,7 +5,6 @@ from __future__ import annotations
 import ast
 import importlib.util
 import json
-from graphlib import CycleError, TopologicalSorter
 from pathlib import Path
 
 
@@ -72,13 +71,11 @@ def agent_path_classification(reference: str) -> str | None:
     return None
 
 
-def _module_inventory(package_root: Path) -> dict[Path, tuple[str, bool]]:
+def module_inventory(package_root: Path) -> dict[Path, tuple[str, bool]]:
+    """Return every Python module below a package root."""
+
     inventory: dict[Path, tuple[str, bool]] = {}
-    paths = list(package_root.glob("*.py"))
-    agents = package_root / "agents"
-    if agents.is_dir():
-        paths.extend(agents.rglob("*.py"))
-    for path in paths:
+    for path in sorted(package_root.rglob("*.py")):
         relative = path.relative_to(package_root)
         parts = list(relative.with_suffix("").parts)
         is_package = parts[-1] == "__init__"
@@ -120,9 +117,10 @@ class _EagerImportVisitor(ast.NodeVisitor):
     def _record(self, target: str | None) -> None:
         if not target or not target.startswith("gravity_sdk"):
             return
-        candidates = {target}
-        if target.startswith("gravity_sdk.agents."):
-            candidates.add("gravity_sdk.agents")
+        parts = target.split(".")
+        candidates = {
+            ".".join(parts[:index]) for index in range(1, len(parts) + 1)
+        }
         self.targets.update(candidate for candidate in candidates if (
             candidate in self.modules and candidate != self.current
         ))
@@ -160,8 +158,8 @@ class _EagerImportVisitor(ast.NodeVisitor):
                 self._record(f"{base}.{alias.name}")
 
 
-def eager_import_cycles(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
-    inventory = _module_inventory(package_root)
+def _eager_import_graph(package_root: Path) -> dict[str, set[str]]:
+    inventory = module_inventory(package_root)
     modules = {name for name, _ in inventory.values()}
     graph = {name: set() for name in modules}
     for path, (name, is_package) in inventory.items():
@@ -169,9 +167,71 @@ def eager_import_cycles(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
         visitor = _EagerImportVisitor(name, current_package, modules)
         visitor.visit(ast.parse(path.read_text(encoding="utf-8"), filename=str(path)))
         graph[name].update(visitor.targets)
-    try:
-        tuple(TopologicalSorter(graph).static_order())
-    except CycleError as error:
-        cycle = list(dict.fromkeys(error.args[1]))
-        return [sorted(cycle)]
-    return []
+    return graph
+
+
+def _strongly_connected_components(
+    graph: dict[str, set[str]],
+) -> list[list[str]]:
+    next_index = 0
+    indices: dict[str, int] = {}
+    lowlinks: dict[str, int] = {}
+    stack: list[str] = []
+    on_stack: set[str] = set()
+    components: list[list[str]] = []
+
+    def connect(node: str) -> None:
+        nonlocal next_index
+        indices[node] = next_index
+        lowlinks[node] = next_index
+        next_index += 1
+        stack.append(node)
+        on_stack.add(node)
+
+        for target in sorted(graph[node]):
+            if target not in indices:
+                connect(target)
+                lowlinks[node] = min(lowlinks[node], lowlinks[target])
+            elif target in on_stack:
+                lowlinks[node] = min(lowlinks[node], indices[target])
+
+        if lowlinks[node] != indices[node]:
+            return
+        component: list[str] = []
+        while True:
+            member = stack.pop()
+            on_stack.remove(member)
+            component.append(member)
+            if member == node:
+                break
+        if len(component) > 1 or node in graph[node]:
+            components.append(sorted(component))
+
+    for node in sorted(graph):
+        if node not in indices:
+            connect(node)
+    return sorted(components)
+
+
+def eager_import_sccs(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
+    """Return every real eager-import cycle in the complete package graph."""
+
+    return _strongly_connected_components(_eager_import_graph(package_root))
+
+
+def _is_agent_migration_module(module: str) -> bool:
+    return (
+        module.startswith("gravity_sdk.agent_")
+        or module == "gravity_sdk.agents"
+        or module.startswith("gravity_sdk.agents.")
+    )
+
+
+def eager_import_cycles(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
+    """Return complete-graph cycles that cross the agent migration boundary."""
+
+    return [
+        component
+        for component in eager_import_sccs(package_root)
+        if any(_is_agent_migration_module(module) for module in component)
+    ]
