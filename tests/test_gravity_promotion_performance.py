@@ -341,6 +341,9 @@ class PromotionPerformanceTests(unittest.TestCase):
             "ad_unit": {
                 "kuaishou": "promotion.kuaishou.ad_unit.list",
             },
+            "group": {
+                "ubix": "promotion.ubix.group.list",
+            },
         }
         self.assertEqual(
             expected,
@@ -872,7 +875,7 @@ class PromotionPerformanceTests(unittest.TestCase):
             result["compatibility"],
         )
 
-    def test_four_non_primary_resources_keep_rows_when_formally_bound(self):
+    def test_non_primary_resources_keep_rows_when_formally_bound(self):
         common_inputs = {
             "date_list": ["2026-08-01", "2026-08-07"],
             "query_fields": ["stat_cost"],

@@ -18,6 +18,7 @@ _FORMAL_RESOURCE_PLATFORMS = {
     "ad_group": ("honor",),
     "campaign": ("honor",),
     "ad_unit": ("kuaishou",),
+    "group": ("ubix",),
 }
 PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS = MappingProxyType(
     {
