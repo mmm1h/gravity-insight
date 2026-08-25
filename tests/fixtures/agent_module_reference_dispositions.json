@@ -9,8 +9,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "ea8b47a5391d0b06292efb210c8d67981b86a722ef01b06d138609478ae2dc3c",
     "candidate_map_sha256": "9ecd2ccc7b170546b2ef3f01e9b40eeb8401e23bc69f7190301fc8d0c60cfb0b",
-    "reference_evidence_sha256": "c0d70d28a7dfa6e0dd01ac073055ba1051279dceb9ed71056a26d40f52c199fd",
-    "manual_review_sha256": "1a0d7004e10241e1f4424328af8380caaf9213e5d820795989d8c46f5ef2e795",
+    "reference_evidence_sha256": "2db0ad441e0ef1af8a02cb7d3373ced0e76c2297894bd28d32e48d52e5280f04",
+    "manual_review_sha256": "6ca6db3603b6be549ac08b19692b933314a51e18bb4a43ece923ddfbf5cae8d4",
     "version_controlled_file_count": 3109,
     "scanned_file_count": 3102,
     "excluded_files": [
@@ -394,7 +394,7 @@
       "rewrite_reference": 13,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "9430d21c8b439d064c6ca8a638c4a0fbf64dd1828de484e306e53fa14d51e1dd"
+    "sites_sha256": "889524c3421d14aca7700d026747a099d3a40b9aeed821fdaf30050cf3859e43"
   },
   "blockers": [],
   "sites": [
@@ -2706,11 +2706,11 @@
       "evidence_kind": "audited_source_context"
     },
     {
-      "source_key": "specs/agent-runtime/index.json:54:43:bare text module string",
+      "source_key": "specs/agent-runtime/index.json:56:43:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/index.json",
-        "line": 54,
+        "line": 56,
         "column": 43,
         "form": "bare text module string",
         "old_value": "agent_pagination",
@@ -2731,11 +2731,11 @@
       }
     },
     {
-      "source_key": "specs/agent-runtime/index.json:55:31:bare text module string",
+      "source_key": "specs/agent-runtime/index.json:57:31:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/index.json",
-        "line": 55,
+        "line": 57,
         "column": 31,
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
@@ -2755,17 +2755,17 @@
       }
     },
     {
-      "source_key": "specs/agent-runtime/index.md:102:109:bare text module string",
+      "source_key": "specs/agent-runtime/index.md:104:26:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/index.md",
-        "line": 102,
-        "column": 109,
+        "line": 104,
+        "column": 26,
         "form": "bare text module string",
         "old_value": "agent_runtime_contracts",
         "audit_proposed_value": "runtime_contracts",
-        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`",
-        "audit_context": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`\n必须成为绑定实施基线的祖先并绑定精确测试证据；动态导入审计的 227 个候选点必须全部得到复核处置，未分类数从 227 降为 0 并绑定分类账本路径与 SHA-256；独立复核必须给出 `ready` 裁决。内部两阶段不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
+        "audit_snippet": "`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且",
+        "audit_context": "R17 只有一个 leaf 状态和一个实施分支/Worktree。它只在基线的 83 个根目录 `agent_*.py`\n遗留前缀候选内应用 facade 可达性：82 个候选可达，其中 81 个一对一迁移，\n`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且\nfacade 不可达而留在根目录。这证明前缀候选内的内聚与排除，不证明该候选集是完整\nAgent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 已在\n`dev@3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515` 绑定并满足；动态导入审计因现有\n227 行账本只来自 `01e20b4` 的 gitignored tmp 审计而尚未重绑定，仍为未满足；独立\n复核的当前裁决为 `not_ready`，亦未满足。两个内部阶段只是同一分支上的串行提交/\n回滚 checkpoint，不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
       },
       "disposition": "no_migration_effect",
       "reason_code": "retained_module_reference",
@@ -2779,17 +2779,17 @@
       }
     },
     {
-      "source_key": "specs/agent-runtime/index.md:102:85:bare text module string",
+      "source_key": "specs/agent-runtime/index.md:104:2:bare text module string",
       "audit_category": "bare_agent_string",
       "source": {
         "file": "specs/agent-runtime/index.md",
-        "line": 102,
-        "column": 85,
+        "line": 104,
+        "column": 2,
         "form": "bare text module string",
         "old_value": "agent_pagination",
         "audit_proposed_value": "pagination",
-        "audit_snippet": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`",
-        "audit_context": "R17 只有一个 leaf 状态。其机械边界为从 `gravity_sdk.agent` facade 沿候选模块静态导入边可达的 82 个模块：81 个一对一迁移，`agent_pagination` 合并删除，`agent_runtime_contracts` 因 0 条 Agent 入边、55 条非 Agent 入边且 facade 不可达而留在根目录。它的机器前置当前均未满足：`088d1606127439943cab0b79c8cdbdf516af4839`\n必须成为绑定实施基线的祖先并绑定精确测试证据；动态导入审计的 227 个候选点必须全部得到复核处置，未分类数从 227 降为 0 并绑定分类账本路径与 SHA-256；独立复核必须给出 `ready` 裁决。内部两阶段不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
+        "audit_snippet": "`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且",
+        "audit_context": "R17 只有一个 leaf 状态和一个实施分支/Worktree。它只在基线的 83 个根目录 `agent_*.py`\n遗留前缀候选内应用 facade 可达性：82 个候选可达，其中 81 个一对一迁移，\n`agent_pagination` 合并删除；`agent_runtime_contracts` 因 0 条候选队列入边、55 条队列外入边且\nfacade 不可达而留在根目录。这证明前缀候选内的内聚与排除，不证明该候选集是完整\nAgent domain，也不声称通过总纲的反路径依赖边界门槛。M0 characterization 已在\n`dev@3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515` 绑定并满足；动态导入审计因现有\n227 行账本只来自 `01e20b4` 的 gitignored tmp 审计而尚未重绑定，仍为未满足；独立\n复核的当前裁决为 `not_ready`，亦未满足。两个内部阶段只是同一分支上的串行提交/\n回滚 checkpoint，不获得独立状态，也不能独立使 R17 到达 `fixed_dev`。"
       },
       "disposition": "no_migration_effect",
       "reason_code": "deleted_module_governance_fact",

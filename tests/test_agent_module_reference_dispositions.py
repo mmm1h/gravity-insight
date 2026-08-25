@@ -30,7 +30,7 @@ from scripts.generate_agent_module_reference_dispositions import (
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
-LEDGER_SHA256 = "f47bd399f1ae6f7c6f4d32bf360c244360fb6ac5034cfd777e1bbcc6785d131b"
+LEDGER_SHA256 = "f20c0c0eaeec9e72a3be49a8d6ddfd1f2828be7741a68b80fe59b6aa023857ef"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
     "bare_agent_string": 101,
