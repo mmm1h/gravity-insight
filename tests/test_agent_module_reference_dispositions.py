@@ -588,6 +588,184 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
     _require(summary.get("blocker_count") == len(blockers), "checkpoint blocker count drifted")
 
 
+def _text_state_projection(text: str) -> dict[str, Any]:
+    scalar_names = (
+        "status",
+        "dynamic_import_audit_classification.satisfied",
+        "schema",
+        "candidate_sites",
+        "classified_sites",
+        "unclassified_sites",
+        "blocking_sites",
+        "m0_bound_implementation_baseline",
+        "ledger_sha256",
+        "live_checkpoint_sha256",
+        "live_checkpoint_tracked_sites",
+    )
+    projection: dict[str, Any] = {}
+    for name in scalar_names:
+        values = set(
+            re.findall(
+                rf"(?<![A-Za-z0-9_.]){re.escape(name)}=([A-Za-z0-9._-]+)",
+                text,
+            )
+        )
+        _require(len(values) == 1, f"ambiguous {name} marker: {values}")
+        projection[name] = values.pop()
+    artifact_markers = re.findall(
+        r"m0_bound_artifact_sha256=(\{[^`\r\n]+\})",
+        text,
+    )
+    _require(
+        len(artifact_markers) == 1,
+        f"ambiguous m0 artifact marker: {artifact_markers}",
+    )
+    try:
+        projection["m0_bound_artifact_sha256"] = json.loads(artifact_markers[0])
+    except json.JSONDecodeError as exc:
+        raise AssertionError("invalid m0 artifact marker JSON") from exc
+    return projection
+
+
+def validate_index_and_specification_state(
+    index: dict[str, Any],
+    index_markdown: str,
+    specification: str,
+    ledger: dict[str, Any],
+    directive: dict[str, Any],
+    *,
+    ledger_bytes: bytes,
+    checkpoint: dict[str, Any],
+    checkpoint_bytes: bytes,
+) -> None:
+    requirement = next(
+        item for item in index["requirements"] if item.get("id") == "R17"
+    )
+    _require(requirement["status"] == "specified", "R17 status changed")
+    m0 = next(
+        item
+        for item in requirement["ready_prerequisites"]
+        if item.get("id") == "m0_characterization"
+    )
+    dynamic = next(
+        item
+        for item in requirement["ready_prerequisites"]
+        if item.get("id") == "dynamic_import_audit_classification"
+    )
+    summary = ledger["summary"]
+    actual_dynamic_evidence = (
+        dynamic["required_schema_version"] == ledger["schema_version"]
+        and dynamic["candidate_sites"] == len(ledger["sites"])
+        and dynamic["classified_sites"]
+        == len(ledger["sites"]) - summary["unclassified_sites"]
+        and dynamic["unclassified_sites"] == summary["unclassified_sites"] == 0
+        and dynamic["blocking_sites"] == summary["blocker_count"] == 0
+        and ledger["blockers"] == []
+    )
+    _require(
+        dynamic["satisfied"] is actual_dynamic_evidence,
+        "dynamic prerequisite boolean differs from ledger evidence",
+    )
+
+    ledger_sha256 = hashlib.sha256(ledger_bytes).hexdigest()
+    derivation = directive["canonical_source_errata"]["allowed_source_replacements"]
+    _require(
+        ledger_sha256
+        == dynamic["ledger_sha256"]
+        == derivation["ledger_sha256"],
+        "ledger digest differs across bytes, index, and directive",
+    )
+    checkpoint_sha256 = hashlib.sha256(checkpoint_bytes).hexdigest()
+    checkpoint_summary = checkpoint["summary"]
+    _require(
+        dynamic["live_checkpoint_path"]
+        == CHECKPOINT.relative_to(ROOT).as_posix()
+        and dynamic["live_checkpoint_schema_version"]
+        == checkpoint["schema_version"]
+        and dynamic["live_checkpoint_sha256"] == checkpoint_sha256
+        and dynamic["live_checkpoint_tracked_sites"]
+        == checkpoint_summary["tracked_site_count"]
+        and dynamic["live_checkpoint_unclassified_sites"]
+        == checkpoint_summary["unclassified_sites"]
+        == 0
+        and dynamic["live_checkpoint_blocking_sites"]
+        == checkpoint_summary["blocker_count"]
+        == 0,
+        "live checkpoint differs from the index prerequisite",
+    )
+    expected_projection = {
+        "status": requirement["status"],
+        "dynamic_import_audit_classification.satisfied": str(
+            dynamic["satisfied"]
+        ).lower(),
+        "schema": dynamic["required_schema_version"],
+        "candidate_sites": str(dynamic["candidate_sites"]),
+        "classified_sites": str(dynamic["classified_sites"]),
+        "unclassified_sites": str(dynamic["unclassified_sites"]),
+        "blocking_sites": str(dynamic["blocking_sites"]),
+        "m0_bound_implementation_baseline": m0["bound_implementation_baseline"],
+        "m0_bound_artifact_sha256": m0["bound_artifact_sha256"],
+        "ledger_sha256": ledger_sha256,
+        "live_checkpoint_sha256": checkpoint_sha256,
+        "live_checkpoint_tracked_sites": str(checkpoint_summary["tracked_site_count"]),
+    }
+    for label, text in (
+        ("R17 specification", specification),
+        ("index markdown", index_markdown),
+    ):
+        _require(
+            _text_state_projection(text) == expected_projection,
+            f"{label} state projection differs from index JSON",
+        )
+
+    revision = m0["bound_implementation_baseline"]
+    _require(
+        re.fullmatch(r"[0-9a-f]{40}", revision) is not None,
+        "M0 baseline is not a full Git revision",
+    )
+    ancestor = subprocess.run(
+        [
+            "git",
+            "merge-base",
+            "--is-ancestor",
+            m0["ancestor_candidate_commit"],
+            revision,
+        ],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    _require(ancestor.returncode == 0, "M0 candidate is not an ancestor of baseline")
+    for path, expected_sha256 in m0["bound_artifact_sha256"].items():
+        bound = subprocess.run(
+            ["git", "show", f"{revision}:{path}"],
+            cwd=ROOT,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ).stdout
+        _require(
+            hashlib.sha256(bound).hexdigest() == expected_sha256,
+            f"M0 artifact digest differs at {path}",
+        )
+
+    combined = "\n".join(
+        (json.dumps(index, ensure_ascii=False), index_markdown, specification)
+    )
+    for residue in (
+        "gravity.agent-module-reference-dispositions.v1",
+        "candidate_sites=227",
+        "classified_sites=227",
+        '"candidate_sites": 227',
+        '"classified_sites": 227',
+        '"site_count": 227',
+        "3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515",
+        "87bd51daac6b88f7aa31bb740a84cc14a0a0147c",
+    ):
+        _require(residue not in combined, f"previous state residue: {residue}")
+
+
 class AgentModuleReferenceDispositionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -631,7 +809,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertEqual(summary["reference_manual_overlap_count"], len(reference_keys & manual_keys))
         self.assertEqual(summary["tracked_site_count"], len(reference_keys | manual_keys))
         if self.checkpoint["source_audit"]["owner_state"] == "baseline":
-            self.assertEqual((901, 238, 236, 903), (
+            self.assertEqual((906, 241, 239, 908), (
                 len(reference_keys),
                 len(manual_keys),
                 len(reference_keys & manual_keys),
@@ -689,78 +867,145 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 self.assertEqual(1, checkpoint_generator.main(["--check"]))
 
     def test_index_and_specification_state_agree(self) -> None:
-        index_text = INDEX_JSON.read_text(encoding="utf-8")
-        index = json.loads(index_text)
+        validate_index_and_specification_state(
+            json.loads(INDEX_JSON.read_text(encoding="utf-8")),
+            INDEX_MARKDOWN.read_text(encoding="utf-8"),
+            R17_SPECIFICATION.read_text(encoding="utf-8"),
+            self.document,
+            self.directive,
+            ledger_bytes=self.raw,
+            checkpoint=self.checkpoint,
+            checkpoint_bytes=self.checkpoint_raw,
+        )
+
+    def test_index_and_specification_state_injections_fail_closed(self) -> None:
+        index = json.loads(INDEX_JSON.read_text(encoding="utf-8"))
         index_markdown = INDEX_MARKDOWN.read_text(encoding="utf-8")
         specification = R17_SPECIFICATION.read_text(encoding="utf-8")
-        requirement = next(
-            item for item in index["requirements"] if item.get("id") == "R17"
+
+        def mutated_index(field: str) -> dict[str, Any]:
+            selected = copy.deepcopy(index)
+            requirement = next(
+                item for item in selected["requirements"] if item.get("id") == "R17"
+            )
+            prerequisite = next(
+                item
+                for item in requirement["ready_prerequisites"]
+                if item.get("id") == field
+            )
+            if field == "dynamic_import_audit_classification":
+                prerequisite["satisfied"] = False
+            else:
+                first = next(iter(prerequisite["bound_artifact_sha256"]))
+                prerequisite["bound_artifact_sha256"][first] = "0" * 64
+            return selected
+
+        injections = {
+            "spec dynamic marker": (
+                index,
+                index_markdown,
+                specification.replace(
+                    "dynamic_import_audit_classification.satisfied=true",
+                    "dynamic_import_audit_classification.satisfied=false",
+                    1,
+                ),
+            ),
+            "index markdown dynamic marker": (
+                index,
+                index_markdown.replace(
+                    "dynamic_import_audit_classification.satisfied=true",
+                    "dynamic_import_audit_classification.satisfied=false",
+                    1,
+                ),
+                specification,
+            ),
+            "index JSON boolean": (
+                mutated_index("dynamic_import_audit_classification"),
+                index_markdown,
+                specification,
+            ),
+            "spec M0 revision": (
+                index,
+                index_markdown,
+                specification.replace(
+                    "m0_bound_implementation_baseline="
+                    "113176a381b6d232e95a112d78d1d2f4bc5ac024",
+                    "m0_bound_implementation_baseline=" + "0" * 40,
+                    1,
+                ),
+            ),
+            "index markdown M0 revision": (
+                index,
+                index_markdown.replace(
+                    "m0_bound_implementation_baseline="
+                    "113176a381b6d232e95a112d78d1d2f4bc5ac024",
+                    "m0_bound_implementation_baseline=" + "0" * 40,
+                    1,
+                ),
+                specification,
+            ),
+            "index JSON M0 digest": (
+                mutated_index("m0_characterization"),
+                index_markdown,
+                specification,
+            ),
+            "spec M0 digest": (
+                index,
+                index_markdown,
+                specification.replace(
+                    'm0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"'
+                    "97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640",
+                    'm0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"'
+                    + "0" * 64,
+                    1,
+                ),
+            ),
+            "spec ledger digest": (
+                index,
+                index_markdown,
+                specification.replace(
+                    "ledger_sha256=" + LEDGER_SHA256,
+                    "ledger_sha256=" + "0" * 64,
+                    1,
+                ),
+            ),
+            "index markdown ledger digest": (
+                index,
+                index_markdown.replace(
+                    "ledger_sha256=" + LEDGER_SHA256,
+                    "ledger_sha256=" + "0" * 64,
+                    1,
+                ),
+                specification,
+            ),
+            "index JSON ledger digest": (
+                copy.deepcopy(index),
+                index_markdown,
+                specification,
+            ),
+        }
+        ledger_index = injections["index JSON ledger digest"][0]
+        ledger_requirement = next(
+            item for item in ledger_index["requirements"] if item.get("id") == "R17"
         )
-        self.assertEqual("specified", requirement["status"])
-        prerequisite = next(
+        dynamic = next(
             item
-            for item in requirement["ready_prerequisites"]
+            for item in ledger_requirement["ready_prerequisites"]
             if item.get("id") == "dynamic_import_audit_classification"
         )
-        summary = self.document["summary"]
-        actual_evidence = (
-            prerequisite["required_schema_version"]
-            == self.document["schema_version"]
-            and prerequisite["candidate_sites"] == len(self.document["sites"])
-            and prerequisite["classified_sites"]
-            == len(self.document["sites"]) - summary["unclassified_sites"]
-            and prerequisite["unclassified_sites"] == 0
-            and summary["unclassified_sites"] == 0
-            and prerequisite["blocking_sites"] == 0
-            and summary["blocker_count"] == 0
-            and self.document["blockers"] == []
-        )
-        self.assertEqual(actual_evidence, prerequisite["satisfied"])
-        self.assertEqual(
-            prerequisite["required_schema_version"],
-            self.document["schema_version"],
-        )
-        self.assertEqual(
-            prerequisite["candidate_sites"], prerequisite["classified_sites"]
-        )
-        self.assertEqual(prerequisite["candidate_sites"], summary["site_count"])
-        self.assertEqual(0, prerequisite["unclassified_sites"])
-        self.assertEqual(0, prerequisite["blocking_sites"])
-
-        marker_names = (
-            "status",
-            "dynamic_import_audit_classification.satisfied",
-            "schema",
-            "candidate_sites",
-            "classified_sites",
-            "unclassified_sites",
-            "blocking_sites",
-        )
-
-        def marker(text: str) -> dict[str, str]:
-            result: dict[str, str] = {}
-            for name in marker_names:
-                values = set(
-                    re.findall(
-                        rf"(?<![A-Za-z0-9_.]){re.escape(name)}=([A-Za-z0-9._-]+)",
-                        text,
-                    )
+        dynamic["ledger_sha256"] = "0" * 64
+        for label, (injected_index, injected_markdown, injected_spec) in injections.items():
+            with self.subTest(label=label), self.assertRaises(AssertionError):
+                validate_index_and_specification_state(
+                    injected_index,
+                    injected_markdown,
+                    injected_spec,
+                    self.document,
+                    self.directive,
+                    ledger_bytes=self.raw,
+                    checkpoint=self.checkpoint,
+                    checkpoint_bytes=self.checkpoint_raw,
                 )
-                self.assertEqual(1, len(values), f"ambiguous {name} marker: {values}")
-                result[name] = values.pop()
-            return result
-
-        self.assertEqual(marker(specification), marker(index_markdown))
-        combined = "\n".join((index_text, index_markdown, specification))
-        for residue in (
-            "gravity.agent-module-reference-dispositions.v1",
-            "candidate_sites=227",
-            "classified_sites=227",
-            '"candidate_sites": 227',
-            '"classified_sites": 227',
-            '"site_count": 227',
-        ):
-            self.assertNotIn(residue, combined, f"previous ledger residue: {residue}")
 
     def test_frozen_scope_supports_all_three_owner_states(self) -> None:
         moves = self.document["scope"]["one_to_one_moves"]
@@ -805,6 +1050,20 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                         for item in mappings
                     ),
                 )
+
+    def test_relative_date_target_uses_the_shared_boundary_token_rule(self) -> None:
+        mappings, _ = make_module_map(ROOT)
+        relative_date = next(
+            item
+            for item in mappings
+            if item.old_module == "gravity_sdk.relative_date_agent"
+        )
+        self.assertEqual("gravity_sdk.agents.relative_date", relative_date.new_module)
+        self.assertEqual("src/gravity_sdk/agents/relative_date.py", relative_date.new_file)
+        self.assertFalse(relative_date.target_exists)
+        self.assertFalse(relative_date.casefold_target_collision)
+        self.assertFalse(relative_date.stdlib_basename_collision)
+        self.assertFalse((ROOT / "src/gravity_sdk/relative_date.py").exists())
 
     def test_canonical_errata_replacements_are_derived_only_from_ledger(self) -> None:
         declaration = self.directive["canonical_source_errata"][
@@ -1089,12 +1348,19 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         forged["summary"]["sites_sha256"] = _canonical_sites_sha256(
             forged["sites"]
         )
+        forged_directive = copy.deepcopy(self.directive)
+        forged_bytes = (json.dumps(forged, indent=2, ensure_ascii=False) + "\n").encode(
+            "utf-8"
+        )
+        forged_directive["canonical_source_errata"]["allowed_source_replacements"][
+            "ledger_sha256"
+        ] = hashlib.sha256(forged_bytes).hexdigest()
         baseline = load_git_baseline(self.directive)
         with self.assertRaisesRegex(
             ErrataValidationError,
-            "supplied ledger bytes differ from the directive-bound ledger object",
+            "Git-bound ledger SHA-256 differs from the errata declaration",
         ):
-            build_expected_source(self.directive, forged, baseline)
+            build_expected_source(forged_directive, forged, baseline)
 
     def test_current_canonical_source_still_matches_v92_binding(self) -> None:
         source = CANONICAL_SOURCE.read_bytes()

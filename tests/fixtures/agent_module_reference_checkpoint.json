@@ -4,8 +4,8 @@
   "immutable_baseline_ledger": {
     "role": "errata_source_only_immutable_baseline",
     "repository_path": "tests/fixtures/agent_module_reference_dispositions.json",
-    "git_revision": "9dce147cd4e5e7d59b243111506db87135932069",
-    "sha256": "cff0dda6ed24a8139f607819d7579b4c83fc437f721201c6d57c9e4b2cd7d98b",
+    "git_blob": "0fcfa6c85e07c7cc901530ed8c2fe7516203e986",
+    "sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
     "schema_version": "gravity.agent-module-reference-dispositions.v2"
   },
   "source_audit": {
@@ -13,12 +13,12 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "c944329199c3491db8f265ec30fc6408f30b8dd621f6bd633c30ead00e8f90c6",
+    "scanner_sha256": "90a5dbf090eed5152cdf19c8ebab7125ebeb4d105593be06ddc16d95ba69f762",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
-    "generator_sha256": "b7bc933d82a8150f6e8b089e506f5dbac549bbf60d140e72eaeb28662ffa2190",
-    "candidate_map_sha256": "3698454d0cfd80f216e66ade482a58a8b0710c9ee36ce1510f1d93a11dbcbff6",
-    "reference_evidence_sha256": "87f13d23d82235d0d0664c820280f58799cf8d8d31e18dbeb5321d76dbc849e1",
-    "manual_review_sha256": "c001eac9b80faf34473788fff0dae45277db6d71ffd3768d62a6d5a2e2250567",
+    "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
+    "candidate_map_sha256": "be8916e36768d710029c698e5ff02a49943b7ce5e9a0c406465fe1f8adb6f512",
+    "reference_evidence_sha256": "0b0334226ac6479c7ec913bf4e50c669dce4eb41e241f9c02881ce1a770dbef3",
+    "manual_review_sha256": "34dea511d5ace2c218e54961709ece00ec0736649fc572ff1fef45d9dc063839",
     "owner_state": "baseline",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
@@ -36,7 +36,7 @@
     "source_key_format": "{file}:{line}:{column}:{form}"
   },
   "scope": {
-    "audit_candidate_modules": 83,
+    "audit_candidate_modules": 84,
     "one_to_one_moves": [
       {
         "old_module": "gravity_sdk.agent_advertiser_profile",
@@ -361,6 +361,10 @@
       {
         "old_module": "gravity_sdk.agent_vocabulary",
         "new_module": "gravity_sdk.agents.vocabulary"
+      },
+      {
+        "old_module": "gravity_sdk.relative_date_agent",
+        "new_module": "gravity_sdk.agents.relative_date"
       }
     ],
     "consolidate_delete": {
@@ -622,7 +626,7 @@
       "evidence_kind": "complete_local_call_census"
     },
     {
-      "basis": "The characterization helper uses the legacy prefix only to classify deep path references and validate ledger row shape. SCC membership comes from the exact 81 move rows plus pagination consolidation, not this prefix.",
+      "basis": "The characterization helper uses the legacy prefix only to classify deep path references and validate ledger row shape. SCC membership comes from the exact 82 move rows plus pagination consolidation, not this prefix.",
       "evidence_kind": "migration_characterization_contract"
     },
     {
@@ -663,39 +667,39 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 903,
-    "reference_site_count": 901,
-    "manual_review_site_count": 238,
-    "reference_manual_overlap_count": 236,
+    "tracked_site_count": 908,
+    "reference_site_count": 906,
+    "manual_review_site_count": 241,
+    "reference_manual_overlap_count": 239,
     "manual_only_site_count": 2,
-    "unique_source_keys": 903,
+    "unique_source_keys": 908,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
-    "actionable_site_count": 595,
+    "actionable_site_count": 599,
     "reference_categories": {
-      "documentation_spec": 113,
+      "documentation_spec": 116,
       "dynamic_import": 11,
       "manual_patch_expression": 117,
       "module_qualname_dependency": 7,
       "patch_target": 35,
-      "static_import": 578,
+      "static_import": 580,
       "string_reference": 40
     },
     "manual_review_categories": {
       "agent_prefix_template": 2,
-      "bare_agent_string": 101,
+      "bare_agent_string": 104,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
       "non_string_patch_expression": 117
     },
     "dispositions": {
-      "no_migration_effect": 308,
+      "no_migration_effect": 309,
       "rewrite_consolidated_reference": 1,
-      "rewrite_reference": 593,
+      "rewrite_reference": 597,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "c0f72cd6782b732041e12cb40d143e8ea8219308f414cba6a0edf2e863d95a8b"
+    "sites_sha256": "101e873b8dde8ce238aff4e4158b492c2baa4d91ffe4dd18c14a9abbf9b792a7"
   },
   "blockers": [],
   "site_fields": [
@@ -850,6 +854,21 @@
       "bare_agent_string",
       "agent_order_directory",
       "order_directory",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      55,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:155:67:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "relative_date_agent",
+      "relative_date",
       "documentation_spec",
       "context review",
       "no_migration_effect",
@@ -2583,7 +2602,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:63:43:bare text module string",
+      "specs/agent-runtime/index.json:64:43:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2598,7 +2617,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:64:31:bare text module string",
+      "specs/agent-runtime/index.json:65:31:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2610,6 +2629,44 @@
       64,
       {
         "kind": "none"
+      }
+    ],
+    [
+      "specs/agent-runtime/index.md:103:29:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "relative_date_agent",
+      "relative_date",
+      "documentation_spec",
+      "context review",
+      "rewrite_reference",
+      "active_governance_path",
+      0,
+      {
+        "kind": "replace_text",
+        "old_text": "relative_date_agent",
+        "new_text": "agents.relative_date",
+        "old_module": "gravity_sdk.relative_date_agent",
+        "new_module": "gravity_sdk.agents.relative_date"
+      }
+    ],
+    [
+      "specs/agent-runtime/index.md:103:9:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_handoff",
+      "handoff",
+      "documentation_spec",
+      "context review",
+      "rewrite_reference",
+      "active_governance_path",
+      0,
+      {
+        "kind": "replace_text",
+        "old_text": "agent_handoff",
+        "new_text": "agents.handoff",
+        "old_module": "gravity_sdk.agent_handoff",
+        "new_module": "gravity_sdk.agents.handoff"
       }
     ],
     [
@@ -6295,6 +6352,23 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_call_bound",
         "new_module": "gravity_sdk.agents.call_bound"
+      }
+    ],
+    [
+      "src/gravity_sdk/agent_handoff.py:553:5:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.relative_date_agent",
+      "gravity_sdk.agents.relative_date",
+      "static_import",
+      "exact",
+      "rewrite_reference",
+      "exact_owner_reference",
+      45,
+      {
+        "kind": "replace_text",
+        "old_module": "gravity_sdk.relative_date_agent",
+        "new_module": "gravity_sdk.agents.relative_date"
       }
     ],
     [
@@ -15006,6 +15080,23 @@
       65,
       {
         "kind": "none"
+      }
+    ],
+    [
+      "tests/test_relative_dates.py:8:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.relative_date_agent",
+      "gravity_sdk.agents.relative_date",
+      "static_import",
+      "exact",
+      "rewrite_reference",
+      "exact_owner_reference",
+      45,
+      {
+        "kind": "replace_text",
+        "old_module": "gravity_sdk.relative_date_agent",
+        "new_module": "gravity_sdk.agents.relative_date"
       }
     ],
     [

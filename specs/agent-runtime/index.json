@@ -54,19 +54,20 @@
         "worktree": "D:/git-pjt/gravity-sdk-r17-migration"
       },
       "scope": {
-        "classifier": "legacy_agent_prefix_cohort_facade_reachable_static_import_closure_v1",
-        "boundary_claim": "cohesion_within_the_legacy_agent_prefix_cohort_only",
+        "classifier": "independent_responsibility_inventory_with_boundary_token_normalization_v2",
+        "boundary_claim": "compact_agent_interaction_scope_supported_but_graph_methods_not_converged",
         "complete_agent_domain_proven": false,
-        "candidate_root_modules": 83,
-        "facade_reachable_candidate_modules": 82,
-        "migrated_modules": 81,
+        "legacy_agent_prefixed_candidate_modules": 83,
+        "legacy_prefix_facade_reachable_modules": 82,
+        "reviewed_root_modules": 84,
+        "migrated_modules": 82,
         "consolidated_deleted_modules": ["agent_pagination"],
         "excluded_modules": ["agent_runtime_contracts"],
-        "final_root_python_files": 496,
+        "final_root_python_files": 495,
         "final_root_agent_prefixed_modules": 1,
         "core_modules": 34,
-        "moved_peripheral_modules": 47,
-        "core_to_moved_peripheral_edges": 152,
+        "moved_peripheral_modules": 48,
+        "core_to_moved_peripheral_edges": 153,
         "moved_peripheral_to_core_edges": 0,
         "non_agent_to_moved_module_edges": 17
       },
@@ -76,12 +77,12 @@
           "satisfied": true,
           "satisfied_by": "agent_under_standing_owner_delegation",
           "owner_review": "pending",
-          "bound_implementation_baseline": "87bd51daac6b88f7aa31bb740a84cc14a0a0147c",
-          "review_note": "scc_self_loop_detection_and_exact_ledger_derived_move_set_are_now_fixed_and_rebound_at_this_baseline",
+          "bound_implementation_baseline": "113176a381b6d232e95a112d78d1d2f4bc5ac024",
+          "review_note": "scc_self_loop_detection_and_exact_82_move_ledger_derived_set_are_fixed_and_rebound_at_this_baseline",
           "ancestor_candidate_commit": "088d1606127439943cab0b79c8cdbdf516af4839",
           "bound_artifact_sha256": {
-            "tests/agent_migration_characterization.py": "daa6fb51220c62e6b7ab69a7ede5b8375d7abc1d1678deea926c10a4251c8c38",
-            "tests/test_agent_module_migration_characterization.py": "242ceea135c81787fd0194b0bb006f54eb63368892a4f211b2d5ba7897351595",
+            "tests/agent_migration_characterization.py": "97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640",
+            "tests/test_agent_module_migration_characterization.py": "6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc",
             "tests/test_installed_wheel.py": "bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117",
             "tests/fixtures/public_api_owner_migrations.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
             "tests/fixtures/public_api_exports.json": "d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053"
@@ -99,7 +100,7 @@
           "review_note": "third_review_false_negatives_closed_dynamic_caller_tracking_now_covers_import_module_dunder_import_sys_modules_indirect_variables_and_string_patch_targets_residual_opaque_forms_are_listed_and_must_block",
           "ledger_regenerated_from": "scripts/generate_agent_module_reference_dispositions.py, which scans git-tracked files directly; the prior gitignored tmp audit is no longer an input",
           "ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
-          "ledger_sha256": "cff0dda6ed24a8139f607819d7579b4c83fc437f721201c6d57c9e4b2cd7d98b",
+          "ledger_sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
           "required_schema_version": "gravity.agent-module-reference-dispositions.v2",
           "candidate_sites": 238,
           "classified_sites": 238,
@@ -112,10 +113,17 @@
           },
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
+          "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
+          "live_checkpoint_sha256": "4c46e7d343749cba164f60ef0059d2a7734444e0f2d32a975c130e4b24b6e399",
+          "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
+          "live_checkpoint_tracked_sites": 908,
+          "live_checkpoint_unclassified_sites": 0,
+          "live_checkpoint_blocking_sites": 0,
           "requires": [
             "all_candidate_sites_have_reviewed_dispositions",
             "classification_ledger_key_count_matches_the_bound_site_count",
-            "classification_ledger_path_and_sha256_are_bound"
+            "classification_ledger_path_and_sha256_are_bound",
+            "live_checkpoint_tracks_the_current_repository_and_fails_closed"
           ]
         },
         {
