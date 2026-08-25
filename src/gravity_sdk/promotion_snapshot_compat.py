@@ -13,6 +13,10 @@ from typing import Any
 from .actionable_error_values import actual_value
 from .composite_result import combined_status
 from .errors import InputValidationError
+from .promotion_performance_snapshot import (
+    PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS,
+    promotion_performance_snapshot,
+)
 from .result_source import RAW_OPERATION, result_source
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
@@ -60,20 +64,7 @@ def promotion_snapshot_compat(
             read_all=read_all,
             max_workers=workers,
         )
-        from .promotion_performance import promotion_performance
-
-        app_id, window, selected, metrics, workers, pages, items = request
-        return promotion_performance(
-            client,
-            app_id,
-            window[0],
-            window[1],
-            platforms=selected,
-            metrics=metrics,
-            max_workers=workers,
-            max_pages=pages,
-            max_items=items,
-        )
+        return promotion_performance_snapshot(client, request, resource=resource)
     return _compatibility_snapshot(
         client,
         requested,
@@ -119,19 +110,22 @@ def _uses_formal_path(platforms: Sequence[str], resource: str) -> bool:
     from .promotion_performance_request import normalize_promotion_platforms
     from .promotion_performance_result import SUPPORTED_PLATFORMS
 
-    if resource != "primary":
+    if resource == "primary":
+        if all(platform in SUPPORTED_PLATFORMS for platform in platforms):
+            return True
+        unsupported = [
+            platform
+            for platform in platforms
+            if platform not in SUPPORTED_PLATFORMS
+            and platform not in _COMPATIBILITY_PRIMARY_PLATFORMS
+        ]
+        if unsupported:
+            normalize_promotion_platforms(unsupported)
         return False
-    if all(platform in SUPPORTED_PLATFORMS for platform in platforms):
-        return True
-    unsupported = [
-        platform
-        for platform in platforms
-        if platform not in SUPPORTED_PLATFORMS
-        and platform not in _COMPATIBILITY_PRIMARY_PLATFORMS
-    ]
-    if unsupported:
-        normalize_promotion_platforms(unsupported)
-    return False
+    operations = PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS.get(resource)
+    return bool(platforms) and operations is not None and all(
+        platform in operations for platform in platforms
+    )
 
 
 def _bound_request(
@@ -148,14 +142,12 @@ def _bound_request(
         validate_promotion_performance_request,
     )
 
-    if resource != "primary":
+    if not _uses_formal_path(platforms, resource):
         raise InputValidationError(
-            f"actual value: {actual_value(resource)}; legacy promotion snapshots "
-            "now require the governed primary resource",
+            f"actual value: {actual_value(resource)}; promotion snapshot formal "
+            "resource binding is not registered for every selected platform",
             field="resource",
-            next_action=(
-                "Use resource='primary' with the governed Promotion request, then retry."
-            ),
+            next_action="Use a registered formal platform/resource combination.",
         )
     if not isinstance(read_all, bool):
         _reject("read_all", read_all, "promotion snapshot read_all must be a boolean")
@@ -177,7 +169,10 @@ def _bound_request(
     bindings: list[
         tuple[str, tuple[str, str], tuple[str, ...], tuple[str, ...], int, int, int]
     ] = []
-    selected = normalize_promotion_platforms(platforms)
+    governed_platforms = (
+        platforms if resource == "primary" else list(dict.fromkeys(platforms))
+    )
+    selected = normalize_promotion_platforms(governed_platforms)
     extra = sorted(set(platform_inputs) - set(selected))
     if extra:
         _reject(
