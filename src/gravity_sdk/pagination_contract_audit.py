@@ -32,6 +32,17 @@ _COMPLETENESS_SIGNAL_FIELDS = frozenset({
 })
 _NOT_COLLECTION = "not_collection_semantics"
 _NO_FALSIFIABLE_SIGNAL = "no_falsifiable_completeness_signal"
+_COLLECTION_PROJECTION_FIELDS = (
+    "data_dynamic_item_fields",
+    "data_item_keys",
+    "data_numeric_suffix_item_fields",
+    "data_scalar_list_types",
+    "dynamic_item_fields",
+    "item_keys",
+    "nested_item_keys",
+    "numeric_suffix_item_fields",
+    "recursive_data_item_keys",
+)
 
 
 def load_pagination_audit(path: Path | None = None) -> dict[str, Any]:
@@ -70,6 +81,7 @@ def current_operation_pagination() -> dict[str, dict[str, Any]]:
                     if isinstance(projection, Mapping)
                     else None
                 ),
+                "response_scalar_only": _response_scalar_only(projection),
                 "stability": operation.get("stability"),
             },
         }
@@ -205,6 +217,11 @@ def _unknown_evidence_disposition(
     review_status = record.get("review_status")
     if review_status == "not_collection_semantics":
         return _static_unknown_disposition(context)
+    if (
+        review_status == "collection_completeness_unknown"
+        and _static_scalar_query(context)
+    ):
+        return _NOT_COLLECTION
     if _production_no_signal(record, pagination):
         return _NO_FALSIFIABLE_SIGNAL
     return None
@@ -240,6 +257,14 @@ def _static_unknown_disposition(context: Mapping[str, Any]) -> str | None:
         and not _has_completeness_signal(context)
     )
     return _NO_FALSIFIABLE_SIGNAL if unpageable_list else None
+
+
+def _static_scalar_query(context: Mapping[str, Any]) -> bool:
+    return (
+        context.get("effect") == "read"
+        and context.get("action") == "query"
+        and context.get("response_scalar_only") is True
+    )
 
 
 def _production_no_signal(
@@ -312,6 +337,23 @@ def _field_names(value: Any) -> set[str]:
             result.update(_field_names(nested))
         return result
     return {str(value)} if isinstance(value, str) else set()
+
+
+def _response_scalar_only(value: Any) -> bool:
+    if not isinstance(value, Mapping) or value.get("data_shape") == "list":
+        return False
+    data_keys = _string_values(value.get("data_keys"))
+    required_keys = _string_values(value.get("required_data_keys"))
+    numeric_paths = _string_values(value.get("numeric_paths"))
+    if not data_keys or data_keys != required_keys or data_keys != numeric_paths:
+        return False
+    return not any(value.get(field) for field in _COLLECTION_PROJECTION_FIELDS)
+
+
+def _string_values(value: Any) -> set[str]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        return set()
+    return {str(item) for item in value}
 
 
 def _disposition_status(record: Mapping[str, Any]) -> str | None:
