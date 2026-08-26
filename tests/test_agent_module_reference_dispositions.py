@@ -1026,6 +1026,11 @@ def _r17_read_modules(
                 value for value in strings if R17_PROTOCOL_PATTERN.fullmatch(value)
             )),
             "schemas": tuple(sorted(schemas)),
+            "symbol_values": (
+                {"SCHEMA_VERSION": tuple(sorted(schemas))}
+                if schemas
+                else {}
+            ),
             "functions": frozenset(
                 node.name
                 for node in tree.body
@@ -1362,6 +1367,10 @@ def _r17_contract_fragment(
     return {
         "package": record["package"],
         "schemas": tuple(record["schemas"]),
+        "symbol_values": {
+            name: tuple(values)
+            for name, values in record["symbol_values"].items()
+        },
         "protocols": tuple(record["protocols"]),
         "commands": tuple(record["commands"]),
         "response_keys": tuple(sorted(record["response_keys"])),
@@ -1527,29 +1536,39 @@ def _r17_contract_matches_fragment(
 
 
 def _r17_contract_binding_matches(
+    model: dict[str, Any],
     contract: dict[str, Any],
     fragment: dict[str, Any],
     locator: str,
+    fragment_index: int,
     facade_closure: set[str] | None,
 ) -> bool:
     binding = contract["protocol_binding"]
     protocol = contract["service_protocol"]
     layer = contract["owner_layer"]
+    schemas = set(fragment["schemas"])
+    for schema_locator, schema_index in _r17_resolve_public_symbol(
+        model, locator, fragment_index, "SCHEMA_VERSION"
+    ):
+        schema_fragment = model["nodes"][schema_locator]["fragments"][schema_index]
+        schemas.update(
+            schema_fragment["symbol_values"].get("SCHEMA_VERSION", ())
+        )
     if binding == "declared_schema":
-        matched = protocol in fragment["schemas"]
+        matched = protocol in schemas
     elif binding == "facade_reachable":
         matched = (
             facade_closure is not None
             and locator in facade_closure
             and not any(
-                schema for schema in fragment["schemas"]
+                schema for schema in schemas
                 if not schema.startswith("gravity.agent")
             )
         )
     else:
         matched = (
             protocol in fragment["imported_symbols"]
-            and not fragment["schemas"]
+            and not schemas
         )
     if not matched:
         return False
@@ -1587,7 +1606,10 @@ def _r17_resolve_public_symbol(
             fragment, selected_symbol
         ):
             continue
-        if selected_symbol in fragment["symbols"]:
+        if (
+            selected_symbol in fragment["symbols"]
+            or selected_symbol in fragment["symbol_values"]
+        ):
             definitions.add((selected_locator, selected_index))
         for target_locator, target_symbol in fragment["symbol_bindings"].get(
             selected_symbol, ()
@@ -1624,7 +1646,7 @@ def _r17_contract_binding_witnesses(
         return (
             {locator}
             if _r17_contract_binding_matches(
-                contract, fragment, locator, facade_closure
+                model, contract, fragment, locator, fragment_index, facade_closure
             )
             and required_owner_keys <= set(fragment["response_keys"])
             else set()
@@ -1637,7 +1659,7 @@ def _r17_contract_binding_witnesses(
             ):
                 continue
             if _r17_contract_binding_matches(
-                contract, fragment, locator, facade_closure
+                model, contract, fragment, locator, fragment_index, facade_closure
             ) and required_owner_keys <= (
                 set(owner_fragment["response_keys"])
                 | set(fragment["response_keys"])
@@ -1665,7 +1687,7 @@ def _r17_resolve_responsibility_contract(
             semantic_owners.add(locator)
             binding_witnesses.update(witnesses)
     _require(
-        bool(semantic_owners),
+        len(semantic_owners) == 1,
         f"responsibility {contract['id']} semantic owners: "
         f"{sorted(semantic_owners)}",
     )
@@ -2020,6 +2042,64 @@ def _r17_move_entry_to_reexported_submodule(
     return origin_module, implementation_module
 
 
+def _r17_move_schema_to_reexported_submodule(
+    package_root: Path,
+    entry_symbol: str,
+) -> tuple[str, str]:
+    origin: Path | None = None
+    source = ""
+    tree: ast.Module | None = None
+    for path in sorted(package_root.rglob("*.py")):
+        selected_source = path.read_text(encoding="utf-8")
+        selected_tree = ast.parse(selected_source, filename=str(path))
+        if any(
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == entry_symbol
+            for node in selected_tree.body
+        ):
+            _require(origin is None, f"multiple entry definitions: {entry_symbol}")
+            origin = path
+            source = selected_source
+            tree = selected_tree
+    _require(
+        origin is not None and tree is not None,
+        f"entry definition not found: {entry_symbol}",
+    )
+    assignments = [
+        node
+        for node in tree.body
+        if isinstance(node, (ast.Assign, ast.AnnAssign))
+        and _r17_assigned_string(node, "SCHEMA_VERSION") is not None
+    ]
+    _require(
+        len(assignments) == 1,
+        f"one SCHEMA_VERSION definition required: {origin}",
+    )
+    assignment = assignments[0]
+    lines = source.splitlines(keepends=True)
+    start = assignment.lineno - 1
+    moved = "".join(lines[start : assignment.end_lineno])
+
+    relative = origin.relative_to(package_root).with_suffix("")
+    origin_module = ".".join((package_root.name, *relative.parts))
+    schema_module = origin.with_name(f"{origin.stem}_schema.py")
+    _require(not schema_module.exists(), f"schema module exists: {schema_module}")
+    schema_module.write_text(
+        "from __future__ import annotations\n\n" + moved,
+        encoding="utf-8",
+    )
+    schema_module_name = origin_module + "_schema"
+    origin.write_text(
+        "".join(
+            lines[:start]
+            + [f"from {schema_module_name} import SCHEMA_VERSION\n"]
+            + lines[assignment.end_lineno :]
+        ),
+        encoding="utf-8",
+    )
+    return origin_module, schema_module_name
+
+
 def _r17_split_merge_responsibility_consumers(
     model: dict[str, Any], inventory: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[str, int]]:
@@ -2060,10 +2140,13 @@ def _r17_split_merge_responsibility_consumers(
             for fragment in node["fragments"]
         )
         if len(targets) == 2:
-            for target in targets:
+            for index, target in enumerate(targets):
                 nodes[target] = {
                     **copy.deepcopy(node),
-                    "fragments": copy.deepcopy(rewritten_fragments),
+                    # Splitting consumers must not clone the definition owner.
+                    "fragments": (
+                        copy.deepcopy(rewritten_fragments) if index == 0 else ()
+                    ),
                 }
         elif targets[0].startswith("external-merge-"):
             merged = nodes.setdefault(targets[0], {
@@ -5015,8 +5098,37 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertNotIn("docstring", record)
         self.assertEqual(("gravity.actual.v1",), record["schemas"])
         self.assertEqual(
+            {"SCHEMA_VERSION": ("gravity.actual.v1",)},
+            record["symbol_values"],
+        )
+        self.assertEqual(
             ("gravity.actual.v1", "gravity.returned.v1"),
             record["protocols"],
+        )
+
+    def test_duplicate_definition_owners_fail_closed(self) -> None:
+        contracts = _r17_load_responsibility_contracts()
+        model = _r17_responsibility_model(_r17_read_modules(None))
+        facade_contract = next(
+            row for row in contracts["responsibilities"]
+            if row["id"] == "agent-facade"
+        )
+        duplicate = copy.deepcopy(model)
+        duplicate_locator = "gravity_sdk.agent_duplicate"
+        duplicate["nodes"][duplicate_locator] = copy.deepcopy(
+            duplicate["nodes"]["gravity_sdk.agent"]
+        )
+        duplicate["graph"][duplicate_locator] = set(
+            duplicate["graph"]["gravity_sdk.agent"]
+        )
+        with self.assertRaises(AssertionError) as caught:
+            _r17_resolve_responsibility_contract(
+                duplicate, facade_contract, None
+            )
+        self.assertEqual(
+            "responsibility agent-facade semantic owners: "
+            "['gravity_sdk.agent', 'gravity_sdk.agent_duplicate']",
+            str(caught.exception),
         )
 
     def test_boundary_is_invariant_to_file_structure(self) -> None:
@@ -5130,6 +5242,29 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             reexported = _r17_derive_responsibility_inventory(
                 reexported_model, contracts
             )
+
+            schema_package_root = Path(raw_temp) / "schema" / "gravity_sdk"
+            schema_package_root.mkdir(parents=True)
+            _r17_materialize_frozen_package(schema_package_root)
+            schema_origin, schema_implementation = (
+                _r17_move_schema_to_reexported_submodule(
+                    schema_package_root, facade_contract["entry"]["symbol"]
+                )
+            )
+            schema_reexported_behavior = subprocess.run(
+                [sys.executable, "-c", probe],
+                cwd=schema_package_root.parent,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            ).stdout
+            schema_reexported_model = _r17_responsibility_model(
+                _r17_read_modules(schema_package_root)
+            )
+            schema_reexported = _r17_derive_responsibility_inventory(
+                schema_reexported_model, contracts
+            )
         self.assertEqual(control_behavior, reexported_behavior)
         reexported_owners, reexported_bindings = (
             _r17_resolve_responsibility_contract(
@@ -5145,7 +5280,44 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertEqual(82, reexported_comparison["normalized_move_count"])
         self.assertTrue(reexported_comparison["normalized_moves_equal_ledger"])
 
-        variants = (renamed, docstring_free, split_merge, reexported)
+        self.assertEqual(control_behavior, schema_reexported_behavior)
+        schema_owners, schema_bindings = _r17_resolve_responsibility_contract(
+            schema_reexported_model, facade_contract, None
+        )
+        self.assertEqual((schema_origin,), schema_owners)
+        self.assertEqual((schema_origin,), schema_bindings)
+        self.assertEqual(
+            {(schema_implementation, 0)},
+            _r17_resolve_public_symbol(
+                schema_reexported_model,
+                schema_origin,
+                0,
+                "SCHEMA_VERSION",
+            ),
+        )
+        self.assertEqual(
+            baseline["source_node_count"] + 1,
+            schema_reexported["source_node_count"],
+        )
+        schema_reexported_comparison = (
+            _r17_compare_responsibilities_to_migration_ledger(
+                schema_reexported
+            )
+        )
+        self.assertEqual(
+            82, schema_reexported_comparison["normalized_move_count"]
+        )
+        self.assertTrue(
+            schema_reexported_comparison["normalized_moves_equal_ledger"]
+        )
+
+        variants = (
+            renamed,
+            docstring_free,
+            split_merge,
+            reexported,
+            schema_reexported,
+        )
         member_delta = sorted(set().union(*(
             set(baseline["members"]) ^ set(variant["members"])
             for variant in variants
@@ -5157,6 +5329,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             f"docstring_free_members={docstring_free['member_count']}",
             f"split_merge_members={split_merge['member_count']}",
             f"reexported_members={reexported['member_count']}",
+            f"schema_reexported_members={schema_reexported['member_count']}",
             f"member_delta={json.dumps(member_delta, separators=(',', ':'))}",
             (
                 "relative-date-resolution=include"
@@ -5175,6 +5348,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
                 "docstring_free_members=84",
                 "split_merge_members=84",
                 "reexported_members=84",
+                "schema_reexported_members=84",
                 "member_delta=[]",
                 "relative-date-resolution=include",
                 "runtime-contracts=exclude:shared_runtime_contract",
