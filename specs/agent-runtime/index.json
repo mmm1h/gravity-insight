@@ -47,7 +47,7 @@
       "shared_spine": true,
       "delivery_mode": "leaf",
       "implementation_binding": {
-        "dev_baseline": "24f16c667d80107e4149cf76742eab4ada564197",
+        "dev_baseline": "823d69822ab09829b2bab47d8fc70ce6eb710a7b",
         "github_issue": null,
         "issue_binding": "not_applicable_internal_structural_debt_issue_creation_prohibited_by_docs_maintainers_issues",
         "branch": "codex/r17-migration",

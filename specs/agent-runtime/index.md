@@ -105,7 +105,7 @@ R17 只有一个 leaf 状态和一个实施分支/Worktree。独立职责清单�
 复现 contracts 排除，但四种全作用域图判据没有收敛，所以当前证据支撑调整后的有界范围，
 不证明完整 Agent domain，也不声称完全通过总纲的反路径依赖门槛。M0 characterization
 与 dynamic-audit classification 均已满足，owner review 仍为 `pending`。实施绑定为
-`dev@24f16c667d80107e4149cf76742eab4ada564197`、无 GitHub Issue（内部结构债禁止
+`dev@823d69822ab09829b2bab47d8fc70ce6eb710a7b`、无 GitHub Issue（内部结构债禁止
 自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。
 机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=true`、
 `schema=gravity.agent-module-reference-dispositions.v2`、`candidate_sites=238`、

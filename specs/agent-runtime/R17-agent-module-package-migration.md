@@ -22,7 +22,7 @@
 Create a minimal `gravity_sdk/agents/` package by migrating the compact Agent
 interaction responsibility set. An independent inventory seeded from
 responsibilities rather than filenames, paths, or prefixes retained all 81
-previous moves, found zero false inclusions, and added the internal
+previous moves, produced no difference against the ledger move set, and added the internal
 `gravity_sdk.relative_date_agent` owner. R17 therefore moves 82 modules one for
 one, consolidates the single-caller `agent_pagination` helper into the canonical
 `pagination_completeness.py` owner and deletes that module, and leaves the
@@ -80,8 +80,8 @@ debt #11, or satisfy R17.
    from the live checkpoint receipt. The live scanner covers static references,
    dynamic loaders, indirect variables, string patch targets, and opaque forms;
    all 909 current tracked sites have dispositions, with zero unclassified sites
-   and zero blockers. This is the original 903-site denominator plus five sites
-   exposed by the expanded scope and current index text. Unknown module names and cross-function loaders remain
+   and zero blockers. This is the original 903-site denominator plus six sites: five from the
+   expanded 82-module scope and one from merging the anchor and inventory work. Unknown module names and cross-function loaders remain
    real blockers rather than exclusions.
 3. **Not satisfied.** An independent reviewer must accept the scope,
    measurement definitions, proposed owner changes, two explicit concept
