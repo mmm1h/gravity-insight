@@ -28,15 +28,18 @@ one, consolidates the single-caller `agent_pagination` helper into the canonical
 `pagination_completeness.py` owner and deletes that module, and leaves the
 unreachable `agent_runtime_contracts.py` infrastructure module at the root.
 
-The independent inventory supports this adjusted 82-move ownership boundary,
-including the continued exclusion of `agent_runtime_contracts` and `find.py`.
-It does not prove a complete Agent domain or fully pass the canonical
-counter-path-dependence test: the full-scope facade SCC, unrestricted facade
-closure, import-graph minimum-conductance cut, and co-change graph returned 40,
-308, 495, and 549 modules respectively and did not converge. No threshold was
-tuned to reproduce the previous 81. R17 remains a bounded structural migration
-whose exact ledger, preservation gates, and independent ready review must still
-be accepted before implementation.
+The checked-in independent inventory supports this adjusted 82-move ownership
+boundary, including the continued exclusion of `agent_runtime_contracts` and
+`find.py`. It does not prove a complete Agent domain or fully pass the canonical
+counter-path-dependence test. Under its now-explicit definitions, the facade
+SCC, unrestricted facade closure, import-graph minimum-conductance cut, and
+fixed-baseline co-change component contain 40, 311, 496, and 626 modules and do
+not converge. These independently redone observations differ from the prior
+unrecorded 40/308/495/549 run because import alias resolution, the conductance
+sweep, and co-change history scope are now defined and locked; no threshold was
+tuned to reproduce 81 or 84. R17 remains a bounded structural migration whose
+exact ledger, preservation gates, and independent ready review must still be
+accepted before implementation.
 
 The root package falls from 578 to 495 Python files. The complete package stays
 at 642 Python files because deleting `agent_pagination.py` offsets the new
@@ -76,7 +79,7 @@ debt #11, or satisfy R17.
    schema `gravity.agent-module-reference-dispositions.v2`) remains separate
    from the live checkpoint receipt. The live scanner covers static references,
    dynamic loaders, indirect variables, string patch targets, and opaque forms;
-   all 908 current tracked sites have dispositions, with zero unclassified sites
+   all 909 current tracked sites have dispositions, with zero unclassified sites
    and zero blockers. This is the original 903-site denominator plus five sites
    exposed by the expanded scope and current index text. Unknown module names and cross-function loaders remain
    real blockers rather than exclusions.
@@ -97,8 +100,8 @@ Machine state shared by this Requirement and `index.md`: `status=specified`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=4c46e7d343749cba164f60ef0059d2a7734444e0f2d32a975c130e4b24b6e399`;
-`live_checkpoint_tracked_sites=908`.
+`live_checkpoint_sha256=3db0645f85a182332fa5460ea7bea05aa73340d6d6108052292d546cbc74f5d9`;
+`live_checkpoint_tracked_sites=909`.
 
 The required cross-file state gate is
 `tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_index_and_specification_state_agree`.
@@ -110,12 +113,31 @@ count or ledger-schema claim in the three R17 state representations.
 
 ## Responsibility Inventory And Target Naming Rule
 
-The exact machine scope is the 84 decisions in the checked-in ledger: 82
-one-to-one moves, the pagination consolidation, and the retained Runtime
-contracts owner. Its ownership basis is an independent responsibility inventory
-that did not seed discovery from filenames, paths, or the `agent_*` prefix. The
-inventory retained every prior move and added `relative_date_agent`, whose only
-source consumer is `agent_handoff`, whose only public symbol is
+The exact independent membership is the 84 included rows in the signed JSON
+block below: the public facade, the 82 one-to-one move owners, and the
+pagination consolidation owner. The same artifact records eight rejected
+semantic candidates, including the retained
+Runtime contracts owner and the independent Find surface. It parses all 642
+package modules, locates the facade from its protocol/command/response shape,
+and applies docstring responsibility declarations plus direct-consumer
+ownership without using a filename, path, or prefix to seed candidates. Only
+after classification does it compare the result with the R17 migration ledger.
+
+The artifact schema is
+`gravity.r17-independent-responsibility-inventory.v1`; its payload SHA-256 is
+`2b2ef88778a029b1ee6bee5bedd664af9058e971d09f80bc53f205848b698381`,
+method SHA-256 is
+`7e61ac801f39ca94cfc1e970dd58e777c84f88fddbf80c4d8712ecb3cc176cd5`,
+member-list SHA-256 is
+`1b15fdfcebfa086dc6683eacbab3262f2f224ffe80403c5a0e1ccfce8a085c5d`,
+and source-tree SHA-256 is
+`d690cf49e61b5c70b0a6bfd1f23be69fbf5795711e383812f7502ea103620b47`.
+`tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests`
+recomputes and locks the source, rows, digests, boundary cases, graph
+observations, R17 comparison, and an injected drift failure.
+
+The inventory retained every prior move and added `relative_date_agent`, whose
+only source consumer is `agent_handoff`, whose only public symbol is
 `fill_agent_relative_dates`, and which is not a root lazy public owner.
 
 Target names apply one rule to all 82 moves: after placing a compact Agent
@@ -1195,6 +1217,1599 @@ an 83-module compact-Agent transformation with 82 physical moves
 and two explicit concept deletions, not proof of the complete Agent domain, a
 prefix rename, or an empty package. `main` remains frozen until the complete
 program is green and the user gives new explicit approval.
+
+## Signed Independent Responsibility Inventory
+
+<!-- R17_INDEPENDENT_INVENTORY_JSON_START -->
+```json
+{
+  "analysis_baseline": "dev@f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59",
+  "boundary_cases": [
+    {
+      "cli_commands": [],
+      "direct_consumer_count": 55,
+      "direct_imports_to_members": [],
+      "direct_member_consumers": [],
+      "direct_other_consumer_count": 55,
+      "in_unrestricted_facade_closure": true,
+      "label": "broader_runtime_contracts_owner",
+      "module": "agent_runtime_contracts",
+      "primary_schemas": [],
+      "selected": false
+    },
+    {
+      "cli_commands": [
+        "describe",
+        "find",
+        "list",
+        "operations",
+        "schema",
+        "search"
+      ],
+      "direct_consumer_count": 10,
+      "direct_imports_to_members": [
+        "agent_discovery_support",
+        "agent_vocabulary"
+      ],
+      "direct_member_consumers": [
+        "agent_analysis",
+        "agent_batch_sources",
+        "agent_capabilities",
+        "agent_discovery_support",
+        "agent_segment",
+        "agent_semantic_context",
+        "agent_sources"
+      ],
+      "direct_other_consumer_count": 3,
+      "in_unrestricted_facade_closure": true,
+      "label": "independent_find_surface",
+      "module": "find",
+      "primary_schemas": [
+        "gravity.find.v1"
+      ],
+      "selected": false
+    }
+  ],
+  "conclusion": {
+    "boundary": "inconsistent_but_adjustable",
+    "complete_agent_domain_proven": false,
+    "graph_methods_converged": false,
+    "r17_82_moves_supported": true
+  },
+  "decisions": [
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "092defcbb5348b14d621fe6c517eabd1665929f6e46bf7584a7a4ab1c0f69725",
+      "include": true,
+      "module": "agent",
+      "other_consumer_count": 3,
+      "other_consumers_sha256": "485e05de661953981febbbbae8074ea855ad60611d2931c601b8a154808dc27b",
+      "r17_disposition": "retain_public_facade",
+      "reason": "unique_semantic_facade",
+      "role_markers": [],
+      "source_sha256": "015242ea0be705bd47651b645e5dd3465fb1fd24b8769ce45fb6e2550c0013fa"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "e2ac2614c2adb8e3fcb0409134f64ff3faa9e775543ae84099ebdc5e8b3416c2",
+      "include": true,
+      "module": "agent_advertiser_profile",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "38953d75af75523d98765adfb7e527b0489777f51b9b95e6a9f75d254694cd7a",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "44234ae97545619e9040ba25ffd41e6c904e0cb139dba903cb8cc8732ae5fc35"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "ae09fd5c2bb10b0e14cbb037897ca4ffa0cc9e6f726e4d3557f3a4a4299f4368",
+      "include": true,
+      "module": "agent_analysis",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role",
+        "intent_boundary"
+      ],
+      "source_sha256": "a9c91c2fbac36b719a518a2fce2ca32dd123a61075448807b2fb1cf49a0cd5fa"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "8f55f7377822664ee04ee85dee39ed1e1b9af60c321c47be624239cc4b7e9408",
+      "include": true,
+      "module": "agent_analysis_default_dictionary",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "d65c266fdaae37b2c8c1db317425452281631a529435ab90219fd305b7400ef7"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "bb0069fc8e02b7a4874d4f24f2a279a2e2655c81907367752b38bd73f6975020",
+      "include": true,
+      "module": "agent_analysis_task",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "adc407df3497fa10c15a79b00d34569f45ddd0c3435418b346ad4506b6c094fe"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "3a1a7c71a80e179f81b7b29eef9d0323e4bfc901cda3752f3ffd12f42b43f175",
+      "include": true,
+      "module": "agent_app_catalog",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "natural_language_boundary"
+      ],
+      "source_sha256": "4edaa81fc895ce6e0494cfa625a2a1dde316649de36fa3372f13ad1b50e54fde"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "0da97c5224d4a490a0c3f452ae922da452663e99a0539cb5ae4e9328c5222fc0",
+      "include": true,
+      "module": "agent_app_public_info",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "c615d201789876ac2288a407c8082493703ee13a65989ef382c808437abd3081"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "8f55f7377822664ee04ee85dee39ed1e1b9af60c321c47be624239cc4b7e9408",
+      "include": true,
+      "module": "agent_attribution_performance",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "1a31a9619d3243d6c4f81d29f74d31f49326e9efdc52e18dbde2cb1097c93ac7"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "89a33ae6387c3ad75592a36290a295b0d5ca7c53eccac56c6aaefbdde7963d5a",
+      "include": true,
+      "module": "agent_attribution_user_detail",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "eb04ee03d31ba2df84cbfd7b314197e0245b747b4b3da319c402738105d9e6cb"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "ebc6beeffe92880e87d194837ada74d1be60f6c71ce083ea2d1a2630c43c704f",
+      "include": true,
+      "module": "agent_batch",
+      "other_consumer_count": 2,
+      "other_consumers_sha256": "c34335ff9c44b736777837e509d12c9797506606294e554db4b32f453e0cf073",
+      "r17_disposition": "move",
+      "reason": "declared_agent_protocol_surface",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "c7c2bba34087c0753e4d73cf43bb71615e16fd2eef969cbdac36f2756cde344a"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "5588552af73c18d655c12a1141f120c6daa2a15e1361a60d11752d26dc56b0f1",
+      "include": true,
+      "module": "agent_batch_questions",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "c8a3ceb3d18c8aa0e6c180a24aa772df422a4091e3560ed0e6d8376c2618b076"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "f7ba7886eb2095235a65ca3e7e8393f33edb2c1791408314a15151ae81cc0378",
+      "include": true,
+      "module": "agent_batch_sources",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "be79716d21b402930f9009cc6970002ce992912f3a2757f203bf2281dec11974"
+    },
+    {
+      "compact_consumer_count": 7,
+      "compact_consumers_sha256": "3059b7a3e64ec1309fad02eff0f1cc3710089994d9eafa1ac54cae3b897282de",
+      "include": true,
+      "module": "agent_bilibili_account_performance",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "d036b0ec84e07237ca00904c90c634934b1f6a21efe70ef8b25157a240966e95",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "198a4e281c4967097ca5e0289c8bed6c6cf0fb8a967a3dd62ba96b0ced2d76da"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "23aaacaef3228e51a04aed3f8efd684e91dd83a3311d297324f8b1f5ca9ffb6c",
+      "include": true,
+      "module": "agent_business_pulse",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "e9a5902046cb92db40e9b8ff86de85bfca7041411cbf2f2fac471e685f0e1a3a"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "89b6f04c9bf400fb9c7339b232412c2c584de4d0744c9856b86f79b92bc204ff",
+      "include": true,
+      "module": "agent_call_bound",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "declared_agent_protocol_surface",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "740256e99d4e2e08ac6a02fcdbdd1a1c5e313b957b82765390e995ab45b05f35"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "810e5c9edb2891dcb5214bc697e9c7f1ab228efd52d76adce6b67e93c1b15a08",
+      "include": true,
+      "module": "agent_caller_language",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "caller_language"
+      ],
+      "source_sha256": "de43dd91b36728cd7fe7067fc83ef970ebcf92c403935220549b19cab2095193"
+    },
+    {
+      "compact_consumer_count": 11,
+      "compact_consumers_sha256": "d29fa9beebbdffc92a88b8da885bfab1b5189d09918ab99c9b3a68c56d4ae67e",
+      "include": true,
+      "module": "agent_capabilities",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "dfeca2239f43c13b9d9f1945dd37d2b718565df2b3a904735fbf97904dc2c8bc"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "e0206117becaded7e8fe2972dbafee8082add6d8c47f2057ab5facdcf90b1f6c",
+      "include": true,
+      "module": "agent_catalog",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "23fba4c6c05f53a8134d0bb9799d106907c7ff3af0fbaf7406a3057481bb194b",
+      "r17_disposition": "move",
+      "reason": "declared_agent_protocol_surface",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "1b0e384f1fb0e68446ae42c3f2ec89060cef46800d7c8f13929c57cdea86710c"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "ca255e7c39412d8e5ac86c827c7bf7ec76279ccaaa374b6bfd5ae74d582b6a54",
+      "include": true,
+      "module": "agent_catalog_parity",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "d14a18184df98a6b5e90e7a03c840d5050509f31d0037419438b1626781f7350"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "ebc6beeffe92880e87d194837ada74d1be60f6c71ce083ea2d1a2630c43c704f",
+      "include": true,
+      "module": "agent_catalog_refresh",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "8f36812f15cfad5516e69a1cdbdd12f6572023a6e4eed4e0d9898913d193b8f5"
+    },
+    {
+      "compact_consumer_count": 2,
+      "compact_consumers_sha256": "eea6ba160b78a9f711c4e8f815d7002290d9d771f221d405001bf259203cf9e0",
+      "include": true,
+      "module": "agent_client",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "68d63f703013288a3ad53a2a89d2da578b800118d89be96f9f90e5dddabe190e",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "lazy_discovery_client"
+      ],
+      "source_sha256": "79f0bd93fefc97a94964dc2f0816ebf4580dacb1a1db5a3704b786f161b27dcf"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "ee406c3351254940bf092a4c0f34d3f1886d3f6823a57b30a6661d733836b193",
+      "include": true,
+      "module": "agent_company_usage",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "5f8f001483c7b10ab717d0accba350cbf15777cbc57504a22e2ec0d57ea6707d",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "227b2be038af373ebb1e788ad429519478d2e4c430acd97aedbe6df8f913f2b2"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "89e35d1240f370bd43473b0f660e7ef9d10ec2cde3be7915e0c0df3c6bec6e39",
+      "include": true,
+      "module": "agent_composite",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "6b29091148c8ac2388ea5f8aa01b86796b5521a7b6d5b963cb3484c71e43836b"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "89e35d1240f370bd43473b0f660e7ef9d10ec2cde3be7915e0c0df3c6bec6e39",
+      "include": true,
+      "module": "agent_composite_inventory",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "c8b4fd37fc918183dda886a6a2ade764e401d3ba9927b8d50f6827349e0e1db9"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "ee406c3351254940bf092a4c0f34d3f1886d3f6823a57b30a6661d733836b193",
+      "include": true,
+      "module": "agent_custom_audience",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "6fe97a1e3f78350b2d37efa73da42cac86934b0d5031aeed97d30c26c2080afc",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "deaa9156e5529b53d568de6e3542918801104c3054dfcb46501cf98c716ff22f"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "6572ac382f0adb0a269109ecefbb230e1bb17a6e9c02c61e152bad5cfdc93758",
+      "include": true,
+      "module": "agent_custom_metric",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "6760af8687fe433cb03302281dc4f08facefd359137eecf767b64d31eca98faa"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "75d4e3742b5d55c497be0359d84105bd3c351a02b9472bee858dd8fc5dcf6681",
+      "include": true,
+      "module": "agent_dashboard",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "68a7551cb9ec94f1e174a140b41ce3ced7e2190fdfe5cf1fa2730f5d0c621f0a"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "27af71ebff9fc9ca4f56d11226f4ee1c89771f54049ac8283bf14556e7eccf47",
+      "include": true,
+      "module": "agent_derived_metrics",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "98973244706e56f102bfbff9053ac8457b47bea722f84ba4cfbec665eec924a7"
+    },
+    {
+      "compact_consumer_count": 6,
+      "compact_consumers_sha256": "cb964add4e6ac54d64f6cd9b8d0f1835daf389bfd6750f576fa7475866cdde5c",
+      "include": true,
+      "module": "agent_discovery_policy",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "71bbcf60296283cb7836cd12b5502b570d88f4c0b1325aedeb14815d89f03776"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "9f605d2e547bf9d180563359eef1af8d70fcf29c2ac38fc04e14fa9f277e51d2",
+      "include": true,
+      "module": "agent_discovery_support",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "eb0f36c4f74cb9757b4ac45feff67dccff9ce1d4a11efeed32d1352364d6a488"
+    },
+    {
+      "compact_consumer_count": 9,
+      "compact_consumers_sha256": "9a16189a2c4e9acc0cc559052677091f4e38acb86b540bea855ef336894c9fb7",
+      "include": true,
+      "module": "agent_export",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "f5ea9bcdb2dd6d604e0c02fb55644e66182f24aea9e07219c233eda3bb6205dd"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "df6420f1096a3c02c0e4b858618fe7ed0e8b2dc49fb9bf0ef0a4d4fd745ea01c",
+      "include": true,
+      "module": "agent_fixed_snapshots",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "natural_language_boundary"
+      ],
+      "source_sha256": "35e1d844bd33e3b0758134ad4e85e98d8f945c59ac44ccd799960124e8144955"
+    },
+    {
+      "compact_consumer_count": 6,
+      "compact_consumers_sha256": "fd65a41aa4f8dd12876395f03142cf904f64a675caaf11eacef3713dcde8481e",
+      "include": true,
+      "module": "agent_gap",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "14c16c806e9b274afecbfaf6e47e2f5d13134f9f13b51495749f677aa3167da9"
+    },
+    {
+      "compact_consumer_count": 6,
+      "compact_consumers_sha256": "678f3d3f2fb1dc7e8c1b3cb45893c23e61289d94cbd9625e78f0d171cd2eb4af",
+      "include": true,
+      "module": "agent_handoff",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "0031b38d3ac498946885c7744cec6dd87edfd670e2baf5bcaf79dc15de37d11d"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "7bd9122ef4dc246638353923776e352490b8e98b1e3288e5efd607f15b3b95b1",
+      "include": true,
+      "module": "agent_host_catalog",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "332fa744af61690aa72aff2ffb126f9472664643c994c8fb1258e676dd44442d"
+    },
+    {
+      "compact_consumer_count": 2,
+      "compact_consumers_sha256": "8388958631004eabb55226e5f9881cc23f5cde68307abe1a0c3b64802de280d0",
+      "include": true,
+      "module": "agent_host_selection",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "host_product_selection"
+      ],
+      "source_sha256": "bfa0de7a77b33c312f9a5af0c1a9c4859ee631f49c50c04d509f5dd4ec949e6d"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "ebc6beeffe92880e87d194837ada74d1be60f6c71ce083ea2d1a2630c43c704f",
+      "include": true,
+      "module": "agent_input_catalogs",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "declared_agent_protocol_surface",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "3ecce6e4ea62e1d32fa3bf4cdafcd60f59b2d76fe35d51df49040bcd92809202"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "cdcbd969b8b04e5a0596e345a85adb92801941adf23aa1fe3db6fc63a685404b",
+      "include": true,
+      "module": "agent_input_resolution",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "f7ca30740108f99252441e6e43668c1b5a59cbec2068d9fe3841b5dd83f01e42",
+      "r17_disposition": "move",
+      "reason": "declared_agent_protocol_surface",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "810d3627309ae2cebb5ef487ec49c27df5da9083c0d644dfd881a917fca9eae7"
+    },
+    {
+      "compact_consumer_count": 11,
+      "compact_consumers_sha256": "99908e09aacba9aa5c43d0bc214098a9f77675ef6e4aa4c8b6ad5bdf72d1ba67",
+      "include": true,
+      "module": "agent_intent_routing",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "9acd24b37af2c287de392e0cdea311383b13d788034d425410b0ebd811dc0d6b"
+    },
+    {
+      "compact_consumer_count": 44,
+      "compact_consumers_sha256": "1b8eb7098484cd0edbc13e1b26010e2e5b5f14b51e40354d996861b0a27fb3cb",
+      "include": true,
+      "module": "agent_intent_text",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "e3f82810e5b747dccf963244a70a706269bd4d6ad564ae7cdd6bf1aad7ee95b1",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "intent_boundary"
+      ],
+      "source_sha256": "54a259e4a5d01ebb63ffae1315c08c99edc5808cbde3c537e51d89f5ffa95cea"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "6572ac382f0adb0a269109ecefbb230e1bb17a6e9c02c61e152bad5cfdc93758",
+      "include": true,
+      "module": "agent_kanban_mutation",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "85838124789d41b23a7f230841b2274fa0d36f96c58590a51ddf37431f7ae4ce"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "72d270fb6ecd7a9de8da2eec1f5ceb3d45a181d5d5f9bea68ceabbb8b03aa45d",
+      "include": true,
+      "module": "agent_lexical_rescue",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "lexical_retrieval"
+      ],
+      "source_sha256": "4e2f13a187d40b085bec1e99c15a851c759d6e8634f2badc54469cfe787b8d46"
+    },
+    {
+      "compact_consumer_count": 2,
+      "compact_consumers_sha256": "caea4baf7b2f824e15ecfe78ea2e9b9d402f57684197c24cab6e7c075333d54f",
+      "include": true,
+      "module": "agent_lexical_retrieval",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "171bc35b5635a3aa48120be7cc4c5a36cade59e7fb71734c2179f1c36ea87775"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "6eac1333bcbe6eb7ba6277f55e4ada9cde0a03e0049fd21cd0d7bb491a19b1d9",
+      "include": true,
+      "module": "agent_material_asset",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "092985f3acf3b85ca812e4fc9b13e563d58f915e82a128ce84c30cb7b7bd0c79"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "75d4e3742b5d55c497be0359d84105bd3c351a02b9472bee858dd8fc5dcf6681",
+      "include": true,
+      "module": "agent_material_performance",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "4a321a495d6b1843f964c1218dc3b7bca2ec1b57b4ff63043fb6dc897060e5b1"
+    },
+    {
+      "compact_consumer_count": 2,
+      "compact_consumers_sha256": "e24f59d9fa6c6ddfcf89ba847bdb27ee1ce1d48afa86ba4c0ed6ab7091951237",
+      "include": true,
+      "module": "agent_metadata_onboarding",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "b284fd600dafb0665bd9bb77d390d32f29321eccbe8eb61c31b3400c17769a31"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "d44321919b0f17d181f78597f53160b505f215c37cfda8180388dcc39f690df6",
+      "include": true,
+      "module": "agent_metadata_search",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "e50e9ade521b8bf94836b4d5c79f226cd1ea24aa4a680e8bbb47ce4d0b932da6"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "6572ac382f0adb0a269109ecefbb230e1bb17a6e9c02c61e152bad5cfdc93758",
+      "include": true,
+      "module": "agent_metadata_template",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "829d614c430838a62b20ee39567889de5e650a141e3a6c50a5382ff74bc164bb"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "0da97c5224d4a490a0c3f452ae922da452663e99a0539cb5ae4e9328c5222fc0",
+      "include": true,
+      "module": "agent_monetization_aggregate",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "be354490165749a81cc1e539fc03f132459d2441e3bce962de0edbdc22ef922b"
+    },
+    {
+      "compact_consumer_count": 6,
+      "compact_consumers_sha256": "d8730c9472ac27687b4c132e149d71deec84045ba941cea2a3a5c84164c28b8a",
+      "include": true,
+      "module": "agent_monetization_guard",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "fbe967f64ded9d5c9989e2392b68529a6f1ae72feb7ff04da4d27f05f9349f8a",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "8934818d5606ff39de58874c1f00572f3f89a85a6e559639045082549eb581ab"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "5c9ae828bb50b980d8f9c13d3a9addf3f40230921d0c7e91ab784c91c6046561",
+      "include": true,
+      "module": "agent_multidim",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "8ad92d79ff24afe6bf0b24b8ccb02feb90e56e520426043aa6d563738e73dbb2"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "89e35d1240f370bd43473b0f660e7ef9d10ec2cde3be7915e0c0df3c6bec6e39",
+      "include": true,
+      "module": "agent_mutation_cards",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "73fa18ff52900402564ab09d12cd183b3f67cb2dd4b7737b9fad24d3676689a5"
+    },
+    {
+      "compact_consumer_count": 2,
+      "compact_consumers_sha256": "aa5d5f340126785bd1e239eeef85918a48fd81a82de07fa6f0b80b3167102011",
+      "include": true,
+      "module": "agent_operation_contract",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "4d05e1fef832bff838af6dcece9be6a58ebeadc95983a88e1ff9f91cda5cc3ea"
+    },
+    {
+      "compact_consumer_count": 7,
+      "compact_consumers_sha256": "36b526b343e417d9a465d3d4552f262fef199fba51b3f63fb9f3c213b861a84e",
+      "include": true,
+      "module": "agent_order_directory",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "d6d120dbb6dd4d3188d79aab5792789982b98dd9416e28217a08c1de1949389c"
+    },
+    {
+      "compact_consumer_count": 6,
+      "compact_consumers_sha256": "d565351905a07d2c75e4a74638a97716c46a17f45736a1c1449b9413400e67b6",
+      "include": true,
+      "module": "agent_order_trace",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "40d3820fbd084f8eea3fc1403a4ac75e902ab0c3fe83d31cc50e2b22b1aa9692"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "cdcbd969b8b04e5a0596e345a85adb92801941adf23aa1fe3db6fc63a685404b",
+      "include": true,
+      "module": "agent_output",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "7f23a5a69ec51d6d7c6f051c96bcdd38098a4189664fa3bd05bebcb46c22c4d3"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "a73ff7757b1355a2215f1e290629de5d994a616477eab2d9cf65cae3e351642e",
+      "include": true,
+      "module": "agent_pagination",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "consolidate_delete",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role",
+        "agent_facing"
+      ],
+      "source_sha256": "1c3cb183d321d68ce565389dee2ac5dd8195f0504efa2d6837ed5cb809f5caa1"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "b7c5bd460c77fa505ca58054a1f0d4b88287ba8450883f21c7b0f46299c24726",
+      "include": true,
+      "module": "agent_product_inventory",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "0ceab08832c9527cf2b5792dc0ddf555acbdefbd092752d103afaf422eab4af0",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "ace6e684b45f084037647ec3dbb24f517c44d35d945c58289b4b8b9a5ac625ac"
+    },
+    {
+      "compact_consumer_count": 6,
+      "compact_consumers_sha256": "d565351905a07d2c75e4a74638a97716c46a17f45736a1c1449b9413400e67b6",
+      "include": true,
+      "module": "agent_promotion_performance",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "799851aabdf6507666a31cde4970c7fb7cf9236bb7e1f32241c9f15b32477ac2"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "6572ac382f0adb0a269109ecefbb230e1bb17a6e9c02c61e152bad5cfdc93758",
+      "include": true,
+      "module": "agent_realtime_event",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "b7d3b3f226e68318889711e469f6d751c35b3024773110c9f15bccb029a40a99"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "8f55f7377822664ee04ee85dee39ed1e1b9af60c321c47be624239cc4b7e9408",
+      "include": true,
+      "module": "agent_realtime_event_catalog",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "f3f8aae411b6239acee84b14a67efe79d2693b92f40f31ab3b01f73e9725390e"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "038f5f23b191dd6e6b1937c4fdaa1de25b808bd7511cc6511e58f1b9c502ee7b",
+      "include": true,
+      "module": "agent_report_directory",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "5f8f001483c7b10ab717d0accba350cbf15777cbc57504a22e2ec0d57ea6707d",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "1858694c86ff4a4db2b9eb67cef1a8b2b1f9cbc14c62b2e82a66504a120865ac"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "6572ac382f0adb0a269109ecefbb230e1bb17a6e9c02c61e152bad5cfdc93758",
+      "include": true,
+      "module": "agent_report_mutation",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "c143ed2204cfa7d8d7e086a906f2ebeb2e47b73b5bf1f349ab0e3e601ff60586"
+    },
+    {
+      "compact_consumer_count": 2,
+      "compact_consumers_sha256": "86295669e8524a73c89a4c1dadeb0887ea3b5ca4e6cc8d0276bdadafacc640c7",
+      "include": true,
+      "module": "agent_report_routing",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "9dd331a86174cbdfa6088d07de2cc1d50ca203fb65852fb5b554b8e725f0b800"
+    },
+    {
+      "compact_consumer_count": 0,
+      "compact_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "include": false,
+      "module": "agent_runtime_contracts",
+      "other_consumer_count": 55,
+      "other_consumers_sha256": "8158fdbf5e420e2157f80418ecfeff7d766540717004510a70878f10e457768c",
+      "r17_disposition": "not_a_member",
+      "reason": "broader_runtime_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "fff45cd14343a17e6747d23817cbb7559cd3027dbad18a36b3ce712b2ee44e49"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "89a33ae6387c3ad75592a36290a295b0d5ca7c53eccac56c6aaefbdde7963d5a",
+      "include": true,
+      "module": "agent_saved_analysis",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "c67b3ffcd945db00e4174dcdaee3fdd5ed7ba4a8830cb42eb5d7b40885318a0e"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "6572ac382f0adb0a269109ecefbb230e1bb17a6e9c02c61e152bad5cfdc93758",
+      "include": true,
+      "module": "agent_saved_analysis_mutation",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "a5dd9247bf3d14f58fdb33ff871d752509f529a0be4305bf01729016def70a9a"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "74a567dd2ea610e782e5ee932dc8f331821b98bde39c57ea6a0acc4b81ceb538",
+      "include": true,
+      "module": "agent_segment",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role",
+        "intent_boundary"
+      ],
+      "source_sha256": "4f32ee4892231565f8c4a6daf3cbae82040c8b4356d64f501b295d5944b98b80"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "75d4e3742b5d55c497be0359d84105bd3c351a02b9472bee858dd8fc5dcf6681",
+      "include": true,
+      "module": "agent_segment_members",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role",
+        "natural_language_boundary"
+      ],
+      "source_sha256": "dabe96d62cd5aedc0355c831b77f4d006778330453475a9a461c7245067482b8"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "75d4e3742b5d55c497be0359d84105bd3c351a02b9472bee858dd8fc5dcf6681",
+      "include": true,
+      "module": "agent_segment_snapshot",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "584d5d49fffc784cfc4c3faff82320ec99a5ec44d4780ff9ed81623893ad0edb"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "89a33ae6387c3ad75592a36290a295b0d5ca7c53eccac56c6aaefbdde7963d5a",
+      "include": true,
+      "module": "agent_semantic_compose",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "a3fbc91d3e40b32b0e4f96513508261094fafe025d65eebd03935d3a1a7afd1f"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "42a237f6ecc03f166032604c106abeafcf7afd11423ebf3664a46d1e0f064ee0",
+      "include": true,
+      "module": "agent_semantic_context",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "04f7ccf27c66190d70674149b23f15109354dfcdc37b4bf16a925d87cc260013"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "e3de14f2cd89ec895a2df4246ef72e3fd7acac88983743964148cb0e76ebdcd0",
+      "include": true,
+      "module": "agent_semantic_derived",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "semantic_gap_support"
+      ],
+      "source_sha256": "7e31fb34cf22c0ce1571e6ff7be452ed2f9de993c3f1c856475d6f8752839369"
+    },
+    {
+      "compact_consumer_count": 8,
+      "compact_consumers_sha256": "a0a9d1e57ca19b4c49c6682594d4fd177431e8b35c8a444a61d24bcc83bd7a86",
+      "include": true,
+      "module": "agent_sources",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "a2a7ca0413cb371fb9eda4681c3620444ce3845e8b048e4e56ccc8a5fd3093e1",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "779b5bc9d4ff3a8facf898ae78fd5f07f18b164fd5d96d06ec9d5221f3f0c05e"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "72d270fb6ecd7a9de8da2eec1f5ceb3d45a181d5d5f9bea68ceabbb8b03aa45d",
+      "include": true,
+      "module": "agent_sql_product_discovery",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "catalog_aware_discovery"
+      ],
+      "source_sha256": "f5ed6652ff8e3b20d6bbc95513d80af4b288cd520a5fe912e88bb9f31a67c552"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "71df9adc8798bba39437f332ba3f842d18284436b668b4a6e50b2d2ca2520c5c",
+      "include": true,
+      "module": "agent_sql_product_gap",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "natural_language_boundary"
+      ],
+      "source_sha256": "72a907a5fa94dde286de8faee1d353ed5257748fc5032cd6554a2cdeaee05903"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "70fc2780c3721fb7a30b0a7274438ea117f0217bd8d7c45e2f5f4323543b3f41",
+      "include": true,
+      "module": "agent_table_lineage",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "eafb287e1ef2f259c9d33eb42b453211796d48e619a85d57859baf753b317c6d"
+    },
+    {
+      "compact_consumer_count": 5,
+      "compact_consumers_sha256": "8f55f7377822664ee04ee85dee39ed1e1b9af60c321c47be624239cc4b7e9408",
+      "include": true,
+      "module": "agent_title_package",
+      "other_consumer_count": 1,
+      "other_consumers_sha256": "d30c2798bcfd9806b7d6c66d75ecb59e0ec43db16f9d51ce28cbcfe44f100f72",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "f3af565b6c8971b478cbce7a9c0621b5087d42e702bcb4fb4d649354b8d973bd"
+    },
+    {
+      "compact_consumer_count": 6,
+      "compact_consumers_sha256": "e2bfc78a7257575447a4074a04118ed338273810371556515a6b8b0ce603a0a6",
+      "include": true,
+      "module": "agent_unavailable",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "unavailable_journey"
+      ],
+      "source_sha256": "8c00953b46ad9fbdea0f08796fa06c4290a49e024f631d416ca36137f0c81176"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "55fcce5e9a1c8190408ca0b2164a319cb98e2f00ec6e318b2833cc194f2581b9",
+      "include": true,
+      "module": "agent_unavailable_analysis",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "natural_language_boundary",
+        "unavailable_journey"
+      ],
+      "source_sha256": "66786bc5b684aafe03acf7a6a46f7801544df2c4f8e4c3892f3512c24511ef38"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "55fcce5e9a1c8190408ca0b2164a319cb98e2f00ec6e318b2833cc194f2581b9",
+      "include": true,
+      "module": "agent_unavailable_promotion",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "natural_language_boundary",
+        "unavailable_journey"
+      ],
+      "source_sha256": "11f62806c5929d000368dbd9a90848a31a116ccdda427cfee63ebe361660d50a"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "55fcce5e9a1c8190408ca0b2164a319cb98e2f00ec6e318b2833cc194f2581b9",
+      "include": true,
+      "module": "agent_unavailable_report",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "natural_language_boundary",
+        "unavailable_journey"
+      ],
+      "source_sha256": "b77099c4a0c47ca96e7dfb87d9bc711b9cda09573e749a83b2d86c250424d0e3"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "623579b3afab0a4a9500c4265e360a79d2282cdcc1655e9d21793bdff317c901",
+      "include": true,
+      "module": "agent_user_journey",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "311f8c3ca6253980863908e4760d90d3fb293b79e21730df51b9e9c7e0e739a3"
+    },
+    {
+      "compact_consumer_count": 4,
+      "compact_consumers_sha256": "394ca5c7d918dd215c647e4b06297ea447d3283e86d1b0dc1db87683c8abf3ee",
+      "include": true,
+      "module": "agent_vocabulary",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "c4ba9fa3fb9be333a898238f27250b9259970a634e257d8b7c9481321fde4421"
+    },
+    {
+      "compact_consumer_count": 0,
+      "compact_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "include": false,
+      "module": "analysis_context",
+      "other_consumer_count": 3,
+      "other_consumers_sha256": "818eb71d098be0910da90076b80b8489a688ad3004c5705da41d10b6a4c97eaf",
+      "r17_disposition": "not_a_member",
+      "reason": "independent_primary_protocol",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "f76d096a2326a3adb07d2525f9710df51638b62977a035f822612319a8027893"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "22361efece3d1a71da4fa6a9387ffc3e317393d2620ed277c82273850f712f77",
+      "include": false,
+      "module": "business_pulse",
+      "other_consumer_count": 3,
+      "other_consumers_sha256": "7bef39abe792cf4bd3600c5c79e976d092d278a60ed5e4c1651e7c38f446cc17",
+      "r17_disposition": "not_a_member",
+      "reason": "independent_primary_protocol",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "e1bcad3f8ecdd7391e30d4d34f62c6ff88a48e2e39b744629c8b4090fe9e9259"
+    },
+    {
+      "compact_consumer_count": 3,
+      "compact_consumers_sha256": "e2601ad2c9fe1554014b2c3ca7b792117023e68b85843f107be4381dbd5fef9b",
+      "include": false,
+      "module": "domains",
+      "other_consumer_count": 30,
+      "other_consumers_sha256": "996707a486dacfba9d384ac8cd7184da649c75d8e970f5f0e69a3dd99e434167",
+      "r17_disposition": "not_a_member",
+      "reason": "broader_runtime_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "b8e6130d0765876582bb9085b85afb13b468df4e04ec5f08a510ca20893f9a20"
+    },
+    {
+      "compact_consumer_count": 7,
+      "compact_consumers_sha256": "5fd2ed71c1defde60d4301b598b198211b2a09c8a5d04614a3f23874adfd446d",
+      "include": false,
+      "module": "find",
+      "other_consumer_count": 3,
+      "other_consumers_sha256": "78549922b4098a4760eba625cb1013ac65c67598db82795e01bc2b7858755b35",
+      "r17_disposition": "not_a_member",
+      "reason": "independent_primary_protocol",
+      "role_markers": [
+        "agent_role",
+        "agent_facing"
+      ],
+      "source_sha256": "f964df7c2d032b174a94c609d115afca9728b9df49cda84107d12da3d0ed7e19"
+    },
+    {
+      "compact_consumer_count": 2,
+      "compact_consumers_sha256": "10a9acc9db7944656a0ba70b0668965593278af5f2de10cc7008e1bac46187ff",
+      "include": false,
+      "module": "find_input",
+      "other_consumer_count": 7,
+      "other_consumers_sha256": "807746801ee28d33c43e1876640b1e9bcc84612a1ae37518175e0a386074eeb8",
+      "r17_disposition": "not_a_member",
+      "reason": "broader_runtime_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "ce0833110ec52ac613dc14260dfde95dc013477175252bfcef85378c83409b7e"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "cdb80b516bf48dd56d9b4770bd950c4a751d8c7a071d3fa76c37a37580a6a1ac",
+      "include": false,
+      "module": "multidim_product",
+      "other_consumer_count": 6,
+      "other_consumers_sha256": "99b7543dd1ef775f345aee9d04246367ddf2ae92a8aafa4c4da5e51946643045",
+      "r17_disposition": "not_a_member",
+      "reason": "broader_runtime_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "031c2639dd4eaf3821c49a1f651719af0a010545556e6ac7996f0f784193f3c2"
+    },
+    {
+      "compact_consumer_count": 1,
+      "compact_consumers_sha256": "89b6f04c9bf400fb9c7339b232412c2c584de4d0744c9856b86f79b92bc204ff",
+      "include": true,
+      "module": "relative_date_agent",
+      "other_consumer_count": 0,
+      "other_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "r17_disposition": "move",
+      "reason": "compact_consumer_owned",
+      "role_markers": [
+        "agent_role"
+      ],
+      "source_sha256": "4539e664097865983221c101c75a744c8e57e0282856dc3303d7a81828769963"
+    },
+    {
+      "compact_consumer_count": 0,
+      "compact_consumers_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "include": false,
+      "module": "resolver",
+      "other_consumer_count": 3,
+      "other_consumers_sha256": "352c94e6605315fd1e38f38c83dcc7a91e51ee66104096acbb8448d763538a09",
+      "r17_disposition": "not_a_member",
+      "reason": "independent_primary_protocol",
+      "role_markers": [
+        "intent_boundary"
+      ],
+      "source_sha256": "39861e2c41af738ea93334d6d3b508dea5799c2a6ab7b3f7655b8eb5b4c6bf97"
+    }
+  ],
+  "graph_observations": [
+    {
+      "member_count": 40,
+      "members_sha256": "68884ce71b5392d25e434d5fb0a09b35c97857d58bd30ebddaf187fcfaddfffe",
+      "name": "facade_scc"
+    },
+    {
+      "member_count": 311,
+      "members_sha256": "3558e70b7ea29239eea7a55575ee1f5859188a6a505a0a1f93ea2b6fbba04f4f",
+      "name": "unrestricted_facade_closure"
+    },
+    {
+      "conductance": 0.17425083240843509,
+      "damping": 0.85,
+      "member_count": 496,
+      "members_sha256": "e286e549a5b373b60242bbeae5a2a8bfb25877978ee734f403d5b4e59eb2d6b0",
+      "name": "import_graph_minimum_conductance",
+      "pagerank_iterations": 127,
+      "tolerance": 1e-14
+    },
+    {
+      "baseline": "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59",
+      "member_count": 626,
+      "members_sha256": "eca93e2830db84bd47b102505bd6d101ef4df4ced6347df1cd87e3488c2bd0a8",
+      "name": "cochange_component"
+    }
+  ],
+  "members": [
+    "agent",
+    "agent_advertiser_profile",
+    "agent_analysis",
+    "agent_analysis_default_dictionary",
+    "agent_analysis_task",
+    "agent_app_catalog",
+    "agent_app_public_info",
+    "agent_attribution_performance",
+    "agent_attribution_user_detail",
+    "agent_batch",
+    "agent_batch_questions",
+    "agent_batch_sources",
+    "agent_bilibili_account_performance",
+    "agent_business_pulse",
+    "agent_call_bound",
+    "agent_caller_language",
+    "agent_capabilities",
+    "agent_catalog",
+    "agent_catalog_parity",
+    "agent_catalog_refresh",
+    "agent_client",
+    "agent_company_usage",
+    "agent_composite",
+    "agent_composite_inventory",
+    "agent_custom_audience",
+    "agent_custom_metric",
+    "agent_dashboard",
+    "agent_derived_metrics",
+    "agent_discovery_policy",
+    "agent_discovery_support",
+    "agent_export",
+    "agent_fixed_snapshots",
+    "agent_gap",
+    "agent_handoff",
+    "agent_host_catalog",
+    "agent_host_selection",
+    "agent_input_catalogs",
+    "agent_input_resolution",
+    "agent_intent_routing",
+    "agent_intent_text",
+    "agent_kanban_mutation",
+    "agent_lexical_rescue",
+    "agent_lexical_retrieval",
+    "agent_material_asset",
+    "agent_material_performance",
+    "agent_metadata_onboarding",
+    "agent_metadata_search",
+    "agent_metadata_template",
+    "agent_monetization_aggregate",
+    "agent_monetization_guard",
+    "agent_multidim",
+    "agent_mutation_cards",
+    "agent_operation_contract",
+    "agent_order_directory",
+    "agent_order_trace",
+    "agent_output",
+    "agent_pagination",
+    "agent_product_inventory",
+    "agent_promotion_performance",
+    "agent_realtime_event",
+    "agent_realtime_event_catalog",
+    "agent_report_directory",
+    "agent_report_mutation",
+    "agent_report_routing",
+    "agent_saved_analysis",
+    "agent_saved_analysis_mutation",
+    "agent_segment",
+    "agent_segment_members",
+    "agent_segment_snapshot",
+    "agent_semantic_compose",
+    "agent_semantic_context",
+    "agent_semantic_derived",
+    "agent_sources",
+    "agent_sql_product_discovery",
+    "agent_sql_product_gap",
+    "agent_table_lineage",
+    "agent_title_package",
+    "agent_unavailable",
+    "agent_unavailable_analysis",
+    "agent_unavailable_promotion",
+    "agent_unavailable_report",
+    "agent_user_journey",
+    "agent_vocabulary",
+    "relative_date_agent"
+  ],
+  "members_sha256": "1b15fdfcebfa086dc6683eacbab3262f2f224ffe80403c5a0e1ccfce8a085c5d",
+  "method": {
+    "candidate_universe": "Parse every Python module in the package; module names and paths label results but never filter candidates.",
+    "dependency_scope": "Build an AST import graph from every lexical depth and take the facade's unrestricted directed closure.",
+    "graph_methods": {
+      "cochange": "fixed-baseline all-history connected component",
+      "facade_scc": "directed mutual reachability",
+      "import_conductance": "degree-normalized personalized PageRank; damping 0.85; tolerance 1e-14; deterministic minimum-conductance sweep",
+      "unrestricted_closure": "directed static-import reachability"
+    },
+    "ownership_decision": "Include the facade; reject a non-Agent primary schema; otherwise include an Agent protocol surface or a marked owner with at least one marked consumer and no more other than marked direct consumers.",
+    "post_selection_comparison": "Load the R17 move ledger only after classification and compute differences.",
+    "responsibility_declaration": "Match module docstrings against the closed role-marker regex list.",
+    "role_markers": [
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "agent_role",
+        "regex": "\\bagent\\b"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "natural_language_boundary",
+        "regex": "natural-language"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "caller_language",
+        "regex": "caller-language"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "agent_facing",
+        "regex": "agent-facing"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "host_product_selection",
+        "regex": "product-selection"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "intent_boundary",
+        "regex": "\\bintent\\b"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "lexical_retrieval",
+        "regex": "\\blexical\\b"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "semantic_gap_support",
+        "regex": "semantic gaps?"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "unavailable_journey",
+        "regex": "unavailable .*journey"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "catalog_aware_discovery",
+        "regex": "catalog-aware discovery"
+      },
+      {
+        "flags": [
+          "IGNORECASE"
+        ],
+        "id": "lazy_discovery_client",
+        "regex": "lazy client boundary"
+      }
+    ],
+    "semantic_facade": "Select the unique non-package owner of gravity.agent.v1 that defines the three facade callables, registers the agent command, and emits the three response-shape keys."
+  },
+  "method_sha256": "7e61ac801f39ca94cfc1e970dd58e777c84f88fddbf80c4d8712ecb3cc176cd5",
+  "module_namespace": "gravity_sdk",
+  "payload_sha256": "2b2ef88778a029b1ee6bee5bedd664af9058e971d09f80bc53f205848b698381",
+  "r17_comparison": {
+    "action_normalized_members_equal_moves": true,
+    "action_normalized_members_not_moves": [],
+    "independent_members_not_moves": [
+      "agent",
+      "agent_pagination"
+    ],
+    "ledger_sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
+    "move_count": 82,
+    "moves_not_action_normalized_members": [],
+    "moves_not_independent_members": []
+  },
+  "schema_version": "gravity.r17-independent-responsibility-inventory.v1",
+  "selector_summary": {
+    "member_count": 84,
+    "rejected_role_candidate_count": 8,
+    "role_candidate_count": 92,
+    "semantic_facade": "agent",
+    "unrestricted_closure_count": 311
+  },
+  "source_snapshot": {
+    "implementation_module_count": 636,
+    "package_module_count": 642,
+    "tree_sha256": "d690cf49e61b5c70b0a6bfd1f23be69fbf5795711e383812f7502ea103620b47"
+  }
+}
+```
+<!-- R17_INDEPENDENT_INVENTORY_JSON_END -->
 
 ## Canonical Owners
 

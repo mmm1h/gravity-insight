@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import ast
 from collections import Counter
+from collections import deque
 import copy
 from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 from typing import Any
@@ -61,6 +64,24 @@ INDEX_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
 R17_SPECIFICATION = ROOT / "specs/agent-runtime/R17-agent-module-package-migration.md"
 ROADMAP = ROOT / "docs/roadmap.md"
 TECHNICAL_DEBT = ROOT / "docs/maintainers/technical-debt.md"
+R17_INVENTORY_START = "<!-- R17_INDEPENDENT_INVENTORY_JSON_START -->"
+R17_INVENTORY_END = "<!-- R17_INDEPENDENT_INVENTORY_JSON_END -->"
+R17_INVENTORY_SCHEMA = "gravity.r17-independent-responsibility-inventory.v1"
+R17_COCHANGE_BASELINE = "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
+R17_ROLE_MARKERS = (
+    ("agent_role", r"\bagent\b"),
+    ("natural_language_boundary", r"natural-language"),
+    ("caller_language", r"caller-language"),
+    ("agent_facing", r"agent-facing"),
+    ("host_product_selection", r"product-selection"),
+    ("intent_boundary", r"\bintent\b"),
+    ("lexical_retrieval", r"\blexical\b"),
+    ("semantic_gap_support", r"semantic gaps?"),
+    ("unavailable_journey", r"unavailable .*journey"),
+    ("catalog_aware_discovery", r"catalog-aware discovery"),
+    ("lazy_discovery_client", r"lazy client boundary"),
+)
+R17_PROTOCOL_PATTERN = re.compile(r"gravity\.[a-z0-9_.-]+\.v[0-9]+")
 LEDGER_SHA256 = "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
@@ -111,6 +132,556 @@ def _canonical_sites_sha256(sites: list[dict[str, Any]]) -> str:
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
+
+
+def _r17_digest(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _r17_module_id(name: str, namespace: str = "gravity_sdk") -> str:
+    if name == namespace:
+        return "."
+    prefix = namespace + "."
+    _require(name.startswith(prefix), f"module is outside {namespace}: {name}")
+    return name.removeprefix(prefix)
+
+
+def _r17_assigned_string(
+    node: ast.Assign | ast.AnnAssign, name: str
+) -> str | None:
+    targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+    if not any(isinstance(target, ast.Name) and target.id == name for target in targets):
+        return None
+    value = node.value
+    if isinstance(value, ast.Constant) and isinstance(value.value, str):
+        return value.value
+    return None
+
+
+def _r17_read_modules(package_root: Path) -> dict[str, dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    for path in sorted(package_root.rglob("*.py")):
+        parts = list(path.relative_to(package_root).with_suffix("").parts)
+        is_package = parts[-1] == "__init__"
+        if is_package:
+            parts.pop()
+        name = package_root.name + ("." + ".".join(parts) if parts else "")
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+        strings = {
+            node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+        schemas = [
+            value
+            for node in tree.body
+            if isinstance(node, (ast.Assign, ast.AnnAssign))
+            if (value := _r17_assigned_string(node, "SCHEMA_VERSION")) is not None
+        ]
+        commands: set[str] = set()
+        response_keys: set[str] = set()
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and node.args
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_parser"
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
+                commands.add(node.args[0].value)
+            if isinstance(node, ast.Dict):
+                response_keys.update(
+                    key.value
+                    for key in node.keys
+                    if isinstance(key, ast.Constant) and isinstance(key.value, str)
+                )
+        records[name] = {
+            "path": path,
+            "package": is_package,
+            "source": source,
+            "tree": tree,
+            "docstring": ast.get_docstring(tree) or "",
+            "protocols": tuple(sorted(
+                value for value in strings if R17_PROTOCOL_PATTERN.fullmatch(value)
+            )),
+            "schemas": tuple(sorted(schemas)),
+            "functions": frozenset(
+                node.name
+                for node in tree.body
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            ),
+            "commands": tuple(sorted(commands)),
+            "response_keys": frozenset(response_keys),
+        }
+    return records
+
+
+def _r17_existing(name: str, modules: set[str]) -> str | None:
+    parts = name.split(".")
+    for size in range(len(parts), 0, -1):
+        candidate = ".".join(parts[:size])
+        if candidate in modules:
+            return candidate
+    return None
+
+
+def _r17_import_base(source: str, package: bool, node: ast.ImportFrom) -> str:
+    if node.level == 0:
+        return node.module or ""
+    parts = (source if package else source.rpartition(".")[0]).split(".")
+    if node.level > 1:
+        parts = parts[: -(node.level - 1)]
+    if node.module:
+        parts.extend(node.module.split("."))
+    return ".".join(parts)
+
+
+def _r17_import_graph(
+    records: dict[str, dict[str, Any]],
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    modules = set(records)
+    graph = {name: set() for name in modules}
+    for source, record in records.items():
+        for node in ast.walk(record["tree"]):
+            targets: list[str | None]
+            if isinstance(node, ast.Import):
+                targets = [_r17_existing(alias.name, modules) for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                base = _r17_import_base(source, record["package"], node)
+                targets = [_r17_existing(base, modules)] if node.module else []
+                targets.extend(
+                    f"{base}.{alias.name}"
+                    if f"{base}.{alias.name}" in modules
+                    else None
+                    for alias in node.names
+                    if alias.name != "*"
+                )
+            else:
+                continue
+            graph[source].update(
+                target for target in targets if target is not None and target != source
+            )
+    reverse = {name: set() for name in modules}
+    for source, targets in graph.items():
+        for target in targets:
+            reverse[target].add(source)
+    return graph, reverse
+
+
+def _r17_closure(graph: dict[str, set[str]], start: str) -> set[str]:
+    selected = {start}
+    queue = deque([start])
+    while queue:
+        source = queue.popleft()
+        for target in sorted(graph[source]):
+            if target not in selected:
+                selected.add(target)
+                queue.append(target)
+    return selected
+
+
+def _r17_role_markers(docstring: str) -> tuple[str, ...]:
+    return tuple(
+        name
+        for name, pattern in R17_ROLE_MARKERS
+        if re.search(pattern, docstring, flags=re.IGNORECASE)
+    )
+
+
+def _r17_analyze_source(package_root: Path) -> dict[str, Any]:
+    records = _r17_read_modules(package_root)
+    graph, reverse = _r17_import_graph(records)
+    facade_candidates = [
+        name
+        for name, record in records.items()
+        if not record["package"]
+        and "gravity.agent.v1" in record["schemas"]
+        and {"add_agent_command", "discover_capabilities", "run_agent_command"}
+        <= record["functions"]
+        and "agent" in record["commands"]
+        and {"routing_mode", "candidates", "capability_gaps"}
+        <= record["response_keys"]
+    ]
+    _require(len(facade_candidates) == 1, f"semantic facade: {facade_candidates}")
+    facade = facade_candidates[0]
+    closure = _r17_closure(graph, facade)
+    markers = {
+        name: _r17_role_markers(record["docstring"])
+        for name, record in records.items()
+    }
+    marked = {
+        name
+        for name in closure
+        if not records[name]["package"] and markers[name]
+    } | {facade}
+    members: set[str] = set()
+    decisions: list[dict[str, Any]] = []
+    for name in sorted(marked):
+        record = records[name]
+        compact_consumers = reverse[name] & marked
+        other_consumers = reverse[name] - marked
+        independent_schemas = [
+            value
+            for value in record["schemas"]
+            if not value.startswith("gravity.agent")
+        ]
+        agent_protocol = any(
+            value.startswith("gravity.agent") for value in record["protocols"]
+        )
+        if name == facade:
+            include, reason = True, "unique_semantic_facade"
+        elif independent_schemas:
+            include, reason = False, "independent_primary_protocol"
+        elif "agent_role" in markers[name] and agent_protocol:
+            include, reason = True, "declared_agent_protocol_surface"
+        elif compact_consumers and len(compact_consumers) >= len(other_consumers):
+            include, reason = True, "compact_consumer_owned"
+        else:
+            include, reason = False, "broader_runtime_consumer_owned"
+        if include:
+            members.add(name)
+        decisions.append({
+            "module": name,
+            "include": include,
+            "reason": reason,
+            "role_markers": list(markers[name]),
+            "compact_consumers": compact_consumers,
+            "other_consumers": other_consumers,
+            "source_sha256": hashlib.sha256(
+                record["source"].encode("utf-8")
+            ).hexdigest(),
+        })
+    return {
+        "records": records,
+        "graph": graph,
+        "reverse": reverse,
+        "facade": facade,
+        "closure": closure,
+        "marked": marked,
+        "members": members,
+        "decisions": decisions,
+    }
+
+
+def _r17_set_observation(name: str, members: set[str], **extra: Any) -> dict[str, Any]:
+    selected = sorted(_r17_module_id(member) for member in members)
+    return {
+        "name": name,
+        "member_count": len(selected),
+        "members_sha256": _r17_digest(selected),
+        **extra,
+    }
+
+
+def _r17_pagerank_sweep(
+    directed: dict[str, set[str]], implementation: set[str], start: str
+) -> tuple[set[str], float, int]:
+    graph = {name: set() for name in implementation}
+    for source in implementation:
+        for target in directed[source] & implementation:
+            graph[source].add(target)
+            graph[target].add(source)
+    damping, tolerance = 0.85, 1e-14
+    nodes = sorted(graph)
+    rank = dict.fromkeys(nodes, 0.0)
+    rank[start] = 1.0
+    iterations = 0
+    for iterations in range(1, 1001):
+        updated = dict.fromkeys(nodes, 0.0)
+        updated[start] = 1.0 - damping
+        updated[start] += damping * sum(rank[name] for name in nodes if not graph[name])
+        for source in nodes:
+            if graph[source]:
+                share = damping * rank[source] / len(graph[source])
+                for target in graph[source]:
+                    updated[target] += share
+        if sum(abs(updated[name] - rank[name]) for name in nodes) <= tolerance:
+            rank = updated
+            break
+        rank = updated
+    order = sorted(
+        nodes,
+        key=lambda name: (
+            -(rank[name] / len(graph[name]) if graph[name] else rank[name]),
+            name,
+        ),
+    )
+    total_volume = sum(len(targets) for targets in graph.values())
+    selected: set[str] = set()
+    volume = crossing = 0
+    best: tuple[float, int, tuple[str, ...]] | None = None
+    for name in order[:-1]:
+        crossing += len(graph[name]) - 2 * len(graph[name] & selected)
+        selected.add(name)
+        volume += len(graph[name])
+        denominator = min(volume, total_volume - volume)
+        if denominator > 0:
+            candidate = (crossing / denominator, len(selected), tuple(sorted(selected)))
+            if best is None or candidate[:2] < best[:2]:
+                best = candidate
+    _require(best is not None, "import graph has no conductance cut")
+    return set(best[2]), best[0], iterations
+
+
+def _r17_cochange_component(records: dict[str, dict[str, Any]], start: str) -> set[str]:
+    paths = {
+        record["path"].relative_to(ROOT).as_posix(): name
+        for name, record in records.items()
+        if not record["package"]
+    }
+    output = subprocess.run(
+        [
+            "git", "log", "--format=commit:%H", "--name-only",
+            R17_COCHANGE_BASELINE, "--", "src/gravity_sdk",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout
+    parent = {name: name for name in paths.values()}
+
+    def find(name: str) -> str:
+        while parent[name] != name:
+            parent[name] = parent[parent[name]]
+            name = parent[name]
+        return name
+
+    def union(left: str, right: str) -> None:
+        left, right = find(left), find(right)
+        if left != right:
+            parent[right] = left
+
+    changed: list[str] = []
+    for line in (*output.splitlines(), "commit:end"):
+        if line.startswith("commit:"):
+            if changed:
+                for member in changed[1:]:
+                    union(changed[0], member)
+            changed = []
+        elif line in paths:
+            changed.append(paths[line])
+    root = find(start)
+    return {name for name in parent if find(name) == root}
+
+
+def build_r17_responsibility_inventory(package_root: Path | None = None) -> dict[str, Any]:
+    package_root = package_root or ROOT / "src/gravity_sdk"
+    analysis = _r17_analyze_source(package_root)
+    records = analysis["records"]
+    graph = analysis["graph"]
+    reverse = analysis["reverse"]
+    facade = analysis["facade"]
+    members = analysis["members"]
+    migration = json.loads(LEDGER.read_text(encoding="utf-8"))
+    scope = migration["scope"]
+    moves = {row["old_module"] for row in scope["one_to_one_moves"]}
+    consolidation = scope["consolidate_delete"]["old_module"]
+    retained = scope["retained_modules"]
+    _require(len(retained) == 1, f"one retained module required: {retained}")
+    excluded = retained[0]
+    find_owners = [
+        name for name, record in records.items() if "gravity.find.v1" in record["schemas"]
+    ]
+    _require(len(find_owners) == 1, f"one Find owner required: {find_owners}")
+    implementation = {
+        name for name, record in records.items() if not record["package"]
+    }
+    reverse_graph = {name: set() for name in graph}
+    for source, targets in graph.items():
+        for target in targets:
+            reverse_graph[target].add(source)
+    scc = _r17_closure(graph, facade) & _r17_closure(reverse_graph, facade)
+    scc &= implementation
+    unrestricted = analysis["closure"] & implementation
+    conductance, conductance_value, iterations = _r17_pagerank_sweep(
+        graph, implementation, facade
+    )
+    cochange = _r17_cochange_component(records, facade)
+    rows: list[dict[str, Any]] = []
+    for decision in analysis["decisions"]:
+        name = decision["module"]
+        if not decision["include"]:
+            disposition = "not_a_member"
+        elif name == facade:
+            disposition = "retain_public_facade"
+        elif name == consolidation:
+            disposition = "consolidate_delete"
+        elif name in moves:
+            disposition = "move"
+        else:
+            disposition = "unmapped_member"
+        compact = sorted(_r17_module_id(value) for value in decision["compact_consumers"])
+        other = sorted(_r17_module_id(value) for value in decision["other_consumers"])
+        rows.append({
+            "module": _r17_module_id(name),
+            "include": decision["include"],
+            "reason": decision["reason"],
+            "role_markers": decision["role_markers"],
+            "compact_consumer_count": len(compact),
+            "compact_consumers_sha256": _r17_digest(compact),
+            "other_consumer_count": len(other),
+            "other_consumers_sha256": _r17_digest(other),
+            "source_sha256": decision["source_sha256"],
+            "r17_disposition": disposition,
+        })
+    selected_ids = sorted(_r17_module_id(name) for name in members)
+    comparable = members - {facade, consolidation}
+
+    def boundary(module: str, label: str) -> dict[str, Any]:
+        record = records[module]
+        return {
+            "label": label,
+            "module": _r17_module_id(module),
+            "selected": module in members,
+            "in_unrestricted_facade_closure": module in analysis["closure"],
+            "primary_schemas": list(record["schemas"]),
+            "cli_commands": list(record["commands"]),
+            "direct_consumer_count": len(reverse[module]),
+            "direct_member_consumers": sorted(
+                _r17_module_id(name) for name in reverse[module] & members
+            ),
+            "direct_other_consumer_count": len(reverse[module] - members),
+            "direct_imports_to_members": sorted(
+                _r17_module_id(name) for name in graph[module] & members
+            ),
+        }
+
+    method = {
+        "candidate_universe": (
+            "Parse every Python module in the package; module names and paths label "
+            "results but never filter candidates."
+        ),
+        "semantic_facade": (
+            "Select the unique non-package owner of gravity.agent.v1 that defines "
+            "the three facade callables, registers the agent command, and emits the "
+            "three response-shape keys."
+        ),
+        "dependency_scope": (
+            "Build an AST import graph from every lexical depth and take the facade's "
+            "unrestricted directed closure."
+        ),
+        "responsibility_declaration": (
+            "Match module docstrings against the closed role-marker regex list."
+        ),
+        "ownership_decision": (
+            "Include the facade; reject a non-Agent primary schema; otherwise include "
+            "an Agent protocol surface or a marked owner with at least one marked "
+            "consumer and no more other than marked direct consumers."
+        ),
+        "post_selection_comparison": (
+            "Load the R17 move ledger only after classification and compute differences."
+        ),
+        "role_markers": [
+            {"id": name, "regex": pattern, "flags": ["IGNORECASE"]}
+            for name, pattern in R17_ROLE_MARKERS
+        ],
+        "graph_methods": {
+            "facade_scc": "directed mutual reachability",
+            "unrestricted_closure": "directed static-import reachability",
+            "import_conductance": (
+                "degree-normalized personalized PageRank; damping 0.85; tolerance "
+                "1e-14; deterministic minimum-conductance sweep"
+            ),
+            "cochange": "fixed-baseline all-history connected component",
+        },
+    }
+    document: dict[str, Any] = {
+        "schema_version": R17_INVENTORY_SCHEMA,
+        "analysis_baseline": f"dev@{R17_COCHANGE_BASELINE}",
+        "module_namespace": package_root.name,
+        "method": method,
+        "method_sha256": _r17_digest(method),
+        "source_snapshot": {
+            "package_module_count": len(records),
+            "implementation_module_count": len(implementation),
+            "tree_sha256": _r17_digest([
+                {
+                    "module": _r17_module_id(name),
+                    "source_sha256": hashlib.sha256(
+                        record["source"].encode("utf-8")
+                    ).hexdigest(),
+                }
+                for name, record in sorted(records.items())
+            ]),
+        },
+        "selector_summary": {
+            "semantic_facade": _r17_module_id(facade),
+            "unrestricted_closure_count": len(unrestricted),
+            "role_candidate_count": len(analysis["marked"]),
+            "member_count": len(members),
+            "rejected_role_candidate_count": sum(not row["include"] for row in rows),
+        },
+        "members": selected_ids,
+        "members_sha256": _r17_digest(selected_ids),
+        "decisions": rows,
+        "r17_comparison": {
+            "ledger_sha256": hashlib.sha256(LEDGER.read_bytes()).hexdigest(),
+            "move_count": len(moves),
+            "independent_members_not_moves": sorted(
+                _r17_module_id(name) for name in members - moves
+            ),
+            "moves_not_independent_members": sorted(
+                _r17_module_id(name) for name in moves - members
+            ),
+            "action_normalized_members_equal_moves": comparable == moves,
+            "action_normalized_members_not_moves": sorted(
+                _r17_module_id(name) for name in comparable - moves
+            ),
+            "moves_not_action_normalized_members": sorted(
+                _r17_module_id(name) for name in moves - comparable
+            ),
+        },
+        "boundary_cases": [
+            boundary(excluded, "broader_runtime_contracts_owner"),
+            boundary(find_owners[0], "independent_find_surface"),
+        ],
+        "graph_observations": [
+            _r17_set_observation("facade_scc", scc),
+            _r17_set_observation("unrestricted_facade_closure", unrestricted),
+            _r17_set_observation(
+                "import_graph_minimum_conductance",
+                conductance,
+                conductance=conductance_value,
+                pagerank_iterations=iterations,
+                damping=0.85,
+                tolerance=1e-14,
+            ),
+            _r17_set_observation(
+                "cochange_component", cochange, baseline=R17_COCHANGE_BASELINE
+            ),
+        ],
+        "conclusion": {
+            "boundary": "inconsistent_but_adjustable",
+            "complete_agent_domain_proven": False,
+            "graph_methods_converged": False,
+            "r17_82_moves_supported": comparable == moves,
+        },
+    }
+    document["payload_sha256"] = _r17_digest(document)
+    return document
+
+
+def load_signed_r17_responsibility_inventory() -> dict[str, Any]:
+    source = R17_SPECIFICATION.read_text(encoding="utf-8")
+    _require(source.count(R17_INVENTORY_START) == 1, "inventory start marker")
+    _require(source.count(R17_INVENTORY_END) == 1, "inventory end marker")
+    payload = source.split(R17_INVENTORY_START, 1)[1].split(R17_INVENTORY_END, 1)[0]
+    match = re.fullmatch(r"\s*```json\s*\n(.*)\n```\s*", payload, flags=re.DOTALL)
+    _require(match is not None, "inventory must be one fenced JSON object")
+    value = json.loads(match.group(1))
+    _require(isinstance(value, dict), "inventory must be a JSON object")
+    return value
 
 
 def _validator_has_current_path_semantics(old_module: str, context: str) -> bool:
@@ -894,7 +1465,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertEqual(summary["reference_manual_overlap_count"], len(reference_keys & manual_keys))
         self.assertEqual(summary["tracked_site_count"], len(reference_keys | manual_keys))
         if self.checkpoint["source_audit"]["owner_state"] == "baseline":
-            self.assertEqual((906, 241, 239, 908), (
+            self.assertEqual((907, 242, 240, 909), (
                 len(reference_keys),
                 len(manual_keys),
                 len(reference_keys & manual_keys),
@@ -1969,6 +2540,108 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         for label, document in mutations.items():
             with self.subTest(label=label), self.assertRaises(AssertionError):
                 validate_ledger(document)
+
+
+class R17ResponsibilityInventoryTests(unittest.TestCase):
+    def test_signed_inventory_exactly_matches_source_recomputation(self) -> None:
+        signed = load_signed_r17_responsibility_inventory()
+        self.assertEqual(signed, build_r17_responsibility_inventory())
+        payload = dict(signed)
+        digest = payload.pop("payload_sha256")
+        self.assertEqual(digest, _r17_digest(payload))
+
+    def test_inventory_rows_and_r17_comparison_are_complete(self) -> None:
+        signed = load_signed_r17_responsibility_inventory()
+        decisions = signed["decisions"]
+        included = [row for row in decisions if row["include"]]
+        rejected = [row for row in decisions if not row["include"]]
+        comparison = signed["r17_comparison"]
+        self.assertEqual(84, len(signed["members"]))
+        self.assertEqual(signed["members"], sorted(row["module"] for row in included))
+        self.assertEqual(92, len(decisions))
+        self.assertEqual(8, len(rejected))
+        non_moves = sorted(
+            row["module"]
+            for row in included
+            if row["r17_disposition"] in {
+                "retain_public_facade",
+                "consolidate_delete",
+            }
+        )
+        self.assertEqual(non_moves, comparison["independent_members_not_moves"])
+        self.assertEqual([], comparison["moves_not_independent_members"])
+        self.assertTrue(comparison["action_normalized_members_equal_moves"])
+        self.assertEqual([], comparison["action_normalized_members_not_moves"])
+        self.assertEqual([], comparison["moves_not_action_normalized_members"])
+        self.assertNotIn(
+            "unmapped_member", {row["r17_disposition"] for row in included}
+        )
+
+    def test_boundary_cases_keep_runtime_contracts_and_find_out(self) -> None:
+        cases = {
+            item["label"]: item
+            for item in load_signed_r17_responsibility_inventory()["boundary_cases"]
+        }
+        contracts = cases["broader_runtime_contracts_owner"]
+        self.assertFalse(contracts["selected"])
+        self.assertEqual(55, contracts["direct_consumer_count"])
+        self.assertEqual([], contracts["direct_member_consumers"])
+        self.assertEqual([], contracts["direct_imports_to_members"])
+        find = cases["independent_find_surface"]
+        self.assertFalse(find["selected"])
+        self.assertEqual(["gravity.find.v1"], find["primary_schemas"])
+        self.assertIn("find", find["cli_commands"])
+        self.assertEqual(10, find["direct_consumer_count"])
+        self.assertEqual(7, len(find["direct_member_consumers"]))
+        self.assertEqual(2, len(find["direct_imports_to_members"]))
+
+    def test_graph_methods_are_recorded_without_a_convergence_claim(self) -> None:
+        signed = load_signed_r17_responsibility_inventory()
+        observations = {
+            item["name"]: item for item in signed["graph_observations"]
+        }
+        self.assertEqual(40, observations["facade_scc"]["member_count"])
+        self.assertEqual(311, observations["unrestricted_facade_closure"]["member_count"])
+        self.assertEqual(496, observations["import_graph_minimum_conductance"]["member_count"])
+        self.assertEqual(626, observations["cochange_component"]["member_count"])
+        self.assertFalse(signed["conclusion"]["graph_methods_converged"])
+        self.assertFalse(signed["conclusion"]["complete_agent_domain_proven"])
+
+    def test_docstring_drift_injection_changes_the_recomputed_inventory(self) -> None:
+        package_root = ROOT / "src/gravity_sdk"
+        baseline = _r17_analyze_source(package_root)
+        targets = [
+            name
+            for name, record in baseline["records"].items()
+            if record["docstring"]
+            == "Fill Agent cards from a unique closed relative-date phrase."
+        ]
+        self.assertEqual(1, len(targets))
+        with tempfile.TemporaryDirectory() as raw:
+            temporary_package = Path(raw) / package_root.name
+            shutil.copytree(package_root, temporary_package)
+            relative = baseline["records"][targets[0]]["path"].relative_to(package_root)
+            target = temporary_package / relative
+            source = target.read_text(encoding="utf-8")
+            old = '"""Fill Agent cards from a unique closed relative-date phrase."""'
+            new = '"""Fill cards from a unique closed relative-date phrase."""'
+            self.assertEqual(1, source.count(old))
+            target.write_text(source.replace(old, new), encoding="utf-8")
+            mutated = _r17_analyze_source(temporary_package)["members"]
+        self.assertEqual({targets[0]}, baseline["members"] - mutated)
+
+    def test_requirement_summary_binds_every_inventory_digest(self) -> None:
+        signed = load_signed_r17_responsibility_inventory()
+        summary = R17_SPECIFICATION.read_text(encoding="utf-8").split(
+            R17_INVENTORY_START, 1
+        )[0]
+        for digest in (
+            signed["payload_sha256"],
+            signed["method_sha256"],
+            signed["members_sha256"],
+            signed["source_snapshot"]["tree_sha256"],
+        ):
+            self.assertEqual(1, summary.count(digest), digest)
 
 
 if __name__ == "__main__":

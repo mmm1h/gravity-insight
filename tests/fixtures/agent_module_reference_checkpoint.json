@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "be8916e36768d710029c698e5ff02a49943b7ce5e9a0c406465fe1f8adb6f512",
-    "reference_evidence_sha256": "0b0334226ac6479c7ec913bf4e50c669dce4eb41e241f9c02881ce1a770dbef3",
-    "manual_review_sha256": "34dea511d5ace2c218e54961709ece00ec0736649fc572ff1fef45d9dc063839",
+    "reference_evidence_sha256": "7f8b507efd26f9ee8b763b5748172c5f2f2e297220e637a74163837e1d5c006a",
+    "manual_review_sha256": "0020c698a35cc5718f4383cde7d759f9b5fd0161adf6eaa129de2200e2f50b86",
     "owner_state": "baseline",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
@@ -667,18 +667,18 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 908,
-    "reference_site_count": 906,
-    "manual_review_site_count": 241,
-    "reference_manual_overlap_count": 239,
+    "tracked_site_count": 909,
+    "reference_site_count": 907,
+    "manual_review_site_count": 242,
+    "reference_manual_overlap_count": 240,
     "manual_only_site_count": 2,
-    "unique_source_keys": 908,
+    "unique_source_keys": 909,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
     "actionable_site_count": 599,
     "reference_categories": {
-      "documentation_spec": 116,
+      "documentation_spec": 117,
       "dynamic_import": 11,
       "manual_patch_expression": 117,
       "module_qualname_dependency": 7,
@@ -688,18 +688,18 @@
     },
     "manual_review_categories": {
       "agent_prefix_template": 2,
-      "bare_agent_string": 104,
+      "bare_agent_string": 105,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
       "non_string_patch_expression": 117
     },
     "dispositions": {
-      "no_migration_effect": 309,
+      "no_migration_effect": 310,
       "rewrite_consolidated_reference": 1,
       "rewrite_reference": 597,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "101e873b8dde8ce238aff4e4158b492c2baa4d91ffe4dd18c14a9abbf9b792a7"
+    "sites_sha256": "9bf48bd28357a34255cce00004c6b28d644eb8067219dc8db16e98a8327b59d3"
   },
   "blockers": [],
   "site_fields": [
@@ -2079,7 +2079,22 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:72:4:bare text module string",
+      "docs/maintainers/technical-debt.md:71:67:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "relative_date_agent",
+      "relative_date",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "dated_governance_decision_evidence",
+      2,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/maintainers/technical-debt.md:73:4:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2094,7 +2109,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:72:87:bare text module string",
+      "docs/maintainers/technical-debt.md:73:87:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_batch",
@@ -2109,7 +2124,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:73:4:bare text module string",
+      "docs/maintainers/technical-debt.md:74:4:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_input_resolution",
@@ -2124,7 +2139,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:76:51:bare text module string",
+      "docs/maintainers/technical-debt.md:77:51:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
