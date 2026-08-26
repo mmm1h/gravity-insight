@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import builtins
 from collections import Counter
 from collections import deque
 import copy
@@ -12,6 +13,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 from typing import Any
 import unittest
@@ -938,6 +940,25 @@ def _r17_frozen_blob(path: str) -> bytes:
     return _r17_frozen_tree_blobs(path)[path]
 
 
+def _r17_non_docstring_strings(tree: ast.Module) -> set[str]:
+    docstring_nodes = {
+        node.body[0].value
+        for node in ast.walk(tree)
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.body
+        and isinstance(node.body[0], ast.Expr)
+        and isinstance(node.body[0].value, ast.Constant)
+        and isinstance(node.body[0].value.value, str)
+    }
+    return {
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and node not in docstring_nodes
+    }
+
+
 def _r17_read_modules(
     package_root: Path | None,
 ) -> dict[str, dict[str, Any]]:
@@ -971,11 +992,7 @@ def _r17_read_modules(
             else f"{R17_ORACLE_TREE_OID}:{path.relative_to(ROOT).as_posix()}"
         )
         tree = ast.parse(source, filename=filename)
-        strings = {
-            node.value
-            for node in ast.walk(tree)
-            if isinstance(node, ast.Constant) and isinstance(node.value, str)
-        }
+        strings = _r17_non_docstring_strings(tree)
         schemas = [
             value
             for node in tree.body
@@ -1005,7 +1022,6 @@ def _r17_read_modules(
             "package": is_package,
             "source": source,
             "tree": tree,
-            "docstring": ast.get_docstring(tree) or "",
             "protocols": tuple(sorted(
                 value for value in strings if R17_PROTOCOL_PATTERN.fullmatch(value)
             )),
@@ -1018,6 +1034,15 @@ def _r17_read_modules(
             "commands": tuple(sorted(commands)),
             "response_keys": frozenset(response_keys),
         }
+    return records
+
+
+def _r17_read_legacy_modules(
+    package_root: Path | None,
+) -> dict[str, dict[str, Any]]:
+    records = _r17_read_modules(package_root)
+    for record in records.values():
+        record["docstring"] = ast.get_docstring(record["tree"]) or ""
     return records
 
 
@@ -1183,7 +1208,149 @@ def _r17_contract_symbols(tree: ast.Module) -> dict[str, dict[str, Any]]:
     return symbols
 
 
-def _r17_contract_fragment(record: dict[str, Any]) -> dict[str, Any]:
+def _r17_string_sequence(node: ast.AST | None) -> tuple[str, ...] | None:
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        values = tuple(
+            item.value
+            for item in node.elts
+            if isinstance(item, ast.Constant) and isinstance(item.value, str)
+        )
+        return values if len(values) == len(node.elts) else None
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _r17_string_sequence(node.left)
+        right = _r17_string_sequence(node.right)
+        return (*left, *right) if left is not None and right is not None else None
+    return None
+
+
+def _r17_declared_exports(tree: ast.Module) -> tuple[str, ...] | None:
+    declared = False
+    exports: list[str] = []
+    for node in tree.body:
+        value: ast.AST | None = None
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "__all__"
+            for target in node.targets
+        ):
+            declared = True
+            value = node.value
+        elif (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "__all__"
+        ):
+            declared = True
+            value = node.value
+        elif (
+            isinstance(node, ast.AugAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "__all__"
+            and isinstance(node.op, ast.Add)
+        ):
+            declared = True
+            value = node.value
+        else:
+            continue
+        values = _r17_string_sequence(value)
+        if values is None:
+            return ()
+        exports.extend(values)
+    return tuple(sorted(set(exports))) if declared else None
+
+
+def _r17_dotted_name(node: ast.AST) -> tuple[str, ...] | None:
+    parts: list[str] = []
+    selected = node
+    while isinstance(selected, ast.Attribute):
+        parts.append(selected.attr)
+        selected = selected.value
+    if not isinstance(selected, ast.Name):
+        return None
+    parts.append(selected.id)
+    return tuple(reversed(parts))
+
+
+def _r17_symbol_bindings(
+    source: str,
+    record: dict[str, Any],
+    modules: set[str],
+) -> tuple[dict[str, tuple[tuple[str, str], ...]], tuple[str, ...]]:
+    bindings: dict[str, set[tuple[str, str]]] = {}
+    module_aliases: dict[str, str] = {}
+    star_imports: set[str] = set()
+    for node in record["tree"].body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                target = _r17_existing(alias.name, modules)
+                if target is None:
+                    continue
+                local = alias.asname or alias.name.split(".", 1)[0]
+                module_aliases[local] = target if alias.asname else local
+        elif isinstance(node, ast.ImportFrom):
+            base = _r17_import_base(source, record["package"], node)
+            target = _r17_existing(base, modules)
+            if target is None:
+                continue
+            for alias in node.names:
+                if alias.name == "*":
+                    star_imports.add(target)
+                    continue
+                local = alias.asname or alias.name
+                imported_module = f"{base}.{alias.name}"
+                if imported_module in modules:
+                    module_aliases[local] = imported_module
+                else:
+                    bindings.setdefault(local, set()).add((target, alias.name))
+
+    local_symbols = set(_r17_contract_symbols(record["tree"]))
+    assignments: list[tuple[str, ast.AST]] = []
+    for node in record["tree"].body:
+        if isinstance(node, ast.Assign):
+            assignments.extend(
+                (target.id, node.value)
+                for target in node.targets
+                if isinstance(target, ast.Name)
+            )
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.value is not None:
+                assignments.append((node.target.id, node.value))
+    for _ in range(len(assignments) + 1):
+        changed = False
+        for local, value in assignments:
+            targets: set[tuple[str, str]] = set()
+            if isinstance(value, ast.Name):
+                targets.update(bindings.get(value.id, set()))
+                if value.id in local_symbols:
+                    targets.add((source, value.id))
+            else:
+                parts = _r17_dotted_name(value)
+                if parts and parts[0] in module_aliases:
+                    qualified = ".".join((module_aliases[parts[0]], *parts[1:]))
+                    module = _r17_existing(qualified, modules)
+                    if module is not None:
+                        suffix = qualified.removeprefix(module).lstrip(".").split(".")
+                        if len(suffix) == 1 and suffix[0]:
+                            targets.add((module, suffix[0]))
+            previous = bindings.setdefault(local, set())
+            before = len(previous)
+            previous.update(targets)
+            changed = changed or len(previous) != before
+        if not changed:
+            break
+    return (
+        {
+            name: tuple(sorted(targets))
+            for name, targets in sorted(bindings.items())
+        },
+        tuple(sorted(star_imports)),
+    )
+
+
+def _r17_contract_fragment(
+    record: dict[str, Any],
+    symbol_bindings: dict[str, tuple[tuple[str, str], ...]],
+    star_imports: tuple[str, ...],
+) -> dict[str, Any]:
     imported_symbols: set[str] = set()
     for node in record["tree"].body:
         if isinstance(node, ast.Import):
@@ -1200,6 +1367,9 @@ def _r17_contract_fragment(record: dict[str, Any]) -> dict[str, Any]:
         "response_keys": tuple(sorted(record["response_keys"])),
         "imported_symbols": tuple(sorted(imported_symbols)),
         "symbols": _r17_contract_symbols(record["tree"]),
+        "exports": _r17_declared_exports(record["tree"]),
+        "symbol_bindings": symbol_bindings,
+        "star_imports": star_imports,
     }
 
 
@@ -1207,10 +1377,13 @@ def _r17_responsibility_model(
     records: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     graph, _reverse = _r17_import_graph(records)
+    modules = set(records)
     return {
         "nodes": {
             name: {
-                "fragments": (_r17_contract_fragment(record),),
+                "fragments": (_r17_contract_fragment(
+                    record, *_r17_symbol_bindings(name, record, modules)
+                ),),
                 "responsibility_ids": frozenset(),
             }
             for name, record in records.items()
@@ -1345,12 +1518,10 @@ def _r17_contract_matches_fragment(
     output = contract["output"]
     if fact["return_contract"] != output["return_contract"]:
         return False
-    keys = (
-        set(fragment["response_keys"])
-        if output.get("key_scope", "entry") == "owner"
-        else set(fact["response_keys"])
-    )
-    if not set(output["required_keys"]) <= keys:
+    if (
+        output.get("key_scope", "entry") == "entry"
+        and not set(output["required_keys"]) <= set(fact["response_keys"])
+    ):
         return False
     return set(output.get("raises", [])) <= set(fact["raises"])
 
@@ -1391,34 +1562,114 @@ def _r17_contract_binding_matches(
     return layer == "shared_runtime_contract" and binding == "schema_validator"
 
 
+def _r17_fragment_exports_symbol(fragment: dict[str, Any], symbol: str) -> bool:
+    exports = fragment["exports"]
+    return symbol in exports if exports is not None else not symbol.startswith("_")
+
+
+def _r17_resolve_public_symbol(
+    model: dict[str, Any],
+    locator: str,
+    fragment_index: int,
+    symbol: str,
+) -> set[tuple[str, int]]:
+    definitions: set[tuple[str, int]] = set()
+    queue = deque([(locator, fragment_index, symbol, True)])
+    visited: set[tuple[str, int, str, bool]] = set()
+    while queue:
+        selected_locator, selected_index, selected_symbol, require_public = queue.popleft()
+        state = (selected_locator, selected_index, selected_symbol, require_public)
+        if state in visited:
+            continue
+        visited.add(state)
+        fragment = model["nodes"][selected_locator]["fragments"][selected_index]
+        if require_public and not _r17_fragment_exports_symbol(
+            fragment, selected_symbol
+        ):
+            continue
+        if selected_symbol in fragment["symbols"]:
+            definitions.add((selected_locator, selected_index))
+        for target_locator, target_symbol in fragment["symbol_bindings"].get(
+            selected_symbol, ()
+        ):
+            for target_index, _target in enumerate(
+                model["nodes"][target_locator]["fragments"]
+            ):
+                queue.append((target_locator, target_index, target_symbol, False))
+        for target_locator in fragment["star_imports"]:
+            for target_index, _target in enumerate(
+                model["nodes"][target_locator]["fragments"]
+            ):
+                queue.append((target_locator, target_index, selected_symbol, True))
+    return definitions
+
+
+def _r17_contract_binding_witnesses(
+    model: dict[str, Any],
+    contract: dict[str, Any],
+    owner: tuple[str, int],
+    facade_closure: set[str] | None,
+) -> set[str]:
+    symbol = contract["entry"]["symbol"]
+    owner_locator, owner_index = owner
+    owner_fragment = model["nodes"][owner_locator]["fragments"][owner_index]
+    required_owner_keys = (
+        set(contract["output"]["required_keys"])
+        if contract["output"].get("key_scope", "entry") == "owner"
+        else set()
+    )
+    if contract["protocol_binding"] == "facade_reachable":
+        locator, fragment_index = owner
+        fragment = model["nodes"][locator]["fragments"][fragment_index]
+        return (
+            {locator}
+            if _r17_contract_binding_matches(
+                contract, fragment, locator, facade_closure
+            )
+            and required_owner_keys <= set(fragment["response_keys"])
+            else set()
+        )
+    witnesses: set[str] = set()
+    for locator, node in model["nodes"].items():
+        for fragment_index, fragment in enumerate(node["fragments"]):
+            if owner not in _r17_resolve_public_symbol(
+                model, locator, fragment_index, symbol
+            ):
+                continue
+            if _r17_contract_binding_matches(
+                contract, fragment, locator, facade_closure
+            ) and required_owner_keys <= (
+                set(owner_fragment["response_keys"])
+                | set(fragment["response_keys"])
+            ):
+                witnesses.add(locator)
+    return witnesses
+
+
 def _r17_resolve_responsibility_contract(
     model: dict[str, Any],
     contract: dict[str, Any],
     facade_closure: set[str] | None,
-) -> tuple[str, ...]:
-    semantic_owners: dict[str, set[str]] = {}
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    semantic_owners: set[str] = set()
+    binding_witnesses: set[str] = set()
     for locator, node in model["nodes"].items():
-        for fragment in node["fragments"]:
+        for fragment_index, fragment in enumerate(node["fragments"]):
             if not _r17_contract_matches_fragment(contract, fragment):
                 continue
-            if not _r17_contract_binding_matches(
-                contract, fragment, locator, facade_closure
-            ):
+            witnesses = _r17_contract_binding_witnesses(
+                model, contract, (locator, fragment_index), facade_closure
+            )
+            if not witnesses:
                 continue
-            entry = fragment["symbols"][contract["entry"]["symbol"]]
-            fingerprint = _r17_digest({
-                "entry": entry,
-                "schemas": fragment["schemas"],
-                "protocols": fragment["protocols"],
-                "imported_symbols": fragment["imported_symbols"],
-            })
-            semantic_owners.setdefault(fingerprint, set()).add(locator)
+            semantic_owners.add(locator)
+            binding_witnesses.update(witnesses)
     _require(
-        len(semantic_owners) == 1,
+        bool(semantic_owners),
         f"responsibility {contract['id']} semantic owners: "
-        f"{sorted(tuple(sorted(value)) for value in semantic_owners.values())}",
+        f"{sorted(semantic_owners)}",
     )
-    return tuple(sorted(next(iter(semantic_owners.values()))))
+    return tuple(sorted(semantic_owners)), tuple(sorted(binding_witnesses))
 
 
 def _r17_derive_responsibility_inventory(
@@ -1427,11 +1678,11 @@ def _r17_derive_responsibility_inventory(
     rows = contracts["responsibilities"]
     facade_contracts = [row for row in rows if row["id"] == "agent-facade"]
     _require(len(facade_contracts) == 1, "one agent facade responsibility")
-    facade_locators = _r17_resolve_responsibility_contract(
+    facade_locators, facade_bindings = _r17_resolve_responsibility_contract(
         model, facade_contracts[0], None
     )
     facade_closure = _r17_responsibility_closure(
-        model["graph"], set(facade_locators)
+        model["graph"], set(facade_bindings)
     )
     included_layers = set(contracts["boundary_policy"]["included_owner_layers"])
     decisions: dict[str, dict[str, Any]] = {}
@@ -1441,7 +1692,7 @@ def _r17_derive_responsibility_inventory(
             if contract["id"] == "agent-facade"
             else _r17_resolve_responsibility_contract(
                 model, contract, facade_closure
-            )
+            )[0]
         )
         included = contract["owner_layer"] in included_layers
         decisions[contract["id"]] = {
@@ -1466,6 +1717,138 @@ def _r17_derive_responsibility_inventory(
     }
 
 
+def _r17_responsibility_inventory_pipeline(
+    package_root: Path | None,
+) -> dict[str, Any]:
+    return _r17_derive_responsibility_inventory(
+        _r17_responsibility_model(_r17_read_modules(package_root)),
+        _r17_load_responsibility_contracts(),
+    )
+
+
+def _r17_ast_import_bindings(nodes: list[ast.stmt]) -> dict[str, str]:
+    bindings: dict[str, str] = {}
+    for node in nodes:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                local = alias.asname or alias.name.split(".", 1)[0]
+                bindings[local] = alias.name if alias.asname else local
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            for alias in node.names:
+                if alias.name != "*":
+                    bindings[alias.asname or alias.name] = (
+                        f"{node.module}.{alias.name}"
+                    )
+    return bindings
+
+
+def _r17_ast_reference(
+    node: ast.AST,
+    bindings: dict[str, str],
+) -> str | None:
+    if isinstance(node, ast.Name):
+        if node.id in bindings:
+            return bindings[node.id]
+        return node.id if node.id in vars(builtins) else None
+    if isinstance(node, ast.Attribute):
+        base = _r17_ast_reference(node.value, bindings)
+        return f"{base}.{node.attr}" if base is not None else None
+    return None
+
+
+def _r17_ast_alias_assignments(
+    nodes: list[ast.stmt],
+    bindings: dict[str, str],
+) -> dict[str, str]:
+    selected = dict(bindings)
+    assignments = [
+        (target.id, node.value)
+        for node in nodes
+        if isinstance(node, (ast.Assign, ast.AnnAssign))
+        for target in (
+            node.targets
+            if isinstance(node, ast.Assign)
+            else [node.target]
+        )
+        if isinstance(target, ast.Name)
+        if node.value is not None
+    ]
+    for _ in range(len(assignments) + 1):
+        changed = False
+        for name, value in assignments:
+            reference = _r17_ast_reference(value, selected)
+            if reference is not None and selected.get(name) != reference:
+                selected[name] = reference
+                changed = True
+        if not changed:
+            break
+    return selected
+
+
+def _r17_ast_call_closure(
+    tree: ast.Module,
+    roots: tuple[str, ...],
+) -> dict[str, Any]:
+    functions = {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    module_bindings = _r17_ast_import_bindings(tree.body)
+    module_bindings.update({name: name for name in functions})
+    module_bindings = _r17_ast_alias_assignments(tree.body, module_bindings)
+    reachable: set[str] = set()
+    resolved_calls: dict[str, set[str]] = {}
+    unresolved_name_calls: dict[str, set[str]] = {}
+    queue = deque(roots)
+    while queue:
+        name = queue.popleft()
+        _require(name in functions, f"derivation gate root missing: {name}")
+        if name in reachable:
+            continue
+        reachable.add(name)
+        function = functions[name]
+        function_bindings = dict(module_bindings)
+        function_bindings.update(_r17_ast_import_bindings([
+            node for node in ast.walk(function)
+            if isinstance(node, (ast.Import, ast.ImportFrom))
+        ]))
+        function_bindings = _r17_ast_alias_assignments(
+            [
+                node for node in ast.walk(function)
+                if isinstance(node, (ast.Assign, ast.AnnAssign))
+            ],
+            function_bindings,
+        )
+        calls: set[str] = set()
+        unresolved: set[str] = set()
+        for node in ast.walk(function):
+            if not isinstance(node, ast.Call):
+                continue
+            reference = _r17_ast_reference(node.func, function_bindings)
+            if reference is not None:
+                calls.add(reference)
+                if reference in functions and reference not in reachable:
+                    queue.append(reference)
+            elif isinstance(node.func, ast.Name):
+                unresolved.add(node.func.id)
+        resolved_calls[name] = calls
+        unresolved_name_calls[name] = unresolved
+    return {
+        "functions": functions,
+        "module_bindings": module_bindings,
+        "reachable": tuple(sorted(reachable)),
+        "resolved_calls": {
+            name: tuple(sorted(calls)) for name, calls in resolved_calls.items()
+        },
+        "unresolved_name_calls": {
+            name: tuple(sorted(calls))
+            for name, calls in unresolved_name_calls.items()
+            if calls
+        },
+    }
+
+
 def _r17_annotate_responsibility_nodes(
     model: dict[str, Any], inventory: dict[str, Any]
 ) -> dict[str, Any]:
@@ -1479,6 +1862,27 @@ def _r17_annotate_responsibility_nodes(
     return selected
 
 
+def _r17_rewrite_fragment_bindings(
+    fragment: dict[str, Any],
+    replacements: dict[str, tuple[str, ...]],
+) -> dict[str, Any]:
+    selected = copy.deepcopy(fragment)
+    selected["symbol_bindings"] = {
+        symbol: tuple(sorted({
+            (rewritten, target_symbol)
+            for target_locator, target_symbol in targets
+            for rewritten in replacements[target_locator]
+        }))
+        for symbol, targets in fragment["symbol_bindings"].items()
+    }
+    selected["star_imports"] = tuple(sorted({
+        rewritten
+        for target_locator in fragment["star_imports"]
+        for rewritten in replacements[target_locator]
+    }))
+    return selected
+
+
 def _r17_rename_responsibility_nodes(
     model: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[str, str]]:
@@ -1486,9 +1890,16 @@ def _r17_rename_responsibility_nodes(
         name: f"m{index:04d}"
         for index, name in enumerate(sorted(model["nodes"]), start=1)
     }
+    replacements = {name: (target,) for name, target in mapping.items()}
     renamed = {
         "nodes": {
-            mapping[name]: copy.deepcopy(node)
+            mapping[name]: {
+                **copy.deepcopy(node),
+                "fragments": tuple(
+                    _r17_rewrite_fragment_bindings(fragment, replacements)
+                    for fragment in node["fragments"]
+                ),
+            }
             for name, node in model["nodes"].items()
         },
         "graph": {
@@ -1512,8 +1923,101 @@ def _r17_clear_module_docstrings(
             and isinstance(tree.body[0].value.value, str)
         ):
             tree.body.pop(0)
-        record["docstring"] = ""
     return selected
+
+
+def _r17_materialize_frozen_package(package_root: Path) -> None:
+    for path, raw in sorted(_r17_frozen_tree_blobs("src/gravity_sdk").items()):
+        target = package_root / Path(path).relative_to("src/gravity_sdk")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(raw)
+
+
+def _r17_move_entry_to_reexported_submodule(
+    package_root: Path,
+    symbol: str,
+) -> tuple[str, str]:
+    origin: Path | None = None
+    source = ""
+    tree: ast.Module | None = None
+    definition: ast.FunctionDef | ast.AsyncFunctionDef | None = None
+    for path in sorted(package_root.rglob("*.py")):
+        selected_source = path.read_text(encoding="utf-8")
+        selected_tree = ast.parse(selected_source, filename=str(path))
+        selected_definition = next(
+            (
+                node
+                for node in selected_tree.body
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and node.name == symbol
+            ),
+            None,
+        )
+        if selected_definition is not None:
+            _require(origin is None, f"multiple entry definitions: {symbol}")
+            origin = path
+            source = selected_source
+            tree = selected_tree
+            definition = selected_definition
+    _require(
+        origin is not None and tree is not None and definition is not None,
+        f"entry definition not found: {symbol}",
+    )
+    lines = source.splitlines(keepends=True)
+    start = min(
+        [definition.lineno, *(node.lineno for node in definition.decorator_list)]
+    ) - 1
+    moved = "".join(lines[start : definition.end_lineno])
+    remaining = lines[:start] + lines[definition.end_lineno :]
+
+    parameters = {
+        argument.arg
+        for argument in (
+            *definition.args.posonlyargs,
+            *definition.args.args,
+            *definition.args.kwonlyargs,
+        )
+    }
+    local_names = parameters | {
+        node.id
+        for node in ast.walk(definition)
+        if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del))
+    } | {
+        alias.asname or alias.name
+        for node in ast.walk(definition)
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        for alias in node.names
+    }
+    loaded_names = {
+        node.id
+        for node in ast.walk(definition)
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+    }
+    origin_globals = tuple(sorted(
+        loaded_names - local_names - set(vars(builtins)) - {symbol}
+    ))
+
+    relative = origin.relative_to(package_root).with_suffix("")
+    origin_module = ".".join((package_root.name, *relative.parts))
+    implementation = origin.with_name(f"{origin.stem}_impl.py")
+    _require(not implementation.exists(), f"implementation exists: {implementation}")
+    implementation.write_text(
+        "from __future__ import annotations\n\n"
+        + f"from {origin_module} import (\n"
+        + "".join(f"    {name},\n" for name in origin_globals)
+        + ")"
+        + "\n\n"
+        + moved,
+        encoding="utf-8",
+    )
+
+    implementation_module = origin_module + "_impl"
+    origin.write_text(
+        "".join(remaining)
+        + f"\nfrom {implementation_module} import {symbol}\n",
+        encoding="utf-8",
+    )
+    return origin_module, implementation_module
 
 
 def _r17_split_merge_responsibility_consumers(
@@ -1551,17 +2055,27 @@ def _r17_split_merge_responsibility_consumers(
     nodes: dict[str, dict[str, Any]] = {}
     for name, node in selected["nodes"].items():
         targets = replacements[name]
+        rewritten_fragments = tuple(
+            _r17_rewrite_fragment_bindings(fragment, replacements)
+            for fragment in node["fragments"]
+        )
         if len(targets) == 2:
             for target in targets:
-                nodes[target] = copy.deepcopy(node)
+                nodes[target] = {
+                    **copy.deepcopy(node),
+                    "fragments": copy.deepcopy(rewritten_fragments),
+                }
         elif targets[0].startswith("external-merge-"):
             merged = nodes.setdefault(targets[0], {
                 "fragments": (),
                 "responsibility_ids": frozenset(),
             })
-            merged["fragments"] = (*merged["fragments"], *copy.deepcopy(node["fragments"]))
+            merged["fragments"] = (*merged["fragments"], *rewritten_fragments)
         else:
-            nodes[targets[0]] = copy.deepcopy(node)
+            nodes[targets[0]] = {
+                **copy.deepcopy(node),
+                "fragments": rewritten_fragments,
+            }
 
     graph = {name: set() for name in nodes}
     for source, targets in selected["graph"].items():
@@ -1653,7 +2167,7 @@ def _r17_role_markers(docstring: str) -> tuple[str, ...]:
 def _r17_analyze_legacy_module_inventory(
     package_root: Path | None,
 ) -> dict[str, Any]:
-    records = _r17_read_modules(package_root)
+    records = _r17_read_legacy_modules(package_root)
     graph, reverse = _r17_import_graph(records)
     facade_candidates = [
         name
@@ -4285,87 +4799,225 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
 
         source = Path(__file__).read_text(encoding="utf-8")
         tree = ast.parse(source, filename=__file__)
-        functions = {
-            node.name: node
-            for node in tree.body
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        }
-        reachable: set[str] = set()
-        queue = deque([
-            "_r17_load_responsibility_contracts",
-            "_r17_responsibility_model",
+        gate = _r17_ast_call_closure(
+            tree, ("_r17_responsibility_inventory_pipeline",)
+        )
+        expected_tcb = {
+            "_r17_assigned_string",
+            "_r17_contract_binding_matches",
+            "_r17_contract_binding_witnesses",
+            "_r17_contract_fragment",
+            "_r17_contract_matches_fragment",
+            "_r17_contract_parameters",
+            "_r17_contract_raises",
+            "_r17_contract_response_keys",
+            "_r17_contract_symbols",
+            "_r17_declared_exports",
             "_r17_derive_responsibility_inventory",
-        ])
-        while queue:
-            name = queue.popleft()
-            if name in reachable:
-                continue
-            reachable.add(name)
-            for node in ast.walk(functions[name]):
-                if (
-                    isinstance(node, ast.Call)
-                    and isinstance(node.func, ast.Name)
-                    and node.func.id in functions
-                    and node.func.id not in reachable
-                ):
-                    queue.append(node.func.id)
-        forbidden_names = {
-            "LEDGER",
-            "R17_SPECIFICATION",
-            "R17_INVENTORY_START",
-            "R17_INVENTORY_END",
-            "R17_ROLE_MARKERS",
-            "_r17_build_legacy_signed_module_inventory",
-            "_r17_load_legacy_signed_module_inventory",
-            "_r17_analyze_legacy_module_inventory",
-            "_r17_compare_responsibilities_to_migration_ledger",
-            "_r17_frozen_blob",
+            "_r17_digest",
+            "_r17_dotted_name",
+            "_r17_existing",
+            "_r17_fragment_exports_symbol",
+            "_r17_frozen_tree_blobs",
+            "_r17_import_base",
+            "_r17_import_graph",
+            "_r17_load_responsibility_contracts",
+            "_r17_non_docstring_strings",
+            "_r17_read_modules",
+            "_r17_resolve_public_symbol",
+            "_r17_resolve_responsibility_contract",
+            "_r17_responsibility_closure",
+            "_r17_responsibility_inventory_pipeline",
+            "_r17_responsibility_model",
+            "_r17_string_sequence",
+            "_r17_subscript_key",
+            "_r17_symbol_bindings",
+            "_require",
         }
-        forbidden_strings = {
-            "LEDGER",
-            "R17_SPECIFICATION",
-            "_r17_build_legacy_signed_module_inventory",
-            "_r17_load_legacy_signed_module_inventory",
-            "agent_module_reference_dispositions.json",
-            "compact_consumers",
-            "docstring",
-            "one_to_one_moves",
-            "other_consumers",
-            "signed_member_inventory",
+        self.assertEqual(expected_tcb, set(gate["reachable"]))
+        self.assertIn("_r17_read_modules", gate["reachable"])
+        self.assertEqual({}, gate["unresolved_name_calls"])
+
+        allowed_external_calls = {
+            "AssertionError",
+            "all",
+            "any",
+            "ast.parse",
+            "ast.unparse",
+            "ast.walk",
+            "bool",
+            "collections.deque",
+            "dict",
+            "enumerate",
+            "frozenset",
+            "hashlib.sha256",
+            "int",
+            "isinstance",
+            "json.dumps",
+            "json.loads",
+            "len",
+            "list",
+            "next",
+            "range",
+            "re.fullmatch",
+            "reversed",
+            "set",
+            "sorted",
+            "str",
+            "subprocess.Popen",
+            "subprocess.run",
+            "tuple",
         }
-        for name in sorted(reachable):
-            node = functions[name]
+        resolved_calls = {
+            call
+            for calls in gate["resolved_calls"].values()
+            for call in calls
+        }
+        external_calls = resolved_calls - set(gate["functions"])
+        self.assertEqual(set(), external_calls - allowed_external_calls)
+
+        allowed_globals = (
+            expected_tcb
+            | set(vars(builtins))
+            | {
+                "Any",
+                "Path",
+                "R17_ORACLE_TREE_OID",
+                "R17_PROTOCOL_PATTERN",
+                "R17_RESPONSIBILITY_CONTRACTS_JSON",
+                "R17_RESPONSIBILITY_SCHEMA",
+                "ROOT",
+                "ast",
+                "deque",
+                "hashlib",
+                "json",
+                "re",
+                "subprocess",
+            }
+        )
+        for name in gate["reachable"]:
+            node = gate["functions"][name]
+            parameters = {
+                argument.arg
+                for argument in (
+                    *node.args.posonlyargs,
+                    *node.args.args,
+                    *node.args.kwonlyargs,
+                )
+            }
+            if node.args.vararg is not None:
+                parameters.add(node.args.vararg.arg)
+            if node.args.kwarg is not None:
+                parameters.add(node.args.kwarg.arg)
+            local_names = parameters | {
+                child.id
+                for child in ast.walk(node)
+                if isinstance(child, ast.Name)
+                and isinstance(child.ctx, (ast.Store, ast.Del))
+            }
             loaded_names = {
                 child.id
                 for child in ast.walk(node)
                 if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load)
             }
-            attributes = {
-                child.attr
-                for child in ast.walk(node)
-                if isinstance(child, ast.Attribute)
-            }
-            strings = {
-                child.value
-                for child in ast.walk(node)
-                if isinstance(child, ast.Constant) and isinstance(child.value, str)
-            }
-            self.assertEqual(set(), forbidden_names & loaded_names, name)
-            self.assertEqual(set(), forbidden_names & attributes, name)
-            if name == "_r17_load_responsibility_contracts":
-                strings -= set(contracts["boundary_policy"]["non_inputs"])
-            self.assertEqual(set(), forbidden_strings & strings, name)
+            self.assertEqual(
+                set(), (loaded_names - local_names) - allowed_globals, name
+            )
 
-        model = _r17_responsibility_model(_r17_read_modules(None))
+        alias_probe = ast.parse(
+            "import ast as syntax\n"
+            "from scripts.audit_agent_module_references import scan_repository as helper\n"
+            "def forbidden_local():\n    pass\n"
+            "alias = forbidden_local\n"
+            "reader = open\n"
+            "def root():\n"
+            "    alias()\n"
+            "    syntax.get_docstring(None)\n"
+            "    helper()\n"
+            "    reader('ignored')\n"
+        )
+        alias_gate = _r17_ast_call_closure(alias_probe, ("root",))
+        self.assertEqual({"forbidden_local", "root"}, set(alias_gate["reachable"]))
+        self.assertEqual(
+            {
+                "ast.get_docstring",
+                "forbidden_local",
+                "open",
+                "scripts.audit_agent_module_references.scan_repository",
+            },
+            set(alias_gate["resolved_calls"]["root"]),
+        )
+
+        real_popen = subprocess.Popen
+        observed_git_calls: list[tuple[str, ...]] = []
+
+        def guarded_popen(command: list[str], *args: Any, **kwargs: Any) -> Any:
+            self.assertIn(
+                command,
+                [
+                    [
+                        "git", "ls-tree", "-r", "-z", R17_ORACLE_TREE_OID,
+                        "--", "src/gravity_sdk",
+                    ],
+                    ["git", "cat-file", "--batch"],
+                ],
+            )
+            observed_git_calls.append(tuple(command))
+            return real_popen(command, *args, **kwargs)
+
+        blocked = AssertionError("forbidden derivation capability")
         with patch.object(
             Path, "read_text", side_effect=AssertionError("derivation text read")
         ), patch.object(
             Path, "read_bytes", side_effect=AssertionError("derivation bytes read")
+        ), patch.object(
+            Path, "open", side_effect=AssertionError("derivation path open")
+        ), patch.object(
+            builtins, "open", side_effect=AssertionError("derivation builtin open")
+        ), patch.object(
+            ast, "get_docstring", side_effect=AssertionError("derivation docstring read")
+        ), patch.object(
+            subprocess, "Popen", side_effect=guarded_popen
+        ), patch(
+            __name__ + "._r17_direct_consumer_counts", side_effect=blocked
+        ), patch(
+            __name__ + "._r17_compare_responsibilities_to_migration_ledger",
+            side_effect=blocked,
+        ), patch(
+            __name__ + "._r17_read_legacy_modules", side_effect=blocked
+        ), patch(
+            __name__ + "._r17_load_legacy_signed_module_inventory",
+            side_effect=blocked,
         ):
             self.assertEqual(
                 84,
-                _r17_derive_responsibility_inventory(model, contracts)["member_count"],
+                _r17_responsibility_inventory_pipeline(None)["member_count"],
             )
+        self.assertEqual(2, len(observed_git_calls))
+
+    def test_protocol_discovery_excludes_docstrings_by_structure(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="r17-docstrings-") as raw_temp:
+            package_root = Path(raw_temp) / "synthetic_sdk"
+            package_root.mkdir()
+            (package_root / "surface.py").write_text(
+                '"""gravity.module-doc.v1"""\n'
+                'SCHEMA_VERSION = "gravity.actual.v1"\n'
+                "class Surface:\n"
+                '    """gravity.class-doc.v1"""\n'
+                "\n"
+                "def payload():\n"
+                '    """gravity.function-doc.v1"""\n'
+                '    return "gravity.returned.v1"\n',
+                encoding="utf-8",
+            )
+            records = _r17_read_modules(package_root)
+        record = records["synthetic_sdk.surface"]
+        self.assertNotIn("docstring", record)
+        self.assertEqual(("gravity.actual.v1",), record["schemas"])
+        self.assertEqual(
+            ("gravity.actual.v1", "gravity.returned.v1"),
+            record["protocols"],
+        )
 
     def test_boundary_is_invariant_to_file_structure(self) -> None:
         contracts = _r17_load_responsibility_contracts()
@@ -4386,7 +5038,10 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             | {target for targets in renamed_model["graph"].values() for target in targets},
         )
 
-        self.assertTrue(any(record["docstring"] for record in records.values()))
+        self.assertTrue(any(
+            ast.get_docstring(record["tree"])
+            for record in records.values()
+        ))
         docstring_free_records = _r17_clear_module_docstrings(records)
         self.assertFalse(any(
             ast.get_docstring(record["tree"], clean=False)
@@ -4436,7 +5091,61 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             for name in baseline_consumers
         ))
 
-        variants = (renamed, docstring_free, split_merge)
+        facade_contract = next(
+            row for row in contracts["responsibilities"]
+            if row["id"] == "agent-facade"
+        )
+        with tempfile.TemporaryDirectory(prefix="r17-reexport-") as raw_temp:
+            package_root = Path(raw_temp) / "gravity_sdk"
+            package_root.mkdir()
+            _r17_materialize_frozen_package(package_root)
+            probe = (
+                "import json\n"
+                "from gravity_sdk.agent import discover_capabilities\n"
+                "print(json.dumps(discover_capabilities(), sort_keys=True, "
+                "separators=(',', ':')))\n"
+            )
+            control_behavior = subprocess.run(
+                [sys.executable, "-c", probe],
+                cwd=package_root.parent,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            ).stdout
+            origin, implementation = _r17_move_entry_to_reexported_submodule(
+                package_root, facade_contract["entry"]["symbol"]
+            )
+            reexported_behavior = subprocess.run(
+                [sys.executable, "-c", probe],
+                cwd=package_root.parent,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            ).stdout
+            reexported_model = _r17_responsibility_model(
+                _r17_read_modules(package_root)
+            )
+            reexported = _r17_derive_responsibility_inventory(
+                reexported_model, contracts
+            )
+        self.assertEqual(control_behavior, reexported_behavior)
+        reexported_owners, reexported_bindings = (
+            _r17_resolve_responsibility_contract(
+                reexported_model, facade_contract, None
+            )
+        )
+        self.assertEqual((implementation,), reexported_owners)
+        self.assertEqual((origin,), reexported_bindings)
+        self.assertEqual(baseline["source_node_count"] + 1, reexported["source_node_count"])
+        reexported_comparison = _r17_compare_responsibilities_to_migration_ledger(
+            reexported
+        )
+        self.assertEqual(82, reexported_comparison["normalized_move_count"])
+        self.assertTrue(reexported_comparison["normalized_moves_equal_ledger"])
+
+        variants = (renamed, docstring_free, split_merge, reexported)
         member_delta = sorted(set().union(*(
             set(baseline["members"]) ^ set(variant["members"])
             for variant in variants
@@ -4447,6 +5156,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             f"renamed_members={renamed['member_count']}",
             f"docstring_free_members={docstring_free['member_count']}",
             f"split_merge_members={split_merge['member_count']}",
+            f"reexported_members={reexported['member_count']}",
             f"member_delta={json.dumps(member_delta, separators=(',', ':'))}",
             (
                 "relative-date-resolution=include"
@@ -4464,6 +5174,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
                 "renamed_members=84",
                 "docstring_free_members=84",
                 "split_merge_members=84",
+                "reexported_members=84",
                 "member_delta=[]",
                 "relative-date-resolution=include",
                 "runtime-contracts=exclude:shared_runtime_contract",
