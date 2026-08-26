@@ -2080,6 +2080,92 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 second_transition, self.document, expected, baseline
             )
 
+    def test_terminal_directive_accepts_exact_r17_consumption_changes(self) -> None:
+        baseline = load_git_baseline(self.directive)
+        expected_source = build_expected_source(
+            self.directive, self.document, baseline
+        )
+        terminal = copy.deepcopy(self.directive)
+        transition = terminal["canonical_source_errata"]["transition"]
+        terminal["version"] = "v9.3"
+        terminal["supersedes"] = {
+            "version": "v9.2",
+            "sha256": transition["from_sha256"],
+        }
+        terminal["canonical_source"]["sha256"] = hashlib.sha256(
+            expected_source
+        ).hexdigest()
+        one_shot = terminal["canonical_source_errata"]["one_shot"]
+        one_shot["state"] = "consumed"
+        one_shot["consumed_by"] = "R17"
+        one_shot["consumed_at_checkpoint"] = "R17-phase-2-core"
+
+        result = validate_final_state(
+            terminal, self.document, expected_source, baseline
+        )
+
+        self.assertEqual("v9.2->v9.3", result["transition"])
+
+    def test_terminal_directive_rejects_approval_scope_drift_with_path(self) -> None:
+        baseline = load_git_baseline(self.directive)
+        expected_source = build_expected_source(
+            self.directive, self.document, baseline
+        )
+        terminal = copy.deepcopy(self.directive)
+        transition = terminal["canonical_source_errata"]["transition"]
+        terminal["version"] = transition["to_version"]
+        terminal["supersedes"] = {
+            "version": transition["from_version"],
+            "sha256": transition["from_sha256"],
+        }
+        terminal["canonical_source"]["sha256"] = hashlib.sha256(
+            expected_source
+        ).hexdigest()
+        one_shot = terminal["canonical_source_errata"]["one_shot"]
+        one_shot["state"] = "consumed"
+        one_shot["consumed_by"] = "R17"
+        one_shot["consumed_at_checkpoint"] = "R17-phase-2-core"
+        terminal["approval"]["program_implementation_scope"] = (
+            "all indexed requirements without readiness gates"
+        )
+
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            r"approval\.program_implementation_scope",
+        ):
+            validate_final_state(
+                terminal, self.document, expected_source, baseline
+            )
+
+    def test_terminal_directive_rejects_main_unfreeze_with_path(self) -> None:
+        baseline = load_git_baseline(self.directive)
+        expected_source = build_expected_source(
+            self.directive, self.document, baseline
+        )
+        terminal = copy.deepcopy(self.directive)
+        transition = terminal["canonical_source_errata"]["transition"]
+        terminal["version"] = transition["to_version"]
+        terminal["supersedes"] = {
+            "version": transition["from_version"],
+            "sha256": transition["from_sha256"],
+        }
+        terminal["canonical_source"]["sha256"] = hashlib.sha256(
+            expected_source
+        ).hexdigest()
+        one_shot = terminal["canonical_source_errata"]["one_shot"]
+        one_shot["state"] = "consumed"
+        one_shot["consumed_by"] = "R17"
+        one_shot["consumed_at_checkpoint"] = "R17-phase-2-core"
+        terminal["main_integration"]["status"] = "unfrozen"
+
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            r"main_integration\.status",
+        ):
+            validate_final_state(
+                terminal, self.document, expected_source, baseline
+            )
+
     def test_canonical_errata_rejects_semantic_change_hidden_as_metadata(self) -> None:
         malicious = copy.deepcopy(self.directive)
         malicious["canonical_source_errata"]["allowed_version_metadata_changes"][0][
