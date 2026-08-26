@@ -11,7 +11,6 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import tempfile
 from typing import Any
@@ -67,6 +66,727 @@ TECHNICAL_DEBT = ROOT / "docs/maintainers/technical-debt.md"
 R17_INVENTORY_START = "<!-- R17_INDEPENDENT_INVENTORY_JSON_START -->"
 R17_INVENTORY_END = "<!-- R17_INDEPENDENT_INVENTORY_JSON_END -->"
 R17_INVENTORY_SCHEMA = "gravity.r17-independent-responsibility-inventory.v1"
+R17_RESPONSIBILITY_SCHEMA = "gravity.r17-responsibility-contracts.v1"
+R17_RESPONSIBILITY_CONTRACTS_JSON = r"""
+{
+  "schema_version": "gravity.r17-responsibility-contracts.v1",
+  "payload_sha256": "4d71ad27bf5be3269ba94b599dc8b9b10e6e31d55d590ac8447fa05f6fce9777",
+  "boundary_policy": {
+    "included_owner_layers": [
+      "compact_agent_interaction",
+      "public_agent_facade"
+    ],
+    "non_inputs": [
+      "direct_consumer_count",
+      "directory_path",
+      "migration_ledger",
+      "module_basename",
+      "module_docstring",
+      "name_prefix",
+      "signed_member_inventory"
+    ]
+  },
+  "responsibilities": [
+    {
+      "id": "agent-facade",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "declared_schema",
+      "entry": {
+        "kind": "function",
+        "symbol": "discover_capabilities",
+        "parameters": ["query", "client", "workspace", "domain", "platform", "limit", "continuation", "sources", "plan_node_namespace", "routing", "host_selection"]
+      },
+      "output": {
+        "return_contract": "dict[str, Any]",
+        "required_keys": ["candidates", "capability_gaps", "routing_mode"],
+        "key_scope": "owner"
+      },
+      "owner_layer": "public_agent_facade"
+    },
+    {
+      "id": "advertiser-profile",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "advertiser_profile_plan_request", "parameters": ["_card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["end", "name", "start"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "analysis-query-spec",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "analysis_query_spec_inventory", "parameters": []},
+      "output": {"return_contract": "tuple[dict[str, Any], ...]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "analysis-default-dictionary",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "analysis_default_dictionary_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "analysis-task",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "analysis_metadata_candidates", "parameters": ["query", "metadata_rows", "limit"]},
+      "output": {"return_contract": "dict[str, list[dict[str, Any]]]", "required_keys": ["events", "metrics", "properties"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "app-catalog",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "app_catalog_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "app-public-info",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "app_public_info_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "attribution-performance",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "attribution_performance_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "attribution-user-detail",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "attribution_user_detail_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "batch-discovery",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "snapshot_failure", "parameters": ["questions"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["results", "schema_version", "status"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "batch-question-validation",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "validate_question", "parameters": ["value", "index"]},
+      "output": {"return_contract": "CapabilityQuestion", "required_keys": ["query"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "batch-source-snapshot",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "snapshot_recipes", "parameters": ["workspace"]},
+      "output": {"return_contract": "tuple[Mapping[str, Any], ...]", "required_keys": ["name", "operation_id", "required_parameters"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "bilibili-account-performance",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "bilibili_account_performance_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "business-pulse",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "business_pulse_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["apps", "end", "start"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "call-bound",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "call_bound_for_card", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["known_inputs", "schema_version", "unit"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "caller-language",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "caller_language_fields", "parameters": ["selector"]},
+      "output": {"return_contract": "tuple[str, ...]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "capability-matching",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "operation_query_match", "parameters": ["query", "item"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["confidence", "matched_terms", "missing_terms"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "agent-catalog",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "run_agent_catalog_command", "parameters": ["args", "client"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "catalog-parity",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "validate_catalog_parity", "parameters": ["inventory", "product_cards", "operations", "gaps"]},
+      "output": {"return_contract": "None", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "catalog-refresh",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "refresh_complete_catalog", "parameters": ["client", "include_table_lineage", "database"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["database"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "deferred-client",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "class", "symbol": "DeferredAgentClient", "parameters": ["factory"]},
+      "output": {"return_contract": "DeferredAgentClient", "required_keys": ["loaded_attribute"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "company-usage",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "company_usage_plan_request", "parameters": ["_card"]},
+      "output": {"return_contract": "dict[str, str]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "composite-card",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "composite_card", "parameters": ["query", "normalized", "domain", "definition"]},
+      "output": {"return_contract": "dict[str, Any] | None", "required_keys": ["composite", "kind", "selector"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "composite-inventory",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "constant", "symbol": "COMPOSITE_CAPABILITIES", "parameters": []},
+      "output": {"return_contract": "tuple[Mapping[str, Any], ...]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "custom-audience",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "custom_audience_plan_request", "parameters": ["_card"]},
+      "output": {"return_contract": "dict[str, str]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "custom-metric",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "custom_metric_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "dashboard",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "dashboard_analysis_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["mode", "name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "derived-metrics",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "derived_metrics_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "discovery-policy",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "operation_fallback_gap", "parameters": ["query"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": ["kind", "next_action", "reason"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "discovery-support",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "unranked_operations_gap", "parameters": ["query", "operation_ids"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["kind", "next_action", "reason"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "export-discovery",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "material_export_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": ["effect", "kind", "selector"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "fixed-snapshots",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "fixed_snapshot_query", "parameters": ["name", "query"]},
+      "output": {"return_contract": "bool", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "capability-gap",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "unavailable_gap", "parameters": ["query", "code", "journey", "reason", "next_action", "argv"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["code", "kind", "reason"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "agent-handoff",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "agent_execution_contract", "parameters": ["workspace_path"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["argv", "bounded_stdout", "input_forms"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "host-catalog",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "host_selection_upgrade_contract", "parameters": ["query"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["next_action", "selection_schema", "when"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "host-selection",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "compile_host_product_selection", "parameters": ["query", "response", "client"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["catalog_sha256", "schema_version", "selected_catalog_refs"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "input-catalogs",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "live_catalog_for_card", "parameters": ["card", "client", "workspace", "known_inputs"]},
+      "output": {"return_contract": "dict[str, Any] | None", "required_keys": ["catalogs", "schema_version", "status"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "input-resolution",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "resolve_capabilities", "parameters": ["query", "known_inputs", "client", "workspace", "domain", "platform", "limit"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "intent-routing",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "product_selection_gap", "parameters": ["query", "selectors", "reason"]},
+      "output": {"return_contract": "dict[str, object]", "required_keys": ["candidate_selectors", "code", "reason"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "intent-text",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "affirmative_intent_text", "parameters": ["query"]},
+      "output": {"return_contract": "str", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "kanban-mutation",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "kanban_mutation_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "lexical-rescue",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "indexed_evidence_rescue", "parameters": ["documents", "query_terms", "document_terms", "idf"]},
+      "output": {"return_contract": "IndexedEvidenceDecision", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "lexical-retrieval",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "selected_candidate", "parameters": ["match"]},
+      "output": {"return_contract": "tuple[str, Mapping[str, Any]] | None", "required_keys": ["confidence", "matched_terms", "missing_terms"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "material-asset",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "material_asset_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": ["artifact_schema_version", "output_root_bound", "selector"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "material-performance",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "material_performance_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "metadata-onboarding",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "metadata_onboarding_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "metadata-search",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "metadata_search_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "metadata-template",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "metadata_template_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "monetization-aggregate",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "monetization_aggregate_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "monetization-guard",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "monetization_detail_plan_request", "parameters": ["_card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "multidim",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "multidim_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "inputs", "name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "mutation-cards",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "mutation_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "operation-contract",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "operation_contract_overlay", "parameters": ["client", "operation", "extra"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["effect", "pagination", "supported"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "order-directory",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "order_directory_plan_request", "parameters": ["_card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "order-trace",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "order_split_trace_plan_request", "parameters": ["_card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "output-envelope",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "ndjson_metadata", "parameters": ["value"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["capability_gaps", "routing_mode", "total"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "pagination-completeness",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "compact_pagination", "parameters": ["value"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["completeness", "pagination_evidence", "supported"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "product-inventory",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "canonical_capability_cards", "parameters": ["client"]},
+      "output": {"return_contract": "tuple[dict[str, Any], ...]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "promotion-performance",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "promotion_performance_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "realtime-event-mutation",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "realtime_event_mutation_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "realtime-event-catalog",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "realtime_event_catalog_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "end", "start"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "report-directory",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "report_read_plan_request", "parameters": ["name", "_card"]},
+      "output": {"return_contract": "dict[str, str]", "required_keys": ["name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "report-mutation",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "report_mutation_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "report-routing",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "report_product_plan_request", "parameters": ["name", "card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "saved-analysis",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "saved_analysis_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "name", "ref"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "saved-analysis-mutation",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "saved_analysis_mutation_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "segment",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "segment_rule_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "name", "spec"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "segment-members",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "segment_members_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "name", "ref"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "segment-snapshot",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "segment_snapshot_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "date", "ref"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "semantic-compose",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "semantic_compose_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "inputs", "name"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "semantic-context",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "load_agent_workspace", "parameters": ["workspace", "sources"]},
+      "output": {"return_contract": "Any | None", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "semantic-derived",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "multiple_gap", "parameters": ["query", "selectors"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["candidate_selectors", "code", "reason"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "source-discovery",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "snapshot_recipe_cards", "parameters": ["query", "inventory"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": ["kind", "recipe", "selector"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "sql-product-discovery",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "apply_workspace_sql_owner", "parameters": ["query", "workspace", "sources"]},
+      "output": {"return_contract": "AppliedLexicalFallback", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "sql-product-gap",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "registered_sql_product_gap", "parameters": ["query"]},
+      "output": {"return_contract": "dict[str, Any] | None", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "table-lineage",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "table_lineage_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": ["metadata_kind", "scope", "selector"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "title-package",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "title_package_plan_request", "parameters": ["card"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["app", "name", "package_kind"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "unavailable-journey",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "unavailable_journey_gap", "parameters": ["query"]},
+      "output": {"return_contract": "dict[str, Any] | None", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "unavailable-analysis",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "unavailable_analysis_gap", "parameters": ["query"]},
+      "output": {"return_contract": "dict[str, Any] | None", "required_keys": ["candidate_selectors", "reason_code", "selection_required"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "unavailable-promotion",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "unavailable_promotion_gap", "parameters": ["query"]},
+      "output": {"return_contract": "dict[str, Any] | None", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "unavailable-report",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "unavailable_report_gap", "parameters": ["query"]},
+      "output": {"return_contract": "dict[str, Any] | None", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "user-journey",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "user_journey_capability_cards", "parameters": ["query", "domain", "platform"]},
+      "output": {"return_contract": "list[dict[str, Any]]", "required_keys": []},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "vocabulary",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "vocabulary_card_fields", "parameters": ["item", "query"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["scope", "selector", "source"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "relative-date-resolution",
+      "service_protocol": "gravity.agent.v1",
+      "protocol_binding": "facade_reachable",
+      "entry": {"kind": "function", "symbol": "fill_agent_relative_dates", "parameters": ["card", "query", "workspace", "now"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["resolved_date_window", "start", "end"]},
+      "owner_layer": "compact_agent_interaction"
+    },
+    {
+      "id": "runtime-contracts",
+      "service_protocol": "JsonSchemaValidator",
+      "protocol_binding": "schema_validator",
+      "entry": {"kind": "function", "symbol": "validate_schema", "parameters": ["value", "schema_name", "label"]},
+      "output": {"return_contract": "None", "required_keys": [], "raises": ["AgentRuntimeContractError"]},
+      "owner_layer": "shared_runtime_contract"
+    },
+    {
+      "id": "find",
+      "service_protocol": "gravity.find.v1",
+      "protocol_binding": "declared_schema",
+      "entry": {"kind": "function", "symbol": "run_find_command", "parameters": ["args", "client", "workspace"]},
+      "output": {"return_contract": "dict[str, Any]", "required_keys": ["results", "schema_version", "status"]},
+      "owner_layer": "independent_primary_protocol"
+    }
+  ]
+}
+
+"""
 R17_COCHANGE_BASELINE = "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
 R17_ORACLE_BASELINE_COMMIT = "ddbca7aca1b7baee2ee42e96f886d7ddaee84947"
 R17_ORACLE_TREE_OID = "aebfca0423628ea36b48f227435abf6854400c00"
@@ -353,6 +1073,563 @@ def _r17_import_graph(
     return graph, reverse
 
 
+def _r17_contract_parameters(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    *, drop_receiver: bool = False,
+) -> tuple[str, ...]:
+    parameters = [
+        argument.arg for argument in (*node.args.posonlyargs, *node.args.args)
+    ]
+    if drop_receiver and parameters[:1] in (["self"], ["cls"]):
+        parameters.pop(0)
+    if node.args.vararg is not None:
+        parameters.append("*" + node.args.vararg.arg)
+    parameters.extend(argument.arg for argument in node.args.kwonlyargs)
+    if node.args.kwarg is not None:
+        parameters.append("**" + node.args.kwarg.arg)
+    return tuple(parameters)
+
+
+def _r17_subscript_key(node: ast.AST) -> str | None:
+    if not isinstance(node, ast.Subscript):
+        return None
+    selected = node.slice
+    if isinstance(selected, ast.Constant) and isinstance(selected.value, str):
+        return selected.value
+    return None
+
+
+def _r17_contract_response_keys(node: ast.AST) -> tuple[str, ...]:
+    keys: set[str] = set()
+    for descendant in ast.walk(node):
+        if isinstance(descendant, ast.Dict):
+            keys.update(
+                key.value
+                for key in descendant.keys
+                if isinstance(key, ast.Constant) and isinstance(key.value, str)
+            )
+        if isinstance(descendant, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            targets: list[ast.AST]
+            if isinstance(descendant, ast.Assign):
+                targets = list(descendant.targets)
+            else:
+                targets = [descendant.target]
+            keys.update(
+                key
+                for target in targets
+                if (key := _r17_subscript_key(target)) is not None
+            )
+    return tuple(sorted(keys))
+
+
+def _r17_contract_raises(node: ast.AST) -> tuple[str, ...]:
+    raised: set[str] = set()
+    for descendant in ast.walk(node):
+        if not isinstance(descendant, ast.Raise) or descendant.exc is None:
+            continue
+        selected = descendant.exc.func if isinstance(descendant.exc, ast.Call) else descendant.exc
+        if isinstance(selected, ast.Name):
+            raised.add(selected.id)
+        elif isinstance(selected, ast.Attribute):
+            raised.add(selected.attr)
+    return tuple(sorted(raised))
+
+
+def _r17_contract_symbols(tree: ast.Module) -> dict[str, dict[str, Any]]:
+    symbols: dict[str, dict[str, Any]] = {}
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            symbols[node.name] = {
+                "kind": "function",
+                "parameters": _r17_contract_parameters(node),
+                "return_contract": ast.unparse(node.returns) if node.returns else "",
+                "response_keys": _r17_contract_response_keys(node),
+                "raises": _r17_contract_raises(node),
+            }
+        elif isinstance(node, ast.ClassDef):
+            initializer = next(
+                (
+                    child
+                    for child in node.body
+                    if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and child.name == "__init__"
+                ),
+                None,
+            )
+            symbols[node.name] = {
+                "kind": "class",
+                "parameters": (
+                    _r17_contract_parameters(initializer, drop_receiver=True)
+                    if initializer is not None
+                    else ()
+                ),
+                "return_contract": node.name,
+                "response_keys": tuple(sorted(
+                    child.name
+                    for child in node.body
+                    if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and not child.name.startswith("_")
+                )),
+                "raises": (),
+            }
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            symbols[node.target.id] = {
+                "kind": "constant",
+                "parameters": (),
+                "return_contract": ast.unparse(node.annotation),
+                "response_keys": _r17_contract_response_keys(node.value),
+                "raises": (),
+            }
+    return symbols
+
+
+def _r17_contract_fragment(record: dict[str, Any]) -> dict[str, Any]:
+    imported_symbols: set[str] = set()
+    for node in record["tree"].body:
+        if isinstance(node, ast.Import):
+            imported_symbols.update(
+                alias.asname or alias.name.rpartition(".")[2] for alias in node.names
+            )
+        elif isinstance(node, ast.ImportFrom):
+            imported_symbols.update(alias.asname or alias.name for alias in node.names)
+    return {
+        "package": record["package"],
+        "schemas": tuple(record["schemas"]),
+        "protocols": tuple(record["protocols"]),
+        "commands": tuple(record["commands"]),
+        "response_keys": tuple(sorted(record["response_keys"])),
+        "imported_symbols": tuple(sorted(imported_symbols)),
+        "symbols": _r17_contract_symbols(record["tree"]),
+    }
+
+
+def _r17_responsibility_model(
+    records: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    graph, _reverse = _r17_import_graph(records)
+    return {
+        "nodes": {
+            name: {
+                "fragments": (_r17_contract_fragment(record),),
+                "responsibility_ids": frozenset(),
+            }
+            for name, record in records.items()
+        },
+        "graph": {name: set(targets) for name, targets in graph.items()},
+    }
+
+
+def _r17_load_responsibility_contracts() -> dict[str, Any]:
+    document = json.loads(R17_RESPONSIBILITY_CONTRACTS_JSON)
+    _require(isinstance(document, dict), "responsibility contracts must be an object")
+    payload = dict(document)
+    digest = payload.pop("payload_sha256", None)
+    _require(digest == _r17_digest(payload), "responsibility contract payload digest")
+    _require(
+        document.get("schema_version") == R17_RESPONSIBILITY_SCHEMA,
+        "responsibility contract schema",
+    )
+    policy = document.get("boundary_policy")
+    _require(isinstance(policy, dict), "responsibility boundary policy")
+    _require(
+        policy.get("included_owner_layers")
+        == ["compact_agent_interaction", "public_agent_facade"],
+        "responsibility included owner layers",
+    )
+    _require(
+        policy.get("non_inputs")
+        == [
+            "direct_consumer_count",
+            "directory_path",
+            "migration_ledger",
+            "module_basename",
+            "module_docstring",
+            "name_prefix",
+            "signed_member_inventory",
+        ],
+        "responsibility non-input declaration",
+    )
+    rows = document.get("responsibilities")
+    _require(isinstance(rows, list) and rows, "responsibility contract rows")
+    identifiers: set[str] = set()
+    for row in rows:
+        _require(isinstance(row, dict), "responsibility row must be an object")
+        _require(
+            set(row)
+            == {
+                "id",
+                "service_protocol",
+                "protocol_binding",
+                "entry",
+                "output",
+                "owner_layer",
+            },
+            f"responsibility row fields: {row}",
+        )
+        identifier = row["id"]
+        _require(
+            isinstance(identifier, str)
+            and re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", identifier) is not None,
+            f"responsibility id: {identifier!r}",
+        )
+        _require(identifier not in identifiers, f"duplicate responsibility: {identifier}")
+        identifiers.add(identifier)
+        entry = row["entry"]
+        _require(
+            isinstance(entry, dict)
+            and set(entry) == {"kind", "symbol", "parameters"}
+            and entry["kind"] in {"function", "class", "constant"}
+            and isinstance(entry["symbol"], str)
+            and isinstance(entry["parameters"], list)
+            and all(isinstance(value, str) for value in entry["parameters"]),
+            f"responsibility entry: {identifier}",
+        )
+        output = row["output"]
+        _require(
+            isinstance(output, dict)
+            and {"return_contract", "required_keys"} <= set(output)
+            and set(output) <= {
+                "return_contract", "required_keys", "key_scope", "raises",
+            }
+            and isinstance(output["return_contract"], str)
+            and isinstance(output["required_keys"], list)
+            and all(isinstance(value, str) for value in output["required_keys"])
+            and output.get("key_scope", "entry") in {"entry", "owner"}
+            and isinstance(output.get("raises", []), list)
+            and all(isinstance(value, str) for value in output.get("raises", [])),
+            f"responsibility output: {identifier}",
+        )
+        _require(
+            row["protocol_binding"]
+            in {"declared_schema", "facade_reachable", "schema_validator"},
+            f"responsibility protocol binding: {identifier}",
+        )
+        _require(
+            row["owner_layer"]
+            in {
+                "compact_agent_interaction",
+                "public_agent_facade",
+                "independent_primary_protocol",
+                "shared_runtime_contract",
+            },
+            f"responsibility owner layer: {identifier}",
+        )
+    return document
+
+
+def _r17_responsibility_closure(
+    graph: dict[str, set[str]], starts: set[str]
+) -> set[str]:
+    selected = set(starts)
+    queue = deque(sorted(starts))
+    while queue:
+        source = queue.popleft()
+        for target in sorted(graph[source]):
+            if target not in selected:
+                selected.add(target)
+                queue.append(target)
+    return selected
+
+
+def _r17_contract_matches_fragment(
+    contract: dict[str, Any], fragment: dict[str, Any]
+) -> bool:
+    entry = contract["entry"]
+    fact = fragment["symbols"].get(entry["symbol"])
+    if fact is None:
+        return False
+    if fact["kind"] != entry["kind"]:
+        return False
+    if fact["parameters"] != tuple(entry["parameters"]):
+        return False
+    output = contract["output"]
+    if fact["return_contract"] != output["return_contract"]:
+        return False
+    keys = (
+        set(fragment["response_keys"])
+        if output.get("key_scope", "entry") == "owner"
+        else set(fact["response_keys"])
+    )
+    if not set(output["required_keys"]) <= keys:
+        return False
+    return set(output.get("raises", [])) <= set(fact["raises"])
+
+
+def _r17_contract_binding_matches(
+    contract: dict[str, Any],
+    fragment: dict[str, Any],
+    locator: str,
+    facade_closure: set[str] | None,
+) -> bool:
+    binding = contract["protocol_binding"]
+    protocol = contract["service_protocol"]
+    layer = contract["owner_layer"]
+    if binding == "declared_schema":
+        matched = protocol in fragment["schemas"]
+    elif binding == "facade_reachable":
+        matched = (
+            facade_closure is not None
+            and locator in facade_closure
+            and not any(
+                schema for schema in fragment["schemas"]
+                if not schema.startswith("gravity.agent")
+            )
+        )
+    else:
+        matched = (
+            protocol in fragment["imported_symbols"]
+            and not fragment["schemas"]
+        )
+    if not matched:
+        return False
+    if layer == "public_agent_facade":
+        return binding == "declared_schema" and protocol == "gravity.agent.v1"
+    if layer == "compact_agent_interaction":
+        return binding == "facade_reachable" and protocol == "gravity.agent.v1"
+    if layer == "independent_primary_protocol":
+        return binding == "declared_schema" and not protocol.startswith("gravity.agent")
+    return layer == "shared_runtime_contract" and binding == "schema_validator"
+
+
+def _r17_resolve_responsibility_contract(
+    model: dict[str, Any],
+    contract: dict[str, Any],
+    facade_closure: set[str] | None,
+) -> tuple[str, ...]:
+    semantic_owners: dict[str, set[str]] = {}
+    for locator, node in model["nodes"].items():
+        for fragment in node["fragments"]:
+            if not _r17_contract_matches_fragment(contract, fragment):
+                continue
+            if not _r17_contract_binding_matches(
+                contract, fragment, locator, facade_closure
+            ):
+                continue
+            entry = fragment["symbols"][contract["entry"]["symbol"]]
+            fingerprint = _r17_digest({
+                "entry": entry,
+                "schemas": fragment["schemas"],
+                "protocols": fragment["protocols"],
+                "imported_symbols": fragment["imported_symbols"],
+            })
+            semantic_owners.setdefault(fingerprint, set()).add(locator)
+    _require(
+        len(semantic_owners) == 1,
+        f"responsibility {contract['id']} semantic owners: "
+        f"{sorted(tuple(sorted(value)) for value in semantic_owners.values())}",
+    )
+    return tuple(sorted(next(iter(semantic_owners.values()))))
+
+
+def _r17_derive_responsibility_inventory(
+    model: dict[str, Any], contracts: dict[str, Any]
+) -> dict[str, Any]:
+    rows = contracts["responsibilities"]
+    facade_contracts = [row for row in rows if row["id"] == "agent-facade"]
+    _require(len(facade_contracts) == 1, "one agent facade responsibility")
+    facade_locators = _r17_resolve_responsibility_contract(
+        model, facade_contracts[0], None
+    )
+    facade_closure = _r17_responsibility_closure(
+        model["graph"], set(facade_locators)
+    )
+    included_layers = set(contracts["boundary_policy"]["included_owner_layers"])
+    decisions: dict[str, dict[str, Any]] = {}
+    for contract in rows:
+        locators = (
+            facade_locators
+            if contract["id"] == "agent-facade"
+            else _r17_resolve_responsibility_contract(
+                model, contract, facade_closure
+            )
+        )
+        included = contract["owner_layer"] in included_layers
+        decisions[contract["id"]] = {
+            "include": included,
+            "reason": "included_owner_layer" if included else contract["owner_layer"],
+            "owner_layer": contract["owner_layer"],
+            "service_protocol": contract["service_protocol"],
+            "entry_symbol": contract["entry"]["symbol"],
+            "locators": locators,
+        }
+    members = tuple(sorted(
+        identifier for identifier, decision in decisions.items()
+        if decision["include"]
+    ))
+    return {
+        "member_count": len(members),
+        "members": members,
+        "members_sha256": _r17_digest(members),
+        "decisions": decisions,
+        "facade_closure_count": len(facade_closure),
+        "source_node_count": len(model["nodes"]),
+    }
+
+
+def _r17_annotate_responsibility_nodes(
+    model: dict[str, Any], inventory: dict[str, Any]
+) -> dict[str, Any]:
+    selected = copy.deepcopy(model)
+    by_locator: dict[str, set[str]] = {}
+    for identifier, decision in inventory["decisions"].items():
+        for locator in decision["locators"]:
+            by_locator.setdefault(locator, set()).add(identifier)
+    for locator, node in selected["nodes"].items():
+        node["responsibility_ids"] = frozenset(by_locator.get(locator, set()))
+    return selected
+
+
+def _r17_rename_responsibility_nodes(
+    model: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    mapping = {
+        name: f"m{index:04d}"
+        for index, name in enumerate(sorted(model["nodes"]), start=1)
+    }
+    renamed = {
+        "nodes": {
+            mapping[name]: copy.deepcopy(node)
+            for name, node in model["nodes"].items()
+        },
+        "graph": {
+            mapping[source]: {mapping[target] for target in targets}
+            for source, targets in model["graph"].items()
+        },
+    }
+    return renamed, mapping
+
+
+def _r17_clear_module_docstrings(
+    records: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    selected = copy.deepcopy(records)
+    for record in selected.values():
+        tree = record["tree"]
+        if (
+            tree.body
+            and isinstance(tree.body[0], ast.Expr)
+            and isinstance(tree.body[0].value, ast.Constant)
+            and isinstance(tree.body[0].value.value, str)
+        ):
+            tree.body.pop(0)
+        record["docstring"] = ""
+    return selected
+
+
+def _r17_split_merge_responsibility_consumers(
+    model: dict[str, Any], inventory: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, int]]:
+    selected = _r17_annotate_responsibility_nodes(model, inventory)
+    included = set(inventory["members"])
+    split_nodes = {
+        name
+        for name, node in selected["nodes"].items()
+        if set(node["responsibility_ids"]) & included and selected["graph"][name]
+    }
+    external_groups: dict[tuple[str, ...], list[str]] = {}
+    for name, node in selected["nodes"].items():
+        if node["responsibility_ids"] or not selected["graph"][name]:
+            continue
+        signature = tuple(sorted(selected["graph"][name]))
+        external_groups.setdefault(signature, []).append(name)
+    merged_groups = [
+        sorted(names)
+        for names in external_groups.values()
+        if len(names) > 1
+    ]
+    _require(split_nodes, "no compact responsibility consumers to split")
+    _require(merged_groups, "no external responsibility consumers to merge")
+
+    replacements = {name: (name,) for name in selected["nodes"]}
+    for index, name in enumerate(sorted(split_nodes), start=1):
+        replacements[name] = (f"compact-split-{index:03d}-a", f"compact-split-{index:03d}-b")
+    for index, names in enumerate(sorted(merged_groups), start=1):
+        merged = f"external-merge-{index:03d}"
+        for name in names:
+            replacements[name] = (merged,)
+
+    nodes: dict[str, dict[str, Any]] = {}
+    for name, node in selected["nodes"].items():
+        targets = replacements[name]
+        if len(targets) == 2:
+            for target in targets:
+                nodes[target] = copy.deepcopy(node)
+        elif targets[0].startswith("external-merge-"):
+            merged = nodes.setdefault(targets[0], {
+                "fragments": (),
+                "responsibility_ids": frozenset(),
+            })
+            merged["fragments"] = (*merged["fragments"], *copy.deepcopy(node["fragments"]))
+        else:
+            nodes[targets[0]] = copy.deepcopy(node)
+
+    graph = {name: set() for name in nodes}
+    for source, targets in selected["graph"].items():
+        rewritten_targets = {
+            rewritten
+            for target in targets
+            for rewritten in replacements[target]
+        }
+        for rewritten_source in replacements[source]:
+            graph[rewritten_source].update(rewritten_targets)
+    transformed = {"nodes": nodes, "graph": graph}
+    stats = {
+        "baseline_nodes": len(selected["nodes"]),
+        "transformed_nodes": len(nodes),
+        "split_nodes": len(split_nodes),
+        "merged_groups": len(merged_groups),
+        "merged_nodes": sum(len(group) for group in merged_groups),
+        "baseline_edges": sum(len(targets) for targets in selected["graph"].values()),
+        "transformed_edges": sum(len(targets) for targets in graph.values()),
+    }
+    return transformed, stats
+
+
+def _r17_compare_responsibilities_to_migration_ledger(
+    inventory: dict[str, Any],
+) -> dict[str, Any]:
+    ledger = json.loads(
+        _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+    )
+    moves = {
+        row["old_module"] for row in ledger["scope"]["one_to_one_moves"]
+    }
+    included_locators = {
+        locator
+        for decision in inventory["decisions"].values()
+        if decision["include"]
+        for locator in decision["locators"]
+    }
+    normalized = set(included_locators)
+    normalized -= set(inventory["decisions"]["agent-facade"]["locators"])
+    normalized -= set(
+        inventory["decisions"]["pagination-completeness"]["locators"]
+    )
+    return {
+        "normalized_move_count": len(normalized),
+        "normalized_moves_equal_ledger": normalized == moves,
+        "responsibility_owners_not_moves": sorted(normalized - moves),
+        "moves_not_responsibility_owners": sorted(moves - normalized),
+    }
+
+
+def _r17_direct_consumer_counts(
+    model: dict[str, Any], inventory: dict[str, Any]
+) -> dict[str, int]:
+    reverse = {name: set() for name in model["nodes"]}
+    for source, targets in model["graph"].items():
+        for target in targets:
+            reverse[target].add(source)
+    return {
+        identifier: len({
+            consumer
+            for locator in decision["locators"]
+            for consumer in reverse[locator]
+        })
+        for identifier, decision in inventory["decisions"].items()
+    }
+
+
 def _r17_closure(graph: dict[str, set[str]], start: str) -> set[str]:
     selected = {start}
     queue = deque([start])
@@ -373,7 +1650,9 @@ def _r17_role_markers(docstring: str) -> tuple[str, ...]:
     )
 
 
-def _r17_analyze_source(package_root: Path | None) -> dict[str, Any]:
+def _r17_analyze_legacy_module_inventory(
+    package_root: Path | None,
+) -> dict[str, Any]:
     records = _r17_read_modules(package_root)
     graph, reverse = _r17_import_graph(records)
     facade_candidates = [
@@ -551,8 +1830,10 @@ def _r17_cochange_component(records: dict[str, dict[str, Any]], start: str) -> s
     return {name for name in parent if find(name) == root}
 
 
-def build_r17_responsibility_inventory(package_root: Path | None = None) -> dict[str, Any]:
-    analysis = _r17_analyze_source(package_root)
+def _r17_build_legacy_signed_module_inventory(
+    package_root: Path | None = None,
+) -> dict[str, Any]:
+    analysis = _r17_analyze_legacy_module_inventory(package_root)
     records = analysis["records"]
     graph = analysis["graph"]
     reverse = analysis["reverse"]
@@ -752,7 +2033,7 @@ def build_r17_responsibility_inventory(package_root: Path | None = None) -> dict
     return document
 
 
-def load_signed_r17_responsibility_inventory() -> dict[str, Any]:
+def _r17_load_legacy_signed_module_inventory() -> dict[str, Any]:
     source = R17_SPECIFICATION.read_text(encoding="utf-8")
     _require(source.count(R17_INVENTORY_START) == 1, "inventory start marker")
     _require(source.count(R17_INVENTORY_END) == 1, "inventory end marker")
@@ -2825,25 +4106,25 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             ).stdout,
         )
 
-    def test_frozen_inventory_recomputation_performs_no_worktree_source_io(self) -> None:
-        signed = load_signed_r17_responsibility_inventory()
+    def test_legacy_signed_module_inventory_uses_no_worktree_source_io(self) -> None:
+        signed = _r17_load_legacy_signed_module_inventory()
         with patch.object(
             Path, "read_text", side_effect=AssertionError("worktree text read")
         ), patch.object(
             Path, "read_bytes", side_effect=AssertionError("worktree bytes read")
         ):
-            self.assertEqual(signed, build_r17_responsibility_inventory())
+            self.assertEqual(signed, _r17_build_legacy_signed_module_inventory())
 
-    def test_signed_inventory_exactly_matches_frozen_tree_recomputation(self) -> None:
-        signed = load_signed_r17_responsibility_inventory()
-        self.assertEqual(signed, build_r17_responsibility_inventory())
+    def test_legacy_signed_module_inventory_matches_frozen_recomputation(self) -> None:
+        signed = _r17_load_legacy_signed_module_inventory()
+        self.assertEqual(signed, _r17_build_legacy_signed_module_inventory())
         payload = dict(signed)
         digest = payload.pop("payload_sha256")
         self.assertEqual(digest, _r17_digest(payload))
 
     def test_current_tree_projects_to_the_frozen_responsibility_ids(self) -> None:
         current = set(_r17_read_modules(ROOT / "src/gravity_sdk"))
-        frozen = load_signed_r17_responsibility_inventory()
+        frozen = _r17_load_legacy_signed_module_inventory()
         scope = json.loads(
             _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
         )["scope"]
@@ -2853,7 +4134,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         )
 
     def test_frozen_move_mapping_is_an_exact_bijection(self) -> None:
-        frozen = load_signed_r17_responsibility_inventory()
+        frozen = _r17_load_legacy_signed_module_inventory()
         scope = json.loads(
             _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
         )["scope"]
@@ -2880,7 +4161,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertEqual("gravity_sdk.agents.relative_date", relative_date["new_module"])
 
     def test_phase1_paths_map_to_frozen_responsibilities(self) -> None:
-        frozen = load_signed_r17_responsibility_inventory()
+        frozen = _r17_load_legacy_signed_module_inventory()
         scope = json.loads(
             _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
         )["scope"]
@@ -2888,7 +4169,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertEqual("phase_1", _r17_owner_projection_state(modules, frozen, scope))
 
     def test_phase2_paths_map_to_frozen_responsibilities(self) -> None:
-        frozen = load_signed_r17_responsibility_inventory()
+        frozen = _r17_load_legacy_signed_module_inventory()
         scope = json.loads(
             _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
         )["scope"]
@@ -2896,7 +4177,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertEqual("phase_2", _r17_owner_projection_state(modules, frozen, scope))
 
     def test_owner_projection_rejects_old_and_new_owner_overlap(self) -> None:
-        frozen = load_signed_r17_responsibility_inventory()
+        frozen = _r17_load_legacy_signed_module_inventory()
         scope = json.loads(
             _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
         )["scope"]
@@ -2907,7 +4188,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             _r17_owner_projection_state(modules, frozen, scope)
 
     def test_owner_projection_rejects_an_unreviewed_phase_partition(self) -> None:
-        frozen = load_signed_r17_responsibility_inventory()
+        frozen = _r17_load_legacy_signed_module_inventory()
         scope = json.loads(
             _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
         )["scope"]
@@ -2916,7 +4197,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             _r17_owner_projection_state(modules, frozen, scope)
 
     def test_owner_projection_rejects_missing_fixed_owners(self) -> None:
-        frozen = load_signed_r17_responsibility_inventory()
+        frozen = _r17_load_legacy_signed_module_inventory()
         scope = json.loads(
             _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
         )["scope"]
@@ -2931,8 +4212,8 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             ):
                 _r17_owner_projection_state(baseline - {missing}, frozen, scope)
 
-    def test_inventory_rows_and_r17_comparison_are_complete(self) -> None:
-        signed = load_signed_r17_responsibility_inventory()
+    def test_legacy_signed_module_inventory_rows_are_complete(self) -> None:
+        signed = _r17_load_legacy_signed_module_inventory()
         decisions = signed["decisions"]
         included = [row for row in decisions if row["include"]]
         rejected = [row for row in decisions if not row["include"]]
@@ -2958,10 +4239,10 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             "unmapped_member", {row["r17_disposition"] for row in included}
         )
 
-    def test_boundary_cases_keep_runtime_contracts_and_find_out(self) -> None:
+    def test_legacy_signed_boundary_cases_are_preserved(self) -> None:
         cases = {
             item["label"]: item
-            for item in load_signed_r17_responsibility_inventory()["boundary_cases"]
+            for item in _r17_load_legacy_signed_module_inventory()["boundary_cases"]
         }
         contracts = cases["broader_runtime_contracts_owner"]
         self.assertFalse(contracts["selected"])
@@ -2976,8 +4257,8 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertEqual(7, len(find["direct_member_consumers"]))
         self.assertEqual(2, len(find["direct_imports_to_members"]))
 
-    def test_graph_methods_are_recorded_without_a_convergence_claim(self) -> None:
-        signed = load_signed_r17_responsibility_inventory()
+    def test_legacy_graph_observations_preserve_the_nonconvergence_claim(self) -> None:
+        signed = _r17_load_legacy_signed_module_inventory()
         observations = {
             item["name"]: item for item in signed["graph_observations"]
         }
@@ -2988,31 +4269,215 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertFalse(signed["conclusion"]["graph_methods_converged"])
         self.assertFalse(signed["conclusion"]["complete_agent_domain_proven"])
 
-    def test_docstring_drift_injection_changes_the_recomputed_inventory(self) -> None:
-        package_root = ROOT / "src/gravity_sdk"
-        baseline = _r17_analyze_source(package_root)
-        targets = [
-            name
-            for name, record in baseline["records"].items()
-            if record["docstring"]
-            == "Fill Agent cards from a unique closed relative-date phrase."
-        ]
-        self.assertEqual(1, len(targets))
-        with tempfile.TemporaryDirectory() as raw:
-            temporary_package = Path(raw) / package_root.name
-            shutil.copytree(package_root, temporary_package)
-            relative = baseline["records"][targets[0]]["path"].relative_to(package_root)
-            target = temporary_package / relative
-            source = target.read_text(encoding="utf-8")
-            old = '"""Fill Agent cards from a unique closed relative-date phrase."""'
-            new = '"""Fill cards from a unique closed relative-date phrase."""'
-            self.assertEqual(1, source.count(old))
-            target.write_text(source.replace(old, new), encoding="utf-8")
-            mutated = _r17_analyze_source(temporary_package)["members"]
-        self.assertEqual({targets[0]}, baseline["members"] - mutated)
+    def test_responsibility_derivation_has_no_migration_or_file_inputs(self) -> None:
+        contracts = _r17_load_responsibility_contracts()
+        serialized_rows = json.dumps(
+            contracts["responsibilities"], sort_keys=True, ensure_ascii=True
+        )
+        self.assertNotIn("gravity_sdk.", serialized_rows)
+        self.assertNotIn("src/", serialized_rows)
+        self.assertNotIn(".py", serialized_rows)
+        for row in contracts["responsibilities"]:
+            self.assertFalse(
+                {"module", "path", "basename", "prefix", "docstring", "consumer_count"}
+                & set(row)
+            )
 
-    def test_requirement_summary_binds_every_inventory_digest(self) -> None:
-        signed = load_signed_r17_responsibility_inventory()
+        source = Path(__file__).read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=__file__)
+        functions = {
+            node.name: node
+            for node in tree.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        reachable: set[str] = set()
+        queue = deque([
+            "_r17_load_responsibility_contracts",
+            "_r17_responsibility_model",
+            "_r17_derive_responsibility_inventory",
+        ])
+        while queue:
+            name = queue.popleft()
+            if name in reachable:
+                continue
+            reachable.add(name)
+            for node in ast.walk(functions[name]):
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id in functions
+                    and node.func.id not in reachable
+                ):
+                    queue.append(node.func.id)
+        forbidden_names = {
+            "LEDGER",
+            "R17_SPECIFICATION",
+            "R17_INVENTORY_START",
+            "R17_INVENTORY_END",
+            "R17_ROLE_MARKERS",
+            "_r17_build_legacy_signed_module_inventory",
+            "_r17_load_legacy_signed_module_inventory",
+            "_r17_analyze_legacy_module_inventory",
+            "_r17_compare_responsibilities_to_migration_ledger",
+            "_r17_frozen_blob",
+        }
+        forbidden_strings = {
+            "LEDGER",
+            "R17_SPECIFICATION",
+            "_r17_build_legacy_signed_module_inventory",
+            "_r17_load_legacy_signed_module_inventory",
+            "agent_module_reference_dispositions.json",
+            "compact_consumers",
+            "docstring",
+            "one_to_one_moves",
+            "other_consumers",
+            "signed_member_inventory",
+        }
+        for name in sorted(reachable):
+            node = functions[name]
+            loaded_names = {
+                child.id
+                for child in ast.walk(node)
+                if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load)
+            }
+            attributes = {
+                child.attr
+                for child in ast.walk(node)
+                if isinstance(child, ast.Attribute)
+            }
+            strings = {
+                child.value
+                for child in ast.walk(node)
+                if isinstance(child, ast.Constant) and isinstance(child.value, str)
+            }
+            self.assertEqual(set(), forbidden_names & loaded_names, name)
+            self.assertEqual(set(), forbidden_names & attributes, name)
+            if name == "_r17_load_responsibility_contracts":
+                strings -= set(contracts["boundary_policy"]["non_inputs"])
+            self.assertEqual(set(), forbidden_strings & strings, name)
+
+        model = _r17_responsibility_model(_r17_read_modules(None))
+        with patch.object(
+            Path, "read_text", side_effect=AssertionError("derivation text read")
+        ), patch.object(
+            Path, "read_bytes", side_effect=AssertionError("derivation bytes read")
+        ):
+            self.assertEqual(
+                84,
+                _r17_derive_responsibility_inventory(model, contracts)["member_count"],
+            )
+
+    def test_boundary_is_invariant_to_file_structure(self) -> None:
+        contracts = _r17_load_responsibility_contracts()
+        records = _r17_read_modules(None)
+        model = _r17_responsibility_model(records)
+        baseline = _r17_derive_responsibility_inventory(model, contracts)
+
+        renamed_model, names = _r17_rename_responsibility_nodes(model)
+        renamed = _r17_derive_responsibility_inventory(renamed_model, contracts)
+        self.assertEqual(642, len(names))
+        self.assertTrue(set(names).isdisjoint(renamed_model["nodes"]))
+        self.assertTrue(
+            all(re.fullmatch(r"m[0-9]{4}", name) for name in renamed_model["nodes"])
+        )
+        self.assertEqual(
+            set(renamed_model["nodes"]),
+            set(renamed_model["graph"])
+            | {target for targets in renamed_model["graph"].values() for target in targets},
+        )
+
+        self.assertTrue(any(record["docstring"] for record in records.values()))
+        docstring_free_records = _r17_clear_module_docstrings(records)
+        self.assertFalse(any(
+            ast.get_docstring(record["tree"], clean=False)
+            for record in docstring_free_records.values()
+        ))
+        docstring_free_model = _r17_responsibility_model(docstring_free_records)
+        docstring_free = _r17_derive_responsibility_inventory(
+            docstring_free_model, contracts
+        )
+
+        split_merge_model, split_merge_stats = (
+            _r17_split_merge_responsibility_consumers(model, baseline)
+        )
+        split_merge = _r17_derive_responsibility_inventory(
+            split_merge_model, contracts
+        )
+        self.assertGreater(split_merge_stats["split_nodes"], 0)
+        self.assertGreater(split_merge_stats["merged_groups"], 0)
+        self.assertTrue(all(
+            node["responsibility_ids"]
+            for name, node in split_merge_model["nodes"].items()
+            if name.startswith("compact-split-")
+        ))
+        self.assertTrue(all(
+            not node["responsibility_ids"]
+            for name, node in split_merge_model["nodes"].items()
+            if name.startswith("external-merge-")
+        ))
+        self.assertNotEqual(
+            split_merge_stats["baseline_nodes"],
+            split_merge_stats["transformed_nodes"],
+        )
+        self.assertNotEqual(
+            split_merge_stats["baseline_edges"],
+            split_merge_stats["transformed_edges"],
+        )
+        baseline_consumers = _r17_direct_consumer_counts(model, baseline)
+        transformed_consumers = _r17_direct_consumer_counts(
+            split_merge_model, split_merge
+        )
+        self.assertTrue(any(
+            transformed_consumers[name] > baseline_consumers[name]
+            for name in baseline_consumers
+        ))
+        self.assertTrue(any(
+            transformed_consumers[name] < baseline_consumers[name]
+            for name in baseline_consumers
+        ))
+
+        variants = (renamed, docstring_free, split_merge)
+        member_delta = sorted(set().union(*(
+            set(baseline["members"]) ^ set(variant["members"])
+            for variant in variants
+        )))
+        comparison = _r17_compare_responsibilities_to_migration_ledger(baseline)
+        observations = [
+            f"baseline_members={baseline['member_count']}",
+            f"renamed_members={renamed['member_count']}",
+            f"docstring_free_members={docstring_free['member_count']}",
+            f"split_merge_members={split_merge['member_count']}",
+            f"member_delta={json.dumps(member_delta, separators=(',', ':'))}",
+            (
+                "relative-date-resolution=include"
+                if baseline["decisions"]["relative-date-resolution"]["include"]
+                else "relative-date-resolution=exclude"
+            ),
+            "runtime-contracts=exclude:"
+            + baseline["decisions"]["runtime-contracts"]["reason"],
+            "find=exclude:" + baseline["decisions"]["find"]["reason"],
+            f"normalized_moves={comparison['normalized_move_count']}",
+        ]
+        self.assertEqual(
+            [
+                "baseline_members=84",
+                "renamed_members=84",
+                "docstring_free_members=84",
+                "split_merge_members=84",
+                "member_delta=[]",
+                "relative-date-resolution=include",
+                "runtime-contracts=exclude:shared_runtime_contract",
+                "find=exclude:independent_primary_protocol",
+                "normalized_moves=82",
+            ],
+            observations,
+        )
+        self.assertTrue(comparison["normalized_moves_equal_ledger"])
+        self.assertEqual([], comparison["responsibility_owners_not_moves"])
+        self.assertEqual([], comparison["moves_not_responsibility_owners"])
+
+    def test_requirement_summary_binds_every_legacy_inventory_digest(self) -> None:
+        signed = _r17_load_legacy_signed_module_inventory()
         summary = R17_SPECIFICATION.read_text(encoding="utf-8").split(
             R17_INVENTORY_START, 1
         )[0]
