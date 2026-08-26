@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_client import DeferredAgentClient
+from .agents.client import DeferredAgentClient
 from .agent_sources import describe_operation_cards
 
 

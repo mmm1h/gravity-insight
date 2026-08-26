@@ -32,7 +32,7 @@ from .agent_sources import (
     workspace_catalog_fingerprint,
 )
 from .agent_batch_sources import AgentSourceSnapshot
-from .agent_client import DeferredAgentClient
+from .agents.client import DeferredAgentClient
 from .agent_discovery_support import (
     assert_discovery_page,
     finish_discovery_candidates,
@@ -215,7 +215,7 @@ def _discover(
             MONETIZATION_DETAIL_RAW_SELECTOR,
             monetization_open_dimension_query,
         )
-        from .agent_app_catalog import app_catalog_operation_query
+        from .agents.app_catalog import app_catalog_operation_query
 
         operation_query = (
             MONETIZATION_DETAIL_RAW_SELECTOR

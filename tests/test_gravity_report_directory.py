@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from gravity_sdk import GravitySDK
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_report_directory import (
+from gravity_sdk.agents.report_directory import (
     report_directory_query,
     report_subscriptions_query,
 )

@@ -7,7 +7,7 @@ from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_batch import capabilities_many
 from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
 from gravity_sdk.agent_capabilities import authoritative_capability_cards, composite_capability_inventory
-from gravity_sdk.agent_order_directory import (
+from gravity_sdk.agents.order_directory import (
     ORDER_DIRECTORY_CAPABILITY, ORDER_DIRECTORY_RAW_SELECTORS,
     ORDER_DIRECTORY_SAFE_FIELDS, order_directory_query,
 )

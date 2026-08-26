@@ -8,8 +8,8 @@ from typing import Any
 from .actionable_error_values import actual_value
 from . import plan_advertiser_profile_adapter as advertiser_plan
 from . import plan_custom_audience_adapter as custom_audience_plan
-from .agent_company_usage import COMPANY_USAGE_NAME
-from .agent_report_directory import REPORT_DIRECTORY_NAME, REPORT_SUBSCRIPTIONS_NAME
+from .agents.company_usage import COMPANY_USAGE_NAME
+from .agents.report_directory import REPORT_DIRECTORY_NAME, REPORT_SUBSCRIPTIONS_NAME
 from .plan import AdapterContext
 from .plan_adapter_support import input_error, validate_selected_fields
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse

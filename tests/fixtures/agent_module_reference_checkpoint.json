@@ -16,10 +16,10 @@
     "scanner_sha256": "90a5dbf090eed5152cdf19c8ebab7125ebeb4d105593be06ddc16d95ba69f762",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
-    "candidate_map_sha256": "be8916e36768d710029c698e5ff02a49943b7ce5e9a0c406465fe1f8adb6f512",
-    "reference_evidence_sha256": "b9865896dd8c93a20432c6204ea5342ab7d52bc7f3d5ae04789f4e91f641393e",
+    "candidate_map_sha256": "4c6ad023acd88e024c2a7816264bdfa92ea76f0741741fac162e69902b80d5b3",
+    "reference_evidence_sha256": "ca10eb6ca08478bd58ab4c008e7255aec5949d6e6210832d0bccde08a09424ab",
     "manual_review_sha256": "bfd51a28aa8f960ed9b7f4ff4c2897915c7d87e068f55a2ecd1ea9ccc53b3c8b",
-    "owner_state": "baseline",
+    "owner_state": "phase_1",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
     "excluded_files": [
@@ -630,10 +630,6 @@
       "evidence_kind": "migration_characterization_contract"
     },
     {
-      "basis": "The exact reference names the owner R17 consolidates into pagination_completeness and deletes.",
-      "evidence_kind": "exact_reference_mapping"
-    },
-    {
       "basis": "The concept-deletion gate intentionally names old and terminal owners to validate baseline, Phase 1, and Phase 2 states from one test.",
       "evidence_kind": "three_state_gate_contract"
     },
@@ -667,24 +663,24 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 909,
-    "reference_site_count": 907,
+    "tracked_site_count": 645,
+    "reference_site_count": 643,
     "manual_review_site_count": 242,
     "reference_manual_overlap_count": 240,
     "manual_only_site_count": 2,
-    "unique_source_keys": 909,
+    "unique_source_keys": 645,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
-    "actionable_site_count": 599,
+    "actionable_site_count": 335,
     "reference_categories": {
       "documentation_spec": 117,
       "dynamic_import": 11,
       "manual_patch_expression": 117,
       "module_qualname_dependency": 7,
-      "patch_target": 35,
-      "static_import": 580,
-      "string_reference": 40
+      "patch_target": 32,
+      "static_import": 322,
+      "string_reference": 37
     },
     "manual_review_categories": {
       "agent_prefix_template": 2,
@@ -695,11 +691,10 @@
     },
     "dispositions": {
       "no_migration_effect": 310,
-      "rewrite_consolidated_reference": 1,
-      "rewrite_reference": 597,
+      "rewrite_reference": 334,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "831c1b04579e1be3e653386a73d7cef0a6ed1c8472571807f514a2cd8350378f"
+    "sites_sha256": "a3b4873f702ad98d62be1aa1036202793c48f44dd3b27d459f274e73a17dc9ec"
   },
   "blockers": [],
   "site_fields": [
@@ -2103,7 +2098,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      64,
+      63,
       {
         "kind": "none"
       }
@@ -2148,7 +2143,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      64,
+      63,
       {
         "kind": "none"
       }
@@ -2397,7 +2392,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -2412,7 +2407,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -2427,7 +2422,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -2641,7 +2636,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      64,
+      63,
       {
         "kind": "none"
       }
@@ -2671,7 +2666,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      64,
+      63,
       {
         "kind": "none"
       }
@@ -2832,7 +2827,7 @@
       "manual",
       "rewrite_selector_data",
       "root_lazy_export_owner_map",
-      66,
+      65,
       {
         "kind": "replace_selector_values",
         "selector": "gravity_sdk._EXPORTS",
@@ -2898,7 +2893,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -2913,7 +2908,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -3055,23 +3050,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent.py:218:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_catalog",
-      "gravity_sdk.agents.app_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_catalog",
-        "new_module": "gravity_sdk.agents.app_catalog"
-      }
-    ],
-    [
       "src/gravity_sdk/agent.py:234:5:from import",
       "r",
       "exact_reference",
@@ -3191,23 +3169,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent.py:35:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_client",
-      "gravity_sdk.agents.client",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_client",
-        "new_module": "gravity_sdk.agents.client"
-      }
-    ],
-    [
       "src/gravity_sdk/agent.py:36:1:from import",
       "r",
       "exact_reference",
@@ -3290,125 +3251,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_output",
         "new_module": "gravity_sdk.agents.output"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_advertiser_profile.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_analysis.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_analysis_default_dictionary.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_app_catalog.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_app_public_info.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_attribution_performance.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_attribution_user_detail.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
       }
     ],
     [
@@ -3565,74 +3407,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_batch_sources.py:23:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_user_journey",
-      "gravity_sdk.agents.user_journey",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_user_journey",
-        "new_module": "gravity_sdk.agents.user_journey"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_batch_sources.py:27:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_vocabulary",
-      "gravity_sdk.agents.vocabulary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_vocabulary",
-        "new_module": "gravity_sdk.agents.vocabulary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_batch_sources.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_task",
-      "gravity_sdk.agents.analysis_task",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_task",
-        "new_module": "gravity_sdk.agents.analysis_task"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_business_pulse.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_business_pulse.py:220:5:from import",
       "r",
       "exact_reference",
@@ -3647,57 +3421,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_intent_routing",
         "new_module": "gravity_sdk.agents.intent_routing"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_caller_language.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_catalog",
-      "gravity_sdk.agents.app_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_catalog",
-        "new_module": "gravity_sdk.agents.app_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_caller_language.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_public_info",
-      "gravity_sdk.agents.app_public_info",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_public_info",
-        "new_module": "gravity_sdk.agents.app_public_info"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_caller_language.py:12:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_monetization_aggregate",
-      "gravity_sdk.agents.monetization_aggregate",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_monetization_aggregate",
-        "new_module": "gravity_sdk.agents.monetization_aggregate"
       }
     ],
     [
@@ -3769,23 +3492,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_capabilities.py:17:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_company_usage",
-      "gravity_sdk.agents.company_usage",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_company_usage",
-        "new_module": "gravity_sdk.agents.company_usage"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_capabilities.py:182:5:from import",
       "r",
       "exact_reference",
@@ -3800,40 +3506,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_unavailable",
         "new_module": "gravity_sdk.agents.unavailable"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:18:1:relative from-import name",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_directory",
-      "gravity_sdk.agents.report_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_directory",
-        "new_module": "gravity_sdk.agents.report_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:19:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_default_dictionary",
-      "gravity_sdk.agents.analysis_default_dictionary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_default_dictionary",
-        "new_module": "gravity_sdk.agents.analysis_default_dictionary"
       }
     ],
     [
@@ -3854,23 +3526,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_capabilities.py:211:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_monetization_aggregate",
-      "gravity_sdk.agents.monetization_aggregate",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_monetization_aggregate",
-        "new_module": "gravity_sdk.agents.monetization_aggregate"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_capabilities.py:212:5:from import",
       "r",
       "exact_reference",
@@ -3885,91 +3540,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_monetization_guard",
         "new_module": "gravity_sdk.agents.monetization_guard"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:22:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event_catalog",
-      "gravity_sdk.agents.realtime_event_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event_catalog",
-        "new_module": "gravity_sdk.agents.realtime_event_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:23:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_audience",
-      "gravity_sdk.agents.custom_audience",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_audience",
-        "new_module": "gravity_sdk.agents.custom_audience"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:248:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_catalog",
-      "gravity_sdk.agents.app_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_catalog",
-        "new_module": "gravity_sdk.agents.app_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:249:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_public_info",
-      "gravity_sdk.agents.app_public_info",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_public_info",
-        "new_module": "gravity_sdk.agents.app_public_info"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:24:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
       }
     ],
     [
@@ -4007,57 +3577,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_capabilities.py:252:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_material_asset",
-      "gravity_sdk.agents.material_asset",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_material_asset",
-        "new_module": "gravity_sdk.agents.material_asset"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:253:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_search",
-      "gravity_sdk.agents.metadata_search",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_search",
-        "new_module": "gravity_sdk.agents.metadata_search"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:254:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_mutation_cards",
-      "gravity_sdk.agents.mutation_cards",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_mutation_cards",
-        "new_module": "gravity_sdk.agents.mutation_cards"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_capabilities.py:255:5:from import",
       "r",
       "exact_reference",
@@ -4072,40 +3591,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_table_lineage",
         "new_module": "gravity_sdk.agents.table_lineage"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:256:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_user_journey",
-      "gravity_sdk.agents.user_journey",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_user_journey",
-        "new_module": "gravity_sdk.agents.user_journey"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:27:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_advertiser_profile",
-      "gravity_sdk.agents.advertiser_profile",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_advertiser_profile",
-        "new_module": "gravity_sdk.agents.advertiser_profile"
       }
     ],
     [
@@ -4143,23 +3628,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_capabilities.py:31:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_derived_metrics",
-      "gravity_sdk.agents.derived_metrics",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_derived_metrics",
-        "new_module": "gravity_sdk.agents.derived_metrics"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_capabilities.py:32:1:from import",
       "r",
       "exact_reference",
@@ -4174,40 +3642,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_monetization_guard",
         "new_module": "gravity_sdk.agents.monetization_guard"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:33:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:340:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_task",
-      "gravity_sdk.agents.analysis_task",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_task",
-        "new_module": "gravity_sdk.agents.analysis_task"
       }
     ],
     [
@@ -4228,57 +3662,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_capabilities.py:342:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_vocabulary",
-      "gravity_sdk.agents.vocabulary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_vocabulary",
-        "new_module": "gravity_sdk.agents.vocabulary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:34:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:35:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_capabilities.py:369:5:from import",
       "r",
       "exact_reference",
@@ -4293,23 +3676,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_intent_routing",
         "new_module": "gravity_sdk.agents.intent_routing"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:36:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_performance",
-      "gravity_sdk.agents.attribution_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_performance",
-        "new_module": "gravity_sdk.agents.attribution_performance"
       }
     ],
     [
@@ -4330,57 +3696,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_capabilities.py:371:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_user_journey",
-      "gravity_sdk.agents.user_journey",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_user_journey",
-        "new_module": "gravity_sdk.agents.user_journey"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:372:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_vocabulary",
-      "gravity_sdk.agents.vocabulary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_vocabulary",
-        "new_module": "gravity_sdk.agents.vocabulary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_capabilities.py:37:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_title_package",
-      "gravity_sdk.agents.title_package",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_title_package",
-        "new_module": "gravity_sdk.agents.title_package"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_catalog.py:10:1:from import",
       "r",
       "exact_reference",
@@ -4395,23 +3710,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_catalog.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_parity",
-      "gravity_sdk.agents.catalog_parity",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_parity",
-        "new_module": "gravity_sdk.agents.catalog_parity"
       }
     ],
     [
@@ -4517,57 +3815,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_company_usage.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:119:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_fixed_snapshots",
-      "gravity_sdk.agents.fixed_snapshots",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_fixed_snapshots",
-        "new_module": "gravity_sdk.agents.fixed_snapshots"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:130:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_saved_analysis",
-      "gravity_sdk.agents.saved_analysis",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_saved_analysis",
-        "new_module": "gravity_sdk.agents.saved_analysis"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_composite.py:138:9:from import",
       "r",
       "exact_reference",
@@ -4636,74 +3883,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_composite.py:153:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:157:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:161:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:164:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_composite.py:172:5:from import",
       "r",
       "exact_reference",
@@ -4718,142 +3897,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_dashboard",
         "new_module": "gravity_sdk.agents.dashboard"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:183:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_default_dictionary",
-      "gravity_sdk.agents.analysis_default_dictionary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_default_dictionary",
-        "new_module": "gravity_sdk.agents.analysis_default_dictionary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:187:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event_catalog",
-      "gravity_sdk.agents.realtime_event_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event_catalog",
-        "new_module": "gravity_sdk.agents.realtime_event_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:191:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_members",
-      "gravity_sdk.agents.segment_members",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_members",
-        "new_module": "gravity_sdk.agents.segment_members"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:194:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_snapshot",
-      "gravity_sdk.agents.segment_snapshot",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_snapshot",
-        "new_module": "gravity_sdk.agents.segment_snapshot"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:211:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_title_package",
-      "gravity_sdk.agents.title_package",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_title_package",
-        "new_module": "gravity_sdk.agents.title_package"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:215:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_performance",
-      "gravity_sdk.agents.attribution_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_performance",
-        "new_module": "gravity_sdk.agents.attribution_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:219:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_user_detail",
-      "gravity_sdk.agents.attribution_user_detail",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_user_detail",
-        "new_module": "gravity_sdk.agents.attribution_user_detail"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite.py:233:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_semantic_compose",
-      "gravity_sdk.agents.semantic_compose",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_semantic_compose",
-        "new_module": "gravity_sdk.agents.semantic_compose"
       }
     ],
     [
@@ -4874,108 +3917,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_composite.py:60:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_default_dictionary",
-      "gravity_sdk.agents.analysis_default_dictionary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_default_dictionary",
-        "new_module": "gravity_sdk.agents.analysis_default_dictionary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event_catalog",
-      "gravity_sdk.agents.realtime_event_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event_catalog",
-        "new_module": "gravity_sdk.agents.realtime_event_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:12:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_performance",
-      "gravity_sdk.agents.attribution_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_performance",
-        "new_module": "gravity_sdk.agents.attribution_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:13:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_user_detail",
-      "gravity_sdk.agents.attribution_user_detail",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_user_detail",
-        "new_module": "gravity_sdk.agents.attribution_user_detail"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:14:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_composite_inventory.py:15:1:from import",
       "r",
       "exact_reference",
@@ -4993,40 +3934,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_composite_inventory.py:16:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_company_usage",
-      "gravity_sdk.agents.company_usage",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_company_usage",
-        "new_module": "gravity_sdk.agents.company_usage"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:17:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_audience",
-      "gravity_sdk.agents.custom_audience",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_audience",
-        "new_module": "gravity_sdk.agents.custom_audience"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_composite_inventory.py:18:1:from import",
       "r",
       "exact_reference",
@@ -5041,23 +3948,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_dashboard",
         "new_module": "gravity_sdk.agents.dashboard"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:19:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_derived_metrics",
-      "gravity_sdk.agents.derived_metrics",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_derived_metrics",
-        "new_module": "gravity_sdk.agents.derived_metrics"
       }
     ],
     [
@@ -5112,210 +4002,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_composite_inventory.py:23:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:24:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:25:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:26:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_saved_analysis",
-      "gravity_sdk.agents.saved_analysis",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_saved_analysis",
-        "new_module": "gravity_sdk.agents.saved_analysis"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:27:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_members",
-      "gravity_sdk.agents.segment_members",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_members",
-        "new_module": "gravity_sdk.agents.segment_members"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:28:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_snapshot",
-      "gravity_sdk.agents.segment_snapshot",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_snapshot",
-        "new_module": "gravity_sdk.agents.segment_snapshot"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:29:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_semantic_compose",
-      "gravity_sdk.agents.semantic_compose",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_semantic_compose",
-        "new_module": "gravity_sdk.agents.semantic_compose"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:30:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_title_package",
-      "gravity_sdk.agents.title_package",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_title_package",
-        "new_module": "gravity_sdk.agents.title_package"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:8:1:relative from-import name",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_directory",
-      "gravity_sdk.agents.report_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_directory",
-        "new_module": "gravity_sdk.agents.report_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_composite_inventory.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_advertiser_profile",
-      "gravity_sdk.agents.advertiser_profile",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_advertiser_profile",
-        "new_module": "gravity_sdk.agents.advertiser_profile"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_custom_audience.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_custom_metric.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_dashboard.py:103:5:from import",
       "r",
       "exact_reference",
@@ -5350,40 +4036,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_dashboard.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_derived_metrics.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_gap",
-      "gravity_sdk.agents.gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_gap",
-        "new_module": "gravity_sdk.agents.gap"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_discovery_policy.py:128:5:from import",
       "r",
       "exact_reference",
@@ -5398,108 +4050,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_segment",
         "new_module": "gravity_sdk.agents.segment"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_discovery_policy.py:129:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_vocabulary",
-      "gravity_sdk.agents.vocabulary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_vocabulary",
-        "new_module": "gravity_sdk.agents.vocabulary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_discovery_policy.py:13:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_discovery_policy.py:17:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_discovery_policy.py:21:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_discovery_policy.py:24:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_discovery_policy.py:27:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_advertiser_profile",
-      "gravity_sdk.agents.advertiser_profile",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_advertiser_profile",
-        "new_module": "gravity_sdk.agents.advertiser_profile"
       }
     ],
     [
@@ -5673,23 +4223,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_discovery_support.py:36:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_caller_language",
-      "gravity_sdk.agents.caller_language",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_caller_language",
-        "new_module": "gravity_sdk.agents.caller_language"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_discovery_support.py:37:5:from import",
       "r",
       "exact_reference",
@@ -5775,40 +4308,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_export.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_fixed_snapshots.py:7:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_handoff.py:230:9:from import",
       "r",
       "exact_reference",
@@ -5857,23 +4356,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_dashboard",
         "new_module": "gravity_sdk.agents.dashboard"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:271:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_saved_analysis",
-      "gravity_sdk.agents.saved_analysis",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_saved_analysis",
-        "new_module": "gravity_sdk.agents.saved_analysis"
       }
     ],
     [
@@ -5928,23 +4410,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_handoff.py:291:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_title_package",
-      "gravity_sdk.agents.title_package",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_title_package",
-        "new_module": "gravity_sdk.agents.title_package"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_handoff.py:295:9:from import",
       "r",
       "exact_reference",
@@ -5959,193 +4424,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_monetization_guard",
         "new_module": "gravity_sdk.agents.monetization_guard"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:299:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:303:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:307:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:311:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:323:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_performance",
-      "gravity_sdk.agents.attribution_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_performance",
-        "new_module": "gravity_sdk.agents.attribution_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:327:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_user_detail",
-      "gravity_sdk.agents.attribution_user_detail",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_user_detail",
-        "new_module": "gravity_sdk.agents.attribution_user_detail"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:331:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_default_dictionary",
-      "gravity_sdk.agents.analysis_default_dictionary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_default_dictionary",
-        "new_module": "gravity_sdk.agents.analysis_default_dictionary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:337:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event_catalog",
-      "gravity_sdk.agents.realtime_event_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event_catalog",
-        "new_module": "gravity_sdk.agents.realtime_event_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:33:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_task",
-      "gravity_sdk.agents.analysis_task",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_task",
-        "new_module": "gravity_sdk.agents.analysis_task"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:343:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_members",
-      "gravity_sdk.agents.segment_members",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_members",
-        "new_module": "gravity_sdk.agents.segment_members"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:346:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_snapshot",
-      "gravity_sdk.agents.segment_snapshot",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_snapshot",
-        "new_module": "gravity_sdk.agents.segment_snapshot"
       }
     ],
     [
@@ -6214,193 +4492,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_monetization_guard",
         "new_module": "gravity_sdk.agents.monetization_guard"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:413:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:423:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:433:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:443:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_performance",
-      "gravity_sdk.agents.attribution_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_performance",
-        "new_module": "gravity_sdk.agents.attribution_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:453:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_user_detail",
-      "gravity_sdk.agents.attribution_user_detail",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_user_detail",
-        "new_module": "gravity_sdk.agents.attribution_user_detail"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:460:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:516:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_semantic_compose",
-      "gravity_sdk.agents.semantic_compose",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_semantic_compose",
-        "new_module": "gravity_sdk.agents.semantic_compose"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:529:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_derived_metrics",
-      "gravity_sdk.agents.derived_metrics",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_derived_metrics",
-        "new_module": "gravity_sdk.agents.derived_metrics"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:546:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_call_bound",
-      "gravity_sdk.agents.call_bound",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_call_bound",
-        "new_module": "gravity_sdk.agents.call_bound"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_handoff.py:553:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.relative_date_agent",
-      "gravity_sdk.agents.relative_date",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.relative_date_agent",
-        "new_module": "gravity_sdk.agents.relative_date"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_host_catalog.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_caller_language",
-      "gravity_sdk.agents.caller_language",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_caller_language",
-        "new_module": "gravity_sdk.agents.caller_language"
       }
     ],
     [
@@ -6608,40 +4699,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_input_resolution.py:230:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_input_resolution.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_input_catalogs",
-      "gravity_sdk.agents.input_catalogs",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_input_catalogs",
-        "new_module": "gravity_sdk.agents.input_catalogs"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_intent_routing.py:117:5:from import",
       "r",
       "exact_reference",
@@ -6656,23 +4713,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:151:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_material_asset",
-      "gravity_sdk.agents.material_asset",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_material_asset",
-        "new_module": "gravity_sdk.agents.material_asset"
       }
     ],
     [
@@ -6778,91 +4818,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_intent_routing.py:199:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_company_usage",
-      "gravity_sdk.agents.company_usage",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_company_usage",
-        "new_module": "gravity_sdk.agents.company_usage"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:200:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_default_dictionary",
-      "gravity_sdk.agents.analysis_default_dictionary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_default_dictionary",
-        "new_module": "gravity_sdk.agents.analysis_default_dictionary"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:201:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event_catalog",
-      "gravity_sdk.agents.realtime_event_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event_catalog",
-        "new_module": "gravity_sdk.agents.realtime_event_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:202:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_audience",
-      "gravity_sdk.agents.custom_audience",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_audience",
-        "new_module": "gravity_sdk.agents.custom_audience"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:203:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_intent_routing.py:206:5:from import",
       "r",
       "exact_reference",
@@ -6897,23 +4852,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_intent_routing.py:208:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_title_package",
-      "gravity_sdk.agents.title_package",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_title_package",
-        "new_module": "gravity_sdk.agents.title_package"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_intent_routing.py:209:5:from import",
       "r",
       "exact_reference",
@@ -6928,91 +4866,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_multidim",
         "new_module": "gravity_sdk.agents.multidim"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:210:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:211:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:212:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:213:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_attribution_performance",
-      "gravity_sdk.agents.attribution_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_attribution_performance",
-        "new_module": "gravity_sdk.agents.attribution_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:214:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_advertiser_profile",
-      "gravity_sdk.agents.advertiser_profile",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_advertiser_profile",
-        "new_module": "gravity_sdk.agents.advertiser_profile"
       }
     ],
     [
@@ -7033,40 +4886,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_intent_routing.py:216:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_snapshot",
-      "gravity_sdk.agents.segment_snapshot",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_snapshot",
-        "new_module": "gravity_sdk.agents.segment_snapshot"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:217:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_members",
-      "gravity_sdk.agents.segment_members",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_members",
-        "new_module": "gravity_sdk.agents.segment_members"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_intent_routing.py:298:5:from import",
       "r",
       "exact_reference",
@@ -7081,57 +4900,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_unavailable",
         "new_module": "gravity_sdk.agents.unavailable"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_intent_routing.py:32:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_kanban_mutation.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:115:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
       }
     ],
     [
@@ -7152,23 +4920,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_lexical_retrieval.py:117:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_sql_product_gap",
-      "gravity_sdk.agents.sql_product_gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_sql_product_gap",
-        "new_module": "gravity_sdk.agents.sql_product_gap"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_lexical_retrieval.py:125:9:from import",
       "r",
       "exact_reference",
@@ -7186,40 +4937,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_lexical_retrieval.py:14:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_catalog",
-      "gravity_sdk.agents.app_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_catalog",
-        "new_module": "gravity_sdk.agents.app_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:15:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_public_info",
-      "gravity_sdk.agents.app_public_info",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_public_info",
-        "new_module": "gravity_sdk.agents.app_public_info"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_lexical_retrieval.py:16:1:from import",
       "r",
       "exact_reference",
@@ -7234,40 +4951,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_export",
         "new_module": "gravity_sdk.agents.export"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:17:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_lexical_rescue",
-      "gravity_sdk.agents.lexical_rescue",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_lexical_rescue",
-        "new_module": "gravity_sdk.agents.lexical_rescue"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:18:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_monetization_aggregate",
-      "gravity_sdk.agents.monetization_aggregate",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_monetization_aggregate",
-        "new_module": "gravity_sdk.agents.monetization_aggregate"
       }
     ],
     [
@@ -7373,40 +5056,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_lexical_retrieval.py:402:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_material_asset",
-      "gravity_sdk.agents.material_asset",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_material_asset",
-        "new_module": "gravity_sdk.agents.material_asset"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:403:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_search",
-      "gravity_sdk.agents.metadata_search",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_search",
-        "new_module": "gravity_sdk.agents.metadata_search"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_lexical_retrieval.py:404:5:from import",
       "r",
       "exact_reference",
@@ -7421,74 +5070,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_table_lineage",
         "new_module": "gravity_sdk.agents.table_lineage"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:405:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_user_journey",
-      "gravity_sdk.agents.user_journey",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_user_journey",
-        "new_module": "gravity_sdk.agents.user_journey"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:406:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_catalog",
-      "gravity_sdk.agents.app_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_catalog",
-        "new_module": "gravity_sdk.agents.app_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:407:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_public_info",
-      "gravity_sdk.agents.app_public_info",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_public_info",
-        "new_module": "gravity_sdk.agents.app_public_info"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:408:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_monetization_aggregate",
-      "gravity_sdk.agents.monetization_aggregate",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_monetization_aggregate",
-        "new_module": "gravity_sdk.agents.monetization_aggregate"
       }
     ],
     [
@@ -7560,23 +5141,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_lexical_retrieval.py:491:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_caller_language",
-      "gravity_sdk.agents.caller_language",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_caller_language",
-        "new_module": "gravity_sdk.agents.caller_language"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_lexical_retrieval.py:492:5:from import",
       "r",
       "exact_reference",
@@ -7591,57 +5155,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_unavailable",
         "new_module": "gravity_sdk.agents.unavailable"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_lexical_retrieval.py:512:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_caller_language",
-      "gravity_sdk.agents.caller_language",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_caller_language",
-        "new_module": "gravity_sdk.agents.caller_language"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_material_asset.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_material_performance.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
       }
     ],
     [
@@ -7662,91 +5175,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_metadata_onboarding.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_metadata_search.py:17:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_onboarding",
-      "gravity_sdk.agents.metadata_onboarding",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_onboarding",
-        "new_module": "gravity_sdk.agents.metadata_onboarding"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_metadata_search.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_metadata_template.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_monetization_aggregate.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_monetization_guard.py:109:5:from import",
       "r",
       "exact_reference",
@@ -7761,23 +5189,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_export",
         "new_module": "gravity_sdk.agents.export"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_monetization_guard.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
       }
     ],
     [
@@ -7798,159 +5209,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_multidim.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_multidim.py:153:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_gap",
-      "gravity_sdk.agents.gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_gap",
-        "new_module": "gravity_sdk.agents.gap"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_mutation_cards.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_template",
-      "gravity_sdk.agents.metadata_template",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_template",
-        "new_module": "gravity_sdk.agents.metadata_template"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_mutation_cards.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_saved_analysis_mutation",
-      "gravity_sdk.agents.saved_analysis_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_saved_analysis_mutation",
-        "new_module": "gravity_sdk.agents.saved_analysis_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_mutation_cards.py:12:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event",
-      "gravity_sdk.agents.realtime_event",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event",
-        "new_module": "gravity_sdk.agents.realtime_event"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_mutation_cards.py:7:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_kanban_mutation",
-      "gravity_sdk.agents.kanban_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_kanban_mutation",
-        "new_module": "gravity_sdk.agents.kanban_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_mutation_cards.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_mutation",
-      "gravity_sdk.agents.report_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_mutation",
-        "new_module": "gravity_sdk.agents.report_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_mutation_cards.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_metric",
-      "gravity_sdk.agents.custom_metric",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_metric",
-        "new_module": "gravity_sdk.agents.custom_metric"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_operation_contract.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_client",
-      "gravity_sdk.agents.client",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_client",
-        "new_module": "gravity_sdk.agents.client"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_operation_contract.py:9:1:from import",
       "r",
       "exact_reference",
@@ -7965,74 +5223,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_sources",
         "new_module": "gravity_sdk.agents.sources"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_order_directory.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_order_trace.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_public_info",
-      "gravity_sdk.agents.app_public_info",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_public_info",
-        "new_module": "gravity_sdk.agents.app_public_info"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_monetization_aggregate",
-      "gravity_sdk.agents.monetization_aggregate",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_monetization_aggregate",
-        "new_module": "gravity_sdk.agents.monetization_aggregate"
       }
     ],
     [
@@ -8070,91 +5260,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_product_inventory.py:17:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_material_asset",
-      "gravity_sdk.agents.material_asset",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_material_asset",
-        "new_module": "gravity_sdk.agents.material_asset"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:18:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_kanban_mutation",
-      "gravity_sdk.agents.kanban_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_kanban_mutation",
-        "new_module": "gravity_sdk.agents.kanban_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:19:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_search",
-      "gravity_sdk.agents.metadata_search",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_search",
-        "new_module": "gravity_sdk.agents.metadata_search"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:20:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_onboarding",
-      "gravity_sdk.agents.metadata_onboarding",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_onboarding",
-        "new_module": "gravity_sdk.agents.metadata_onboarding"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:21:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_mutation",
-      "gravity_sdk.agents.report_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_mutation",
-        "new_module": "gravity_sdk.agents.report_mutation"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_product_inventory.py:22:1:from import",
       "r",
       "exact_reference",
@@ -8186,91 +5291,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_table_lineage",
         "new_module": "gravity_sdk.agents.table_lineage"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:24:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_user_journey",
-      "gravity_sdk.agents.user_journey",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_user_journey",
-        "new_module": "gravity_sdk.agents.user_journey"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:25:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_metric",
-      "gravity_sdk.agents.custom_metric",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_metric",
-        "new_module": "gravity_sdk.agents.custom_metric"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:26:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_template",
-      "gravity_sdk.agents.metadata_template",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_template",
-        "new_module": "gravity_sdk.agents.metadata_template"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:27:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_saved_analysis_mutation",
-      "gravity_sdk.agents.saved_analysis_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_saved_analysis_mutation",
-        "new_module": "gravity_sdk.agents.saved_analysis_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_product_inventory.py:30:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event",
-      "gravity_sdk.agents.realtime_event",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event",
-        "new_module": "gravity_sdk.agents.realtime_event"
       }
     ],
     [
@@ -8308,125 +5328,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_product_inventory.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_catalog",
-      "gravity_sdk.agents.app_catalog",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_catalog",
-        "new_module": "gravity_sdk.agents.app_catalog"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_promotion_performance.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_promotion_performance.py:195:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_realtime_event.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_realtime_event_catalog.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_directory.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_mutation.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_report_routing.py:23:9:from import",
       "r",
       "exact_reference",
@@ -8441,74 +5342,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_business_pulse",
         "new_module": "gravity_sdk.agents.business_pulse"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_routing.py:27:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_advertiser_profile",
-      "gravity_sdk.agents.advertiser_profile",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_advertiser_profile",
-        "new_module": "gravity_sdk.agents.advertiser_profile"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_routing.py:31:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_company_usage",
-      "gravity_sdk.agents.company_usage",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_company_usage",
-        "new_module": "gravity_sdk.agents.company_usage"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_routing.py:35:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_audience",
-      "gravity_sdk.agents.custom_audience",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_audience",
-        "new_module": "gravity_sdk.agents.custom_audience"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_routing.py:39:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_directory",
-      "gravity_sdk.agents.report_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_directory",
-        "new_module": "gravity_sdk.agents.report_directory"
       }
     ],
     [
@@ -8529,142 +5362,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_report_routing.py:59:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_advertiser_profile",
-      "gravity_sdk.agents.advertiser_profile",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_advertiser_profile",
-        "new_module": "gravity_sdk.agents.advertiser_profile"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_routing.py:63:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_company_usage",
-      "gravity_sdk.agents.company_usage",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_company_usage",
-        "new_module": "gravity_sdk.agents.company_usage"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_routing.py:67:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_audience",
-      "gravity_sdk.agents.custom_audience",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_audience",
-        "new_module": "gravity_sdk.agents.custom_audience"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_report_routing.py:71:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_directory",
-      "gravity_sdk.agents.report_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_directory",
-        "new_module": "gravity_sdk.agents.report_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_saved_analysis.py:165:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_saved_analysis.py:177:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_saved_analysis.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_saved_analysis_mutation.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_segment.py:11:1:from import",
       "r",
       "exact_reference",
@@ -8679,227 +5376,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_export",
         "new_module": "gravity_sdk.agents.export"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:12:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:178:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_app_public_info",
-      "gravity_sdk.agents.app_public_info",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_app_public_info",
-        "new_module": "gravity_sdk.agents.app_public_info"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:179:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_material_asset",
-      "gravity_sdk.agents.material_asset",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_material_asset",
-        "new_module": "gravity_sdk.agents.material_asset"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:180:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_monetization_aggregate",
-      "gravity_sdk.agents.monetization_aggregate",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_monetization_aggregate",
-        "new_module": "gravity_sdk.agents.monetization_aggregate"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:181:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_kanban_mutation",
-      "gravity_sdk.agents.kanban_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_kanban_mutation",
-        "new_module": "gravity_sdk.agents.kanban_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:182:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_mutation",
-      "gravity_sdk.agents.report_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_mutation",
-        "new_module": "gravity_sdk.agents.report_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:183:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_metric",
-      "gravity_sdk.agents.custom_metric",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_metric",
-        "new_module": "gravity_sdk.agents.custom_metric"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:184:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_template",
-      "gravity_sdk.agents.metadata_template",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_template",
-        "new_module": "gravity_sdk.agents.metadata_template"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:185:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_saved_analysis_mutation",
-      "gravity_sdk.agents.saved_analysis_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_saved_analysis_mutation",
-        "new_module": "gravity_sdk.agents.saved_analysis_mutation"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment.py:186:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event",
-      "gravity_sdk.agents.realtime_event",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event",
-        "new_module": "gravity_sdk.agents.realtime_event"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment_members.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_segment_snapshot.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_semantic_compose.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
       }
     ],
     [
@@ -9107,57 +5583,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_semantic_derived.py:37:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_derived_metrics",
-      "gravity_sdk.agents.derived_metrics",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_derived_metrics",
-        "new_module": "gravity_sdk.agents.derived_metrics"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_semantic_derived.py:81:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_derived_metrics",
-      "gravity_sdk.agents.derived_metrics",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_derived_metrics",
-        "new_module": "gravity_sdk.agents.derived_metrics"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_sources.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_pagination",
-      "gravity_sdk.pagination_completeness",
-      "static_import",
-      "exact",
-      "rewrite_consolidated_reference",
-      "pagination_consolidation_reference",
-      59,
-      {
-        "kind": "replace_module",
-        "old_module": "gravity_sdk.agent_pagination",
-        "new_module": "gravity_sdk.pagination_completeness"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_sources.py:13:1:from import",
       "r",
       "exact_reference",
@@ -9226,23 +5651,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_sql_product_discovery.py:22:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_sql_product_gap",
-      "gravity_sdk.agents.sql_product_gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_sql_product_gap",
-        "new_module": "gravity_sdk.agents.sql_product_gap"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_sql_product_discovery.py:52:5:from import",
       "r",
       "exact_reference",
@@ -9294,40 +5702,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_sql_product_gap.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_gap",
-      "gravity_sdk.agents.gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_gap",
-        "new_module": "gravity_sdk.agents.gap"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_sql_product_gap.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_table_lineage.py:8:1:from import",
       "r",
       "exact_reference",
@@ -9345,57 +5719,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_table_lineage.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_title_package.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable.py:20:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_sql_product_gap",
-      "gravity_sdk.agents.sql_product_gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_sql_product_gap",
-        "new_module": "gravity_sdk.agents.sql_product_gap"
-      }
-    ],
-    [
       "src/gravity_sdk/agent_unavailable.py:21:5:from import",
       "r",
       "exact_reference",
@@ -9410,40 +5733,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_unavailable_analysis",
         "new_module": "gravity_sdk.agents.unavailable_analysis"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable.py:22:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_unavailable_promotion",
-      "gravity_sdk.agents.unavailable_promotion",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_unavailable_promotion",
-        "new_module": "gravity_sdk.agents.unavailable_promotion"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable.py:23:5:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_unavailable_report",
-      "gravity_sdk.agents.unavailable_report",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_unavailable_report",
-        "new_module": "gravity_sdk.agents.unavailable_report"
       }
     ],
     [
@@ -9498,125 +5787,6 @@
       }
     ],
     [
-      "src/gravity_sdk/agent_unavailable_analysis.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_gap",
-      "gravity_sdk.agents.gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_gap",
-        "new_module": "gravity_sdk.agents.gap"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable_analysis.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable_promotion.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_gap",
-      "gravity_sdk.agents.gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_gap",
-        "new_module": "gravity_sdk.agents.gap"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable_promotion.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable_report.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_gap",
-      "gravity_sdk.agents.gap",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_gap",
-        "new_module": "gravity_sdk.agents.gap"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_unavailable_report.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
-      "src/gravity_sdk/agent_user_journey.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
-      }
-    ],
-    [
       "src/gravity_sdk/analysis_artifact.py:10:1:from import",
       "r",
       "exact_reference",
@@ -9626,7 +5796,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9641,7 +5811,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9656,7 +5826,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9671,7 +5841,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9686,7 +5856,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9701,7 +5871,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9733,7 +5903,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9748,7 +5918,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9797,7 +5967,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9812,7 +5982,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9827,7 +5997,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9842,7 +6012,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9917,7 +6087,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9932,7 +6102,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9947,7 +6117,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9962,7 +6132,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -9977,7 +6147,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10009,7 +6179,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10024,7 +6194,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10039,7 +6209,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10062,23 +6232,6 @@
       }
     ],
     [
-      "src/gravity_sdk/find.py:16:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_vocabulary",
-      "gravity_sdk.agents.vocabulary",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_vocabulary",
-        "new_module": "gravity_sdk.agents.vocabulary"
-      }
-    ],
-    [
       "src/gravity_sdk/governor_observation.py:16:1:from import",
       "r",
       "exact_reference",
@@ -10088,7 +6241,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10103,7 +6256,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10118,7 +6271,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10133,7 +6286,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10148,7 +6301,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10163,7 +6316,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10178,7 +6331,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10193,111 +6346,9 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_sdk/plan_advertiser_profile_adapter.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_advertiser_profile",
-      "gravity_sdk.agents.advertiser_profile",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_advertiser_profile",
-        "new_module": "gravity_sdk.agents.advertiser_profile"
-      }
-    ],
-    [
-      "src/gravity_sdk/plan_bilibili_account_performance_adapter.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_bilibili_account_performance",
-      "gravity_sdk.agents.bilibili_account_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_bilibili_account_performance",
-        "new_module": "gravity_sdk.agents.bilibili_account_performance"
-      }
-    ],
-    [
-      "src/gravity_sdk/plan_custom_audience_adapter.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_audience",
-      "gravity_sdk.agents.custom_audience",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_audience",
-        "new_module": "gravity_sdk.agents.custom_audience"
-      }
-    ],
-    [
-      "src/gravity_sdk/plan_report_adapter.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_company_usage",
-      "gravity_sdk.agents.company_usage",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_company_usage",
-        "new_module": "gravity_sdk.agents.company_usage"
-      }
-    ],
-    [
-      "src/gravity_sdk/plan_report_adapter.py:12:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_directory",
-      "gravity_sdk.agents.report_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_directory",
-        "new_module": "gravity_sdk.agents.report_directory"
-      }
-    ],
-    [
-      "src/gravity_sdk/plan_title_package_adapter.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_title_package",
-      "gravity_sdk.agents.title_package",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_title_package",
-        "new_module": "gravity_sdk.agents.title_package"
       }
     ],
     [
@@ -10447,7 +6498,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10462,7 +6513,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10477,7 +6528,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10492,7 +6543,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10507,7 +6558,7 @@
       "manual",
       "no_migration_effect",
       "root_package_only",
-      67,
+      66,
       {
         "kind": "none"
       }
@@ -10522,26 +6573,9 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_sdk/sdk.py:236:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_client",
-      "gravity_sdk.agents.client",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_client",
-        "new_module": "gravity_sdk.agents.client"
       }
     ],
     [
@@ -10559,23 +6593,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_batch",
         "new_module": "gravity_sdk.agents.batch"
-      }
-    ],
-    [
-      "src/gravity_sdk/sdk.py:258:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_client",
-      "gravity_sdk.agents.client",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_client",
-        "new_module": "gravity_sdk.agents.client"
       }
     ],
     [
@@ -10605,7 +6622,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10620,7 +6637,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10635,7 +6652,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10650,7 +6667,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10665,7 +6682,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10680,7 +6697,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10695,7 +6712,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10710,7 +6727,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10725,7 +6742,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10740,7 +6757,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10770,7 +6787,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10785,7 +6802,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10800,26 +6817,9 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_sdk/template_replay_surface.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
       }
     ],
     [
@@ -10832,7 +6832,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10847,7 +6847,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10862,7 +6862,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10877,7 +6877,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10892,7 +6892,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10907,7 +6907,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10922,7 +6922,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -10967,7 +6967,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -11109,23 +7109,6 @@
       }
     ],
     [
-      "tests/test_agent_catalog.py:12:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_parity",
-      "gravity_sdk.agents.catalog_parity",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_parity",
-        "new_module": "gravity_sdk.agents.catalog_parity"
-      }
-    ],
-    [
       "tests/test_agent_catalog.py:13:1:from import",
       "r",
       "exact_reference",
@@ -11186,7 +7169,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      60,
+      59,
       {
         "kind": "none"
       }
@@ -11201,7 +7184,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      60,
+      59,
       {
         "kind": "none"
       }
@@ -11216,7 +7199,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      60,
+      59,
       {
         "kind": "none"
       }
@@ -11231,7 +7214,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      60,
+      59,
       {
         "kind": "none"
       }
@@ -11246,7 +7229,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      60,
+      59,
       {
         "kind": "none"
       }
@@ -11369,23 +7352,6 @@
       }
     ],
     [
-      "tests/test_agent_lexical_retrieval.py:11:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_caller_language",
-      "gravity_sdk.agents.caller_language",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_caller_language",
-        "new_module": "gravity_sdk.agents.caller_language"
-      }
-    ],
-    [
       "tests/test_agent_lexical_retrieval.py:15:1:from import",
       "r",
       "exact_reference",
@@ -11417,23 +7383,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_lexical_retrieval",
         "new_module": "gravity_sdk.agents.lexical_retrieval"
-      }
-    ],
-    [
-      "tests/test_agent_lexical_retrieval.py:254:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_intent_text",
-      "gravity_sdk.agents.intent_text",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_intent_text",
-        "new_module": "gravity_sdk.agents.intent_text"
       }
     ],
     [
@@ -11542,7 +7491,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -11572,7 +7521,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -11587,7 +7536,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -11602,7 +7551,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -11622,23 +7571,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_product_inventory",
         "new_module": "gravity_sdk.agents.product_inventory"
-      }
-    ],
-    [
-      "tests/test_discovery_next_fields.py:7:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_caller_language",
-      "gravity_sdk.agents.caller_language",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_caller_language",
-        "new_module": "gravity_sdk.agents.caller_language"
       }
     ],
     [
@@ -11668,7 +7600,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      63,
+      62,
       {
         "kind": "none"
       }
@@ -11683,7 +7615,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -11698,7 +7630,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      62,
+      61,
       {
         "kind": "none"
       }
@@ -11758,43 +7690,9 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_analysis_task.py:6:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_task",
-      "gravity_sdk.agents.analysis_task",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_task",
-        "new_module": "gravity_sdk.agents.analysis_task"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_call_bound.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_task",
-      "gravity_sdk.agents.analysis_task",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_task",
-        "new_module": "gravity_sdk.agents.analysis_task"
       }
     ],
     [
@@ -11866,23 +7764,6 @@
       }
     ],
     [
-      "tests/test_gravity_agent_input_resolution.py:15:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_input_catalogs",
-      "gravity_sdk.agents.input_catalogs",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_input_catalogs",
-        "new_module": "gravity_sdk.agents.input_catalogs"
-      }
-    ],
-    [
       "tests/test_gravity_agent_input_resolution.py:16:1:from import",
       "r",
       "exact_reference",
@@ -11934,57 +7815,6 @@
       }
     ],
     [
-      "tests/test_gravity_agent_input_resolution.py:17:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_task",
-      "gravity_sdk.agents.analysis_task",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_task",
-        "new_module": "gravity_sdk.agents.analysis_task"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_input_resolution.py:181:13:patch",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "patch_target",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_input_resolution.py:181:13:python string literal",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "string_reference",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
-      }
-    ],
-    [
       "tests/test_gravity_agent_input_resolution.py:18:1:from import",
       "r",
       "exact_reference",
@@ -12033,40 +7863,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_input_resolution",
         "new_module": "gravity_sdk.agents.input_resolution"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_input_resolution.py:194:13:patch",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "patch_target",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_input_resolution.py:194:13:python string literal",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "string_reference",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
       }
     ],
     [
@@ -12135,40 +7931,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_input_resolution",
         "new_module": "gravity_sdk.agents.input_resolution"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_input_resolution.py:215:13:patch",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "patch_target",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
-      }
-    ],
-    [
-      "tests/test_gravity_agent_input_resolution.py:215:13:python string literal",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "string_reference",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
       }
     ],
     [
@@ -12354,23 +8116,6 @@
       27,
       {
         "kind": "none"
-      }
-    ],
-    [
-      "tests/test_gravity_custom_metric_mutation.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_custom_metric",
-      "gravity_sdk.agents.custom_metric",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_custom_metric",
-        "new_module": "gravity_sdk.agents.custom_metric"
       }
     ],
     [
@@ -12955,23 +8700,6 @@
       }
     ],
     [
-      "tests/test_gravity_insight_agent_ux.py:20:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_analysis_task",
-      "gravity_sdk.agents.analysis_task",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_analysis_task",
-        "new_module": "gravity_sdk.agents.analysis_task"
-      }
-    ],
-    [
       "tests/test_gravity_insight_agent_ux.py:21:1:from import",
       "r",
       "exact_reference",
@@ -13003,23 +8731,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_batch_sources",
         "new_module": "gravity_sdk.agents.batch_sources"
-      }
-    ],
-    [
-      "tests/test_gravity_insight_agent_ux.py:23:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_client",
-      "gravity_sdk.agents.client",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_client",
-        "new_module": "gravity_sdk.agents.client"
       }
     ],
     [
@@ -13397,7 +9108,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      61,
+      60,
       {
         "kind": "none"
       }
@@ -14018,40 +9729,6 @@
       }
     ],
     [
-      "tests/test_gravity_insight_tencent_medium_adgroup.py:211:9:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_unavailable_promotion",
-      "gravity_sdk.agents.unavailable_promotion",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_unavailable_promotion",
-        "new_module": "gravity_sdk.agents.unavailable_promotion"
-      }
-    ],
-    [
-      "tests/test_gravity_kanban_mutation.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_kanban_mutation",
-      "gravity_sdk.agents.kanban_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_kanban_mutation",
-        "new_module": "gravity_sdk.agents.kanban_mutation"
-      }
-    ],
-    [
       "tests/test_gravity_material_performance.py:61:21:importlib.import_module",
       "rm",
       "dynamic_import",
@@ -14128,40 +9805,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_capabilities",
         "new_module": "gravity_sdk.agents.capabilities"
-      }
-    ],
-    [
-      "tests/test_gravity_metadata_sync.py:33:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_catalog_refresh",
-      "gravity_sdk.agents.catalog_refresh",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_catalog_refresh",
-        "new_module": "gravity_sdk.agents.catalog_refresh"
-      }
-    ],
-    [
-      "tests/test_gravity_metadata_template_mutation.py:7:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_metadata_template",
-      "gravity_sdk.agents.metadata_template",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_metadata_template",
-        "new_module": "gravity_sdk.agents.metadata_template"
       }
     ],
     [
@@ -14374,23 +10017,6 @@
       }
     ],
     [
-      "tests/test_gravity_order_directory_agent.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_directory",
-      "gravity_sdk.agents.order_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_directory",
-        "new_module": "gravity_sdk.agents.order_directory"
-      }
-    ],
-    [
       "tests/test_gravity_order_directory_agent.py:115:12:patch",
       "r",
       "exact_reference",
@@ -14578,23 +10204,6 @@
       }
     ],
     [
-      "tests/test_gravity_order_trace_agent.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_order_trace",
-      "gravity_sdk.agents.order_trace",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_order_trace",
-        "new_module": "gravity_sdk.agents.order_trace"
-      }
-    ],
-    [
       "tests/test_gravity_order_trace_surface.py:80:49:patch",
       "rm",
       "non_string_patch_expression",
@@ -14763,74 +10372,6 @@
       }
     ],
     [
-      "tests/test_gravity_promotion_performance_agent.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_promotion_performance",
-      "gravity_sdk.agents.promotion_performance",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_promotion_performance",
-        "new_module": "gravity_sdk.agents.promotion_performance"
-      }
-    ],
-    [
-      "tests/test_gravity_realtime_event_mutation.py:7:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_realtime_event",
-      "gravity_sdk.agents.realtime_event",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_realtime_event",
-        "new_module": "gravity_sdk.agents.realtime_event"
-      }
-    ],
-    [
-      "tests/test_gravity_report_directory.py:12:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_report_directory",
-      "gravity_sdk.agents.report_directory",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_report_directory",
-        "new_module": "gravity_sdk.agents.report_directory"
-      }
-    ],
-    [
-      "tests/test_gravity_saved_analysis_mutation.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_saved_analysis_mutation",
-      "gravity_sdk.agents.saved_analysis_mutation",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_saved_analysis_mutation",
-        "new_module": "gravity_sdk.agents.saved_analysis_mutation"
-      }
-    ],
-    [
       "tests/test_gravity_saved_analysis_mutation.py:9:1:from import",
       "r",
       "exact_reference",
@@ -14879,23 +10420,6 @@
         "kind": "replace_text",
         "old_module": "gravity_sdk.agent_batch_sources",
         "new_module": "gravity_sdk.agents.batch_sources"
-      }
-    ],
-    [
-      "tests/test_gravity_segment_members.py:15:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.agent_segment_members",
-      "gravity_sdk.agents.segment_members",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.agent_segment_members",
-        "new_module": "gravity_sdk.agents.segment_members"
       }
     ],
     [
@@ -15092,26 +10616,9 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
-      }
-    ],
-    [
-      "tests/test_relative_dates.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_sdk.relative_date_agent",
-      "gravity_sdk.agents.relative_date",
-      "static_import",
-      "exact",
-      "rewrite_reference",
-      "exact_owner_reference",
-      45,
-      {
-        "kind": "replace_text",
-        "old_module": "gravity_sdk.relative_date_agent",
-        "new_module": "gravity_sdk.agents.relative_date"
       }
     ],
     [
@@ -15139,7 +10646,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -15188,7 +10695,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -15203,7 +10710,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -15218,7 +10725,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -15593,7 +11100,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -15608,7 +11115,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }
@@ -15623,7 +11130,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      65,
+      64,
       {
         "kind": "none"
       }

@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agent_realtime_event import (
+from gravity_sdk.agents.realtime_event import (
     SELECTOR,
     realtime_event_mutation_capability_inventory,
     realtime_event_mutation_cards,

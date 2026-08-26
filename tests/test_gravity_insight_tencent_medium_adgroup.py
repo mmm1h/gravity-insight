@@ -208,7 +208,7 @@ class TencentAdgroupReportAndCreativeTests(unittest.TestCase):
         self.assertEqual({"video_id": "v1"}, row["creative_components"])
 
     def test_empty_tencent_kuaishou_reads_stay_confirmed_and_uninvented(self) -> None:
-        from gravity_sdk.agent_unavailable_promotion import unavailable_promotion_gap
+        from gravity_sdk.agents.unavailable_promotion import unavailable_promotion_gap
         from gravity_sdk.prober.read_semantics import (
             CONFIRMATIONS_PATH,
             confirmation_keys,

@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 import re
 from typing import Any
 
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 
 
 _CREATE_EFFECT = "export_job_create"

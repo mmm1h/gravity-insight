@@ -34,7 +34,7 @@ def unbound_gap(
     query: str,
     cards: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any] | None:
-    from .agent_derived_metrics import derived_metric_gap, derived_metric_intent
+    from .agents.derived_metrics import derived_metric_gap, derived_metric_intent
 
     if not derived_metric_intent(query) or _registered_route_owns(query, cards):
         return None
@@ -78,7 +78,7 @@ def resolve_derived(
             *direct,
         ]
         return [], [multiple_gap(query, selectors)], True
-    from .agent_derived_metrics import semantic_derived_card
+    from .agents.derived_metrics import semantic_derived_card
 
     declaration, phrases = matches[0]
     return [semantic_derived_card(declaration, phrases)], [], True

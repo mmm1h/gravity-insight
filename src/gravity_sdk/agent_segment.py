@@ -9,7 +9,7 @@ from typing import Any
 
 from .find import query_match
 from .agent_export import is_authoritative_export_card
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 from .segment_mutation_contracts import (
     FROM_ANALYSIS_CREATE,
     FROM_HISTORY_CREATE,
@@ -175,15 +175,15 @@ def segment_mutation_intent(query: str) -> bool:
 def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     """Identify direct cards that must suppress low-level operation fallback."""
 
-    from .agent_app_public_info import is_authoritative_app_public_info_card
-    from .agent_material_asset import is_authoritative_material_asset_card
-    from .agent_monetization_aggregate import is_authoritative_monetization_aggregate_card
-    from .agent_kanban_mutation import is_kanban_mutation_card
-    from .agent_report_mutation import is_report_mutation_card
-    from .agent_custom_metric import is_custom_metric_card
-    from .agent_metadata_template import is_metadata_template_card
-    from .agent_saved_analysis_mutation import is_saved_analysis_mutation_card
-    from .agent_realtime_event import is_realtime_event_mutation_card
+    from .agents.app_public_info import is_authoritative_app_public_info_card
+    from .agents.material_asset import is_authoritative_material_asset_card
+    from .agents.monetization_aggregate import is_authoritative_monetization_aggregate_card
+    from .agents.kanban_mutation import is_kanban_mutation_card
+    from .agents.report_mutation import is_report_mutation_card
+    from .agents.custom_metric import is_custom_metric_card
+    from .agents.metadata_template import is_metadata_template_card
+    from .agents.saved_analysis_mutation import is_saved_analysis_mutation_card
+    from .agents.realtime_event import is_realtime_event_mutation_card
 
     return any(
         (

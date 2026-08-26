@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from .agent_analysis_task import analysis_task_cards
+from .agents.analysis_task import analysis_task_cards
 from .agent_capabilities import (
     analysis_query_spec_cards,
     composite_capability_cards,
@@ -20,11 +20,11 @@ from .agent_discovery_policy import (
 )
 from .agent_sources import snapshot_recipe_cards, workspace_catalog_fingerprint
 from .agent_table_lineage import table_lineage_capability_cards
-from .agent_user_journey import user_journey_capability_cards
+from .agents.user_journey import user_journey_capability_cards
 from .errors import InputValidationError
 from .find import _metadata_card
 from .find_metadata import search_metadata
-from .agent_vocabulary import is_workspace_vocabulary
+from .agents.vocabulary import is_workspace_vocabulary
 from .workspace import load_workspace
 from .actionable_error_values import actual_value
 

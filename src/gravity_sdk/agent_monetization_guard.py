@@ -6,7 +6,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 
 from .monetization_detail import SAFE_ROW_FIELDS
 

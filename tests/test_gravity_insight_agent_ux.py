@@ -17,10 +17,10 @@ from gravity_sdk import cli, runtime
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_business_pulse import business_pulse_query
 from gravity_sdk.agent_capabilities import composite_capability_cards
-from gravity_sdk.agent_analysis_task import analysis_task_cards
+from gravity_sdk.agents.analysis_task import analysis_task_cards
 from gravity_sdk.agent_batch import capabilities_many, iter_ndjson_records
 from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
-from gravity_sdk.agent_client import DeferredAgentClient
+from gravity_sdk.agents.client import DeferredAgentClient
 from gravity_sdk.agent_handoff import apply_workspace_prefix
 from gravity_sdk.agent_sources import OperationDiscovery, discover_operation_cards
 from gravity_sdk.workspace import load_workspace

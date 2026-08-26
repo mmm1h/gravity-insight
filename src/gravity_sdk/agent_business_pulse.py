@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .business_pulse import DEFAULT_PLATFORMS
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 
 
 BUSINESS_PULSE_NAME = "business_pulse"

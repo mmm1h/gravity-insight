@@ -17,10 +17,10 @@ _REGISTERED_GAP_QUERIES = (
 
 
 def unavailable_journey_gap(query: str) -> dict[str, Any] | None:
-    from .agent_sql_product_gap import registered_sql_product_gap
+    from .agents.sql_product_gap import registered_sql_product_gap
     from .agent_unavailable_analysis import unavailable_analysis_gap
-    from .agent_unavailable_promotion import unavailable_promotion_gap
-    from .agent_unavailable_report import unavailable_report_gap
+    from .agents.unavailable_promotion import unavailable_promotion_gap
+    from .agents.unavailable_report import unavailable_report_gap
     from .agent_multidim import unavailable_multidim_gap
 
     for recognize in (

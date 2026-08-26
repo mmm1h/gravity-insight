@@ -233,7 +233,7 @@ class GravitySDK(
         """Discover recipes and executable Insight operations in one offline call."""
 
         from .agent import discover_capabilities
-        from .agent_client import DeferredAgentClient
+        from .agents.client import DeferredAgentClient
 
         client = DeferredAgentClient(lambda: self.insight) if str(query or "").strip() else None
         return discover_capabilities(
@@ -255,7 +255,7 @@ class GravitySDK(
         """Discover up to 32 questions from one immutable offline catalog snapshot."""
 
         from .agent_batch import capabilities_many
-        from .agent_client import DeferredAgentClient
+        from .agents.client import DeferredAgentClient
 
         return capabilities_many(
             questions,

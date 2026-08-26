@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_title_package import TITLE_PACKAGE_NAME
+from .agents.title_package import TITLE_PACKAGE_NAME
 from .plan import AdapterContext
 from .plan_adapter_support import input_error, validate_exact_targets
 from .title_package import normalize_package_kind

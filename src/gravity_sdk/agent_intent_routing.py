@@ -29,7 +29,7 @@ _WRAPPER_SELECTORS = frozenset({
 def adjacent_product_conflict(owner: str, query: str) -> bool:
     """Preserve proven compact conflicts without distributing foreign terms."""
 
-    from .agent_order_directory import order_directory_adjacent_intent
+    from .agents.order_directory import order_directory_adjacent_intent
 
     selected = " ".join(query.strip().casefold().split())
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
@@ -148,7 +148,7 @@ def _clause_selectors(
 def _local_clause_selectors(clause: str) -> tuple[str, ...]:
     """Classify one coordinated clause without consulting the whole query."""
 
-    from .agent_material_asset import material_asset_capability_cards
+    from .agents.material_asset import material_asset_capability_cards
     from .agent_export import material_export_capability_cards
     from .agent_table_lineage import table_lineage_capability_cards
     from .agent_unavailable import unavailable_journey_gap
@@ -196,25 +196,25 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
 
     from .agent_analysis import analysis_query_spec_cards
     from .agent_business_pulse import business_pulse_intent
-    from .agent_company_usage import company_usage_intent
-    from .agent_analysis_default_dictionary import analysis_default_dictionary_intent
-    from .agent_realtime_event_catalog import realtime_event_catalog_intent
-    from .agent_custom_audience import custom_audience_intent
-    from .agent_bilibili_account_performance import (
+    from .agents.company_usage import company_usage_intent
+    from .agents.analysis_default_dictionary import analysis_default_dictionary_intent
+    from .agents.realtime_event_catalog import realtime_event_catalog_intent
+    from .agents.custom_audience import custom_audience_intent
+    from .agents.bilibili_account_performance import (
         bilibili_account_performance_intent,
     )
     from .agent_dashboard import dashboard_analysis_intent, dashboard_snapshot_intent
     from .agent_material_performance import material_performance_intent
-    from .agent_title_package import title_package_intent
+    from .agents.title_package import title_package_intent
     from .agent_multidim import multidim_intent
-    from .agent_order_directory import order_directory_intent
-    from .agent_order_trace import order_split_trace_intent
-    from .agent_promotion_performance import promotion_performance_intent
-    from .agent_attribution_performance import attribution_performance_intent
-    from .agent_advertiser_profile import advertiser_profile_query
+    from .agents.order_directory import order_directory_intent
+    from .agents.order_trace import order_split_trace_intent
+    from .agents.promotion_performance import promotion_performance_intent
+    from .agents.attribution_performance import attribution_performance_intent
+    from .agents.advertiser_profile import advertiser_profile_query
     from .agent_segment import segment_evaluate_intent, segment_mutation_intent
-    from .agent_segment_snapshot import segment_snapshot_intent
-    from .agent_segment_members import segment_members_intent
+    from .agents.segment_snapshot import segment_snapshot_intent
+    from .agents.segment_members import segment_members_intent
 
     analysis = analysis_query_spec_cards(query, domain=None, platform=None)
     claims = (

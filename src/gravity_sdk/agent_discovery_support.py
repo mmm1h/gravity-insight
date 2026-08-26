@@ -33,7 +33,7 @@ def catalog_browse_next() -> dict[str, Any]:
 def answerable_examples(client: Any) -> list[dict[str, Any]]:
     """One executable registered ask per domain, from existing caller language."""
 
-    from .agent_caller_language import caller_language_fields
+    from .agents.caller_language import caller_language_fields
     from .agent_product_inventory import canonical_capability_cards
 
     selected: list[dict[str, Any]] = []

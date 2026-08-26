@@ -8,7 +8,7 @@ from gravity_sdk import GravityInsightClient
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_batch import capabilities_many
 from gravity_sdk.agent_capabilities import composite_capability_inventory
-from gravity_sdk.agent_caller_language import (
+from gravity_sdk.agents.caller_language import (
     CALLER_LANGUAGE_SOURCES,
     caller_language_fields,
 )
@@ -214,7 +214,7 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
         )
 
     def test_indirect_workspace_sql_owner_preserves_adjacent_boundaries(self) -> None:
-        from gravity_sdk import agent_sql_product_gap as sql_gap
+        from gravity_sdk.agents import sql_product_gap as sql_gap
 
         self.assertFalse(sql_gap.registered_sql_product_intent(
             "按时间窗汇总多个 App 的业务趋势和小时脉搏。"
@@ -251,7 +251,7 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
         ])
 
     def test_operation_products_are_indexed_and_negated_reframes_keep_the_positive(self) -> None:
-        from gravity_sdk.agent_intent_text import affirmative_intent_text
+        from gravity_sdk.agents.intent_text import affirmative_intent_text
 
         selectors = {
             document.selector

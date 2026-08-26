@@ -6,7 +6,7 @@ import copy
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_input_catalogs import live_catalog_for_card, resolvable_scenario
+from .agents.input_catalogs import live_catalog_for_card, resolvable_scenario
 from .errors import InputValidationError, UpstreamError
 from .actionable_error_values import actual_value
 
@@ -227,7 +227,7 @@ def _refresh_target(result: Mapping[str, Any]) -> dict[str, bool]:
 
 
 def _refresh_catalog(client: Any, *, include_table_lineage: bool) -> dict[str, Any]:
-    from .agent_catalog_refresh import refresh_complete_catalog
+    from .agents.catalog_refresh import refresh_complete_catalog
 
     result = refresh_complete_catalog(
         client, include_table_lineage=include_table_lineage

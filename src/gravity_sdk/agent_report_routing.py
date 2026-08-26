@@ -24,19 +24,19 @@ def report_product_query(name: str, query: str) -> bool:
 
         return business_pulse_query(query)
     if name == "advertiser_profile":
-        from .agent_advertiser_profile import advertiser_profile_query
+        from .agents.advertiser_profile import advertiser_profile_query
 
         return advertiser_profile_query(query)
     if name == "company_usage":
-        from .agent_company_usage import company_usage_query
+        from .agents.company_usage import company_usage_query
 
         return company_usage_query(query)
     if name == "custom_audience":
-        from .agent_custom_audience import custom_audience_query
+        from .agents.custom_audience import custom_audience_query
 
         return custom_audience_query(query)
     if name in {"report_directory", "report_subscriptions"}:
-        from .agent_report_directory import (
+        from .agents.report_directory import (
             report_directory_query, report_subscriptions_query,
         )
 
@@ -56,19 +56,19 @@ def report_product_plan_request(
 
         return business_pulse_plan_request(card)
     if name == "advertiser_profile":
-        from .agent_advertiser_profile import advertiser_profile_plan_request
+        from .agents.advertiser_profile import advertiser_profile_plan_request
 
         return advertiser_profile_plan_request(card)
     if name == "company_usage":
-        from .agent_company_usage import company_usage_plan_request
+        from .agents.company_usage import company_usage_plan_request
 
         return company_usage_plan_request(card)
     if name == "custom_audience":
-        from .agent_custom_audience import custom_audience_plan_request
+        from .agents.custom_audience import custom_audience_plan_request
 
         return custom_audience_plan_request(card)
     if name in {"report_directory", "report_subscriptions"}:
-        from .agent_report_directory import report_read_plan_request
+        from .agents.report_directory import report_read_plan_request
 
         return report_read_plan_request(name, card)
     raise ValueError(f"unknown report product: {name}")

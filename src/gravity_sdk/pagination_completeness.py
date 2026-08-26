@@ -18,6 +18,26 @@ PAGINATION_EVIDENCE_VALUES = frozenset({"production", "wire", "template", "none"
 _COMPLETE_EVIDENCE = frozenset({"production", "wire"})
 
 
+def compact_pagination(value: Any) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        return {
+            "supported": False,
+            "kind": "none",
+            "completeness": "unknown",
+            "pagination_evidence": "none",
+        }
+    kind = str(value.get("kind", "none"))
+    return {
+        "supported": kind != "none",
+        "kind": kind,
+        "completeness": value.get("completeness", "unknown"),
+        "pagination_evidence": value.get("pagination_evidence", "none"),
+        "page_field": value.get("page_field"),
+        "page_size_field": value.get("page_size_field"),
+        "max_page_size": value.get("max_page_size"),
+    }
+
+
 def contract_dimensions(value: Mapping[str, Any]) -> tuple[str, str]:
     """Parse fail-closed pagination dimensions from a runtime manifest."""
 
@@ -158,6 +178,7 @@ __all__ = [
     "UNKNOWN",
     "aggregate_completeness",
     "collection_claims",
+    "compact_pagination",
     "contract_dimensions",
     "force_prefix",
     "page_completeness",

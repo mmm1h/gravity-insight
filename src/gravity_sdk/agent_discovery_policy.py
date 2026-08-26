@@ -10,21 +10,21 @@ from .agent_monetization_guard import (
     monetization_guard_blocks_operation_fallback,
     monetization_guard_safe_query,
 )
-from .agent_order_directory import (
+from .agents.order_directory import (
     order_directory_blocks_operation_fallback,
     order_directory_safe_query,
 )
-from .agent_order_trace import (
+from .agents.order_trace import (
     order_split_trace_blocks_operation_fallback,
     order_split_trace_safe_query,
 )
-from .agent_promotion_performance import (
+from .agents.promotion_performance import (
     promotion_performance_blocks_operation_fallback,
 )
-from .agent_bilibili_account_performance import (
+from .agents.bilibili_account_performance import (
     bilibili_account_performance_blocks_operation_fallback,
 )
-from .agent_advertiser_profile import (
+from .agents.advertiser_profile import (
     advertiser_profile_blocks_operation_fallback,
 )
 
@@ -126,7 +126,7 @@ def is_authoritative_local_question(
     """Treat safe product gaps as local without broadening card authority."""
 
     from .agent_segment import is_authoritative_direct_card
-    from .agent_vocabulary import is_authoritative_local_metadata_card
+    from .agents.vocabulary import is_authoritative_local_metadata_card
 
     return operation_fallback_excluded(query) or any(
         (

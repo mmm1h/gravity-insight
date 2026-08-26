@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from .analysis_spec_schema import analysis_query_spec_schema
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 from .find import query_match
 
 

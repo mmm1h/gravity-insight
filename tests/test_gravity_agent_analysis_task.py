@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from gravity_sdk.agent_analysis_task import analysis_task_cards
+from gravity_sdk.agents.analysis_task import analysis_task_cards
 
 
 class GravityAgentAnalysisTaskTests(unittest.TestCase):

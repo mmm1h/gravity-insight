@@ -10,7 +10,7 @@
 | Shared-spine integration | Required and serialized |
 | Delivery mode | `leaf`; one implementation branch/worktree with two serial commit and rollback checkpoints |
 | Measurement baseline | `codex/gov-staged-epic@aa46ddf3343d8fb8ea0162b7806403527a2d79d9` |
-| Implementation baseline | `dev@823d69822ab09829b2bab47d8fc70ce6eb710a7b` |
+| Implementation baseline | `dev@26a765a34e16b167093f5133ff2982a5d07d167a` |
 | M0 evidence candidate | `codex/m0-characterization@088d1606127439943cab0b79c8cdbdf516af4839` |
 | Implementation Issue | `none`; internal structural debt must not receive a self-created GitHub Issue under `docs/maintainers/issues.md` |
 | Implementation branch / worktree | `codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration` |
@@ -106,8 +106,8 @@ Machine state shared by this Requirement and `index.md`: `status=specified`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=412b82f049cd64b23818f6eeae1ef494773822bd9a0b097390d78fbaad69c675`;
-`live_checkpoint_tracked_sites=909`.
+`live_checkpoint_sha256=9b3952da7d45f274f8be551ce87ce83c4c253eefdb1375c10d5efc099de71e76`;
+`live_checkpoint_tracked_sites=645`.
 
 The required cross-file state gate is
 `tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_index_and_specification_state_agree`.
@@ -969,7 +969,7 @@ real index and worktree are not changed.
 
 ```powershell
 $expectedBranch = 'codex/r17-migration'
-$baseline = '823d69822ab09829b2bab47d8fc70ce6eb710a7b'
+$baseline = '26a765a34e16b167093f5133ff2982a5d07d167a'
 $actualBranch = (& git branch --show-current).Trim()
 if ($actualBranch -ne $expectedBranch) { throw "Phase 1 rollback checkpoint not reached: branch mismatch; expected=$expectedBranch actual=$actualBranch" }
 $dirty = @(& git status --porcelain --untracked-files=all)
@@ -1024,7 +1024,7 @@ baseline; it rejects retaining Phase 2 while removing Phase 1.
 function Test-R17Phase2Rollback {
     param([Parameter(Mandatory)][ValidateSet('phase-1', 'baseline')][string]$Target)
     $expectedBranch = 'codex/r17-migration'
-    $baseline = '823d69822ab09829b2bab47d8fc70ce6eb710a7b'
+    $baseline = '26a765a34e16b167093f5133ff2982a5d07d167a'
     $actualBranch = (& git branch --show-current).Trim()
     if ($actualBranch -ne $expectedBranch) { throw "Phase 2 rollback checkpoint not reached: branch mismatch; expected=$expectedBranch actual=$actualBranch target=$Target" }
     $dirty = @(& git status --porcelain --untracked-files=all)

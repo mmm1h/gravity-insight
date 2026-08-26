@@ -14,27 +14,27 @@ from typing import Any
 
 from .find import query_match
 from .agent_business_pulse import BUSINESS_PULSE_NAME
-from .agent_company_usage import COMPANY_USAGE_NAME
-from . import agent_report_directory as report_agent
-from .agent_analysis_default_dictionary import (
+from .agents.company_usage import COMPANY_USAGE_NAME
+from .agents import report_directory as report_agent
+from .agents.analysis_default_dictionary import (
     ANALYSIS_DEFAULT_DICTIONARY_NAME,
 )
-from .agent_realtime_event_catalog import REALTIME_EVENT_CATALOG_NAME
-from .agent_custom_audience import CUSTOM_AUDIENCE_NAME
-from .agent_bilibili_account_performance import (
+from .agents.realtime_event_catalog import REALTIME_EVENT_CATALOG_NAME
+from .agents.custom_audience import CUSTOM_AUDIENCE_NAME
+from .agents.bilibili_account_performance import (
     BILIBILI_ACCOUNT_PERFORMANCE_NAME,
 )
-from .agent_advertiser_profile import (
+from .agents.advertiser_profile import (
     ADVERTISER_PROFILE_NAME,
 )
 from .agent_composite_inventory import COMPOSITE_CAPABILITIES
-from .agent_derived_metrics import DERIVED_METRICS_NAME
+from .agents.derived_metrics import DERIVED_METRICS_NAME
 from .agent_monetization_guard import MONETIZATION_DETAIL_NAME
-from .agent_order_directory import ORDER_DIRECTORY_NAME
-from .agent_order_trace import ORDER_SPLIT_TRACE_NAME
-from .agent_promotion_performance import PROMOTION_PERFORMANCE_NAME
-from .agent_attribution_performance import ATTRIBUTION_PERFORMANCE_NAME
-from .agent_title_package import TITLE_PACKAGE_NAME
+from .agents.order_directory import ORDER_DIRECTORY_NAME
+from .agents.order_trace import ORDER_SPLIT_TRACE_NAME
+from .agents.promotion_performance import PROMOTION_PERFORMANCE_NAME
+from .agents.attribution_performance import ATTRIBUTION_PERFORMANCE_NAME
+from .agents.title_package import TITLE_PACKAGE_NAME
 
 
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
@@ -208,7 +208,7 @@ def _guarded_handoff_cards(
     composite_inventory: Sequence[Mapping[str, Any]] | None,
 ) -> tuple[list[dict[str, Any]], bool] | None:
     from .agent_intent_routing import multiple_product_intents
-    from .agent_monetization_aggregate import monetization_aggregate_capability_cards
+    from .agents.monetization_aggregate import monetization_aggregate_capability_cards
     from .agent_monetization_guard import (
         monetization_guard_blocks_operation_fallback,
     )
@@ -245,15 +245,15 @@ def _routed_handoff_cards(
     export_inventory: Sequence[Mapping[str, Any]],
     composite_inventory: Sequence[Mapping[str, Any]] | None,
 ) -> tuple[list[dict[str, Any]], bool]:
-    from .agent_app_catalog import app_catalog_capability_cards
-    from .agent_app_public_info import app_public_info_capability_cards
+    from .agents.app_catalog import app_catalog_capability_cards
+    from .agents.app_public_info import app_public_info_capability_cards
     from .agent_discovery_policy import operation_fallback_excluded
     from .agent_export import export_capability_cards
-    from .agent_material_asset import material_asset_capability_cards
-    from .agent_metadata_search import metadata_search_capability_cards
-    from .agent_mutation_cards import mutation_cards
+    from .agents.material_asset import material_asset_capability_cards
+    from .agents.metadata_search import metadata_search_capability_cards
+    from .agents.mutation_cards import mutation_cards
     from .agent_table_lineage import table_lineage_capability_cards
-    from .agent_user_journey import user_journey_capability_cards
+    from .agents.user_journey import user_journey_capability_cards
 
     direct_effects = [
         *mutation_cards(query, domain=domain, platform=platform),
@@ -337,9 +337,9 @@ def merge_catalog_handoff_cards(
 ) -> list[dict[str, Any]]:
     """Give recipes/vocabulary precedence, otherwise emit one Analysis task."""
 
-    from .agent_analysis_task import analysis_task_cards
+    from .agents.analysis_task import analysis_task_cards
     from .agent_handoff import is_analysis_task_handoff_query
-    from .agent_vocabulary import is_authoritative_local_metadata_card
+    from .agents.vocabulary import is_authoritative_local_metadata_card
 
     recipes = [card for card in catalog if card.get("kind") == "recipe"]
     local = [card for card in catalog if is_authoritative_local_metadata_card(card)]
@@ -368,8 +368,8 @@ def authoritative_capability_cards(
 
     from .agent_intent_routing import unique_authoritative_cards
     from .agent_segment import is_authoritative_direct_card
-    from .agent_user_journey import is_user_journey_card
-    from .agent_vocabulary import is_authoritative_local_metadata_card
+    from .agents.user_journey import is_user_journey_card
+    from .agents.vocabulary import is_authoritative_local_metadata_card
 
     authoritative_composites = [
         card

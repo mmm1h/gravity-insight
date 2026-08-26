@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from .agent_pagination import compact_pagination
+from .pagination_completeness import compact_pagination
 
 from .agent_capabilities import (
     agent_query_match,

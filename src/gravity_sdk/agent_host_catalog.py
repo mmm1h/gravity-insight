@@ -7,7 +7,7 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .agent_caller_language import caller_language_fields
+from .agents.caller_language import caller_language_fields
 from .agent_product_inventory import canonical_capability_cards
 from .agent_unavailable import registered_unavailable_gaps
 from .host_effect_sources import SOURCE_SCHEMA_VERSION, host_source

@@ -10,11 +10,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import ANY, patch
 from gravity_sdk import GravitySDK
-from gravity_sdk import agent_input_catalogs
+from gravity_sdk.agents import input_catalogs as agent_input_catalogs
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_input_catalogs import live_catalog_for_card
+from gravity_sdk.agents.input_catalogs import live_catalog_for_card
 from gravity_sdk.agent_input_resolution import resolve_capabilities
-from gravity_sdk.agent_analysis_task import analysis_task_cards
+from gravity_sdk.agents.analysis_task import analysis_task_cards
 from gravity_sdk.agent_handoff import attach_plan_node
 from gravity_sdk.cli import build_parser, main
 from gravity_sdk.domains import MULTIDIM_METADATA_OPERATIONS
@@ -178,7 +178,7 @@ class AgentInputResolutionTests(unittest.TestCase):
             "gravity_sdk.agent_input_resolution._discover",
             side_effect=[missing, available],
         ), patch(
-            "gravity_sdk.agent_catalog_refresh.refresh_complete_catalog",
+            "gravity_sdk.agents.catalog_refresh.refresh_complete_catalog",
             return_value=sync_result,
         ) as sync:
             result = resolve_capabilities("purchase trend",
@@ -191,7 +191,7 @@ class AgentInputResolutionTests(unittest.TestCase):
         table = discover_capabilities("table versions", client=None)["candidates"][0]
         with patch("gravity_sdk.agent_input_resolution._discover",
                    side_effect=[{"candidates": [table]}, {"candidates": [table]}]), patch(
-            "gravity_sdk.agent_catalog_refresh.refresh_complete_catalog",
+            "gravity_sdk.agents.catalog_refresh.refresh_complete_catalog",
             return_value=sync_result,
         ) as table_sync:
             table_result = resolve_capabilities("table versions",
@@ -212,7 +212,7 @@ class AgentInputResolutionTests(unittest.TestCase):
         client = _NoOperations()
         client._metadata_cache = _Cache()
         with patch("gravity_sdk.agent_input_resolution._discover", return_value=metadata), patch(
-            "gravity_sdk.agent_catalog_refresh.refresh_complete_catalog",
+            "gravity_sdk.agents.catalog_refresh.refresh_complete_catalog",
             return_value=partial,
         ):
             with self.assertRaises(UpstreamError):

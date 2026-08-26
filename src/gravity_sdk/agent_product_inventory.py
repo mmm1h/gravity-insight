@@ -6,28 +6,28 @@ import copy
 from typing import Any
 
 from .agent_analysis import analysis_query_spec_inventory
-from .agent_app_catalog import app_catalog_capability_inventory
-from .agent_app_public_info import app_public_info_capability_inventory
-from .agent_monetization_aggregate import monetization_aggregate_capability_inventory
+from .agents.app_catalog import app_catalog_capability_inventory
+from .agents.app_public_info import app_public_info_capability_inventory
+from .agents.monetization_aggregate import monetization_aggregate_capability_inventory
 from .agent_capabilities import (
     composite_capability_cards,
     composite_capability_inventory,
 )
 from .agent_export import export_capability_inventory
-from .agent_material_asset import material_asset_capability_inventory
-from .agent_kanban_mutation import kanban_mutation_capability_inventory
-from .agent_metadata_search import metadata_search_capability_inventory
-from .agent_metadata_onboarding import metadata_onboarding_capability_inventory
-from .agent_report_mutation import report_mutation_capability_inventory
+from .agents.material_asset import material_asset_capability_inventory
+from .agents.kanban_mutation import kanban_mutation_capability_inventory
+from .agents.metadata_search import metadata_search_capability_inventory
+from .agents.metadata_onboarding import metadata_onboarding_capability_inventory
+from .agents.report_mutation import report_mutation_capability_inventory
 from .agent_segment import segment_capability_inventory
 from .agent_table_lineage import table_lineage_capability_inventory
-from .agent_user_journey import user_journey_capability_inventory
-from .agent_custom_metric import custom_metric_capability_inventory
-from .agent_metadata_template import metadata_template_capability_inventory
-from .agent_saved_analysis_mutation import (
+from .agents.user_journey import user_journey_capability_inventory
+from .agents.custom_metric import custom_metric_capability_inventory
+from .agents.metadata_template import metadata_template_capability_inventory
+from .agents.saved_analysis_mutation import (
     saved_analysis_mutation_capability_inventory,
 )
-from .agent_realtime_event import realtime_event_mutation_capability_inventory
+from .agents.realtime_event import realtime_event_mutation_capability_inventory
 
 
 def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:

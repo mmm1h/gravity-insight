@@ -40,6 +40,13 @@ class DocumentationArchitectureTests(unittest.TestCase):
         missing: list[str] = []
         for source in sources:
             for target in local_markdown_targets(source):
+                # Archived prose is frozen history and does not follow current source paths.
+                if (
+                    ARCHIVE.resolve() in source.resolve().parents
+                    and target != DOCS.resolve()
+                    and DOCS.resolve() not in target.parents
+                ):
+                    continue
                 if not target.exists():
                     missing.append(f"{source.relative_to(ROOT)} -> {target}")
         self.assertEqual([], missing)

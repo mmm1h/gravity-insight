@@ -5,7 +5,7 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agent_custom_metric import (
+from gravity_sdk.agents.custom_metric import (
     SELECTORS,
     custom_metric_capability_inventory,
     custom_metric_cards,

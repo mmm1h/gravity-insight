@@ -13,7 +13,7 @@ from .agent_discovery_support import (
     answerable_examples,
     catalog_browse_next,
 )
-from .agent_vocabulary import (
+from .agents.vocabulary import (
     is_vocabulary_discovery_query,
     is_workspace_vocabulary,
     vocabulary_card_fields,

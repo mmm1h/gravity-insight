@@ -5,29 +5,29 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from . import agent_report_directory as report_agent
-from .agent_advertiser_profile import ADVERTISER_PROFILE_CAPABILITY
-from .agent_analysis_default_dictionary import ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY
-from .agent_realtime_event_catalog import REALTIME_EVENT_CATALOG_CAPABILITY
-from .agent_attribution_performance import ATTRIBUTION_PERFORMANCE_CAPABILITY
-from .agent_attribution_user_detail import ATTRIBUTION_USER_DETAIL_CAPABILITY
-from .agent_bilibili_account_performance import BILIBILI_ACCOUNT_PERFORMANCE_CAPABILITY
+from .agents import report_directory as report_agent
+from .agents.advertiser_profile import ADVERTISER_PROFILE_CAPABILITY
+from .agents.analysis_default_dictionary import ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY
+from .agents.realtime_event_catalog import REALTIME_EVENT_CATALOG_CAPABILITY
+from .agents.attribution_performance import ATTRIBUTION_PERFORMANCE_CAPABILITY
+from .agents.attribution_user_detail import ATTRIBUTION_USER_DETAIL_CAPABILITY
+from .agents.bilibili_account_performance import BILIBILI_ACCOUNT_PERFORMANCE_CAPABILITY
 from .agent_business_pulse import BUSINESS_PULSE_CAPABILITY
-from .agent_company_usage import COMPANY_USAGE_CAPABILITY
-from .agent_custom_audience import CUSTOM_AUDIENCE_CAPABILITY
+from .agents.company_usage import COMPANY_USAGE_CAPABILITY
+from .agents.custom_audience import CUSTOM_AUDIENCE_CAPABILITY
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
-from .agent_derived_metrics import DERIVED_METRICS_CAPABILITY
+from .agents.derived_metrics import DERIVED_METRICS_CAPABILITY
 from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
 from .agent_monetization_guard import MONETIZATION_DETAIL_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
-from .agent_order_directory import ORDER_DIRECTORY_CAPABILITY
-from .agent_order_trace import ORDER_SPLIT_TRACE_CAPABILITY
-from .agent_promotion_performance import PROMOTION_PERFORMANCE_CAPABILITY
-from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
-from .agent_segment_members import SEGMENT_MEMBERS_CAPABILITY
-from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
-from .agent_semantic_compose import SEMANTIC_COMPOSE_CAPABILITY
-from .agent_title_package import TITLE_PACKAGE_CAPABILITY
+from .agents.order_directory import ORDER_DIRECTORY_CAPABILITY
+from .agents.order_trace import ORDER_SPLIT_TRACE_CAPABILITY
+from .agents.promotion_performance import PROMOTION_PERFORMANCE_CAPABILITY
+from .agents.saved_analysis import SAVED_ANALYSIS_CAPABILITY
+from .agents.segment_members import SEGMENT_MEMBERS_CAPABILITY
+from .agents.segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
+from .agents.semantic_compose import SEMANTIC_COMPOSE_CAPABILITY
+from .agents.title_package import TITLE_PACKAGE_CAPABILITY
 from .template_replay_surface import ANALYSIS_TEMPLATE_CAPABILITY
 
 

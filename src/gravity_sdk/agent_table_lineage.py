@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 from .agent_capabilities import agent_query_match, normalize_agent_query
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 
 
 _CAPABILITY = {

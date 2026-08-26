@@ -5,7 +5,7 @@ from unittest.mock import patch
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_batch import capabilities_many
 from gravity_sdk.agent_capabilities import authoritative_capability_cards
-from gravity_sdk.agent_promotion_performance import (
+from gravity_sdk.agents.promotion_performance import (
     PROMOTION_PERFORMANCE_PLATFORMS,
     promotion_performance_query,
 )

@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from typing import Any, Callable
 
 from . import runtime
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 from .dashboard_artifact import validate_dashboard_window
 from .domains import ANALYSIS_QUERY_OPERATIONS
 from .errors import (

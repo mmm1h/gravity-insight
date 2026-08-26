@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 
 
 DASHBOARD_ANALYSIS_CAPABILITY: Mapping[str, Any] = {

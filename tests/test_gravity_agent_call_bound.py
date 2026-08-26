@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from gravity_sdk import GravitySDK
 from gravity_sdk.agent import run_agent_command
-from gravity_sdk.agent_analysis_task import analysis_task_cards
+from gravity_sdk.agents.analysis_task import analysis_task_cards
 from gravity_sdk.agent_capabilities import composite_capability_inventory
 from gravity_sdk.agent_handoff import attach_plan_node
 from gravity_sdk.domains import MULTIDIM_METADATA_OPERATIONS

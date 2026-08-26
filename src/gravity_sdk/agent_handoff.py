@@ -30,7 +30,7 @@ def resolve_workspace_path(workspace: Any | None) -> object | None:
 def is_analysis_task_handoff_query(query: str) -> bool:
     """Keep broad task recognition away from one-word capability lookups."""
 
-    from .agent_analysis_task import is_analysis_task_query
+    from .agents.analysis_task import is_analysis_task_query
 
     if not is_analysis_task_query(query):
         return False
@@ -268,7 +268,7 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
     }:
         return _analysis_product_plan_request(str(composite), card)
     if composite == "saved_analysis":
-        from .agent_saved_analysis import saved_analysis_plan_request
+        from .agents.saved_analysis import saved_analysis_plan_request
 
         return saved_analysis_plan_request(card)
     if composite == "analysis_template":
@@ -288,7 +288,7 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
 
         return material_performance_plan_request(card)
     if composite == "title_package":
-        from .agent_title_package import title_package_plan_request
+        from .agents.title_package import title_package_plan_request
 
         return title_package_plan_request(card)
     if composite == "monetization_detail":
@@ -296,19 +296,19 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
 
         return monetization_detail_plan_request(card)
     if composite == "order_directory":
-        from .agent_order_directory import order_directory_plan_request
+        from .agents.order_directory import order_directory_plan_request
 
         return order_directory_plan_request(card)
     if composite == "order_split_trace":
-        from .agent_order_trace import order_split_trace_plan_request
+        from .agents.order_trace import order_split_trace_plan_request
 
         return order_split_trace_plan_request(card)
     if composite == "promotion_performance":
-        from .agent_promotion_performance import promotion_performance_plan_request
+        from .agents.promotion_performance import promotion_performance_plan_request
 
         return promotion_performance_plan_request(card)
     if composite == "bilibili_account_performance":
-        from .agent_bilibili_account_performance import (
+        from .agents.bilibili_account_performance import (
             bilibili_account_performance_plan_request,
         )
 
@@ -320,30 +320,30 @@ def _analysis_product_plan_request(
     composite: str, card: Mapping[str, Any]
 ) -> dict[str, Any]:
     if composite == "attribution_performance":
-        from .agent_attribution_performance import attribution_performance_plan_request
+        from .agents.attribution_performance import attribution_performance_plan_request
 
         return attribution_performance_plan_request(card)
     if composite == "attribution_user_detail":
-        from .agent_attribution_user_detail import attribution_user_detail_plan_request
+        from .agents.attribution_user_detail import attribution_user_detail_plan_request
 
         return attribution_user_detail_plan_request(card)
     if composite == "analysis_default_dictionary":
-        from .agent_analysis_default_dictionary import (
+        from .agents.analysis_default_dictionary import (
             analysis_default_dictionary_plan_request,
         )
 
         return analysis_default_dictionary_plan_request(card)
     if composite == "realtime_event_catalog":
-        from .agent_realtime_event_catalog import (
+        from .agents.realtime_event_catalog import (
             realtime_event_catalog_plan_request,
         )
 
         return realtime_event_catalog_plan_request(card)
     if composite == "segment_members":
-        from .agent_segment_members import segment_members_plan_request
+        from .agents.segment_members import segment_members_plan_request
 
         return segment_members_plan_request(card)
-    from .agent_segment_snapshot import segment_snapshot_plan_request
+    from .agents.segment_snapshot import segment_snapshot_plan_request
 
     return segment_snapshot_plan_request(card)
 
@@ -410,7 +410,7 @@ def _composite_product_requirements(
             monetization_detail_input_template(),
         )
     if card.get("composite") == "order_directory":
-        from .agent_order_directory import (
+        from .agents.order_directory import (
             ORDER_DIRECTORY_REQUIRED_INPUTS,
             order_directory_input_template,
         )
@@ -420,7 +420,7 @@ def _composite_product_requirements(
             order_directory_input_template(),
         )
     if card.get("composite") == "order_split_trace":
-        from .agent_order_trace import (
+        from .agents.order_trace import (
             ORDER_SPLIT_TRACE_REQUIRED_INPUTS,
             order_split_trace_input_template,
         )
@@ -430,7 +430,7 @@ def _composite_product_requirements(
             order_split_trace_input_template(),
         )
     if card.get("composite") == "promotion_performance":
-        from .agent_promotion_performance import (
+        from .agents.promotion_performance import (
             PROMOTION_PERFORMANCE_REQUIRED_INPUTS,
             promotion_performance_input_template,
         )
@@ -440,7 +440,7 @@ def _composite_product_requirements(
             promotion_performance_input_template(),
         )
     if card.get("composite") == "attribution_performance":
-        from .agent_attribution_performance import (
+        from .agents.attribution_performance import (
             ATTRIBUTION_PERFORMANCE_REQUIRED_INPUTS,
             attribution_performance_input_template,
         )
@@ -450,14 +450,14 @@ def _composite_product_requirements(
             attribution_performance_input_template(),
         )
     if card.get("composite") == "attribution_user_detail":
-        from .agent_attribution_user_detail import (
+        from .agents.attribution_user_detail import (
             ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS,
             attribution_user_detail_input_template,
         )
 
         return list(ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS), attribution_user_detail_input_template()
     if card.get("composite") == "bilibili_account_performance":
-        from .agent_bilibili_account_performance import (
+        from .agents.bilibili_account_performance import (
             BILIBILI_ACCOUNT_PERFORMANCE_REQUIRED_INPUTS,
             bilibili_account_performance_input_template,
         )
@@ -513,7 +513,7 @@ _composite_plan_request_without_semantic_compose = _composite_plan_request
 
 def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
     if card.get("composite") == "semantic_compose":
-        from .agent_semantic_compose import semantic_compose_plan_request
+        from .agents.semantic_compose import semantic_compose_plan_request
 
         return semantic_compose_plan_request(card)
     return _composite_plan_request_without_semantic_compose(card)
@@ -526,7 +526,7 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
     """Preserve a caller-declared arithmetic spec without inventing source rows."""
 
     if card.get("composite") == "derived_metrics":
-        from .agent_derived_metrics import derived_metrics_plan_request
+        from .agents.derived_metrics import derived_metrics_plan_request
 
         return derived_metrics_plan_request(card)
     return _composite_plan_request_without_derived_metrics(card)
@@ -543,14 +543,14 @@ def attach_plan_node(
 ) -> dict[str, Any]:
     """Attach the additive call-bound contract to both card and Plan handoff."""
 
-    from .agent_call_bound import call_bound_for_card
+    from .agents.call_bound import call_bound_for_card
     from .result_audit import add_result_audit
     from .result_source import card_result_source
 
     selected = _attach_plan_node_without_call_bound(
         card, query, namespace=namespace
     )
-    from .relative_date_agent import fill_agent_relative_dates
+    from .agents.relative_date import fill_agent_relative_dates
 
     selected = fill_agent_relative_dates(selected, query)
     if selected.get("resolved_date_window") is not None:

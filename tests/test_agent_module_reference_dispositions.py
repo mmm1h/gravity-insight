@@ -4195,6 +4195,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
 
     def test_relative_date_target_uses_the_shared_boundary_token_rule(self) -> None:
         mappings, _ = make_module_map(ROOT)
+        current_modules = set(_r17_read_modules(ROOT / "src/gravity_sdk"))
+        owner_state = _r17_owner_projection_state(
+            current_modules,
+            _r17_load_legacy_signed_module_inventory(),
+            self.document["scope"],
+        )
         relative_date = next(
             item
             for item in mappings
@@ -4202,7 +4208,15 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         )
         self.assertEqual("gravity_sdk.agents.relative_date", relative_date.new_module)
         self.assertEqual("src/gravity_sdk/agents/relative_date.py", relative_date.new_file)
-        self.assertFalse(relative_date.target_exists)
+        if owner_state == "baseline":
+            self.assertFalse(relative_date.target_exists)
+            self.assertIn(relative_date.old_module, current_modules)
+            self.assertNotIn(relative_date.new_module, current_modules)
+        else:
+            self.assertIn(owner_state, {"phase_1", "phase_2"})
+            self.assertTrue(relative_date.target_exists)
+            self.assertNotIn(relative_date.old_module, current_modules)
+            self.assertIn(relative_date.new_module, current_modules)
         self.assertFalse(relative_date.casefold_target_collision)
         self.assertFalse(relative_date.stdlib_basename_collision)
         self.assertFalse((ROOT / "src/gravity_sdk/relative_date.py").exists())

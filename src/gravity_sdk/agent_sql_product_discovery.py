@@ -19,7 +19,7 @@ def apply_workspace_sql_owner(
 
     from .agent_batch_sources import snapshot_products
     from .agent_semantic_context import load_agent_workspace
-    from .agent_sql_product_gap import (
+    from .agents.sql_product_gap import (
         registered_sql_product_gap,
         registered_sql_product_names,
     )

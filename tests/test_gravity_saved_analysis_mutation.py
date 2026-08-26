@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from gravity_sdk.agent_analysis import analysis_query_spec_cards
-from gravity_sdk.agent_saved_analysis_mutation import (
+from gravity_sdk.agents.saved_analysis_mutation import (
     saved_analysis_mutation_capability_inventory,
     saved_analysis_mutation_cards,
 )

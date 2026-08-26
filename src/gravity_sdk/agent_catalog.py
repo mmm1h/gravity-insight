@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .agent_capabilities import composite_capability_inventory
-from .agent_catalog_parity import validate_catalog_parity
+from .agents.catalog_parity import validate_catalog_parity
 from .agent_operation_contract import operation_contract_overlay
 from .agent_product_inventory import canonical_capability_cards
 from .agent_sources import describe_operation_cards

@@ -6,7 +6,7 @@ from unittest.mock import patch
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_batch import capabilities_many
 from gravity_sdk.agent_capabilities import authoritative_capability_cards
-from gravity_sdk.agent_order_trace import ORDER_SPLIT_TRACE_RAW_SELECTOR, order_split_trace_query
+from gravity_sdk.agents.order_trace import ORDER_SPLIT_TRACE_RAW_SELECTOR, order_split_trace_query
 
 
 class OrderSplitTraceAgentTests(unittest.TestCase):

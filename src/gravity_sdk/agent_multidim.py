@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from .multidim_product import MULTIDIM_INPUT_SCHEMA_VERSION, multidim_input_schema
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 from .multidim_contract import (
     MULTIDIM_COHORT_HORIZON_GAP_CODE,
     multidim_multi_key_contract,
@@ -150,7 +150,7 @@ def unavailable_multidim_gap(query: str) -> dict[str, Any] | None:
     contract = multidim_multi_key_contract()
     if not requested or max(requested) <= contract.maximum:
         return None
-    from .agent_gap import unavailable_gap
+    from .agents.gap import unavailable_gap
 
     return unavailable_gap(
         query,

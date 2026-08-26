@@ -4,7 +4,7 @@ import unittest
 
 from gravity_sdk import GravityInsightClient
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_caller_language import caller_language_fields
+from gravity_sdk.agents.caller_language import caller_language_fields
 from gravity_sdk.agent_discovery_support import (
     ANSWERABLE_LIMIT,
     CATALOG_BROWSE_ARGV,

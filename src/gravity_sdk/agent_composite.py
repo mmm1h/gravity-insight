@@ -57,7 +57,7 @@ def composite_card(
         *(str(value) for value in definition.get("aliases", ())),
     )
     if strict_product or normalized in {selector.casefold(), name.casefold()}:
-        from .agent_order_trace import order_split_trace_blocks_operation_fallback
+        from .agents.order_trace import order_split_trace_blocks_operation_fallback
 
         redact_query = bool(definition.get("sensitive_query")) or (
             order_split_trace_blocks_operation_fallback(query)
@@ -116,7 +116,7 @@ def _strict_composite_query(name: str, query: str) -> bool:
     }:
         return True
     if name in {"analysis_context", "app_snapshot", "attribution_snapshot"}:
-        from .agent_fixed_snapshots import fixed_snapshot_query
+        from .agents.fixed_snapshots import fixed_snapshot_query
 
         return fixed_snapshot_query(name, query)
     if name in {"dashboard_snapshot", "dashboard_analysis"}:
@@ -127,7 +127,7 @@ def _strict_composite_query(name: str, query: str) -> bool:
     }:
         return _analysis_product_query(name, query)
     if name == "saved_analysis":
-        from .agent_saved_analysis import saved_analysis_query
+        from .agents.saved_analysis import saved_analysis_query
 
         return saved_analysis_query(query)
     if name == "analysis_template":
@@ -150,18 +150,18 @@ def _strict_composite_query(name: str, query: str) -> bool:
 
         return monetization_detail_query(query)
     if name == "order_directory":
-        from .agent_order_directory import order_directory_query
+        from .agents.order_directory import order_directory_query
 
         return order_directory_query(query)
     if name == "order_split_trace":
-        from .agent_order_trace import order_split_trace_query
+        from .agents.order_trace import order_split_trace_query
 
         return order_split_trace_query(query)
     if name == "promotion_performance":
-        from .agent_promotion_performance import promotion_performance_query
+        from .agents.promotion_performance import promotion_performance_query
 
         return promotion_performance_query(query)
-    from .agent_bilibili_account_performance import (
+    from .agents.bilibili_account_performance import (
         bilibili_account_performance_product_query,
     )
 
@@ -180,18 +180,18 @@ def _dashboard_query(name: str, query: str) -> bool:
 
 def _analysis_product_query(name: str, query: str) -> bool:
     if name == "analysis_default_dictionary":
-        from .agent_analysis_default_dictionary import analysis_default_dictionary_query
+        from .agents.analysis_default_dictionary import analysis_default_dictionary_query
 
         return analysis_default_dictionary_query(query)
     if name == "realtime_event_catalog":
-        from .agent_realtime_event_catalog import realtime_event_catalog_query
+        from .agents.realtime_event_catalog import realtime_event_catalog_query
 
         return realtime_event_catalog_query(query)
     if name == "segment_members":
-        from .agent_segment_members import segment_members_query
+        from .agents.segment_members import segment_members_query
 
         return segment_members_query(query)
-    from .agent_segment_snapshot import segment_snapshot_query
+    from .agents.segment_snapshot import segment_snapshot_query
 
     return segment_snapshot_query(query)
 
@@ -208,15 +208,15 @@ _strict_composite_query_without_title_package = _strict_composite_query
 
 def _strict_composite_query(name: str, query: str) -> bool:
     if name == "title_package":
-        from .agent_title_package import title_package_query
+        from .agents.title_package import title_package_query
 
         return title_package_query(query)
     if name == "attribution_performance":
-        from .agent_attribution_performance import attribution_performance_query
+        from .agents.attribution_performance import attribution_performance_query
 
         return attribution_performance_query(query)
     if name == "attribution_user_detail":
-        from .agent_attribution_user_detail import attribution_user_detail_query
+        from .agents.attribution_user_detail import attribution_user_detail_query
 
         return attribution_user_detail_query(query)
     return _strict_composite_query_without_title_package(name, query)
@@ -230,7 +230,7 @@ _strict_composite_query_without_semantic_compose = _strict_composite_query
 
 def _strict_composite_query(name: str, query: str) -> bool:
     if name == "semantic_compose":
-        from .agent_semantic_compose import semantic_compose_query
+        from .agents.semantic_compose import semantic_compose_query
 
         return semantic_compose_query(query)
     return _strict_composite_query_without_semantic_compose(name, query)

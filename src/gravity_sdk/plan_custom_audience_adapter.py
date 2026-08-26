@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_custom_audience import CUSTOM_AUDIENCE_NAME
+from .agents.custom_audience import CUSTOM_AUDIENCE_NAME
 from .plan import AdapterContext
 from .plan_adapter_support import input_error, validate_selected_fields
 from .actionable_error_values import actual_value

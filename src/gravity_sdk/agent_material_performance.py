@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from .material_performance import DEFAULT_PLATFORMS
-from .agent_intent_text import affirmative_intent_text
+from .agents.intent_text import affirmative_intent_text
 
 
 MATERIAL_PERFORMANCE_NAME = "material_performance"

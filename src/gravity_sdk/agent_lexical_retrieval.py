@@ -11,11 +11,11 @@ import re
 import unicodedata
 from typing import Any
 
-from .agent_app_catalog import APP_CATALOG_SELECTOR
-from .agent_app_public_info import APP_PUBLIC_INFO_SELECTOR
+from .agents.app_catalog import APP_CATALOG_SELECTOR
+from .agents.app_public_info import APP_PUBLIC_INFO_SELECTOR
 from .agent_export import MATERIAL_EXPORT_OPERATION
-from .agent_lexical_rescue import indexed_evidence_rescue, query_top_score
-from .agent_monetization_aggregate import MONETIZATION_AGGREGATE_SELECTOR
+from .agents.lexical_rescue import indexed_evidence_rescue, query_top_score
+from .agents.monetization_aggregate import MONETIZATION_AGGREGATE_SELECTOR
 
 
 ALGORITHM = "idf_weighted_term_coverage.v2"
@@ -112,9 +112,9 @@ def apply_lexical_fallback(
 ) -> AppliedLexicalFallback:
     """Apply retrieval only after the complete existing route chain abstains."""
 
-    from .agent_intent_text import affirmative_intent_text
+    from .agents.intent_text import affirmative_intent_text
     from .agent_intent_routing import multiple_product_intents
-    from .agent_sql_product_gap import registered_sql_product_intent
+    from .agents.sql_product_gap import registered_sql_product_intent
 
     if (
         platform is None
@@ -399,13 +399,13 @@ def _composite_documents(
 
 def _direct_documents(domain: str | None) -> list[LexicalDocument]:
     from .agent_capabilities import analysis_query_spec_cards
-    from .agent_material_asset import material_asset_capability_cards
-    from .agent_metadata_search import metadata_search_capability_cards
+    from .agents.material_asset import material_asset_capability_cards
+    from .agents.metadata_search import metadata_search_capability_cards
     from .agent_table_lineage import table_lineage_capability_cards
-    from .agent_user_journey import user_journey_capability_cards
-    from .agent_app_catalog import app_catalog_capability_cards
-    from .agent_app_public_info import app_public_info_capability_cards
-    from .agent_monetization_aggregate import monetization_aggregate_capability_cards
+    from .agents.user_journey import user_journey_capability_cards
+    from .agents.app_catalog import app_catalog_capability_cards
+    from .agents.app_public_info import app_public_info_capability_cards
+    from .agents.monetization_aggregate import monetization_aggregate_capability_cards
     from .agent_export import material_export_capability_cards
 
     builders = (
@@ -488,7 +488,7 @@ def _export_documents(
 def _gap_documents(domain: str | None) -> list[LexicalDocument]:
     if domain is not None:
         return []
-    from .agent_caller_language import caller_language_fields
+    from .agents.caller_language import caller_language_fields
     from .agent_unavailable import registered_unavailable_gaps
 
     return [
@@ -509,7 +509,7 @@ def _gap_documents(domain: str | None) -> list[LexicalDocument]:
 
 
 def _card_document(card: Mapping[str, Any], *, name: str | None = None) -> LexicalDocument:
-    from .agent_caller_language import caller_language_fields
+    from .agents.caller_language import caller_language_fields
 
     selector = str(card["selector"])
     selected_name = name or str(

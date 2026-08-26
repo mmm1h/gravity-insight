@@ -119,7 +119,7 @@ B 档 32 种 fail closed、C 档 0 种静默错解。已知失败形状均拒绝
 四种全作用域图判据仍未收敛，因此不证明完整 Agent domain；图收敛性与总纲反路径依赖是两个
 独立问题，本段只陈述证据，第五条是否满足由独立复核裁定，尚未裁定。M0 characterization
 与 dynamic-audit classification 均已满足，owner review 仍为 `pending`。实施绑定为
-`dev@823d69822ab09829b2bab47d8fc70ce6eb710a7b`、无 GitHub Issue（内部结构债禁止
+`dev@26a765a34e16b167093f5133ff2982a5d07d167a`、无 GitHub Issue（内部结构债禁止
 自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。
 机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=true`、
 `schema=gravity.agent-module-reference-dispositions.v2`、`candidate_sites=238`、
@@ -130,8 +130,8 @@ B 档 32 种 fail closed、C 档 0 种静默错解。已知失败形状均拒绝
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=412b82f049cd64b23818f6eeae1ef494773822bd9a0b097390d78fbaad69c675`；
-`live_checkpoint_tracked_sites=909`。
+`live_checkpoint_sha256=9b3952da7d45f274f8be551ce87ce83c4c253eefdb1375c10d5efc099de71e76`；
+`live_checkpoint_tracked_sites=645`。
 
 The user approved the R01 binding and designated the Requirement document as
 the internal program delivery ledger on 2026-08-21. The same authorization lets

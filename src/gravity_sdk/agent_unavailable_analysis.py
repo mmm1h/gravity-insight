@@ -5,8 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from .agent_gap import unavailable_gap
-from .agent_intent_text import affirmative_intent_text
+from .agents.gap import unavailable_gap
+from .agents.intent_text import affirmative_intent_text
 
 
 _CURRENT_SCHEMA_ENGLISH = re.compile(

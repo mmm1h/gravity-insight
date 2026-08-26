@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_advertiser_profile import ADVERTISER_PROFILE_NAME
+from .agents.advertiser_profile import ADVERTISER_PROFILE_NAME
 from .errors import InputValidationError
 from .plan import AdapterContext
 from .plan_adapter_support import (
