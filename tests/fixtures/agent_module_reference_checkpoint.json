@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "be8916e36768d710029c698e5ff02a49943b7ce5e9a0c406465fe1f8adb6f512",
-    "reference_evidence_sha256": "fd88840077273329762332c1e9f20cd83b58b388344792eaf62e8192563423dc",
-    "manual_review_sha256": "bbe970fc3ad49837f216d15dfa01aba006cdd857dc7a76bab45ed2485bc3dae7",
+    "reference_evidence_sha256": "b9865896dd8c93a20432c6204ea5342ab7d52bc7f3d5ae04789f4e91f641393e",
+    "manual_review_sha256": "bfd51a28aa8f960ed9b7f4ff4c2897915c7d87e068f55a2ecd1ea9ccc53b3c8b",
     "owner_state": "baseline",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
@@ -699,7 +699,7 @@
       "rewrite_reference": 597,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "9121d59bd271d4ba56c49d3f21bc7ebc8d8fa31b67c181dc169dc068c3f3dee6"
+    "sites_sha256": "831c1b04579e1be3e653386a73d7cef0a6ed1c8472571807f514a2cd8350378f"
   },
   "blockers": [],
   "site_fields": [
@@ -2139,7 +2139,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:83:51:bare text module string",
+      "docs/maintainers/technical-debt.md:86:51:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2617,7 +2617,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:82:43:bare text module string",
+      "specs/agent-runtime/index.json:89:43:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2632,7 +2632,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:83:31:bare text module string",
+      "specs/agent-runtime/index.json:90:31:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2647,7 +2647,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:106:32:bare text module string",
+      "specs/agent-runtime/index.md:109:32:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2662,7 +2662,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:107:2:bare text module string",
+      "specs/agent-runtime/index.md:110:2:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2677,7 +2677,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:109:12:bare text module string",
+      "specs/agent-runtime/index.md:112:12:bare text module string",
       "rm",
       "bare_agent_string",
       "relative_date_agent",
@@ -2696,7 +2696,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:109:41:bare text module string",
+      "specs/agent-runtime/index.md:112:41:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_handoff",

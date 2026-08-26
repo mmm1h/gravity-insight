@@ -54,10 +54,10 @@
         "worktree": "D:/git-pjt/gravity-sdk-r17-migration"
       },
       "scope": {
-        "classifier": "responsibility_contract_derivation_v3",
+        "classifier": "responsibility_contract_derivation_v4",
         "classifier_inputs": ["service_protocol","entry_kind_symbol_parameters","return_contract","required_response_keys","declared_exceptions","owner_layer"],
-        "classifier_forbidden_inputs": ["module_docstring","module_basename","directory_path","name_prefix","direct_consumer_file_count","migration_ledger","signed_legacy_inventory"],
-        "classifier_forbidden_inputs_enforced_by": "ast_gate_over_transitive_call_closure_of_contract_loader_model_builder_and_derivation",
+        "classifier_forbidden_inputs": ["direct_consumer_count","directory_path","migration_ledger","module_basename","module_docstring","name_prefix","signed_member_inventory"],
+        "classifier_forbidden_inputs_enforced_by": "ast_gate_over_29_function_transitive_call_closure_rooted_at__r17_responsibility_inventory_pipeline_including__r17_read_modules",
         "boundary_claim": "compact_agent_interaction_scope_supported_but_graph_methods_not_converged",
         "complete_agent_domain_proven": false,
         "boundary_invariance": {
@@ -67,6 +67,13 @@
           "responsibilities_gaining_direct_consumer_files": 85,
           "responsibilities_losing_direct_consumer_files": 1,
           "members_under_every_transformation": 84,
+          "public_binding_graph_transformations": ["one_hop_reexport","two_hop_reexport_chain","subpackage_directory_nesting","protocol_constant_relocation","two_hop_protocol_reexport","renamed_protocol_alias","protocol_reexport_via_subpackage_init","protocol_attribute_assignment_reexport"],
+          "public_binding_graph_member_delta_under_every_transformation": [],
+          "static_binding_shape_space": {
+            "grade_a_correct_resolution": 32,
+            "grade_b_fail_closed": 32,
+            "grade_c_silent_misresolution": 0
+          },
           "graph_isomorphism_only": false
         },
         "canonical_anti_path_dependence_clause": {
@@ -132,7 +139,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "1339ec2f7f75487cb47d52f94e19fbc25d11b9326c2803c0475ec0282eee940f",
+          "live_checkpoint_sha256": "412b82f049cd64b23818f6eeae1ef494773822bd9a0b097390d78fbaad69c675",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 909,
           "live_checkpoint_unclassified_sites": 0,

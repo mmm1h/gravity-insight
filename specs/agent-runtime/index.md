@@ -100,9 +100,12 @@ Requirement branches implement domain cores and focused tests first. A named int
 `specified` means scope and dependency boundaries exist. Before changing a leaf or epic milestone to `ready`, the plan owner must fill unresolved decisions, bind a current baseline SHA and Issue, confirm write scope/worktree, and approve exact acceptance commands.
 
 R17 只有一个 leaf 状态和一个实施分支/Worktree。边界判据已从模块换为职责契约：86 项职责各由
-服务协议、入口 kind/符号/参数、返回契约、必需响应键、声明异常和 owner layer 定义，模块名只作
-图 locator；docstring、basename、目录、前缀和消费者文件数一律不作判据输入，由 AST 门禁对
-契约 loader、模型构造器与推导器的传递调用闭包强制。推导得 84 项成员，归一化后 82 个 owner 与
+服务协议、入口 kind/符号/参数、返回契约、必需响应键、声明异常和 owner layer 定义，入口定义所在节点是
+职责 owner，协议则沿公开符号绑定图逐跳解析到真实源符号；显式/改名/星号导入、赋值重导出、静态
+`__all__`、相对导入和子包 `__init__` 链均受建模，顶层重绑按执行顺序后写获胜。模块名只作图
+locator；docstring、basename、目录、前缀、消费者文件数、migration ledger 和 signed member inventory
+一律不作判据输入，由 AST 门禁对 `_r17_responsibility_inventory_pipeline` 起始的 29 个本地函数传递闭包
+强制，其中包含真正读取文件系统的 `_r17_read_modules`。推导得 84 项成员，归一化后 82 个 owner 与
 不可变迁移账本无差集（该等式不能独立证明账本本身没有误纳）。`agent_pagination` 合并删除，
 `agent_runtime_contracts` 以 `shared_runtime_contract`、`find.py` 以
 `independent_primary_protocol` 排除——前者实际位于全作用域 facade 闭包内，不再以"不可达"为由。
@@ -111,6 +114,8 @@ R17 只有一个 leaf 状态和一个实施分支/Worktree。边界判据已从�
 消费者关系或 docstring 词表。
 不变性证据：642 节点全部重命名、docstring 全部中和、消费者节点拆并使节点 642→657、边
 2832→3674（85 项直接消费者文件数上升、1 项下降），三种变形后成员集恒为 84，故不是图同构。
+另外八种入口/协议重定位变形同样保持 84 成员且 `member_delta=[]`；静态形状空间为 A 档 32 种正确解析、
+B 档 32 种 fail closed、C 档 0 种静默错解。已知失败形状均拒绝产生结果，没有一例产生不同边界。
 四种全作用域图判据仍未收敛，因此不证明完整 Agent domain；图收敛性与总纲反路径依赖是两个
 独立问题，本段只陈述证据，第五条是否满足由独立复核裁定，尚未裁定。M0 characterization
 与 dynamic-audit classification 均已满足，owner review 仍为 `pending`。实施绑定为
@@ -125,7 +130,7 @@ R17 只有一个 leaf 状态和一个实施分支/Worktree。边界判据已从�
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=1339ec2f7f75487cb47d52f94e19fbc25d11b9326c2803c0475ec0282eee940f`；
+`live_checkpoint_sha256=412b82f049cd64b23818f6eeae1ef494773822bd9a0b097390d78fbaad69c675`；
 `live_checkpoint_tracked_sites=909`。
 
 The user approved the R01 binding and designated the Requirement document as

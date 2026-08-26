@@ -77,8 +77,11 @@
   `agent_input_resolution`(1:1) 均为合法 Agent 入口，且按文件数计票会随文件拆并翻转。
 - **未纳入的更大目标**：跨 plan/analysis/metadata/kanban 执行核心的大环优先级更高，但各方图口径不一致
   （AST-only、含 `_EXPORTS` 字符串边、含 package parent 边分别得出不同 SCC 规模），须先统一图定义再立项。
-- **遗留双算法**：旧的 docstring/消费者计数分类器已改名为 legacy verifier，不再判定任何边界，仅继续验证
-  `specs/` 里已签名的历史清单摘要。R17 施工期禁改 `specs/`，故只能留着；这是本条自带的收尾项，
+- **现行职责判据**：职责 owner 取入口定义节点，协议沿公开符号绑定图解析；显式/改名/星号导入、赋值重导出、
+  静态 `__all__`、相对导入和子包链受建模，顶层后写重绑获胜，无法静态解析时 fail closed。
+- **遗留双算法**：旧的 docstring/消费者计数分类器已改名为 legacy verifier。它不参与现行边界成员判定，但仍验证
+  `specs/` 里已签名的历史清单摘要，并用于当前树 owner projection、move bijection 和 Phase 0/1/2 迁移状态判定。
+  现行推导与 legacy 各自对同一冻结迁移账本比较，因而间接耦合。R17 施工期禁改 `specs/`，故只能留着；这是本条自带的收尾项，
   不另开条目。
 - **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 495、
   `agents/` 含 82 个实现模块、147 lazy owner 与 148 `__all__` 不变、迁移宇宙 eager SCC 为 0；

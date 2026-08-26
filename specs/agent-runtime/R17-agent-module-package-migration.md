@@ -106,7 +106,7 @@ Machine state shared by this Requirement and `index.md`: `status=specified`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=1339ec2f7f75487cb47d52f94e19fbc25d11b9326c2803c0475ec0282eee940f`;
+`live_checkpoint_sha256=412b82f049cd64b23818f6eeae1ef494773822bd9a0b097390d78fbaad69c675`;
 `live_checkpoint_tracked_sites=909`.
 
 The required cross-file state gate is
@@ -400,10 +400,16 @@ without `PYTHONPATH`.
 ### Boundary Classifier And Edges
 
 The normative measurement unit is a responsibility contract, not a module.
-`responsibility_contract_derivation_v3` resolves each contract against the
+`responsibility_contract_derivation_v4` resolves each contract against the
 semantic model, assigns membership from `owner_layer`, and reports module names
-only as graph locators for the resolved responsibility. The six allowed input
-classes are:
+only as graph locators for the resolved responsibility. A responsibility owner
+is the node containing the entry definition. Its protocol binding is resolved
+separately through the public-symbol binding graph: explicit imports, renamed
+aliases, assignment re-exports, star imports, static `__all__`, relative imports,
+and chained subpackage `__init__` re-exports preserve the real source symbol at
+every hop. Top-level rebinding follows execution order, so the last write wins
+rather than being unioned with stale definitions. Dynamic, ambiguous, deleted,
+or otherwise unresolved bindings fail closed. The six allowed input classes are:
 
 1. service protocol, including its declared binding mode;
 2. entry kind, symbol, and parameters as one entry contract;
@@ -422,13 +428,26 @@ The seven forbidden input classes are:
 6. migration ledger; and
 7. signed legacy/member inventory.
 
-The forbidden-input AST gate starts from the contract loader, semantic-model
-builder, and responsibility derivation, then walks their complete transitive
-closure of calls to local functions. It rejects forbidden identifiers,
+The forbidden-input AST gate starts at
+`_r17_responsibility_inventory_pipeline` and walks its complete 29-function
+transitive closure of calls to local functions, including `_r17_read_modules`,
+which performs the filesystem read. It rejects forbidden identifiers,
 attributes, and string inputs anywhere in that closure; it is not a check of
-only the three entry functions. The structure-invariance gate separately
-proves unchanged membership after opaque renaming of every module locator,
-module-docstring removal, and consumer-node split/merge transformations.
+only the public pipeline body. The structure-invariance gate separately proves
+unchanged membership after opaque renaming of every module locator,
+module-docstring removal, consumer-node split/merge transformations, and entry
+or protocol relocation through public re-exports. Eight measured binding-graph
+transformations (one-hop and two-hop re-export, subpackage nesting, protocol
+constant relocation, two-hop protocol re-export, renamed protocol alias,
+subpackage-`__init__` protocol re-export, and protocol attribute-assignment
+re-export) each retain 84 members with an empty `member_delta`. The exhaustive
+static shape space contains 32 grade-A correct resolutions, 32 grade-B
+fail-closed rejections, and zero grade-C silent misresolutions. Later literal,
+import, or computed rebinding, deletion, and runtime module-attribute rewriting
+also all fail closed. Thus every known failure shape refuses to produce an
+inventory; none has produced a different boundary. This evidence records the
+distinction but does not adjudicate
+architecture-source.md 20.12 item 5, which remains pending independent review.
 
 The executable measurement below imports the existing implementation from
 `tests/test_agent_module_reference_dispositions.py`. Its inline code only
@@ -439,20 +458,11 @@ ownership, or membership rule.
 $code = @'
 import json
 from tests.test_agent_module_reference_dispositions import (
-    _r17_derive_responsibility_inventory,
-    _r17_load_responsibility_contracts,
-    _r17_read_modules,
-    _r17_responsibility_model,
+    _r17_responsibility_inventory_pipeline,
 )
 
-contracts = _r17_load_responsibility_contracts()
-model = _r17_responsibility_model(_r17_read_modules(None))
-inventory = _r17_derive_responsibility_inventory(model, contracts)
-print(json.dumps({
-    "schema_version": contracts["schema_version"],
-    "responsibility_count": len(contracts["responsibilities"]),
-    "inventory": inventory,
-}, indent=2, sort_keys=True))
+inventory = _r17_responsibility_inventory_pipeline(None)
+print(json.dumps(inventory, indent=2, sort_keys=True))
 '@
 & ./.venv/Scripts/python.exe -c $code
 if ($LASTEXITCODE) { throw 'R17 responsibility-contract measurement failed' }
@@ -461,9 +471,12 @@ if ($LASTEXITCODE) { throw 'R17 responsibility-contract measurement failed' }
 #### Legacy Prefix-Graph Measurement
 
 The following preserved measurement prints the historical summary followed by
-all 83 `module A X d` rows. It now serves only the legacy verifier that checks
-the already signed inventory summaries embedded in `specs/`; it does not select,
-include, or exclude any current boundary responsibility.
+all 83 `module A X d` rows. The legacy inventory still verifies the signed
+summaries embedded in `specs/` and remains an input to migration-stage checks:
+current-tree owner projection, exact move bijection, and Phase 0/1/2 state. It
+does not select, include, or exclude any member of the current responsibility
+boundary; the current derivation and legacy checks are indirectly coupled by
+their separate comparisons with the same frozen migration ledger.
 
 ```powershell
 $code = @'
@@ -757,7 +770,9 @@ so it does not change the five-command Phase 1 sequence or its rollback count.
 ```powershell
 & ./.venv/Scripts/python.exe -m pytest -q `
   tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests::test_boundary_is_invariant_to_file_structure `
-  tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests::test_responsibility_derivation_has_no_migration_or_file_inputs
+  tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests::test_responsibility_derivation_has_no_migration_or_file_inputs `
+  tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests::test_static_schema_binding_shapes_preserve_responsibility_inventory `
+  tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests::test_unresolved_schema_binding_shapes_fail_closed
 if ($LASTEXITCODE) { throw 'R17 responsibility boundary invariance assertion failed' }
 ```
 
@@ -1313,8 +1328,10 @@ program is green and the user gives new explicit approval.
 
 This embedded artifact is immutable historical evidence for the legacy
 docstring/consumer-count verifier. Its signed bytes and summaries remain
-checked, but it is not an input to `responsibility_contract_derivation_v3` and
-does not adjudicate the current boundary.
+checked. It is not an input to `responsibility_contract_derivation_v4` and does
+not adjudicate current boundary membership, but it remains an input to
+current-tree owner projection, exact move-bijection, and Phase 0/1/2 migration
+state checks.
 
 <!-- R17_INDEPENDENT_INVENTORY_JSON_START -->
 ```json
