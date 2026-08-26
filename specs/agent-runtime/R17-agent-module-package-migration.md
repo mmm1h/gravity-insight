@@ -20,21 +20,27 @@
 ## Outcome
 
 Create a minimal `gravity_sdk/agents/` package by migrating the compact Agent
-interaction responsibility set. An independent inventory seeded from
-responsibilities rather than filenames, paths, or prefixes retained all 81
-previous moves, produced no difference against the ledger move set, and added the internal
+interaction responsibility set. The contract derivation classifies
+responsibilities rather than filenames, paths, prefixes, docstrings, or
+consumer-file counts. It retained all 81 previous moves, produced no difference
+against the ledger move set, and added the internal
 `gravity_sdk.relative_date_agent` owner. R17 therefore moves 82 modules one for
 one, consolidates the single-caller `agent_pagination` helper into the canonical
 `pagination_completeness.py` owner and deletes that module, and leaves the
-unreachable `agent_runtime_contracts.py` infrastructure module at the root.
+shared Runtime contracts owner `agent_runtime_contracts.py` at the root.
 
-The checked-in independent inventory supports this adjusted 82-move ownership
-boundary, including the continued exclusion of `agent_runtime_contracts` and
-`find.py`. It does not prove a complete Agent domain or fully pass the canonical
-counter-path-dependence test. Under its now-explicit definitions, the facade
+The responsibility-contract derivation records evidence for this adjusted
+82-move ownership boundary, including the exclusion of the
+`shared_runtime_contract` and `independent_primary_protocol` owner layers. It
+does not prove a complete Agent domain. Whether it satisfies the canonical
+counter-path-dependence clause is recorded as evidence only; that verdict
+belongs to the independent review and has not been issued, which is why
+`index.json` carries `self_certified: false` and
+`adjudication: pending_independent_review`. Self-downgrading is no more
+admissible here than self-certifying. In the preserved legacy graph verifier, the facade
 SCC, unrestricted facade closure, import-graph minimum-conductance cut, and
 fixed-baseline co-change component contain 40, 311, 496, and 626 modules and do
-not converge. These independently redone observations differ from the prior
+not converge. These historical observations differ from the prior
 unrecorded 40/308/495/549 run because import alias resolution, the conductance
 sweep, and co-change history scope are now defined and locked; no threshold was
 tuned to reproduce 81 or 84. R17 remains a bounded structural migration whose
@@ -100,7 +106,7 @@ Machine state shared by this Requirement and `index.md`: `status=specified`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=090a2cd212f6a4d01531ec4e4e16238215dff7710e9ebfec7f1f0af0c7fbb2d5`;
+`live_checkpoint_sha256=1339ec2f7f75487cb47d52f94e19fbc25d11b9326c2803c0475ec0282eee940f`;
 `live_checkpoint_tracked_sites=909`.
 
 The required cross-file state gate is
@@ -113,17 +119,18 @@ count or ledger-schema claim in the three R17 state representations.
 
 ## Responsibility Inventory And Target Naming Rule
 
-The exact independent membership is the 84 included rows in the signed JSON
-block below: the public facade, the 82 one-to-one move owners, and the
-pagination consolidation owner. The same artifact records eight rejected
-semantic candidates, including the retained
-Runtime contracts owner and the independent Find surface. It parses all 642
-package modules, locates the facade from its protocol/command/response shape,
-and applies docstring responsibility declarations plus direct-consumer
-ownership without using a filename, path, or prefix to seed candidates. Only
-after classification does it compare the result with the R17 migration ledger.
+The normative derivation loads 86 responsibility contracts and includes 84
+responsibility IDs: the public facade, the 82 one-to-one move owners, and the
+pagination consolidation owner. It excludes two contracts by owner layer: the
+retained Runtime contracts owner is `shared_runtime_contract`, and the Find
+surface is `independent_primary_protocol`. It builds a semantic model from all
+642 package modules and uses module names only as graph locators. Classification
+uses the contract inputs defined in `Boundary Classifier And Edges`; only after
+classification does a separate verifier compare the result with the R17
+migration ledger.
 
-The artifact schema is
+The signed JSON block below predates the contract derivation and is retained as
+legacy verification evidence. Its schema is
 `gravity.r17-independent-responsibility-inventory.v1`; its payload SHA-256 is
 `2b2ef88778a029b1ee6bee5bedd664af9058e971d09f80bc53f205848b698381`,
 method SHA-256 is
@@ -133,8 +140,9 @@ member-list SHA-256 is
 and source-tree SHA-256 is
 `d690cf49e61b5c70b0a6bfd1f23be69fbf5795711e383812f7502ea103620b47`.
 `tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests`
-recomputes and locks the source, rows, digests, boundary cases, graph
-observations, R17 comparison, and an injected drift failure.
+keeps those legacy bytes and summaries reproducible while separately exercising
+the current responsibility contracts, structure-invariance transformations,
+and forbidden-input gate.
 
 The inventory retained every prior move and added `relative_date_agent`, whose
 only source consumer is `agent_handoff`, whose only public symbol is
@@ -150,29 +158,30 @@ other move target or with an unrelated existing root module. There is no
 existing `gravity_sdk.relative_date` or `gravity_sdk.agents.relative_date`
 module at the bound baseline.
 
-The original 83-file `agent_*.py` graph remains supporting evidence rather than
-the selector. For each prefix candidate `m`, `d(m)` is the shortest path from
+The original 83-file `agent_*.py` graph is a legacy measurement, not a selector.
+For each prefix candidate `m`, `d(m)` is the historical shortest path from
 `gravity_sdk.agent` through prefix candidates. It reproduces 82 reachable
-members: 81 moves plus pagination, while `agent_runtime_contracts` remains
-unreachable with 0 compact-cohort and 55 external direct consumers. The
-independent inventory separately reproduces that exclusion: its direct
-consumers belong to broader Skill, Context, Capability, Receipt, Artifact,
-Journey, Operator/Model, and SQL Explorer Runtime layers, with zero compact
-Agent-domain direct consumers. `find.py` also remains out because its own
-`gravity.find.v1` and CLI surfaces plus mixed Agent/CLI/SQL consumers make the
-coupling bidirectional rather than Agent-owned.
+members: 81 moves plus pagination, while `agent_runtime_contracts` is
+unreachable in that restricted graph with 0 compact-cohort and 55 external
+direct consumers. Those observations now validate only the signed historical
+summary. The current derivation excludes `runtime-contracts` because its
+contract declares `owner_layer=shared_runtime_contract`; it excludes `find`
+because its contract declares `owner_layer=independent_primary_protocol`.
+Reachability, prefixes, and consumer-file counts do not decide either result.
 
 The legacy ledger columns below retain `A`, unique direct inbound sources from
 the prefix candidates plus facade, `X`, other `src/gravity_sdk` sources, and
-`d`. They are evidence, not thresholds, and cover the original prefix cohort;
-the separately inventoried `relative_date_agent` row follows the table.
+`d`. They validate the signed historical summary only, are not thresholds, and
+cover the original prefix cohort; the separately recorded
+`relative_date_agent` row follows the table.
 
 ### Baseline Classification Ledger
 
-`move` means one-for-one package migration. `consolidate/delete` is inside the
-selected cohort but is not a migrated module. `exclude` means excluded from
-this migration because `d` is absent; it does not prove a final domain owner.
-`agent_runtime_contracts` is not special-cased by the rule.
+In this legacy ledger, `move` means one-for-one package migration.
+`consolidate/delete` is inside the historical cohort but is not a migrated
+module. `exclude` records that `d` is absent under the legacy graph; it does not
+classify the current boundary or prove a final domain owner.
+`agent_runtime_contracts` was not special-cased by that historical rule.
 
 | Module | A | X | A:X | d | R17 action |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -260,18 +269,21 @@ this migration because `d` is absent; it does not prove a final domain owner.
 | `agent_user_journey` | 4 | 0 | 4:0 | 2 | move |
 | `agent_vocabulary` | 3 | 1 | 3:1 | 2 | move |
 
-The independent inventory adds `relative_date_agent` as a move with one direct
-compact-Agent source consumer (`agent_handoff`) and zero other source consumers;
-its target is `gravity_sdk.agents.relative_date`.
+The contract derivation includes the `relative-date-resolution` responsibility,
+whose migration locator is `relative_date_agent`; the one direct compact-Agent
+source consumer (`agent_handoff`) and zero other source consumers are migration
+evidence, not classifier inputs. Its target is
+`gravity_sdk.agents.relative_date`.
 
-The ledger contains 82 `move`, one `consolidate/delete`, and one `exclude`
-decision. The original facade-reachable prefix cohort still has 82 modules: 81
-moves plus pagination. Adding the responsibility-inventoried relative-date
+The legacy ledger contains 82 `move`, one `consolidate/delete`, and one
+`exclude` decision. The original facade-reachable prefix cohort still has 82
+modules: 81 moves plus pagination. Adding the contract-derived relative-date
 owner yields 341 internal facade/scope edges. The 82 move rows have 335
 scope/facade inbound edges and 17 scope-external inbound edges. Those 17
-consumer edges change target path but not ownership; the excluded contracts
-module instead has 0 compact-Agent and 55 broader-Runtime inbound consumers.
-This supports the bounded 82-move scope but is not proof of a complete domain.
+consumer edges are historical graph observations and do not decide ownership;
+the excluded contracts module instead has 0 compact-Agent and 55 broader-Runtime
+inbound consumers. This supports the bounded 82-move scope but is not proof of a
+complete domain.
 
 ## Explicit Concept Deletions
 
@@ -297,10 +309,12 @@ data-driven registry.
 
 `agent_runtime_contracts.py` stays at
 `src/gravity_sdk/agent_runtime_contracts.py` as R17's terminal location. It is
-not copied, aliased, or re-exported from `agents/`. Its prefix and possible
-future ownership under a Runtime/contracts layer are separate boundary
-questions with no approved target. A rename or move requires a separate
-structural decision covering its 55 non-Agent consumers.
+not copied, aliased, or re-exported from `agents/`. The responsibility contract
+for `validate_schema(value, schema_name, label) -> None` declares the
+`JsonSchemaValidator` protocol, `AgentRuntimeContractError`, and
+`owner_layer=shared_runtime_contract`, so the current derivation excludes that
+responsibility. Its basename and 55 non-Agent consumers are legacy observations,
+not classifier inputs. A rename or move requires a separate structural decision.
 
 ## Internal Implementation Plan
 
@@ -385,8 +399,71 @@ without `PYTHONPATH`.
 
 ### Boundary Classifier And Edges
 
-This is the normative measurement definition. It prints the summary followed
-by all 83 `module A X d` rows.
+The normative measurement unit is a responsibility contract, not a module.
+`responsibility_contract_derivation_v3` resolves each contract against the
+semantic model, assigns membership from `owner_layer`, and reports module names
+only as graph locators for the resolved responsibility. The six allowed input
+classes are:
+
+1. service protocol, including its declared binding mode;
+2. entry kind, symbol, and parameters as one entry contract;
+3. return contract;
+4. required response keys, including their entry/owner key scope;
+5. declared exceptions; and
+6. owner layer.
+
+The seven forbidden input classes are:
+
+1. module docstring;
+2. module basename;
+3. directory path;
+4. name prefix;
+5. direct consumer file count;
+6. migration ledger; and
+7. signed legacy/member inventory.
+
+The forbidden-input AST gate starts from the contract loader, semantic-model
+builder, and responsibility derivation, then walks their complete transitive
+closure of calls to local functions. It rejects forbidden identifiers,
+attributes, and string inputs anywhere in that closure; it is not a check of
+only the three entry functions. The structure-invariance gate separately
+proves unchanged membership after opaque renaming of every module locator,
+module-docstring removal, and consumer-node split/merge transformations.
+
+The executable measurement below imports the existing implementation from
+`tests/test_agent_module_reference_dispositions.py`. Its inline code only
+serializes the returned contract inventory; it contains no alternate matching,
+ownership, or membership rule.
+
+```powershell
+$code = @'
+import json
+from tests.test_agent_module_reference_dispositions import (
+    _r17_derive_responsibility_inventory,
+    _r17_load_responsibility_contracts,
+    _r17_read_modules,
+    _r17_responsibility_model,
+)
+
+contracts = _r17_load_responsibility_contracts()
+model = _r17_responsibility_model(_r17_read_modules(None))
+inventory = _r17_derive_responsibility_inventory(model, contracts)
+print(json.dumps({
+    "schema_version": contracts["schema_version"],
+    "responsibility_count": len(contracts["responsibilities"]),
+    "inventory": inventory,
+}, indent=2, sort_keys=True))
+'@
+& ./.venv/Scripts/python.exe -c $code
+if ($LASTEXITCODE) { throw 'R17 responsibility-contract measurement failed' }
+```
+
+#### Legacy Prefix-Graph Measurement
+
+The following preserved measurement prints the historical summary followed by
+all 83 `module A X d` rows. It now serves only the legacy verifier that checks
+the already signed inventory summaries embedded in `specs/`; it does not select,
+include, or exclude any current boundary responsibility.
 
 ```powershell
 $code = @'
@@ -452,7 +529,7 @@ for target in sorted(candidates):
 & ./.venv/Scripts/python.exe -c $code
 ```
 
-Measured summary: `candidates=83`, `selected=82`, `cohort_internal_edges=340`,
+Legacy measured summary: `candidates=83`, `selected=82`, `cohort_internal_edges=340`,
 `excluded=["gravity_sdk.agent_runtime_contracts"]`, `moved=81`, `core=34`,
 `peripheral_cohort=48`, `moved_peripheral=47`,
 `core_to_peripheral=153`, `peripheral_to_core=0`,
@@ -670,6 +747,19 @@ implementation worktree root with no `PYTHONPATH`; every assertion names the
 mismatched contract. The two complete collectors are intentionally separate
 because CI gates on pytest while unittest discovery remains a required parity
 collector.
+
+### Boundary Structure Invariance
+
+This is a classifier-structure acceptance gate, not a Phase 1 checkpoint. It is
+independent of whether the migration tree is at baseline, Phase 1, or Phase 2,
+so it does not change the five-command Phase 1 sequence or its rollback count.
+
+```powershell
+& ./.venv/Scripts/python.exe -m pytest -q `
+  tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests::test_boundary_is_invariant_to_file_structure `
+  tests/test_agent_module_reference_dispositions.py::R17ResponsibilityInventoryTests::test_responsibility_derivation_has_no_migration_or_file_inputs
+if ($LASTEXITCODE) { throw 'R17 responsibility boundary invariance assertion failed' }
+```
 
 ### Phase 1 Structural Checkpoint
 
@@ -1193,8 +1283,9 @@ branch when:
   `agent_runtime_contracts.py`; `agents/` has exactly 82 implementation modules;
   the complete package has 642 Python files;
 - the physical cohort graph has 34 core and 48 peripheral modules, 153 unique
-  core-to-peripheral edges, and zero reverse edges; no `agents/` module falls
-  outside the selected facade-reachable cohort;
+  core-to-peripheral edges, and zero reverse edges; the physical graph check does
+  not re-select membership, and every `agents/` module maps to a contract-derived
+  responsibility;
 - `agent_pagination.py` and `metadata_inventory()` are absent;
   `compact_pagination` behavior is preserved in `pagination_completeness.py`;
   `metadata_inventory_state()` failure ordering is preserved;
@@ -1218,7 +1309,12 @@ and two explicit concept deletions, not proof of the complete Agent domain, a
 prefix rename, or an empty package. `main` remains frozen until the complete
 program is green and the user gives new explicit approval.
 
-## Signed Independent Responsibility Inventory
+## Signed Legacy Responsibility Inventory
+
+This embedded artifact is immutable historical evidence for the legacy
+docstring/consumer-count verifier. Its signed bytes and summaries remain
+checked, but it is not an input to `responsibility_contract_derivation_v3` and
+does not adjudicate the current boundary.
 
 <!-- R17_INDEPENDENT_INVENTORY_JSON_START -->
 ```json

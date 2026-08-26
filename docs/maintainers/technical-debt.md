@@ -67,11 +67,11 @@
 ### 11. `gravity_sdk` 根目录模块扁平化扩大了变更定位范围
 - **可测事实**：`src/gravity_sdk/` 平铺 578 个 Python 模块；领域边界主要靠命名而非子包，跨领域定位和审查集中在根目录。
 - **影响边界**：不改公开导入或运行时行为；只增加所有权辨识、审查和后续迁移成本。
-- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。前缀先定义 83 个 `agent_*` 候选队列；facade 可达性只证明
-  队列内 82 个候选内聚（一对一迁移 81 + 合并删除 `agent_pagination` 1），排除 1；另有队列外的 `relative_date_agent`
-  经独立职责清单补入（`agent` 在名字末尾，前缀判据看不见），故一对一迁移合计 82。不证明完整 Agent domain。
-  `agent_runtime_contracts` 留根的理由已更正：它在全作用域 facade 闭包（312 个模块）**之内**，
-  早先"facade 不可达"的说法只在前缀队列子图内成立，按全图读是错的。现按职责契约排除，
+- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。现行判据从职责契约推导 84 个成员；模块名只作图 locator，
+  `relative_date_agent` 由入口契约而非名字补入，故一对一迁移合计 82。不证明完整 Agent domain。历史前缀图定义 83 个
+  `agent_*` 候选并记录队列内 82 个可达项（一对一迁移 81 + 合并删除 `agent_pagination` 1）和 1 个不可达项，
+  但只验证已签名摘要，不再判定边界。`agent_runtime_contracts` 在全作用域 facade 闭包（312 个模块）**之内**；
+  早先"facade 不可达"只描述历史前缀子图，不能作为排除理由。现按职责契约排除，
   owner layer 为 `shared_runtime_contract`（`validate_schema(...) -> None`、`JsonSchemaValidator`、
   `AgentRuntimeContractError`）；其新归属需另行决策。消费者数量一律不作判据——`agent_batch`(1:2)、
   `agent_input_resolution`(1:1) 均为合法 Agent 入口，且按文件数计票会随文件拆并翻转。

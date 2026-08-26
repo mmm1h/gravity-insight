@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "be8916e36768d710029c698e5ff02a49943b7ce5e9a0c406465fe1f8adb6f512",
-    "reference_evidence_sha256": "a6119d9341d3b147b9305406e23c9df40747c83bdd0db6a122d3ae601af73770",
-    "manual_review_sha256": "d6f6f86e93f57bfb8ce40e1869c599d576e844fcee43a0cc411f283934a4c850",
+    "reference_evidence_sha256": "fd88840077273329762332c1e9f20cd83b58b388344792eaf62e8192563423dc",
+    "manual_review_sha256": "bbe970fc3ad49837f216d15dfa01aba006cdd857dc7a76bab45ed2485bc3dae7",
     "owner_state": "baseline",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
@@ -699,7 +699,7 @@
       "rewrite_reference": 597,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "595989eef3ba18739cf62406826d80470d14d95db6f4270a80f5651865bd29ef"
+    "sites_sha256": "9121d59bd271d4ba56c49d3f21bc7ebc8d8fa31b67c181dc169dc068c3f3dee6"
   },
   "blockers": [],
   "site_fields": [
@@ -2064,22 +2064,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:71:33:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_pagination",
-      "pagination_completeness",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "deleted_module_governance_fact",
-      3,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/maintainers/technical-debt.md:71:67:bare text module string",
+      "docs/maintainers/technical-debt.md:71:4:bare text module string",
       "rm",
       "bare_agent_string",
       "relative_date_agent",
@@ -2094,7 +2079,22 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:73:4:bare text module string",
+      "docs/maintainers/technical-debt.md:72:47:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_pagination",
+      "pagination_completeness",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "deleted_module_governance_fact",
+      3,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/maintainers/technical-debt.md:73:21:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
