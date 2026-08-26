@@ -10,7 +10,7 @@
 | Shared-spine integration | Required and serialized |
 | Delivery mode | `leaf`; one implementation branch/worktree with two serial commit and rollback checkpoints |
 | Measurement baseline | `codex/gov-staged-epic@aa46ddf3343d8fb8ea0162b7806403527a2d79d9` |
-| Implementation baseline | `dev@24f16c667d80107e4149cf76742eab4ada564197` |
+| Implementation baseline | `dev@823d69822ab09829b2bab47d8fc70ce6eb710a7b` |
 | M0 evidence candidate | `codex/m0-characterization@088d1606127439943cab0b79c8cdbdf516af4839` |
 | Implementation Issue | `none`; internal structural debt must not receive a self-created GitHub Issue under `docs/maintainers/issues.md` |
 | Implementation branch / worktree | `codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration` |
@@ -864,7 +864,7 @@ real index and worktree are not changed.
 
 ```powershell
 $expectedBranch = 'codex/r17-migration'
-$baseline = '24f16c667d80107e4149cf76742eab4ada564197'
+$baseline = '823d69822ab09829b2bab47d8fc70ce6eb710a7b'
 $actualBranch = (& git branch --show-current).Trim()
 if ($actualBranch -ne $expectedBranch) { throw "Phase 1 rollback checkpoint not reached: branch mismatch; expected=$expectedBranch actual=$actualBranch" }
 $dirty = @(& git status --porcelain --untracked-files=all)
@@ -919,7 +919,7 @@ baseline; it rejects retaining Phase 2 while removing Phase 1.
 function Test-R17Phase2Rollback {
     param([Parameter(Mandatory)][ValidateSet('phase-1', 'baseline')][string]$Target)
     $expectedBranch = 'codex/r17-migration'
-    $baseline = '24f16c667d80107e4149cf76742eab4ada564197'
+    $baseline = '823d69822ab09829b2bab47d8fc70ce6eb710a7b'
     $actualBranch = (& git branch --show-current).Trim()
     if ($actualBranch -ne $expectedBranch) { throw "Phase 2 rollback checkpoint not reached: branch mismatch; expected=$expectedBranch actual=$actualBranch target=$Target" }
     $dirty = @(& git status --porcelain --untracked-files=all)
