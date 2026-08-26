@@ -655,6 +655,71 @@ def _reviewed_phase1_directive_bytes() -> bytes:
     return reviewed.replace(needle, replacement, 1)
 
 
+def _reviewed_phase1_directive() -> dict[str, Any]:
+    directive = json.loads(_reviewed_phase1_directive_bytes())
+    _require(isinstance(directive, dict), "reviewed directive must be an object")
+    return directive
+
+
+def _json_field_path(parent: str, field: Any) -> str:
+    if isinstance(field, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", field):
+        return f"{parent}.{field}" if parent else field
+    rendered = json.dumps(field, ensure_ascii=False, sort_keys=True)
+    return f"{parent}[{rendered}]" if parent else f"[{rendered}]"
+
+
+def _directive_mismatch_paths(
+    actual: Any, expected: Any, *, path: str = ""
+) -> list[str]:
+    if type(actual) is not type(expected):
+        return [path or "$directive"]
+    if isinstance(expected, dict):
+        mismatches: list[str] = []
+        fields = sorted(set(actual) | set(expected), key=str)
+        for field in fields:
+            field_path = _json_field_path(path, field)
+            if field not in actual or field not in expected:
+                mismatches.append(field_path)
+                continue
+            mismatches.extend(
+                _directive_mismatch_paths(
+                    actual[field], expected[field], path=field_path
+                )
+            )
+        return mismatches
+    if isinstance(expected, list):
+        mismatches = []
+        for index in range(max(len(actual), len(expected))):
+            item_path = f"{path}[{index}]"
+            if index >= len(actual) or index >= len(expected):
+                mismatches.append(item_path)
+                continue
+            mismatches.extend(
+                _directive_mismatch_paths(
+                    actual[index], expected[index], path=item_path
+                )
+            )
+        return mismatches
+    return [] if actual == expected else [path or "$directive"]
+
+
+def _expected_final_directive(expected_source_sha256: str) -> dict[str, Any]:
+    expected = _reviewed_phase1_directive()
+    errata = expected["canonical_source_errata"]
+    transition = errata["transition"]
+    expected["version"] = transition["to_version"]
+    expected["supersedes"] = {
+        "version": transition["from_version"],
+        "sha256": transition["from_sha256"],
+    }
+    expected["canonical_source"]["sha256"] = expected_source_sha256
+    one_shot = errata["one_shot"]
+    one_shot["state"] = "consumed"
+    one_shot["consumed_by"] = "R17"
+    one_shot["consumed_at_checkpoint"] = "R17-phase-2-core"
+    return expected
+
+
 def validate_phase1_reviewed_state(
     directive: dict[str, Any],
     directive_bytes: bytes,
@@ -698,19 +763,32 @@ def validate_final_state(
     source_bytes: bytes,
     baseline_bytes: bytes,
 ) -> dict[str, Any]:
-    errata = _errata(directive)
+    reviewed_directive = _reviewed_phase1_directive()
+    expected = build_expected_source(reviewed_directive, ledger, baseline_bytes)
+    expected_sha = hashlib.sha256(expected).hexdigest()
+    expected_directive = _expected_final_directive(expected_sha)
+    mismatch_paths = _directive_mismatch_paths(directive, expected_directive)
+    if mismatch_paths:
+        message = (
+            "terminal directive differs from the reviewed Phase 1 baseline at "
+            "field path(s): " + ", ".join(mismatch_paths)
+        )
+        if any(
+            path.startswith("canonical_source_errata.one_shot")
+            for path in mismatch_paths
+        ):
+            message += (
+                "; errata is not consumed exactly once by R17 at the core checkpoint"
+            )
+        if any(
+            path.startswith("canonical_source_errata.transition")
+            for path in mismatch_paths
+        ):
+            message += "; errata transition must remain v9.2 to v9.3"
+        raise ErrataValidationError(message)
+
+    errata = expected_directive["canonical_source_errata"]
     transition = errata["transition"]
-    expected_one_shot = {
-        "state": "consumed",
-        "reusable": False,
-        "consumed_by": "R17",
-        "consumed_at_checkpoint": "R17-phase-2-core",
-    }
-    _require(
-        errata.get("one_shot") == expected_one_shot,
-        "errata is not consumed exactly once by R17 at the core checkpoint",
-    )
-    expected = build_expected_source(directive, ledger, baseline_bytes)
     if source_bytes != expected:
         expected_text = expected.decode("utf-8")
         source_text = source_bytes.decode("utf-8")
@@ -729,21 +807,8 @@ def validate_final_state(
         )
 
     actual_sha = hashlib.sha256(source_bytes).hexdigest()
-    canonical = directive.get("canonical_source", {})
-    _require(actual_sha == canonical.get("sha256"), "canonical source SHA mismatch")
-    _require(
-        directive.get("version") == transition["to_version"],
-        "directive version does not match the errata target",
-    )
-    _require(
-        directive.get("supersedes")
-        == {
-            "version": transition["from_version"],
-            "sha256": transition["from_sha256"],
-        },
-        "directive supersedes binding changed",
-    )
-    replacements = derive_source_replacements(directive, ledger)
+    _require(actual_sha == expected_sha, "canonical source SHA mismatch")
+    replacements = derive_source_replacements(reviewed_directive, ledger)
     return {
         "transition": f"{transition['from_version']}->{transition['to_version']}",
         "source_replacements": len(replacements),
@@ -758,13 +823,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         directive = load_json(DIRECTIVE_PATH)
         ledger = load_json(LEDGER_PATH)
-        validate_bound_ledger(
-            directive,
-            ledger,
-            ledger_bytes=LEDGER_PATH.read_bytes(),
-        )
-        source_bytes = canonical_source_path(directive).read_bytes()
         if arguments == ["--phase-1"]:
+            validate_bound_ledger(
+                directive,
+                ledger,
+                ledger_bytes=LEDGER_PATH.read_bytes(),
+            )
+            source_bytes = canonical_source_path(directive).read_bytes()
             result = validate_phase1_reviewed_state(
                 directive,
                 DIRECTIVE_PATH.read_bytes(),
@@ -772,7 +837,14 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             _require(not arguments, f"unknown arguments: {arguments}")
-            baseline_bytes = load_git_baseline(directive)
+            reviewed_directive = _reviewed_phase1_directive()
+            validate_bound_ledger(
+                reviewed_directive,
+                ledger,
+                ledger_bytes=LEDGER_PATH.read_bytes(),
+            )
+            source_bytes = canonical_source_path(reviewed_directive).read_bytes()
+            baseline_bytes = load_git_baseline(reviewed_directive)
             result = validate_final_state(directive, ledger, source_bytes, baseline_bytes)
     except (
         ErrataValidationError,
