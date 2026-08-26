@@ -68,6 +68,8 @@ R17_INVENTORY_START = "<!-- R17_INDEPENDENT_INVENTORY_JSON_START -->"
 R17_INVENTORY_END = "<!-- R17_INDEPENDENT_INVENTORY_JSON_END -->"
 R17_INVENTORY_SCHEMA = "gravity.r17-independent-responsibility-inventory.v1"
 R17_COCHANGE_BASELINE = "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
+R17_ORACLE_BASELINE_COMMIT = "ddbca7aca1b7baee2ee42e96f886d7ddaee84947"
+R17_ORACLE_TREE_OID = "aebfca0423628ea36b48f227435abf6854400c00"
 R17_ROLE_MARKERS = (
     ("agent_role", r"\bagent\b"),
     ("natural_language_boundary", r"natural-language"),
@@ -165,16 +167,90 @@ def _r17_assigned_string(
     return None
 
 
-def _r17_read_modules(package_root: Path) -> dict[str, dict[str, Any]]:
+def _r17_frozen_tree_blobs(prefix: str) -> dict[str, bytes]:
+    listing = subprocess.run(
+        ["git", "ls-tree", "-r", "-z", R17_ORACLE_TREE_OID, "--", prefix],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout
+    entries: list[tuple[str, str]] = []
+    for raw_entry in listing.split(b"\0"):
+        if not raw_entry:
+            continue
+        metadata, raw_path = raw_entry.split(b"\t", 1)
+        _mode, object_type, raw_oid = metadata.split(b" ")
+        _require(object_type == b"blob", f"non-blob frozen entry: {raw_path!r}")
+        entries.append((raw_path.decode("utf-8"), raw_oid.decode("ascii")))
+    process = subprocess.Popen(
+        ["git", "cat-file", "--batch"],
+        cwd=ROOT,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    request = "".join(f"{oid}\n" for _, oid in entries).encode("ascii")
+    stdout, stderr = process.communicate(request)
+    _require(
+        process.returncode == 0,
+        f"cannot read frozen tree: {stderr.decode('utf-8', errors='replace')}",
+    )
+    blobs: dict[str, bytes] = {}
+    offset = 0
+    for path, expected_oid in entries:
+        line_end = stdout.index(b"\n", offset)
+        oid, object_type, raw_size = stdout[offset:line_end].split(b" ")
+        _require(
+            oid.decode("ascii") == expected_oid and object_type == b"blob",
+            f"unexpected frozen object header: {path}",
+        )
+        size = int(raw_size)
+        start = line_end + 1
+        end = start + size
+        blobs[path] = stdout[start:end]
+        _require(stdout[end : end + 1] == b"\n", f"unterminated blob: {path}")
+        offset = end + 1
+    return blobs
+
+
+def _r17_frozen_blob(path: str) -> bytes:
+    return _r17_frozen_tree_blobs(path)[path]
+
+
+def _r17_read_modules(
+    package_root: Path | None,
+) -> dict[str, dict[str, Any]]:
     records: dict[str, dict[str, Any]] = {}
-    for path in sorted(package_root.rglob("*.py")):
-        parts = list(path.relative_to(package_root).with_suffix("").parts)
+    if package_root is None:
+        package_name = "gravity_sdk"
+        source_rows = [
+            (ROOT / path, raw.decode("utf-8"))
+            for path, raw in sorted(
+                _r17_frozen_tree_blobs("src/gravity_sdk").items()
+            )
+            if path.endswith(".py")
+        ]
+        source_root = ROOT / "src/gravity_sdk"
+    else:
+        package_name = package_root.name
+        source_rows = [
+            (path, path.read_text(encoding="utf-8"))
+            for path in sorted(package_root.rglob("*.py"))
+        ]
+        source_root = package_root
+    for path, source in source_rows:
+        parts = list(path.relative_to(source_root).with_suffix("").parts)
         is_package = parts[-1] == "__init__"
         if is_package:
             parts.pop()
-        name = package_root.name + ("." + ".".join(parts) if parts else "")
-        source = path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(path))
+        name = package_name + ("." + ".".join(parts) if parts else "")
+        filename = (
+            str(path)
+            if package_root is not None
+            else f"{R17_ORACLE_TREE_OID}:{path.relative_to(ROOT).as_posix()}"
+        )
+        tree = ast.parse(source, filename=filename)
         strings = {
             node.value
             for node in ast.walk(tree)
@@ -297,7 +373,7 @@ def _r17_role_markers(docstring: str) -> tuple[str, ...]:
     )
 
 
-def _r17_analyze_source(package_root: Path) -> dict[str, Any]:
+def _r17_analyze_source(package_root: Path | None) -> dict[str, Any]:
     records = _r17_read_modules(package_root)
     graph, reverse = _r17_import_graph(records)
     facade_candidates = [
@@ -476,14 +552,18 @@ def _r17_cochange_component(records: dict[str, dict[str, Any]], start: str) -> s
 
 
 def build_r17_responsibility_inventory(package_root: Path | None = None) -> dict[str, Any]:
-    package_root = package_root or ROOT / "src/gravity_sdk"
     analysis = _r17_analyze_source(package_root)
     records = analysis["records"]
     graph = analysis["graph"]
     reverse = analysis["reverse"]
     facade = analysis["facade"]
     members = analysis["members"]
-    migration = json.loads(LEDGER.read_text(encoding="utf-8"))
+    migration_bytes = (
+        _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix())
+        if package_root is None
+        else LEDGER.read_bytes()
+    )
+    migration = json.loads(migration_bytes.decode("utf-8"))
     scope = migration["scope"]
     moves = {row["old_module"] for row in scope["one_to_one_moves"]}
     consolidation = scope["consolidate_delete"]["old_module"]
@@ -599,7 +679,7 @@ def build_r17_responsibility_inventory(package_root: Path | None = None) -> dict
     document: dict[str, Any] = {
         "schema_version": R17_INVENTORY_SCHEMA,
         "analysis_baseline": f"dev@{R17_COCHANGE_BASELINE}",
-        "module_namespace": package_root.name,
+        "module_namespace": "gravity_sdk" if package_root is None else package_root.name,
         "method": method,
         "method_sha256": _r17_digest(method),
         "source_snapshot": {
@@ -626,7 +706,7 @@ def build_r17_responsibility_inventory(package_root: Path | None = None) -> dict
         "members_sha256": _r17_digest(selected_ids),
         "decisions": rows,
         "r17_comparison": {
-            "ledger_sha256": hashlib.sha256(LEDGER.read_bytes()).hexdigest(),
+            "ledger_sha256": hashlib.sha256(migration_bytes).hexdigest(),
             "move_count": len(moves),
             "independent_members_not_moves": sorted(
                 _r17_module_id(name) for name in members - moves
@@ -682,6 +762,74 @@ def load_signed_r17_responsibility_inventory() -> dict[str, Any]:
     value = json.loads(match.group(1))
     _require(isinstance(value, dict), "inventory must be a JSON object")
     return value
+
+
+def _r17_owner_projection_state(
+    module_names: set[str],
+    frozen_inventory: dict[str, Any],
+    frozen_scope: dict[str, Any],
+) -> str:
+    moves = {
+        move["old_module"]: move["new_module"]
+        for move in frozen_scope["one_to_one_moves"]
+    }
+    inventory_moves = {
+        f"gravity_sdk.{row['module']}"
+        for row in frozen_inventory["decisions"]
+        if row["include"] and row["r17_disposition"] == "move"
+    }
+    _require(
+        inventory_moves == set(moves),
+        "frozen responsibility rows differ from the immutable move ledger",
+    )
+    overlaps = [
+        old for old, new in moves.items() if old in module_names and new in module_names
+    ]
+    missing = [
+        old for old, new in moves.items() if old not in module_names and new not in module_names
+    ]
+    _require(
+        not overlaps and not missing,
+        f"current responsibility owners are not one-to-one: overlaps={overlaps[:5]}, "
+        f"missing={missing[:5]}",
+    )
+    old_count = sum(old in module_names for old in moves)
+    new_count = sum(new in module_names for new in moves.values())
+    consolidation = frozen_scope["consolidate_delete"]
+    pagination_old = consolidation["old_module"] in module_names
+    _require(
+        consolidation["new_module"] in module_names,
+        "pagination consolidation target is missing",
+    )
+    for retained in frozen_scope["retained_modules"]:
+        _require(retained in module_names, f"retained owner is missing: {retained}")
+    owner_state = (old_count, new_count, pagination_old)
+    states = {
+        "baseline": (82, 0, True),
+        "phase_1": (34, 48, False),
+        "phase_2": (0, 82, False),
+    }
+    matches = [name for name, expected in states.items() if expected == owner_state]
+    _require(
+        len(matches) == 1,
+        f"responsibility projection is outside Phase 0/1/2: {owner_state}",
+    )
+    return matches[0]
+
+
+def _r17_phase_module_names(
+    frozen_scope: dict[str, Any], *, old_count: int, pagination_old: bool
+) -> set[str]:
+    moves = frozen_scope["one_to_one_moves"]
+    result = {
+        move["old_module"] if index < old_count else move["new_module"]
+        for index, move in enumerate(moves)
+    }
+    result.add(frozen_scope["consolidate_delete"]["new_module"])
+    result.update(frozen_scope["retained_modules"])
+    if pagination_old:
+        result.add(frozen_scope["consolidate_delete"]["old_module"])
+    return result
 
 
 def _validator_has_current_path_semantics(old_module: str, context: str) -> bool:
@@ -2629,12 +2777,159 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
 
 
 class R17ResponsibilityInventoryTests(unittest.TestCase):
-    def test_signed_inventory_exactly_matches_source_recomputation(self) -> None:
+    def test_frozen_tree_oid_is_literal_and_resolves_from_the_bound_commit(self) -> None:
+        resolved = subprocess.run(
+            ["git", "rev-parse", f"{R17_ORACLE_BASELINE_COMMIT}^{{tree}}"],
+            cwd=ROOT,
+            check=True,
+            text=True,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ).stdout.strip()
+        self.assertEqual(R17_ORACLE_TREE_OID, resolved)
+        self.assertEqual(
+            "tree",
+            subprocess.run(
+                ["git", "cat-file", "-t", R17_ORACLE_TREE_OID],
+                cwd=ROOT,
+                check=True,
+                text=True,
+                encoding="utf-8",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            ).stdout.strip(),
+        )
+
+    def test_frozen_ledger_blob_is_read_from_the_pinned_tree(self) -> None:
+        path = LEDGER.relative_to(ROOT).as_posix()
+        frozen = _r17_frozen_blob(path)
+        self.assertEqual(LEDGER_SHA256, hashlib.sha256(frozen).hexdigest())
+        blob_oid = subprocess.run(
+            ["git", "rev-parse", f"{R17_ORACLE_TREE_OID}:{path}"],
+            cwd=ROOT,
+            check=True,
+            text=True,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ).stdout.strip()
+        self.assertEqual(
+            frozen,
+            subprocess.run(
+                ["git", "cat-file", "blob", blob_oid],
+                cwd=ROOT,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            ).stdout,
+        )
+
+    def test_frozen_inventory_recomputation_performs_no_worktree_source_io(self) -> None:
+        signed = load_signed_r17_responsibility_inventory()
+        with patch.object(
+            Path, "read_text", side_effect=AssertionError("worktree text read")
+        ), patch.object(
+            Path, "read_bytes", side_effect=AssertionError("worktree bytes read")
+        ):
+            self.assertEqual(signed, build_r17_responsibility_inventory())
+
+    def test_signed_inventory_exactly_matches_frozen_tree_recomputation(self) -> None:
         signed = load_signed_r17_responsibility_inventory()
         self.assertEqual(signed, build_r17_responsibility_inventory())
         payload = dict(signed)
         digest = payload.pop("payload_sha256")
         self.assertEqual(digest, _r17_digest(payload))
+
+    def test_current_tree_projects_to_the_frozen_responsibility_ids(self) -> None:
+        current = set(_r17_read_modules(ROOT / "src/gravity_sdk"))
+        frozen = load_signed_r17_responsibility_inventory()
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        self.assertIn(
+            _r17_owner_projection_state(current, frozen, scope),
+            {"baseline", "phase_1", "phase_2"},
+        )
+
+    def test_frozen_move_mapping_is_an_exact_bijection(self) -> None:
+        frozen = load_signed_r17_responsibility_inventory()
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        moves = scope["one_to_one_moves"]
+        self.assertEqual(82, len(moves))
+        self.assertEqual(82, len({move["old_module"] for move in moves}))
+        self.assertEqual(82, len({move["new_module"] for move in moves}))
+        inventory_moves = {
+            f"gravity_sdk.{row['module']}"
+            for row in frozen["decisions"]
+            if row["include"] and row["r17_disposition"] == "move"
+        }
+        self.assertEqual(inventory_moves, {move["old_module"] for move in moves})
+
+    def test_frozen_relative_date_mapping_uses_the_boundary_token_rule(self) -> None:
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        relative_date = next(
+            move
+            for move in scope["one_to_one_moves"]
+            if move["old_module"] == "gravity_sdk.relative_date_agent"
+        )
+        self.assertEqual("gravity_sdk.agents.relative_date", relative_date["new_module"])
+
+    def test_phase1_paths_map_to_frozen_responsibilities(self) -> None:
+        frozen = load_signed_r17_responsibility_inventory()
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        modules = _r17_phase_module_names(scope, old_count=34, pagination_old=False)
+        self.assertEqual("phase_1", _r17_owner_projection_state(modules, frozen, scope))
+
+    def test_phase2_paths_map_to_frozen_responsibilities(self) -> None:
+        frozen = load_signed_r17_responsibility_inventory()
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        modules = _r17_phase_module_names(scope, old_count=0, pagination_old=False)
+        self.assertEqual("phase_2", _r17_owner_projection_state(modules, frozen, scope))
+
+    def test_owner_projection_rejects_old_and_new_owner_overlap(self) -> None:
+        frozen = load_signed_r17_responsibility_inventory()
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        modules = _r17_phase_module_names(scope, old_count=34, pagination_old=False)
+        move = scope["one_to_one_moves"][0]
+        modules.update({move["old_module"], move["new_module"]})
+        with self.assertRaisesRegex(AssertionError, "not one-to-one"):
+            _r17_owner_projection_state(modules, frozen, scope)
+
+    def test_owner_projection_rejects_an_unreviewed_phase_partition(self) -> None:
+        frozen = load_signed_r17_responsibility_inventory()
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        modules = _r17_phase_module_names(scope, old_count=33, pagination_old=False)
+        with self.assertRaisesRegex(AssertionError, "outside Phase 0/1/2"):
+            _r17_owner_projection_state(modules, frozen, scope)
+
+    def test_owner_projection_rejects_missing_fixed_owners(self) -> None:
+        frozen = load_signed_r17_responsibility_inventory()
+        scope = json.loads(
+            _r17_frozen_blob(LEDGER.relative_to(ROOT).as_posix()).decode("utf-8")
+        )["scope"]
+        baseline = _r17_phase_module_names(scope, old_count=82, pagination_old=True)
+        cases = {
+            "consolidation target": scope["consolidate_delete"]["new_module"],
+            "retained owner": scope["retained_modules"][0],
+        }
+        for label, missing in cases.items():
+            with self.subTest(owner=label), self.assertRaisesRegex(
+                AssertionError, "is missing"
+            ):
+                _r17_owner_projection_state(baseline - {missing}, frozen, scope)
 
     def test_inventory_rows_and_r17_comparison_are_complete(self) -> None:
         signed = load_signed_r17_responsibility_inventory()
