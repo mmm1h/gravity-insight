@@ -99,12 +99,20 @@ Requirement branches implement domain cores and focused tests first. A named int
 
 `specified` means scope and dependency boundaries exist. Before changing a leaf or epic milestone to `ready`, the plan owner must fill unresolved decisions, bind a current baseline SHA and Issue, confirm write scope/worktree, and approve exact acceptance commands.
 
-R17 只有一个 leaf 状态和一个实施分支/Worktree。独立职责清单对原 81 个 move 无差集
-（不能独立证明账本本身没有误纳），并补入唯一由 `agent_handoff` 消费的
-`relative_date_agent`，形成 82 个一对一迁移；
-`agent_pagination` 合并删除，`agent_runtime_contracts` 与 `find.py` 仍不纳入。前缀图继续
-复现 contracts 排除，但四种全作用域图判据没有收敛，所以当前证据支撑调整后的有界范围，
-不证明完整 Agent domain，也不声称完全通过总纲的反路径依赖门槛。M0 characterization
+R17 只有一个 leaf 状态和一个实施分支/Worktree。边界判据已从模块换为职责契约：86 项职责各由
+服务协议、入口 kind/符号/参数、返回契约、必需响应键、声明异常和 owner layer 定义，模块名只作
+图 locator；docstring、basename、目录、前缀和消费者文件数一律不作判据输入，由 AST 门禁对
+契约 loader、模型构造器与推导器的传递调用闭包强制。推导得 84 项成员，归一化后 82 个 owner 与
+不可变迁移账本无差集（该等式不能独立证明账本本身没有误纳）。`agent_pagination` 合并删除，
+`agent_runtime_contracts` 以 `shared_runtime_contract`、`find.py` 以
+`independent_primary_protocol` 排除——前者实际位于全作用域 facade 闭包内，不再以"不可达"为由。
+早先按队列外补入的 `relative_date_agent`（唯一消费者为 `agent_handoff`）在新判据下改由
+`fill_agent_relative_dates(card, query, workspace, now)` 的协议事实独立立住，不再依赖
+消费者关系或 docstring 词表。
+不变性证据：642 节点全部重命名、docstring 全部中和、消费者节点拆并使节点 642→657、边
+2832→3674（85 项直接消费者文件数上升、1 项下降），三种变形后成员集恒为 84，故不是图同构。
+四种全作用域图判据仍未收敛，因此不证明完整 Agent domain；图收敛性与总纲反路径依赖是两个
+独立问题，本段只陈述证据，第五条是否满足由独立复核裁定，尚未裁定。M0 characterization
 与 dynamic-audit classification 均已满足，owner review 仍为 `pending`。实施绑定为
 `dev@823d69822ab09829b2bab47d8fc70ce6eb710a7b`、无 GitHub Issue（内部结构债禁止
 自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。
@@ -117,7 +125,7 @@ R17 只有一个 leaf 状态和一个实施分支/Worktree。独立职责清单�
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=2c380592d7c2d28e169c54fced453aa01c90937d7506bfc001728170e3a89246`；
+`live_checkpoint_sha256=090a2cd212f6a4d01531ec4e4e16238215dff7710e9ebfec7f1f0af0c7fbb2d5`；
 `live_checkpoint_tracked_sites=909`。
 
 The user approved the R01 binding and designated the Requirement document as
