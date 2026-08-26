@@ -85,19 +85,13 @@
   legacy verifier 及其在 `specs/` 中的签名摘要一并退役，仓库只剩职责契约一套边界算法；
   不得以改名或空目录关闭。
 
-### 13. 8 个公开符号会被同名根模块遮蔽，取值取决于导入顺序
-- **可测事实**：147 个 lazy 导出中有 8 个与根模块同名——`analysis_query_batch_schema`、
-  `bilibili_account_performance`、`business_pulse`、`company_usage`、`dashboard_snapshot`、`monetization_detail`、
-  `order_directory`、`promotion_performance`。`import gravity_sdk.X` 会把子模块对象设为包属性，使 `__getattr__`
-  不再触发，于是 `from gravity_sdk import X` 得到模块而非函数。实测 `business_pulse` 直接访问为 function，
-  先导入同名子模块后为 module。
-- **影响边界**：消费方是 agent，调用会抛 `'module' object is not callable`，且是否触发取决于此前有无其他代码
-  导入过该子模块——同一份调用在不同执行路径下行为不同。
-- **退出条件**：8 个符号在任意导入顺序下均解析为公开可调用对象，由隔离进程顺序访问测试锁定；不得靠约定
-  「不要导入同名子模块」或重命名公开符号规避。
-
 ## 已关闭
 
+- 2026-08-26：#13 公开符号遮蔽债关闭：`gravity_sdk.__init__` 把模块 `__class__` 换装为
+  `_ExportAwareModule`，`__getattribute__` 对 8 个碰撞符号每次访问都重查 `_EXPORTS`，
+  子模块导入把包属性覆写为 module 时按 `_is_shadowing_module` fail-closed 重新解析而非
+  静默返回错误类型；`child-first`/`export-first`/`cross-order` 三种导入顺序均由隔离子进程
+  测试锁定，碰撞集合本身有新增探测，未靠改名或「不要导入同名子模块」的约定规避。
 - 2026-08-25：#8 Title Package 已从编译合同派生 opaque JSON 字段，复用有界深度、元素和大小投影；未登记和非 opaque 标量规则仍 fail-closed。
 2026-08-19 以前关闭项见[清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)。
 - 2026-08-20：Census POST 读词元债关闭，`uncovered_read` 仅保留安全方法/exact 静态确认，其余为
