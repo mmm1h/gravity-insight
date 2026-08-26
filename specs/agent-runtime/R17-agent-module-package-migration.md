@@ -106,7 +106,7 @@ Machine state shared by this Requirement and `index.md`: `status=specified`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=9b3952da7d45f274f8be551ce87ce83c4c253eefdb1375c10d5efc099de71e76`;
+`live_checkpoint_sha256=ff63202cfbfa6ab1f9b020e1623456511e92a52c6a5214ab33470cc51a25e588`;
 `live_checkpoint_tracked_sites=645`.
 
 The required cross-file state gate is
@@ -407,9 +407,13 @@ is the node containing the entry definition. Its protocol binding is resolved
 separately through the public-symbol binding graph: explicit imports, renamed
 aliases, assignment re-exports, star imports, static `__all__`, relative imports,
 and chained subpackage `__init__` re-exports preserve the real source symbol at
-every hop. Top-level rebinding follows execution order, so the last write wins
-rather than being unioned with stale definitions. Dynamic, ambiguous, deleted,
-or otherwise unresolved bindings fail closed. The six allowed input classes are:
+every hop. The model does not implement Python's last-write-wins semantics for
+all top-level rebindings: after a star import, a later correct literal or named
+binding is unioned with the stale star definition and fails closed as multiple
+definitions. The enumerated literal, named-import, and attribute-assignment
+rebindings without that collision resolve in execution order. Dynamic,
+ambiguous, deleted, or otherwise unresolved bindings fail closed. The six
+allowed input classes are:
 
 1. service protocol, including its declared binding mode;
 2. entry kind, symbol, and parameters as one entry contract;
@@ -428,25 +432,34 @@ The seven forbidden input classes are:
 6. migration ledger; and
 7. signed legacy/member inventory.
 
-The forbidden-input AST gate starts at
-`_r17_responsibility_inventory_pipeline` and walks its complete 29-function
-transitive closure of calls to local functions, including `_r17_read_modules`,
-which performs the filesystem read. It rejects forbidden identifiers,
-attributes, and string inputs anywhere in that closure; it is not a check of
-only the public pipeline body. The structure-invariance gate separately proves
+The AST gate starts at `_r17_responsibility_inventory_pipeline`, pins its
+29-function transitive closure of statically resolved local calls, including
+`_r17_read_modules`, and requires no unresolved bare-name calls. Within that
+closure it allowlists statically resolved direct and attribute calls and loaded
+global names. Runtime patches separately block path and builtin reads,
+`ast.get_docstring`, direct-consumer and legacy-ledger helpers, and subprocesses
+other than the frozen-tree Git reads. This is not a general forbidden-name,
+attribute, or string scanner: calls through dynamic receivers or subscripts,
+`[__import__][0](...)`, and inputs accessed as `record["direct_consumer_count"]`
+or `record.module_docstring` are not recorded by the gate. The
+structure-invariance gate separately proves
 unchanged membership after opaque renaming of every module locator,
 module-docstring removal, consumer-node split/merge transformations, and entry
 or protocol relocation through public re-exports. Eight measured binding-graph
 transformations (one-hop and two-hop re-export, subpackage nesting, protocol
 constant relocation, two-hop protocol re-export, renamed protocol alias,
 subpackage-`__init__` protocol re-export, and protocol attribute-assignment
-re-export) each retain 84 members with an empty `member_delta`. The exhaustive
-static shape space contains 32 grade-A correct resolutions, 32 grade-B
-fail-closed rejections, and zero grade-C silent misresolutions. Later literal,
-import, or computed rebinding, deletion, and runtime module-attribute rewriting
-also all fail closed. Thus every known failure shape refuses to produce an
-inventory; none has produced a different boundary. This evidence records the
-distinction but does not adjudicate
+re-export) each retain 84 members with an empty `member_delta`. Two hand-written
+lists enumerate and lock 32 grade-A correct resolutions and 32 grade-B
+fail-closed rejections; they define neither a shape grammar nor an exhaustive
+space, and shapes outside both lists are known. No grade-C case was found among
+the behavior-equivalent layout refactors. A known unfixed grade-C family uses an
+import-time side effect in an unrelated assignment value, function default,
+class body, or decorator, for example
+`_probe = globals().__setitem__("SCHEMA_VERSION", "gravity.wrong.v1")`.
+The runtime binding then becomes `gravity.wrong.v1`, while static derivation
+still returns 84 members with an empty `member_delta`. This evidence records the
+distinction and known counterexample but does not adjudicate
 architecture-source.md 20.12 item 5, which remains pending independent review.
 
 The executable measurement below imports the existing implementation from

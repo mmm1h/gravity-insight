@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "4c6ad023acd88e024c2a7816264bdfa92ea76f0741741fac162e69902b80d5b3",
-    "reference_evidence_sha256": "ca10eb6ca08478bd58ab4c008e7255aec5949d6e6210832d0bccde08a09424ab",
-    "manual_review_sha256": "bfd51a28aa8f960ed9b7f4ff4c2897915c7d87e068f55a2ecd1ea9ccc53b3c8b",
+    "reference_evidence_sha256": "68922dad8fe70b44048250480a6e2e231f5d1341cbc8e2a90507a0796d51ba2e",
+    "manual_review_sha256": "48a604f9f40d2e309dc3c7812dd72e488ac845b24344bbcf205c758be4c7a026",
     "owner_state": "phase_1",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
@@ -694,7 +694,7 @@
       "rewrite_reference": 334,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "a3b4873f702ad98d62be1aa1036202793c48f44dd3b27d459f274e73a17dc9ec"
+    "sites_sha256": "e274c293eaffa41d5ea87b7efb4d8ccb32860553d454f9179c9fe9e0363e2467"
   },
   "blockers": [],
   "site_fields": [
@@ -2134,7 +2134,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:86:51:bare text module string",
+      "docs/maintainers/technical-debt.md:93:51:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2504,6 +2504,21 @@
       }
     ],
     [
+      "specs/agent-runtime/index.json:100:31:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_runtime_contracts",
+      "agent_runtime_contracts",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "retained_exact_reference",
+      63,
+      {
+        "kind": "none"
+      }
+    ],
+    [
       "specs/agent-runtime/index.json:13:22:bare text module string",
       "rm",
       "bare_agent_string",
@@ -2612,7 +2627,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:89:43:bare text module string",
+      "specs/agent-runtime/index.json:99:43:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2627,22 +2642,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:90:31:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_runtime_contracts",
-      "agent_runtime_contracts",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "retained_exact_reference",
-      63,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "specs/agent-runtime/index.md:109:32:bare text module string",
+      "specs/agent-runtime/index.md:112:32:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2657,7 +2657,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:110:2:bare text module string",
+      "specs/agent-runtime/index.md:113:2:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2672,7 +2672,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:112:12:bare text module string",
+      "specs/agent-runtime/index.md:115:12:bare text module string",
       "rm",
       "bare_agent_string",
       "relative_date_agent",
@@ -2691,7 +2691,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:112:41:bare text module string",
+      "specs/agent-runtime/index.md:115:41:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_handoff",

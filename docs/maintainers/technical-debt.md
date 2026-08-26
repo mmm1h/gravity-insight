@@ -78,7 +78,14 @@
 - **未纳入的更大目标**：跨 plan/analysis/metadata/kanban 执行核心的大环优先级更高，但各方图口径不一致
   （AST-only、含 `_EXPORTS` 字符串边、含 package parent 边分别得出不同 SCC 规模），须先统一图定义再立项。
 - **现行职责判据**：职责 owner 取入口定义节点，协议沿公开符号绑定图解析；显式/改名/星号导入、赋值重导出、
-  静态 `__all__`、相对导入和子包链受建模，顶层后写重绑获胜，无法静态解析时 fail closed。
+  静态 `__all__`、相对导入和子包链受建模。顶层重绑并非一律后写获胜：错误 star import 后再写正确
+  literal 或 named binding 时，模型并集旧 star 定义并以 multiple definitions fail closed；其他无法静态解析的
+  形状也 fail closed。
+- **结构不变性证据上限**（委托记录：`agent_under_standing_owner_delegation`；`owner_review: pending`）：成员资格由
+  `include = contract["owner_layer"] in included_layers` 直接决定，源码树只决定每条契约能否解析到 locator。因此现行
+  判据验证的是可解析性而非成员选择，输出空间只有固定的 84 项或抛错；`member_delta=[]` 证明 locator 解析成功，
+  不是边界选择的独立性，也无法说明若从零设计为何会选择这 84 项。这限制了结构不变性证据的强度上限；本记录不裁定
+  architecture-source.md 20.12 第五条满足或不满足。
 - **遗留双算法**：旧的 docstring/消费者计数分类器已改名为 legacy verifier。它不参与现行边界成员判定，但仍验证
   `specs/` 里已签名的历史清单摘要，并用于当前树 owner projection、move bijection 和 Phase 0/1/2 迁移状态判定。
   现行推导与 legacy 各自对同一冻结迁移账本比较，因而间接耦合。R17 施工期禁改 `specs/`，故只能留着；这是本条自带的收尾项，

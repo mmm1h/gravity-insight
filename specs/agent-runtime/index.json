@@ -57,7 +57,11 @@
         "classifier": "responsibility_contract_derivation_v4",
         "classifier_inputs": ["service_protocol","entry_kind_symbol_parameters","return_contract","required_response_keys","declared_exceptions","owner_layer"],
         "classifier_forbidden_inputs": ["direct_consumer_count","directory_path","migration_ledger","module_basename","module_docstring","name_prefix","signed_member_inventory"],
-        "classifier_forbidden_inputs_enforced_by": "ast_gate_over_29_function_transitive_call_closure_rooted_at__r17_responsibility_inventory_pipeline_including__r17_read_modules",
+        "classifier_forbidden_inputs_enforced_by": {
+          "mechanisms": ["pinned_29_function_transitive_local_call_closure_including__r17_read_modules","statically_resolved_direct_and_attribute_call_allowlist","loaded_global_name_allowlist","specific_runtime_capability_patches"],
+          "coverage": "partial_not_a_general_forbidden_identifier_attribute_or_string_scan",
+          "unrecorded_shapes": ["dynamic_receiver_attribute_calls","higher_order_subscript_calls","subscripted___import___calls","forbidden_input_access_through_subscript_or_attribute"]
+        },
         "boundary_claim": "compact_agent_interaction_scope_supported_but_graph_methods_not_converged",
         "complete_agent_domain_proven": false,
         "boundary_invariance": {
@@ -72,7 +76,13 @@
           "static_binding_shape_space": {
             "grade_a_correct_resolution": 32,
             "grade_b_fail_closed": 32,
-            "grade_c_silent_misresolution": 0
+            "grade_c_silent_misresolution": {
+              "known": true,
+              "status": "known_unfixed_limit",
+              "known_shapes": ["assignment_rhs_module_binding_mutation","function_default_module_binding_mutation","class_body_module_binding_mutation","decorator_module_binding_mutation"]
+            },
+            "exhaustive": false,
+            "out_of_table_shapes_known": true
           },
           "graph_isomorphism_only": false
         },
@@ -139,7 +149,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "9b3952da7d45f274f8be551ce87ce83c4c253eefdb1375c10d5efc099de71e76",
+          "live_checkpoint_sha256": "ff63202cfbfa6ab1f9b020e1623456511e92a52c6a5214ab33470cc51a25e588",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 645,
           "live_checkpoint_unclassified_sites": 0,
