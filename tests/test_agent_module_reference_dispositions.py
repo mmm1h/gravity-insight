@@ -993,12 +993,46 @@ def _r17_read_modules(
         )
         tree = ast.parse(source, filename=filename)
         strings = _r17_non_docstring_strings(tree)
-        schemas = [
-            value
-            for node in tree.body
-            if isinstance(node, (ast.Assign, ast.AnnAssign))
-            if (value := _r17_assigned_string(node, "SCHEMA_VERSION")) is not None
-        ]
+        symbol_values: dict[str, tuple[str, ...]] = {}
+        for node in tree.body:
+            targets: list[str] = []
+            value: ast.AST | None = None
+            if isinstance(node, ast.Assign):
+                targets = [
+                    target.id for target in node.targets
+                    if isinstance(target, ast.Name)
+                ]
+                value = node.value
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                targets = [node.target.id]
+                value = node.value
+            elif isinstance(node, ast.Import):
+                targets = [
+                    alias.asname or alias.name.split(".", 1)[0]
+                    for alias in node.names
+                ]
+            elif isinstance(node, ast.ImportFrom):
+                targets = [
+                    alias.asname or alias.name
+                    for alias in node.names if alias.name != "*"
+                ]
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                targets = [node.name]
+            elif isinstance(node, ast.Delete):
+                targets = [
+                    target.id for target in node.targets
+                    if isinstance(target, ast.Name)
+                ]
+            resolved_values: tuple[str, ...] | None = None
+            if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                resolved_values = (value.value,)
+            elif isinstance(value, ast.Name):
+                resolved_values = symbol_values.get(value.id)
+            for target in targets:
+                symbol_values.pop(target, None)
+                if resolved_values is not None:
+                    symbol_values[target] = resolved_values
+        schemas = symbol_values.get("SCHEMA_VERSION", ())
         commands: set[str] = set()
         response_keys: set[str] = set()
         for node in ast.walk(tree):
@@ -1025,12 +1059,8 @@ def _r17_read_modules(
             "protocols": tuple(sorted(
                 value for value in strings if R17_PROTOCOL_PATTERN.fullmatch(value)
             )),
-            "schemas": tuple(sorted(schemas)),
-            "symbol_values": (
-                {"SCHEMA_VERSION": tuple(sorted(schemas))}
-                if schemas
-                else {}
-            ),
+            "schemas": schemas,
+            "symbol_values": symbol_values,
             "functions": frozenset(
                 node.name
                 for node in tree.body
@@ -1168,6 +1198,31 @@ def _r17_contract_raises(node: ast.AST) -> tuple[str, ...]:
 def _r17_contract_symbols(tree: ast.Module) -> dict[str, dict[str, Any]]:
     symbols: dict[str, dict[str, Any]] = {}
     for node in tree.body:
+        rebound: list[str] = []
+        if isinstance(node, ast.Import):
+            rebound = [
+                alias.asname or alias.name.split(".", 1)[0]
+                for alias in node.names
+            ]
+        elif isinstance(node, ast.ImportFrom):
+            rebound = [
+                alias.asname or alias.name
+                for alias in node.names if alias.name != "*"
+            ]
+        elif isinstance(node, ast.Assign):
+            rebound = [
+                target.id for target in node.targets
+                if isinstance(target, ast.Name)
+            ]
+        elif isinstance(node, ast.Delete):
+            rebound = [
+                target.id for target in node.targets
+                if isinstance(target, ast.Name)
+            ]
+        for name in rebound:
+            symbols.pop(name, None)
+        if rebound:
+            continue
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             symbols[node.name] = {
                 "kind": "function",
@@ -1213,54 +1268,220 @@ def _r17_contract_symbols(tree: ast.Module) -> dict[str, dict[str, Any]]:
     return symbols
 
 
-def _r17_string_sequence(node: ast.AST | None) -> tuple[str, ...] | None:
-    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+def _r17_string_sequence(
+    node: ast.AST | None,
+    bindings: dict[str, tuple[tuple[str, ...], str]] | None = None,
+) -> tuple[tuple[str, ...], str] | None:
+    known = bindings or {}
+    if isinstance(node, ast.Name):
+        return known.get(node.id)
+    if isinstance(node, ast.Dict):
         values = tuple(
-            item.value
-            for item in node.elts
-            if isinstance(item, ast.Constant) and isinstance(item.value, str)
+            key.value
+            for key in node.keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
         )
-        return values if len(values) == len(node.elts) else None
+        return (values, "mapping") if len(values) == len(node.keys) else None
+    if isinstance(node, (ast.List, ast.Tuple)):
+        values: list[str] = []
+        for item in node.elts:
+            if isinstance(item, ast.Constant) and isinstance(item.value, str):
+                values.append(item.value)
+                continue
+            if isinstance(item, ast.Starred):
+                expanded = _r17_string_sequence(item.value, known)
+                if expanded is not None:
+                    values.extend(expanded[0])
+                    continue
+            return None
+        return tuple(values), "list" if isinstance(node, ast.List) else "tuple"
     if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
-        left = _r17_string_sequence(node.left)
-        right = _r17_string_sequence(node.right)
-        return (*left, *right) if left is not None and right is not None else None
+        left = _r17_string_sequence(node.left, known)
+        right = _r17_string_sequence(node.right, known)
+        if (
+            left is not None
+            and right is not None
+            and left[1] == right[1]
+            and left[1] in {"list", "tuple"}
+        ):
+            return (*left[0], *right[0]), left[1]
     return None
 
 
-def _r17_declared_exports(tree: ast.Module) -> tuple[str, ...] | None:
+def _r17_declared_exports(
+    tree: ast.Module,
+) -> tuple[tuple[str, ...] | None, bool]:
     declared = False
-    exports: list[str] = []
+    static_sequences: dict[str, tuple[tuple[str, ...], str]] = {}
+    sequence_ids: dict[str, int] = {}
+    next_sequence_id = 0
     for node in tree.body:
         value: ast.AST | None = None
-        if isinstance(node, ast.Assign) and any(
-            isinstance(target, ast.Name) and target.id == "__all__"
-            for target in node.targets
-        ):
-            declared = True
+        append = False
+        targets: list[str] = []
+        if isinstance(node, ast.Assign):
+            targets = [
+                target.id for target in node.targets
+                if isinstance(target, ast.Name)
+            ]
             value = node.value
-        elif (
-            isinstance(node, ast.AnnAssign)
-            and isinstance(node.target, ast.Name)
-            and node.target.id == "__all__"
-        ):
-            declared = True
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            targets = [node.target.id]
             value = node.value
         elif (
             isinstance(node, ast.AugAssign)
             and isinstance(node.target, ast.Name)
-            and node.target.id == "__all__"
-            and isinstance(node.op, ast.Add)
         ):
-            declared = True
+            targets = [node.target.id]
             value = node.value
-        else:
+            append = isinstance(node.op, ast.Add)
+        if targets:
+            collection = _r17_string_sequence(value, static_sequences)
+            sequence_id = (
+                sequence_ids.get(value.id)
+                if isinstance(value, ast.Name)
+                else None
+            )
+            if append:
+                previous = static_sequences.get(targets[0])
+                if previous is not None and collection is not None:
+                    previous_values, previous_kind = previous
+                    values, kind = collection
+                    if previous_kind == "list" or (
+                        previous_kind == kind == "tuple"
+                    ):
+                        collection = ((*previous_values, *values), previous_kind)
+                        sequence_id = (
+                            sequence_ids.get(targets[0])
+                            if previous_kind == "list"
+                            else None
+                        )
+                    else:
+                        collection = None
+                else:
+                    collection = None
+            if collection is None:
+                for selected in ast.walk(value) if value is not None else ():
+                    if isinstance(selected, ast.Name):
+                        static_sequences.pop(selected.id, None)
+                        sequence_ids.pop(selected.id, None)
+            elif sequence_id is None:
+                next_sequence_id += 1
+                sequence_id = next_sequence_id
+            for target in targets:
+                static_sequences.pop(target, None)
+                sequence_ids.pop(target, None)
+                if collection is not None:
+                    static_sequences[target] = collection
+                    sequence_ids[target] = sequence_id
+            if "__all__" in targets:
+                declared = True
+                if collection is None or collection[1] not in {"list", "tuple"}:
+                    # Python import-star consumes __all__ as an indexable sequence;
+                    # other static containers are rejected rather than misread.
+                    return (), True
             continue
-        values = _r17_string_sequence(value)
-        if values is None:
-            return ()
-        exports.extend(values)
-    return tuple(sorted(set(exports))) if declared else None
+        if (
+            isinstance(node, ast.For)
+            and isinstance(node.target, ast.Name)
+            and not node.orelse
+        ):
+            loop_collection = _r17_string_sequence(node.iter, static_sequences)
+            loop_values = loop_collection[0] if loop_collection is not None else None
+            extended: set[str] = set()
+            supported = loop_values is not None
+            for statement in node.body:
+                if not isinstance(statement, ast.Assign):
+                    supported = False
+                    break
+                for target in statement.targets:
+                    if not (
+                        isinstance(target, ast.Subscript)
+                        and isinstance(target.value, ast.Name)
+                        and isinstance(target.slice, ast.Name)
+                        and target.slice.id == node.target.id
+                        and target.value.id in static_sequences
+                        and static_sequences[target.value.id][1] == "mapping"
+                    ):
+                        supported = False
+                        break
+                    extended.add(target.value.id)
+                if not supported:
+                    break
+            if supported and extended and loop_values is not None:
+                for name in extended:
+                    values, kind = static_sequences[name]
+                    static_sequences[name] = (
+                        (*values, *loop_values), kind
+                    )
+                continue
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            evaluated = (
+                *node.decorator_list,
+                *node.args.defaults,
+                *(value for value in node.args.kw_defaults if value is not None),
+                *(argument.annotation for argument in (
+                    *node.args.posonlyargs,
+                    *node.args.args,
+                    *node.args.kwonlyargs,
+                ) if argument.annotation is not None),
+                *((node.args.vararg.annotation,) if node.args.vararg and node.args.vararg.annotation else ()),
+                *((node.args.kwarg.annotation,) if node.args.kwarg and node.args.kwarg.annotation else ()),
+                *((node.returns,) if node.returns is not None else ()),
+            )
+            selected_nodes = tuple(
+                selected for expression in evaluated for selected in ast.walk(expression)
+            )
+        else:
+            selected_nodes = tuple(ast.walk(node))
+        referenced_names = {
+            selected.id
+            for selected in selected_nodes
+            if isinstance(selected, ast.Name)
+        }
+        referenced_names.update(
+            selected.asname or selected.name.split(".", 1)[0]
+            for selected in selected_nodes
+            if isinstance(selected, ast.alias)
+        )
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            referenced_names.add(node.name)
+        referenced_names.update(
+            selected.name
+            for selected in selected_nodes
+            if isinstance(selected, ast.ExceptHandler) and selected.name
+        )
+        referenced_names.update(
+            selected.name
+            for selected in selected_nodes
+            if isinstance(selected, (ast.MatchAs, ast.MatchStar)) and selected.name
+        )
+        referenced_names.update(
+            selected.rest
+            for selected in selected_nodes
+            if isinstance(selected, ast.MatchMapping) and selected.rest
+        )
+        export_sequence_id = sequence_ids.get("__all__")
+        export_alias_referenced = (
+            export_sequence_id is not None
+            and any(
+                sequence_ids.get(name) == export_sequence_id
+                for name in referenced_names
+            )
+        )
+        for name in referenced_names:
+            static_sequences.pop(name, None)
+            sequence_ids.pop(name, None)
+        if "__all__" in referenced_names or export_alias_referenced:
+            # Runtime mutation is outside the static model; an unresolved export
+            # list is deliberately rejected instead of falling back to old values.
+            return (), True
+    exports = static_sequences.get("__all__")
+    return (
+        tuple(sorted(set(exports[0])))
+        if declared and exports is not None
+        else None
+    ), False
 
 
 def _r17_dotted_name(node: ast.AST) -> tuple[str, ...] | None:
@@ -1279,75 +1500,173 @@ def _r17_symbol_bindings(
     source: str,
     record: dict[str, Any],
     modules: set[str],
-) -> tuple[dict[str, tuple[tuple[str, str], ...]], tuple[str, ...]]:
-    bindings: dict[str, set[tuple[str, str]]] = {}
+) -> tuple[
+    dict[str, tuple[tuple[str, str], ...]],
+    tuple[str, ...],
+    tuple[str, ...],
+]:
+    bindings: dict[str, tuple[str, str]] = {}
     module_aliases: dict[str, str] = {}
-    star_imports: set[str] = set()
+    star_imports: list[str] = []
+    uncertain_symbols: set[str] = set()
+    local_symbols: set[str] = set()
     for node in record["tree"].body:
         if isinstance(node, ast.Import):
             for alias in node.names:
+                local = alias.asname or alias.name.split(".", 1)[0]
+                bindings.pop(local, None)
+                module_aliases.pop(local, None)
+                uncertain_symbols.discard(local)
+                local_symbols.discard(local)
                 target = _r17_existing(alias.name, modules)
                 if target is None:
                     continue
-                local = alias.asname or alias.name.split(".", 1)[0]
                 module_aliases[local] = target if alias.asname else local
         elif isinstance(node, ast.ImportFrom):
             base = _r17_import_base(source, record["package"], node)
             target = _r17_existing(base, modules)
-            if target is None:
-                continue
             for alias in node.names:
                 if alias.name == "*":
-                    star_imports.add(target)
+                    if target is not None:
+                        star_imports.append(target)
                     continue
                 local = alias.asname or alias.name
+                bindings.pop(local, None)
+                module_aliases.pop(local, None)
+                uncertain_symbols.discard(local)
+                local_symbols.discard(local)
+                if target is None:
+                    continue
                 imported_module = f"{base}.{alias.name}"
                 if imported_module in modules:
                     module_aliases[local] = imported_module
                 else:
-                    bindings.setdefault(local, set()).add((target, alias.name))
-
-    local_symbols = set(_r17_contract_symbols(record["tree"]))
-    assignments: list[tuple[str, ast.AST]] = []
-    for node in record["tree"].body:
-        if isinstance(node, ast.Assign):
-            assignments.extend(
-                (target.id, node.value)
-                for target in node.targets
-                if isinstance(target, ast.Name)
-            )
-        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-            if node.value is not None:
-                assignments.append((node.target.id, node.value))
-    for _ in range(len(assignments) + 1):
-        changed = False
-        for local, value in assignments:
-            targets: set[tuple[str, str]] = set()
-            if isinstance(value, ast.Name):
-                targets.update(bindings.get(value.id, set()))
-                if value.id in local_symbols:
-                    targets.add((source, value.id))
+                    bindings[local] = (target, alias.name)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            bindings.pop(node.name, None)
+            module_aliases.pop(node.name, None)
+            if node.decorator_list:
+                uncertain_symbols.add(node.name)
             else:
-                parts = _r17_dotted_name(value)
-                if parts and parts[0] in module_aliases:
-                    qualified = ".".join((module_aliases[parts[0]], *parts[1:]))
-                    module = _r17_existing(qualified, modules)
-                    if module is not None:
-                        suffix = qualified.removeprefix(module).lstrip(".").split(".")
-                        if len(suffix) == 1 and suffix[0]:
-                            targets.add((module, suffix[0]))
-            previous = bindings.setdefault(local, set())
-            before = len(previous)
-            previous.update(targets)
-            changed = changed or len(previous) != before
-        if not changed:
-            break
+                uncertain_symbols.discard(node.name)
+            local_symbols.add(node.name)
+        elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+            value = node.value
+            raw_targets = (
+                list(node.targets) if isinstance(node, ast.Assign) else [node.target]
+            )
+            for raw_target in raw_targets:
+                if isinstance(raw_target, ast.Name):
+                    continue
+                uncertain_symbols.update(
+                    selected.id
+                    for selected in ast.walk(raw_target)
+                    if isinstance(selected, ast.Name)
+                    and isinstance(selected.ctx, (ast.Store, ast.Del))
+                )
+                uncertain_symbols.update(
+                    selected.attr
+                    for selected in ast.walk(raw_target)
+                    if isinstance(selected, ast.Attribute)
+                    and isinstance(selected.ctx, (ast.Store, ast.Del))
+                )
+                if any(
+                    isinstance(selected, ast.Call)
+                    and isinstance(selected.func, ast.Name)
+                    and selected.func.id in {"globals", "locals", "vars"}
+                    for selected in ast.walk(raw_target)
+                ):
+                    uncertain_symbols.add("*")
+            targets = (
+                [
+                    target.id for target in node.targets
+                    if isinstance(target, ast.Name)
+                ]
+                if isinstance(node, ast.Assign)
+                else (
+                    [node.target.id]
+                    if isinstance(node.target, ast.Name) and value is not None
+                    else []
+                )
+            )
+            for local in targets:
+                bindings.pop(local, None)
+                module_aliases.pop(local, None)
+                uncertain_symbols.discard(local)
+                if local in record["symbol_values"]:
+                    local_symbols.add(local)
+                    continue
+                target_binding: tuple[str, str] | None = None
+                if isinstance(value, ast.Name):
+                    target_binding = bindings.get(value.id)
+                    if target_binding is None and value.id in local_symbols:
+                        target_binding = (source, value.id)
+                else:
+                    parts = _r17_dotted_name(value) if value is not None else None
+                    if parts and parts[0] in module_aliases:
+                        qualified = ".".join((module_aliases[parts[0]], *parts[1:]))
+                        module = _r17_existing(qualified, modules)
+                        if module is not None:
+                            suffix = qualified.removeprefix(module).lstrip(".").split(".")
+                            if len(suffix) == 1 and suffix[0]:
+                                target_binding = (module, suffix[0])
+                if target_binding is not None:
+                    bindings[local] = target_binding
+                elif not isinstance(value, ast.Constant):
+                    uncertain_symbols.add(local)
+                local_symbols.add(local)
+        elif isinstance(node, ast.Delete):
+            for target in node.targets:
+                if not isinstance(target, ast.Name):
+                    continue
+                bindings.pop(target.id, None)
+                module_aliases.pop(target.id, None)
+                uncertain_symbols.discard(target.id)
+                local_symbols.discard(target.id)
+        else:
+            # Control-dependent and runtime-created bindings are intentionally
+            # unresolved. The resolver turns these markers into a hard failure.
+            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+                uncertain_symbols.add("*")
+            for selected in ast.walk(node):
+                if isinstance(selected, ast.Import):
+                    uncertain_symbols.update(
+                        alias.asname or alias.name.split(".", 1)[0]
+                        for alias in selected.names
+                    )
+                elif isinstance(selected, ast.ImportFrom):
+                    for alias in selected.names:
+                        uncertain_symbols.add(
+                            "*" if alias.name == "*" else alias.asname or alias.name
+                        )
+                elif (
+                    isinstance(selected, ast.Name)
+                    and isinstance(selected.ctx, (ast.Store, ast.Del))
+                ):
+                    uncertain_symbols.add(selected.id)
+                elif isinstance(
+                    selected, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+                ):
+                    uncertain_symbols.add(selected.name)
+                elif isinstance(selected, ast.ExceptHandler) and selected.name:
+                    uncertain_symbols.add(selected.name)
+                elif isinstance(selected, (ast.MatchAs, ast.MatchStar)) and selected.name:
+                    uncertain_symbols.add(selected.name)
+                elif isinstance(selected, ast.MatchMapping) and selected.rest:
+                    uncertain_symbols.add(selected.rest)
+                elif (
+                    isinstance(selected, ast.Call)
+                    and isinstance(selected.func, ast.Name)
+                    and selected.func.id in {"exec", "eval", "globals", "locals"}
+                ):
+                    uncertain_symbols.add("*")
     return (
         {
-            name: tuple(sorted(targets))
-            for name, targets in sorted(bindings.items())
+            name: (target,)
+            for name, target in sorted(bindings.items())
         },
-        tuple(sorted(star_imports)),
+        tuple(star_imports),
+        tuple(sorted(uncertain_symbols)),
     )
 
 
@@ -1355,7 +1674,9 @@ def _r17_contract_fragment(
     record: dict[str, Any],
     symbol_bindings: dict[str, tuple[tuple[str, str], ...]],
     star_imports: tuple[str, ...],
+    uncertain_symbols: tuple[str, ...],
 ) -> dict[str, Any]:
+    exports, exports_uncertain = _r17_declared_exports(record["tree"])
     imported_symbols: set[str] = set()
     for node in record["tree"].body:
         if isinstance(node, ast.Import):
@@ -1376,9 +1697,12 @@ def _r17_contract_fragment(
         "response_keys": tuple(sorted(record["response_keys"])),
         "imported_symbols": tuple(sorted(imported_symbols)),
         "symbols": _r17_contract_symbols(record["tree"]),
-        "exports": _r17_declared_exports(record["tree"]),
+        "exports": exports,
+        "exports_uncertain": exports_uncertain,
         "symbol_bindings": symbol_bindings,
         "star_imports": star_imports,
+        "uncertain_symbols": uncertain_symbols,
+        "dynamic_getattr": "__getattr__" in record["functions"],
     }
 
 
@@ -1547,12 +1871,12 @@ def _r17_contract_binding_matches(
     protocol = contract["service_protocol"]
     layer = contract["owner_layer"]
     schemas = set(fragment["schemas"])
-    for schema_locator, schema_index in _r17_resolve_public_symbol(
+    for schema_locator, schema_index, schema_symbol in _r17_resolve_public_symbol(
         model, locator, fragment_index, "SCHEMA_VERSION"
     ):
         schema_fragment = model["nodes"][schema_locator]["fragments"][schema_index]
         schemas.update(
-            schema_fragment["symbol_values"].get("SCHEMA_VERSION", ())
+            schema_fragment["symbol_values"].get(schema_symbol, ())
         )
     if binding == "declared_schema":
         matched = protocol in schemas
@@ -1591,8 +1915,8 @@ def _r17_resolve_public_symbol(
     locator: str,
     fragment_index: int,
     symbol: str,
-) -> set[tuple[str, int]]:
-    definitions: set[tuple[str, int]] = set()
+) -> set[tuple[str, int, str]]:
+    definitions: set[tuple[str, int, str]] = set()
     queue = deque([(locator, fragment_index, symbol, True)])
     visited: set[tuple[str, int, str, bool]] = set()
     while queue:
@@ -1602,27 +1926,58 @@ def _r17_resolve_public_symbol(
             continue
         visited.add(state)
         fragment = model["nodes"][selected_locator]["fragments"][selected_index]
+        if require_public and fragment["exports_uncertain"]:
+            raise AssertionError(
+                "static public symbol exports are unresolved: "
+                f"{selected_locator}.{selected_symbol}"
+            )
         if require_public and not _r17_fragment_exports_symbol(
             fragment, selected_symbol
         ):
             continue
         if (
+            selected_symbol in fragment["uncertain_symbols"]
+            or "*" in fragment["uncertain_symbols"]
+        ):
+            raise AssertionError(
+                "static public symbol binding is unresolved: "
+                f"{selected_locator}.{selected_symbol}"
+            )
+        locally_defined = (
             selected_symbol in fragment["symbols"]
             or selected_symbol in fragment["symbol_values"]
-        ):
-            definitions.add((selected_locator, selected_index))
-        for target_locator, target_symbol in fragment["symbol_bindings"].get(
+        )
+        targets = fragment["symbol_bindings"].get(
             selected_symbol, ()
-        ):
+        )
+        star_imports = fragment["star_imports"]
+        if locally_defined:
+            definitions.add((selected_locator, selected_index, selected_symbol))
+        for target_locator, target_symbol in targets:
             for target_index, _target in enumerate(
                 model["nodes"][target_locator]["fragments"]
             ):
                 queue.append((target_locator, target_index, target_symbol, False))
-        for target_locator in fragment["star_imports"]:
+        for target_locator in star_imports:
             for target_index, _target in enumerate(
                 model["nodes"][target_locator]["fragments"]
             ):
                 queue.append((target_locator, target_index, selected_symbol, True))
+        if (
+            not locally_defined
+            and not targets
+            and not star_imports
+            and fragment["dynamic_getattr"]
+        ):
+            raise AssertionError(
+                "static public symbol binding depends on module __getattr__: "
+                f"{selected_locator}.{selected_symbol}"
+            )
+    if len(definitions) > 1:
+        raise AssertionError(
+            "static public symbol binding resolves to multiple definitions: "
+            f"{locator}.{symbol}: {sorted(definitions)}"
+        )
     return definitions
 
 
@@ -1654,8 +2009,12 @@ def _r17_contract_binding_witnesses(
     witnesses: set[str] = set()
     for locator, node in model["nodes"].items():
         for fragment_index, fragment in enumerate(node["fragments"]):
-            if owner not in _r17_resolve_public_symbol(
+            resolved = _r17_resolve_public_symbol(
                 model, locator, fragment_index, symbol
+            )
+            if not any(
+                (resolved_locator, resolved_index) == owner
+                for resolved_locator, resolved_index, _resolved_symbol in resolved
             ):
                 continue
             if _r17_contract_binding_matches(
@@ -2098,6 +2457,42 @@ def _r17_move_schema_to_reexported_submodule(
         encoding="utf-8",
     )
     return origin_module, schema_module_name
+
+
+def _r17_schema_binding_variant_records(
+    records: dict[str, dict[str, Any]],
+    facade_locator: str,
+    replacement: str,
+    extra_files: dict[str, str],
+) -> dict[str, dict[str, Any]]:
+    record = records[facade_locator]
+    source = record["source"]
+    assignments = [
+        node
+        for node in record["tree"].body
+        if isinstance(node, (ast.Assign, ast.AnnAssign))
+        and _r17_assigned_string(node, "SCHEMA_VERSION") is not None
+    ]
+    _require(len(assignments) == 1, "one facade SCHEMA_VERSION assignment")
+    assignment = assignments[0]
+    lines = source.splitlines(keepends=True)
+    transformed = "".join(
+        lines[: assignment.lineno - 1]
+        + [replacement.rstrip() + "\n"]
+        + lines[assignment.end_lineno :]
+    )
+    relative_facade = Path(*_r17_module_id(facade_locator).split(".")).with_suffix(".py")
+    with tempfile.TemporaryDirectory(prefix="r17-binding-shape-") as raw_temp:
+        package_root = Path(raw_temp) / "gravity_sdk"
+        facade_path = package_root / relative_facade
+        facade_path.parent.mkdir(parents=True)
+        facade_path.write_text(transformed, encoding="utf-8")
+        for relative, content in extra_files.items():
+            target = package_root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+        replacements = _r17_read_modules(package_root)
+    return {**records, **replacements}
 
 
 def _r17_split_merge_responsibility_consumers(
@@ -4886,7 +5281,6 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             tree, ("_r17_responsibility_inventory_pipeline",)
         )
         expected_tcb = {
-            "_r17_assigned_string",
             "_r17_contract_binding_matches",
             "_r17_contract_binding_witnesses",
             "_r17_contract_fragment",
@@ -5131,6 +5525,592 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
             str(caught.exception),
         )
 
+    def test_static_schema_binding_shapes_preserve_responsibility_inventory(self) -> None:
+        contracts = _r17_load_responsibility_contracts()
+        records = _r17_read_modules(None)
+        baseline = _r17_derive_responsibility_inventory(
+            _r17_responsibility_model(records), contracts
+        )
+        facade_locator, = baseline["decisions"]["agent-facade"]["locators"]
+        good = 'SCHEMA_VERSION = "gravity.agent.v1"\n'
+        private = '_INTERNAL_SCHEMA = "gravity.agent.v1"\n'
+        wrong = 'SCHEMA_VERSION = "gravity.wrong.v1"\n'
+        # A shapes have one execution-ordered static definition, so relocating
+        # that definition must preserve the complete responsibility inventory.
+        cases = (
+            (
+                "absolute named import",
+                "from gravity_sdk.r17_shape_source import SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "absolute same-name alias import",
+                "from gravity_sdk.r17_shape_source import "
+                "SCHEMA_VERSION as SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "absolute differently-named alias import",
+                "from gravity_sdk.r17_shape_source import "
+                "_INTERNAL_SCHEMA as SCHEMA_VERSION",
+                {"r17_shape_source.py": private},
+            ),
+            (
+                "explicit import ignores source __all__ omission",
+                "from gravity_sdk.r17_shape_source import SCHEMA_VERSION",
+                {"r17_shape_source.py": good + "__all__ = []\n"},
+            ),
+            (
+                "absolute star import with implicit exports",
+                "from gravity_sdk.r17_shape_source import *",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "absolute module attribute assignment",
+                "import gravity_sdk.r17_shape_source\n"
+                "SCHEMA_VERSION = gravity_sdk.r17_shape_source.SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "absolute aliased module attribute assignment",
+                "import gravity_sdk.r17_shape_source as source\n"
+                "SCHEMA_VERSION = source.SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "dot named import",
+                "from .r17_shape_source import SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "dot differently-named alias import",
+                "from .r17_shape_source import _INTERNAL_SCHEMA as SCHEMA_VERSION",
+                {"r17_shape_source.py": private},
+            ),
+            (
+                "dot star import",
+                "from .r17_shape_source import *",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "dot module attribute assignment",
+                "from . import r17_shape_source\n"
+                "SCHEMA_VERSION = r17_shape_source.SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "dot aliased module attribute assignment",
+                "from . import r17_shape_source as source\n"
+                "SCHEMA_VERSION = source.SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "dot-dot named import",
+                "from .r17_shape_pkg.entry import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_pkg/__init__.py": "",
+                    "r17_shape_pkg/entry.py": (
+                        "from ..r17_shape_source import SCHEMA_VERSION\n"
+                    ),
+                },
+            ),
+            (
+                "dot-dot differently-named alias import",
+                "from .r17_shape_pkg.entry import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": private,
+                    "r17_shape_pkg/__init__.py": "",
+                    "r17_shape_pkg/entry.py": (
+                        "from ..r17_shape_source import "
+                        "_INTERNAL_SCHEMA as SCHEMA_VERSION\n"
+                    ),
+                },
+            ),
+            (
+                "dot-dot star import",
+                "from .r17_shape_pkg.entry import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_pkg/__init__.py": "",
+                    "r17_shape_pkg/entry.py": "from ..r17_shape_source import *\n",
+                },
+            ),
+            (
+                "dot-dot module attribute assignment",
+                "from .r17_shape_pkg.entry import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_pkg/__init__.py": "",
+                    "r17_shape_pkg/entry.py": (
+                        "from .. import r17_shape_source\n"
+                        "SCHEMA_VERSION = r17_shape_source.SCHEMA_VERSION\n"
+                    ),
+                },
+            ),
+            (
+                "dot-dot aliased module attribute assignment",
+                "from .r17_shape_pkg.entry import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_pkg/__init__.py": "",
+                    "r17_shape_pkg/entry.py": (
+                        "from .. import r17_shape_source as source\n"
+                        "SCHEMA_VERSION = source.SCHEMA_VERSION\n"
+                    ),
+                },
+            ),
+            (
+                "subpackage init re-export chain",
+                "from .r17_shape_pkg import SCHEMA_VERSION",
+                {
+                    "r17_shape_pkg/__init__.py": (
+                        "from .mid import SCHEMA_VERSION\n"
+                    ),
+                    "r17_shape_pkg/mid.py": "from .leaf import SCHEMA_VERSION\n",
+                    "r17_shape_pkg/leaf.py": good,
+                },
+            ),
+            (
+                "subpackage chained renamed re-exports",
+                "from .r17_shape_pkg import SCHEMA_VERSION",
+                {
+                    "r17_shape_pkg/__init__.py": (
+                        "from .mid import MID_SCHEMA as SCHEMA_VERSION\n"
+                    ),
+                    "r17_shape_pkg/mid.py": (
+                        "from .leaf import _INTERNAL_SCHEMA as MID_SCHEMA\n"
+                    ),
+                    "r17_shape_pkg/leaf.py": private,
+                },
+            ),
+            (
+                "subpackage star re-export chain",
+                "from .r17_shape_pkg import SCHEMA_VERSION",
+                {
+                    "r17_shape_pkg/__init__.py": "from .mid import *\n",
+                    "r17_shape_pkg/mid.py": "from .leaf import SCHEMA_VERSION\n",
+                    "r17_shape_pkg/leaf.py": good,
+                },
+            ),
+            (
+                "star import with listed list __all__",
+                "from .r17_shape_source import *",
+                {"r17_shape_source.py": good + '__all__ = ["SCHEMA_VERSION"]\n'},
+            ),
+            (
+                "star import with listed tuple __all__",
+                "from .r17_shape_source import *",
+                {"r17_shape_source.py": good + '__all__ = ("SCHEMA_VERSION",)\n'},
+            ),
+            (
+                "star import with concatenated static __all__",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good + '__all__ = [] + ["SCHEMA_VERSION"]\n'
+                    )
+                },
+            ),
+            (
+                "star import with augmented static __all__",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good + '__all__ = []\n__all__ += ["SCHEMA_VERSION"]\n'
+                    )
+                },
+            ),
+            (
+                "star import with static-name __all__",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good
+                        + '_EXPORTS = ("SCHEMA_VERSION",)\n'
+                        + "__all__ = _EXPORTS\n"
+                    )
+                },
+            ),
+            (
+                "star import with static export map extension",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good
+                        + '_EXPORTS = {"SCHEMA_VERSION": None}\n'
+                        + 'for _name in ("OTHER",):\n'
+                        + "    _EXPORTS[_name] = None\n"
+                        + "__all__ = [*_EXPORTS]\n"
+                    )
+                },
+            ),
+            (
+                "later star explicitly omits the existing symbol",
+                "from .r17_shape_source import *\n"
+                "from .r17_shape_excluded import *",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_excluded.py": "__all__ = []\n",
+                },
+            ),
+            (
+                "assignment from imported local name",
+                "from .r17_shape_source import SCHEMA_VERSION as _SOURCE_SCHEMA\n"
+                "SCHEMA_VERSION = _SOURCE_SCHEMA",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "assignment from local protocol constant",
+                '_INTERNAL_SCHEMA = "gravity.agent.v1"\n'
+                "SCHEMA_VERSION = _INTERNAL_SCHEMA",
+                {},
+            ),
+            (
+                "later named import wins",
+                "from .r17_shape_wrong import SCHEMA_VERSION\n"
+                "from .r17_shape_source import SCHEMA_VERSION",
+                {
+                    "r17_shape_wrong.py": wrong,
+                    "r17_shape_source.py": good,
+                },
+            ),
+            (
+                "later attribute assignment wins",
+                "import gravity_sdk.r17_shape_wrong as wrong_source\n"
+                "import gravity_sdk.r17_shape_source as good_source\n"
+                "SCHEMA_VERSION = wrong_source.SCHEMA_VERSION\n"
+                "SCHEMA_VERSION = good_source.SCHEMA_VERSION",
+                {
+                    "r17_shape_wrong.py": wrong,
+                    "r17_shape_source.py": good,
+                },
+            ),
+            (
+                "later literal assignment wins",
+                'SCHEMA_VERSION = "gravity.wrong.v1"\n'
+                'SCHEMA_VERSION = "gravity.agent.v1"',
+                {},
+            ),
+        )
+        for label, replacement, extra_files in cases:
+            with self.subTest(shape=label):
+                variant_records = _r17_schema_binding_variant_records(
+                    records, facade_locator, replacement, extra_files
+                )
+                variant = _r17_derive_responsibility_inventory(
+                    _r17_responsibility_model(variant_records), contracts
+                )
+                delta = sorted(set(baseline["members"]) ^ set(variant["members"]))
+                comparison = _r17_compare_responsibilities_to_migration_ledger(
+                    variant
+                )
+                self.assertEqual(84, variant["member_count"], label)
+                self.assertEqual(baseline["members"], variant["members"], label)
+                self.assertEqual([], delta, label)
+                self.assertEqual(82, comparison["normalized_move_count"], label)
+                self.assertTrue(
+                    comparison["normalized_moves_equal_ledger"], label
+                )
+
+    def test_unresolved_schema_binding_shapes_fail_closed(self) -> None:
+        contracts = _r17_load_responsibility_contracts()
+        records = _r17_read_modules(None)
+        baseline = _r17_derive_responsibility_inventory(
+            _r17_responsibility_model(records), contracts
+        )
+        facade_locator, = baseline["decisions"]["agent-facade"]["locators"]
+        good = 'SCHEMA_VERSION = "gravity.agent.v1"\n'
+        wrong = 'SCHEMA_VERSION = "gravity.wrong.v1"\n'
+        # B shapes are control-dependent, runtime-created, or invalid exports;
+        # the static model must reject them rather than retain a stale binding.
+        cases = (
+            (
+                "star import omitted by explicit __all__",
+                "from .r17_shape_source import *",
+                {"r17_shape_source.py": good + "__all__ = []\n"},
+            ),
+            (
+                "set __all__ is not an import-star sequence",
+                "from .r17_shape_source import *",
+                {"r17_shape_source.py": good + '__all__ = {"SCHEMA_VERSION"}\n'},
+            ),
+            (
+                "dict __all__ is not an import-star sequence",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good + '__all__ = {"SCHEMA_VERSION": None}\n'
+                    )
+                },
+            ),
+            (
+                "TYPE_CHECKING conditional import",
+                "from typing import TYPE_CHECKING\n"
+                "if TYPE_CHECKING:\n"
+                "    from .r17_shape_wrong import SCHEMA_VERSION\n"
+                "else:\n"
+                "    from .r17_shape_source import SCHEMA_VERSION",
+                {
+                    "r17_shape_wrong.py": wrong,
+                    "r17_shape_source.py": good,
+                },
+            ),
+            (
+                "try except ImportError import",
+                "try:\n"
+                "    from .r17_shape_missing import SCHEMA_VERSION\n"
+                "except ImportError:\n"
+                "    from .r17_shape_source import SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "ordinary conditional import after valid binding",
+                "from .r17_shape_source import SCHEMA_VERSION\n"
+                "if RUNTIME_FLAG:\n"
+                "    from .r17_shape_wrong import SCHEMA_VERSION",
+                {
+                    "r17_shape_wrong.py": wrong,
+                    "r17_shape_source.py": good,
+                },
+            ),
+            (
+                "string concatenation after valid literal",
+                'SCHEMA_VERSION = "gravity.agent.v1"\n'
+                'SCHEMA_VERSION = "gravity.agent." + "v1"',
+                {},
+            ),
+            (
+                "f-string construction",
+                'SCHEMA_VERSION = f"gravity.agent.{\'v1\'}"',
+                {},
+            ),
+            (
+                "function return",
+                "def _r17_schema_value():\n"
+                '    return "gravity.agent.v1"\n'
+                "SCHEMA_VERSION = _r17_schema_value()",
+                {},
+            ),
+            (
+                "getattr lookup",
+                "from . import r17_shape_source\n"
+                'SCHEMA_VERSION = getattr(r17_shape_source, "SCHEMA_VERSION")',
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "dynamic import lookup",
+                "import importlib\n"
+                "SCHEMA_VERSION = importlib.import_module("
+                "'gravity_sdk.r17_shape_source').SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+            (
+                "module __getattr__",
+                "from .r17_shape_source import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": (
+                        '_INTERNAL_SCHEMA = "gravity.agent.v1"\n'
+                        '__all__ = ["SCHEMA_VERSION"]\n'
+                        "def __getattr__(name):\n"
+                        '    if name == "SCHEMA_VERSION":\n'
+                        "        return _INTERNAL_SCHEMA\n"
+                        "    raise AttributeError(name)\n"
+                    )
+                },
+            ),
+            (
+                "runtime __all__ append",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good + '__all__ = []\n__all__.append("SCHEMA_VERSION")\n'
+                    )
+                },
+            ),
+            (
+                "runtime __all__ removes static export",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good
+                        + '__all__ = ["SCHEMA_VERSION"]\n'
+                        + '__all__.remove("SCHEMA_VERSION")\n'
+                    )
+                },
+            ),
+            (
+                "runtime __all__ alias removes static export",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good
+                        + '_EXPORTS = ["SCHEMA_VERSION"]\n'
+                        + "__all__ = _EXPORTS\n"
+                        + '_EXPORTS.remove("SCHEMA_VERSION")\n'
+                    )
+                },
+            ),
+            (
+                "computed __all__",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good
+                        + "def _exports():\n"
+                        + '    return ["SCHEMA_VERSION"]\n'
+                        + "__all__ = _exports()\n"
+                    )
+                },
+            ),
+            (
+                "later star has computed __all__",
+                "from .r17_shape_source import *\n"
+                "from .r17_shape_dynamic import *",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_dynamic.py": (
+                        wrong
+                        + "def _exports():\n"
+                        + '    return ["SCHEMA_VERSION"]\n'
+                        + "__all__ = _exports()\n"
+                    ),
+                },
+            ),
+            (
+                "star source imports __all__ dynamically",
+                "from .r17_shape_source import *",
+                {
+                    "r17_shape_source.py": (
+                        good
+                        + "from .r17_shape_exports import EXPORTS as __all__\n"
+                    ),
+                    "r17_shape_exports.py": 'EXPORTS = ["SCHEMA_VERSION"]\n',
+                },
+            ),
+            (
+                "multiple star imports",
+                "from .r17_shape_source import *\n"
+                "from .r17_shape_wrong import *",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_wrong.py": wrong,
+                },
+            ),
+            (
+                "star and explicit binding collision",
+                "from .r17_shape_source import *\n"
+                "from .r17_shape_wrong import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_wrong.py": wrong,
+                },
+            ),
+            (
+                "later named import is wrong",
+                "from .r17_shape_source import SCHEMA_VERSION\n"
+                "from .r17_shape_wrong import SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_wrong.py": wrong,
+                },
+            ),
+            (
+                "later attribute assignment is wrong",
+                "import gravity_sdk.r17_shape_source as good_source\n"
+                "import gravity_sdk.r17_shape_wrong as wrong_source\n"
+                "SCHEMA_VERSION = good_source.SCHEMA_VERSION\n"
+                "SCHEMA_VERSION = wrong_source.SCHEMA_VERSION",
+                {
+                    "r17_shape_source.py": good,
+                    "r17_shape_wrong.py": wrong,
+                },
+            ),
+            (
+                "later literal assignment is wrong",
+                'SCHEMA_VERSION = "gravity.agent.v1"\n'
+                'SCHEMA_VERSION = "gravity.wrong.v1"',
+                {},
+            ),
+            (
+                "globals subscript rewrite after valid literal",
+                'SCHEMA_VERSION = "gravity.agent.v1"\n'
+                'globals()["SCHEMA_VERSION"] = "gravity.wrong.v1"',
+                {},
+            ),
+            (
+                "module attribute rewrite after valid literal",
+                "import sys\n"
+                'SCHEMA_VERSION = "gravity.agent.v1"\n'
+                "sys.modules[__name__].SCHEMA_VERSION = "
+                '"gravity.wrong.v1"',
+                {},
+            ),
+            (
+                "top-level call mutates a prior binding",
+                'SCHEMA_VERSION = "gravity.agent.v1"\n'
+                "def _rewrite_schema():\n"
+                "    global SCHEMA_VERSION\n"
+                '    SCHEMA_VERSION = "gravity.wrong.v1"\n'
+                "_rewrite_schema()",
+                {},
+            ),
+            (
+                "assignment expression",
+                '(SCHEMA_VERSION := "gravity.agent.v1")',
+                {},
+            ),
+            (
+                "for target binding",
+                'for SCHEMA_VERSION in ("gravity.agent.v1",):\n'
+                "    pass",
+                {},
+            ),
+            (
+                "with target binding",
+                "from contextlib import nullcontext\n"
+                'with nullcontext("gravity.agent.v1") as SCHEMA_VERSION:\n'
+                "    pass",
+                {},
+            ),
+            (
+                "exception target binding",
+                "try:\n"
+                "    raise RuntimeError\n"
+                "except RuntimeError as SCHEMA_VERSION:\n"
+                "    pass",
+                {},
+            ),
+            (
+                "match capture binding",
+                'match "gravity.agent.v1":\n'
+                "    case SCHEMA_VERSION:\n"
+                "        pass",
+                {},
+            ),
+            (
+                "delete after valid import",
+                "from .r17_shape_source import SCHEMA_VERSION\n"
+                "del SCHEMA_VERSION",
+                {"r17_shape_source.py": good},
+            ),
+        )
+        for label, replacement, extra_files in cases:
+            with self.subTest(shape=label):
+                with self.assertRaises(AssertionError) as caught:
+                    variant_records = _r17_schema_binding_variant_records(
+                        records, facade_locator, replacement, extra_files
+                    )
+                    _r17_derive_responsibility_inventory(
+                        _r17_responsibility_model(variant_records), contracts
+                    )
+                self.assertRegex(
+                    str(caught.exception),
+                    "static public symbol (?:binding|exports)|"
+                    "responsibility agent-facade semantic owners",
+                    label,
+                )
+
     def test_boundary_is_invariant_to_file_structure(self) -> None:
         contracts = _r17_load_responsibility_contracts()
         records = _r17_read_modules(None)
@@ -5287,7 +6267,7 @@ class R17ResponsibilityInventoryTests(unittest.TestCase):
         self.assertEqual((schema_origin,), schema_owners)
         self.assertEqual((schema_origin,), schema_bindings)
         self.assertEqual(
-            {(schema_implementation, 0)},
+            {(schema_implementation, 0, "SCHEMA_VERSION")},
             _r17_resolve_public_symbol(
                 schema_reexported_model,
                 schema_origin,
