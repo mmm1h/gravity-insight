@@ -99,8 +99,9 @@ Requirement branches implement domain cores and focused tests first. A named int
 
 `specified` means scope and dependency boundaries exist. Before changing a leaf or epic milestone to `ready`, the plan owner must fill unresolved decisions, bind a current baseline SHA and Issue, confirm write scope/worktree, and approve exact acceptance commands.
 
-R17 只有一个 leaf 状态和一个实施分支/Worktree。独立职责清单保留原 81 个 move、零误纳，
-并补入唯一由 `agent_handoff` 消费的 `relative_date_agent`，形成 82 个一对一迁移；
+R17 只有一个 leaf 状态和一个实施分支/Worktree。独立职责清单对原 81 个 move 无差集
+（不能独立证明账本本身没有误纳），并补入唯一由 `agent_handoff` 消费的
+`relative_date_agent`，形成 82 个一对一迁移；
 `agent_pagination` 合并删除，`agent_runtime_contracts` 与 `find.py` 仍不纳入。前缀图继续
 复现 contracts 排除，但四种全作用域图判据没有收敛，所以当前证据支撑调整后的有界范围，
 不证明完整 Agent domain，也不声称完全通过总纲的反路径依赖门槛。M0 characterization
@@ -116,7 +117,7 @@ R17 只有一个 leaf 状态和一个实施分支/Worktree。独立职责清单�
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=3db0645f85a182332fa5460ea7bea05aa73340d6d6108052292d546cbc74f5d9`；
+`live_checkpoint_sha256=2c380592d7c2d28e169c54fced453aa01c90937d7506bfc001728170e3a89246`；
 `live_checkpoint_tracked_sites=909`。
 
 The user approved the R01 binding and designated the Requirement document as

@@ -114,7 +114,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "3db0645f85a182332fa5460ea7bea05aa73340d6d6108052292d546cbc74f5d9",
+          "live_checkpoint_sha256": "2c380592d7c2d28e169c54fced453aa01c90937d7506bfc001728170e3a89246",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 909,
           "live_checkpoint_unclassified_sites": 0,

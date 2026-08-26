@@ -100,7 +100,7 @@ Machine state shared by this Requirement and `index.md`: `status=specified`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=3db0645f85a182332fa5460ea7bea05aa73340d6d6108052292d546cbc74f5d9`;
+`live_checkpoint_sha256=2c380592d7c2d28e169c54fced453aa01c90937d7506bfc001728170e3a89246`;
 `live_checkpoint_tracked_sites=909`.
 
 The required cross-file state gate is
@@ -855,8 +855,8 @@ if ($LASTEXITCODE) { throw 'R17 Phase 1 behavior regression after checkpoint pre
 
 ### Phase 1 Rollback Checkpoint
 
-The first three Phase 1 commands establish the complete Phase 1 tree. This
-command then requires one single-parent commit whose parent is exactly the
+The first four Phase 1 commands establish and exercise the complete Phase 1
+tree. This command then requires one single-parent commit whose parent is exactly the
 reviewed baseline, so every baseline-to-checkpoint change is in that commit.
 It reverse-applies the complete binary diff in a temporary Git index and
 requires the simulated result tree to equal the baseline tree exactly; the
@@ -1208,7 +1208,7 @@ branch when:
 - shared-spine paths point to `agents/capabilities.py`,
   `agents/composite.py`, and `agents/handoff.py`, while `plan_adapters.py` and
   `__main__.py` remain in place; and
-- all four Phase 1 commands passed on the trailer-bound Phase 1 checkpoint;
+- all five Phase 1 commands passed on the trailer-bound Phase 1 checkpoint;
   both Phase 2 rollback targets and every command from `Structural Exit And
   Reviewed Owners` onward pass on the final checkpoint without substitution.
 

@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "be8916e36768d710029c698e5ff02a49943b7ce5e9a0c406465fe1f8adb6f512",
-    "reference_evidence_sha256": "7f8b507efd26f9ee8b763b5748172c5f2f2e297220e637a74163837e1d5c006a",
-    "manual_review_sha256": "0020c698a35cc5718f4383cde7d759f9b5fd0161adf6eaa129de2200e2f50b86",
+    "reference_evidence_sha256": "36cb36910d579b6aaa88cd581248d58a41f5ef9f7bf90ee36869f32a5036ac77",
+    "manual_review_sha256": "edd5e49e178a027f81c3c318c30858735e1bc240850496003d19f1d393c38404",
     "owner_state": "baseline",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
@@ -699,7 +699,7 @@
       "rewrite_reference": 597,
       "rewrite_selector_data": 1
     },
-    "sites_sha256": "9bf48bd28357a34255cce00004c6b28d644eb8067219dc8db16e98a8327b59d3"
+    "sites_sha256": "3f9e75607c308fb664c08b7d874ee32c4bddb5b574ab9ead2624dfd805dc635b"
   },
   "blockers": [],
   "site_fields": [
@@ -2647,26 +2647,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:103:29:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "relative_date_agent",
-      "relative_date",
-      "documentation_spec",
-      "context review",
-      "rewrite_reference",
-      "active_governance_path",
-      0,
-      {
-        "kind": "replace_text",
-        "old_text": "relative_date_agent",
-        "new_text": "agents.relative_date",
-        "old_module": "gravity_sdk.relative_date_agent",
-        "new_module": "gravity_sdk.agents.relative_date"
-      }
-    ],
-    [
-      "specs/agent-runtime/index.md:103:9:bare text module string",
+      "specs/agent-runtime/index.md:103:26:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_handoff",
@@ -2685,7 +2666,26 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:104:26:bare text module string",
+      "specs/agent-runtime/index.md:104:2:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "relative_date_agent",
+      "relative_date",
+      "documentation_spec",
+      "context review",
+      "rewrite_reference",
+      "active_governance_path",
+      0,
+      {
+        "kind": "replace_text",
+        "old_text": "relative_date_agent",
+        "new_text": "agents.relative_date",
+        "old_module": "gravity_sdk.relative_date_agent",
+        "new_module": "gravity_sdk.agents.relative_date"
+      }
+    ],
+    [
+      "specs/agent-runtime/index.md:105:26:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2700,7 +2700,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:104:2:bare text module string",
+      "specs/agent-runtime/index.md:105:2:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
