@@ -38,32 +38,33 @@ _CANDIDATE_REASON_FIELDS = frozenset({"goal_match", "boundary_check"})
 
 
 def add_host_routing_arguments(command: Any) -> None:
-    """Register the explicit host arm while leaving recognizer as the default."""
+    """Register both arms while preserving whether routing was omitted."""
 
     command.add_argument(
         "--routing",
         choices=ROUTING_MODES,
-        default=DEFAULT_ROUTING_MODE,
+        default=None,
         help=(
-            "Discovery router (default: recognizer floor). Prefer host_catalog "
-            "when the caller can emit gravity.host-product-selection.v1; "
-            "host_catalog consumes that selection without invoking a model."
+            "Discovery router (when omitted: recognizer without a selection, "
+            "host_catalog with one). host_catalog consumes "
+            "gravity.host-product-selection.v1 without invoking a model."
         ),
     )
     command.add_argument(
         "--host-selection",
         help=(
             "Inline JSON, file, or '-' containing gravity.host-product-selection.v1; "
-            "valid only with --routing host_catalog."
+            "selects host_catalog when --routing is omitted, and is also valid "
+            "with explicit --routing host_catalog."
         ),
     )
 
 
 def host_routing_command(args: Any, client: Any) -> dict[str, Any] | None:
-    """Resolve the explicit CLI host arm, or return None for the recognizer."""
+    """Resolve the effective CLI host arm, or return None for the recognizer."""
 
-    routing = str(getattr(args, "routing", DEFAULT_ROUTING_MODE))
     selection = getattr(args, "host_selection", None)
+    routing = _effective_routing_mode(getattr(args, "routing", None), selection)
     if routing == HOST_ROUTING_MODE:
         from ..find_input import load_json_input
 
@@ -78,13 +79,14 @@ def host_routing_discovery(
     query: str | None,
     client: Any,
     *,
-    routing: str,
+    routing: str | None,
     host_selection: Any,
     workspace: Any | None,
     plan_node_namespace: str | None,
 ) -> dict[str, Any] | None:
-    """Resolve the explicit SDK host arm, or return None for the recognizer."""
+    """Resolve the effective SDK host arm, or return None for the recognizer."""
 
+    routing = _effective_routing_mode(routing, host_selection)
     if routing == HOST_ROUTING_MODE:
         return resolve_host_product_selection(
             str(query or ""), host_selection, client, workspace=workspace,
@@ -92,6 +94,12 @@ def host_routing_discovery(
         )
     _validate_routing_inputs(routing, host_selection)
     return None
+
+
+def _effective_routing_mode(routing: Any, selection: Any) -> str:
+    if routing is None:
+        return HOST_ROUTING_MODE if selection is not None else DEFAULT_ROUTING_MODE
+    return str(routing)
 
 
 def _validate_routing_inputs(routing: str, selection: Any) -> None:
@@ -102,8 +110,8 @@ def _validate_routing_inputs(routing: str, selection: Any) -> None:
             field="routing",
             next_action=(
                 "Use recognizer as the offline floor when the caller cannot emit "
-                "a selection, or fetch the host catalog and pass its exact "
-                "selection with host_catalog routing."
+                "a selection, or fetch the host catalog and pass its exact selection "
+                "with routing omitted or explicitly set to host_catalog."
             ),
         )
 

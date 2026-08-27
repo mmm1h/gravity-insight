@@ -63,12 +63,39 @@ class _SnapshotClient:
             "continuation_token": None,
         }
 
+    def operations(
+        self,
+        *,
+        domain: str | None = None,
+        platform: str | None = None,
+        stability: str | None = "stable",
+        **_options: Any,
+    ) -> list[dict[str, Any]]:
+        return [
+            dict(item)
+            for item in self._sources.operation_inventory
+            if (domain is None or item.get("domain") == domain)
+            and (platform is None or item.get("platform") == platform)
+            and (stability is None or item.get("stability") == stability)
+        ]
+
+    def export_capabilities(self) -> dict[str, Any]:
+        return {"operations": [dict(item) for item in self._sources.export_inventory]}
+
+    def export_describe(self, operation_id: str) -> dict[str, Any]:
+        return next(
+            dict(item)
+            for item in self._sources.export_inventory
+            if str(item.get("operation_id")) == operation_id
+        )
+
 
 def capabilities_many(
     questions: Mapping[str, Any] | Sequence[str | Mapping[str, Any]],
     *,
     client: Any,
     workspace: Any | None = None,
+    routing: str | None = None,
 ) -> dict[str, Any]:
     """Discover many questions from one bound workspace and operation inventory."""
 
@@ -83,7 +110,9 @@ def capabilities_many(
         return snapshot_failure(pending)
     cached_client = _SnapshotClient(client, sources)
     results = [
-        compact_analysis_schema(discover_one(item, cached_client, sources))
+        compact_analysis_schema(
+            discover_one(item, cached_client, sources, routing=routing)
+        )
         for item in pending
     ]
     failures = [item for item in results if item["ok"] is not True]
@@ -191,6 +220,8 @@ def discover_one(
     item: CapabilityQuestion,
     client: _SnapshotClient,
     sources: AgentSourceSnapshot,
+    *,
+    routing: str | None = None,
 ) -> dict[str, Any]:
     try:
         result = discover_capabilities(
@@ -202,6 +233,8 @@ def discover_one(
             limit=item.limit,
             sources=sources,
             plan_node_namespace=item.question_id,
+            routing=routing,
+            host_selection=item.host_selection,
         )
         return {
             "question_id": item.question_id,

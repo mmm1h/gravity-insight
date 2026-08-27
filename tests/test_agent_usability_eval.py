@@ -531,11 +531,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             ValueError, "stage=subprocess_execute.*exit code 7.*synthetic bridge crash"):
             _invoke_plugin(plugin, {"capabilities": []}, [], timeout_seconds=10)
 
-    def test_external_selection_default_dispatch_follows_source_default(self) -> None:
-        from agent_usability_host_arm_gap import (
-            _installed_host_selection,
-            _source_reexecuted_host_selection,
-        )
+    def test_external_selection_default_dispatch_infers_host_from_selection(self) -> None:
         from agent_usability_external_selector import _catalog, _selection_result
         from gravity_sdk.client import GravityInsightClient
 
@@ -557,22 +553,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             production_http_requests=lambda: 0,
             dispatch_mode="default",
         )
-        counterfactual = _source_reexecuted_host_selection("HOST_ROUTING_MODE")
-        with _installed_host_selection(counterfactual):
-            flipped = _selection_result(
-                case,
-                selected,
-                runtime_catalog,
-                client,
-                metadata,
-                plugin_sha256="a" * 64,
-                production_http_requests=lambda: 0,
-                dispatch_mode="default",
-            )
-        self.assertEqual(
-            ("recognizer", "host_catalog"),
-            (actual["routing_mode"], flipped["routing_mode"]),
-        )
+        self.assertEqual("host_catalog", actual["routing_mode"])
+        self.assertFalse(actual["routing"]["floor"])
 
     def test_external_selector_blinds_ids_and_degroups_journeys(self) -> None:
         from agent_usability_external_selector import _blind_questions

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -12,15 +13,19 @@ from ..errors import InputValidationError
 
 
 MAX_QUESTIONS = 32
-_QUESTION_FIELDS = frozenset({"id", "query", "domain", "platform", "limit"})
+_QUESTION_FIELDS = frozenset(
+    {"id", "query", "domain", "platform", "limit", "host_selection"}
+)
 _BATCH_SHAPE = (
     '{"questions":[{"id":"<stable-id>","query":"<text>","domain":"<optional>",'
-    '"platform":"<optional>","limit":3}]} or a non-empty questions array of '
+    '"platform":"<optional>","limit":3,"host_selection":"<optional object>"}]} '
+    "or a non-empty questions array of "
     "those objects or query strings"
 )
 _QUESTION_SHAPE = (
     '{"id":"<stable-id>","query":"<text>","domain":"<optional>",'
-    '"platform":"<optional>","limit":3} or a non-empty query string'
+    '"platform":"<optional>","limit":3,"host_selection":"<optional object>"} '
+    "or a non-empty query string"
 )
 
 
@@ -31,6 +36,7 @@ class CapabilityQuestion:
     domain: str | None
     platform: str | None
     limit: int
+    host_selection: Any | None
 
 
 def _batch_input_error(
@@ -116,7 +122,8 @@ def validate_question(value: Any, index: int) -> CapabilityQuestion:
             f"keys {sorted(_QUESTION_FIELDS)}; legal shape: {_QUESTION_SHAPE}",
             field=f"input.questions[{index}]",
             next_action=(
-                "Keep only id, query, domain, platform, and limit on each "
+                "Keep only id, query, domain, platform, limit, and host_selection "
+                "on each "
                 "question; wrap a single query as "
                 '{"questions":[{"id":"q1","query":"<text>"}]}.'
             ),
@@ -147,7 +154,14 @@ def validate_question(value: Any, index: int) -> CapabilityQuestion:
             field=f"input.questions[{index}].limit",
             next_action="Set limit to an integer from 1 to 5, or omit it.",
         )
-    return CapabilityQuestion(question_id, query.strip(), domain, platform, limit)
+    return CapabilityQuestion(
+        question_id,
+        query.strip(),
+        domain,
+        platform,
+        limit,
+        copy.deepcopy(selected.get("host_selection")),
+    )
 
 
 def optional_text(value: Any, field: str, index: int = 0) -> str | None:

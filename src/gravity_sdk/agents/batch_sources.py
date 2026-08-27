@@ -57,7 +57,11 @@ def snapshot_agent_sources(
     metadata, metadata_available = metadata_inventory_state(warnings)
     recipes = snapshot_recipes(selected_workspace)
     composites = composite_capability_inventory()
-    export_requested = any(
+    host_selection_present = any(
+        getattr(item, "host_selection", None) is not None
+        for item in questions or ()
+    )
+    export_requested = host_selection_present or any(
         query_requests_export(str(getattr(item, "query", "")))
         and not operation_fallback_excluded(str(getattr(item, "query", "")))
         for item in questions or ()

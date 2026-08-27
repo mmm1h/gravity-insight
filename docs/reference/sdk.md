@@ -13,6 +13,9 @@ gravity = connect(workspace="/path/to/gravity.toml")
 # 与 `gravity agent` 相同的离线发现合同；一次得到 recipe/operation、输入 schema 和下一步。
 capabilities = gravity.capabilities("event analysis")
 
+# 给出严格 selection 而不写 routing 时，同一入口改走 host_catalog。
+selected = gravity.capabilities("event analysis", host_selection=selection)
+
 # 多个未知问题只做一次目录快照；每个候选带可直接组装的 plan_node。
 many = gravity.capabilities_many(
     [
@@ -228,9 +231,14 @@ SQL product 的描述和执行仍使用同一个 workspace。
 需要完整 catalog、validate、probe、分阶段 export 恢复或测试注入时，使用公开属性 `gravity.insight`。
 `gravity.sql` 是兼容专家调用方的低层入口，不应注册给程序化 Agent。
 
+`capabilities(query, routing=None, host_selection=None)` 在没有 selection 时保留 recognizer 地板；
+省略 routing 但给出严格 selection 时走 `host_catalog`。显式 recognizer 不接受 selection，显式
+`host_catalog` 仍要求 selection。
+
 `capabilities_many()` 接受字符串或带稳定 `id` 的对象数组，也接受
 `{"questions":[...]}` wrapper；每次最多 32 个问题，ID 必须唯一。它只扫描一次 Workspace、
-stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。
+stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。问题对象可带与自身
+query 绑定的 `host_selection`；未带 selection 的项仍走 recognizer。
 
 `resolve_capabilities(query, *, known_inputs, workspace=None, domain=None, platform=None, limit=3)` 是
 加法在线入口。`known_inputs` 只接受 `app`、`platforms`、`catalog_policy`：Dashboard/Saved/Segment

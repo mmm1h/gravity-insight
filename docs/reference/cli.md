@@ -63,6 +63,7 @@ gravity agent "retention" --limit 3
 gravity agent --input questions.json
 gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output catalog.json
 gravity agent-catalog host
+gravity agent "<query>" --host-selection selection.json
 gravity agent "<query>" --routing host_catalog --host-selection selection.json
 ```
 
@@ -80,7 +81,7 @@ gravity agent "<query>" --routing host_catalog --host-selection selection.json
 operation；每项固定给出目标、返回物、相邻边界、前置输入与 effect。宿主响应必须完整符合
 `gravity.host-product-selection.v1`，只能引用当前 `catalog_ref`。0 个引用由仓库生成固定路由 gap；
 多个引用固定为 `MULTIPLE_INTENTS`；未知字段、旧目录指纹、伪造产品或直接 operation/path 均整体拒绝。
-调用方能产出选择时推荐显式 `--routing host_catalog --host-selection`；未指定 `--routing` 的默认仍是 recognizer，那是够不着宿主时的地板，不是劣等品。识别器若没选中产品、只排出至少 3 条互不相同的 raw operation（短英文目录查找除外；挂在后面的非权威 catalog 卡不算选定），会返回 `UNRANKED_OPERATIONS`（不是错误），`next.argv` 指向 `gravity agent-catalog host`，由宿主走已有 `host_catalog` 路径完成选择。
+调用方能产出选择时直接传 `--host-selection`；省略 `--routing` 且给了 selection 会进入 `host_catalog`，省略两者才走 recognizer 地板。显式 `--routing recognizer` 不接受 selection，显式 `--routing host_catalog` 仍强制要求 selection。识别器若没选中产品、只排出至少 3 条互不相同的 raw operation（短英文目录查找除外；挂在后面的非权威 catalog 卡不算选定），会返回 `UNRANKED_OPERATIONS`（不是错误），`next.argv` 指向 `gravity agent-catalog host`，由宿主走已有 `host_catalog` 路径完成选择。
 
 `category` 的顺序是合同而不是模糊相关性：每个 category 内固定按
 `product → raw_operation → capability_gap` 排序，同类再按 selector 升序。于是第一页先展示 canonical
@@ -89,7 +90,8 @@ operation；每项固定给出目标、返回物、相邻边界、前置输入�
 无 query 时返回两步协议；有 query 时优先返回匹配的 workspace recipe，再用 stable operation
 补足 capability cards；可由 Plan 执行的卡含必填输入、下一条 `argv` 和 `plan_node`，默认 3 个、
 最多 5 个，不访问网络。`--input` 接受最多 32 个唯一 ID 问题的 `{"questions":[...]}`，为
-多个问题复用一次离线目录快照并按输入顺序返回；不能与 positional query、continuation、
+多个问题复用一次离线目录快照并按输入顺序返回；每个问题对象可带与自身 query 绑定的
+`host_selection`，未带的项仍走 recognizer。`--input` 不能与 positional query、continuation、
 domain 或 platform 组合。需要完整 catalog 或 blocked 覆盖信息时再进入
 `operations search/describe`。
 

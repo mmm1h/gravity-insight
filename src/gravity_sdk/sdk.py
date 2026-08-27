@@ -229,6 +229,7 @@ class GravitySDK(
         platform: str | None = None,
         limit: int = 3,
         continuation: str | None = None,
+        routing: str | None = None, host_selection: Any | None = None,
     ) -> dict[str, Any]:
         """Discover recipes and executable Insight operations in one offline call."""
 
@@ -243,14 +244,14 @@ class GravitySDK(
             domain=domain,
             platform=platform,
             limit=limit,
-            continuation=continuation,
+            continuation=continuation, routing=routing, host_selection=host_selection,
         )
 
     def capabilities_many(
         self,
         questions: Mapping[str, Any] | Sequence[str | Mapping[str, Any]],
         *,
-        workspace: Any | None = None,
+        workspace: Any | None = None, routing: str | None = None,
     ) -> dict[str, Any]:
         """Discover up to 32 questions from one immutable offline catalog snapshot."""
 
@@ -260,7 +261,7 @@ class GravitySDK(
         return capabilities_many(
             questions,
             client=DeferredAgentClient(lambda: self.insight),
-            workspace=self._select_workspace(workspace),
+            workspace=self._select_workspace(workspace), routing=routing,
         )
 
     def run(
