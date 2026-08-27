@@ -73,9 +73,10 @@
   以整理目录为由损失调用能力或改变执行 owner。
 - **已解前置（2026-08-27）**：[模块依赖图 v1](#14-机器图合同) 把节点、四类边、动态导出排除边界与 Tarjan
   cyclic SCC 口径写成机器定义，可重建完整图，并由测试锁住定义摘要、图摘要与 SCC 成员及规模。
-- **未解前置**：最大 SCC 按口径累计为 AST-only `96`、加 `_EXPORTS` 字符串边 `422`、再加 package parent `520`，
-  已成受测基线。**`520` 不表示「81% 模块互相缠死」**：63 条 `lazy_export_owner` 边全部出自 `gravity_sdk` 单节点，
-  641 条 parent 边又让每个模块都能到达它；拆环按 `96` 估工作量，`422`/`520` 只描述潜在可达面。仍无可靠门禁识别
+- **未解前置**：最大 SCC 按口径累计为 AST-only `96`、加 `_EXPORTS` 字符串边 `422`、再加 package parent `521`，
+  已成受测基线。**canonical 那个数不表示「八成模块互相缠死」**：63 条 `lazy_export_owner` 边全部出自
+  `gravity_sdk` 单节点，parent 边又让每个模块都能到达它——新增 `_version.py` 只让它 `520`→`521` 而 `96` 不动，
+  正是枢纽效应的实证。拆环按 `96` 估工作量，`422`/`521` 只描述潜在可达面。仍无可靠门禁识别
   不带 `agent_` 前缀却被误放根目录的未来 Agent owner，本条只记录该缺口。明确不恢复 v4 职责契约判据：其成员集合
   由预选 `included_layers` 决定，回答不了未来模块是否属于该域。
 - **退出条件**：以该定义批准有界迁移单元，使上述家族迁入明确 owner 或留可机器验证的根级保留理由，消除大环，
@@ -109,6 +110,6 @@
 <!-- MODULE_GRAPH_DEFINITION_V1_END -->
 <!-- MODULE_GRAPH_BASELINE_V1_START -->
 ```json
-{"definition_id":"gravity-sdk-runtime-possible-module-dependency-graph.v1","definition_sha256":"8ed98cb1e136461612495d3b0187bae3756f4fbe09cde63a9905e838c8ded95f","edge_kind_counts":{"ast_delayed_import":465,"ast_eager_import":2447,"lazy_export_owner":63,"package_parent":641},"node_count":642,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"7d07b8d38abd147ddf22e64dcdb7e36e8fe401d0de497a36eeebb2304a7df7dc","cyclic_scc_sizes":[422,3,2],"edge_count":2953,"graph_sha256":"9dabf6033f84e0c1a4db40a96f7199eadef2880b00652af25950da0e46ddc23f","largest_cyclic_scc_size":422,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":10,"cyclic_scc_sha256":"754b2698eb2b7352dd28743446eaccbfecbfd8c1d1f8ce0267256e77b076c7ca","cyclic_scc_sizes":[96,41,3,3,3,2,2,2,2,2],"edge_count":2890,"graph_sha256":"bfa30c725137ab061fcc62f2584a7625318ef7b9c86832a7fe8c4fcbc98a7e55","largest_cyclic_scc_size":96,"self_loop_scc_count":0},"canonical":{"cyclic_scc_count":5,"cyclic_scc_sha256":"a642877b8f09cee5d39034384a2335625fbdf09ca9cc1198df1e782b30236748","cyclic_scc_sizes":[520,15,3,2,2],"edge_count":3516,"graph_sha256":"7a989ecca56915bfb2015bae019f3c7236942d74786c5d5b7789df471c85beec","largest_cyclic_scc_size":520,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"afc924028fae98ca426f1d1f6622233562e693d3ee04064bd90569aa4795ec88","cyclic_scc_sizes":[5],"edge_count":2447,"graph_sha256":"a94a797889c60e268d2456be3c9dde0d2d4ddbc70123f59a101c183a4b64df07","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
+{"definition_id":"gravity-sdk-runtime-possible-module-dependency-graph.v1","definition_sha256":"8ed98cb1e136461612495d3b0187bae3756f4fbe09cde63a9905e838c8ded95f","edge_kind_counts":{"ast_delayed_import":465,"ast_eager_import":2448,"lazy_export_owner":63,"package_parent":642},"node_count":643,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"7d07b8d38abd147ddf22e64dcdb7e36e8fe401d0de497a36eeebb2304a7df7dc","cyclic_scc_sizes":[422,3,2],"edge_count":2954,"graph_sha256":"a0c8130b2fca4c228ebe17a7d3b81da2512ec9f450311ccd00fa8db1f14fe3da","largest_cyclic_scc_size":422,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":10,"cyclic_scc_sha256":"754b2698eb2b7352dd28743446eaccbfecbfd8c1d1f8ce0267256e77b076c7ca","cyclic_scc_sizes":[96,41,3,3,3,2,2,2,2,2],"edge_count":2891,"graph_sha256":"fe5317a5836e51728a33b53c321774b5b5cba83c099f7a3d0efed1793950c9cf","largest_cyclic_scc_size":96,"self_loop_scc_count":0},"canonical":{"cyclic_scc_count":5,"cyclic_scc_sha256":"1eb4c544c851180fae62050505ce04ff7d87db4775d48a07286f337639cfeb81","cyclic_scc_sizes":[521,15,3,2,2],"edge_count":3518,"graph_sha256":"75c25d90b629c0009414b9c3f6a8800be2ced03b51dd9deb51782f10554b10c9","largest_cyclic_scc_size":521,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"afc924028fae98ca426f1d1f6622233562e693d3ee04064bd90569aa4795ec88","cyclic_scc_sizes":[5],"edge_count":2448,"graph_sha256":"e82919fd73708903611a29d719ae7d1061be014b964f022d1abbbed64f61a91d","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
 ```
 <!-- MODULE_GRAPH_BASELINE_V1_END -->
