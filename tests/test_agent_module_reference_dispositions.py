@@ -13,6 +13,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import tomllib
 from typing import Any
 import unittest
 from unittest.mock import patch
@@ -55,6 +56,7 @@ from scripts.validate_r17_canonical_source_errata import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PYPROJECT = ROOT / "pyproject.toml"
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 CHECKPOINT = ROOT / "tests/fixtures/agent_module_reference_checkpoint.json"
 DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
@@ -897,6 +899,9 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         cls.checkpoint_raw = CHECKPOINT.read_bytes()
         cls.checkpoint = json.loads(cls.checkpoint_raw)
         cls.directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
+        cls.membership_registry = tomllib.loads(
+            PYPROJECT.read_text(encoding="utf-8")
+        )["tool"]["gravity_sdk"]["agent-package-membership"]
 
     def test_reviewed_fixture_sha256_is_bound(self) -> None:
         self.assertEqual(LEDGER_SHA256, hashlib.sha256(self.raw).hexdigest())
@@ -1260,20 +1265,85 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, message):
                     make_module_map(root)
 
+    def test_current_agent_package_membership_is_explicitly_registered(self) -> None:
+        self.assertEqual(1, self.membership_registry.get("schema-version"))
+        members = self.membership_registry.get("members")
+        self.assertIsInstance(members, list)
+        invalid = [
+            member
+            for member in members
+            if not isinstance(member, str)
+            or Path(member).is_absolute()
+            or "\\" in member
+            or ".." in Path(member).parts
+            or not member.endswith(".py")
+            or Path(member).name == "__init__.py"
+        ]
+        self.assertEqual([], invalid, "registered agent members must be safe .py paths")
+        self.assertEqual(
+            sorted(set(members)),
+            members,
+            "registered agent members must be unique and sorted",
+        )
+        agents_root = ROOT / "src/gravity_sdk/agents"
+        actual = {
+            path.relative_to(agents_root).as_posix()
+            for path in agents_root.rglob("*.py")
+            if path.name != "__init__.py"
+        }
+        registered = set(members)
+        unregistered = sorted(actual - registered)
+        registered_but_missing = sorted(registered - actual)
+        self.assertEqual(
+            [],
+            unregistered,
+            "unregistered agents module(s); register each new module in "
+            "[tool.gravity_sdk.agent-package-membership] in pyproject.toml: "
+            f"{unregistered}",
+        )
+        self.assertEqual(
+            [],
+            registered_but_missing,
+            "registered agents module(s) missing from src/gravity_sdk/agents; "
+            f"update the registration with the code change: {registered_but_missing}",
+        )
+
+    def test_every_frozen_move_target_remains_registered_and_present(self) -> None:
+        frozen_scope = _frozen_module_scope(ROOT)[:82]
+        frozen_members = {
+            Path(*new_module.split(".")).with_suffix(".py")
+            .relative_to(Path("gravity_sdk/agents"))
+            .as_posix()
+            for _, new_module in frozen_scope
+        }
+        registered = set(self.membership_registry["members"])
+        self.assertEqual(82, len(frozen_members))
+        self.assertEqual(
+            [],
+            sorted(frozen_members - registered),
+            "frozen R17 target(s) must remain in the current agent membership registry",
+        )
+        missing_targets = sorted(
+            new_module
+            for _, new_module in frozen_scope
+            if not (
+                ROOT / "src" / Path(*new_module.split(".")).with_suffix(".py")
+            ).is_file()
+        )
+        self.assertEqual(
+            [],
+            missing_targets,
+            "frozen R17 target file(s) must remain present in the agents package",
+        )
+
     def test_frozen_move_mapping_is_an_exact_bijection(self) -> None:
         moves = self.document["scope"]["one_to_one_moves"]
         expected = [(move["old_module"], move["new_module"]) for move in moves]
         self.assertEqual(expected, _frozen_module_scope(ROOT)[:82])
         mappings, _ = make_module_map(ROOT)
         self.assertEqual(expected, [(item.old_module, item.new_module) for item in mappings[:82]])
-        self.assertEqual(
-            {item.new_file for item in mappings[:82]},
-            {
-                path.relative_to(ROOT).as_posix()
-                for path in (ROOT / "src/gravity_sdk/agents").rglob("*.py")
-                if path.name != "__init__.py"
-            },
-        )
+        self.assertEqual(82, len({item.old_module for item in mappings[:82]}))
+        self.assertEqual(82, len({item.new_module for item in mappings[:82]}))
         duplicate = copy.deepcopy(self.document)
         duplicate["scope"]["one_to_one_moves"][1] = dict(moves[0])
         wrong_name = copy.deepcopy(self.document)
