@@ -8,7 +8,7 @@
 **状态（2026-08-25）**：除 `primary` 21 平台外，`bytedance/project`、`honor/ad_group`、`honor/campaign`、
 `kuaishou/ad_unit`、`ubix/group` 已复用 Promotion Performance 的 App、日期、平台/指标、分页和结果绑定。逐条重列
 发现原记 32 实为 33：漏记的 `ubix/group` 五项条件全满足，已转正；其余 32 个组合的卡点逐条复核后全部仍准确。
-- **转正证据**：四项 stable contract 均有必填 `date_list`、App 等值 `filters`、动态 `query_fields`、同构
+- **转正证据**：五项 stable contract（`21 primary + 5 + 32 = 58`）均有必填 `date_list`、App 等值 `filters`、动态 `query_fields`、同构
   `page_info` 和登记行投影；合同漂移 fail-closed。同一 canonical 输入经原 inventory 内核与正式入口产生完全相同的
   operation payload 和原生行，正式结果使用 `gravity-insight.promotion-performance.v1`，不再携带 compatibility marker。
 - **primary 卡点**：`bing/advertiser`、`xiaohongshu/advertiser` 无日期/动态指标；`taptap/group`、
@@ -48,8 +48,8 @@
   composite 均传播它，`all_pages` 遇未知/前缀返回 capability gap。已确认 A 的自动读取为 Multidim metadata、
   Material Performance、Business Pulse；两个 report query 均按实测 B 不续页。缺 `total_page` 的 `read_all`
   停第一页并标 `unknown`，满页续读须 `continue_without_total`；单次无 `page_info` 不能证明永不截断。
-- **静态复核与处置（2026-08-25）**：`reconcile_pagination_audit` 现把 177 unknown 显式分为 86 条
-  `collect_production_or_wire`、82 条 `not_scheduled_without_new_signal`、9 条 non-stable。82 条均站得住、0 退回，
+- **静态复核与处置（2026-08-25 中间态，计数已被下文 85/83 取代，勿按本行取值）**：`reconcile_pagination_audit`
+  当时把 177 unknown 分为 86 条 `collect_production_or_wire`、82 条 `not_scheduled_without_new_signal`、9 条 non-stable。82 条均站得住、0 退回，
   但 `analysis.dashboard.tree` 是 list，不是非集合；修正后为 46 条非集合（38 mutation + 8 detail/get）和 36 条
   无可证伪信号（1 静态 tree + 34 条既存 exact production observation + 1 条 shape B）。
 - **设计逃逸复核（2026-08-25）**：随真实请求被动记录响应形状不属于被禁的“全量生产探测”，但**技术可行不等于该做**——
