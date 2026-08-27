@@ -113,6 +113,11 @@ def _main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return exit_code_for_category(ErrorCategory.CALLER)
 
+    from .auto_upgrade import maybe_auto_upgrade, startup_update_enabled
+
+    if startup_update_enabled(args):
+        maybe_auto_upgrade(args)
+
     from . import cli as insight_cli
     from .census import cli as census_cli
     from .sql import __main__ as sql_cli

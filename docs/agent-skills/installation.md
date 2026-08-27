@@ -19,6 +19,12 @@
     "working_directory": "outside_any_gravity_sdk_source_checkout",
     "requires_executable": ["python", "git"]
   },
+  "version_pin": {
+    "environment": "GRAVITY_SDK_PINNED_VERSION",
+    "value": "<version>",
+    "install_command": "python -m pip install --upgrade \"git+https://github.com/mmm1h/gravity-sdk.git@v<version>\"",
+    "effect": "Startup auto-upgrade is disabled while the exact installed version is pinned."
+  },
   "verify": [
     {
       "command": "gravity --help",

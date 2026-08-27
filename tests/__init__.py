@@ -18,6 +18,7 @@ _cache_environment = patch.dict(
         "GRAVITY_CACHE_HOME": str(_cache_root),
         "LOCALAPPDATA": str(_cache_root),
         "XDG_CACHE_HOME": str(_cache_root),
+        "GRAVITY_SDK_AUTO_UPGRADE": "0",
     },
 )
 _cache_environment.start()

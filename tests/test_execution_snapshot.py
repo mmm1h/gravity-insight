@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import unittest
 
+from gravity_sdk import __version__
 from gravity_sdk.agent_runtime_contracts import canonical_digest
 from gravity_sdk.execution_snapshot import (
     ExecutionSnapshotError,
@@ -103,6 +104,7 @@ class ExecutionSnapshotTests(unittest.TestCase):
         value = snapshot()
 
         self.assertEqual("gravity.execution-snapshot.v1", value["schema_version"])
+        self.assertEqual(__version__, value["runtime"]["version"])
         self.assertRegex(value["snapshot_digest"], r"^[0-9a-f]{64}$")
         self.assertEqual(value, compile_execution_snapshot(value))
         rendered = repr(value)
