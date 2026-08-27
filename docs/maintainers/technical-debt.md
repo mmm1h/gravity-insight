@@ -64,6 +64,22 @@
   并修正合同；另 27 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
   短页、满页启发式提级或全量生产探测。
 
+### 14. 根包仍然扁平，跨执行核心的图定义尚未统一
+- **接续范围**：接续已关闭 #11 中未由 R17 处理的两部分：R17 只迁移了 `agent_*` 家族，没有解决
+  `src/gravity_sdk` 根包整体扁平化；跨 plan/analysis/metadata/kanban 执行核心的大环也仍未形成可立项的统一图口径。
+- **可测事实（2026-08-27）**：`src/gravity_sdk/*.py` 共 495 个；按文件名前缀计数，`plan*` 48、`analysis*` 29、
+  `export*` 16、`metadata*` 12、`segment*` 12、`kanban*` 11、`saved*` 8、`report*` 6。
+- **影响边界**：当前债务不改变公开导入或运行时行为，只增加模块定位、变更归属判断和跨域审查成本；后续治理也不得
+  以整理目录为由损失调用能力或改变执行 owner。
+- **未解前置**：AST-only、加入 `_EXPORTS` 字符串边、加入 package parent 边会得到不同的 SCC 规模，必须先统一
+  节点、边、动态导出和 package parent 的机器图定义，才能讨论拆环或迁移立项。当前也没有可靠门禁识别一个不带
+  `agent_` 前缀、却被误放在根目录的未来 Agent owner；本条只记录该缺口，不在没有域边界判据时实现。明确不恢复 v4
+  职责契约判据：它的成员集合由预选的 `included_layers` 决定，回答不了未来模块是否属于该域。
+- **退出条件**：先落下一份可复现且由测试锁定的统一图定义；再以它批准有界迁移单元，使上述根目录家族逐项迁入明确
+  owner 或留下可机器验证的根级保留理由，消除已确认的大环，并建立未来 Agent owner 归属的非前缀判据；全过程保持
+  公开导入、运行时行为、单一执行 owner 和调用能力不变，并以根文件清单、家族计数及 SCC 门禁锁住结果。
+- **委托决策**：`agent_under_standing_owner_delegation`；`owner_review: pending`。
+
 ## 已关闭
 
 - 2026-08-27：#11 已关闭：R17 `fixed_dev`，82 项精确移动与 concept/owner/SCC/consumer/wheel 门禁已验收，根 `.py` 为 495、`agents/` 含 82 个实现模块；legacy/v4 脚手架退役，五条 facade 依赖按单一 owner 设计保留；`agent_under_standing_owner_delegation`，`owner_review: pending`。
