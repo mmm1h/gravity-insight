@@ -385,5 +385,216 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
         ])], crossing)
 
 
+from tests.agent_migration_characterization import (
+    module_graph_adjacency,
+    module_graph_baseline,
+    module_graph_canonical_sha256,
+    module_graph_cyclic_sccs,
+    module_graph_definition,
+    module_graph_edge_kinds,
+    module_graph_for_profile,
+    module_graph_measurement,
+)
+
+
+class UnifiedModuleDependencyGraphTests(unittest.TestCase):
+    @staticmethod
+    def _write_package(root: Path, files: dict[str, str]) -> Path:
+        package = root / "gravity_sdk"
+        for relative, content in files.items():
+            path = package / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+        return package
+
+    def test_unified_graph_definition_is_locked(self) -> None:
+        definition = module_graph_definition()
+        self.assertEqual(
+            "gravity-sdk-runtime-possible-module-dependency-graph.v1",
+            definition["definition_id"],
+        )
+        self.assertEqual(
+            "8ed98cb1e136461612495d3b0187bae3756f4fbe09cde63a9905e838c8ded95f",
+            module_graph_canonical_sha256(definition),
+        )
+        self.assertEqual(
+            [
+                "ast_eager_import",
+                "ast_delayed_import",
+                "lazy_export_owner",
+                "package_parent",
+            ],
+            definition["profiles"]["canonical"],
+        )
+
+    def test_unified_edge_kinds_follow_the_declared_runtime_rules(self) -> None:
+        files = {
+            "__init__.py": """
+_EXPORTS = {
+    "lazy": (".lazy_owner", "lazy"),
+    "also_lazy": (".lazy_owner", "also_lazy"),
+}
+for name in ("looped",):
+    _EXPORTS[name] = (".loop_owner", name)
+__all__ = ["not_an_owner"]
+import importlib
+importlib.import_module("gravity_sdk.dynamic_owner")
+__import__("gravity_sdk.dynamic_owner")
+""",
+            "consumer.py": """
+from typing import TYPE_CHECKING
+import gravity_sdk.eager_owner as renamed
+from .relative_owner import value as renamed_value
+from .star_owner import *
+from . import sibling as sibling_alias
+if TYPE_CHECKING:
+    from . import type_owner
+if not TYPE_CHECKING:
+    from . import runtime_owner
+if unknown_condition:
+    from . import conditional_owner
+else:
+    from . import alternate_owner
+def run():
+    from . import delayed_owner
+""",
+            "alternate_owner.py": "",
+            "conditional_owner.py": "",
+            "delayed_owner.py": "",
+            "dynamic_owner.py": "",
+            "eager_owner.py": "",
+            "lazy_owner.py": "",
+            "loop_owner.py": "",
+            "relative_owner.py": "",
+            "runtime_owner.py": "",
+            "sibling.py": "",
+            "star_owner.py": "",
+            "type_owner.py": "",
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            package = self._write_package(Path(raw), files)
+            inventory, edges = module_graph_edge_kinds(package)
+        eager_targets = {
+            target
+            for source, target in edges["ast_eager_import"]
+            if source == "gravity_sdk.consumer"
+        }
+        self.assertEqual(
+            {
+                "gravity_sdk",
+                "gravity_sdk.alternate_owner",
+                "gravity_sdk.conditional_owner",
+                "gravity_sdk.eager_owner",
+                "gravity_sdk.relative_owner",
+                "gravity_sdk.runtime_owner",
+                "gravity_sdk.sibling",
+                "gravity_sdk.star_owner",
+            },
+            eager_targets,
+        )
+        self.assertEqual(
+            {
+                ("gravity_sdk.consumer", "gravity_sdk"),
+                ("gravity_sdk.consumer", "gravity_sdk.delayed_owner"),
+            },
+            edges["ast_delayed_import"],
+        )
+        self.assertNotIn(
+            ("gravity_sdk.consumer", "gravity_sdk.type_owner"),
+            edges["ast_eager_import"],
+        )
+        self.assertEqual(
+            {
+                ("gravity_sdk", "gravity_sdk.lazy_owner"),
+                ("gravity_sdk", "gravity_sdk.loop_owner"),
+            },
+            edges["lazy_export_owner"],
+        )
+        self.assertNotIn(
+            ("gravity_sdk", "gravity_sdk.dynamic_owner"),
+            edges["lazy_export_owner"],
+        )
+        self.assertEqual(len(inventory) - 1, len(edges["package_parent"]))
+
+    def test_unified_scc_rule_counts_multi_node_cycles_and_self_loops(self) -> None:
+        graph = {
+            "gravity_sdk.a": {"gravity_sdk.a"},
+            "gravity_sdk.b": {"gravity_sdk.c"},
+            "gravity_sdk.c": {"gravity_sdk.b"},
+            "gravity_sdk.d": set(),
+        }
+        self.assertEqual(
+            [
+                ["gravity_sdk.b", "gravity_sdk.c"],
+                ["gravity_sdk.a"],
+            ],
+            module_graph_cyclic_sccs(graph),
+        )
+
+    def test_unified_profiles_are_cumulative(self) -> None:
+        definition = module_graph_definition()
+        files = {
+            "__init__.py": '_EXPORTS = {"owner": (".owner", "value")}\n',
+            "owner.py": "def run():\n    from . import delayed\n",
+            "delayed.py": "",
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            package = self._write_package(Path(raw), files)
+            inventory, edges = module_graph_edge_kinds(package)
+        nodes = [name for name, _is_package in inventory.values()]
+        counts = {
+            name: sum(
+                len(targets)
+                for targets in module_graph_for_profile(
+                    nodes, edges, kinds,
+                ).values()
+            )
+            for name, kinds in definition["profiles"].items()
+        }
+        self.assertLess(counts["eager-ast-only"], counts["ast-only"])
+        self.assertLess(counts["ast-only"], counts["ast+lazy-exports"])
+        self.assertLess(counts["ast+lazy-exports"], counts["canonical"])
+
+    def test_unified_profile_graph_is_machine_readable(self) -> None:
+        definition = module_graph_definition()
+        files = {
+            "__init__.py": "",
+            "consumer.py": "import gravity_sdk.owner\n",
+            "owner.py": "",
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            package = self._write_package(Path(raw), files)
+            graph = module_graph_adjacency(package, definition, "ast-only")
+        self.assertEqual("ast-only", graph["profile"])
+        self.assertEqual(
+            ["gravity_sdk.owner"],
+            graph["edges"]["gravity_sdk.consumer"],
+        )
+
+    def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
+        expected = module_graph_baseline()
+        self.assertEqual(
+            "2f3b105c430bf1ef131dfdaf63020351f5c65539f7e2cc22a7a074a95d92f6b9",
+            module_graph_canonical_sha256(expected),
+        )
+        self.assertEqual(
+            {
+                "ast-only": 96,
+                "ast+lazy-exports": 422,
+                "canonical": 520,
+                "eager-ast-only": 5,
+            },
+            {
+                profile: summary["largest_cyclic_scc_size"]
+                for profile, summary in expected["profiles"].items()
+            },
+        )
+        self.assertEqual(
+            [520, 15, 3, 2, 2],
+            expected["profiles"]["canonical"]["cyclic_scc_sizes"],
+        )
+        self.assertEqual(expected, module_graph_measurement())
+
+
 if __name__ == "__main__":
     unittest.main()
