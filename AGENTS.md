@@ -160,9 +160,9 @@ git diff --check
 ```
 
 CI runs `pytest`, not `unittest discover`. The `946 vs 715` counts at `8fd278e`
-are a historical example, not the current baseline: both runners now collect
-1774 tests, plus 4375 subtests reported only by pytest. Re-derive the baseline
-from the latest fully green gate, and run both — CI gates on `pytest` alone.
+are a historical example, not the current baseline. Re-derive test and subtest
+counts each round from the latest fully green dual-collector gate, and run both
+collectors — CI gates on `pytest` alone.
 
 Tests isolate the developer's private cache in `tests/__init__.py`; without it a
 machine holding a real metadata cache fails discovery-ordering tests that pass

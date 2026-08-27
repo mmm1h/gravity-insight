@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -20,6 +22,7 @@ from tests.agent_migration_characterization import (
     eager_import_sccs,
     expected_public_exports,
     migration_module_names,
+    module_inventory,
     root_export_module_collisions,
     unexpected_root_export_module_collisions,
 )
@@ -233,6 +236,38 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
 
     def test_eager_module_import_graph_has_no_migration_related_component(self) -> None:
         self.assertEqual([], eager_import_cycles(PACKAGE_ROOT))
+
+    def test_retained_facade_dependencies_match_the_reviewed_module_symbol_set(self) -> None:
+        # Lock direct import syntax, not an inferred domain or binding graph.
+        dependencies: set[tuple[str, str]] = set()
+        for path, (module, is_package) in module_inventory(PACKAGE_ROOT).items():
+            if module != "gravity_sdk.agents" and not module.startswith("gravity_sdk.agents."):
+                continue
+            package = module if is_package else module.rpartition(".")[0]
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if isinstance(node, ast.ImportFrom):
+                    base = (
+                        importlib.util.resolve_name("." * node.level + (node.module or ""), package)
+                        if node.level else node.module
+                    )
+                    if base == "gravity_sdk.agent":
+                        dependencies.update((module, alias.name) for alias in node.names)
+                    elif base == "gravity_sdk" and any(alias.name == "agent" for alias in node.names):
+                        dependencies.add((module, "<module>"))
+                elif isinstance(node, ast.Import) and any(
+                    alias.name == "gravity_sdk.agent" for alias in node.names
+                ):
+                    dependencies.add((module, "<module>"))
+        self.assertEqual(
+            {
+                ("gravity_sdk.agents.batch", "discover_capabilities"),
+                ("gravity_sdk.agents.batch_questions", "DEFAULT_LIMIT"),
+                ("gravity_sdk.agents.host_selection", "SCHEMA_VERSION"),
+                ("gravity_sdk.agents.input_resolution", "discover_capabilities"),
+                ("gravity_sdk.agents.output", "SCHEMA_VERSION"),
+            },
+            dependencies,
+        )
 
     def test_eager_detector_reports_a_migration_module_self_loop(self) -> None:
         files = {

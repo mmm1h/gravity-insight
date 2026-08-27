@@ -41,7 +41,7 @@
     {
       "id": "R17",
       "path": "R17-agent-module-package-migration.md",
-      "status": "specified",
+      "status": "fixed_dev",
       "dependencies": [],
       "parallel_group": "structural-migration",
       "shared_spine": true,
@@ -54,57 +54,28 @@
         "worktree": "D:/git-pjt/gravity-sdk-r17-migration"
       },
       "scope": {
-        "classifier": "responsibility_contract_derivation_v4",
-        "classifier_inputs": ["service_protocol","entry_kind_symbol_parameters","return_contract","required_response_keys","declared_exceptions","owner_layer"],
-        "classifier_forbidden_inputs": ["direct_consumer_count","directory_path","migration_ledger","module_basename","module_docstring","name_prefix","signed_member_inventory"],
-        "classifier_forbidden_inputs_enforced_by": {
-          "mechanisms": ["pinned_29_function_transitive_local_call_closure_including__r17_read_modules","statically_resolved_direct_and_attribute_call_allowlist","loaded_global_name_allowlist","specific_runtime_capability_patches"],
-          "coverage": "partial_not_a_general_forbidden_identifier_attribute_or_string_scan",
-          "unrecorded_shapes": ["dynamic_receiver_attribute_calls","higher_order_subscript_calls","subscripted___import___calls","forbidden_input_access_through_subscript_or_attribute"]
-        },
-        "boundary_claim": "compact_agent_interaction_scope_supported_but_graph_methods_not_converged",
+        "boundary_basis": "human_reviewed_compact_agent_interaction_manifest",
+        "manifest_path": "tests/fixtures/agent_module_reference_dispositions.json",
+        "manifest_sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
+        "boundary_claim": "compact_agent_interaction_only",
         "complete_agent_domain_proven": false,
-        "boundary_invariance": {
-          "transformations": ["all_642_nodes_renamed_to_opaque_ids","all_module_docstrings_neutralized","consumer_nodes_split_and_merged"],
-          "split_merge_nodes": [642, 657],
-          "split_merge_edges": [2832, 3674],
-          "responsibilities_gaining_direct_consumer_files": 85,
-          "responsibilities_losing_direct_consumer_files": 1,
-          "members_under_every_transformation": 84,
-          "public_binding_graph_transformations": ["one_hop_reexport","two_hop_reexport_chain","subpackage_directory_nesting","protocol_constant_relocation","two_hop_protocol_reexport","renamed_protocol_alias","protocol_reexport_via_subpackage_init","protocol_attribute_assignment_reexport"],
-          "public_binding_graph_member_delta_under_every_transformation": [],
-          "static_binding_shape_space": {
-            "grade_a_correct_resolution": 32,
-            "grade_b_fail_closed": 32,
-            "grade_c_silent_misresolution": {
-              "known": true,
-              "status": "known_unfixed_limit",
-              "known_shapes": ["assignment_rhs_module_binding_mutation","function_default_module_binding_mutation","class_body_module_binding_mutation","decorator_module_binding_mutation"]
-            },
-            "exhaustive": false,
-            "out_of_table_shapes_known": true
-          },
-          "graph_isomorphism_only": false
-        },
-        "canonical_anti_path_dependence_clause": {
-          "clause": "architecture-source.md 20.12 item 5",
-          "evidence_recorded": true,
-          "self_certified": false,
-          "adjudication": "pending_independent_review"
-        },
-        "legacy_agent_prefixed_candidate_modules": 83,
-        "legacy_prefix_facade_reachable_modules": 82,
+        "automated_independence_proven": false,
         "reviewed_root_modules": 84,
         "migrated_modules": 82,
-        "consolidated_deleted_modules": ["agent_pagination"],
-        "excluded_modules": ["agent_runtime_contracts"],
+        "consolidated_deleted_modules": [
+          "agent_pagination"
+        ],
+        "excluded_modules": [
+          "agent_runtime_contracts"
+        ],
         "final_root_python_files": 495,
         "final_root_agent_prefixed_modules": 1,
+        "complete_package_python_files": 642,
         "core_modules": 34,
         "moved_peripheral_modules": 48,
         "core_to_moved_peripheral_edges": 153,
         "moved_peripheral_to_core_edges": 0,
-        "non_agent_to_moved_module_edges": 17
+        "baseline_non_agent_to_moved_module_edges": 17
       },
       "ready_prerequisites": [
         {
@@ -149,9 +120,9 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "54dfce164b420a62c09d55cc46f45fd83f88023e2dab65680ac7ce5b8fe579c0",
+          "live_checkpoint_sha256": "6f805e82eb44947986c20159c1186157dba3ca8ab159f006d3831e0fe986af6b",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
-          "live_checkpoint_tracked_sites": 311,
+          "live_checkpoint_tracked_sites": 305,
           "live_checkpoint_unclassified_sites": 0,
           "live_checkpoint_blocking_sites": 0,
           "requires": [
@@ -160,16 +131,22 @@
             "classification_ledger_path_and_sha256_are_bound",
             "live_checkpoint_tracks_the_current_repository_and_fails_closed"
           ]
-        },
-        {
-          "id": "independent_ready_review",
-          "satisfied": false,
-          "required_verdict": "ready",
-          "requires": [
-            "reviewer_accepts_scope_measurements_owner_changes_and_exact_acceptance_commands"
-          ]
         }
-      ]
+      ],
+      "delivery_acceptance": {
+        "accepted_by": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "evidence_source": "external_plan_owner_delivery_verdict",
+        "phase_1_commit": "4926362f42f9ea68a11e42559a802cb7ba67f6ee",
+        "phase_2_commit": "ea33c42eeb82fc7fb8a62ef60e11ba5a8527dc69",
+        "dev_integration_commit": "125bb84cbb98a575a2ef3c4a577f174027bc908d",
+        "rollback_to_phase_1": "exact_tree_match",
+        "ordered_full_rollback": "exact_tree_match",
+        "independent_thermo_review": "no_high_confidence_blockers",
+        "ready_history": "historical_evidence_retained_no_backdated_ready_or_new_per_requirement_user_approval",
+        "retirement_scope": "test_and_governance_scaffolding_only",
+        "maintenance_baseline": "125bb84cbb98a575a2ef3c4a577f174027bc908d"
+      }
     },
     {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
     {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"fixed_dev","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},

@@ -46,8 +46,8 @@
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
-- R17 终态须移除 83 个旧 deep module path（82 迁移 + pagination 删除）且不设 shim；仅在固定 consumer census 零命中，且 M0/回归/wheel 门禁锁定 root facade、
-  CLI/SDK/Plan/Agent 读取面、148 个 `__all__` 与请求行为无差异后，才证明读取能力无损；任一差异都阻断迁移。
+- R17（`fixed_dev`）已移除 83 个旧 deep module path（82 迁移 + pagination 删除）且无 shim；人工审阅 compact Agent interaction manifest，固定 consumer census、M0/回归/wheel 已证明 root facade、CLI/SDK/Plan/Agent 读取能力、147 lazy owner/148 `__all__` 与请求行为无损；legacy/v4 脚手架退役后 #11 关闭，不声称完整 Agent domain 或自动独立证明。
+  五条依赖有意保留：`agents.batch`、`agents.input_resolution` → `agent.discover_capabilities`；`agents.batch_questions` → `agent.DEFAULT_LIMIT`；`agents.host_selection`、`agents.output` → `agent.SCHEMA_VERSION`。只有真实职责变化、第二 owner 或 eager cycle 才触发另行批准的拆分；零反向边不再作为 #11 退出目标。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、
   聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。
 - 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。

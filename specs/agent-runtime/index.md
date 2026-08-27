@@ -1,6 +1,6 @@
 # Gravity Agent Runtime Requirement Index
 
-本目录是 [Gravity Agent Runtime v9.2 canonical architecture](architecture-source.md) 的派生需求层。[directive.json](directive.json) v9.2 绑定总纲 SHA-256。总纲是唯一产品与共享架构源；这里的文档只定义有界交付单元，不得反向改写总纲。
+本目录是 [Gravity Agent Runtime v9.3 canonical architecture](architecture-source.md) 的派生需求层。[directive.json](directive.json) v9.3 绑定总纲 SHA-256。总纲是唯一产品与共享架构源；这里的文档只定义有界交付单元，不得反向改写总纲。
 
 ## Program Rules
 
@@ -36,12 +36,12 @@ R02 → R14-C
 R14-B + R14-C → R14-D
 
 R04 → R16 (conditional)
-[R17 ready prerequisites: M0 binding and SCC semantics satisfied; dynamic-audit classification satisfied; independent ready review pending] ⇢ R17 leaf (82 moves + 1 consolidation; 1 infrastructure exclusion)
+[R17 delivery accepted on dev; historical M0 and dynamic ledger bindings retained] ⇢ R17 fixed_dev leaf (82 moves + 1 consolidation; 1 infrastructure exclusion)
 R00 → CT01
 CT01 + R09B → CT02 → CT03
 ```
 
-R17 行中的方括号内容是 `ready_prerequisites`，不是 Requirement 或 milestone 节点；R17 没有 Requirement 依赖。
+R17 方括号是交付验收记录，不是新增 Requirement 或 milestone；R17 没有 Requirement 依赖。
 
 ## Requirements
 
@@ -68,7 +68,7 @@ R17 行中的方括号内容是 `ready_prerequisites`，不是 Requirement 或 m
 | [R14](R14-adaptive-governor-variants.md) | Adaptive Governor and Execution Variants | R02 | `fixed_dev` (A/B/C/D) | Staged epic A→B, C, then D |
 | [R15](R15-isolated-sql-explorer.md) | Isolated SQL Explorer | R02, R05 | `fixed_dev` | Leaf |
 | [R16](R16-control-plane-stage-b.md) | Control Plane Stage B | R04 + trigger | `specified` | Conditional leaf |
-| [R17](R17-agent-module-package-migration.md) | Compact Agent interaction package migration | -; machine-readable ready prerequisites | `specified` | Leaf with two serial checkpoints on one branch |
+| [R17](R17-agent-module-package-migration.md) | Compact Agent interaction package migration | -; bound delivery evidence | `fixed_dev` | Leaf; original two serial checkpoints preserved |
 | [CT01](CT01-thinkingai-inventory.md) | ThinkingAI source inventory | R00 | `fixed_dev` | Parallel content |
 | [CT02](CT02-thinkingai-representative-skills.md) | Representative ThinkingAI Skills | CT01, R09B | `fixed_dev` | Content validation |
 | [CT03](CT03-thinkingai-full-specification.md) | Full independent Skill specifications | CT02 | `fixed_dev` | Content expansion |
@@ -88,10 +88,9 @@ src/gravity_sdk/cli.py
 src/gravity_sdk/__main__.py
 ```
 
-R17's 82-module responsibility-inventoried move set includes the three `agent_*` spine modules; its core implementation checkpoint moves them to
-`src/gravity_sdk/agents/{capabilities,composite,handoff}.py` and must update the
-machine list atomically with that code move. Until the core phase lands, the paths above
-remain authoritative.
+R17's human-reviewed 82-module manifest included the three Agent spine modules.
+Their delivered owners are now `src/gravity_sdk/agents/{capabilities,composite,handoff}.py`;
+the machine list above matches the accepted core checkpoint.
 
 Requirement branches implement domain cores and focused tests first. A named integrator performs final shared-spine wiring, generated artifact refresh and cross-requirement validation serially on `dev`.
 
@@ -99,44 +98,43 @@ Requirement branches implement domain cores and focused tests first. A named int
 
 `specified` means scope and dependency boundaries exist. Before changing a leaf or epic milestone to `ready`, the plan owner must fill unresolved decisions, bind a current baseline SHA and Issue, confirm write scope/worktree, and approve exact acceptance commands.
 
-R17 只有一个 leaf 状态和一个实施分支/Worktree。边界判据已从模块换为职责契约：86 项职责各由
-服务协议、入口 kind/符号/参数、返回契约、必需响应键、声明异常和 owner layer 定义，入口定义所在节点是
-职责 owner，协议则沿公开符号绑定图逐跳解析到真实源符号；显式/改名/星号导入、赋值重导出、静态
-`__all__`、相对导入和子包 `__init__` 链均受建模，但顶层重绑并非一律后写获胜：错误 star import 后的
-正确 literal 或 named binding 会与旧 star 定义并集并以 multiple definitions fail closed。模块名只作图
-locator；docstring、basename、目录、前缀、消费者文件数、migration ledger 和 signed member inventory
-不作声明的判据输入。AST 门禁锁定 `_r17_responsibility_inventory_pipeline` 起始的 29 个本地函数传递闭包，
-对可静态解析的调用和加载的全局名实施白名单，并用 runtime patch 阻断特定读取与旧分类器；它不全量扫描
-禁用标识符、属性或字符串，动态 receiver、高阶下标调用、`[__import__][0](...)` 以及下标/属性形式的禁用
-输入不会被记录。推导得 84 项成员，归一化后 82 个 owner 与
-不可变迁移账本无差集（该等式不能独立证明账本本身没有误纳）。`agent_pagination` 合并删除，
-`agent_runtime_contracts` 以 `shared_runtime_contract`、`find.py` 以
-`independent_primary_protocol` 排除——前者实际位于全作用域 facade 闭包内，不再以"不可达"为由。
-早先按队列外补入的 `agents.relative_date`（唯一消费者为 `agents.handoff`）在新判据下改由
-`fill_agent_relative_dates(card, query, workspace, now)` 的协议事实独立立住，不再依赖
-消费者关系或 docstring 词表。
-不变性证据：642 节点全部重命名、docstring 全部中和、消费者节点拆并使节点 642→657、边
-2832→3674（85 项直接消费者文件数上升、1 项下降），三种变形后成员集恒为 84，故不是图同构。
-另外八种入口/协议重定位变形同样保持 84 成员且 `member_delta=[]`；两张手写列表枚举并锁定 A 档 32 种
-正确解析和 B 档 32 种 fail closed，但没有形状 grammar 或穷举证明，且存在表外形状。行为等价的布局重构中
-未发现 C 档；已知未修复的 C 档反例是在无关赋值右值、函数默认值、类体或装饰器中于导入期改写
-`SCHEMA_VERSION`，运行时变为错误值，静态推导仍返回 84 项且 `member_delta=[]`。
-四种全作用域图判据仍未收敛，因此不证明完整 Agent domain；图收敛性与总纲反路径依赖是两个
-独立问题，本段只陈述证据，第五条是否满足由独立复核裁定，尚未裁定。M0 characterization
-与 dynamic-audit classification 均已满足，owner review 仍为 `pending`。实施绑定为
-`dev@26a765a34e16b167093f5133ff2982a5d07d167a`、无 GitHub Issue（内部结构债禁止
-自建 Issue）、`codex/r17-migration` / `D:/git-pjt/gravity-sdk-r17-migration`。
-机器状态为 `status=specified`、`dynamic_import_audit_classification.satisfied=true`、
+R17 已按外部计划 owner 裁决达到 `fixed_dev`：Phase 1
+`4926362f42f9ea68a11e42559a802cb7ba67f6ee`、Phase 2
+`ea33c42eeb82fc7fb8a62ef60e11ba5a8527dc69` 和 dev 集成
+`125bb84cbb98a575a2ef3c4a577f174027bc908d` 已验收。双 collector 全绿、
+两级 rollback tree 精确一致，独立 thermo review 无高置信阻断；原迁移分支和历史不改。
+裁决为 `agent_under_standing_owner_delegation`，`owner_review: pending`。
+原实验式 independent-ready 前置已退役为准确的 `delivery_acceptance`；
+两个已满足的 `ready_prerequisites` 只保留 M0/动态 ledger 的历史证据绑定，
+不伪造更早的 ready 或用户逐项批准。
+
+边界是人工审阅的 compact Agent interaction manifest：82 项一对一移动，
+`agent_pagination` 合并删除，共享 `agent_runtime_contracts` 留在根目录。
+Runtime 执行核、共享 schema validator、独立 Find protocol 不因此进入 Agent 包。
+relative-date 已按同一个边界词去除规则迁入 `agents.relative_date`。
+这不证明完整 Agent domain，也不声称通用自动独立证明。legacy 图/docstring/
+consumer-count 分类器、v4 职责绑定实验及其签名摘要已退役；真实不变量复用
+manifest、公开 owner、现有 eager SCC、concept/errata/wheel 和 consumer gate。
+
+五条基线 facade 依赖有意保留：`agents.batch` 和 `agents.input_resolution`
+依赖 `agent.discover_capabilities`，`agents.batch_questions` 依赖
+`agent.DEFAULT_LIMIT`，`agents.host_selection` 和 `agents.output` 依赖
+`agent.SCHEMA_VERSION`。这是单一 discovery/protocol owner 设计，不构成 eager cycle，
+也不是 #11 的未完成零反向边目标；模块/符号集合由有界测试锁定。
+
+机器状态：`status=fixed_dev`、`dynamic_import_audit_classification.satisfied=true`、
 `schema=gravity.agent-module-reference-dispositions.v2`、`candidate_sites=238`、
-`classified_sites=238`、`unclassified_sites=0`、`blocking_sites=0`；独立复核仍为
-`not_ready`。两个内部阶段只是同一分支上的串行提交/回滚 checkpoint，不获得独立
-状态，也不能独立使 R17 到达 `fixed_dev`。
+`classified_sites=238`、`unclassified_sites=0`、`blocking_sites=0`。
+`accepted_by=agent_under_standing_owner_delegation`；`owner_review=pending`；
+`phase_1_commit=4926362f42f9ea68a11e42559a802cb7ba67f6ee`；
+`phase_2_commit=ea33c42eeb82fc7fb8a62ef60e11ba5a8527dc69`；
+`dev_integration_commit=125bb84cbb98a575a2ef3c4a577f174027bc908d`。
 
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=54dfce164b420a62c09d55cc46f45fd83f88023e2dab65680ac7ce5b8fe579c0`；
-`live_checkpoint_tracked_sites=311`。
+`live_checkpoint_sha256=6f805e82eb44947986c20159c1186157dba3ca8ab159f006d3831e0fe986af6b`；
+`live_checkpoint_tracked_sites=305`。
 
 The user approved the R01 binding and designated the Requirement document as
 the internal program delivery ledger on 2026-08-21. The same authorization lets

@@ -64,45 +64,9 @@
   并修正合同；另 27 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
   短页、满页启发式提级或全量生产探测。
 
-### 11. `gravity_sdk` 根目录模块扁平化扩大了变更定位范围
-- **可测事实**：`src/gravity_sdk/` 平铺 578 个 Python 模块；领域边界主要靠命名而非子包，跨领域定位和审查集中在根目录。
-- **影响边界**：不改公开导入或运行时行为；只增加所有权辨识、审查和后续迁移成本。
-- **立项（2026-08-25）**：R17 已建，leaf，状态 `specified`。现行判据从职责契约推导 84 个成员；模块名只作图 locator，
-  `relative_date_agent` 由入口契约而非名字补入，故一对一迁移合计 82。不证明完整 Agent domain。历史前缀图定义 83 个
-  `agent_*` 候选并记录队列内 82 个可达项（一对一迁移 81 + 合并删除 `agent_pagination` 1）和 1 个不可达项，
-  但只验证已签名摘要，不再判定边界。`agent_runtime_contracts` 在全作用域 facade 闭包（312 个模块）**之内**；
-  早先"facade 不可达"只描述历史前缀子图，不能作为排除理由。现按职责契约排除，
-  owner layer 为 `shared_runtime_contract`（`validate_schema(...) -> None`、`JsonSchemaValidator`、
-  `AgentRuntimeContractError`）；其新归属需另行决策。消费者数量一律不作判据——`agent_batch`(1:2)、
-  `agent_input_resolution`(1:1) 均为合法 Agent 入口，且按文件数计票会随文件拆并翻转。
-- **未纳入的更大目标**：跨 plan/analysis/metadata/kanban 执行核心的大环优先级更高，但各方图口径不一致
-  （AST-only、含 `_EXPORTS` 字符串边、含 package parent 边分别得出不同 SCC 规模），须先统一图定义再立项。
-- **现行职责判据**：职责 owner 取入口定义节点，协议沿公开符号绑定图解析；显式/改名/星号导入、赋值重导出、
-  静态 `__all__`、相对导入和子包链受建模。顶层重绑并非一律后写获胜：错误 star import 后再写正确
-  literal 或 named binding 时，模型并集旧 star 定义并以 multiple definitions fail closed；其他无法静态解析的
-  形状也 fail closed。
-- **结构不变性证据上限**（委托记录：`agent_under_standing_owner_delegation`；`owner_review: pending`）：成员资格由
-  `include = contract["owner_layer"] in included_layers` 直接决定，源码树只决定每条契约能否解析到 locator。因此现行
-  判据验证的是可解析性而非成员选择，输出空间只有固定的 84 项或抛错；`member_delta=[]` 证明 locator 解析成功，
-  不是边界选择的独立性，也无法说明若从零设计为何会选择这 84 项。这限制了结构不变性证据的强度上限；本记录不裁定
-  architecture-source.md 20.12 第五条满足或不满足。
-- **遗留双算法**：旧的 docstring/消费者计数分类器已改名为 legacy verifier。它不参与现行边界成员判定，但仍验证
-  `specs/` 里已签名的历史清单摘要，并用于当前树 owner projection、move bijection 和 Phase 0/1/2 迁移状态判定。
-  现行推导与 legacy 各自对同一冻结迁移账本比较，因而间接耦合。R17 施工期禁改 `specs/`，故只能留着；这是本条自带的收尾项，
-  不另开条目。
-- **R17 后仍保留的 facade 反向边**：`agents.batch`、`agents.input_resolution` 仍导入
-  `agent.discover_capabilities`，`agents.batch_questions`、`agents.host_selection`、`agents.output` 仍分别导入
-  `agent.DEFAULT_LIMIT` 或 `agent.SCHEMA_VERSION`。五条边在迁移基线已经存在，且不构成 eager SCC；R17 不新增它们。
-  消除这些边需要把 facade 常量或 discovery owner 下沉，属于 R17 Non-goals 排除的 layer redesign。裁决记录为
-  `agent_under_standing_owner_delegation`，`owner_review: pending`；退出条件是另行批准 owner split，保持 facade 行为与
-  公开面不变，并由完整 eager-graph 门禁证明五条边全部消失且未产生替代环。
-- **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 495、
-  `agents/` 含 82 个实现模块、147 lazy owner 与 148 `__all__` 不变、迁移宇宙 eager SCC 为 0；
-  legacy verifier 及其在 `specs/` 中的签名摘要一并退役，仓库只剩职责契约一套边界算法；
-  不得以改名或空目录关闭。
-
 ## 已关闭
 
+- 2026-08-27：#11 已关闭：R17 `fixed_dev`，82 项精确移动与 concept/owner/SCC/consumer/wheel 门禁已验收，根 `.py` 为 495、`agents/` 含 82 个实现模块；legacy/v4 脚手架退役，五条 facade 依赖按单一 owner 设计保留；`agent_under_standing_owner_delegation`，`owner_review: pending`。
 - 2026-08-26：#13 公开符号遮蔽债关闭：`gravity_sdk.__init__` 把模块 `__class__` 换装为
   `_ExportAwareModule`，`__getattribute__` 对 8 个碰撞符号每次访问都重查 `_EXPORTS`，
   子模块导入把包属性覆写为 module 时按 `_is_shadowing_module` fail-closed 重新解析而非
