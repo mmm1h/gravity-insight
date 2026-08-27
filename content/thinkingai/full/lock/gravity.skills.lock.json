@@ -1,6 +1,6 @@
 {
   "artifact_kind": "skills_lock",
-  "lock_digest": "66d03141f75ffb2d1811f88b221df1d502d860c62cf92e257f61b81357447e9b",
+  "lock_digest": "71751351d2bc996b5d41b3903ea85683d1a72a20356bd09599ad49d6afa156e2",
   "requested": [
     "skill://gravity.game/ad-delivery-analysis@1.0.0",
     "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
@@ -43,7 +43,7 @@
     "skill://gravity.game/trino-metadata-query-analysis@1.0.0",
     "skill://gravity.game/user-tag-system-design@1.0.0"
   ],
-  "runtime_version": "0.3.0",
+  "runtime_version": "0.3.1",
   "schema_version": "gravity.skills-lock.v1",
   "skills": [
     {

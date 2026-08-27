@@ -5,6 +5,7 @@
 
 | 目标 | 指南 |
 | --- | --- |
+| 从不可变 tag 安装并离线自检 | [Agent 安装契约](installation.md) |
 | 分三层浏览全部本地能力 | [完整目录发现](catalog-discovery.md) |
 | 调用方自己选产品时走宿主臂 | [完整目录发现](catalog-discovery.md) |
 | 十分钟内从本地能力走到第一次真实分析 | [十分钟路径](ten-minute-path.md) |

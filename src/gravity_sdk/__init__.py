@@ -12,7 +12,7 @@ from types import ModuleType
 from typing import Any
 
 
-__version__ = "0.3.0"
+from ._version import __version__
 
 _EXPORTS = {
     "DEFAULT_METADATA_TTL_SECONDS": (".cache", "DEFAULT_METADATA_TTL_SECONDS"),

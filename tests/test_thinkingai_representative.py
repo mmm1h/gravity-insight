@@ -110,7 +110,10 @@ class ThinkingAIRepresentativeTests(unittest.TestCase):
         cls.snapshot = load_inventory_snapshot(SNAPSHOT)
         cls.source = compile_hub_source(load_json_object(SOURCE_TARGET, "CT02 source"))
         cls.index = compile_hub_index(
-            load_json_object(INDEX_TARGET, "CT02 index"), runtime_version="0.3.0"
+            load_json_object(INDEX_TARGET, "CT02 index"),
+            runtime_version=compile_skills_lock(
+                load_json_object(LOCK_TARGET, "CT02 representative lock")
+            )["runtime_version"],
         )
         cls.representative_set = validate_representative_set(
             load_json_object(SET_TARGET, "CT02 representative set")

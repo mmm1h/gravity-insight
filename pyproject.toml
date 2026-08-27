@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gravity-sdk"
-version = "0.3.0"
+version = "0.3.1"
 description = "Agent-first governed data-analysis runtime, Python SDK, and CLI for Gravity"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{name = "<PYPI_PACKAGE_OWNER>"}]
-maintainers = [{name = "<PYPI_MAINTAINER>"}]
+authors = [{name = "mmm1h"}]
+maintainers = [{name = "mmm1h"}]
 keywords = ["analytics", "cli", "governance", "gravity", "sdk"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -27,8 +27,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/<GITHUB_ORG>/<REPOSITORY>"
-Issues = "https://github.com/<GITHUB_ORG>/<REPOSITORY>/issues"
+Repository = "https://github.com/mmm1h/gravity-sdk"
+Issues = "https://github.com/mmm1h/gravity-sdk/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=9,<10"]

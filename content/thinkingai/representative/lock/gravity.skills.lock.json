@@ -1,6 +1,6 @@
 {
   "artifact_kind": "skills_lock",
-  "lock_digest": "92070c64e7143e9050eb3ca020cf8fd22de04ae91c73e7e3605695a4bf9c2051",
+  "lock_digest": "00b008cb767700cf3c21d06cdb637a8948a4fddfe0f356242edd10bdff6ee753",
   "requested": [
     "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
     "skill://gravity.game/app-device-performance-analysis@1.0.0",
@@ -8,7 +8,7 @@
     "skill://gravity.game/filter-result-bias-diagnosis@1.0.0",
     "skill://gravity.game/game-revenue-forecast@1.0.0"
   ],
-  "runtime_version": "0.3.0",
+  "runtime_version": "0.3.1",
   "schema_version": "gravity.skills-lock.v1",
   "skills": [
     {

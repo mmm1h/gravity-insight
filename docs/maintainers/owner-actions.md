@@ -20,10 +20,17 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 ## Publishing
 
-- Decide whether to publish to PyPI, the package name, whether internal builds
-  need a distinct name or version policy, and whether artifacts must be signed.
-- Replace `<PYPI_PACKAGE_OWNER>`, `<PYPI_MAINTAINER>`, and
-  `<GITHUB_ORG>/<REPOSITORY>` in `pyproject.toml` with approved metadata.
+- The install channel is an immutable `v<version>` tag. Tags are cut from `dev`
+  now and from `main` after the future dev-to-main promotion; the channel itself
+  is not bound to either branch.
+- `pyproject.toml` now uses the confirmed repository and issue URLs under
+  `https://github.com/mmm1h/gravity-sdk`.
+- `authors` and `maintainers` use `mmm1h`, inferred only from the confirmed
+  repository owner. `agent_under_standing_owner_delegation`; `owner_review: pending`.
+- The tag workflow uploads to PyPI only when `PYPI_API_TOKEN` is configured.
+  Confirm that `gravity-sdk` is controlled by the owner on PyPI, provision the
+  secret if publishing is intended, and decide whether artifacts must be signed.
+  `agent_under_standing_owner_delegation`; `owner_review: pending`.
 
 ## Repository controls
 

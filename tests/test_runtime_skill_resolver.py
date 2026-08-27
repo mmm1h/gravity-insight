@@ -334,7 +334,7 @@ class RuntimeSkillResolverTests(unittest.TestCase):
         )
 
         wrong_runtime = copy.deepcopy(lock)
-        wrong_runtime["runtime_version"] = "0.3.1"
+        wrong_runtime["runtime_version"] = "9.9.9"
         wrong_runtime["lock_digest"] = canonical_digest(
             {key: value for key, value in wrong_runtime.items() if key != "lock_digest"}
         )

@@ -76,7 +76,9 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
         )
         cls.index = compile_hub_index(
             load_json_object(INDEX_TARGET, "CT03 full Hub index"),
-            runtime_version="0.3.0",
+            runtime_version=compile_skills_lock(
+                load_json_object(LOCK_TARGET, "CT03 full Skill lock")
+            )["runtime_version"],
         )
         cls.specification = validate_full_specification(
             load_json_object(SPECIFICATION_TARGET, "CT03 full specification")
@@ -173,7 +175,9 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
     def test_full_hub_reuses_representatives_and_packages_new_content_without_code(self) -> None:
         representative_index = compile_hub_index(
             load_json_object(REPRESENTATIVE_INDEX, "CT02 Hub index"),
-            runtime_version="0.3.0",
+            runtime_version=compile_skills_lock(
+                load_json_object(LOCK_TARGET, "CT03 full Skill lock")
+            )["runtime_version"],
         )
         self.assertEqual(40, len(self.index["skills"]))
         for identity, entry in self.index["skills"].items():
