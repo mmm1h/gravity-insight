@@ -93,6 +93,20 @@ def ensure_first_run_credentials(*, requires_credentials: bool) -> bool:
     return implementation(requires_credentials=requires_credentials)
 
 
+def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
+    from .auto_upgrade import (
+        TERMINAL_UPGRADE_STATUSES,
+        UPGRADE_RESTART_EXIT_CODE,
+        maybe_auto_upgrade,
+        startup_update_enabled,
+    )
+
+    if not startup_update_enabled(args):
+        return None
+    result = maybe_auto_upgrade(args)
+    return UPGRADE_RESTART_EXIT_CODE if result.status in TERMINAL_UPGRADE_STATUSES else None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     from .cli_stdio import configure_utf8_stdio, emit_entry_error
 
@@ -113,10 +127,9 @@ def _main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return exit_code_for_category(ErrorCategory.CALLER)
 
-    from .auto_upgrade import maybe_auto_upgrade, startup_update_enabled
-
-    if startup_update_enabled(args):
-        maybe_auto_upgrade(args)
+    upgrade_exit = _startup_upgrade_exit(args)
+    if upgrade_exit is not None:
+        return upgrade_exit
 
     from . import cli as insight_cli
     from .census import cli as census_cli

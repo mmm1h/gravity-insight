@@ -177,10 +177,14 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual("complete", result["completeness"])
 
     def test_all_pages_audit_counts_worker_http_requests(self) -> None:
-        from gravity_sdk.receipt import count_http_requests, record_http_request
+        from gravity_sdk.receipt import (
+            PRODUCTION_HTTP_KIND,
+            count_http_requests,
+            record_http_request,
+        )
 
         def execute(_operation_id, inputs):
-            record_http_request()
+            record_http_request(kind=PRODUCTION_HTTP_KIND)
             page = int(inputs.get("page", 1))
             return _page(page, [{"id": page}], 4)
 

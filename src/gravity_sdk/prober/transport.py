@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 from gravity_sdk import runtime as tool_runtime
 from gravity_sdk.paths import PROJECT_ROOT, STATE_ROOT
 from gravity_sdk.receipt import (
+    PRODUCTION_HTTP_KIND,
     authorized_request_receipt_context,
     perform_http_request,
     record_active_http_response,
@@ -229,6 +230,7 @@ class _OpenApiProbeRuntime:
             self._recording.request,
             method,
             parts["credentials"].GRAVITY_HOST + path,
+            kind=PRODUCTION_HTTP_KIND,
             headers=headers,
             params=query,
             json=body or None,

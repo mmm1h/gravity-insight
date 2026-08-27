@@ -6,62 +6,91 @@ import os
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 from gravity_sdk import __version__
 from gravity_sdk import __main__ as entry
+from gravity_sdk import auto_upgrade as upgrade
 from gravity_sdk.auto_upgrade import (
     AUTO_UPGRADE_ENV,
-    DISTRIBUTION_HTTP_KIND,
     PINNED_VERSION_ENV,
     UPDATE_CHECK_INTERVAL,
-    check_latest_tag,
+    UPGRADE_RESTART_EXIT_CODE,
+    check_latest_version,
     maybe_auto_upgrade,
     startup_update_enabled,
     update_state_path,
 )
-from gravity_sdk.receipt import count_http_requests
+from gravity_sdk.receipt import (
+    DISTRIBUTION_HTTP_KIND,
+    count_http_requests,
+)
 
 
 NOW = datetime(2026, 8, 27, 8, 0, tzinfo=timezone.utc)
 
 
 class FakeResponse:
-    def __init__(self, status: int, payload: object = None, *, etag: str | None = None):
+    def __init__(self, status: int, payload: bytes = b"", *, etag: str | None = None):
         self.status_code = status
-        self.content = payload if isinstance(payload, bytes) else b""
+        self.content = payload
         self.headers = {"ETag": etag} if etag is not None else {}
 
 
-def atom(*tags: str) -> bytes:
-    entries = "".join(f"<entry><title>{tag}</title></entry>" for tag in tags)
-    return (
-        '<feed xmlns="http://www.w3.org/2005/Atom">'
-        f"{entries}</feed>"
-    ).encode("utf-8")
+def pypi(version: str, *, name: str = "gravity-insight") -> bytes:
+    return json.dumps({"info": {"name": name, "version": version}}).encode("utf-8")
 
 
-def state(*, checked_at: datetime, etag: str | None, latest_tag: str | None) -> dict[str, object]:
+def timestamp(value: datetime) -> str:
+    return value.isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def state(
+    *,
+    successful_checked_at: datetime | None,
+    etag: str | None,
+    latest_version: str | None,
+    attempted_version: str | None = None,
+    attempted_at: datetime | None = None,
+) -> dict[str, object]:
     return {
-        "schema_version": 1,
-        "checked_at": checked_at.isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "schema_version": 2,
+        "successful_checked_at": (
+            timestamp(successful_checked_at)
+            if successful_checked_at is not None
+            else None
+        ),
         "etag": etag,
-        "latest_tag": latest_tag,
+        "latest_version": latest_version,
+        "attempted_version": attempted_version,
+        "attempted_at": timestamp(attempted_at) if attempted_at is not None else None,
     }
+
+
+def completed(returncode: int, *, stdout: str = "") -> subprocess.CompletedProcess[str]:
+    return subprocess.CompletedProcess([], returncode, stdout=stdout, stderr="")
 
 
 class UpdateStateTests(unittest.TestCase):
     def test_state_path_uses_the_existing_cross_platform_cache_root_top_level(self) -> None:
         cases = (
-            ({"LOCALAPPDATA": "C:/Local", "XDG_CACHE_HOME": "C:/ignored"}, Path("C:/Local/GravityInsight/update-check.json")),
-            ({"XDG_CACHE_HOME": "/var/cache/user"}, Path("/var/cache/user/GravityInsight/update-check.json")),
+            (
+                {"LOCALAPPDATA": "C:/Local", "XDG_CACHE_HOME": "C:/ignored"},
+                Path("C:/Local/GravityInsight/update-check.json"),
+            ),
+            (
+                {"XDG_CACHE_HOME": "/var/cache/user"},
+                Path("/var/cache/user/GravityInsight/update-check.json"),
+            ),
         )
         for environment, expected in cases:
-            with self.subTest(environment=environment), patch.dict(os.environ, environment, clear=True):
+            with self.subTest(environment=environment), patch.dict(
+                os.environ, environment, clear=True
+            ):
                 self.assertEqual(expected, update_state_path())
         with patch.dict(os.environ, {}, clear=True), patch(
             "gravity_sdk.runtime_scope.Path.home", return_value=Path("/Users/analyst")
@@ -71,33 +100,73 @@ class UpdateStateTests(unittest.TestCase):
                 update_state_path(),
             )
 
-    def test_check_writes_only_the_four_authorized_fields_and_reuses_interval(self) -> None:
+    def test_successful_check_writes_distinct_state_facts_and_cached_check_has_no_version(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             path = Path(raw) / "update-check.json"
-            request = Mock(return_value=FakeResponse(200, atom(), etag='"empty"'))
-            first = check_latest_tag(state_path=path, now=NOW, request=request)
-            second = check_latest_tag(
+            request = Mock(return_value=FakeResponse(200, pypi(__version__), etag='"release"'))
+            first = check_latest_version(state_path=path, now=NOW, request=request)
+            second = check_latest_version(
                 state_path=path,
                 now=NOW + UPDATE_CHECK_INTERVAL - timedelta(seconds=1),
                 request=Mock(side_effect=AssertionError("interval must skip HTTP")),
             )
             stored = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(("checked", "cached"), (first.status, second.status))
+        self.assertIsNone(second.latest_version)
         self.assertEqual(
-            {"schema_version", "checked_at", "etag", "latest_tag"}, set(stored)
+            {
+                "schema_version",
+                "successful_checked_at",
+                "etag",
+                "latest_version",
+                "attempted_version",
+                "attempted_at",
+            },
+            set(stored),
         )
-        self.assertEqual((1, '"empty"', None), (stored["schema_version"], stored["etag"], stored["latest_tag"]))
+        self.assertEqual(
+            (2, timestamp(NOW), '"release"', __version__, None, None),
+            (
+                stored["schema_version"],
+                stored["successful_checked_at"],
+                stored["etag"],
+                stored["latest_version"],
+                stored["attempted_version"],
+                stored["attempted_at"],
+            ),
+        )
         request.assert_called_once()
 
-    def test_etag_is_sent_and_304_refreshes_without_production_http_accounting(self) -> None:
+    def test_failed_check_is_retried_and_never_becomes_cached(self) -> None:
+        failed_request = Mock(side_effect=OSError("offline"))
+        successful_request = Mock(return_value=FakeResponse(200, pypi(__version__)))
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw) / "update-check.json"
+            first = check_latest_version(
+                state_path=path, now=NOW, request=failed_request
+            )
+            state_after_failure = path.exists()
+            second = check_latest_version(
+                state_path=path,
+                now=NOW + timedelta(seconds=1),
+                request=successful_request,
+            )
+        self.assertEqual(("failed", "checked"), (first.status, second.status))
+        self.assertFalse(state_after_failure)
+        failed_request.assert_called_once()
+        successful_request.assert_called_once()
+
+    def test_etag_is_sent_and_live_304_refreshes_success_without_losing_attempt(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             path = Path(raw) / "update-check.json"
             path.write_text(
                 json.dumps(
                     state(
-                        checked_at=NOW - UPDATE_CHECK_INTERVAL,
+                        successful_checked_at=NOW - UPDATE_CHECK_INTERVAL,
                         etag='W/"release-etag"',
-                        latest_tag="v0.3.2",
+                        latest_version="0.3.2",
+                        attempted_version="0.3.2",
+                        attempted_at=NOW - UPDATE_CHECK_INTERVAL,
                     )
                 ),
                 encoding="utf-8",
@@ -108,39 +177,61 @@ class UpdateStateTests(unittest.TestCase):
                 observed.update(headers)
                 return FakeResponse(304)
 
-            with count_http_requests() as production:
-                result = check_latest_tag(state_path=path, now=NOW, request=request)
+            result = check_latest_version(state_path=path, now=NOW, request=request)
             stored = json.loads(path.read_text(encoding="utf-8"))
-        self.assertEqual("code_distribution", DISTRIBUTION_HTTP_KIND)
-        self.assertEqual(0, production.count)
         self.assertEqual('W/"release-etag"', observed["If-None-Match"])
-        self.assertEqual(("not_modified", "v0.3.2"), (result.status, result.latest_tag))
+        self.assertEqual(("not_modified", "0.3.2"), (result.status, result.latest_version))
         self.assertEqual(
-            (NOW.isoformat(timespec="seconds").replace("+00:00", "Z"), 'W/"release-etag"', "v0.3.2"),
-            (stored["checked_at"], stored["etag"], stored["latest_tag"]),
+            (timestamp(NOW), 'W/"release-etag"', "0.3.2", "0.3.2"),
+            (
+                stored["successful_checked_at"],
+                stored["etag"],
+                stored["latest_version"],
+                stored["attempted_version"],
+            ),
         )
 
-    def test_latest_strict_version_tag_wins_and_branches_cannot_be_selected(self) -> None:
-        payload = atom("main", "v0.3.2", "v2.0.0", "release/99", "v2.0.0-rc1")
-        with tempfile.TemporaryDirectory() as raw:
-            result = check_latest_tag(
-                state_path=Path(raw) / "update-check.json",
-                now=NOW,
-                request=lambda _headers: FakeResponse(200, payload, etag='"tags"'),
-            )
-        self.assertEqual(("checked", "v2.0.0"), (result.status, result.latest_tag))
+    def test_distribution_request_enters_authoritative_boundary_without_production_count(self) -> None:
+        response = FakeResponse(200, pypi(__version__))
+        with patch("gravity_sdk.auto_upgrade.requests.get", return_value=response) as network:
+            with count_http_requests() as counter:
+                actual = upgrade._distribution_get({"If-None-Match": '"known"'})
+        self.assertIs(response, actual)
+        self.assertEqual(0, counter.count)
+        self.assertEqual({DISTRIBUTION_HTTP_KIND: 1}, counter.attempts_by_kind)
+        network.assert_called_once_with(
+            "https://pypi.org/pypi/gravity-insight/json",
+            headers={"If-None-Match": '"known"'},
+            timeout=(2.0, 4.0),
+            allow_redirects=False,
+        )
 
-    def test_corrupt_unreadable_or_unwritable_state_fails_open_without_http(self) -> None:
+    def test_pypi_identity_and_strict_stable_version_are_both_required(self) -> None:
+        cases = (
+            (pypi("2.0.0", name="other-project"), "wrong-name"),
+            (pypi("2.0.0rc1"), "prerelease"),
+            (b"not-json", "malformed"),
+        )
+        for payload, label in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as raw:
+                result = check_latest_version(
+                    state_path=Path(raw) / "update-check.json",
+                    now=NOW,
+                    request=lambda _headers, body=payload: FakeResponse(200, body),
+                )
+            self.assertEqual("failed", result.status)
+
+    def test_corrupt_or_unwritable_state_fails_open_without_http(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             corrupt = root / "corrupt.json"
             corrupt.write_text("{broken", encoding="utf-8")
             request = Mock(side_effect=AssertionError("bad state must skip HTTP"))
-            damaged = check_latest_tag(state_path=corrupt, now=NOW, request=request)
+            damaged = check_latest_version(state_path=corrupt, now=NOW, request=request)
 
             parent_file = root / "not-a-directory"
             parent_file.write_text("blocked", encoding="utf-8")
-            unwritable = check_latest_tag(
+            unwritable = check_latest_version(
                 state_path=parent_file / "update-check.json",
                 now=NOW,
                 request=request,
@@ -148,20 +239,20 @@ class UpdateStateTests(unittest.TestCase):
         self.assertEqual(("failed", "failed"), (damaged.status, unwritable.status))
         request.assert_not_called()
 
-    def test_concurrent_callers_share_one_cross_process_claim(self) -> None:
+    def test_concurrent_callers_share_one_short_lease_and_one_request(self) -> None:
         calls = 0
 
         def request(_headers):
             nonlocal calls
             calls += 1
-            return FakeResponse(200, atom(), etag='"shared"')
+            return FakeResponse(200, pypi(__version__), etag='"shared"')
 
         with tempfile.TemporaryDirectory() as raw:
             path = Path(raw) / "update-check.json"
             with ThreadPoolExecutor(max_workers=2) as pool:
                 results = list(
                     pool.map(
-                        lambda _index: check_latest_tag(
+                        lambda _index: check_latest_version(
                             state_path=path, now=NOW, request=request
                         ),
                         range(2),
@@ -170,11 +261,30 @@ class UpdateStateTests(unittest.TestCase):
         self.assertEqual(1, calls)
         statuses = [result.status for result in results]
         self.assertEqual(1, statuses.count("checked"))
-        self.assertIn(next(status for status in statuses if status != "checked"), {"busy", "cached"})
+        self.assertIn(
+            next(status for status in statuses if status != "checked"),
+            {"busy", "cached"},
+        )
+
+    def test_success_state_is_published_with_atomic_replace(self) -> None:
+        with tempfile.TemporaryDirectory() as raw, patch(
+            "gravity_sdk._auto_upgrade_state.os.replace", wraps=os.replace
+        ) as replace:
+            path = Path(raw) / "update-check.json"
+            result = check_latest_version(
+                state_path=path,
+                now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi(__version__)),
+            )
+            leftovers = list(path.parent.glob(f".{path.name}.*.tmp"))
+        self.assertEqual("checked", result.status)
+        self.assertEqual(1, replace.call_count)
+        self.assertEqual(path, replace.call_args.args[1])
+        self.assertEqual([], leftovers)
 
 
 class StartupUpgradeTests(unittest.TestCase):
-    def test_doctor_eval_test_pin_and_reexec_paths_disable_the_check(self) -> None:
+    def test_doctor_pin_off_switch_and_reexec_paths_disable_the_check(self) -> None:
         enabled = {AUTO_UPGRADE_ENV: "1"}
         self.assertFalse(startup_update_enabled(["doctor"], environ=enabled))
         self.assertFalse(startup_update_enabled(["insight", "doctor"], environ=enabled))
@@ -192,52 +302,119 @@ class StartupUpgradeTests(unittest.TestCase):
         )
         self.assertTrue(startup_update_enabled(["agent"], environ=enabled))
 
-    def test_pip_failure_is_visible_and_current_command_can_continue(self) -> None:
+    def test_pip_failure_is_recorded_and_not_retried_on_next_startup(self) -> None:
         stderr = io.StringIO()
-        runner = Mock(return_value=subprocess.CompletedProcess([], 7))
+        runner = Mock(return_value=completed(7))
         replacement = Mock(side_effect=AssertionError("failed pip must not restart"))
         with tempfile.TemporaryDirectory() as raw:
-            result = maybe_auto_upgrade(
+            path = Path(raw) / "update-check.json"
+            first = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
                 environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=Path(raw) / "update-check.json",
+                state_path=path,
                 now=NOW,
-                request=lambda _headers: FakeResponse(200, atom("v99.0.0")),
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
                 run=runner,
                 execv=replacement,
                 stderr=stderr,
             )
-        self.assertEqual("upgrade_failed", result.status)
+            second = maybe_auto_upgrade(
+                ["agent-catalog", "categories"],
+                environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=path,
+                now=NOW + timedelta(seconds=1),
+                request=Mock(side_effect=AssertionError("successful check must be cached")),
+                run=runner,
+                execv=replacement,
+                stderr=stderr,
+            )
+            stored = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(("upgrade_failed", "cached"), (first.status, second.status))
+        self.assertEqual(1, runner.call_count)
+        command = runner.call_args.args[0]
+        self.assertIn("gravity-insight==99.0.0", command)
+        self.assertIn("https://pypi.org/simple", command)
+        self.assertNotIn("github.com", " ".join(command))
+        self.assertEqual(("99.0.0", timestamp(NOW)), (stored["attempted_version"], stored["attempted_at"]))
         self.assertIn("continuing with version", stderr.getvalue())
         replacement.assert_not_called()
 
-    def test_successful_pip_replaces_the_process_with_the_same_command(self) -> None:
-        observed: dict[str, object] = {}
-
-        def replace(executable: str, arguments: list[str]) -> None:
-            observed.update(
-                executable=executable,
-                arguments=arguments,
-                reexec=os.environ.get("GRAVITY_SDK_UPGRADE_REEXEC"),
-            )
-
+    def test_pip_success_but_version_mismatch_is_terminal_before_exec(self) -> None:
+        stderr = io.StringIO()
+        runner = Mock(side_effect=[completed(0), completed(0, stdout="98.0.0\n")])
+        replacement = Mock(side_effect=AssertionError("unverified install must not restart"))
         with tempfile.TemporaryDirectory() as raw:
             result = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
                 environ={AUTO_UPGRADE_ENV: "1"},
                 state_path=Path(raw) / "update-check.json",
                 now=NOW,
-                request=lambda _headers: FakeResponse(200, atom("v99.0.0")),
-                run=lambda *args, **kwargs: subprocess.CompletedProcess(args, 0),
-                execv=replace,
-                stderr=io.StringIO(),
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
+                run=runner,
+                execv=replacement,
+                stderr=stderr,
             )
-        self.assertEqual("restarted", result.status)
-        self.assertEqual("1", observed["reexec"])
-        self.assertEqual(
-            [os.sys.executable, "-m", "gravity_sdk", "agent-catalog", "categories"],
-            observed["arguments"],
-        )
+        self.assertEqual("verification_failed", result.status)
+        self.assertIn("installed version could not be verified", stderr.getvalue())
+        self.assertIn("This command was not run; rerun it once", stderr.getvalue())
+        replacement.assert_not_called()
+
+    def test_exec_return_is_failure_and_never_claimed_as_restarted(self) -> None:
+        stderr = io.StringIO()
+        runner = Mock(side_effect=[completed(0), completed(0, stdout="99.0.0\n")])
+        replacement = Mock(return_value=None)
+        with tempfile.TemporaryDirectory() as raw:
+            result = maybe_auto_upgrade(
+                ["agent-catalog", "categories"],
+                environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=Path(raw) / "update-check.json",
+                now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
+                run=runner,
+                execv=replacement,
+                stderr=stderr,
+            )
+        self.assertEqual("restart_failed", result.status)
+        self.assertIn("returned unexpectedly", result.detail or "")
+        self.assertNotEqual("restarted", result.status)
+        self.assertIn("This command was not run; rerun it once", stderr.getvalue())
+
+    def test_entry_terminates_after_pip_success_and_exec_failure_before_command(self) -> None:
+        def runner(command, **_kwargs):
+            if command[1:4] == ["-m", "pip", "install"]:
+                return completed(0)
+            return completed(0, stdout="99.0.0\n")
+
+        with tempfile.TemporaryDirectory() as raw:
+            environment = {
+                AUTO_UPGRADE_ENV: "1",
+                "LOCALAPPDATA": raw,
+                "XDG_CACHE_HOME": raw,
+            }
+            command_guard = Mock(
+                side_effect=AssertionError("user command must not execute in old process")
+            )
+            stderr = io.StringIO()
+            original_guard = entry.ensure_first_run_credentials
+            entry.ensure_first_run_credentials = command_guard
+            try:
+                with patch.dict(os.environ, environment), patch(
+                    "gravity_sdk.auto_upgrade._distribution_get",
+                    return_value=FakeResponse(200, pypi("99.0.0")),
+                ), patch(
+                    "gravity_sdk.auto_upgrade.subprocess.run", side_effect=runner
+                ) as subprocess_run, patch(
+                    "gravity_sdk.auto_upgrade.os.execv", side_effect=OSError("blocked")
+                ) as replacement, redirect_stderr(stderr):
+                    exit_code = entry.main(["agent-catalog", "categories"])
+            finally:
+                entry.ensure_first_run_credentials = original_guard
+        self.assertEqual(UPGRADE_RESTART_EXIT_CODE, exit_code)
+        self.assertEqual(2, subprocess_run.call_count)
+        replacement.assert_called_once()
+        command_guard.assert_not_called()
+        self.assertIn("was upgraded to 99.0.0", stderr.getvalue())
+        self.assertIn("This command was not run; rerun it once", stderr.getvalue())
 
     def test_offline_help_and_real_command_exit_zero_with_visible_warning(self) -> None:
         commands = (["--help"], ["agent-catalog", "categories"])
@@ -273,6 +450,28 @@ class StartupUpgradeTests(unittest.TestCase):
         result = json.loads(stdout.getvalue())
         self.assertEqual(0, exit_code, stderr.getvalue())
         self.assertFalse(result["network_called"])
+        self.assertFalse(state_exists)
+        network.assert_not_called()
+
+    def test_pinned_version_keeps_real_entry_offline_and_does_not_touch_state(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            network = Mock(side_effect=AssertionError("pin must keep startup offline"))
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with patch.dict(
+                os.environ,
+                {
+                    AUTO_UPGRADE_ENV: "1",
+                    PINNED_VERSION_ENV: __version__,
+                    "LOCALAPPDATA": raw,
+                    "XDG_CACHE_HOME": raw,
+                },
+            ), patch("gravity_sdk.auto_upgrade._distribution_get", network), redirect_stdout(
+                stdout
+            ), redirect_stderr(stderr):
+                exit_code = entry.main(["--help"])
+            state_exists = Path(raw, "GravityInsight", "update-check.json").exists()
+        self.assertEqual(0, exit_code, stderr.getvalue())
+        self.assertTrue(stdout.getvalue().strip())
         self.assertFalse(state_exists)
         network.assert_not_called()
 

@@ -11,7 +11,7 @@ import requests
 
 from .errors import GravityInsightError
 from .paths import STATE_ROOT
-from .receipt import perform_http_request, request_receipt_context
+from .receipt import PRODUCTION_HTTP_KIND, perform_http_request, request_receipt_context
 
 class BlobTransferError(GravityInsightError):
     """A structured, caller-safe transfer failure."""
@@ -199,6 +199,7 @@ class RequestsBlobTransport:
         return perform_http_request(
             self._session.get,
             url,
+            kind=PRODUCTION_HTTP_KIND,
             headers=dict(headers),
             timeout=timeout,
             stream=True,
@@ -226,6 +227,7 @@ class RequestsBlobTransport:
             return perform_http_request(
                 self._session.post,
                 url,
+                kind=PRODUCTION_HTTP_KIND,
                 data=dict(form_fields),
                 files={file_field: (file_path.name, handle, content_type)},
                 timeout=timeout,

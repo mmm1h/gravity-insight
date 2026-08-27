@@ -4,13 +4,13 @@
 
 ## 1. 安装
 
-不要 `pip install gravity-sdk` 或 `pip install gravity`：前者是 Gravity Labs 的广告 SDK，后者是 galaxyproject 的 Galaxy 服务器管理 CLI，都是无关第三方包。当前只安装不可变、已通过门禁的 `v<version>` tag；发布到 PyPI 后也可 `pip install gravity-insight`。把 `<version>` 替换为已发布版本：
+不要 `pip install gravity-sdk` 或 `pip install gravity`：前者是 Gravity Labs 的广告 SDK，后者是 galaxyproject 的 Galaxy 服务器管理 CLI，都是无关第三方包。权威发行源是 PyPI 上已通过门禁的 `gravity-insight`：
 
 ```powershell
-python -m pip install --upgrade "git+https://github.com/mmm1h/gravity-sdk.git@v<version>"
+python -m pip install gravity-insight
 ```
 
-每次升级都显式换成更新的 `v<version>` tag，并保留 `--upgrade`，让 pip 比较安装元数据中的版本。完整的 Agent 安装/自检合同见 [Agent 安装契约](agent-skills/installation.md)。
+升级用 `python -m pip install --upgrade gravity-insight`；要固定发布版本则安装 `gravity-insight==<version>`。完整的 Agent 安装/自检合同见 [Agent 安装契约](agent-skills/installation.md)。
 
 只有要修改 SDK 源码时才 clone，并在该 worktree 自己的虚拟环境中安装 editable 包：
 

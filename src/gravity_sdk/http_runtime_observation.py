@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .credentials import GRAVITY_HOST
-from .receipt import perform_http_request
+from .receipt import PRODUCTION_HTTP_KIND, perform_http_request
 
 
 def perform_runtime_attempt(
@@ -30,6 +30,7 @@ def perform_runtime_attempt(
         requester.session.request,
         method,
         GRAVITY_HOST + path,
+        kind=PRODUCTION_HTTP_KIND,
         headers=headers,
         params=dict(params or {}),
         json=dict(json_body) if json_body is not None else None,

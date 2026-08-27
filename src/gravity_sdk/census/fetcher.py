@@ -15,7 +15,11 @@ from urllib.parse import urljoin, urlsplit
 import requests
 
 from gravity_sdk.paths import STATE_ROOT
-from gravity_sdk.receipt import perform_http_request, request_receipt_context
+from gravity_sdk.receipt import (
+    PRODUCTION_HTTP_KIND,
+    perform_http_request,
+    request_receipt_context,
+)
 
 from .io import sha256_bytes, stable_bundle_id, write_json
 
@@ -151,6 +155,7 @@ class StaticFetcher:
                 response = perform_http_request(
                     self._session().get,
                     url,
+                    kind=PRODUCTION_HTTP_KIND,
                     timeout=self.timeout,
                     allow_redirects=True,
                     http_receipt={

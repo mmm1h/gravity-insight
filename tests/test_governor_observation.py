@@ -26,6 +26,7 @@ from gravity_sdk.governor_observation import (
 )
 from gravity_sdk.http_runtime import GravityHttpRuntime, SQL_PROFILE
 from gravity_sdk.receipt import (
+    PRODUCTION_HTTP_KIND,
     count_http_requests,
     perform_http_request,
     request_receipt_context,
@@ -180,7 +181,9 @@ class GovernorObservationEquivalenceTests(unittest.TestCase):
             "gravity_sdk.governor_observation.observe_http_attempt",
             side_effect=RuntimeError("observer failed"),
         ):
-            result = perform_http_request(lambda: response_value)
+            result = perform_http_request(
+                lambda: response_value, kind=PRODUCTION_HTTP_KIND
+            )
         self.assertIs(response_value, result)
 
     def test_status_classes_and_rate_delay_are_exact_under_fake_time(self) -> None:
@@ -264,6 +267,7 @@ class GovernorObservationPrivacyAndScopeTests(unittest.TestCase):
             perform_http_request(
                 lambda _url, **_kwargs: FakeResponse(secret_payload),
                 secret_url,
+                kind=PRODUCTION_HTTP_KIND,
                 headers={"Authorization": "private-credential"},
                 http_receipt=request_receipt_context(
                     operation_id="material.asset.fetch",

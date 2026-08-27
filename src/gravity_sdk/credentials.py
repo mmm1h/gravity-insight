@@ -37,7 +37,7 @@ from .errors import (
     TransportError,
 )
 from .paths import PROJECT_ROOT, STATE_ROOT
-from .receipt import perform_http_request, request_receipt_context
+from .receipt import PRODUCTION_HTTP_KIND, perform_http_request, request_receipt_context
 from .runtime_scope import principal_receipt_root
 
 
@@ -426,6 +426,7 @@ class CredentialProvider:
                     session.request,
                     "POST",
                     GRAVITY_HOST + LOGIN_PATH,
+                    kind=PRODUCTION_HTTP_KIND,
                     headers={
                         "Accept": "application/json",
                         "Content-Type": "application/json",

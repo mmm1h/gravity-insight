@@ -12,6 +12,7 @@ def perform_governed_http_request(
     request_args: Sequence[Any],
     request_kwargs: Mapping[str, Any],
     *,
+    kind: str,
     receipt_context: Mapping[str, Any] | None,
     receipt_root: Path | None,
     governor_context: Mapping[str, Any] | None,
@@ -23,6 +24,7 @@ def perform_governed_http_request(
         request,
         request_args,
         request_kwargs,
+        kind=kind,
         receipt_context=receipt_context,
         receipt_root=receipt_root,
         governor_context=governor_context,
@@ -57,6 +59,7 @@ def _perform_actual_http_request(
     request_args: Sequence[Any],
     request_kwargs: Mapping[str, Any],
     *,
+    kind: str,
     receipt_context: Mapping[str, Any] | None,
     receipt_root: Path | None,
     governor_context: Mapping[str, Any] | None,
@@ -64,7 +67,7 @@ def _perform_actual_http_request(
 ) -> Any:
     from . import receipt as evidence
 
-    evidence.record_http_request()
+    evidence.record_http_request(kind=kind)
     active = (
         evidence._ActiveHttpReceipt(receipt_context, receipt_root)
         if receipt_context is not None and receipt_root is not None

@@ -18,7 +18,7 @@ from gravity_sdk.metadata_sync import (
     _write_catalog_metadata,
     _write_rows,
 )
-from gravity_sdk.receipt import record_http_request
+from gravity_sdk.receipt import PRODUCTION_HTTP_KIND, record_http_request
 from gravity_sdk.recipe import check_recipe
 from gravity_sdk.resolver import resolve_and_run
 from gravity_sdk.workspace import Recipe, RecipeBindings, load_workspace
@@ -202,7 +202,7 @@ class ResolverTests(unittest.TestCase):
         executed: list[dict] = []
 
         def read(_client, _operation_id, inputs, **_kwargs):
-            record_http_request()
+            record_http_request(kind=PRODUCTION_HTTP_KIND)
             executed.append(dict(inputs))
             return {"ok": True, "status": "empty", "data": []}
 
@@ -234,7 +234,7 @@ class ResolverTests(unittest.TestCase):
         }
 
         def read(*_args, **_kwargs):
-            record_http_request()
+            record_http_request(kind=PRODUCTION_HTTP_KIND)
             return {
                 "ok": True, "status": "success",
                 "completeness": "prefix",
@@ -266,7 +266,7 @@ class ResolverTests(unittest.TestCase):
         def read(*_args, **kwargs):
             pages = 17
             for page in range(1, pages + 1):
-                record_http_request()
+                record_http_request(kind=PRODUCTION_HTTP_KIND)
                 calls.append(page)
             return {
                 "ok": True, "status": "success",

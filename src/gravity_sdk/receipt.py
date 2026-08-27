@@ -9,7 +9,7 @@ import logging
 import time
 import uuid
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping, Sequence
@@ -27,6 +27,9 @@ from .result_output import write_rendered_result
 
 SCHEMA_VERSION = "gravity.receipt.v1"
 HTTP_SCHEMA_VERSION = "gravity.http-receipt.v1"
+PRODUCTION_HTTP_KIND = "production"
+DISTRIBUTION_HTTP_KIND = "code_distribution"
+HTTP_KINDS = frozenset({PRODUCTION_HTTP_KIND, DISTRIBUTION_HTTP_KIND})
 _FACET_FIELDS = frozenset(
     {
         "run",
@@ -69,6 +72,7 @@ _ACTIVE_RESULT_RECEIPTS: contextvars.ContextVar[_ReceiptReferences | None] = (
 @dataclass
 class RequestCounter:
     count: int = 0
+    attempts_by_kind: dict[str, int] = field(default_factory=dict)
 
 
 _ACTIVE_REQUEST_COUNTER: contextvars.ContextVar[RequestCounter | None] = (
@@ -86,10 +90,14 @@ def count_http_requests() -> Iterator[RequestCounter]:
         _ACTIVE_REQUEST_COUNTER.reset(token)
 
 
-def record_http_request() -> None:
+def record_http_request(*, kind: str) -> None:
+    if kind not in HTTP_KINDS:
+        raise ValueError("HTTP request kind is not governed")
     counter = _ACTIVE_REQUEST_COUNTER.get()
     if counter is not None:
-        counter.count += 1
+        counter.attempts_by_kind[kind] = counter.attempts_by_kind.get(kind, 0) + 1
+        if kind == PRODUCTION_HTTP_KIND:
+            counter.count += 1
 
 
 def bind_request_counter():
@@ -131,6 +139,7 @@ def capture_http_receipt_references() -> Iterator[_ReceiptReferences]:
 def perform_http_request(
     request: Callable[..., Any],
     *args: Any,
+    kind: str,
     http_receipt: Mapping[str, Any] | None = None,
     receipt_root: Path | None = None,
     governor_context: Mapping[str, Any] | None = None,
@@ -147,6 +156,7 @@ def perform_http_request(
         request,
         args,
         kwargs,
+        kind=kind,
         receipt_context=http_receipt,
         receipt_root=receipt_root,
         governor_context=governor_context,
@@ -550,6 +560,9 @@ def persist_receipt(
 
 
 __all__ = [
+    "DISTRIBUTION_HTTP_KIND",
+    "HTTP_KINDS",
+    "PRODUCTION_HTTP_KIND",
     "build_receipt",
     "capture_http_receipt_references",
     "count_http_requests",

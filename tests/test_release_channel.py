@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,7 @@ import gravity_sdk
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 TAG_GATE = ROOT / "scripts" / "check_release_tag.py"
+RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release.yml"
 
 
 def _run(command: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -83,6 +85,50 @@ class ReleaseTagGateTests(unittest.TestCase):
             completed = self._gate(repository)
         self.assertEqual(1, completed.returncode, completed.stdout + completed.stderr)
         self.assertIn("do not match expected", completed.stdout)
+
+
+class ReleaseWorkflowTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+    def _job(self, name: str) -> str:
+        matched = re.search(
+            rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z][a-z0-9-]*:\n|\Z)",
+            self.workflow,
+        )
+        self.assertIsNotNone(matched, name)
+        return matched.group(0) if matched is not None else ""
+
+    def test_every_release_action_is_pinned_to_a_full_commit_sha(self) -> None:
+        uses = re.findall(r"(?m)^\s+- uses: ([^\s]+)$", self.workflow)
+        self.assertTrue(uses)
+        self.assertEqual(
+            [],
+            [value for value in uses if re.fullmatch(r"[^@]+@[0-9a-f]{40}", value) is None],
+        )
+
+    def test_build_is_read_only_and_publishes_one_checked_artifact(self) -> None:
+        build = self._job("build")
+        self.assertIn("contents: read", build)
+        self.assertNotIn("contents: write", build)
+        self.assertIn("name: python-distributions", build)
+        self.assertIn("path: dist/", build)
+        self.assertNotIn("gh release create", build)
+
+    def test_oidc_publish_precedes_the_only_github_release_job(self) -> None:
+        publish = self._job("publish")
+        github_release = self._job("github-release")
+        self.assertIn("needs: build", publish)
+        self.assertIn("id-token: write", publish)
+        self.assertIn("name: python-distributions", publish)
+        self.assertIn("gh-action-pypi-publish@", publish)
+        self.assertNotIn("gh release create", publish)
+        self.assertIn("needs: publish", github_release)
+        self.assertIn("contents: write", github_release)
+        self.assertIn("name: python-distributions", github_release)
+        self.assertIn("gh release create", github_release)
+        self.assertEqual(1, self.workflow.count("gh release create"))
 
 
 if __name__ == "__main__":

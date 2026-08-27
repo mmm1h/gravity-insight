@@ -257,11 +257,15 @@ def _git(root: Path, *arguments: str, maximum: int) -> bytes:
 def _https_get(url: str, maximum: int, timeout: int) -> bytes:
     import requests
 
+    from .receipt import DISTRIBUTION_HTTP_KIND, perform_http_request
+
     session = requests.Session()
     session.trust_env = False
     try:
-        response = session.get(
+        response = perform_http_request(
+            session.get,
             url,
+            kind=DISTRIBUTION_HTTP_KIND,
             headers={"Accept": "application/json, application/zip"},
             stream=True,
             allow_redirects=False,

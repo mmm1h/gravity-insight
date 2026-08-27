@@ -32,6 +32,7 @@ from .blob_transfer import SafeBlobTransfer
 from .errors import ErrorCategory
 from .paths import STATE_ROOT
 from .receipt import (
+    PRODUCTION_HTTP_KIND,
     capture_http_receipt_references,
     perform_http_request,
     request_receipt_context,
@@ -239,6 +240,7 @@ class _RequestsArtifactTransport:
         return perform_http_request(
             self._session.get,
             url,
+            kind=PRODUCTION_HTTP_KIND,
             headers=dict(headers),
             timeout=timeout,
             stream=True,

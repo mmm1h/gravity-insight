@@ -17,11 +17,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "7fd74fed87075dc874cc1b68413afb30529e4c7dac2002ef6fd05b88d05d4e28",
-    "manual_review_sha256": "e4df6f2692e9651646930605c2c1f62ed2af5eed67b4da817d65bf6cdf3ad798",
+    "reference_evidence_sha256": "df9ecdbad5497cc6b1081067582fcaed3b3d53f9a25caa94a286568a2fe5cf18",
+    "manual_review_sha256": "30bf4267c0902f2916037e0982d3fed266d80b2864fd4bff140fe8fdc88119aa",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3118,
-    "scanned_file_count": 3110,
+    "version_controlled_file_count": 3119,
+    "scanned_file_count": 3111,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 305
     },
-    "sites_sha256": "3b4701801902e7b5d3e6ee02930b9a2ee82cb5227e746dc706e4f9f3e452fea4"
+    "sites_sha256": "48c3afc47c95308295482e8d0bb7bdd9cca3138aef4b5605aa19403df959b329"
   },
   "blockers": [],
   "site_fields": [
@@ -2677,7 +2677,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:175:19:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:176:19:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".models\"",
@@ -2692,7 +2692,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:176:21:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:177:21:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".registry\"",
@@ -2707,7 +2707,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:177:21:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:178:21:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".executor\"",
@@ -2722,7 +2722,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:178:22:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:179:22:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".transport\"",
@@ -2737,7 +2737,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:179:25:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:180:25:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".http_runtime\"",
@@ -2752,7 +2752,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:180:24:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:181:24:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".credentials\"",
@@ -2782,7 +2782,7 @@
       }
     ],
     [
-      "src/gravity_sdk/receipt.py:445:5:from import",
+      "src/gravity_sdk/receipt.py:455:5:from import",
       "r",
       "exact_reference",
       "gravity_sdk.agent_runtime_contracts",
@@ -4087,7 +4087,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:188:18:patch.object",
+      "tests/test_gravity_insight_pagination.py:192:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4102,7 +4102,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:207:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:211:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4117,7 +4117,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:226:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:230:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4132,7 +4132,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:237:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:241:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4147,7 +4147,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:273:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:277:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4162,7 +4162,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:296:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:300:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4177,7 +4177,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:316:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:320:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4192,7 +4192,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:377:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:381:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4207,7 +4207,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:392:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:396:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",

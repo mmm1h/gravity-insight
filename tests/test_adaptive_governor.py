@@ -34,6 +34,7 @@ from gravity_sdk.http_runtime import GravityHttpRuntime, HostRateLimiter, SQL_PR
 from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan
 from gravity_sdk.provider_rpc_transport import CallableProviderTransport
 from gravity_sdk.receipt import (
+    PRODUCTION_HTTP_KIND,
     bind_request_counter,
     capture_http_receipt_references,
     count_http_requests,
@@ -468,6 +469,7 @@ class AdaptiveGovernorSingleFlightTests(unittest.TestCase):
                 network,
                 "POST",
                 "https://example.invalid/read",
+                kind=PRODUCTION_HTTP_KIND,
                 **kwargs,
                 http_receipt=receipt,
                 governor_context={
@@ -515,6 +517,7 @@ class AdaptiveGovernorSingleFlightTests(unittest.TestCase):
                 network,
                 "POST",
                 "https://example.invalid/read",
+                kind=PRODUCTION_HTTP_KIND,
                 json={"value": 1},
                 http_receipt=receipt,
                 governor_context={"scope_key": "failed", "profile": "insight"},
