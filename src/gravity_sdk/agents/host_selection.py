@@ -23,9 +23,10 @@ from ..host_effect_sources import (
 )
 
 
-DEFAULT_ROUTING_MODE = "recognizer"
+RECOGNIZER_ROUTING_MODE = "recognizer"
 HOST_ROUTING_MODE = "host_catalog"
-ROUTING_MODES = (DEFAULT_ROUTING_MODE, HOST_ROUTING_MODE)
+ROUTING_MODES = (RECOGNIZER_ROUTING_MODE, HOST_ROUTING_MODE)
+DEFAULT_ROUTING_MODE = RECOGNIZER_ROUTING_MODE
 EMPTY_SELECTION_GAP = "HOST_PRODUCT_SELECTION_EMPTY"
 
 _RESPONSE_FIELDS = frozenset(
@@ -94,7 +95,7 @@ def host_routing_discovery(
 
 
 def _validate_routing_inputs(routing: str, selection: Any) -> None:
-    if routing != DEFAULT_ROUTING_MODE or selection is not None:
+    if routing != RECOGNIZER_ROUTING_MODE or selection is not None:
         raise InputValidationError(
             "actual value: invalid Agent routing inputs; allowed value: recognizer "
             "without host_selection, or host_catalog with one complete selection",
@@ -429,6 +430,7 @@ __all__ = [
     "DEFAULT_ROUTING_MODE",
     "EMPTY_SELECTION_GAP",
     "HOST_ROUTING_MODE",
+    "RECOGNIZER_ROUTING_MODE",
     "ROUTING_MODES",
     "add_host_routing_arguments",
     "assess_host_product_selection",
