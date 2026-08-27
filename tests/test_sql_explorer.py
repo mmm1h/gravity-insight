@@ -436,9 +436,15 @@ class SqlExplorerTests(unittest.TestCase):
         self.assertEqual("SQL_EXPLORER_PROMOTION_PRODUCT_EXISTS", raised.exception.code)
 
     def test_promotion_readback_failure_rolls_back_workspace_install(self) -> None:
+        # Caller spelling may differ from the canonical install path (for
+        # example a Windows short temp path); exercise that on every platform.
+        self.workspace_path = (
+            self.workspace_root / ".." / self.workspace_root.name / "gravity.toml"
+        )
         workspace = load_workspace(
             self.workspace_path, environ={}, cache_root=self.cache_root
         )
+        self.assertNotEqual(self.workspace_path, workspace.path)
         service = SqlExplorerService(workspace)
         source = service.execute(_request(self.database))["promotion_source"]
         original = self.workspace_path.read_bytes()
@@ -448,7 +454,7 @@ class SqlExplorerTests(unittest.TestCase):
         def corrupt_first_commit(source_path, target_path):
             nonlocal corrupted
             replace(source_path, target_path)
-            if target_path == self.workspace_path and not corrupted:
+            if target_path == workspace.path and not corrupted:
                 corrupted = True
                 target_path.write_text("schema_version =", encoding="utf-8")
 

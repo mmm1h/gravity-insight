@@ -48,6 +48,10 @@ jobs:
         shell: pwsh
         run: |
           gravity --help
-          gravity sql --dry-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gravity --workspace examples/workspace sql --dry-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity census --smoke
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity insight --dry-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "725ecda6fb04033c23e7cdd50191421d102e0f3b8dd3ba3d690bfd482847d321",
-    "manual_review_sha256": "88cefefae700f181bf294f430d70860bf7a750580fe76ebf2191111e23bb1ca9",
+    "reference_evidence_sha256": "e8dcfc319dfabb626cca72f9f9f5922d6ba514699baabbfe5aba539e0248674e",
+    "manual_review_sha256": "58240caf4e82bea9262263e0543bc1c5f60771acb6570ce3cf1e4d6bafeed59d",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3111,
     "scanned_file_count": 3103,
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 305
     },
-    "sites_sha256": "fcdd024483776ba742bd557222fae304151630ee8fb009dfaeea4c9fd3ae48bf"
+    "sites_sha256": "7a32dae2609b6968805340e0d5064943c0d4b47eeb996e6631a2a326c4972dda"
   },
   "blockers": [],
   "site_fields": [
@@ -4882,7 +4882,7 @@
       }
     ],
     [
-      "tests/test_sql_explorer.py:538:14:patch.object",
+      "tests/test_sql_explorer.py:544:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "SqlExplorerService",
