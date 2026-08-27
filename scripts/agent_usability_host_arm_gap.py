@@ -2,7 +2,7 @@
 
 Does not change the evaluator, suite, scorer, layers, or thresholds.
 Does not read holdout/final keys or sealed files.
-One trial only. Writes a compact JSON summary; no production HTTP.
+Uses development reliability trials; writes a compact JSON summary; no production HTTP.
 """
 
 from __future__ import annotations
@@ -437,7 +437,7 @@ def _recognizer_miss_class(row: Mapping[str, Any]) -> str:
     return reason
 
 
-DEFAULT_DISPATCH_SCHEMA = "gravity.agent-usability-default-dispatch.v1"
+DEFAULT_DISPATCH_SCHEMA = "gravity.agent-usability-default-dispatch.v2"
 
 
 def _source_reexecuted_host_selection(default_symbol: str) -> Any:
@@ -497,7 +497,6 @@ def measure_default_dispatch(
     plugin_path: Path,
     *,
     timeout_seconds: float,
-    trials: int,
 ) -> dict[str, Any]:
     """Score two source defaults against the same development selections."""
 
@@ -509,10 +508,12 @@ def measure_default_dispatch(
         _invoke_plugin,
         _selection_result,
     )
+    from agent_usability_eval import _selection_identity
 
-    if trials < 1:
-        raise ValueError("trials must be at least one")
     manifest, cases = load_cases("development", None)
+    trials = int(manifest["trials"])
+    if trials < 1:
+        raise ValueError("development reliability trials must be at least one")
     blocker, network = BlockedTransport(), NetworkGuard()
     with tempfile.TemporaryDirectory(
         prefix="gravity-default-dispatch-"
@@ -533,19 +534,23 @@ def measure_default_dispatch(
         client = GravityInsightClient.from_env(transport=blocker)
         selector_catalog, runtime_catalog = _catalog(client)
         questions, aliases, blind_receipt = _blind_questions(cases)
-        outcomes = {
-            "checked_in": {str(case["case_id"]): [] for case in cases},
-            "counterfactual": {str(case["case_id"]): [] for case in cases},
+        states = {
+            policy: {
+                str(case["case_id"]): {"selection": [], "selected": []}
+                for case in cases
+            }
+            for policy in ("checked_in", "counterfactual")
         }
         reasons = {"checked_in": Counter(), "counterfactual": Counter()}
         routing_modes = {"checked_in": Counter(), "counterfactual": Counter()}
+        per_trial_scores = {"checked_in": [], "counterfactual": []}
         receipts: list[Mapping[str, Any]] = []
         modules = {
             "checked_in": checked_in,
             "counterfactual": counterfactual,
         }
         plugin_sha256 = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
-        for _trial in range(trials):
+        for trial in range(1, trials + 1):
             selected, metadata = _invoke_plugin(
                 plugin_path,
                 selector_catalog,
@@ -557,6 +562,13 @@ def measure_default_dispatch(
                 str(case["case_id"]): selected[aliases[str(case["case_id"])]]
                 for case in cases
             }
+            trial_reasons = {
+                "checked_in": Counter(), "counterfactual": Counter()
+            }
+            trial_routing_modes = {
+                "checked_in": Counter(), "counterfactual": Counter()
+            }
+            trial_outcomes = {"checked_in": [], "counterfactual": []}
             for policy, module in modules.items():
                 with _installed_host_selection(module):
                     for case in cases:
@@ -571,27 +583,125 @@ def measure_default_dispatch(
                             dispatch_mode="default",
                         )
                         ok, reason, _card = route_score(case, result)
-                        outcomes[policy][str(case["case_id"])].append(ok)
+                        state = states[policy][str(case["case_id"])]
+                        state["selection"].append(ok)
+                        runtime_result = dict(result)
+                        runtime_result.pop("selected_selectors", None)
+                        state["selected"].append(
+                            _selection_identity(runtime_result)
+                        )
+                        trial_outcomes[policy].append(ok)
+                        trial_reasons[policy][reason] += 1
+                        trial_routing_modes[policy][
+                            str(result.get("routing_mode"))
+                        ] += 1
                         reasons[policy][reason] += 1
                         routing_modes[policy][str(result.get("routing_mode"))] += 1
+                passed = sum(trial_outcomes[policy])
+                per_trial_scores[policy].append({
+                    "trial": trial,
+                    "passed": passed,
+                    "total": len(cases),
+                    "rate": _default_dispatch_rate(passed, len(cases)),
+                    "routing_mode_counts": dict(sorted(
+                        trial_routing_modes[policy].items()
+                    )),
+                    "failure_classes": dict(sorted(
+                        trial_reasons[policy].items()
+                    )),
+                })
 
     if blocker.attempts or network.attempts:
         raise RuntimeError("measurement attempted prohibited Gravity network access")
-    scores = {}
+    request_hashes = [receipt.get("request_sha256") for receipt in receipts]
+    if not all(isinstance(value, str) and value for value in request_hashes):
+        raise RuntimeError(
+            "default-dispatch evidence requires one verified request SHA-256 per trial"
+        )
+    if len(set(request_hashes)) != 1:
+        raise RuntimeError("default-dispatch selector request changed across trials")
+    scores: dict[str, Any] = {}
     for policy in ("checked_in", "counterfactual"):
-        scores[policy] = {
-            "passed": sum(all(rows) for rows in outcomes[policy].values()),
-            "total": len(cases),
-            "routing_mode_counts": dict(sorted(routing_modes[policy].items())),
-            "trial_reason_counts": dict(sorted(reasons[policy].items())),
-        }
+        scores[policy] = _default_dispatch_score(
+            states[policy],
+            trials=trials,
+            per_trial_scores=per_trial_scores[policy],
+            routing_mode_counts=routing_modes[policy],
+            failure_classes=reasons[policy],
+        )
+    pass1_difference = (
+        scores["counterfactual"]["pass^1"]["passed"]
+        - scores["checked_in"]["pass^1"]["passed"]
+    )
+    passn_difference = (
+        scores["counterfactual"]["pass^N"]["passed"]
+        - scores["checked_in"]["pass^N"]["passed"]
+    )
+    multiple_intent_cases = [
+        case for case in cases
+        if case["expected"].get("gap_code") == "MULTIPLE_INTENTS"
+    ]
+    gap_identity_case_ids = sorted(
+        str(case["case_id"])
+        for case in multiple_intent_cases
+        if any(
+            str(selector).startswith("gap:")
+            for selector in case["expected"].get(
+                "candidate_selectors", {}
+            ).values()
+        )
+    )
     return {
         "schema_version": DEFAULT_DISPATCH_SCHEMA,
+        "evidence_scope": {
+            "classification": "development_counterfactual_prediction",
+            "is_holdout_result": False,
+            "is_post_flip_measurement": False,
+            "checked_in_default_changed": False,
+            "limitations": [
+                "This development result does not establish protected-split generalization.",
+                "Protected legacy ambiguous prompts do not carry development's explicit multi-journey expectations.",
+                "The selector subprocess reports its own network activity; the parent cannot independently instrument it.",
+            ],
+        },
         "suite_version": manifest["suite_version"],
         "split": "development",
         "case_count": len(cases),
         "trials": trials,
+        "reliability_protocol": {
+            "trials_source": "evals/agent_usability/suite.json#trials",
+            "N": trials,
+            "pass^1_definition": "cases correct on the first trial",
+            "pass^N_definition": "cases correct on every one of N trials",
+            "instability_definition": "case IDs whose exact runtime selection identity differs across trials",
+        },
+        "protected_split_comparability": {
+            "same_multi_intent_scoring_contract": False,
+            "development_explicit_multi_intent_case_count": len(
+                multiple_intent_cases
+            ),
+            "development_gap_identity_case_ids": gap_identity_case_ids,
+            "development_gap_identity_score_effect_bound": {
+                "max_cases_per_trial": len(gap_identity_case_ids),
+                "max_percentage_points": round(
+                    100 * len(gap_identity_case_ids) / len(cases), 6
+                ),
+                "observed_cases_helped": None,
+            },
+            "protected_legacy_behavior": (
+                "cases without an explicit multiple-intent declaration retain "
+                "single-journey scoring"
+            ),
+            "protected_ambiguous_case_count": None,
+            "protected_score_impact": None,
+            "unquantified_reason": (
+                "Determining protected ambiguous cases or score impact would "
+                "require opening a protected payload; this measurement did not."
+            ),
+        },
         "selector_plugin_sha256": plugin_sha256,
+        "selector_request_sha256": request_hashes[0],
+        "selector_request_sha256_by_trial": request_hashes,
         "blind_order_seed_sha256": blind_receipt["order_seed_sha256"],
         "selector_network_reported_trials": sum(
             receipt.get("network_called") is True for receipt in receipts
@@ -599,8 +709,58 @@ def measure_default_dispatch(
         "checked_in_default": checked_in.DEFAULT_ROUTING_MODE,
         "counterfactual_default": counterfactual.DEFAULT_ROUTING_MODE,
         "scores": scores,
-        "scores_differ": scores["checked_in"]["passed"]
-        != scores["counterfactual"]["passed"],
+        "score_differences": {
+            "counterfactual_minus_checked_in_pass^1": pass1_difference,
+            "counterfactual_minus_checked_in_pass^N": passn_difference,
+        },
+        "scores_differ": passn_difference != 0,
+    }
+
+
+def _default_dispatch_rate(passed: int, total: int) -> float | None:
+    return round(passed / total, 6) if total else None
+
+
+def _default_dispatch_score(
+    states: Mapping[str, Mapping[str, list[Any]]],
+    *,
+    trials: int,
+    per_trial_scores: list[dict[str, Any]],
+    routing_mode_counts: Counter[str],
+    failure_classes: Counter[str],
+) -> dict[str, Any]:
+    pass1 = sum(state["selection"][0] is True for state in states.values())
+    passn = sum(
+        all(value is True for value in state["selection"])
+        for state in states.values()
+    )
+    unstable = sorted(
+        case_id for case_id, state in states.items()
+        if len(set(state["selected"])) > 1
+    )
+    return {
+        "pass^1": {
+            "passed": pass1,
+            "total": len(states),
+            "rate": _default_dispatch_rate(pass1, len(states)),
+        },
+        "pass^N": {
+            "N": trials,
+            "passed": passn,
+            "total": len(states),
+            "rate": _default_dispatch_rate(passn, len(states)),
+        },
+        "unstable_tasks": len(unstable),
+        "unstable_case_ids": unstable,
+        "unstable_selections": {
+            case_id: [
+                list(value) for value in sorted(set(states[case_id]["selected"]))
+            ]
+            for case_id in unstable
+        },
+        "routing_mode_counts": dict(sorted(routing_mode_counts.items())),
+        "failure_classes": dict(sorted(failure_classes.items())),
+        "per_trial_scores": per_trial_scores,
     }
 
 
@@ -615,7 +775,6 @@ def default_dispatch_parser() -> Any:
     )
     parser.add_argument("--selector-plugin", type=Path, required=True)
     parser.add_argument("--selector-timeout", type=float, default=300.0)
-    parser.add_argument("--trials", type=int, default=1)
     parser.add_argument(
         "--output",
         type=Path,
@@ -630,7 +789,6 @@ def default_dispatch_main(argv: list[str] | None = None) -> int:
         payload = measure_default_dispatch(
             args.selector_plugin.resolve(),
             timeout_seconds=float(args.selector_timeout),
-            trials=int(args.trials),
         )
     except Exception as error:
         print(
