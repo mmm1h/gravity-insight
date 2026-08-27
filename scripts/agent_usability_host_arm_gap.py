@@ -13,7 +13,7 @@ import socket
 import sys
 import tempfile
 from collections import Counter
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any, Mapping
 from unittest.mock import patch
@@ -437,5 +437,223 @@ def _recognizer_miss_class(row: Mapping[str, Any]) -> str:
     return reason
 
 
+DEFAULT_DISPATCH_SCHEMA = "gravity.agent-usability-default-dispatch.v1"
+
+
+def _source_reexecuted_host_selection(default_symbol: str) -> Any:
+    """Execute production host-selection source with one default assignment changed."""
+
+    import ast
+    import importlib
+    import types
+
+    if default_symbol not in {"RECOGNIZER_ROUTING_MODE", "HOST_ROUTING_MODE"}:
+        raise ValueError("default_symbol must name one registered routing arm")
+    current = importlib.import_module("gravity_sdk.agents.host_selection")
+    source_path = Path(current.__file__).resolve()
+    tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    assignments = 0
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "DEFAULT_ROUTING_MODE"
+            for target in node.targets
+        ):
+            node.value = ast.copy_location(
+                ast.Name(id=default_symbol, ctx=ast.Load()), node.value
+            )
+            assignments += 1
+    if assignments != 1:
+        raise RuntimeError(
+            "host-selection source must have exactly one default routing assignment"
+        )
+    ast.fix_missing_locations(tree)
+    module = types.ModuleType("gravity_sdk.agents._host_selection_counterfactual")
+    module.__file__ = str(source_path)
+    module.__package__ = "gravity_sdk.agents"
+    exec(compile(tree, str(source_path), "exec"), module.__dict__)
+    return module
+
+
+@contextmanager
+def _installed_host_selection(module: Any) -> Any:
+    """Install one fully executed routing module for dynamic public entry imports."""
+
+    import importlib
+
+    package = importlib.import_module("gravity_sdk.agents")
+    module_name = "gravity_sdk.agents.host_selection"
+    previous_module = sys.modules[module_name]
+    previous_attribute = package.host_selection
+    sys.modules[module_name] = module
+    package.host_selection = module
+    try:
+        yield
+    finally:
+        sys.modules[module_name] = previous_module
+        package.host_selection = previous_attribute
+
+
+def measure_default_dispatch(
+    plugin_path: Path,
+    *,
+    timeout_seconds: float,
+    trials: int,
+) -> dict[str, Any]:
+    """Score two source defaults against the same development selections."""
+
+    import hashlib
+
+    from agent_usability_external_selector import (
+        _blind_questions,
+        _catalog,
+        _invoke_plugin,
+        _selection_result,
+    )
+
+    if trials < 1:
+        raise ValueError("trials must be at least one")
+    manifest, cases = load_cases("development", None)
+    blocker, network = BlockedTransport(), NetworkGuard()
+    with tempfile.TemporaryDirectory(
+        prefix="gravity-default-dispatch-"
+    ) as cache, ExitStack() as stack:
+        stack.enter_context(patch.dict(os.environ, {
+            "GRAVITY_CACHE_HOME": cache,
+            "LOCALAPPDATA": cache,
+            "XDG_CACHE_HOME": cache,
+        }))
+        stack.enter_context(patch("socket.socket.connect", network.block))
+        stack.enter_context(patch("socket.create_connection", network.block))
+        from gravity_sdk.agents import host_selection as checked_in
+        from gravity_sdk.client import GravityInsightClient
+
+        if checked_in.DEFAULT_ROUTING_MODE != checked_in.RECOGNIZER_ROUTING_MODE:
+            raise RuntimeError("checked-in default must remain the recognizer")
+        counterfactual = _source_reexecuted_host_selection("HOST_ROUTING_MODE")
+        client = GravityInsightClient.from_env(transport=blocker)
+        selector_catalog, runtime_catalog = _catalog(client)
+        questions, aliases, blind_receipt = _blind_questions(cases)
+        outcomes = {
+            "checked_in": {str(case["case_id"]): [] for case in cases},
+            "counterfactual": {str(case["case_id"]): [] for case in cases},
+        }
+        reasons = {"checked_in": Counter(), "counterfactual": Counter()}
+        routing_modes = {"checked_in": Counter(), "counterfactual": Counter()}
+        receipts: list[Mapping[str, Any]] = []
+        modules = {
+            "checked_in": checked_in,
+            "counterfactual": counterfactual,
+        }
+        plugin_sha256 = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
+        for _trial in range(trials):
+            selected, metadata = _invoke_plugin(
+                plugin_path,
+                selector_catalog,
+                questions,
+                timeout_seconds=timeout_seconds,
+            )
+            receipts.append(metadata)
+            selected = {
+                str(case["case_id"]): selected[aliases[str(case["case_id"])]]
+                for case in cases
+            }
+            for policy, module in modules.items():
+                with _installed_host_selection(module):
+                    for case in cases:
+                        result = _selection_result(
+                            case,
+                            selected[str(case["case_id"])],
+                            runtime_catalog,
+                            client,
+                            metadata,
+                            plugin_sha256=plugin_sha256,
+                            production_http_requests=lambda: blocker.attempts,
+                            dispatch_mode="default",
+                        )
+                        ok, reason, _card = route_score(case, result)
+                        outcomes[policy][str(case["case_id"])].append(ok)
+                        reasons[policy][reason] += 1
+                        routing_modes[policy][str(result.get("routing_mode"))] += 1
+
+    if blocker.attempts or network.attempts:
+        raise RuntimeError("measurement attempted prohibited Gravity network access")
+    scores = {}
+    for policy in ("checked_in", "counterfactual"):
+        scores[policy] = {
+            "passed": sum(all(rows) for rows in outcomes[policy].values()),
+            "total": len(cases),
+            "routing_mode_counts": dict(sorted(routing_modes[policy].items())),
+            "trial_reason_counts": dict(sorted(reasons[policy].items())),
+        }
+    return {
+        "schema_version": DEFAULT_DISPATCH_SCHEMA,
+        "suite_version": manifest["suite_version"],
+        "split": "development",
+        "case_count": len(cases),
+        "trials": trials,
+        "selector_plugin_sha256": plugin_sha256,
+        "blind_order_seed_sha256": blind_receipt["order_seed_sha256"],
+        "selector_network_reported_trials": sum(
+            receipt.get("network_called") is True for receipt in receipts
+        ),
+        "checked_in_default": checked_in.DEFAULT_ROUTING_MODE,
+        "counterfactual_default": counterfactual.DEFAULT_ROUTING_MODE,
+        "scores": scores,
+        "scores_differ": scores["checked_in"]["passed"]
+        != scores["counterfactual"]["passed"],
+    }
+
+
+def default_dispatch_parser() -> Any:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Measure public default routing on the visible development suite; "
+            "there is intentionally no split option."
+        )
+    )
+    parser.add_argument("--selector-plugin", type=Path, required=True)
+    parser.add_argument("--selector-timeout", type=float, default=300.0)
+    parser.add_argument("--trials", type=int, default=1)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=ROOT / "tmp" / "agent-usability-default-dispatch.json",
+    )
+    return parser
+
+
+def default_dispatch_main(argv: list[str] | None = None) -> int:
+    args = default_dispatch_parser().parse_args(argv)
+    try:
+        payload = measure_default_dispatch(
+            args.selector_plugin.resolve(),
+            timeout_seconds=float(args.selector_timeout),
+            trials=int(args.trials),
+        )
+    except Exception as error:
+        print(
+            f"default-dispatch measurement failed: {type(error).__name__}: {error}",
+            file=sys.stderr,
+        )
+        return 1
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "checked_in_default": payload["checked_in_default"],
+        "checked_in_score": payload["scores"]["checked_in"],
+        "counterfactual_default": payload["counterfactual_default"],
+        "counterfactual_score": payload["scores"]["counterfactual"],
+        "scores_differ": payload["scores_differ"],
+    }, ensure_ascii=False, indent=2, sort_keys=True))
+    return 0
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "default-dispatch":
+        raise SystemExit(default_dispatch_main(sys.argv[2:]))
     raise SystemExit(main())

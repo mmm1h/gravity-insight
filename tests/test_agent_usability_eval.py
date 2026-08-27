@@ -531,6 +531,49 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             ValueError, "stage=subprocess_execute.*exit code 7.*synthetic bridge crash"):
             _invoke_plugin(plugin, {"capabilities": []}, [], timeout_seconds=10)
 
+    def test_external_selection_default_dispatch_follows_source_default(self) -> None:
+        from agent_usability_host_arm_gap import (
+            _installed_host_selection,
+            _source_reexecuted_host_selection,
+        )
+        from agent_usability_external_selector import _catalog, _selection_result
+        from gravity_sdk.client import GravityInsightClient
+
+        client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
+        _selector_catalog, runtime_catalog = _catalog(client)
+        case = {"prompt": "show the business pulse across apps"}
+        selected = {
+            "selectors": ["composite:business_pulse"],
+            "reason": "registered host product",
+        }
+        metadata = {"selector": "synthetic.v1", "network_called": False}
+        actual = _selection_result(
+            case,
+            selected,
+            runtime_catalog,
+            client,
+            metadata,
+            plugin_sha256="a" * 64,
+            production_http_requests=lambda: 0,
+            dispatch_mode="default",
+        )
+        counterfactual = _source_reexecuted_host_selection("HOST_ROUTING_MODE")
+        with _installed_host_selection(counterfactual):
+            flipped = _selection_result(
+                case,
+                selected,
+                runtime_catalog,
+                client,
+                metadata,
+                plugin_sha256="a" * 64,
+                production_http_requests=lambda: 0,
+                dispatch_mode="default",
+            )
+        self.assertEqual(
+            ("recognizer", "host_catalog"),
+            (actual["routing_mode"], flipped["routing_mode"]),
+        )
+
     def test_external_selector_blinds_ids_and_degroups_journeys(self) -> None:
         from agent_usability_external_selector import _blind_questions
 
@@ -695,6 +738,36 @@ json.dump({'schema_version': 'gravity.agent-external-selector-response.v1', 'res
                     parameter_score=lambda *_: (None, "not_applicable"),
                     terminal_score=lambda *_: (None, "skipped_production"),
                     production_http_requests=lambda: 0,
+                )
+
+    def test_multiple_intents_derive_exact_gap_candidate_identities(self) -> None:
+        _manifest, cases = self.subject.load_cases("development", None)
+        expected = {
+            "J32.dev.v3.multiple": {
+                "J32": "metadata:table_lineage",
+                "J44": "gap:CURRENT_TABLE_SCHEMA_PARENT_MISSING",
+            },
+            "J47.dev.v3.multiple": {
+                "J47": "gap:ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
+                "J48": "material.asset.fetch",
+            },
+        }
+        for case_id, candidate_selectors in expected.items():
+            with self.subTest(case_id=case_id):
+                case = next(item for item in cases if item["case_id"] == case_id)
+                self.assertEqual(
+                    candidate_selectors,
+                    case["expected"]["candidate_selectors"],
+                )
+                result = {"capability_gaps": [{
+                    "code": "MULTIPLE_INTENTS",
+                    "candidate_selectors": list(reversed(
+                        candidate_selectors.values()
+                    )),
+                }]}
+                self.assertEqual(
+                    (True, "correct_multiple_intents", None),
+                    self.subject.route_score(case, result),
                 )
 
 

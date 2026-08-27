@@ -347,25 +347,33 @@ def _selection_result(
     *,
     plugin_sha256: str,
     production_http_requests: Callable[[], int],
+    dispatch_mode: str = "explicit_host",
 ) -> dict[str, Any]:
     selectors = list(selected["selectors"])
     query = str(case["prompt"])
-    from gravity_sdk.agents.host_selection import (
-        HOST_ROUTING_MODE,
-        host_routing_discovery,
-    )
-
     selection = _runtime_selection(query, selected, runtime_catalog)
-    result = host_routing_discovery(
-        query,
-        client,
-        routing=HOST_ROUTING_MODE,
-        host_selection=selection,
-        workspace=None,
-        plan_node_namespace=None,
-    )
+    if dispatch_mode == "explicit_host":
+        from gravity_sdk.agents.host_selection import (
+            HOST_ROUTING_MODE,
+            host_routing_discovery,
+        )
+
+        result = host_routing_discovery(
+            query,
+            client,
+            routing=HOST_ROUTING_MODE,
+            host_selection=selection,
+            workspace=None,
+            plan_node_namespace=None,
+        )
+    elif dispatch_mode == "default":
+        result = _default_dispatch_result(query, selection, client)
+    else:
+        raise ValueError(
+            "dispatch_mode must be 'explicit_host' or 'default'"
+        )
     if result is None:
-        raise RuntimeError("host_catalog dispatcher returned no selection result")
+        raise RuntimeError(f"{dispatch_mode} dispatcher returned no selection result")
     result = copy.deepcopy(result)
     terminal_network = _terminal_network_fact(production_http_requests)
     result.update({
@@ -383,6 +391,33 @@ def _selection_result(
         "selected_selectors": selectors,
     })
     return result
+
+
+def _default_dispatch_result(
+    query: str,
+    selection: Mapping[str, Any],
+    client: Any,
+) -> dict[str, Any]:
+    """Enter the public CLI command without spelling a routing mode."""
+
+    from gravity_sdk.agent import run_agent_command
+    from gravity_sdk.agents.host_selection import HOST_ROUTING_MODE
+    from gravity_sdk.cli import build_parser
+
+    argv = ["agent", query]
+    args = build_parser().parse_args(argv)
+    if args.routing == HOST_ROUTING_MODE:
+        argv.extend([
+            "--host-selection",
+            json.dumps(selection, ensure_ascii=False, separators=(",", ":")),
+        ])
+        args = build_parser().parse_args(argv)
+    result = run_agent_command(args, client)
+    if not isinstance(result, Mapping):
+        raise RuntimeError("public default dispatcher returned a non-object result")
+    if result.get("routing_mode") != args.routing:
+        raise RuntimeError("public default dispatcher ignored the parser routing policy")
+    return dict(result)
 
 
 def _runtime_selection(
@@ -442,5 +477,7 @@ __all__ = [
     "REQUEST_SCHEMA",
     "RESPONSE_SCHEMA",
     "SELECTION_NETWORK_MEASUREMENT_REASON",
+    "_default_dispatch_result",
+    "_selection_result",
     "external_selector_trials",
 ]

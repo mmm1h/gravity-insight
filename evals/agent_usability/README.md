@@ -84,10 +84,14 @@ suite is authored.
 The target registry deliberately contains no status field. Its exact ledger
 titles make the Markdown table machine-readable; missing or duplicate rows,
 unregistered case identities, and a status without its frozen target shape all
-fail before scoring. Its `candidate_selectors` map records only public selectors
-needed to interpret ambiguity candidates; gap-only journeys remain target
-identities even when no executable selector exists. Evaluation receipts fingerprint the parser, target
-registry, and ledger and record their hashes and status counts.
+fail before scoring. Its `candidate_selectors` map is the manually curated
+subset of public product selectors needed to interpret ambiguity candidates;
+it is not inferred from product presence. When an ambiguity includes a gap-only
+journey, the scorer derives its public host-catalog identity as
+`gap:<gap_code>` from that journey's frozen gap target. Every declared journey
+must therefore have one exact candidate identity before the case is scored.
+Evaluation receipts fingerprint the parser, target registry, and ledger and
+record their hashes and status counts.
 
 This applies after any development, holdout, or final payload is loaded. The
 protected payloads are not rebuilt: their sealed `journey_id` remains the target
@@ -321,6 +325,27 @@ non-actionable target gap or any execution-stage network attempt. The evaluator
 repeats the plugin four times: `pass^4` still uses correctness, while
 `unstable_tasks`, `unstable_case_ids`, and `unstable_selections` compare and
 expose the exact selected selector sets regardless of correctness.
+
+The `default-dispatch` mode of
+`scripts/agent_usability_host_arm_gap.py` measures the missing policy arm
+without editing the checked-in default. It obtains one blinded external
+selection batch, sends it through the public `gravity agent` parser and runner
+without `--routing`, then AST-rewrites only the production
+`DEFAULT_ROUTING_MODE` assignment to `HOST_ROUTING_MODE` and reexecutes that
+module before replaying the same selections. The script is development-only
+and deliberately has no split argument:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\agent_usability_host_arm_gap.py default-dispatch `
+  --selector-plugin scripts\agent_usability_host_selector.py `
+  --selector-timeout 300 `
+  --output tmp\agent-usability-default-dispatch.json
+```
+
+Its routing-mode counts prove which arm every case used; `scores_differ` must
+be true for the measurement to demonstrate a score effect. A one-trial result
+is a same-selection policy counterfactual, not a replacement for the
+evaluator's four-trial selector reliability result.
 
 The committed `scripts/agent_usability_selector_stub.py` is only a reproducible
 wiring fixture. It selects a composite when every token in the catalog name is
