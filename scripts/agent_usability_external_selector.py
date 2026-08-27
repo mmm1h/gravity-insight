@@ -47,7 +47,7 @@ def external_selector_trials(
     if not plugin_path.is_file():
         raise ValueError("--selector-plugin must name one readable Python file")
     plugin_sha256 = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
-    catalog, inventory = _catalog(client)
+    catalog, runtime_catalog = _catalog(client)
     blind_questions, aliases, blind_receipt = _blind_questions(cases)
     states = {
         str(case["case_id"]): {
@@ -75,7 +75,7 @@ def external_selector_trials(
             result = _selection_result(
                 case,
                 item,
-                inventory,
+                runtime_catalog,
                 client,
                 metadata,
                 plugin_sha256=plugin_sha256,
@@ -141,20 +141,38 @@ def _external_selector_receipt(
         }),
         "catalog_capability_count": len(catalog["capabilities"]),
         "catalog_category_count": len(catalog["categories"]),
+        "runtime_dispatcher": (
+            "gravity_sdk.agents.host_selection.host_routing_discovery"
+        ),
+        "runtime_routing_mode": "host_catalog",
+        "runtime_host_catalog_schema_version": catalog[
+            "host_catalog_schema_version"
+        ],
+        "runtime_host_catalog_sha256": catalog["host_catalog_sha256"],
+        "runtime_selection_schema_version": catalog["selection_schema_version"],
         "blind_presentation": blind_receipt,
         "trial_receipts": receipts,
     }
 
 
-def _catalog(client: Any) -> tuple[dict[str, Any], dict[str, Mapping[str, Any]]]:
+def _catalog(client: Any) -> tuple[dict[str, Any], dict[str, Any]]:
     from gravity_sdk.agents.catalog import _categories, _inventory, _summary
+    from gravity_sdk.agents.host_catalog import host_product_catalog
 
-    items = _inventory(client)
+    runtime_catalog = host_product_catalog(client)
+    refs = set(map(str, runtime_catalog["catalog_refs"]))
+    items = [item for item in _inventory(client) if str(item["selector"]) in refs]
+    projected_refs = {str(item["selector"]) for item in items}
+    if projected_refs != refs:
+        raise RuntimeError("external selector host catalog projection is incomplete")
     return {
         "schema_version": "gravity.agent-external-selector-catalog.v1",
+        "host_catalog_schema_version": runtime_catalog["schema_version"],
+        "host_catalog_sha256": runtime_catalog["catalog_sha256"],
+        "selection_schema_version": runtime_catalog["selection_schema_version"],
         "categories": _categories(items),
         "capabilities": [_summary(item) for item in items],
-    }, {str(item["selector"]): item for item in items}
+    }, runtime_catalog
 
 
 def _stderr_summary(value: Any) -> str:
@@ -323,7 +341,7 @@ def _validate_response(
 def _selection_result(
     case: Mapping[str, Any],
     selected: Mapping[str, Any],
-    inventory: Mapping[str, Mapping[str, Any]],
+    runtime_catalog: Mapping[str, Any],
     client: Any,
     metadata: Mapping[str, Any],
     *,
@@ -332,45 +350,25 @@ def _selection_result(
 ) -> dict[str, Any]:
     selectors = list(selected["selectors"])
     query = str(case["prompt"])
-    if len(selectors) > 1:
-        from gravity_sdk.agents.intent_routing import product_selection_gap
+    from gravity_sdk.agents.host_selection import (
+        HOST_ROUTING_MODE,
+        host_routing_discovery,
+    )
 
-        gaps = [product_selection_gap(
-            query,
-            selectors,
-            reason="the external selector returned multiple registered products",
-        )]
-        candidates: list[dict[str, Any]] = []
-    elif len(selectors) == 1:
-        item = inventory[selectors[0]]
-        if item["source"] == "gap":
-            gap = copy.deepcopy(dict(item["card"]))
-            gap["query"] = query
-            candidates = []
-            gaps = [gap]
-        else:
-            candidates = [_described_card(selectors[0], inventory, client, query)]
-            gaps = []
-    else:
-        candidates = []
-        gaps = [{
-            "kind": "capability_gap",
-            "code": "EXTERNAL_SELECTOR_ABSTAINED",
-            "query": query,
-            "reason": selected.get("reason") or "the external selector abstained",
-            "next_action": (
-                "Refine the question or inspect gravity agent-catalog categories; "
-                "do not execute an unselected capability."
-            ),
-            "weak_matches": [],
-        }]
+    selection = _runtime_selection(query, selected, runtime_catalog)
+    result = host_routing_discovery(
+        query,
+        client,
+        routing=HOST_ROUTING_MODE,
+        host_selection=selection,
+        workspace=None,
+        plan_node_namespace=None,
+    )
+    if result is None:
+        raise RuntimeError("host_catalog dispatcher returned no selection result")
+    result = copy.deepcopy(result)
     terminal_network = _terminal_network_fact(production_http_requests)
-    return {
-        "schema_version": "gravity.agent-external-selector-result.v1",
-        "ok": True,
-        "status": "success" if candidates else "capability_gap",
-        "offline": metadata.get("network_called") is not True,
-        "network_called": metadata.get("network_called") is True,
+    result.update({
         "selection_network_called": metadata.get("network_called") is True,
         "selection_network_measured": False,
         "selection_network_measurement_reason": (
@@ -383,8 +381,46 @@ def _selection_result(
         "selector_self_report_measurements": self_report_measurements(),
         **terminal_network,
         "selected_selectors": selectors,
-        "candidates": candidates,
-        "capability_gaps": gaps,
+    })
+    return result
+
+
+def _runtime_selection(
+    query: str,
+    selected: Mapping[str, Any],
+    runtime_catalog: Mapping[str, Any],
+) -> dict[str, Any]:
+    selectors = list(map(str, selected["selectors"]))
+    count = len(selectors)
+    decision = (
+        "abstained"
+        if not count
+        else "selected" if count == 1 else "multiple_intents"
+    )
+    summary = str(selected.get("reason") or "").strip() or (
+        "external selector abstained"
+        if not selectors
+        else "external selector returned registered host catalog refs"
+    )
+    return {
+        "schema_version": runtime_catalog["selection_schema_version"],
+        "catalog_sha256": runtime_catalog["catalog_sha256"],
+        "query": query,
+        "decision": decision,
+        "reason": {
+            "summary": summary,
+            "needs_clarification": not selectors,
+        },
+        "candidates": [
+            {
+                "catalog_ref": selector,
+                "reason": {
+                    "goal_match": "external selector returned this catalog ref",
+                    "boundary_check": "response validation excluded non-catalog refs",
+                },
+            }
+            for selector in selectors
+        ],
     }
 
 
@@ -400,27 +436,6 @@ def _terminal_network_fact(
         "terminal_offline_measured": False,
         "terminal_offline_measurement_reason": TERMINAL_OFFLINE_MEASUREMENT_REASON,
     }
-
-
-def _described_card(
-    selector: str,
-    inventory: Mapping[str, Mapping[str, Any]],
-    client: Any,
-    query: str,
-) -> dict[str, Any]:
-    from gravity_sdk.agents.catalog import _capability_for_item
-    from gravity_sdk.agents.handoff import attach_plan_node
-
-    item = inventory[selector]
-    card = _capability_for_item(item, client)
-    card["match"] = {
-        "confidence": "external_selector",
-        "coverage": None,
-        "matched_terms": [],
-        "missing_terms": [],
-        "exact_selector": False,
-    }
-    return attach_plan_node(card, query)
 
 
 __all__ = [

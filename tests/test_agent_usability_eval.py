@@ -449,6 +449,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_external_selector_stub_receives_catalog_and_is_scored(self) -> None:
         from agent_usability_external_selector import _invoke_plugin, external_selector_trials
+        from gravity_sdk.agents.host_selection import host_routing_discovery
         from gravity_sdk.client import GravityInsightClient
 
         cases = [{
@@ -463,26 +464,54 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             Path(__file__).resolve().parents[1]
             / "scripts" / "agent_usability_selector_stub.py"
         )
-        states, calls, observations, receipt = external_selector_trials(
-            cases,
-            GravityInsightClient.from_env(transport=self.subject.BlockedTransport()),
-            4,
-            plugin_path=plugin,
-            timeout_seconds=10,
-            route_score=self.subject.route_score,
-            parameter_score=self.subject.parameter_score,
-            terminal_score=self.subject.terminal_score,
-            production_http_requests=lambda: 0,
-        )
+        with patch(
+            "gravity_sdk.agents.host_selection.host_routing_discovery",
+            wraps=host_routing_discovery,
+        ) as dispatcher:
+            states, calls, observations, receipt = external_selector_trials(
+                cases,
+                GravityInsightClient.from_env(transport=self.subject.BlockedTransport()),
+                4,
+                plugin_path=plugin,
+                timeout_seconds=10,
+                route_score=self.subject.route_score,
+                parameter_score=self.subject.parameter_score,
+                terminal_score=self.subject.terminal_score,
+                production_http_requests=lambda: 0,
+            )
         self.assertEqual([True] * 4, states["stub-business-pulse"]["selection"])
         self.assertEqual(4, calls)
+        self.assertEqual(4, dispatcher.call_count)
+        self.assertTrue(all(
+            call.kwargs["routing"] == "host_catalog"
+            for call in dispatcher.call_args_list
+        ))
         self.assertEqual("external_selector", receipt["mode"])
+        self.assertEqual(
+            "gravity_sdk.agents.host_selection.host_routing_discovery",
+            receipt["runtime_dispatcher"],
+        )
+        self.assertEqual("host_catalog", receipt["runtime_routing_mode"])
+        self.assertEqual(
+            "gravity.host-product-selection.v1",
+            receipt["runtime_selection_schema_version"],
+        )
+        self.assertEqual(64, len(receipt["runtime_host_catalog_sha256"]))
         self.assertTrue(receipt["blind_presentation"]["randomized"])
         self.assertTrue(receipt["blind_presentation"]["case_ids_anonymized"])
         self.assertEqual(1, len(observations))
         self.assertEqual(
             "composite:business_pulse",
             observations[0]["result"]["candidates"][0]["selector"],
+        )
+        self.assertEqual("host_catalog", observations[0]["result"]["routing_mode"])
+        self.assertEqual(
+            "host_catalog",
+            observations[0]["result"]["candidates"][0]["match"]["confidence"],
+        )
+        self.assertEqual(
+            "gravity.host-product-selection-compiled.v1",
+            observations[0]["result"]["selection_receipt"]["schema_version"],
         )
         self.assertFalse(observations[0]["result"]["selection_network_measured"])
         self.assertIn("plugin-reported", observations[0]["result"][
@@ -525,17 +554,26 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_external_selector_can_select_an_exact_registered_gap(self) -> None:
         from agent_usability_external_selector import _catalog, _selection_result
+        from gravity_sdk.agents.host_selection import EMPTY_SELECTION_GAP
         from gravity_sdk.client import GravityInsightClient
 
         client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
-        _, inventory = _catalog(client)
+        catalog, runtime_catalog = _catalog(client)
+        self.assertEqual(
+            set(runtime_catalog["catalog_refs"]),
+            {item["selector"] for item in catalog["capabilities"]},
+        )
+        self.assertNotIn(
+            "analysis.event.list",
+            {item["selector"] for item in catalog["capabilities"]},
+        )
         result = _selection_result(
             {"prompt": "media reports"},
             {
                 "selectors": ["gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING"],
                 "reason": "registered unavailable product",
             },
-            inventory,
+            runtime_catalog,
             client,
             {"selector": "synthetic.v1", "network_called": False},
             plugin_sha256="a" * 64,
@@ -546,6 +584,16 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
             result["capability_gaps"][0]["code"],
         )
+        empty = _selection_result(
+            {"prompt": "no matching product"},
+            {"selectors": [], "reason": "none"},
+            runtime_catalog,
+            client,
+            {"selector": "synthetic.v1", "network_called": False},
+            plugin_sha256="a" * 64,
+            production_http_requests=lambda: 0,
+        )
+        self.assertEqual(EMPTY_SELECTION_GAP, empty["capability_gaps"][0]["code"])
 
     def test_external_selector_derives_terminal_network_from_http_counter(self) -> None:
         from agent_usability_external_selector import _catalog, _selection_result
@@ -553,7 +601,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
         blocker = self.subject.BlockedTransport()
         client = GravityInsightClient.from_env(transport=blocker)
-        _, inventory = _catalog(client)
+        _, runtime_catalog = _catalog(client)
         with self.assertRaisesRegex(RuntimeError, "production HTTP is disabled"):
             blocker.request({"operation_id": "synthetic.execution"})
         result = _selection_result(
@@ -562,7 +610,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                 "selectors": ["gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING"],
                 "reason": "registered unavailable product",
             },
-            inventory,
+            runtime_catalog,
             client,
             {"selector": "synthetic.v1", "network_called": True},
             plugin_sha256="a" * 64,
@@ -573,6 +621,9 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             "gap_code": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
         }}
         self.assertEqual(1, blocker.attempts)
+        self.assertTrue(result["offline"])
+        self.assertFalse(result["network_called"])
+        self.assertTrue(result["selection_network_called"])
         self.assertEqual(1, result["execution_http_requests"])
         self.assertTrue(result["execution_network_called"])
         self.assertFalse(result["terminal_offline_measured"])

@@ -266,9 +266,11 @@ and quality tests.
 evaluator. For each of the suite's four trials, the evaluator starts the Python
 file once and writes one `gravity.agent-external-selector-request.v1` JSON
 object to stdin. The request contains every question (`id` and `query`) plus a
-frozen, value-free projection of `gravity agent-catalog`: category summaries
-and each capability's selector, source, name, description, stability, and
-executable flag. The plugin returns exactly one
+frozen, value-free projection of the runtime `gravity agent-catalog host`:
+category summaries and each governed product or registered gap's selector,
+source, name, description, stability, and executable flag. Raw operations are
+not selectable because the runtime host-selection contract rejects direct
+operation controls. The plugin returns exactly one
 `gravity.agent-external-selector-response.v1` object on stdout:
 
 ```json
@@ -296,18 +298,23 @@ the four trials, one harness-measured plugin SHA-256 must report one stable
 conflict with an earlier receipt for the same SHA. This consistency binding
 does not verify that provider/model/prompt claims inside the version string are
 true.
-Zero selectors become an actionable `EXTERNAL_SELECTOR_ABSTAINED` gap; multiple
-selectors go through the same `MULTIPLE_INTENTS` fail-closed response as product
-routing; one selector is described from the supplied catalog and scored by the
-same six layers. The plugin's `network_called` **reports** selection-stage
+The evaluator binds the returned refs to the supplied catalog hash and question,
+builds one complete `gravity.host-product-selection.v1`, and passes it through
+the SDK's `host_routing_discovery` dispatcher. The real runtime therefore owns
+the selected card, canonical gap, routing fields, and selection receipt that the
+six layers score. Zero selectors become `HOST_PRODUCT_SELECTION_EMPTY`, multiple
+selectors become the runtime's `MULTIPLE_INTENTS` gap, and one selector is
+described by the repository-owned resolver. The plugin's `network_called`
+**reports** selection-stage
 network activity; the evaluator validates only that it is boolean. Per-result
 and top-level `selection_network_measured=false` plus
 `selection_network_measurement_reason` make this boundary machine-readable;
 the same marker accompanies the query-ledger selector receipt. The legacy
-`offline`, `network_called`, `selection_network_called`, and
-`external_selector_network_trials` fields remain additive-compatible reported
-values, not harness measurements. `execution_network_called` is derived from
-the blocked Gravity transport attempt counter, but
+`selection_network_called` and `external_selector_network_trials` fields remain
+plugin-reported values, not harness measurements. The dispatcher-owned
+`offline=true` and `network_called=false` describe local SDK selection
+resolution, not the plugin subprocess. `execution_network_called` is derived
+from the blocked Gravity transport attempt counter, but
 `terminal_offline_measured=false` because this selection-only protocol never
 executes a capability. The offline terminal layer still fails a missing or
 non-actionable target gap or any execution-stage network attempt. The evaluator
