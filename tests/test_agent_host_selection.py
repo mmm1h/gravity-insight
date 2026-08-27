@@ -6,20 +6,20 @@ import unittest
 from unittest.mock import patch
 
 from gravity_sdk.agent import run_agent_command
-from gravity_sdk.agent_host_catalog import (
+from gravity_sdk.agents.host_catalog import (
     SELECTION_SCHEMA_VERSION,
     host_product_catalog,
     validate_host_catalog_projection,
 )
-from gravity_sdk.agent_host_selection import (
+from gravity_sdk.agents.host_selection import (
     EMPTY_SELECTION_GAP,
     DEFAULT_ROUTING_MODE,
     assess_host_product_selection,
     compile_host_product_selection,
     resolve_host_product_selection,
 )
-from gravity_sdk.agent_product_inventory import canonical_capability_cards
-from gravity_sdk.agent_unavailable import registered_unavailable_gaps
+from gravity_sdk.agents.product_inventory import canonical_capability_cards
+from gravity_sdk.agents.unavailable import registered_unavailable_gaps
 from gravity_sdk.cli import build_parser
 from gravity_sdk.client import GravityInsightClient
 from gravity_sdk.errors import InputValidationError
@@ -215,7 +215,7 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertIn("HOST_SELECTION_REASON_INVALID", str(caught.exception))
 
     def test_agent_input_rejects_single_query_object_with_legal_shape(self) -> None:
-        from gravity_sdk.agent_batch import validate_questions
+        from gravity_sdk.agents.batch import validate_questions
 
         with self.assertRaises(InputValidationError) as caught:
             validate_questions({"query": "event trend"})

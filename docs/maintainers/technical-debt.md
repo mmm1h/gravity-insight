@@ -83,6 +83,12 @@
   `specs/` 里已签名的历史清单摘要，并用于当前树 owner projection、move bijection 和 Phase 0/1/2 迁移状态判定。
   现行推导与 legacy 各自对同一冻结迁移账本比较，因而间接耦合。R17 施工期禁改 `specs/`，故只能留着；这是本条自带的收尾项，
   不另开条目。
+- **R17 后仍保留的 facade 反向边**：`agents.batch`、`agents.input_resolution` 仍导入
+  `agent.discover_capabilities`，`agents.batch_questions`、`agents.host_selection`、`agents.output` 仍分别导入
+  `agent.DEFAULT_LIMIT` 或 `agent.SCHEMA_VERSION`。五条边在迁移基线已经存在，且不构成 eager SCC；R17 不新增它们。
+  消除这些边需要把 facade 常量或 discovery owner 下沉，属于 R17 Non-goals 排除的 layer redesign。裁决记录为
+  `agent_under_standing_owner_delegation`，`owner_review: pending`；退出条件是另行批准 owner split，保持 facade 行为与
+  公开面不变，并由完整 eager-graph 门禁证明五条边全部消失且未产生替代环。
 - **退出条件**：R17 达 `fixed_dev`，根目录 `agent_*.py` 仅剩 `agent_runtime_contracts.py`、根 `.py` 为 495、
   `agents/` 含 82 个实现模块、147 lazy owner 与 148 `__all__` 不变、迁移宇宙 eager SCC 为 0；
   legacy verifier 及其在 `specs/` 中的签名摘要一并退役，仓库只剩职责契约一套边界算法；

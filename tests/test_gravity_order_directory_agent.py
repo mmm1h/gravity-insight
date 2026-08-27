@@ -4,9 +4,9 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_batch import capabilities_many
-from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
-from gravity_sdk.agent_capabilities import authoritative_capability_cards, composite_capability_inventory
+from gravity_sdk.agents.batch import capabilities_many
+from gravity_sdk.agents.batch_sources import AgentSourceSnapshot
+from gravity_sdk.agents.capabilities import authoritative_capability_cards, composite_capability_inventory
 from gravity_sdk.agents.order_directory import (
     ORDER_DIRECTORY_CAPABILITY, ORDER_DIRECTORY_RAW_SELECTORS,
     ORDER_DIRECTORY_SAFE_FIELDS, order_directory_query,
@@ -112,7 +112,7 @@ class OrderDirectoryAgentTests(unittest.TestCase):
         for selector in ORDER_DIRECTORY_RAW_SELECTORS:
             result = discover_capabilities(selector, client=Client())
             self.assertEqual([selector], [item["selector"] for item in result["candidates"]])
-    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_pure_batch_deep_copies_and_plan_node_dry_runs(self, _metadata):
         result = capabilities_many(
             ["order directory", "订单明细", "export order details", "跨日订单报表",
@@ -145,7 +145,7 @@ class OrderDirectoryAgentTests(unittest.TestCase):
         dry = execute_plan({"schema_version": "gravity.plan.v1", "nodes": [node]},
                            adapters=PlanAdapters(composite=adapter), workspace=object(), dry_run=True)
         self.assertEqual(("validated", 1, 1), (dry["status"], len(calls), calls[0][1]))
-    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_mixed_batch_caches_raw_describe_and_continuation_is_safe(self, _metadata):
         selector = sorted(ORDER_DIRECTORY_RAW_SELECTORS)[0]
         class CountingClient:

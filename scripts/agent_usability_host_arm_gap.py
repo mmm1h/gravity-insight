@@ -55,9 +55,9 @@ def main() -> int:
         )
         stack.enter_context(patch.object(socket.socket, "connect", network.block))
         stack.enter_context(patch("socket.create_connection", network.block))
-        from gravity_sdk.agent_batch import capabilities_many
-        from gravity_sdk.agent_host_catalog import host_product_catalog
-        from gravity_sdk.agent_host_selection import resolve_host_product_selection
+        from gravity_sdk.agents.batch import capabilities_many
+        from gravity_sdk.agents.host_catalog import host_product_catalog
+        from gravity_sdk.agents.host_selection import resolve_host_product_selection
         from gravity_sdk.client import GravityInsightClient
         from gravity_sdk.errors import InputValidationError
 

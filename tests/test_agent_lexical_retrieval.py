@@ -6,24 +6,24 @@ from pathlib import Path
 
 from gravity_sdk import GravityInsightClient
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_batch import capabilities_many
-from gravity_sdk.agent_capabilities import composite_capability_inventory
+from gravity_sdk.agents.batch import capabilities_many
+from gravity_sdk.agents.capabilities import composite_capability_inventory
 from gravity_sdk.agents.caller_language import (
     CALLER_LANGUAGE_SOURCES,
     caller_language_fields,
 )
-from gravity_sdk.agent_discovery_support import (
+from gravity_sdk.agents.discovery_support import (
     HOST_CATALOG_ARGV,
     UNRANKED_OPERATIONS,
     apply_unranked_operation_handoff,
 )
-from gravity_sdk.agent_lexical_retrieval import (
+from gravity_sdk.agents.lexical_retrieval import (
     ALGORITHM,
     MINIMUM_SCORE,
     registered_documents,
     retrieve_registered_products,
 )
-from gravity_sdk.agent_sql_product_discovery import WORKSPACE_SQL_NAME_ALGORITHM
+from gravity_sdk.agents.sql_product_discovery import WORKSPACE_SQL_NAME_ALGORITHM
 from gravity_sdk.workspace import load_workspace
 
 

@@ -147,7 +147,7 @@ def _external_selector_receipt(
 
 
 def _catalog(client: Any) -> tuple[dict[str, Any], dict[str, Mapping[str, Any]]]:
-    from gravity_sdk.agent_catalog import _categories, _inventory, _summary
+    from gravity_sdk.agents.catalog import _categories, _inventory, _summary
 
     items = _inventory(client)
     return {
@@ -333,7 +333,7 @@ def _selection_result(
     selectors = list(selected["selectors"])
     query = str(case["prompt"])
     if len(selectors) > 1:
-        from gravity_sdk.agent_intent_routing import product_selection_gap
+        from gravity_sdk.agents.intent_routing import product_selection_gap
 
         gaps = [product_selection_gap(
             query,
@@ -408,8 +408,8 @@ def _described_card(
     client: Any,
     query: str,
 ) -> dict[str, Any]:
-    from gravity_sdk.agent_catalog import _capability_for_item
-    from gravity_sdk.agent_handoff import attach_plan_node
+    from gravity_sdk.agents.catalog import _capability_for_item
+    from gravity_sdk.agents.handoff import attach_plan_node
 
     item = inventory[selector]
     card = _capability_for_item(item, client)

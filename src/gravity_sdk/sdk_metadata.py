@@ -97,7 +97,7 @@ class MetadataSdkMixin:
     ) -> dict[str, Any]:
         """Discover a capability and its complete live input catalogs."""
 
-        from .agent_input_resolution import resolve_capabilities
+        from .agents.input_resolution import resolve_capabilities
 
         selected_workspace = self._select_workspace(workspace)
         return resolve_capabilities(

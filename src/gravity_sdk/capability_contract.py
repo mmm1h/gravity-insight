@@ -144,7 +144,7 @@ def _operations() -> dict[str, OperationSpec]:
 
 @lru_cache(maxsize=1)
 def _product_card_fingerprints() -> dict[str, str]:
-    from .agent_product_inventory import canonical_capability_cards
+    from .agents.product_inventory import canonical_capability_cards
 
     cards = canonical_capability_cards(None)
     return {

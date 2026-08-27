@@ -4383,10 +4383,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             build_expected_source(source_pivot, self.document, malicious)
 
     def test_phase1_canonical_source_and_directive_equal_reviewed_bytes(self) -> None:
-        source = CANONICAL_SOURCE.read_bytes()
+        reviewed_directive = errata_validator._reviewed_phase1_directive()
+        reviewed_directive_bytes = errata_validator._reviewed_phase1_directive_bytes()
+        source = load_git_baseline(reviewed_directive)
         result = validate_phase1_reviewed_state(
-            self.directive,
-            DIRECTIVE.read_bytes(),
+            reviewed_directive,
+            reviewed_directive_bytes,
             source,
         )
         self.assertEqual("phase-1", result["checkpoint"])
@@ -4396,12 +4398,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             "canonical source differs from the reviewed baseline",
         ):
             validate_phase1_reviewed_state(
-                self.directive,
-                DIRECTIVE.read_bytes(),
+                reviewed_directive,
+                reviewed_directive_bytes,
                 source + b"\nexpand execution authority\n",
             )
 
-        changed_directive = DIRECTIVE.read_bytes().replace(
+        changed_directive = reviewed_directive_bytes.replace(
             b'"owner_review": "pending"',
             b'"owner_review": "approved"',
             1,
@@ -4411,7 +4413,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             "canonical directive differs from the reviewed baseline",
         ):
             validate_phase1_reviewed_state(
-                self.directive,
+                reviewed_directive,
                 changed_directive,
                 source,
             )
@@ -4639,9 +4641,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             ),
             owner_state="phase_2",
         )
-        exports = json.loads(
+        baseline_exports = json.loads(
             (ROOT / "tests/fixtures/public_api_exports.json").read_text(encoding="utf-8")
         )
+        exports = copy.deepcopy(baseline_exports)
         move_mapping = {
             move["old_module"]: move["new_module"]
             for move in baseline_receipt["scope"]["one_to_one_moves"]
@@ -4660,10 +4663,16 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertEqual(0, terminal_receipt["summary"]["actionable_site_count"])
         self.assertEqual([], terminal_receipt["blockers"])
 
+        repository_receipt = build_document()
+        validate_checkpoint_receipt(repository_receipt)
+        self.assertEqual("phase_2", repository_receipt["source_audit"]["owner_state"])
+        self.assertEqual(0, repository_receipt["summary"]["actionable_site_count"])
+        self.assertEqual([], repository_receipt["blockers"])
+
         with tempfile.TemporaryDirectory() as temp:
             receipt_path = Path(temp) / "checkpoint.json"
             exports_path = Path(temp) / "public_api_exports.json"
-            exports_path.write_text(json.dumps(exports), encoding="utf-8")
+            exports_path.write_text(json.dumps(baseline_exports), encoding="utf-8")
             with patch.object(
                 checkpoint_generator, "scan_repository", return_value=terminal_audit
             ), patch.object(
@@ -4733,13 +4742,22 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         ):
             build_expected_source(forged_directive, forged, baseline)
 
-    def test_current_canonical_source_still_matches_v92_binding(self) -> None:
+    def test_current_canonical_source_matches_terminal_v93_binding(self) -> None:
         source = CANONICAL_SOURCE.read_bytes()
-        self.assertEqual(load_git_baseline(self.directive), source)
+        baseline = load_git_baseline(self.directive)
+        self.assertNotEqual(baseline, source)
+        self.assertEqual("v9.3", self.directive["version"])
         self.assertEqual(
             self.directive["canonical_source"]["sha256"],
             hashlib.sha256(source).hexdigest(),
         )
+        result = validate_final_state(
+            self.directive,
+            self.document,
+            source,
+            baseline,
+        )
+        self.assertEqual("v9.2->v9.3", result["transition"])
 
     def test_governance_exclusion_is_narrow_and_explicit(self) -> None:
         for path in GENERATED_GOVERNANCE_FILES:

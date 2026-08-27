@@ -4,10 +4,10 @@ from unittest.mock import patch
 
 from gravity_sdk import GravitySDK, InputValidationError
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_capabilities import (
+from gravity_sdk.agents.capabilities import (
     composite_capability_cards, composite_capability_inventory,
 )
-from gravity_sdk.agent_handoff import attach_plan_node
+from gravity_sdk.agents.handoff import attach_plan_node
 from gravity_sdk.material_performance_result import product_envelope, safe_component
 from gravity_sdk.material_performance import MATERIAL_REPORT_OPERATION
 from gravity_sdk.material_performance_plan_result import sanitize_product_result

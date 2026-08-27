@@ -106,8 +106,8 @@ Machine state shared by this Requirement and `index.md`: `status=specified`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=9b3952da7d45f274f8be551ce87ce83c4c253eefdb1375c10d5efc099de71e76`;
-`live_checkpoint_tracked_sites=645`.
+`live_checkpoint_sha256=70942af6b299a09a3f1cffab6eee302f8131406a051cc2a01aa800ced33df4fc`;
+`live_checkpoint_tracked_sites=311`.
 
 The required cross-file state gate is
 `tests/test_agent_module_reference_dispositions.py::AgentModuleReferenceDispositionTests::test_index_and_specification_state_agree`.
@@ -651,12 +651,14 @@ pending and no count is maintained by narrowing the scanner.
 - Move `agent_capabilities.py`, `agent_composite.py`, and `agent_handoff.py` in
   the core phase; serialize their integration and update `cli.py` imports and
   the Requirement Index shared-spine paths in the same phase.
-- Execute the 13 governance-document rewrites and one source selector-data
-  rewrite the disposition ledger records, all at the core checkpoint because
-  all of them name the three agent spine files: three in `AGENTS.md`, four in
+- Execute 15 governance-document rewrites at the core checkpoint: the 13
+  rewrites recorded by the disposition ledger, plus two policy-derived
+  `index.md` rewrites for active-governance references added after the ledger
+  was frozen. The total comprises three in `AGENTS.md`, four in
   `specs/agent-runtime/architecture-source.md`, three in
-  `specs/agent-runtime/index.json`, three in `specs/agent-runtime/index.md`,
-  and the single `_EXPORTS` selector-data rewrite in
+  `specs/agent-runtime/index.json`, and five in `specs/agent-runtime/index.md`
+  (three ledger-derived and two post-freeze policy-derived), plus the one
+  source selector-data rewrite recorded for
   `src/gravity_sdk/__init__.py`. `AGENTS.md` edits are in-place replacements and
   must not grow the documentation budget.
 - **Rewriting `architecture-source.md` breaks its digest binding.** That file is
@@ -714,8 +716,15 @@ pending and no count is maintained by narrowing the scanner.
   consolidation; `agent_runtime_contracts.py` remains at its root path;
   `gravity_sdk.agent` remains the stable facade.
 - `gravity_sdk.agents.__init__` imports no business module and exposes no
-  parallel facade. Internal modules do not import `gravity_sdk` or
-  `gravity_sdk.agent` as a facade back-edge.
+  parallel facade. R17 introduces no facade back-edge. Five pre-migration
+  edges remain: `agents.batch -> agent.discover_capabilities`,
+  `agents.batch_questions -> agent.DEFAULT_LIMIT`,
+  `agents.host_selection -> agent.SCHEMA_VERSION`,
+  `agents.input_resolution -> agent.discover_capabilities`, and
+  `agents.output -> agent.SCHEMA_VERSION`. They form no eager import cycle, so
+  the migration-related SCC gate remains empty. Removing them requires the
+  layer redesign excluded by this Requirement; they exit only through a
+  separately approved owner split that preserves facade behavior.
 - No old path for a moved/deleted module, alias, import hook, or duplicate
   source remains. The retained contracts module is not mirrored under
   `agents/`.
@@ -1306,8 +1315,10 @@ branch when:
   `metadata_inventory_state()` failure ordering is preserved;
 - `gravity_sdk.__all__ == 148`; fixture/runtime owners each equal 147; the
   reviewed owner ledger contains exactly six proposed changes;
-- no removed deep-path shim, alias, hook, duplicate, second facade, package
-  initialization side effect, or facade back-edge exists;
+- no removed deep-path shim, alias, hook, duplicate, second facade, or package
+  initialization side effect exists; R17 adds no facade back-edge, while the
+  five acyclic pre-migration edges enumerated in the Machine Contract remain
+  under technical debt #11 until a separately approved layer redesign;
 - every candidate in the rebound audit denominator has a reviewed disposition
   and there is no unresolved consumer; isolated-wheel and canonical-consumer
   censuses match their ledgers;

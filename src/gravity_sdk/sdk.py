@@ -254,7 +254,7 @@ class GravitySDK(
     ) -> dict[str, Any]:
         """Discover up to 32 questions from one immutable offline catalog snapshot."""
 
-        from .agent_batch import capabilities_many
+        from .agents.batch import capabilities_many
         from .agents.client import DeferredAgentClient
 
         return capabilities_many(

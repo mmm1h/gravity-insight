@@ -13,8 +13,8 @@ from gravity_sdk.plan_analysis_adapter import (
 )
 from gravity_sdk.sdk import GravitySDK
 from gravity_sdk.workspace import load_workspace
-from gravity_sdk.agent_analysis import analysis_query_spec_cards
-from gravity_sdk.agent_handoff import attach_plan_node
+from gravity_sdk.agents.analysis import analysis_query_spec_cards
+from gravity_sdk.agents.handoff import attach_plan_node
 
 
 def spec():

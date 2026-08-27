@@ -6,8 +6,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk.cli import build_parser
-from gravity_sdk.agent_capabilities import composite_capability_cards
-from gravity_sdk.agent_handoff import attach_plan_node
+from gravity_sdk.agents.capabilities import composite_capability_cards
+from gravity_sdk.agents.handoff import attach_plan_node
 from gravity_sdk.errors import PaginationLimitError
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.plan_dashboard_adapter import (

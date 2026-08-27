@@ -51,10 +51,10 @@ class _OfflineClient:
 
 def render_documents() -> dict[Path, str]:
     from gravity_sdk.agent import _protocol, discover_capabilities
-    from gravity_sdk.agent_analysis import analysis_query_spec_cards
-    from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
-    from gravity_sdk.agent_product_inventory import canonical_capability_cards
-    from gravity_sdk.agent_unavailable import registered_unavailable_gaps
+    from gravity_sdk.agents.analysis import analysis_query_spec_cards
+    from gravity_sdk.agents.batch_sources import AgentSourceSnapshot
+    from gravity_sdk.agents.product_inventory import canonical_capability_cards
+    from gravity_sdk.agents.unavailable import registered_unavailable_gaps
     from gravity_sdk.analysis_period_compare import compare_analysis_periods
     from gravity_sdk.analysis_spec import prepare_query_spec
     from gravity_sdk.analysis_spec_schema import analysis_query_spec_schema

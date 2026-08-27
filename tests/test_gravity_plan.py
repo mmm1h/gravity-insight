@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk.agent import run_agent_command
-from gravity_sdk.agent_batch import capabilities_many
+from gravity_sdk.agents.batch import capabilities_many
 from gravity_sdk.plan import (
     PlanAdapter,
     PlanAdapters,
@@ -590,7 +590,7 @@ class AgentBatchTests(unittest.TestCase):
     def workspace():
         return SimpleNamespace(recipes={}, products={}, datasources={}, apps={})
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    @patch("gravity_sdk.agents.batch_sources.search_metadata")
     def test_capabilities_many_scans_sources_once_and_returns_plan_nodes(self, metadata):
         metadata.return_value = {"results": []}
         client = self.Client()
@@ -607,7 +607,7 @@ class AgentBatchTests(unittest.TestCase):
         self.assertTrue(all("complete_collection_count" not in card["allowed_claims"] for card in cards))
         self.assertTrue(all("complete_collection_count" in card["forbidden_claims"] for card in cards))
 
-    @patch("gravity_sdk.agent_batch.capabilities_many")
+    @patch("gravity_sdk.agents.batch.capabilities_many")
     def test_agent_input_routes_to_batch_without_positional_query(self, batch):
         batch.return_value = {"schema_version": "gravity.agent-batch.v1", "ok": True}
         args = SimpleNamespace(

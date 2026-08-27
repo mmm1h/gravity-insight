@@ -153,23 +153,23 @@ _EXPORTS = {
     "normalized_host_plan_request": (
         ".host_effects", "normalized_host_plan_request"
     ),
-    "host_product_catalog": (".agent_host_catalog", "host_product_catalog"),
+    "host_product_catalog": (".agents.host_catalog", "host_product_catalog"),
     "host_product_selection_schema": (
-        ".agent_host_catalog", "host_product_selection_schema"
+        ".agents.host_catalog", "host_product_selection_schema"
     ),
     "assess_host_product_selection": (
-        ".agent_host_selection", "assess_host_product_selection"
+        ".agents.host_selection", "assess_host_product_selection"
     ),
     "compile_host_product_selection": (
-        ".agent_host_selection", "compile_host_product_selection"
+        ".agents.host_selection", "compile_host_product_selection"
     ),
     "resolve_host_product_selection": (
-        ".agent_host_selection", "resolve_host_product_selection"
+        ".agents.host_selection", "resolve_host_product_selection"
     ),
     "PlanRecipe": (".workspace_plan_recipe", "PlanRecipe"),
     "PlanRecipeError": (".workspace_plan_recipe", "PlanRecipeError"),
     "expand_plan_recipe": (".workspace_plan_recipe", "expand_plan_recipe"),
-    "capabilities_many": (".agent_batch", "capabilities_many"),
+    "capabilities_many": (".agents.batch", "capabilities_many"),
     "CompiledAnalysisQuery": (".analysis_spec", "CompiledAnalysisQuery"),
     "analysis_query_spec_schema": (".analysis_spec", "analysis_query_spec_schema"),
     "compile_query_spec": (".analysis_spec", "compile_query_spec"),

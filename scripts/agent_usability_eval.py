@@ -436,7 +436,7 @@ def _selection_identity(result: Mapping[str, Any] | None) -> tuple[str, ...]:
 def _discover_trials(
     cases: Sequence[Mapping[str, Any]], client: Any, trials: int
 ) -> tuple[dict[str, Any], int, list[dict[str, Any]]]:
-    from gravity_sdk.agent_batch import capabilities_many
+    from gravity_sdk.agents.batch import capabilities_many
 
     states = {
         case["case_id"]: {

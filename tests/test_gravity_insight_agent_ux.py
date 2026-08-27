@@ -15,14 +15,14 @@ from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_business_pulse import business_pulse_query
-from gravity_sdk.agent_capabilities import composite_capability_cards
+from gravity_sdk.agents.business_pulse import business_pulse_query
+from gravity_sdk.agents.capabilities import composite_capability_cards
 from gravity_sdk.agents.analysis_task import analysis_task_cards
-from gravity_sdk.agent_batch import capabilities_many, iter_ndjson_records
-from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
+from gravity_sdk.agents.batch import capabilities_many, iter_ndjson_records
+from gravity_sdk.agents.batch_sources import AgentSourceSnapshot
 from gravity_sdk.agents.client import DeferredAgentClient
-from gravity_sdk.agent_handoff import apply_workspace_prefix
-from gravity_sdk.agent_sources import OperationDiscovery, discover_operation_cards
+from gravity_sdk.agents.handoff import apply_workspace_prefix
+from gravity_sdk.agents.sources import OperationDiscovery, discover_operation_cards
 from gravity_sdk.workspace import load_workspace
 
 try:
@@ -346,7 +346,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual("xlsx", card["columns"]["format"])
                 self.assertEqual(5, len(card["columns"]["file_schema"]["columns"]))
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_agent_batch_snapshots_export_inventory_once(self, _metadata) -> None:
         workspace = SimpleNamespace(recipes={}, products={}, datasources={})
         with (
@@ -731,7 +731,7 @@ class DiscoveryUxTests(unittest.TestCase):
             second["candidates"][0]["input_schema"]["inputs"]["machine_schema"]["required"],
         )
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_multidim_batch_reuses_one_local_snapshot(self, metadata) -> None:
         with patch.object(
             self.client, "operation_inventory", wraps=self.client.operation_inventory
@@ -773,7 +773,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual("metadata_search", card["plan_node"]["kind"])
                 self.assertFalse(result["network_called"])
 
-        with patch("gravity_sdk.agent_batch_sources.search_metadata") as metadata:
+        with patch("gravity_sdk.agents.batch_sources.search_metadata") as metadata:
             metadata.return_value = {"results": []}
             batch = capabilities_many(
                 [
@@ -835,7 +835,7 @@ class DiscoveryUxTests(unittest.TestCase):
                     self.assertTrue(card["catalog_only"])
                     self.assertFalse(card["replay_supported"])
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    @patch("gravity_sdk.agents.batch_sources.search_metadata")
     def test_agent_batch_loads_vocabulary_once_and_namespaces_nodes(self, search) -> None:
         search.return_value = {"results": [
             {
@@ -1093,7 +1093,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 raise AssertionError("local Agent handoffs must not scan operations")
 
         with patch(
-            "gravity_sdk.agent_batch_sources.search_metadata",
+            "gravity_sdk.agents.batch_sources.search_metadata",
             side_effect=OSError("catalog unavailable"),
         ):
             task = capabilities_many(
@@ -1139,7 +1139,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual({"name": "user_journey"}, card["plan_node"]["request"])
         self.assertNotIn("client_id", card["plan_node"]["request"])
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_agent_batch_namespaces_analysis_spec_plan_nodes(self, _metadata) -> None:
         result = capabilities_many(
             [
@@ -1192,7 +1192,7 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         self.assertEqual("batch", handoff["command"][3])
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    @patch("gravity_sdk.agents.batch_sources.search_metadata")
     def test_agent_batch_namespaces_plan_nodes_and_exposes_ndjson_rows(self, metadata) -> None:
         metadata.return_value = {"results": [{
             "kind": "metric", "scope": "workspace", "source": "report_metrics",
@@ -1267,7 +1267,7 @@ class DiscoveryUxTests(unittest.TestCase):
             / "workspace"
             / "gravity.toml"
         )
-        with patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace):
+        with patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace):
             result = cli.run_agent_command(
                 SimpleNamespace(
                     query="retention",
@@ -1284,7 +1284,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual("@demo-retention", result["candidates"][0]["selector"])
         self.assertEqual("gravity", result["candidates"][0]["next"]["argv"][0])
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    @patch("gravity_sdk.agents.batch_sources.search_metadata")
     def test_agent_workspace_is_preserved_in_single_and_batch_handoffs(self, metadata) -> None:
         metadata.return_value = {"results": []}
         workspace = load_workspace(
@@ -1335,9 +1335,9 @@ class DiscoveryUxTests(unittest.TestCase):
             / "gravity.toml"
         )
         with (
-            patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace),
+            patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace),
             patch(
-                "gravity_sdk.agent_sources.metadata_capability_cards",
+                "gravity_sdk.agents.sources.metadata_capability_cards",
                 return_value=([], []),
             ),
         ):
@@ -1363,9 +1363,9 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual("daily event summary", find_fallback["argv"][-1])
 
         with (
-            patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace),
+            patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace),
             patch(
-                "gravity_sdk.agent_sources.metadata_capability_cards",
+                "gravity_sdk.agents.sources.metadata_capability_cards",
                 return_value=([], []),
             ),
         ):
@@ -1392,9 +1392,9 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         results = []
         with (
-            patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace),
+            patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace),
             patch(
-                "gravity_sdk.agent_sources.metadata_capability_cards",
+                "gravity_sdk.agents.sources.metadata_capability_cards",
                 return_value=([], []),
             ),
         ):
@@ -1624,7 +1624,7 @@ class DiscoveryUxTests(unittest.TestCase):
             / "workspace"
             / "gravity.toml"
         )
-        with patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace):
+        with patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace):
             first = cli.run_agent_command(
                 SimpleNamespace(
                     query="analysis",
