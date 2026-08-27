@@ -4,7 +4,7 @@
 
 ## 1. 安装
 
-团队安装不可变、已通过发布门禁的 tag；不需要手工 clone 仓库。把 `<version>` 替换为要安装的已发布版本：
+不要 `pip install gravity-sdk` 或 `pip install gravity`：前者是 Gravity Labs 的广告 SDK，后者是 galaxyproject 的 Galaxy 服务器管理 CLI，都是无关第三方包。当前只安装不可变、已通过门禁的 `v<version>` tag；发布到 PyPI 后也可 `pip install gravity-insight`。把 `<version>` 替换为已发布版本：
 
 ```powershell
 python -m pip install --upgrade "git+https://github.com/mmm1h/gravity-sdk.git@v<version>"

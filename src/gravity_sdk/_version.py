@@ -9,7 +9,7 @@ from pathlib import Path
 
 def _resolve_version() -> str:
     try:
-        return metadata.version("gravity-sdk")
+        return metadata.version("gravity-insight")
     except metadata.PackageNotFoundError:
         project_path = Path(__file__).resolve().parents[2] / "pyproject.toml"
         project = tomllib.loads(project_path.read_text(encoding="utf-8"))["project"]

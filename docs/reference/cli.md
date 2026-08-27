@@ -119,7 +119,7 @@ catalog 使用 `{"catalog_policy":"refresh"}`；任一来源失败时不发布 s
 
 领域命令如 `analysis`、`multidim`、`promotion`、`materials` 是受控 operation 的易用门面；不确定时从 `operations search` 开始。
 
-`gravity doctor` 先在本地对齐当前源码 `pyproject.toml`、`gravity-sdk` distribution metadata、
+`gravity doctor` 先在本地对齐当前源码 `pyproject.toml`、`gravity-insight` distribution metadata、
 editable 根目录、实际 `gravity_sdk` import 路径和版本。重复 metadata、版本或根目录不一致会在任何
 客户端构造和 `--live` 探针前以 `INSTALL_*` reason code、local exit `4` 和有序
 `reinstall_commands` 失败；检查本身不访问网络。

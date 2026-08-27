@@ -26,11 +26,11 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 - `pyproject.toml` now uses the confirmed repository and issue URLs under
   `https://github.com/mmm1h/gravity-sdk`.
 - `authors`/`maintainers` use `mmm1h`; owner confirmed 2026-08-28 that this is an
-  individual account, the intended publishing identity, and that PyPI `gravity-sdk`
-  is theirs. `owner_review: confirmed`.
-- `PYPI_API_TOKEN` is deliberately unset — a token can only be minted from the
-  owner's PyPI account, so tags publish to GitHub alone until provisioned. Signing
-  stays undecided and unsigned. `agent_under_standing_owner_delegation`; `owner_review: pending`.
+  individual account and the intended publishing identity. `owner_review: confirmed`.
+- The pending PyPI trusted publisher binds `gravity-insight` to repository
+  `mmm1h/gravity-sdk`, workflow `release.yml`, and environment `pypi`. Releases use
+  OIDC, so `PYPI_API_TOKEN` remains unset. Artifact signing stays undecided and
+  unsigned. `owner_review: confirmed` for publishing; `owner_review: pending` for signing.
 
 ## Repository controls
 

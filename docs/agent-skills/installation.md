@@ -2,10 +2,12 @@
 
 下面的 JSON 是自足的安装与离线自检合同。Agent 应替换 `tag`/`version` 后逐条执行，不从分支安装，也不在源码检出目录内验证非 editable 安装。
 
+不要 `pip install gravity-sdk` 或 `pip install gravity`：前者是 Gravity Labs 的广告 SDK，后者是 galaxyproject 的 Galaxy 服务器管理 CLI，都是无关第三方包。安装只走已发布的 `v<version>` tag；发布到 PyPI 后也可 `pip install gravity-insight`。
+
 ```json
 {
   "schema_version": "gravity-sdk.agent-install.v1",
-  "distribution": "gravity-sdk",
+  "distribution": "gravity-insight",
   "python_requires": ">=3.11",
   "channel": {
     "kind": "immutable_git_tag",

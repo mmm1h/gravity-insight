@@ -35,7 +35,7 @@ def _sdk_module():
         except (ImportError, AttributeError) as exc:
             errors.append(exc)
     raise RuntimeError(
-        "Gravity SDK is unavailable; install the gravity-sdk package"
+        "Gravity SDK is unavailable; install the gravity-insight package"
     ) from errors[-1]
 
 

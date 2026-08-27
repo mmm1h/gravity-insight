@@ -71,7 +71,7 @@ class InstalledWheelTests(unittest.TestCase):
                 "--wheel-dir", str(wheelhouse), str(project),
             ]
             _run(pip + wheel_command, cwd=temporary)
-            wheels = list(wheelhouse.glob("gravity_sdk-*.whl"))
+            wheels = list(wheelhouse.glob("gravity_insight-*.whl"))
             self.assertEqual(1, len(wheels), f"unexpected wheels: {wheels}")
             with zipfile.ZipFile(wheels[0]) as wheel:
                 entries = wheel.namelist()

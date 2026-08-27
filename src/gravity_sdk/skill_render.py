@@ -205,7 +205,7 @@ def _agent_skill_markdown(
         "---",
         f"name: {name}",
         f"description: {_yaml_string(contract['description'])}",
-        f"compatibility: {_yaml_string('Requires gravity-sdk ' + contract['runtime_requires'])}",
+        f"compatibility: {_yaml_string('Requires gravity-insight ' + contract['runtime_requires'])}",
         "metadata:",
         f"  gravity-namespace: {_yaml_string(contract['namespace'])}",
         f"  gravity-skill-id: {_yaml_string(contract['skill_id'])}",

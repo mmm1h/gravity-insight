@@ -5,9 +5,6 @@ name: SDK Release
     tags:
       - "v*"
 
-permissions:
-  contents: write
-
 env:
   PYTHONUTF8: "1"
   PYTHONIOENCODING: utf-8
@@ -16,6 +13,8 @@ jobs:
   release:
     runs-on: windows-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -73,23 +72,24 @@ jobs:
           gh release create $env:GITHUB_REF_NAME @assets `
             --verify-tag --generate-notes --title $env:GITHUB_REF_NAME
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Detect PyPI token
-        id: pypi
-        shell: pwsh
-        env:
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:PYPI_API_TOKEN)) {
-            "configured=false" >> $env:GITHUB_OUTPUT
-            Write-Output "PyPI token is not configured; upload will be skipped."
-          } else {
-            "configured=true" >> $env:GITHUB_OUTPUT
-            Write-Output "PyPI token is configured."
-          }
+      - name: Upload checked distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download checked distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
       - name: Publish distributions to PyPI
-        if: steps.pypi.outputs.configured == 'true'
-        shell: pwsh
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python -m twine upload --non-interactive dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1

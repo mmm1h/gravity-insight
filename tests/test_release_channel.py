@@ -26,7 +26,7 @@ class ReleaseVersionTests(unittest.TestCase):
     def test_project_import_and_distribution_versions_are_identical(self) -> None:
         project_version = PROJECT["project"]["version"]
         self.assertEqual(project_version, gravity_sdk.__version__)
-        self.assertEqual(project_version, metadata.version("gravity-sdk"))
+        self.assertEqual(project_version, metadata.version("gravity-insight"))
 
     def test_uninstalled_source_checkout_derives_version_from_pyproject(self) -> None:
         probe = (
