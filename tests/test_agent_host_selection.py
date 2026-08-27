@@ -338,6 +338,39 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertGreater(result["count"], 0)
         self.assertEqual(RECOGNIZER_ROUTING_MODE, result["routing_mode"])
 
+    def test_routing_arm_set_does_not_depend_on_the_default_policy(self) -> None:
+        # The arm identities say which arms exist; DEFAULT_ROUTING_MODE only says
+        # which one is the fallback when a caller sends no selection. Rebuilding
+        # the module with a different fallback must leave the arm set untouched.
+        # Without this, collapsing the two names back into one constant is silent:
+        # every routing test still passes while the arm set degrades to a pair of
+        # duplicates the moment anyone changes the fallback.
+        import ast
+        import types
+        from pathlib import Path
+
+        source_path = Path(resolve_host_product_selection.__code__.co_filename)
+        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == "DEFAULT_ROUTING_MODE"
+                for target in node.targets
+            ):
+                node.value = ast.copy_location(ast.Constant(value="host_catalog"), node.value)
+                break
+        else:
+            self.fail("host selection has no default routing assignment")
+        ast.fix_missing_locations(tree)
+        rebound = types.ModuleType("gravity_sdk.agents._host_selection_rebound_default")
+        rebound.__file__ = str(source_path)
+        rebound.__package__ = "gravity_sdk.agents"
+        exec(compile(tree, str(source_path), "exec"), rebound.__dict__)
+
+        self.assertEqual(("recognizer", "host_catalog"), rebound.ROUTING_MODES)
+        self.assertEqual(2, len(set(rebound.ROUTING_MODES)))
+        self.assertEqual("recognizer", rebound.RECOGNIZER_ROUTING_MODE)
+        self.assertEqual("host_catalog", rebound.DEFAULT_ROUTING_MODE)
+
     def test_recognizer_upgrade_carries_selection_schema_and_copyable_example(self) -> None:
         result = run_agent_command(
             build_parser().parse_args(["agent", "event analysis"]),
