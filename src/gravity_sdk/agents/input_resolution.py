@@ -180,7 +180,11 @@ def _batch_command(args: Any, client: Any, input_value: Any) -> dict[str, Any]:
     from .batch import capabilities_many
     from ..find_input import load_json_input
 
-    return capabilities_many(load_json_input(input_value, required=True), client=client)
+    return capabilities_many(
+        load_json_input(input_value, required=True),
+        client=client,
+        routing=getattr(args, "routing", None),
+    )
 
 
 def _discover(query: str, **options: Any) -> dict[str, Any]:

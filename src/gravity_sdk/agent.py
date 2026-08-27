@@ -149,7 +149,7 @@ def discover_capabilities(
     continuation: str | None = None,
     sources: AgentSourceSnapshot | None = None,
     plan_node_namespace: str | None = None,
-    routing: str = "recognizer",
+    routing: str | None = None,
     host_selection: Any | None = None,
 ) -> dict[str, Any]:
     """Return the same bounded, offline protocol used by ``gravity agent``.
@@ -277,6 +277,7 @@ def _discovery_response(
 ) -> dict[str, Any]:
     from .agents.discovery_support import recognizer_routing_declaration
 
+    routing = recognizer_routing_declaration(request.query)
     candidates = [
         attach_plan_node(
             apply_workspace_prefix(item, workspace_path),
@@ -304,8 +305,8 @@ def _discovery_response(
         "offline": True,
         "network_called": False,
         "mode": "discover_and_describe",
-        "routing_mode": "recognizer",
-        "routing": recognizer_routing_declaration(request.query),
+        "routing_mode": routing["mode"],
+        "routing": routing,
         "scope": AGENT_SCOPE,
         "query": safe_discovery_query(request.query),
         "limit": request.limit,
@@ -406,6 +407,7 @@ def _discovery_page(
 def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
     from .agents.discovery_support import recognizer_routing_declaration
 
+    routing = recognizer_routing_declaration("")
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -413,8 +415,8 @@ def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
         "offline": True,
         "network_called": False,
         "mode": "protocol",
-        "routing_mode": "recognizer",
-        "routing": recognizer_routing_declaration(""),
+        "routing_mode": routing["mode"],
+        "routing": routing,
         "scope": AGENT_SCOPE,
         "goal": "Known inputs take one call; candidate.call_bound declares unknown-input lower bounds.",
         "workflow": [

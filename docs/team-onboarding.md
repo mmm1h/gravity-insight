@@ -19,7 +19,7 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 
 优先选择 `identity_kind=product`。Raw operation 是已知 wire 的专家入口；`capability_gap` 只能报告，不能执行。
 
-调用方能可靠选择产品时，读取 `agent-catalog host`，提交严格的 `gravity.host-product-selection.v1`。没有 selection 时使用默认 recognizer；它是离线保底，不会替调用方猜业务输入。
+调用方能可靠选择产品时，读取 `agent-catalog host`，提交严格的 `gravity.host-product-selection.v1`；省略 routing 即进入宿主臂。没有 selection 时使用默认 recognizer；它是离线保底，不会替调用方猜业务输入。
 
 ## 2. 补参并执行
 
