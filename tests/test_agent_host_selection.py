@@ -5,7 +5,7 @@ import unittest
 
 from unittest.mock import patch
 
-from gravity_sdk.agent import run_agent_command
+from gravity_sdk.agent import discover_capabilities, run_agent_command
 from gravity_sdk.agents.host_catalog import (
     SELECTION_SCHEMA_VERSION,
     host_product_catalog,
@@ -151,9 +151,15 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertFalse(card["next"]["ready_without_input"])
 
     def test_cli_default_and_unspecified_behavior_remain_recognizer(self) -> None:
+        import inspect
+        from gravity_sdk.agents.host_selection import RECOGNIZER_ROUTING_MODE
+
         args = build_parser().parse_args(["agent", "event analysis"])
-        self.assertEqual("recognizer", DEFAULT_ROUTING_MODE)
-        self.assertEqual(DEFAULT_ROUTING_MODE, args.routing)
+        self.assertEqual(RECOGNIZER_ROUTING_MODE, DEFAULT_ROUTING_MODE)
+        self.assertIsNone(args.routing)
+        self.assertIsNone(
+            inspect.signature(discover_capabilities).parameters["routing"].default
+        )
         self.assertIsNone(args.host_selection)
         result = run_agent_command(args, self.client)
         self.assertEqual("discover_and_describe", result["mode"])
@@ -168,109 +174,169 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertNotIn("routing", result["next_action"])
         self.assertEqual("analysis.query.spec:event", result["candidates"][0]["selector"])
 
-    def test_default_policy_can_flip_without_redefining_routing_arms(self) -> None:
+    def test_cli_selection_implies_host_without_weakening_explicit_arms(self) -> None:
+        import json
+        from gravity_sdk.agents.host_selection import (
+            HOST_ROUTING_MODE,
+            RECOGNIZER_ROUTING_MODE,
+        )
+
         query = self.response()["query"]
         selection = self.response("analysis.query.spec")
-        recognizer_mode = "recognizer"
-        expected_message = (
-            "actual value: invalid Agent routing inputs; allowed value: recognizer "
-            "without host_selection, or host_catalog with one complete selection"
+        selection_json = json.dumps(selection)
+        parser = build_parser()
+
+        implied = run_agent_command(
+            parser.parse_args(["agent", query, "--host-selection", selection_json]),
+            self.client,
         )
-        expected_next_action = (
-            "Use recognizer as the offline floor when the caller cannot emit "
-            "a selection, or fetch the host catalog and pass its exact "
-            "selection with host_catalog routing."
-        )
-
-        import argparse
-        import ast
-        import types
-        from pathlib import Path
-
-        source_path = Path(resolve_host_product_selection.__code__.co_filename)
-        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
-        for node in tree.body:
-            if isinstance(node, ast.Assign) and any(
-                isinstance(target, ast.Name) and target.id == "DEFAULT_ROUTING_MODE"
-                for target in node.targets
-            ):
-                node.value = ast.copy_location(
-                    ast.Constant(value="host_catalog"),
-                    node.value,
-                )
-                break
-        else:
-            self.fail("host selection has no default routing assignment")
-        ast.fix_missing_locations(tree)
-        counterfactual = types.ModuleType(
-            "gravity_sdk.agents._host_selection_counterfactual"
-        )
-        counterfactual.__file__ = str(source_path)
-        counterfactual.__package__ = "gravity_sdk.agents"
-        exec(compile(tree, str(source_path), "exec"), counterfactual.__dict__)
-
-        with self.subTest(contract="mode set"):
-            self.assertEqual(
-                (recognizer_mode, counterfactual.HOST_ROUTING_MODE),
-                counterfactual.ROUTING_MODES,
-            )
-            self.assertEqual(2, len(set(counterfactual.ROUTING_MODES)))
-
-        parser = argparse.ArgumentParser(add_help=False)
-        counterfactual.add_host_routing_arguments(parser)
-        self.assertEqual(
-            counterfactual.HOST_ROUTING_MODE,
-            parser.parse_args([]).routing,
-        )
-
-        missing_routing = types.SimpleNamespace(query=query, host_selection=selection)
-        host_result = counterfactual.host_routing_command(
-            missing_routing,
+        explicit = run_agent_command(
+            parser.parse_args([
+                "agent", query, "--routing", HOST_ROUTING_MODE,
+                "--host-selection", selection_json,
+            ]),
             self.client,
         )
         self.assertEqual(
-            counterfactual.HOST_ROUTING_MODE,
-            host_result["routing_mode"],
+            [HOST_ROUTING_MODE, HOST_ROUTING_MODE],
+            [implied["routing_mode"], explicit["routing_mode"]],
         )
 
-        with self.subTest(contract="recognizer arm"):
-            self.assertIsNone(
-                counterfactual.host_routing_discovery(
-                    query,
+        from gravity_sdk.find_input import load_json_input
+
+        with patch(
+            "gravity_sdk.find_input.load_json_input", wraps=load_json_input
+        ) as load:
+            with self.assertRaisesRegex(ValueError, "--input is required"):
+                run_agent_command(
+                    parser.parse_args([
+                        "agent", query, "--routing", HOST_ROUTING_MODE,
+                    ]),
                     self.client,
-                    routing=recognizer_mode,
-                    host_selection=None,
-                    workspace=None,
-                    plan_node_namespace=None,
                 )
+        load.assert_called_once_with(None, required=True)
+
+        with self.assertRaises(InputValidationError) as caught:
+            run_agent_command(
+                parser.parse_args([
+                    "agent", query, "--routing", RECOGNIZER_ROUTING_MODE,
+                    "--host-selection", selection_json,
+                ]),
+                self.client,
             )
-        with self.subTest(contract="recognizer identity"):
-            self.assertEqual(
-                recognizer_mode,
-                counterfactual.RECOGNIZER_ROUTING_MODE,
+        self.assertEqual("routing", caught.exception.field)
+        self.assertIn("invalid Agent routing inputs", str(caught.exception))
+        self.assertIn("explicitly set to host_catalog", caught.exception.next_action)
+
+    def test_discover_capabilities_routes_from_selection_presence(self) -> None:
+        from gravity_sdk.agents.host_selection import (
+            HOST_ROUTING_MODE,
+            RECOGNIZER_ROUTING_MODE,
+        )
+
+        query = self.response()["query"]
+        selection = self.response("analysis.query.spec")
+        floor = discover_capabilities(query, client=self.client)
+        selected = discover_capabilities(
+            query, client=self.client, host_selection=selection
+        )
+        for label, result, mode, is_floor in (
+            ("without-selection", floor, RECOGNIZER_ROUTING_MODE, True),
+            ("with-selection", selected, HOST_ROUTING_MODE, False),
+        ):
+            with self.subTest(selection=label):
+                self.assertEqual(mode, result["routing"]["mode"])
+                self.assertEqual(is_floor, result["routing"]["floor"])
+        with self.assertRaises(InputValidationError):
+            discover_capabilities(
+                query,
+                client=self.client,
+                routing=RECOGNIZER_ROUTING_MODE,
+                host_selection=selection,
             )
 
-        invalid_inputs = (
-            (recognizer_mode, selection),
-            ("unknown", None),
+    def test_batch_and_cli_input_route_each_question_from_its_selection(self) -> None:
+        import json
+        from gravity_sdk.agents.batch import capabilities_many
+        from gravity_sdk.agents.host_selection import (
+            HOST_ROUTING_MODE,
+            RECOGNIZER_ROUTING_MODE,
         )
-        for routing, host_selection in invalid_inputs:
-            with self.subTest(routing=routing, host_selection=host_selection):
-                with self.assertRaises(InputValidationError) as caught:
-                    counterfactual.host_routing_discovery(
-                        query,
-                        self.client,
-                        routing=routing,
-                        host_selection=host_selection,
-                        workspace=None,
-                        plan_node_namespace=None,
-                    )
-                self.assertEqual(expected_message, str(caught.exception))
-                self.assertEqual("routing", caught.exception.field)
+
+        query = self.response()["query"]
+        selection = self.response("analysis.query.spec")
+        questions = [
+            {"id": "floor", "query": "event analysis"},
+            {"id": "host", "query": query, "host_selection": selection},
+        ]
+        core = capabilities_many(questions, client=self.client)
+        cli = run_agent_command(
+            build_parser().parse_args([
+                "agent", "--input", json.dumps({"questions": questions}),
+            ]),
+            self.client,
+        )
+        for surface, result in (("core", core), ("cli-input", cli)):
+            with self.subTest(surface=surface):
                 self.assertEqual(
-                    expected_next_action,
-                    caught.exception.next_action,
+                    [RECOGNIZER_ROUTING_MODE, HOST_ROUTING_MODE],
+                    [item["result"]["routing_mode"] for item in result["results"]],
                 )
+                self.assertEqual([True, False], [
+                    item["result"]["routing"]["floor"] for item in result["results"]
+                ])
+
+        explicit_recognizer = run_agent_command(
+            build_parser().parse_args([
+                "agent", "--routing", RECOGNIZER_ROUTING_MODE,
+                "--input", json.dumps({"questions": [questions[1]]}),
+            ]),
+            self.client,
+        )
+        self.assertFalse(explicit_recognizer["ok"])
+        self.assertIsNone(explicit_recognizer["results"][0]["result"])
+        self.assertEqual(
+            "AGENT_DISCOVERY_FAILED",
+            explicit_recognizer["results"][0]["error"]["code"],
+        )
+
+    def test_gravity_facade_routes_from_selection_presence(self) -> None:
+        from gravity_sdk import GravitySDK
+        from gravity_sdk.agents.host_selection import (
+            HOST_ROUTING_MODE,
+            RECOGNIZER_ROUTING_MODE,
+        )
+
+        query = self.response()["query"]
+        selection = self.response("analysis.query.spec")
+        sdk = GravitySDK(insight=self.client)
+        floor = sdk.capabilities(query)
+        selected = sdk.capabilities(query, host_selection=selection)
+        for label, result, mode, is_floor in (
+            ("without-selection", floor, RECOGNIZER_ROUTING_MODE, True),
+            ("with-selection", selected, HOST_ROUTING_MODE, False),
+        ):
+            with self.subTest(selection=label):
+                self.assertEqual(mode, result["routing_mode"])
+                self.assertEqual(is_floor, result["routing"]["floor"])
+
+    def test_no_selection_still_needs_one_discovery_call(self) -> None:
+        from gravity_sdk.agents.host_selection import RECOGNIZER_ROUTING_MODE
+
+        parser = build_parser()
+        with patch(
+            "gravity_sdk.agent.discover_capabilities",
+            wraps=discover_capabilities,
+        ) as discovery, patch(
+            "gravity_sdk.agents.host_selection.resolve_host_product_selection"
+        ) as host:
+            result = run_agent_command(
+                parser.parse_args(["agent", "event analysis"]), self.client
+            )
+        self.assertEqual(1, discovery.call_count)
+        host.assert_not_called()
+        self.assertGreater(result["count"], 0)
+        self.assertEqual(RECOGNIZER_ROUTING_MODE, result["routing_mode"])
 
     def test_recognizer_upgrade_carries_selection_schema_and_copyable_example(self) -> None:
         result = run_agent_command(

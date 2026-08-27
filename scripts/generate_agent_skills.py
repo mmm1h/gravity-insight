@@ -169,7 +169,7 @@ def _catalog_discovery(catalog: dict[str, int], exits: dict[str, str]) -> str:
         [
             f"完整目录当前有 {catalog['selector_count']} 个 selector：{catalog['operation_count']} 个 operation、{catalog['product_card_count']} 张产品卡与 {catalog['gap_count']} 个精确 gap。先看分类，不要先猜命令：",
             "```powershell\ngravity agent-catalog categories\ngravity agent-catalog category <category>\ngravity agent-catalog describe <selected-selector>\ngravity agent-catalog host\n```",
-            "第一层决定领域，第二层只选择 selector，第三层才读取完整输入合同、`required_inputs`、`next.argv` 与可执行状态。本面投影产品卡加压缩 operation 合同，不投影 wire/examples/privacy/health。完整合同看 `gravity operations describe <selector>`。`host` 只投影产品/gap 及严格选择 schema，不暴露 raw operation。调用方能产出选择时推荐宿主臂：读取 `host` 投影后只返回 `gravity.host-product-selection.v1`，再显式 `gravity agent --routing host_catalog --host-selection <json>`；仓库消费该选择、不调模型。省略 `--routing` 时默认 recognizer 是够不着宿主时的地板，不是劣等品。category 返回 `next_offset` 时，只有确实需要浏览该领域剩余能力才继续；已知 selector 直接 describe。所有目录命令均离线且不执行候选。",
+            "第一层决定领域，第二层只选择 selector，第三层才读取完整输入合同、`required_inputs`、`next.argv` 与可执行状态。本面投影产品卡加压缩 operation 合同，不投影 wire/examples/privacy/health。完整合同看 `gravity operations describe <selector>`。`host` 只投影产品/gap 及严格选择 schema，不暴露 raw operation。调用方能产出选择时推荐宿主臂：读取 `host` 投影后只返回 `gravity.host-product-selection.v1`，再交给 `gravity agent --host-selection <json>`；仓库消费该选择、不调模型。省略 `--routing` 且没有 selection 时仍走 recognizer 地板；省略 `--routing` 但给了 selection 时走 host_catalog。category 返回 `next_offset` 时，只有确实需要浏览该领域剩余能力才继续；已知 selector 直接 describe。所有目录命令均离线且不执行候选。",
         ],
         catalog,
         exits,
@@ -301,7 +301,7 @@ def _capability_gap(protocol: dict[str, Any], gap: dict[str, Any], exits: dict[s
         "拿到 capability_gap 后怎么办",
         [
             "```powershell\n" + _argv(command) + "\n```",
-            "调用方能产出选择时，先 `gravity agent-catalog host` 再把严格 `gravity.host-product-selection.v1` 交给 `gravity agent --routing host_catalog --host-selection`；默认 `gravity agent` 仍是够不着宿主时的地板。识别器只排出互不相同 raw operation 时返回 `UNRANKED_OPERATIONS`，`next.argv` 是 `gravity agent-catalog host`，不是可执行产品。只有 `status=success` 的 candidate 才可执行；`capability_gaps` 是明确的不可执行结果，不是 empty。",
+            "调用方能产出选择时，先 `gravity agent-catalog host` 再把严格 `gravity.host-product-selection.v1` 交给 `gravity agent --host-selection`；省略 routing 且没有 selection 的 `gravity agent` 仍是够不着宿主时的地板，给了 selection 则走 host_catalog。识别器只排出互不相同 raw operation 时返回 `UNRANKED_OPERATIONS`，`next.argv` 是 `gravity agent-catalog host`，不是可执行产品。只有 `status=success` 的 candidate 才可执行；`capability_gaps` 是明确的不可执行结果，不是 empty。",
         ],
         gap,
         exits,
@@ -313,7 +313,7 @@ def _ten_minute_path(card: dict[str, Any], contract: dict[str, Any], exits: dict
     return _guide(
         "十分钟路径：从仓库到第一次真实分析",
         [
-            "先由调用方明确选择 App、日期窗和一个精确物理事件名；bootstrap 不会从可读 App 或事件中静默挑默认值。默认 `gravity agent \"问题\"` 走离线识别器地板；调用方能产出 `gravity.host-product-selection.v1` 时先 `gravity agent-catalog host`，再 `gravity agent --routing host_catalog --host-selection`。然后只做两次顶层调用：",
+            "先由调用方明确选择 App、日期窗和一个精确物理事件名；bootstrap 不会从可读 App 或事件中静默挑默认值。没有 selection 的 `gravity agent \"问题\"` 走离线识别器地板；调用方能产出 `gravity.host-product-selection.v1` 时先 `gravity agent-catalog host`，再 `gravity agent --host-selection`，省略 routing 即进入 host_catalog。然后只做两次顶层调用：",
             "```powershell\ngravity analysis bootstrap `\n  --app <selected-app-id> `\n  --start <caller-start-date> --end <caller-end-date> `\n  --target <physical-event> --plan-output first-analysis-plan.json\n# 审阅 Plan 中的 App、日期、事件与 metadata 指纹\ngravity plan run --input first-analysis-plan.json\n```",
             "第一次调用复用 `app.list`、单 App metadata sync、离线精确事件查找和 Plan dry-run；它只写 Plan，不执行分析。冷目录把四类 metadata 各限制为第一页，CLI transport 不重试：含首次登录最多 6 HTTP。第二次从固定 catalog 快照做 FieldPolicy 校验，只发 1 次事件查询；总计最多 7 HTTP。",
             "如果 App、日期或事件未提供，返回的 caller error 只有一个 `next_action`，不会代选。若任一 metadata 类超过第一页，bootstrap 也不会自动扩量；它返回运行普通有界 sync 的唯一下一动作，调用方审阅更大预算后再决定。",

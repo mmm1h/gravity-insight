@@ -10,7 +10,7 @@
 | 已知 Analysis kind 和 compact spec | `gravity analysis query` |
 | 多个独立任务或存在依赖 | 一个显式 `gravity plan run` |
 | 未知当前能力 | `agent-catalog categories → category → describe` |
-| 调用方能选择目录项 | `agent-catalog host` + `host-selection` |
+| 调用方能选择目录项 | `agent-catalog host` + `host-selection`（省略 routing 即走宿主臂） |
 | 调用方无法选择 | 默认 `gravity agent` recognizer 保底 |
 
 目录浏览和 schema 查询离线完成。发现不会执行产品，自然语言不会执行写入。

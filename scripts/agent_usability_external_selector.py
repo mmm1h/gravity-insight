@@ -404,19 +404,20 @@ def _default_dispatch_result(
     from gravity_sdk.agents.host_selection import HOST_ROUTING_MODE
     from gravity_sdk.cli import build_parser
 
-    argv = ["agent", query]
+    argv = [
+        "agent",
+        query,
+        "--host-selection",
+        json.dumps(selection, ensure_ascii=False, separators=(",", ":")),
+    ]
     args = build_parser().parse_args(argv)
-    if args.routing == HOST_ROUTING_MODE:
-        argv.extend([
-            "--host-selection",
-            json.dumps(selection, ensure_ascii=False, separators=(",", ":")),
-        ])
-        args = build_parser().parse_args(argv)
+    if args.routing is not None:
+        raise RuntimeError("public default dispatcher unexpectedly specified routing")
     result = run_agent_command(args, client)
     if not isinstance(result, Mapping):
         raise RuntimeError("public default dispatcher returned a non-object result")
-    if result.get("routing_mode") != args.routing:
-        raise RuntimeError("public default dispatcher ignored the parser routing policy")
+    if result.get("routing_mode") != HOST_ROUTING_MODE:
+        raise RuntimeError("public default dispatcher did not infer the host arm")
     return dict(result)
 
 
