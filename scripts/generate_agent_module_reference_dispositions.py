@@ -34,6 +34,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SCANNER = ROOT / "scripts/audit_agent_module_references.py"
 GENERATOR = ROOT / "scripts/generate_agent_module_reference_dispositions.py"
 PUBLIC_EXPORTS = ROOT / "tests/fixtures/public_api_exports.json"
+PUBLIC_EXPORT_OWNER_MIGRATIONS = (
+    ROOT / "tests/fixtures/public_api_owner_migrations.json"
+)
 DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
 BASELINE_LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 OUTPUT = ROOT / "tests/fixtures/agent_module_reference_checkpoint.json"
@@ -198,14 +201,33 @@ def _reference_snippets(references: tuple[Finding, ...]) -> dict[tuple[str, ...]
     return result
 
 
+def _projected_public_exports() -> dict[str, Any]:
+    exports = json.loads(PUBLIC_EXPORTS.read_text(encoding="utf-8"))
+    migrations = json.loads(
+        PUBLIC_EXPORT_OWNER_MIGRATIONS.read_text(encoding="utf-8")
+    )
+    if not isinstance(migrations, list):
+        raise ValueError("public export owner migrations must be a list")
+    for index, migration in enumerate(migrations):
+        if not isinstance(migration, dict) or set(migration) != {
+            "symbol",
+            "from",
+            "to",
+        }:
+            raise ValueError(f"public export owner migration {index} is invalid")
+        symbol = migration["symbol"]
+        if symbol not in exports or exports[symbol][0] != migration["from"]:
+            raise ValueError(
+                f"public export owner migration {index} does not match the baseline"
+            )
+        exports[symbol][0] = migration["to"]
+    return exports
+
+
 def _selector_rewrites(
     move_mapping: dict[str, str], exports: dict[str, Any] | None = None
 ) -> tuple[str, list[dict[str, str]]]:
-    exports = (
-        json.loads(PUBLIC_EXPORTS.read_text(encoding="utf-8"))
-        if exports is None
-        else exports
-    )
+    exports = _projected_public_exports() if exports is None else exports
     rewrites: list[dict[str, str]] = []
     owner_states: set[str] = set()
     reverse_mapping = {new: old for old, new in move_mapping.items()}

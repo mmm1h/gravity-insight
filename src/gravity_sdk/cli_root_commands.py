@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from .agent import add_agent_command
-from .agent_catalog import add_agent_catalog_command
+from .agents.catalog import add_agent_catalog_command
 from .capability_trust_cli import add_capability_trust_commands
 from .context_cli import add_context_commands
 from .find import add_operation_commands

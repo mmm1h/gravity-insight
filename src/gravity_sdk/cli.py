@@ -656,7 +656,7 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
 
 def _iter_ndjson_lines(result: Any):
     if isinstance(result, Mapping) and result.get("schema_version") == "gravity.agent-batch.v1":
-        from gravity_sdk.agent_batch import iter_ndjson_records
+        from gravity_sdk.agents.batch import iter_ndjson_records
         for record in iter_ndjson_records(result):
             yield json_output.dumps(
                 _sanitize_credentials(record), ensure_ascii=False, sort_keys=True

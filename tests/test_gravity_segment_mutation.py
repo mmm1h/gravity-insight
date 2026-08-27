@@ -6,7 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
-from gravity_sdk.agent_segment import segment_mutation_cards
+from gravity_sdk.agents.segment import segment_mutation_cards
 from gravity_sdk.errors import InputValidationError, PolicyViolation
 from gravity_sdk.models import load_operation_manifest
 from gravity_sdk.mutation import MutationExecutor

@@ -2,8 +2,8 @@ import json, unittest
 from unittest.mock import patch
 from gravity_sdk import GravityInsightClient
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_batch import capabilities_many
-from gravity_sdk.agent_monetization_guard import (
+from gravity_sdk.agents.batch import capabilities_many
+from gravity_sdk.agents.monetization_guard import (
     MONETIZATION_DETAIL_RAW_SELECTOR as READ,
     MONETIZATION_EXPORT_RAW_SELECTOR as EXPORT,
     monetization_guard_blocks_operation_fallback as guarded,
@@ -49,7 +49,7 @@ class MonetizationGuardAgentTests(unittest.TestCase):
                 ))
                 rendered = json.dumps(result, ensure_ascii=False)
                 self.assertFalse(any(value in rendered for value in ("north-secret", "2026-08-01", READ, EXPORT)))
-        with patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []}):
+        with patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []}):
             batch = capabilities_many(queries, client=NoScan())
         self.assertTrue(all(item["status"] == "capability_gap" for item in batch["results"]))
     def test_export_intent_is_not_claimed_as_the_read_product(self):
@@ -76,7 +76,7 @@ class MonetizationGuardAgentTests(unittest.TestCase):
                 self.assertFalse(guarded(query))
                 self.assertEqual("success", result["status"])
                 self.assertEqual(READ, result["candidates"][0]["selector"])
-    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_exact_raw_and_other_user_level_discovery_stay_compatible(self, _metadata):
         for query in (
             "monetization", "变现", "list monetization apps", "monetization report", "monetization summary",

@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from .agent_sources import workspace_catalog_fingerprint
+from .agents.sources import workspace_catalog_fingerprint
 from .errors import InputValidationError
 from .host_effects import HOST_PLAN_SCHEMA_VERSION, compile_host_plan
 from .host_plan_execution import execute_host_plan

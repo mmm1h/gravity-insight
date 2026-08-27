@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
-from .agent_monetization_guard import MONETIZATION_DETAIL_RAW_SELECTOR
+from .agents.monetization_guard import MONETIZATION_DETAIL_RAW_SELECTOR
 from .export_completion import MONETIZATION_EXPORT_OPERATION, UPSTREAM_FILE_ROW_LIMIT
 from .export_models import _export_error
 

@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
-from gravity_sdk.agent_capabilities import composite_capability_inventory
+from gravity_sdk.agents.batch_sources import AgentSourceSnapshot
+from gravity_sdk.agents.capabilities import composite_capability_inventory
 from gravity_sdk.errors import error_detail_from_exception, exit_code_for_error
 from gravity_sdk.workspace import load_workspace
 from gravity_sdk.workspace_semantic_context import SemanticContextError

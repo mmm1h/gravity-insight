@@ -5,8 +5,8 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from gravity_sdk import GravitySDK, cli
-from gravity_sdk.agent_capabilities import composite_capability_cards
-from gravity_sdk.agent_handoff import attach_plan_node
+from gravity_sdk.agents.capabilities import composite_capability_cards
+from gravity_sdk.agents.handoff import attach_plan_node
 from gravity_sdk.dashboard_snapshot_cli import dispatch_dashboard_analysis
 from gravity_sdk.errors import InputValidationError
 from gravity_sdk.plan import AdapterContext

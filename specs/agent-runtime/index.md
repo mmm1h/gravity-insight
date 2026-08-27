@@ -81,9 +81,9 @@ The following files are shared-spine integration points and cannot be wired conc
 
 ```text
 src/gravity_sdk/plan_adapters.py
-src/gravity_sdk/agent_capabilities.py
-src/gravity_sdk/agent_composite.py
-src/gravity_sdk/agent_handoff.py
+src/gravity_sdk/agents/capabilities.py
+src/gravity_sdk/agents/composite.py
+src/gravity_sdk/agents/handoff.py
 src/gravity_sdk/cli.py
 src/gravity_sdk/__main__.py
 ```
@@ -112,7 +112,7 @@ locator；docstring、basename、目录、前缀、消费者文件数、migratio
 不可变迁移账本无差集（该等式不能独立证明账本本身没有误纳）。`agent_pagination` 合并删除，
 `agent_runtime_contracts` 以 `shared_runtime_contract`、`find.py` 以
 `independent_primary_protocol` 排除——前者实际位于全作用域 facade 闭包内，不再以"不可达"为由。
-早先按队列外补入的 `relative_date_agent`（唯一消费者为 `agent_handoff`）在新判据下改由
+早先按队列外补入的 `agents.relative_date`（唯一消费者为 `agents.handoff`）在新判据下改由
 `fill_agent_relative_dates(card, query, workspace, now)` 的协议事实独立立住，不再依赖
 消费者关系或 docstring 词表。
 不变性证据：642 节点全部重命名、docstring 全部中和、消费者节点拆并使节点 642→657、边
@@ -135,8 +135,8 @@ locator；docstring、basename、目录、前缀、消费者文件数、migratio
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=ff63202cfbfa6ab1f9b020e1623456511e92a52c6a5214ab33470cc51a25e588`；
-`live_checkpoint_tracked_sites=645`。
+`live_checkpoint_sha256=54dfce164b420a62c09d55cc46f45fd83f88023e2dab65680ac7ce5b8fe579c0`；
+`live_checkpoint_tracked_sites=311`。
 
 The user approved the R01 binding and designated the Requirement document as
 the internal program delivery ledger on 2026-08-21. The same authorization lets

@@ -79,8 +79,8 @@ and agent handoff have ordering dependencies. For a directive-approved
 must still deliver its own complete core/surface/handoff slice rather than
 splitting that milestone again by implementation phase.
 
-The shared spine is `plan_adapters.py`, `agent_capabilities.py`,
-`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve
+The shared spine is `plan_adapters.py`, `agents/capabilities.py`,
+`agents/composite.py`, `agents/handoff.py`, `cli.py`, and `__main__.py`. Preserve
 their characterized behavior unless the active requirement explicitly migrates
 it; do not create wrappers merely to avoid an approved structural change.
 Serialize the final wiring of every unit that touches the spine through a single

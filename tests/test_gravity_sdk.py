@@ -290,7 +290,7 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual("metric", local["candidates"][0]["metadata_kind"])
         self.assertEqual({"insight": 0}, built)
 
-        with patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={
+        with patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={
             "results": [{
                 "kind": "metric", "scope": "workspace", "source": "report_metrics",
                 "operation_id": "report.multidim.metric.list", "name": "Revenue",

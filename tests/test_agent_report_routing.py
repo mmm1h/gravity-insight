@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.agent_report_routing import NO_SPEC_PRODUCTS, REPORT_PRODUCTS
+from gravity_sdk.agents.report_routing import NO_SPEC_PRODUCTS, REPORT_PRODUCTS
 
 
 class AgentReportRoutingTests(unittest.TestCase):

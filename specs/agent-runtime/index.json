@@ -10,9 +10,9 @@
   },
   "shared_spine": [
     "src/gravity_sdk/plan_adapters.py",
-    "src/gravity_sdk/agent_capabilities.py",
-    "src/gravity_sdk/agent_composite.py",
-    "src/gravity_sdk/agent_handoff.py",
+    "src/gravity_sdk/agents/capabilities.py",
+    "src/gravity_sdk/agents/composite.py",
+    "src/gravity_sdk/agents/handoff.py",
     "src/gravity_sdk/cli.py",
     "src/gravity_sdk/__main__.py"
   ],
@@ -149,9 +149,9 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "ff63202cfbfa6ab1f9b020e1623456511e92a52c6a5214ab33470cc51a25e588",
+          "live_checkpoint_sha256": "54dfce164b420a62c09d55cc46f45fd83f88023e2dab65680ac7ce5b8fe579c0",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
-          "live_checkpoint_tracked_sites": 645,
+          "live_checkpoint_tracked_sites": 311,
           "live_checkpoint_unclassified_sites": 0,
           "live_checkpoint_blocking_sites": 0,
           "requires": [

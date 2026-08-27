@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
 
-from .agent_discovery_support import (
+from .agents.discovery_support import (
     NO_CANDIDATE_NEXT_ACTION,
     answerable_examples,
     catalog_browse_next,
