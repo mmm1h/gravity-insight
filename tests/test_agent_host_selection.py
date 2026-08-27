@@ -152,6 +152,7 @@ class HostProductSelectionTests(unittest.TestCase):
 
     def test_cli_default_and_unspecified_behavior_remain_recognizer(self) -> None:
         args = build_parser().parse_args(["agent", "event analysis"])
+        self.assertEqual("recognizer", DEFAULT_ROUTING_MODE)
         self.assertEqual(DEFAULT_ROUTING_MODE, args.routing)
         self.assertIsNone(args.host_selection)
         result = run_agent_command(args, self.client)
@@ -166,6 +167,110 @@ class HostProductSelectionTests(unittest.TestCase):
         )
         self.assertNotIn("routing", result["next_action"])
         self.assertEqual("analysis.query.spec:event", result["candidates"][0]["selector"])
+
+    def test_default_policy_can_flip_without_redefining_routing_arms(self) -> None:
+        query = self.response()["query"]
+        selection = self.response("analysis.query.spec")
+        recognizer_mode = "recognizer"
+        expected_message = (
+            "actual value: invalid Agent routing inputs; allowed value: recognizer "
+            "without host_selection, or host_catalog with one complete selection"
+        )
+        expected_next_action = (
+            "Use recognizer as the offline floor when the caller cannot emit "
+            "a selection, or fetch the host catalog and pass its exact "
+            "selection with host_catalog routing."
+        )
+
+        import argparse
+        import ast
+        import types
+        from pathlib import Path
+
+        source_path = Path(resolve_host_product_selection.__code__.co_filename)
+        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == "DEFAULT_ROUTING_MODE"
+                for target in node.targets
+            ):
+                node.value = ast.copy_location(
+                    ast.Constant(value="host_catalog"),
+                    node.value,
+                )
+                break
+        else:
+            self.fail("host selection has no default routing assignment")
+        ast.fix_missing_locations(tree)
+        counterfactual = types.ModuleType(
+            "gravity_sdk.agents._host_selection_counterfactual"
+        )
+        counterfactual.__file__ = str(source_path)
+        counterfactual.__package__ = "gravity_sdk.agents"
+        exec(compile(tree, str(source_path), "exec"), counterfactual.__dict__)
+
+        with self.subTest(contract="mode set"):
+            self.assertEqual(
+                (recognizer_mode, counterfactual.HOST_ROUTING_MODE),
+                counterfactual.ROUTING_MODES,
+            )
+            self.assertEqual(2, len(set(counterfactual.ROUTING_MODES)))
+
+        parser = argparse.ArgumentParser(add_help=False)
+        counterfactual.add_host_routing_arguments(parser)
+        self.assertEqual(
+            counterfactual.HOST_ROUTING_MODE,
+            parser.parse_args([]).routing,
+        )
+
+        missing_routing = types.SimpleNamespace(query=query, host_selection=selection)
+        host_result = counterfactual.host_routing_command(
+            missing_routing,
+            self.client,
+        )
+        self.assertEqual(
+            counterfactual.HOST_ROUTING_MODE,
+            host_result["routing_mode"],
+        )
+
+        with self.subTest(contract="recognizer arm"):
+            self.assertIsNone(
+                counterfactual.host_routing_discovery(
+                    query,
+                    self.client,
+                    routing=recognizer_mode,
+                    host_selection=None,
+                    workspace=None,
+                    plan_node_namespace=None,
+                )
+            )
+        with self.subTest(contract="recognizer identity"):
+            self.assertEqual(
+                recognizer_mode,
+                counterfactual.RECOGNIZER_ROUTING_MODE,
+            )
+
+        invalid_inputs = (
+            (recognizer_mode, selection),
+            ("unknown", None),
+        )
+        for routing, host_selection in invalid_inputs:
+            with self.subTest(routing=routing, host_selection=host_selection):
+                with self.assertRaises(InputValidationError) as caught:
+                    counterfactual.host_routing_discovery(
+                        query,
+                        self.client,
+                        routing=routing,
+                        host_selection=host_selection,
+                        workspace=None,
+                        plan_node_namespace=None,
+                    )
+                self.assertEqual(expected_message, str(caught.exception))
+                self.assertEqual("routing", caught.exception.field)
+                self.assertEqual(
+                    expected_next_action,
+                    caught.exception.next_action,
+                )
 
     def test_recognizer_upgrade_carries_selection_schema_and_copyable_example(self) -> None:
         result = run_agent_command(
