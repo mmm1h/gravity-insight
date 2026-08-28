@@ -16,7 +16,6 @@ import json
 from pathlib import Path
 import time
 from typing import Any, Mapping, Sequence
-from urllib.parse import urlsplit
 import zipfile
 
 import requests
@@ -26,7 +25,12 @@ from gravity_sdk.paths import CONTRACT_ROOT, TMP_ROOT
 
 from .core import REPO_ROOT
 from .privacy import response_schema_sketch
-from .transport import RecordingSession, RequestDiscipline, build_runtime
+from .transport import (
+    RecordingSession,
+    RequestDiscipline,
+    build_runtime,
+    trusted_export_download,
+)
 
 
 EXPORT_CONTRACT_PATH = CONTRACT_ROOT / "exports" / "routes-v1.json"
@@ -419,101 +423,74 @@ class ExportVerificationRunner:
         status_authorization: Any,
         policy: Any,
     ) -> dict[str, Any]:
-        url = _first_path(status_payload, ("data.download_url", "download_url"))
-        if not isinstance(url, str) or not url:
-            raise RuntimeError("READY status omitted download_url")
-        parsed = urlsplit(url)
-        extension, mime_type, magic = _file_protocol(parsed.path)
-        trusted = self.catalog["export.material.report.start"]["privacy"]
-        hosts = frozenset(str(value) for value in trusted["allowed_hosts"])
-        prefixes = {
-            str(host): tuple(str(value) for value in values)
-            for host, values in trusted["allowed_path_prefixes"].items()
-        }
-        if parsed.scheme != "https" or parsed.hostname not in hosts:
-            raise RuntimeError("export download host is outside the verified allowlist")
-        if not any(
-            parsed.path.startswith(prefix)
-            for prefix in prefixes.get(parsed.hostname, ())
-        ):
-            raise RuntimeError("export download path is outside the verified tenant prefix")
+        return _download_and_inspect(
+            self, job_id, create_contract, status_payload,
+            status_authorization, policy,
+        )
 
-        blob = _sdk_module("blob")
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=300)
-        authorization_scope = (
-            f"export_probe:{create_contract['operation_id']}:{job_id}"
+
+def _download_and_inspect(
+    runner: ExportVerificationRunner, job_id: str,
+    create_contract: Mapping[str, Any], status_payload: Mapping[str, Any],
+    status_authorization: Any, policy: Any,
+) -> dict[str, Any]:
+    url = _first_path(status_payload, ("data.download_url", "download_url"))
+    if not isinstance(url, str) or not url:
+        raise RuntimeError("READY status omitted download_url")
+    trusted = runner.catalog["export.material.report.start"]["privacy"]
+    parsed, extension, mime_type, magic, hosts, prefixes = trusted_export_download(
+        url, trusted
+    )
+    blob = _sdk_module("blob")
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=300)
+    authorization_scope = f"export_probe:{create_contract['operation_id']}:{job_id}"
+    receipt = policy.authorize_blob_download(
+        status_authorization, job_id=job_id, url=url, declared_path=parsed.path,
+        expires_at=expires_at, authorization_scope=authorization_scope,
+    )
+    source = blob.AuthorizedBlobSource(
+        url=url, declared_path=parsed.path, expires_at=expires_at,
+        authorization_scope=authorization_scope, job_id=job_id,
+        declared_mime_type=mime_type, effect_receipt=receipt,
+    )
+    blob_policy = blob.BlobPolicy(
+        allowed_extensions=frozenset({extension}),
+        allowed_mime_types=frozenset({mime_type}),
+        magic_signatures={extension: (blob.MagicSignature(0, magic),)},
+        mime_types_by_extension={extension: (mime_type,)},
+        max_declared_size_bytes=100 * 1024 * 1024,
+        max_stream_size_bytes=100 * 1024 * 1024, allowed_hosts=hosts,
+        allowed_redirect_hosts=frozenset(), allowed_path_prefixes=prefixes,
+        archive_policy=blob.ArchivePolicy(
+            enabled=extension == ".xlsx",
+            max_uncompressed_size_bytes=128 * 1024 * 1024,
+            max_entries=1_000, max_nested_depth=0, max_compression_ratio=100.0,
+        ),
+        destination_root=runner.output_root, temporary_root=runner.output_root,
+        overwrite_policy="deny", require_effect_receipt=True,
+    )
+    destination = create_contract["operation_id"].replace(".", "-") + extension
+    path = runner.output_root / destination
+    try:
+        downloaded = blob.SafeBlobTransfer().download(source, destination, blob_policy)
+        schema, rows, worksheet_count = _inspect_table(path, extension)
+        narrow_rejected, exact_accepted = validate_privacy_gate(
+            schema, classification=str(create_contract["privacy"]["classification"])
         )
-        receipt = policy.authorize_blob_download(
-            status_authorization,
-            job_id=job_id,
-            url=url,
-            declared_path=parsed.path,
-            expires_at=expires_at,
-            authorization_scope=authorization_scope,
-        )
-        source = blob.AuthorizedBlobSource(
-            url=url,
-            declared_path=parsed.path,
-            expires_at=expires_at,
-            authorization_scope=authorization_scope,
-            job_id=job_id,
-            declared_mime_type=mime_type,
-            effect_receipt=receipt,
-        )
-        blob_policy = blob.BlobPolicy(
-            allowed_extensions=frozenset({extension}),
-            allowed_mime_types=frozenset({mime_type}),
-            magic_signatures={extension: (blob.MagicSignature(0, magic),)},
-            mime_types_by_extension={extension: (mime_type,)},
-            max_declared_size_bytes=100 * 1024 * 1024,
-            max_stream_size_bytes=100 * 1024 * 1024,
-            allowed_hosts=hosts,
-            allowed_redirect_hosts=frozenset(),
-            allowed_path_prefixes=prefixes,
-            archive_policy=blob.ArchivePolicy(
-                enabled=extension == ".xlsx",
-                max_uncompressed_size_bytes=128 * 1024 * 1024,
-                max_entries=1_000,
-                max_nested_depth=0,
-                max_compression_ratio=100.0,
-            ),
-            destination_root=self.output_root,
-            temporary_root=self.output_root,
-            overwrite_policy="deny",
-            require_effect_receipt=True,
-        )
-        destination = (
-            create_contract["operation_id"].replace(".", "-") + extension
-        )
-        path = self.output_root / destination
-        try:
-            downloaded = blob.SafeBlobTransfer().download(
-                source,
-                destination,
-                blob_policy,
-            )
-            schema, rows, worksheet_count = _inspect_table(path, extension)
-            narrow_rejected, exact_accepted = validate_privacy_gate(
-                schema,
-                classification=str(create_contract["privacy"]["classification"]),
-            )
-            return {
-                "format": extension.lstrip("."),
-                "mime_type": downloaded.content_type,
-                "size_bytes": downloaded.size_bytes,
-                "rows": rows,
-                "columns": list(schema),
-                "column_count": len(schema),
-                "worksheet_count": worksheet_count,
-                "etag_present": downloaded.etag is not None,
-                "last_modified_present": downloaded.last_modified is not None,
-                "narrow_allowlist_rejected": narrow_rejected,
-                "exact_allowlist_accepted": exact_accepted,
-                "privacy_gate_passed": narrow_rejected and exact_accepted,
-                "temporary_file_deleted": True,
-            }
-        finally:
-            path.unlink(missing_ok=True)
+        return {
+            "format": extension.lstrip("."), "mime_type": downloaded.content_type,
+            "size_bytes": downloaded.size_bytes, "rows": rows,
+            "columns": list(schema), "column_count": len(schema),
+            "worksheet_count": worksheet_count,
+            "etag_present": downloaded.etag is not None,
+            "last_modified_present": downloaded.last_modified is not None,
+            "narrow_allowlist_rejected": narrow_rejected,
+            "exact_allowlist_accepted": exact_accepted,
+            "privacy_gate_passed": narrow_rejected and exact_accepted,
+            "temporary_file_deleted": True,
+        }
+    finally:
+        path.unlink(missing_ok=True)
 
 
 def validate_privacy_gate(
@@ -527,10 +504,8 @@ def validate_privacy_gate(
     privacy = _sdk_module("export_privacy")
     narrow = schema[:-1] if len(schema) > 1 else ("__probe_no_actual_column__",)
     narrow_contract = models.ExportPrivacyContract(
-        allowed_columns=narrow,
-        required_columns=(),
-        classification=classification,
-        format="xlsx",
+        allowed_columns=narrow, required_columns=(),
+        classification=classification, format="xlsx",
     )
     narrow_rejected = False
     try:
@@ -538,10 +513,8 @@ def validate_privacy_gate(
     except Exception as exc:
         narrow_rejected = getattr(exc, "code", None) == "EXPORT_SCHEMA_MISMATCH"
     exact_contract = models.ExportPrivacyContract(
-        allowed_columns=schema,
-        required_columns=schema,
-        classification=classification,
-        format="xlsx",
+        allowed_columns=schema, required_columns=schema,
+        classification=classification, format="xlsx",
     )
     exact_accepted = True
     try:
@@ -566,17 +539,6 @@ def _inspect_table(path: Path, extension: str) -> tuple[tuple[str, ...], int, in
     if any(schema != schemas[0] for schema in schemas[1:]):
         raise ValueError("export worksheets do not share one schema")
     return schemas[0], sum(item[1] for item in observed), len(worksheets)
-
-
-def _file_protocol(path: str) -> tuple[str, str, bytes]:
-    lowered = path.casefold()
-    if lowered.endswith(".xlsx"):
-        return (
-            ".xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            b"PK\x03\x04",
-        )
-    raise ValueError("export download has an unverified file extension")
 
 
 def _task_id(payload: Any) -> tuple[str | int | None, str | None]:

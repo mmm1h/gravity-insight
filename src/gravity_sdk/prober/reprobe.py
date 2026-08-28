@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -302,6 +303,129 @@ def _write_parameter_selection(
     )
 
 
+@dataclass(frozen=True)
+class ProbeContext:
+    discipline: RequestDiscipline
+    recording: RecordingSession
+    runtime: Any
+    stable_client: Any
+
+
+def build_probe_context(
+    *, session: Any | None, interval_seconds: float, request_limit: int,
+) -> ProbeContext:
+    if session is None:
+        try:
+            import requests
+        except ImportError as exc:
+            raise RuntimeError("requests is required for online Gravity probing") from exc
+        session = requests.Session()
+    discipline = RequestDiscipline(
+        interval_seconds=interval_seconds, request_limit=request_limit, hard_limit=900
+    )
+    recording = RecordingSession(session, discipline)
+    runtime = build_runtime(recording)
+    stable_client = sdk_parts()["GravityInsightClient"].from_env(
+        runtime=runtime, timeout=120.0, attempts=1
+    )
+    return ProbeContext(discipline, recording, runtime, stable_client)
+
+
+def run_parameter_targets(
+    context: ProbeContext, operation_ids: Sequence[str], *, draft_root: Path,
+    evidence_root: Path, results_path: Path,
+) -> tuple[list[dict[str, Any]], bool]:
+    results: list[dict[str, Any]] = []
+    stopped = False
+    for operation_id in operation_ids:
+        if context.discipline.request_limit - context.discipline.total < 8:
+            stopped = True
+            break
+        try:
+            result = probe_draft(
+                read_json(draft_root / f"{operation_id}.json"),
+                stable_client=context.stable_client, runtime=context.runtime,
+                recording=context.recording, evidence_root=evidence_root,
+                draft_root=draft_root,
+            )
+        except RuntimeError as exc:
+            if "budget exhausted" in str(exc):
+                stopped = True
+                break
+            raise
+        results.append(result)
+        write_json(results_path, {"results": results})
+        if context.discipline.domain_stopped:
+            break
+    return results, stopped
+
+
+def run_scoped_targets(
+    context: ProbeContext, operation_ids: Sequence[str], *, draft_root: Path,
+    evidence_root: Path, results_path: Path,
+) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+    for operation_id in operation_ids:
+        if context.discipline.request_limit - context.discipline.total < 10:
+            break
+        path = draft_root / f"{operation_id}.json"
+        if not path.is_file():
+            continue
+        results.append(probe_draft(
+            read_json(path), stable_client=context.stable_client,
+            runtime=context.runtime, recording=context.recording,
+            evidence_root=evidence_root, draft_root=draft_root,
+        ))
+        write_json(results_path, {"results": results})
+        if context.discipline.domain_stopped:
+            break
+    return results
+
+
+def promote_probe_results(
+    results: Sequence[Mapping[str, Any]], *, draft_root: Path,
+    operation_root: Path,
+) -> list[dict[str, Any]]:
+    promoted: list[dict[str, Any]] = []
+    for result in results:
+        operation_id = str(result["operation_id"])
+        if result.get("eligible") and (draft_root / f"{operation_id}.json").is_file():
+            promoted.extend(promote_drafts(
+                [operation_id], draft_root=draft_root,
+                operation_root=operation_root, compile_products=False,
+            ))
+    if promoted:
+        from gravity_sdk.compiler import ContractCompiler
+
+        ContractCompiler().compile()
+    return promoted
+
+
+def parameter_adjustment_stats(
+    results: Sequence[Mapping[str, Any]],
+) -> tuple[int, int]:
+    adjustment_count = adjusted_successes = 0
+    for result in results:
+        evidence = read_json(REPO_ROOT / str(result["evidence"]))
+        semantic = evidence.get("semantic_errors", {})
+        adjustments = semantic.get("parameter_adjustments", []) if isinstance(semantic, Mapping) else []
+        adjustment_count += len(adjustments) if isinstance(adjustments, list) else 0
+        if result.get("conclusion") == "success" and adjustments:
+            adjusted_successes += 1
+    return adjustment_count, adjusted_successes
+
+
+def request_summary(discipline: RequestDiscipline) -> dict[str, Any]:
+    return {
+        "probe_total": discipline.total, "failed_http": discipline.failed,
+        "backoff_events": discipline.backoff_events,
+        "backoff_terminations": discipline.backoff_terminations,
+        "request_limit": discipline.request_limit,
+        "minimum_interval_ms": int(discipline.interval_seconds * 1000),
+        "concurrency": 1,
+    }
+
+
 def run_parameter_reprobes(
     *, interval_seconds: float = 0.31, request_limit: int = 850,
     draft_root: Path = DRAFT_ROOT, operation_root: Path = OPERATION_ROOT,
@@ -325,77 +449,23 @@ def run_parameter_reprobes(
         operation_ids.append(DEVELOPER_APPLICATION_OPERATION)
     _write_parameter_selection(report_root, draft_root, operation_ids, skipped)
 
-    discipline = RequestDiscipline(
-        interval_seconds=interval_seconds,
+    context = build_probe_context(
+        session=session, interval_seconds=interval_seconds,
         request_limit=request_limit,
-        hard_limit=900,
     )
-    if session is None:
-        try:
-            import requests
-        except ImportError as exc:
-            raise RuntimeError("requests is required for online Gravity probing") from exc
-        session = requests.Session()
-    recording = RecordingSession(session, discipline)
-    runtime = build_runtime(recording)
-    parts = sdk_parts()
-    stable_client = parts["GravityInsightClient"].from_env(
-        runtime=runtime, timeout=120.0, attempts=1
+    results, stopped_for_budget = run_parameter_targets(
+        context, operation_ids, draft_root=draft_root,
+        evidence_root=evidence_root,
+        results_path=report_root / "probe-results.json",
     )
-    results: list[dict[str, Any]] = []
-    stopped_for_budget = False
-    for operation_id in operation_ids:
-        if discipline.request_limit - discipline.total < 8:
-            stopped_for_budget = True
-            break
-        source = read_json(draft_root / f"{operation_id}.json")
-        try:
-            result = probe_draft(
-                source, stable_client=stable_client, runtime=runtime,
-                recording=recording, evidence_root=evidence_root,
-                draft_root=draft_root,
-            )
-        except RuntimeError as exc:
-            if "budget exhausted" in str(exc):
-                stopped_for_budget = True
-                break
-            raise
-        results.append(result)
-        write_json(report_root / "probe-results.json", {"results": results})
-        if discipline.domain_stopped:
-            break
 
     developer_evidence = prune_missing_probe_references(
         DEVELOPER_APPLICATION_OPERATION, draft_root=draft_root
     )
-    eligible = [
-        str(result["operation_id"])
-        for result in results
-        if result.get("eligible")
-        and (draft_root / f"{result['operation_id']}.json").is_file()
-    ]
-    promoted: list[dict[str, Any]] = []
-    for operation_id in eligible:
-        promoted.extend(
-            promote_drafts(
-                [operation_id], draft_root=draft_root,
-                operation_root=operation_root, compile_products=False,
-            )
-        )
-    if promoted:
-        from gravity_sdk.compiler import ContractCompiler
-
-        ContractCompiler().compile()
-
-    adjustment_count = 0
-    adjusted_successes = 0
-    for result in results:
-        evidence = read_json(REPO_ROOT / str(result["evidence"]))
-        semantic = evidence.get("semantic_errors", {})
-        adjustments = semantic.get("parameter_adjustments", []) if isinstance(semantic, Mapping) else []
-        adjustment_count += len(adjustments) if isinstance(adjustments, list) else 0
-        if result.get("conclusion") == "success" and adjustments:
-            adjusted_successes += 1
+    promoted = promote_probe_results(
+        results, draft_root=draft_root, operation_root=operation_root
+    )
+    adjustment_count, adjusted_successes = parameter_adjustment_stats(results)
 
     comparison = failure_comparison(
         inventory, draft_root=draft_root, operation_root=operation_root
@@ -418,15 +488,7 @@ def run_parameter_reprobes(
         "succeeded_after_parameter_adjustment": adjusted_successes,
         "stopped_for_budget": stopped_for_budget,
         "developer_application_evidence": developer_evidence,
-        "requests": {
-            "probe_total": discipline.total,
-            "failed_http": discipline.failed,
-            "backoff_events": discipline.backoff_events,
-            "backoff_terminations": discipline.backoff_terminations,
-            "request_limit": discipline.request_limit,
-            "minimum_interval_ms": int(discipline.interval_seconds * 1000),
-            "concurrency": 1,
-        },
+        "requests": request_summary(context.discipline),
         "assembly": {
             key: value for key, value in assembly.items() if key != "operations"
         },
@@ -448,64 +510,20 @@ def run_scoped_reprobes(
     if not operation_ids:
         raise ValueError("scoped reprobe requires at least one operation")
     assert_available_probe_items(operation_ids, draft_root=draft_root)
-    if session is None:
-        try:
-            import requests
-        except ImportError as exc:
-            raise RuntimeError("requests is required for online Gravity probing") from exc
-        session = requests.Session()
     initial_stable = len(_stable_ids(operation_root))
-    discipline = RequestDiscipline(
-        interval_seconds=interval_seconds, request_limit=request_limit,
-        hard_limit=900,
+    context = build_probe_context(
+        session=session, interval_seconds=interval_seconds,
+        request_limit=request_limit,
     )
-    recording = RecordingSession(session, discipline)
-    runtime = build_runtime(recording)
-    parts = sdk_parts()
-    stable_client = parts["GravityInsightClient"].from_env(
-        runtime=runtime, timeout=120.0, attempts=1
+    results = run_scoped_targets(
+        context, operation_ids, draft_root=draft_root,
+        evidence_root=evidence_root,
+        results_path=report_root / f"{report_name}-results.json",
     )
-    results: list[dict[str, Any]] = []
-    for operation_id in operation_ids:
-        if discipline.request_limit - discipline.total < 10:
-            break
-        path = draft_root / f"{operation_id}.json"
-        if not path.is_file():
-            continue
-        result = probe_draft(
-            read_json(path), stable_client=stable_client, runtime=runtime,
-            recording=recording, evidence_root=evidence_root,
-            draft_root=draft_root,
-        )
-        results.append(result)
-        write_json(
-            report_root / f"{report_name}-results.json", {"results": results}
-        )
-        if discipline.domain_stopped:
-            break
-    promoted: list[dict[str, Any]] = []
-    for result in results:
-        operation_id = str(result["operation_id"])
-        path = draft_root / f"{operation_id}.json"
-        if result.get("eligible") and path.is_file():
-            promoted.extend(
-                promote_drafts(
-                    [operation_id], draft_root=draft_root,
-                    operation_root=operation_root, compile_products=False,
-                )
-            )
-    if promoted:
-        from gravity_sdk.compiler import ContractCompiler
-
-        ContractCompiler().compile()
-    adjustments = 0
-    adjusted_successes = 0
-    for result in results:
-        evidence = read_json(REPO_ROOT / str(result["evidence"]))
-        semantic = evidence.get("semantic_errors", {})
-        learned = semantic.get("parameter_adjustments", []) if isinstance(semantic, Mapping) else []
-        adjustments += len(learned) if isinstance(learned, list) else 0
-        adjusted_successes += bool(result.get("conclusion") == "success" and learned)
+    promoted = promote_probe_results(
+        results, draft_root=draft_root, operation_root=operation_root
+    )
+    adjustments, adjusted_successes = parameter_adjustment_stats(results)
     final_stable = len(_stable_ids(operation_root))
     summary = {
         "schema_version": "gravity-insight.scoped-reprobe.v1",
@@ -519,15 +537,7 @@ def run_scoped_reprobes(
         "stable_net_increase": final_stable - initial_stable,
         "parameter_retry_adjustments": adjustments,
         "succeeded_after_parameter_adjustment": adjusted_successes,
-        "requests": {
-            "probe_total": discipline.total,
-            "failed_http": discipline.failed,
-            "backoff_events": discipline.backoff_events,
-            "backoff_terminations": discipline.backoff_terminations,
-            "request_limit": discipline.request_limit,
-            "minimum_interval_ms": int(discipline.interval_seconds * 1000),
-            "concurrency": 1,
-        },
+        "requests": request_summary(context.discipline),
     }
     write_json(report_root / f"{report_name}-summary.json", summary)
     return summary

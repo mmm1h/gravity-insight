@@ -186,133 +186,136 @@ def _parameter_reprobe_auth() -> dict[str, Any]:
     return _ensure_auth()
 
 
-def run(args: argparse.Namespace) -> Mapping[str, Any]:
-    if args.command == "draft":
-        if args.all_high_certainty:
-            if any((args.path, args.family, args.business_module, args.cost)):
-                raise ValueError("--all-high-certainty cannot be combined with route filters")
-            summary = create_bulk_drafts(
-                method_certainty=args.method_certainty or "high",
-                limit=args.limit,
-            )
-            return {
-                "schema_version": "gravity-insight.prober-bulk-draft.v1",
-                "ok": True,
-                "status": "success",
-                **summary,
-            }
-        created = create_drafts(
-            paths=args.path,
-            families=args.family,
-            business_modules=args.business_module,
-            costs=args.cost,
-            method_certainty=args.method_certainty or None,
-            limit=args.limit,
-            overwrite=args.overwrite,
-            method_evidence_path=args.method_evidence,
-        )
-        return {
-            "schema_version": "gravity-insight.prober-draft.v1",
-            "ok": True,
-            "status": "success",
-            "count": len(created),
-            "drafts": created,
-        }
-    if args.command == "reserve-writes":
-        summary = create_write_registry(overwrite=args.overwrite)
-        return {
-            "schema_version": "gravity-insight.prober-write-reservation.v1",
-            "ok": True,
-            "status": "success",
-            "summary": summary,
-        }
-    if args.command == "probe":
-        auth = _probe_auth(args.operation_id, args.stable)
-        kwargs: dict[str, Any] = {}
-        if args.evidence_root is not None:
-            kwargs["evidence_root"] = args.evidence_root.resolve()
-        result = run_online_probes(
-            args.operation_id,
-            stable=args.stable,
-            interval_seconds=args.interval_ms / 1000.0,
-            request_limit=args.request_limit,
-            **kwargs,
-        )
-        result["auth"] = {
-            "auth_state": auth.get("auth_state"),
-            "can_exchange_credentials": bool(auth.get("can_exchange_credentials")),
-        }
-        return result
-    if args.command == "probe-batch":
-        auth = _batch_probe_auth()
-        result = run_batch_probes(
-            interval_seconds=args.interval_ms / 1000.0,
-            request_limit=args.request_limit,
-            promote=not args.no_promote,
-        )
-        result["auth"] = {
-            "auth_state": auth.get("auth_state"),
-            "can_exchange_credentials": bool(auth.get("can_exchange_credentials")),
-        }
-        return result
-    if args.command == "assemble-params":
-        return assemble_draft_parameters()
-    if args.command == "reprobe-params":
-        auth = _parameter_reprobe_auth()
-        result = run_parameter_reprobes(
-            interval_seconds=args.interval_ms / 1000.0,
-            request_limit=args.request_limit,
-        )
-        result["auth"] = {
-            "auth_state": auth.get("auth_state"),
-            "can_exchange_credentials": bool(auth.get("can_exchange_credentials")),
-        }
-        return result
-    if args.command == "resolve-parents":
-        auth = _ensure_auth()
-        import requests
+def _auth_result(auth: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "auth_state": auth.get("auth_state"),
+        "can_exchange_credentials": bool(auth.get("can_exchange_credentials")),
+    }
 
-        recording = RecordingSession(
-            requests.Session(),
-            RequestDiscipline(
-                interval_seconds=args.interval_ms / 1000.0,
-                request_limit=args.request_limit,
-            ),
-        )
-        runtime_instance = build_runtime(recording)
-        stable_client = sdk_parts()["GravityInsightClient"].from_env(
-            runtime=runtime_instance, timeout=120.0, attempts=1
-        )
-        kwargs: dict[str, Any] = {}
-        if args.evidence_root is not None:
-            kwargs["evidence_root"] = args.evidence_root.resolve()
-        result = resolve_parent_blockers(
-            stable_client=stable_client,
-            recording=recording,
-            operation_ids=args.operation_id,
-            **kwargs,
-        )
-        result["auth"] = {
-            "auth_state": auth.get("auth_state"),
-            "can_exchange_credentials": bool(auth.get("can_exchange_credentials")),
-        }
-        return result
-    if args.command == "promote":
-        promoted = promote_drafts(
-            args.operation_id, compile_products=not args.no_compile
+
+def _run_draft(args: argparse.Namespace) -> Mapping[str, Any]:
+    if args.all_high_certainty:
+        if any((args.path, args.family, args.business_module, args.cost)):
+            raise ValueError("--all-high-certainty cannot be combined with route filters")
+        summary = create_bulk_drafts(
+            method_certainty=args.method_certainty or "high", limit=args.limit,
         )
         return {
-            "schema_version": "gravity-insight.prober-promote.v1",
-            "ok": True,
-            "status": "success",
-            "count": len(promoted),
-            "operations": promoted,
+            "schema_version": "gravity-insight.prober-bulk-draft.v1",
+            "ok": True, "status": "success", **summary,
         }
-    if args.command == "reevaluate":
-        return reevaluate_drafts()
-    if args.command == "status":
-        return status_report(args.operation_id)
-    raise ValueError(f"unsupported prober command: {args.command}")
+    created = create_drafts(
+        paths=args.path, families=args.family,
+        business_modules=args.business_module, costs=args.cost,
+        method_certainty=args.method_certainty or None, limit=args.limit,
+        overwrite=args.overwrite, method_evidence_path=args.method_evidence,
+    )
+    return {
+        "schema_version": "gravity-insight.prober-draft.v1",
+        "ok": True, "status": "success", "count": len(created),
+        "drafts": created,
+    }
+
+
+def _run_reserve_writes(args: argparse.Namespace) -> Mapping[str, Any]:
+    return {
+        "schema_version": "gravity-insight.prober-write-reservation.v1",
+        "ok": True, "status": "success",
+        "summary": create_write_registry(overwrite=args.overwrite),
+    }
+
+
+def _run_probe(args: argparse.Namespace) -> Mapping[str, Any]:
+    auth = _probe_auth(args.operation_id, args.stable)
+    kwargs = (
+        {"evidence_root": args.evidence_root.resolve()}
+        if args.evidence_root is not None else {}
+    )
+    result = run_online_probes(
+        args.operation_id, stable=args.stable,
+        interval_seconds=args.interval_ms / 1000.0,
+        request_limit=args.request_limit, **kwargs,
+    )
+    result["auth"] = _auth_result(auth)
+    return result
+
+
+def _run_probe_batch(args: argparse.Namespace) -> Mapping[str, Any]:
+    auth = _batch_probe_auth()
+    result = run_batch_probes(
+        interval_seconds=args.interval_ms / 1000.0,
+        request_limit=args.request_limit, promote=not args.no_promote,
+    )
+    result["auth"] = _auth_result(auth)
+    return result
+
+
+def _run_reprobe_params(args: argparse.Namespace) -> Mapping[str, Any]:
+    auth = _parameter_reprobe_auth()
+    result = run_parameter_reprobes(
+        interval_seconds=args.interval_ms / 1000.0,
+        request_limit=args.request_limit,
+    )
+    result["auth"] = _auth_result(auth)
+    return result
+
+
+def _run_resolve_parents(args: argparse.Namespace) -> Mapping[str, Any]:
+    auth = _ensure_auth()
+    import requests
+
+    recording = RecordingSession(
+        requests.Session(),
+        RequestDiscipline(
+            interval_seconds=args.interval_ms / 1000.0,
+            request_limit=args.request_limit,
+        ),
+    )
+    runtime_instance = build_runtime(recording)
+    stable_client = sdk_parts()["GravityInsightClient"].from_env(
+        runtime=runtime_instance, timeout=120.0, attempts=1
+    )
+    kwargs = (
+        {"evidence_root": args.evidence_root.resolve()}
+        if args.evidence_root is not None else {}
+    )
+    result = resolve_parent_blockers(
+        stable_client=stable_client, recording=recording,
+        operation_ids=args.operation_id, **kwargs,
+    )
+    result["auth"] = _auth_result(auth)
+    return result
+
+
+def _run_promote(args: argparse.Namespace) -> Mapping[str, Any]:
+    promoted = promote_drafts(
+        args.operation_id, compile_products=not args.no_compile
+    )
+    return {
+        "schema_version": "gravity-insight.prober-promote.v1",
+        "ok": True, "status": "success", "count": len(promoted),
+        "operations": promoted,
+    }
+
+
+def run(args: argparse.Namespace) -> Mapping[str, Any]:
+    commands = {
+        "draft": _run_draft,
+        "reserve-writes": _run_reserve_writes,
+        "probe": _run_probe,
+        "probe-batch": _run_probe_batch,
+        "assemble-params": lambda namespace: assemble_draft_parameters(),
+        "reprobe-params": _run_reprobe_params,
+        "resolve-parents": _run_resolve_parents,
+        "promote": _run_promote,
+        "reevaluate": lambda namespace: reevaluate_drafts(),
+        "status": lambda namespace: status_report(namespace.operation_id),
+    }
+    try:
+        command = commands[args.command]
+    except KeyError as exc:
+        raise ValueError(f"unsupported prober command: {args.command}") from exc
+    return command(args)
 
 
 def _write_json(value: Any, *, stream: Any = None) -> None:
