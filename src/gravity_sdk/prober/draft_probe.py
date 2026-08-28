@@ -13,8 +13,9 @@ from .drafts import refresh_structured_blockers
 from .parameters import apply_error_learning
 from .probe_support import (
     assert_read_only_source, conclusion, contract_with_optional_required, evidence_path, family_id,
-    last_primary, observation_summary, privacy_summary, probe_pagination,
-    relative, request_stats, resolve_inputs, semantic_success,
+    collect_batch_evidence, final_batch_summary, final_operation_rows, last_primary,
+    observation_summary, privacy_summary, probe_pagination, relative, request_stats,
+    resolve_inputs, semantic_success, stable_operation_ids,
 )
 from .promotion import evaluate_gate, save_draft
 from .read_semantics import assert_probe_read_semantics

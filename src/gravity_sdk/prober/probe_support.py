@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import time
+from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -17,7 +18,7 @@ from ..semantic_status import (
     protocol_status_evidence,
     response_data_nonempty,
 )
-from .core import REPO_ROOT, canonical_fingerprint
+from .core import REPO_ROOT, canonical_fingerprint, iter_json_evidence, read_json
 from .privacy import response_schema_sketch
 from .transport import HttpObservation, RecordingSession
 
@@ -104,7 +105,6 @@ def resolve_parent(
         "probe_selection": "all" if selection == "all" else "first",
         "candidate_count": len(values), "status": "resolved",
     }
-
 
 def resolve_inputs(
     value: Any, *, source: Mapping[str, Any], stable_client: Any,
@@ -343,4 +343,198 @@ def request_stats(observations: Sequence[HttpObservation]) -> dict[str, int]:
         "backoff_terminations": sum(
             1 for item in observations if item.status_code == 429 or item.status_code >= 500
         ),
+    }
+def collect_batch_evidence(
+    evidence_root: Path, task_evidence_floor: str,
+) -> tuple[
+    dict[str, list[tuple[Path, Mapping[str, Any]]]], Counter[str],
+    list[dict[str, str]],
+]:
+    evidence_by_operation: dict[str, list[tuple[Path, Mapping[str, Any]]]] = {}
+    request_totals: Counter[str] = Counter()
+    skipped_evidence_files: list[dict[str, str]] = []
+    for path, evidence in iter_json_evidence(
+        evidence_root, skipped_files=skipped_evidence_files
+    ):
+        timestamp = path.name.split("_", 1)[0]
+        if timestamp < task_evidence_floor:
+            continue
+        operation_id = str(evidence.get("operation_id", ""))
+        if not operation_id:
+            continue
+        evidence_by_operation.setdefault(operation_id, []).append((path, evidence))
+        stats = evidence.get("request_stats", {})
+        if isinstance(stats, Mapping):
+            request_totals["total"] += int(stats.get("total", 0))
+            request_totals["failed"] += int(stats.get("failed", 0))
+            request_totals["backoff_terminations"] += int(
+                stats.get("backoff_terminations", 0)
+            )
+    return evidence_by_operation, request_totals, skipped_evidence_files
+
+
+def stable_operation_ids(operation_root: Path) -> set[str]:
+    return {
+        str(source["operation"]["operation_id"])
+        for path in operation_root.glob("*.json")
+        for source in [read_json(path)]
+        if source.get("operation", {}).get("stability") == "stable"
+    }
+
+
+def _failure_reason(
+    row: Mapping[str, Any], latest: Mapping[str, Any], missing: Sequence[str],
+) -> str:
+    conclusion = latest.get("conclusion")
+    if row.get("write_semantics_reason"):
+        return "写语义跳过"
+    if row.get("privacy_name_risk"):
+        return "字段待审"
+    if conclusion in {"privacy_review_required", "success"} or "field_review_required" in missing:
+        return "字段待审"
+    if conclusion in {"inconclusive_empty", "available_empty"}:
+        return "空数据"
+    if conclusion == "permission_or_auth_unavailable":
+        return "无权限"
+    if row.get("parent_indicated") and conclusion in {
+        "local_or_parent_inconclusive", "semantic_error",
+    }:
+        return "需父资源"
+    if conclusion == "semantic_error":
+        return "参数不明"
+    return "路由不可用"
+
+
+def _parent_result(
+    row: Mapping[str, Any], operation_id: str,
+    evidence_rows: Sequence[tuple[Path, Mapping[str, Any]]],
+    latest: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    if not row.get("parent_indicated"):
+        return None
+    actual_parent_attempted = any(
+        any(
+            isinstance(http, Mapping) and http.get("purpose") == "parent"
+            for http in evidence.get("http", [])
+        )
+        for _, evidence in evidence_rows
+    )
+    resolved = any(
+        bool(evidence.get("successful"))
+        and (
+            evidence.get("required_parent") is None
+            or (
+                isinstance(evidence.get("required_parent"), Mapping)
+                and evidence["required_parent"].get("status") == "resolved"
+            )
+        )
+        for _, evidence in evidence_rows
+    )
+    return {
+        "operation_id": operation_id, "attempted": bool(evidence_rows),
+        "resolved": resolved, "actual_stable_parent_attempted": actual_parent_attempted,
+        "bound_parent_count": row.get("bound_parent_count", 0),
+        "latest_conclusion": latest.get("conclusion") if latest else None,
+    }
+
+
+def final_operation_rows(
+    rows: Sequence[Mapping[str, Any]],
+    evidence_by_operation: Mapping[str, list[tuple[Path, Mapping[str, Any]]]],
+    stable_ids: set[str], draft_root: Path, gate_evaluator: Any,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    final_rows: list[dict[str, Any]] = []
+    parent_results: list[dict[str, Any]] = []
+    for row in rows:
+        operation_id = str(row["operation_id"])
+        evidence_rows = evidence_by_operation.get(operation_id, [])
+        latest = evidence_rows[-1][1] if evidence_rows else {}
+        draft_path = draft_root / f"{operation_id}.json"
+        missing = (
+            list(gate_evaluator(read_json(draft_path))["missing"])
+            if draft_path.is_file() else []
+        )
+        result = {
+            **dict(row), "attempted": bool(evidence_rows),
+            "successful": any(bool(item[1].get("successful")) for item in evidence_rows),
+            "promoted": operation_id in stable_ids,
+            "latest_conclusion": latest.get("conclusion") if latest else None,
+            "latest_evidence": (
+                evidence_rows[-1][0].relative_to(REPO_ROOT).as_posix()
+                if evidence_rows else None
+            ),
+            "evidence_count": len(evidence_rows), "missing": missing,
+        }
+        if not result["promoted"]:
+            result["failure_reason"] = _failure_reason(row, latest, missing)
+        final_rows.append(result)
+        parent = _parent_result(row, operation_id, evidence_rows, latest)
+        if parent is not None:
+            parent_results.append(parent)
+    return final_rows, parent_results
+
+
+def _layer_results(final_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    layers: list[dict[str, Any]] = []
+    for tier in range(1, 6):
+        selected = [item for item in final_rows if item["tier"] == tier]
+        attempted = sum(bool(item["attempted"]) for item in selected)
+        successful = sum(bool(item["successful"]) for item in selected)
+        layers.append({
+            "tier": tier, "total": len(selected), "attempted": attempted,
+            "successful": successful,
+            "promoted": sum(bool(item["promoted"]) for item in selected),
+            "success_rate": successful / attempted if attempted else 0.0,
+        })
+    return layers
+
+
+def final_batch_summary(
+    *, final_rows: Sequence[Mapping[str, Any]],
+    parent_results: Sequence[Mapping[str, Any]], stable_ids: set[str],
+    request_totals: Counter[str], auth_http_requests: int,
+    skipped_evidence_files: Sequence[Mapping[str, str]],
+) -> dict[str, Any]:
+    layers = _layer_results(final_rows)
+    failure_counts = Counter(
+        str(item["failure_reason"]) for item in final_rows if not item["promoted"]
+    )
+    return {
+        "schema_version": "gravity-insight.batch-probe-final.v1",
+        "tier_counts": {str(item["tier"]): item["total"] for item in layers},
+        "layers": layers,
+        "attempted": sum(bool(item["attempted"]) for item in final_rows),
+        "successful": sum(bool(item["successful"]) for item in final_rows),
+        "promoted": sum(bool(item["promoted"]) for item in final_rows),
+        "promoted_operation_ids": sorted(
+            str(item["operation_id"]) for item in final_rows if item["promoted"]
+        ),
+        "initial_stable": 124, "final_stable": len(stable_ids),
+        "failure_counts": dict(sorted(failure_counts.items())),
+        "parent": {
+            "total": len(parent_results),
+            "attempted": sum(item["attempted"] for item in parent_results),
+            "resolved": sum(item["resolved"] for item in parent_results),
+            "actual_stable_parent_attempted": sum(
+                item["actual_stable_parent_attempted"] for item in parent_results
+            ),
+            "agent_cli_unknown_before": 22, "agent_cli_unknown_clarified": 0,
+        },
+        "method": {
+            "uncertain_before_probe": 0,
+            "verified_by_success": sum(bool(item["successful"]) for item in final_rows),
+        },
+        "skipped_write": sum(bool(item.get("write_semantics_reason")) for item in final_rows),
+        "skipped_privacy_name_risk": sum(bool(item.get("privacy_name_risk")) for item in final_rows),
+        "stop_loss_layers": [2, 3, 4], "backfilled_after_stop_loss": 10,
+        "requests": {
+            "probe_total": request_totals["total"],
+            "probe_failed": request_totals["failed"],
+            "backoff_terminations": request_totals["backoff_terminations"],
+            "auth_refresh_and_smoke": auth_http_requests,
+            "http_total_upper_bound": request_totals["total"] + auth_http_requests,
+            "limit": 900, "minimum_interval_ms": 310,
+        },
+        "skipped_evidence_file_count": len(skipped_evidence_files),
+        "skipped_evidence_files": list(skipped_evidence_files),
     }

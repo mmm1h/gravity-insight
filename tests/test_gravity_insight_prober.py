@@ -724,6 +724,57 @@ class GravityInsightProberTests(unittest.TestCase):
         with pytest.raises(PolicyViolation, match="have not been verified"):
             assert_probe_read_semantics(source, confirmations_path=confirmations)
 
+    def test_batch_skip_reasons_keep_their_precedence(self) -> None:
+        row = {
+            "operation_id": "candidate.query",
+            "write_semantics_reason": "write route",
+            "privacy_name_risk": "user data",
+            "parent_indicated": False,
+        }
+
+        write_skip = prober_batch._unattempted_probe_result(
+            row, request_budget_exhausted=True, stop_loss=True
+        )
+        privacy_skip = prober_batch._unattempted_probe_result(
+            {**row, "write_semantics_reason": None},
+            request_budget_exhausted=True,
+            stop_loss=True,
+        )
+        budget_skip = prober_batch._unattempted_probe_result(
+            {**row, "write_semantics_reason": None, "privacy_name_risk": None},
+            request_budget_exhausted=True,
+            stop_loss=True,
+        )
+        stop_loss_skip = prober_batch._unattempted_probe_result(
+            {**row, "write_semantics_reason": None, "privacy_name_risk": None},
+            request_budget_exhausted=False,
+            stop_loss=True,
+        )
+        parent_attempt = prober_batch._unattempted_probe_result(
+            {
+                **row,
+                "write_semantics_reason": None,
+                "privacy_name_risk": None,
+                "parent_indicated": True,
+            },
+            request_budget_exhausted=False,
+            stop_loss=True,
+        )
+
+        assert [
+            write_skip["conclusion"],
+            privacy_skip["conclusion"],
+            budget_skip["conclusion"],
+            stop_loss_skip["conclusion"],
+            parent_attempt,
+        ] == [
+            "skipped_write_semantics",
+            "skipped_privacy_name_risk",
+            "not_attempted_budget",
+            "not_attempted_stop_loss",
+            None,
+        ]
+
     def test_probe_semantic_status_model_has_no_ambiguous_unknown(self) -> None:
         source = build_draft(_route("/candidate/query/"), set())
         route = source["draft"]["route_evidence"]
