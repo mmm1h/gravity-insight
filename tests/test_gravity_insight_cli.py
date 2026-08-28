@@ -18,6 +18,9 @@ from gravity_sdk.actionable_error_values import (
     allowed_values,
 )
 from gravity_sdk.analysis_spec import analysis_query_spec_schema
+from gravity_sdk.errors import InputValidationError
+from gravity_sdk.export_batch import validate_batch_item
+from gravity_sdk.find_input import set_input_path
 from gravity_sdk.domains import (
     ANALYSIS_AUXILIARY_OPERATIONS,
     ANALYSIS_DASHBOARD_OPERATIONS,
@@ -405,6 +408,14 @@ class GravityInsightCliTests(unittest.TestCase):
         )
         self.assertEqual([], client.batch_calls)
 
+    def test_batch_rejects_conflicting_input_aliases_with_an_input_error(self):
+        value = {"operation_id": "app.list", "input": {}, "inputs": {}}
+        with self.assertRaises(InputValidationError) as raised:
+            validate_batch_item(value)
+
+        self.assertEqual("inputs", raised.exception.field)
+        self.assertIn("actual value:", str(raised.exception))
+
     def test_batch_envelope_aggregates_counts_and_highest_exit_code(self):
         class PartialClient(FakeClient):
             def batch(self, requests: list[dict], concurrency: int = 4):
@@ -554,6 +565,13 @@ class GravityInsightCliTests(unittest.TestCase):
             },
             result["inputs"],
         )
+
+    def test_set_requires_path_and_value_without_raising_name_error(self):
+        with self.assertRaises(InputValidationError) as raised:
+            set_input_path({}, "missing-separator")
+
+        self.assertEqual("set", raised.exception.field)
+        self.assertIn('actual value: "missing-separator"', str(raised.exception))
 
     def test_query_flags_override_set_and_inline_input(self):
         class AnalysisFlagClient(FakeClient):

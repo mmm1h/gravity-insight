@@ -8,10 +8,17 @@ from unittest.mock import patch
 
 from gravity_sdk.errors import InputValidationError
 from gravity_sdk.resolver_batch import MAX_EXPANDED_ITEMS, resolver_batch_schema, run_many
-from gravity_sdk.resolver_support import error_diagnostic
+from gravity_sdk.resolver_support import error_diagnostic, parse_parameter_assignments
 
 
 class ResolverBatchTests(unittest.TestCase):
+    def test_parameter_requires_name_value_pair_without_raising_name_error(self) -> None:
+        with self.assertRaises(InputValidationError) as raised:
+            parse_parameter_assignments(["missing-separator"])
+
+        self.assertEqual("param", raised.exception.field)
+        self.assertIn('actual value: "missing-separator"', str(raised.exception))
+
     def test_schema_describes_selectors_expansion_and_bounded_execution(self) -> None:
         schema = resolver_batch_schema()
 

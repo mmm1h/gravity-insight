@@ -80,6 +80,20 @@ def _catalog() -> dict:
                           "items": [{"id": "42"}]}]}
 
 class AgentInputResolutionTests(unittest.TestCase):
+    def test_live_catalog_requires_known_app_with_a_safe_actual_value(self) -> None:
+        with self.assertRaises(InputValidationError) as raised:
+            agent_input_catalogs._required_app({})
+
+        self.assertEqual("known_inputs.app", raised.exception.field)
+        self.assertIn("actual value: null", str(raised.exception))
+
+    def test_live_catalog_requires_platform_sequence_with_a_safe_actual_value(self) -> None:
+        with self.assertRaises(InputValidationError) as raised:
+            agent_input_catalogs._required_platforms({"platforms": "apple"})
+
+        self.assertEqual("known_inputs.platforms", raised.exception.field)
+        self.assertIn('actual value: "apple"', str(raised.exception))
+
     def test_seven_live_catalog_paths_lower_only_the_resolved_scenario(self) -> None:
         self.assertEqual(
             {

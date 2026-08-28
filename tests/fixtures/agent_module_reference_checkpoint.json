@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "9b797bf9a3a520d6a818f423f083e3c315c0e69e4fa9e9283a6f08e994c1b385",
-    "manual_review_sha256": "a014bc9249db5a249db021a8b41697b339feda7ef7ffb719f4a22b2aeb762abf",
+    "reference_evidence_sha256": "5a5e11ec22235e1e85b628d503fc56119534cea11e13651ba6c92680a4f65566",
+    "manual_review_sha256": "d04cbd705744ca9682b6d9f253457931ee6d32482057880a4003a8aeec2a6e35",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3145,
     "scanned_file_count": 3137,
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 309
     },
-    "sites_sha256": "6424db4026e47fd712588fd8b957841122b6c3beb3f5a27f600b7e597e17bca3"
+    "sites_sha256": "2e79a116478eeca5160edfeb1338a5e5e36a5f1ee8cde9b510d3558b6d8e1555"
   },
   "blockers": [],
   "site_fields": [
@@ -3817,7 +3817,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_cli.py:210:33:patch.object",
+      "tests/test_gravity_insight_cli.py:213:33:patch.object",
       "rm",
       "non_string_patch_expression",
       "sys",
@@ -3832,7 +3832,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_cli.py:272:13:patch.object",
+      "tests/test_gravity_insight_cli.py:275:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "runtime",
@@ -3847,7 +3847,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_cli.py:273:13:patch.object",
+      "tests/test_gravity_insight_cli.py:276:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "runtime",
@@ -3967,7 +3967,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_export_integration.py:391:18:patch.object",
+      "tests/test_gravity_insight_export_integration.py:397:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "client",
@@ -3982,7 +3982,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_export_integration.py:627:14:patch.object",
+      "tests/test_gravity_insight_export_integration.py:633:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "GravityInsightClient",
