@@ -28,6 +28,6 @@ transport, contracts, probing, census, and Evidence publication.
 
 The 2026-08 documentation consolidation moved superseded decisions, product
 designs, external research, and authority-page snapshots under
-[`docs/archive`](docs/archive/index.md). Those files preserve provenance but are
-non-normative. Current task routing starts at [`docs/index.md`](docs/index.md);
+[`docs/archive`](index.md). Those files preserve provenance but are
+non-normative. Current task routing starts at [`docs/index.md`](../index.md);
 runtime contracts, manifests, and CLI output remain authoritative for behavior.
