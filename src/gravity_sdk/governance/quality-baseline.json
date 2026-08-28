@@ -5,18 +5,12 @@
       "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 19,
       "src/gravity_sdk/census/cli.py::run": 26,
-      "src/gravity_sdk/census/coverage.py::build_coverage": 55,
       "src/gravity_sdk/census/coverage.py::identify_contract_families": 18,
       "src/gravity_sdk/census/coverage.py::reconcile_stable_operations": 17,
-      "src/gravity_sdk/census/coverage.py::render_report": 19,
       "src/gravity_sdk/census/diffing.py::diff_routes": 24,
-      "src/gravity_sdk/census/fetcher.py::StaticFetcher.fetch": 48,
       "src/gravity_sdk/census/impact.py::locate_route_impacts": 31,
-      "src/gravity_sdk/census/params.py::_batch_validation": 30,
       "src/gravity_sdk/census/params.py::_extract_occurrence": 19,
-      "src/gravity_sdk/census/params.py::_infer_expression": 49,
       "src/gravity_sdk/census/params.py::_route_document": 21,
-      "src/gravity_sdk/census/params.py::_summary": 20,
       "src/gravity_sdk/census/params.py::_tokenize": 19,
       "src/gravity_sdk/census/parser.py::build_routes": 29,
       "src/gravity_sdk/census/response.py::_binding_alias": 16,
@@ -61,13 +55,8 @@
     "function_sloc": {
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 109,
       "src/gravity_sdk/census/cli.py::run": 83,
-      "src/gravity_sdk/census/coverage.py::build_coverage": 241,
-      "src/gravity_sdk/census/coverage.py::render_report": 164,
-      "src/gravity_sdk/census/fetcher.py::StaticFetcher.fetch": 218,
       "src/gravity_sdk/census/impact.py::locate_route_impacts": 171,
-      "src/gravity_sdk/census/params.py::_batch_validation": 109,
       "src/gravity_sdk/census/params.py::_extract_occurrence": 104,
-      "src/gravity_sdk/census/params.py::_infer_expression": 200,
       "src/gravity_sdk/census/params.py::_tokenize": 108,
       "src/gravity_sdk/census/parser.py::build_routes": 93,
       "src/gravity_sdk/census/response.py::apply_response_fields_to_drafts": 86,
@@ -238,16 +227,16 @@
       "sloc_hard_limit": 665
     },
     "src/gravity_sdk/census/coverage.py": {
-      "ast_hard_limit": 5585,
-      "ast_nodes": 5585,
+      "ast_hard_limit": 5140,
+      "ast_nodes": 5140,
       "migration_sloc": 890,
-      "sloc_hard_limit": 793
+      "sloc_hard_limit": 630
     },
     "src/gravity_sdk/census/params.py": {
-      "ast_hard_limit": 11768,
-      "ast_nodes": 11768,
+      "ast_hard_limit": 10333,
+      "ast_nodes": 10333,
       "migration_sloc": 1568,
-      "sloc_hard_limit": 1568
+      "sloc_hard_limit": 1342
     },
     "src/gravity_sdk/census/response.py": {
       "ast_hard_limit": 4035,

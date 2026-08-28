@@ -115,6 +115,20 @@ class GravityCensusParameterTests(unittest.TestCase):
         self.assertNotIn("properties", body["page"])
         self.assertNotIn("properties", body["id"])
 
+    def test_infers_conversion_array_method_signed_literal_and_void(self) -> None:
+        result = self._build(
+            b'const{load:list}=request("/api/v1/types/list/",{type:"post"});'
+            b'list({body:{count:Number(raw),ratio:parseFloat(raw),label:String(raw),'
+            b'ids:rows.map(x=>x.id),offset:-2,missing:void 0}});'
+        )
+        body = {item["name"]: item for item in result["routes"][0]["body_parameters"]}
+        self.assertEqual(["integer"], body["count"]["types"])
+        self.assertEqual(["number"], body["ratio"]["types"])
+        self.assertEqual(["string"], body["label"]["types"])
+        self.assertEqual(["array"], body["ids"]["types"])
+        self.assertEqual(-2, body["offset"]["default"])
+        self.assertEqual(["unknown"], body["missing"]["types"])
+
     def test_parameter_document_is_byte_deterministic(self) -> None:
         source = (
             b'const{load:list}=request("/api/v1/search/list/",{type:"post"});'
