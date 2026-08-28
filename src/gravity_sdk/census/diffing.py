@@ -11,12 +11,9 @@ def _route_key(item: dict[str, Any]) -> tuple[str, str]:
     return str(item.get("method", "UNKNOWN")), str(item.get("path", ""))
 
 
-def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
-    old_map = {_route_key(item): item for item in old.get("routes", [])}
-    new_map = {_route_key(item): item for item in new.get("routes", [])}
-    removed = set(old_map) - set(new_map)
-    added = set(new_map) - set(old_map)
-
+def _extract_method_changes(
+    removed: set[tuple[str, str]], added: set[tuple[str, str]]
+) -> list[dict[str, Any]]:
     method_changes: list[dict[str, Any]] = []
     for path in sorted({path for _, path in removed} & {path for _, path in added}):
         old_methods = sorted(method for method, item_path in removed if item_path == path)
@@ -25,8 +22,12 @@ def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
             method_changes.append({"path": path, "old_methods": old_methods, "new_methods": new_methods})
             removed -= {(method, path) for method in old_methods}
             added -= {(method, path) for method in new_methods}
+    return method_changes
 
-    path_changes: list[dict[str, Any]] = []
+
+def _path_change_candidates(
+    removed: set[tuple[str, str]], added: set[tuple[str, str]]
+) -> list[tuple[float, tuple[str, str], tuple[str, str]]]:
     candidates: list[tuple[float, tuple[str, str], tuple[str, str]]] = []
     for old_key in removed:
         for new_key in added:
@@ -39,9 +40,16 @@ def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
             ratio = SequenceMatcher(None, old_key[1], new_key[1]).ratio()
             if ratio >= 0.72:
                 candidates.append((ratio, old_key, new_key))
+    return sorted(candidates, key=lambda item: (-item[0], item[1], item[2]))
+
+
+def _extract_path_changes(
+    removed: set[tuple[str, str]], added: set[tuple[str, str]]
+) -> list[dict[str, Any]]:
+    path_changes: list[dict[str, Any]] = []
     used_old: set[tuple[str, str]] = set()
     used_new: set[tuple[str, str]] = set()
-    for ratio, old_key, new_key in sorted(candidates, key=lambda item: (-item[0], item[1], item[2])):
+    for ratio, old_key, new_key in _path_change_candidates(removed, added):
         if old_key in used_old or new_key in used_new:
             continue
         used_old.add(old_key)
@@ -57,8 +65,25 @@ def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
         )
     removed -= used_old
     added -= used_new
-    added_rows = [{"method": method, "path": path} for method, path in sorted(added, key=lambda item: (item[1], item[0]))]
-    removed_rows = [{"method": method, "path": path} for method, path in sorted(removed, key=lambda item: (item[1], item[0]))]
+    return path_changes
+
+
+def _route_rows(keys: set[tuple[str, str]]) -> list[dict[str, str]]:
+    return [
+        {"method": method, "path": path}
+        for method, path in sorted(keys, key=lambda item: (item[1], item[0]))
+    ]
+
+
+def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
+    old_map = {_route_key(item): item for item in old.get("routes", [])}
+    new_map = {_route_key(item): item for item in new.get("routes", [])}
+    removed = set(old_map) - set(new_map)
+    added = set(new_map) - set(old_map)
+    method_changes = _extract_method_changes(removed, added)
+    path_changes = _extract_path_changes(removed, added)
+    added_rows = _route_rows(added)
+    removed_rows = _route_rows(removed)
     return {
         "schema_version": 1,
         "kind": "route_diff",

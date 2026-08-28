@@ -136,54 +136,44 @@ def _actions(impact_types: set[str], complete: bool) -> tuple[str, list[str]]:
     )
 
 
-def locate_route_impacts(
-    route_diff: Mapping[str, Any],
-    provenance: Mapping[str, Any],
-    contracts_root: Path,
-    *,
-    census_complete: bool | None = None,
-) -> dict[str, Any]:
-    index = build_provenance_route_index(provenance, contracts_root)
-    by_route: Mapping[tuple[str, str], list[dict[str, Any]]] = index["by_route"]
-    complete = (
-        bool(route_diff.get("new_bundle_complete"))
-        if census_complete is None
-        else bool(census_complete)
-    )
-    changes: list[dict[str, Any]] = []
-
-    for row in route_diff.get("removed", ()):
-        method = str(row.get("method", "UNKNOWN")).upper()
-        path = str(row.get("path", ""))
-        changes.append(
-            _change(
-                change_id=f"removed:{method}:{path}",
-                impact_type="route_removed",
-                old_method=method,
-                old_path=path,
-                new_method=None,
-                new_path=None,
-                certainty="confirmed_static_graph" if complete else "incomplete_static_graph",
-            )
+def _removed_changes(route_diff: Mapping[str, Any], complete: bool) -> list[dict[str, Any]]:
+    return [
+        _change(
+            change_id=f"removed:{str(row.get('method', 'UNKNOWN')).upper()}:{str(row.get('path', ''))}",
+            impact_type="route_removed",
+            old_method=str(row.get("method", "UNKNOWN")).upper(),
+            old_path=str(row.get("path", "")),
+            new_method=None,
+            new_path=None,
+            certainty="confirmed_static_graph" if complete else "incomplete_static_graph",
         )
+        for row in route_diff.get("removed", ())
+    ]
+
+
+def _method_changes(route_diff: Mapping[str, Any], complete: bool) -> list[dict[str, Any]]:
+    changes: list[dict[str, Any]] = []
     for row in route_diff.get("method_changes", ()):
         path = str(row.get("path", ""))
-        old_methods = sorted(str(item).upper() for item in row.get("old_methods", ()))
         new_methods = sorted(str(item).upper() for item in row.get("new_methods", ()))
-        for old_method in old_methods:
+        new_method = ",".join(new_methods) or None
+        for old_method in sorted(str(item).upper() for item in row.get("old_methods", ())):
             changes.append(
                 _change(
-                    change_id=(
-                        f"method:{path}:{old_method}->{','.join(new_methods) or 'NONE'}"
-                    ),
+                    change_id=f"method:{path}:{old_method}->{new_method or 'NONE'}",
                     impact_type="method_changed",
                     old_method=old_method,
                     old_path=path,
-                    new_method=",".join(new_methods) or None,
+                    new_method=new_method,
                     new_path=path,
                     certainty="confirmed_static_graph" if complete else "incomplete_static_graph",
                 )
             )
+    return changes
+
+
+def _path_changes(route_diff: Mapping[str, Any], complete: bool) -> list[dict[str, Any]]:
+    changes: list[dict[str, Any]] = []
     for row in route_diff.get("path_changes", ()):
         method = str(row.get("method", "UNKNOWN")).upper()
         old_path = str(row.get("old_path", ""))
@@ -203,21 +193,48 @@ def locate_route_impacts(
                 ),
             )
         )
-    for row in route_diff.get("added", ()):
-        method = str(row.get("method", "UNKNOWN")).upper()
-        path = str(row.get("path", ""))
-        changes.append(
-            _change(
-                change_id=f"added:{method}:{path}",
-                impact_type="route_added",
-                old_method=None,
-                old_path=None,
-                new_method=method,
-                new_path=path,
-                certainty="confirmed_static_graph" if complete else "incomplete_static_graph",
-            )
-        )
+    return changes
 
+
+def _added_changes(route_diff: Mapping[str, Any], complete: bool) -> list[dict[str, Any]]:
+    return [
+        _change(
+            change_id=f"added:{str(row.get('method', 'UNKNOWN')).upper()}:{str(row.get('path', ''))}",
+            impact_type="route_added",
+            old_method=None,
+            old_path=None,
+            new_method=str(row.get("method", "UNKNOWN")).upper(),
+            new_path=str(row.get("path", "")),
+            certainty="confirmed_static_graph" if complete else "incomplete_static_graph",
+        )
+        for row in route_diff.get("added", ())
+    ]
+
+
+def _route_changes(route_diff: Mapping[str, Any], complete: bool) -> list[dict[str, Any]]:
+    return [
+        *_removed_changes(route_diff, complete),
+        *_method_changes(route_diff, complete),
+        *_path_changes(route_diff, complete),
+        *_added_changes(route_diff, complete),
+    ]
+
+
+def _unmapped_change(change: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **change,
+        "priority": "P2",
+        "suggested_actions": [
+            "reconcile the new route with coverage",
+            "collect an authorized probe before proposing a reviewed contract",
+        ],
+    }
+
+
+def _map_changes(
+    changes: list[dict[str, Any]],
+    by_route: Mapping[tuple[str, str], list[dict[str, Any]]],
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
     impacted: dict[str, dict[str, Any]] = {}
     unmapped: list[dict[str, Any]] = []
     for change in sorted(changes, key=lambda item: item["change_id"]):
@@ -225,21 +242,11 @@ def locate_route_impacts(
         path = change["old_path"] or change["new_path"] or ""
         matched = by_route.get(_route_key(method, path), [])
         if not matched:
-            unmapped.append(
-                {
-                    **change,
-                    "priority": "P2",
-                    "suggested_actions": [
-                        "reconcile the new route with coverage",
-                        "collect an authorized probe before proposing a reviewed contract",
-                    ],
-                }
-            )
+            unmapped.append(_unmapped_change(change))
             continue
         for operation in matched:
-            operation_id = operation["operation_id"]
             item = impacted.setdefault(
-                operation_id,
+                operation["operation_id"],
                 {
                     **operation,
                     "impact_types": set(),
@@ -250,9 +257,14 @@ def locate_route_impacts(
             item["impact_types"].add(change["impact_type"])
             item["route_changes"].append(change)
             item["evidence_refs"].append(change["change_id"])
+    return impacted, unmapped
 
-    operation_rows: list[dict[str, Any]] = []
-    for operation_id, item in sorted(impacted.items()):
+
+def _operation_rows(
+    impacted: Mapping[str, dict[str, Any]], complete: bool
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for _, item in sorted(impacted.items()):
         impact_types = set(item.pop("impact_types"))
         priority, actions = _actions(impact_types, complete)
         item["impact_types"] = sorted(impact_types)
@@ -262,24 +274,49 @@ def locate_route_impacts(
         item["evidence_refs"] = sorted(set(item["evidence_refs"]))
         item["priority"] = priority
         item["suggested_actions"] = actions
-        operation_rows.append(item)
+        rows.append(item)
+    return rows
 
-    direct_probe_ids = sorted(item["operation_id"] for item in operation_rows)
-    impacted_families = {
+
+def _family_samples(
+    operation_rows: list[dict[str, Any]], index_operations: list[dict[str, Any]]
+) -> list[str]:
+    direct_ids = {item["operation_id"] for item in operation_rows}
+    families = {
         str(item["family"])
         for item in operation_rows
         if item.get("family") not in {None, ""}
     }
-    family_samples: list[str] = []
-    for family in sorted(impacted_families):
+    samples: list[str] = []
+    for family in sorted(families):
         peers = sorted(
             item["operation_id"]
-            for item in index["operations"]
-            if item.get("family") == family
-            and item["operation_id"] not in direct_probe_ids
+            for item in index_operations
+            if item.get("family") == family and item["operation_id"] not in direct_ids
         )
-        family_samples.extend(peers[:3])
-    family_samples = sorted(set(family_samples))
+        samples.extend(peers[:3])
+    return sorted(set(samples))
+
+
+def locate_route_impacts(
+    route_diff: Mapping[str, Any],
+    provenance: Mapping[str, Any],
+    contracts_root: Path,
+    *,
+    census_complete: bool | None = None,
+) -> dict[str, Any]:
+    index = build_provenance_route_index(provenance, contracts_root)
+    by_route: Mapping[tuple[str, str], list[dict[str, Any]]] = index["by_route"]
+    complete = (
+        bool(route_diff.get("new_bundle_complete"))
+        if census_complete is None
+        else bool(census_complete)
+    )
+    changes = _route_changes(route_diff, complete)
+    impacted, unmapped = _map_changes(changes, by_route)
+    operation_rows = _operation_rows(impacted, complete)
+    direct_probe_ids = sorted(item["operation_id"] for item in operation_rows)
+    family_samples = _family_samples(operation_rows, index["operations"])
 
     return {
         "schema_version": "gravity-census.route-impact.v1",

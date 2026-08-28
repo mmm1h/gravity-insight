@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "9b797bf9a3a520d6a818f423f083e3c315c0e69e4fa9e9283a6f08e994c1b385",
-    "manual_review_sha256": "a014bc9249db5a249db021a8b41697b339feda7ef7ffb719f4a22b2aeb762abf",
+    "reference_evidence_sha256": "8a11189aab3ec5fddda5e9eeab9db67f1cfdaf665ec93fae137f02380d0ac33e",
+    "manual_review_sha256": "097bc4aee59b2a484b4e058e2c76d9572f63ebe33cf5a9936f6002f4f2b74b9a",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3145,
     "scanned_file_count": 3137,
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 309
     },
-    "sites_sha256": "6424db4026e47fd712588fd8b957841122b6c3beb3f5a27f600b7e597e17bca3"
+    "sites_sha256": "d37d482bc28a7fd567546e372d0e799ffb9f9c5fe74cdd8585452990a09d8951"
   },
   "blockers": [],
   "site_fields": [
@@ -3592,7 +3592,7 @@
       }
     ],
     [
-      "tests/test_gravity_census_pipeline.py:289:14:patch.object",
+      "tests/test_gravity_census_pipeline.py:317:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "StaticFetcher",

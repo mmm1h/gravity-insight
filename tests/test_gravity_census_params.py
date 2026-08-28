@@ -6,7 +6,7 @@ from pathlib import Path
 
 from gravity_sdk.census.io import json_bytes, sha256_bytes, stable_bundle_id
 from gravity_sdk.census.params import build_route_params
-from gravity_sdk.census.parser import build_routes
+from gravity_sdk.census.parser import _tokenize, build_routes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -137,6 +137,18 @@ class GravityCensusParameterTests(unittest.TestCase):
         first = json_bytes(self._build(source))
         second = json_bytes(self._build(source))
         self.assertEqual(first, second)
+
+    def test_lexer_keeps_nested_templates_offsets_and_pairs(self) -> None:
+        source = '/* ignored */ call?.(`${outer({key: "}"})}`, 0x10, value ?? fallback)'
+        lexed = _tokenize(source)
+        self.assertEqual(
+            ["call", "?.", "(", '${outer({key: "}"})}', ",", "0x10", ",", "value", "??", "fallback", ")"],
+            [token.value for token in lexed.tokens],
+        )
+        open_index = next(index for index, token in enumerate(lexed.tokens) if token.value == "(")
+        self.assertEqual(")", lexed.tokens[lexed.pairs[open_index]].value)
+        template_offset = source.index("`${")
+        self.assertEqual(3, lexed.token_at_offset(template_offset))
 
 
 if __name__ == "__main__":

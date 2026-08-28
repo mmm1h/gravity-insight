@@ -4,18 +4,6 @@
     "cyclomatic_complexity": {
       "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 19,
-      "src/gravity_sdk/census/cli.py::run": 26,
-      "src/gravity_sdk/census/coverage.py::identify_contract_families": 18,
-      "src/gravity_sdk/census/coverage.py::reconcile_stable_operations": 17,
-      "src/gravity_sdk/census/diffing.py::diff_routes": 24,
-      "src/gravity_sdk/census/impact.py::locate_route_impacts": 31,
-      "src/gravity_sdk/census/params.py::_extract_occurrence": 19,
-      "src/gravity_sdk/census/params.py::_route_document": 21,
-      "src/gravity_sdk/census/params.py::_tokenize": 19,
-      "src/gravity_sdk/census/parser.py::build_routes": 29,
-      "src/gravity_sdk/census/response.py::_binding_alias": 16,
-      "src/gravity_sdk/census/response.py::_callback_parameter": 17,
-      "src/gravity_sdk/census/response.py::apply_response_fields_to_drafts": 19,
       "src/gravity_sdk/cli.py::_analysis": 19,
       "src/gravity_sdk/cli.py::run": 21,
       "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
@@ -48,12 +36,6 @@
     },
     "function_sloc": {
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 109,
-      "src/gravity_sdk/census/cli.py::run": 83,
-      "src/gravity_sdk/census/impact.py::locate_route_impacts": 171,
-      "src/gravity_sdk/census/params.py::_extract_occurrence": 104,
-      "src/gravity_sdk/census/params.py::_tokenize": 108,
-      "src/gravity_sdk/census/parser.py::build_routes": 93,
-      "src/gravity_sdk/census/response.py::apply_response_fields_to_drafts": 86,
       "src/gravity_sdk/cli.py::build_parser": 146,
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 81,
       "src/gravity_sdk/models.py::OperationSpec.schema": 98,
@@ -215,23 +197,11 @@
       "migration_sloc": 664,
       "sloc_hard_limit": 665
     },
-    "src/gravity_sdk/census/coverage.py": {
-      "ast_hard_limit": 5140,
-      "ast_nodes": 5140,
-      "migration_sloc": 890,
-      "sloc_hard_limit": 630
-    },
     "src/gravity_sdk/census/params.py": {
-      "ast_hard_limit": 10333,
-      "ast_nodes": 10333,
+      "ast_hard_limit": 9763,
+      "ast_nodes": 9763,
       "migration_sloc": 1568,
-      "sloc_hard_limit": 1342
-    },
-    "src/gravity_sdk/census/response.py": {
-      "ast_hard_limit": 4035,
-      "ast_nodes": 4035,
-      "migration_sloc": 551,
-      "sloc_hard_limit": 551
+      "sloc_hard_limit": 1281
     },
     "src/gravity_sdk/cli.py": {
       "ast_hard_limit": 3822,

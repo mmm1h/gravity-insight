@@ -4,19 +4,21 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from .io import json_bytes, read_json, write_json
-from .normalize import comparison_path
+from .io import (
+    apply_response_fields_to_drafts as _apply_response_fields_to_drafts,
+    read_json,
+    write_json,
+)
 from .params import (
-    _Lexed,
     _call_open_for_route,
     _enclosing_scope,
     _load_bundle,
     _occurrences_by_route,
     _segments,
-    _tokenize,
     _top_level_token,
 )
-from .parser import _line_column, _line_starts
+from .normalize import _line_column, _line_starts, comparison_path
+from .parser import _Lexed, _tokenize
 
 
 RESPONSE_SCHEMA_VERSION = "gravity-census.route-response-fields.v1"
@@ -55,15 +57,31 @@ RESPONSE_PARSER_LIMITATIONS = [
 ]
 
 
-def _binding_alias(lexed: _Lexed, call_open: int, key: str) -> str | None:
-    tokens = lexed.tokens
-    equals: int | None = None
+def _binding_assignment(lexed: _Lexed, call_open: int) -> int | None:
     for index in range(call_open - 1, max(-1, call_open - 16), -1):
-        if tokens[index].value == "=":
-            equals = index
-            break
-        if tokens[index].value in {";", "=>"}:
+        if lexed.tokens[index].value == "=":
+            return index
+        if lexed.tokens[index].value in {";", "=>"}:
             return None
+    return None
+
+
+def _segment_alias(
+    lexed: _Lexed, start: int, end: int, key: str
+) -> str | None:
+    tokens = lexed.tokens
+    colon = _top_level_token(lexed, start, end, {":"})
+    if colon == start + 1 and tokens[start].value == key:
+        if colon + 1 < end and tokens[colon + 1].kind == "identifier":
+            return tokens[colon + 1].value
+    if colon is None and start < end and tokens[start].value == key:
+        return key
+    return None
+
+
+def _binding_alias(lexed: _Lexed, call_open: int, key: str) -> str | None:
+    equals = _binding_assignment(lexed, call_open)
+    tokens = lexed.tokens
     if equals is None or equals == 0 or tokens[equals - 1].value != "}":
         return None
     object_close = equals - 1
@@ -71,12 +89,9 @@ def _binding_alias(lexed: _Lexed, call_open: int, key: str) -> str | None:
     if object_open is None:
         return None
     for start, end in _segments(lexed, object_open + 1, object_close):
-        colon = _top_level_token(lexed, start, end, {":"})
-        if colon == start + 1 and tokens[start].value == key:
-            if colon + 1 < end and tokens[colon + 1].kind == "identifier":
-                return tokens[colon + 1].value
-        if colon is None and start < end and tokens[start].value == key:
-            return key
+        alias = _segment_alias(lexed, start, end, key)
+        if alias is not None:
+            return alias
     return None
 
 
@@ -111,13 +126,28 @@ def _path(parts: Sequence[str]) -> str:
     return "data." + ".".join(parts)
 
 
+def _arrow_parameter(lexed: _Lexed, start: int, arrow: int) -> str | None:
+    previous = lexed.tokens[arrow - 1]
+    if previous.kind == "identifier":
+        return previous.value
+    if previous.value != ")":
+        return None
+    open_index = lexed.pairs.get(arrow - 1)
+    if open_index is None or open_index < start:
+        return None
+    identifiers = [
+        token.value
+        for token in lexed.tokens[open_index + 1 : arrow - 1]
+        if token.kind == "identifier"
+    ]
+    return identifiers[0] if len(identifiers) == 1 else None
+
+
 def _callback_parameter(
     lexed: _Lexed, call_open: int
 ) -> tuple[str | None, tuple[int, int] | None]:
     call_close = lexed.pairs.get(call_open)
-    if call_close is None:
-        return None, None
-    arguments = _segments(lexed, call_open + 1, call_close)
+    arguments = _segments(lexed, call_open + 1, call_close) if call_close else []
     if not arguments:
         return None, None
     start, end = arguments[0]
@@ -127,20 +157,7 @@ def _callback_parameter(
     )
     if arrow is None or arrow == start:
         return None, None
-    parameter: str | None = None
-    previous = lexed.tokens[arrow - 1]
-    if previous.kind == "identifier":
-        parameter = previous.value
-    elif previous.value == ")":
-        open_index = lexed.pairs.get(arrow - 1)
-        if open_index is not None:
-            identifiers = [
-                token.value
-                for token in lexed.tokens[open_index + 1 : arrow - 1]
-                if token.kind == "identifier"
-            ]
-            if len(identifiers) == 1:
-                parameter = identifiers[0]
+    parameter = _arrow_parameter(lexed, start, arrow)
     if parameter is None or arrow + 1 >= end:
         return None, None
     body_start = arrow + 1
@@ -493,101 +510,9 @@ def _route_key(method: Any, path: Any) -> tuple[str, str]:
     return str(method).upper(), comparison_path(str(path))
 
 
-def _leaf_fields(fields: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-    paths = {str(item.get("path", "")) for item in fields}
-    result: list[Mapping[str, Any]] = []
-    for item in fields:
-        path = str(item.get("path", ""))
-        prefixes = (path + ".", path + "[].")
-        if any(other != path and other.startswith(prefixes) for other in paths):
-            continue
-        result.append(item)
-    return result
-
-
 def apply_response_fields_to_drafts(
     response_document: Mapping[str, Any], drafts_root: Path
 ) -> dict[str, Any]:
-    indexed = {
-        _route_key(item.get("method"), item.get("path")): (index, item)
-        for index, item in enumerate(response_document.get("routes", []))
-    }
-    summary: dict[str, Any] = {
-        "response_schema_unverified": 0,
-        "route_matched": 0,
-        "with_static_candidates": 0,
-        "candidate_fields_added": 0,
-        "candidate_fields_total": 0,
-        "files_changed": 0,
-        "confidence": {"high": 0, "medium": 0, "low": 0},
-    }
-    for draft_path in sorted(drafts_root.glob("*.json")):
-        source = read_json(draft_path)
-        original = json_bytes(source)
-        draft = source.get("draft", {})
-        operation = source.get("operation", {})
-        blockers = draft.get("blockers", []) if isinstance(draft, Mapping) else []
-        response_blocker = next(
-            (
-                item
-                for item in blockers
-                if isinstance(item, Mapping)
-                and item.get("code") == "response_schema_unverified"
-            ),
-            None,
-        )
-        if response_blocker is None or not isinstance(operation, Mapping):
-            continue
-        summary["response_schema_unverified"] += 1
-        matched = indexed.get(
-            _route_key(operation.get("upstream_method"), operation.get("path_template"))
-        )
-        if matched is None:
-            continue
-        route_index, route = matched
-        summary["route_matched"] += 1
-        selected = _leaf_fields(route.get("fields", []))
-        if not selected:
-            continue
-        summary["with_static_candidates"] += 1
-        for item in selected:
-            level = str(item.get("confidence", "low"))
-            summary["confidence"][level] += 1
-        candidates = draft.get("candidate_fields", [])
-        if not isinstance(candidates, list):
-            candidates = []
-        by_path = {
-            str(item.get("path")): item
-            for item in candidates
-            if isinstance(item, Mapping)
-        }
-        before = len(by_path)
-        for item in selected:
-            path = str(item.get("path", ""))
-            by_path.setdefault(
-                path,
-                {
-                    "path": path,
-                    "types": ["unknown"],
-                    "presence": "unknown",
-                    "privacy_classification": "manual_review",
-                    "classification_reason": "frontend_static_consumer_unreviewed",
-                    "expose": False,
-                },
-            )
-        added = len(by_path) - before
-        draft["candidate_fields"] = [by_path[path] for path in sorted(by_path)]
-        response_blocker["evidence"] = (
-            f"src/gravity_sdk/census/data/route-response-fields.json#/routes/{route_index}"
-        )
-        summary["candidate_fields_added"] += added
-        summary["candidate_fields_total"] += len(selected)
-        if json_bytes(source) != original:
-            write_json(draft_path, source)
-            summary["files_changed"] += 1
-    covered = int(summary["with_static_candidates"])
-    summary["average_candidate_fields"] = (
-        round(int(summary["candidate_fields_total"]) / covered, 3) if covered else 0.0
+    return _apply_response_fields_to_drafts(
+        response_document, drafts_root, route_key=_route_key
     )
-    summary["blockers_advanced_by_static_plus_probe"] = 0
-    return summary

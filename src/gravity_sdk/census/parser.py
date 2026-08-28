@@ -8,15 +8,27 @@ from pathlib import Path
 from typing import Any
 
 from .io import read_json, write_json
-from .normalize import decode_js_escapes, looks_like_api_path, normalize_path
+from .normalize import (
+    _expand_simple_concatenation,
+    _iter_js_strings,
+    _line_column,
+    _line_starts,
+    _ui_evidence,
+    decode_js_escapes,
+    looks_like_api_path,
+    normalize_path,
+)
 
 
 COVERAGE_SCOPE = "same_origin_static_js_graph_discoverable_from_site_entry"
 KNOWN_EXCLUDED_ORIGINS = ("rank.gravity-engine.com",)
 
 
-_CHINESE_STRING = re.compile(
-    r"['\"`](?P<value>(?:\\.|[^'\"`]){0,120}[\u3400-\u9fff](?:\\.|[^'\"`]){0,120})['\"`]"
+_PARAM_IDENTIFIER = re.compile(r"[A-Za-z_$][\w$]*")
+_PARAM_NUMBER = re.compile(r"(?:0[xX][0-9A-Fa-f]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)")
+_PARAM_OPERATORS = (
+    "===", "!==", ">>>", "**=", "...", "=>", "==", "!=", "<=", ">=",
+    "&&", "||", "??", "?.", "++", "--", "**", "+=", "-=", "*=", "/=",
 )
 _DIRECT_METHOD = re.compile(
     r"(?i)(?:\.|\b)(get|post|put|patch|delete|head|options)\s*\(\s*$"
@@ -62,50 +74,136 @@ PARSER_LIMITATIONS = [
 
 
 @dataclass(frozen=True)
-class _StringToken:
-    quote: str
+class _Token:
+    kind: str
     value: str
-    start_offset: int
-    end_offset: int
-
-    def group(self, name: str) -> str:
-        if name == "quote":
-            return self.quote
-        if name == "value":
-            return self.value
-        raise IndexError(name)
-
-    def start(self) -> int:
-        return self.start_offset
-
-    def end(self) -> int:
-        return self.end_offset
+    start: int
+    end: int
+    quote: str | None = None
 
 
-def _iter_js_strings(text: str):
-    index = 0
-    length = len(text)
-    while index < length:
-        quote = text[index]
-        if quote not in "'\"`":
-            index += 1
-            continue
-        start = index
-        index += 1
-        value_start = index
-        while index < length:
-            char = text[index]
-            if char == "\\":
-                index += 2
+@dataclass
+class _Lexed:
+    text: str
+    tokens: list[_Token]
+    pairs: dict[int, int]
+    starts: list[int]
+
+    def token_at_offset(self, offset: int) -> int | None:
+        index = bisect.bisect_left(self.starts, offset)
+        if index < len(self.tokens) and self.tokens[index].start == offset:
+            return index
+        if index and self.tokens[index - 1].start <= offset < self.tokens[index - 1].end:
+            return index - 1
+        return None
+
+
+class _Tokenizer:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.length = len(text)
+
+    def _scan_quoted(self, start: int) -> int:
+        quote = self.text[start]
+        cursor = start + 1
+        while cursor < self.length:
+            current = self.text[cursor]
+            if current == "\\":
+                cursor += 2
                 continue
-            if char == quote:
-                yield _StringToken(quote, text[value_start:index], start, index + 1)
-                index += 1
-                break
-            if quote != "`" and char in "\r\n":
-                index += 1
-                break
-            index += 1
+            if current == quote:
+                return cursor + 1
+            if quote == "`" and self.text.startswith("${", cursor):
+                cursor = self._scan_template_expression(cursor + 1)
+                continue
+            if quote != "`" and current in "\r\n":
+                return cursor
+            cursor += 1
+        return cursor
+
+    def _scan_template_expression(self, open_brace: int) -> int:
+        depth = 1
+        cursor = open_brace + 1
+        while cursor < self.length and depth:
+            current = self.text[cursor]
+            if current in "'\"`":
+                cursor = self._scan_quoted(cursor)
+                continue
+            if current == "{":
+                depth += 1
+            elif current == "}":
+                depth -= 1
+            cursor += 1
+        return cursor
+
+    def _skip_ignored(self, index: int) -> int | None:
+        if self.text[index].isspace():
+            return index + 1
+        if self.text.startswith("/*", index):
+            close = self.text.find("*/", index + 2)
+            return self.length if close < 0 else close + 2
+        return None
+
+    def _string_token(self, start: int) -> tuple[_Token, int]:
+        quote = self.text[start]
+        end = self._scan_quoted(start)
+        closed = end <= self.length and self.text[end - 1 : end] == quote
+        value_end = end - 1 if closed else end
+        return _Token("string", self.text[start + 1 : value_end], start, end, quote), end
+
+    def _token(self, index: int) -> tuple[_Token, int]:
+        char = self.text[index]
+        if char in "'\"`":
+            return self._string_token(index)
+        identifier = _PARAM_IDENTIFIER.match(self.text, index)
+        if identifier:
+            return _Token("identifier", identifier.group(0), index, identifier.end()), identifier.end()
+        if char.isdigit():
+            number = _PARAM_NUMBER.match(self.text, index)
+            if number:
+                return _Token("number", number.group(0), index, number.end()), number.end()
+        operator = next(
+            (item for item in _PARAM_OPERATORS if self.text.startswith(item, index)), None
+        )
+        if operator:
+            end = index + len(operator)
+            return _Token("punct", operator, index, end), end
+        return _Token("punct", char, index, index + 1), index + 1
+
+    def scan(self) -> list[_Token]:
+        tokens: list[_Token] = []
+        index = 0
+        while index < self.length:
+            next_index = self._skip_ignored(index)
+            if next_index is not None:
+                index = next_index
+                continue
+            token, index = self._token(index)
+            tokens.append(token)
+        return tokens
+
+
+def _token_pairs(tokens: list[_Token]) -> dict[int, int]:
+    pairs: dict[int, int] = {}
+    stacks: dict[str, list[int]] = {"(": [], "{": [], "[": []}
+    closing = {")": "(", "}": "{", "]": "["}
+    for token_index, token in enumerate(tokens):
+        if token.value in stacks:
+            stacks[token.value].append(token_index)
+            continue
+        if token.value not in closing:
+            continue
+        stack = stacks[closing[token.value]]
+        if stack:
+            open_index = stack.pop()
+            pairs[open_index] = token_index
+            pairs[token_index] = open_index
+    return pairs
+
+
+def _tokenize(text: str) -> _Lexed:
+    tokens = _Tokenizer(text).scan()
+    return _Lexed(text, tokens, _token_pairs(tokens), [token.start for token in tokens])
 
 
 def _learn_wrappers(text: str) -> dict[str, str]:
@@ -239,61 +337,6 @@ def _caller_for(text: str, start: int) -> str | None:
     return None
 
 
-def _line_starts(text: str) -> list[int]:
-    starts = [0]
-    starts.extend(match.end() for match in re.finditer(r"\n", text))
-    return starts
-
-
-def _line_column(starts: list[int], offset: int) -> tuple[int, int]:
-    index = bisect.bisect_right(starts, offset) - 1
-    return index + 1, offset - starts[index] + 1
-
-
-def _ui_evidence(text: str, offset: int) -> list[str]:
-    start = max(0, offset - 1200)
-    end = min(len(text), offset + 1200)
-    candidates: list[tuple[int, str]] = []
-    for match in _CHINESE_STRING.finditer(text[start:end]):
-        value = decode_js_escapes(match.group("value")).strip()
-        value = re.sub(r"\s+", " ", value)
-        if not value or len(value) > 100 or value.startswith("/"):
-            continue
-        absolute = start + match.start()
-        candidates.append((abs(absolute - offset), value))
-    result: list[str] = []
-    for _, value in sorted(candidates, key=lambda item: (item[0], item[1])):
-        if value not in result:
-            result.append(value)
-        if len(result) == 3:
-            break
-    return result
-
-
-def _expand_simple_concatenation(text: str, match: _StringToken) -> str:
-    raw = match.group("value")
-    if match.group("quote") == "`" or not text[match.end() :].lstrip().startswith("+"):
-        return raw
-    tail = text[match.end() : min(len(text), match.end() + 260)]
-    cursor = 0
-    result = raw
-    additions = 0
-    pattern = re.compile(
-        r"\s*\+\s*(?:(?P<expr>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\+\s*)?"
-        r"(?P<q>['\"])(?P<literal>(?:\\.|[^'\"])*?)(?P=q)"
-    )
-    while additions < 4:
-        part = pattern.match(tail, cursor)
-        if not part:
-            break
-        if part.group("expr"):
-            result += "${" + part.group("expr") + "}"
-        result += part.group("literal")
-        cursor = part.end()
-        additions += 1
-    return result
-
-
 def parse_text(
     text: str,
     *,
@@ -358,8 +401,9 @@ def _source_metadata(
     }
 
 
-def build_routes(snapshot: dict[str, Any], raw_dir: Path) -> dict[str, Any]:
-    all_occurrences: list[dict[str, Any]] = []
+def _load_sources(
+    snapshot: dict[str, Any], raw_dir: Path
+) -> tuple[list[tuple[dict[str, Any], str]], list[str]]:
     missing_files: list[str] = []
     loaded: list[tuple[dict[str, Any], str]] = []
     for file_info in sorted(snapshot.get("files", []), key=lambda item: item.get("url", "")):
@@ -369,64 +413,86 @@ def build_routes(snapshot: dict[str, Any], raw_dir: Path) -> dict[str, Any]:
             continue
         text = local_path.read_bytes().decode("utf-8", errors="replace")
         loaded.append((file_info, text))
+    return loaded, missing_files
+
+
+def _exported_api_bases(
+    loaded: list[tuple[dict[str, Any], str]],
+) -> tuple[dict[str, str], dict[str, str]]:
     api_locals: dict[str, str] = {}
     exported_bases: dict[str, str] = {}
     for file_info, text in loaded:
         if re.search(r"/api-[^/]+\.js(?:\?|$)", str(file_info.get("url", ""))):
             api_locals, exported_bases = _api_exported_bases(text)
             break
+    return api_locals, exported_bases
+
+
+def _parse_loaded_sources(
+    loaded: list[tuple[dict[str, Any], str]],
+) -> list[dict[str, Any]]:
+    api_locals, exported_bases = _exported_api_bases(loaded)
+    occurrences: list[dict[str, Any]] = []
     for file_info, text in loaded:
         own_bases = api_locals if re.search(
             r"/api-[^/]+\.js(?:\?|$)", str(file_info.get("url", ""))
         ) else {}
         aliases = _base_aliases(text, exported_bases, own_bases)
-        all_occurrences.extend(parse_text(text, file_info=file_info, base_aliases=aliases))
+        occurrences.extend(parse_text(text, file_info=file_info, base_aliases=aliases))
+    return occurrences
 
+
+def _group_occurrences(
+    occurrences: list[dict[str, Any]],
+) -> dict[tuple[str, str], list[dict[str, Any]]]:
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     known_paths = {
-        item["path"] for item in all_occurrences if item["method"] != "UNKNOWN"
+        item["path"] for item in occurrences if item["method"] != "UNKNOWN"
     }
-    for item in all_occurrences:
+    for item in occurrences:
         if item["method"] == "UNKNOWN" and item["path"] in known_paths:
             continue
         grouped[(item["method"], item["path"])].append(item)
+    return grouped
 
-    routes: list[dict[str, Any]] = []
+
+def _route_from_occurrences(
+    method: str, path: str, items: list[dict[str, Any]]
+) -> dict[str, Any]:
     certainty_order = {"high": 0, "medium": 1, "low": 2}
-    for (method, path), items in grouped.items():
-        items.sort(key=lambda item: (item["url"], item["offset"], item["raw_path"]))
-        callers = sorted({item["caller"] for item in items if item.get("caller")})
-        ui_texts = sorted({text for item in items for text in item.get("ui_texts", [])})
-        evidences = sorted({item["method_evidence"] for item in items})
-        route_evidence_kinds = sorted({item["route_evidence_kind"] for item in items})
-        certainty = max(
+    items.sort(key=lambda item: (item["url"], item["offset"], item["raw_path"]))
+    first = items[0]
+    return {
+        "method": method,
+        "path": path,
+        "raw_paths": sorted({item["raw_path"] for item in items}),
+        "resolved_bases": sorted(
+            {item["resolved_base"] for item in items if item.get("resolved_base")}
+        ),
+        "occurrences": len(items),
+        "first_occurrence": {
+            "file": first["file"],
+            "url": first["url"],
+            "offset": first["offset"],
+            "line": first["line"],
+            "column": first["column"],
+        },
+        "callers": sorted({item["caller"] for item in items if item.get("caller")})[:20],
+        "ui_texts": sorted(
+            {text for item in items for text in item.get("ui_texts", [])}
+        )[:20],
+        "method_certainty": max(
             (item["method_certainty"] for item in items),
             key=lambda value: certainty_order.get(value, 9) * -1,
-        )
-        first = items[0]
-        routes.append(
-            {
-                "method": method,
-                "path": path,
-                "raw_paths": sorted({item["raw_path"] for item in items}),
-                "resolved_bases": sorted({item["resolved_base"] for item in items if item.get("resolved_base")}),
-                "occurrences": len(items),
-                "first_occurrence": {
-                    "file": first["file"],
-                    "url": first["url"],
-                    "offset": first["offset"],
-                    "line": first["line"],
-                    "column": first["column"],
-                },
-                "callers": callers[:20],
-                "ui_texts": ui_texts[:20],
-                "method_certainty": certainty,
-                "method_evidence": evidences,
-                "route_evidence_kinds": route_evidence_kinds,
-            }
-        )
-    routes.sort(key=lambda item: (item["path"], item["method"]))
-    summary = snapshot.get("summary", {})
+        ),
+        "method_evidence": sorted({item["method_evidence"] for item in items}),
+        "route_evidence_kinds": sorted(
+            {item["route_evidence_kind"] for item in items}
+        ),
+    }
+
+
+def _unknown_reason_summary(routes: list[dict[str, Any]]) -> dict[str, int]:
     unknown_reason_counts: Counter[str] = Counter()
     for route in routes:
         if route["method"] != "UNKNOWN":
@@ -438,6 +504,18 @@ def build_routes(snapshot: dict[str, Any], raw_dir: Path) -> dict[str, Any]:
             unknown_reason_counts["API catalog, documentation, or service URL literal is not a request call"] += 1
         else:
             unknown_reason_counts["request wrapper method could not be resolved statically"] += 1
+    return dict(sorted(unknown_reason_counts.items()))
+
+
+def build_routes(snapshot: dict[str, Any], raw_dir: Path) -> dict[str, Any]:
+    loaded, missing_files = _load_sources(snapshot, raw_dir)
+    grouped = _group_occurrences(_parse_loaded_sources(loaded))
+    routes = [
+        _route_from_occurrences(method, path, items)
+        for (method, path), items in grouped.items()
+    ]
+    routes.sort(key=lambda item: (item["path"], item["method"]))
+    summary = snapshot.get("summary", {})
     return {
         "schema_version": 1,
         "source": _source_metadata(snapshot, summary, missing_files),
@@ -449,7 +527,7 @@ def build_routes(snapshot: dict[str, Any], raw_dir: Path) -> dict[str, Any]:
             "unique_method_path": len(routes),
             "route_occurrences": sum(item["occurrences"] for item in routes),
             "unknown_method_routes": sum(item["method"] == "UNKNOWN" for item in routes),
-            "unknown_method_reasons": dict(sorted(unknown_reason_counts.items())),
+            "unknown_method_reasons": _unknown_reason_summary(routes),
         },
         "routes": routes,
     }

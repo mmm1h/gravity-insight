@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.census.cli import _coverage_summary, build_parser
+from gravity_sdk.census.cli import _coverage_summary, build_parser, run
 from gravity_sdk.census.coverage import build_coverage
 from gravity_sdk.census.diffing import diff_routes
 from gravity_sdk.census.fetcher import StaticFetcher, _FetchError, _looks_like_vite_chunk, check_upstream
@@ -26,6 +26,13 @@ class GravityCensusCliTests(unittest.TestCase):
         self.assertEqual("coverage", coverage.command)
         summary = _coverage_summary({"summary": {"total_routes": 987}, "source": {"coverage_scope": "same_origin_static_js_graph_discoverable_from_site_entry", "platform_complete": False, "known_excluded_origins": ["rank.gravity-engine.com"]}})
         self.assertEqual((summary["total_routes"], summary["coverage_scope"], summary["platform_complete"], summary["known_excluded_origins"]), (987, "same_origin_static_js_graph_discoverable_from_site_entry", False, ["rank.gravity-engine.com"]))
+
+    def test_run_dispatches_to_the_selected_command_handler(self) -> None:
+        expected = ({"unique_method_path": 2}, 0)
+        args = SimpleNamespace(smoke=False, command="parse")
+        with patch("gravity_sdk.census.cli._run_parse", return_value=expected) as handler:
+            self.assertEqual(expected, run(args))
+        handler.assert_called_once_with(args)
 
 
 class GravityCensusNormalizationTests(unittest.TestCase):
@@ -89,6 +96,27 @@ class GravityCensusParserTests(unittest.TestCase):
             self.assertEqual(first, second)
             source = first_document["source"]
             self.assertEqual((source["coverage_scope"], source["platform_complete"], source["known_excluded_origins"]), ("same_origin_static_js_graph_discoverable_from_site_entry", False, ["rank.gravity-engine.com"]))
+
+    def test_build_routes_records_missing_bundle_files_without_aborting(self) -> None:
+        snapshot = {
+            "site_url": "https://example.test/",
+            "bundle_id": "missing-fixture",
+            "files": [
+                {
+                    "url": "https://example.test/assets/missing.js",
+                    "local_path": "raw/example.test/assets/missing.js",
+                }
+            ],
+            "summary": {"bundle_files": 1, "complete": False},
+        }
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temp:
+            result = build_routes(snapshot, Path(temp))
+
+        self.assertEqual([], result["routes"])
+        self.assertEqual(
+            ["raw/example.test/assets/missing.js"],
+            result["source"]["missing_local_files"],
+        )
 
     def test_resolves_esm_exported_base_url_and_type_method(self) -> None:
         api_source = (
@@ -406,6 +434,23 @@ class GravityCensusDiffTests(unittest.TestCase):
         self.assertEqual(result["summary"], {"added": 1, "removed": 1, "method_changed": 1, "path_changed": 1})
         self.assertEqual(result["method_changes"][0]["path"], "/api/v1/method/")
         self.assertEqual(result["path_changes"][0]["new_path"], "/api/v2/item/detail/")
+
+    def test_path_change_matching_uses_each_route_at_most_once(self) -> None:
+        old = {
+            "routes": [
+                {"method": "GET", "path": "/api/v1/team/a/items/"},
+                {"method": "GET", "path": "/api/v1/team/b/items/"},
+            ]
+        }
+        new = {
+            "routes": [{"method": "GET", "path": "/api/v1/team/a2/items/"}]
+        }
+
+        result = diff_routes(old, new)
+
+        self.assertEqual(1, result["summary"]["path_changed"])
+        self.assertEqual(1, result["summary"]["removed"])
+        self.assertEqual("/api/v1/team/a/items/", result["path_changes"][0]["old_path"])
 
 
 if __name__ == "__main__":

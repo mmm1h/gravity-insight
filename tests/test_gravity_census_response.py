@@ -182,6 +182,27 @@ class GravityCensusResponseTests(unittest.TestCase):
         self.assertEqual(second_summary["files_changed"], 0)
         self.assertEqual(second_summary["candidate_fields_added"], 0)
 
+    def test_apply_skips_draft_without_response_schema_blocker(self) -> None:
+        response_document = {
+            "routes": [{"method": "GET", "path": "/api/v1/items/", "fields": []}]
+        }
+        draft = {
+            "operation": {
+                "upstream_method": "GET",
+                "path_template": "/api/v1/items/",
+            },
+            "draft": {"blockers": []},
+        }
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temp:
+            draft_path = Path(temp) / "fixture.json"
+            write_json(draft_path, draft)
+            summary = apply_response_fields_to_drafts(response_document, Path(temp))
+            unchanged = read_json(draft_path)
+
+        self.assertEqual(draft, unchanged)
+        self.assertEqual(0, summary["response_schema_unverified"])
+        self.assertEqual(0, summary["files_changed"])
+
 
 if __name__ == "__main__":
     unittest.main()

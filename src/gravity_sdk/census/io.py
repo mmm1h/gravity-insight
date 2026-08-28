@@ -377,3 +377,130 @@ def summarize_parameter_routes(routes: Sequence[Mapping[str, Any]]) -> dict[str,
         "routes_with_high_confidence_complete_contract": _complete_contract_count(routes),
         "top_level_parameters": {**top_level, "total": sum(top_level.values())},
     }
+
+
+def _response_leaf_fields(
+    fields: Sequence[Mapping[str, Any]],
+) -> list[Mapping[str, Any]]:
+    paths = {str(item.get("path", "")) for item in fields}
+    result: list[Mapping[str, Any]] = []
+    for item in fields:
+        path = str(item.get("path", ""))
+        prefixes = (path + ".", path + "[].")
+        if any(other != path and other.startswith(prefixes) for other in paths):
+            continue
+        result.append(item)
+    return result
+
+
+def _response_blocker(draft: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    return next(
+        (
+            item
+            for item in draft.get("blockers", [])
+            if isinstance(item, Mapping)
+            and item.get("code") == "response_schema_unverified"
+        ),
+        None,
+    )
+
+
+def _merge_response_candidates(
+    draft: dict[str, Any], selected: list[Mapping[str, Any]]
+) -> int:
+    candidates = draft.get("candidate_fields", [])
+    if not isinstance(candidates, list):
+        candidates = []
+    by_path = {
+        str(item.get("path")): item
+        for item in candidates
+        if isinstance(item, Mapping)
+    }
+    before = len(by_path)
+    for item in selected:
+        path = str(item.get("path", ""))
+        by_path.setdefault(
+            path,
+            {
+                "path": path,
+                "types": ["unknown"],
+                "presence": "unknown",
+                "privacy_classification": "manual_review",
+                "classification_reason": "frontend_static_consumer_unreviewed",
+                "expose": False,
+            },
+        )
+    draft["candidate_fields"] = [by_path[path] for path in sorted(by_path)]
+    return len(by_path) - before
+
+
+def _apply_response_route(
+    source: dict[str, Any],
+    indexed: Mapping[tuple[str, str], tuple[int, Mapping[str, Any]]],
+    summary: dict[str, Any],
+    route_key: Callable[[Any, Any], tuple[str, str]],
+) -> None:
+    draft = source.get("draft", {})
+    operation = source.get("operation", {})
+    if not isinstance(draft, dict) or not isinstance(operation, Mapping):
+        return
+    response_blocker = _response_blocker(draft)
+    if response_blocker is None:
+        return
+    summary["response_schema_unverified"] += 1
+    matched = indexed.get(
+        route_key(operation.get("upstream_method"), operation.get("path_template"))
+    )
+    if matched is None:
+        return
+    route_index, route = matched
+    summary["route_matched"] += 1
+    selected = _response_leaf_fields(route.get("fields", []))
+    if not selected:
+        return
+    summary["with_static_candidates"] += 1
+    for item in selected:
+        summary["confidence"][str(item.get("confidence", "low"))] += 1
+    summary["candidate_fields_added"] += _merge_response_candidates(draft, selected)
+    summary["candidate_fields_total"] += len(selected)
+    response_blocker["evidence"] = (
+        f"src/gravity_sdk/census/data/route-response-fields.json#/routes/{route_index}"
+    )
+
+
+def _response_draft_summary() -> dict[str, Any]:
+    return {
+        "response_schema_unverified": 0,
+        "route_matched": 0,
+        "with_static_candidates": 0,
+        "candidate_fields_added": 0,
+        "candidate_fields_total": 0,
+        "files_changed": 0,
+        "confidence": {"high": 0, "medium": 0, "low": 0},
+    }
+
+
+def apply_response_fields_to_drafts(
+    response_document: Mapping[str, Any],
+    drafts_root: Path,
+    *,
+    route_key: Callable[[Any, Any], tuple[str, str]],
+) -> dict[str, Any]:
+    indexed = {
+        route_key(item.get("method"), item.get("path")): (index, item)
+        for index, item in enumerate(response_document.get("routes", []))
+    }
+    summary = _response_draft_summary()
+    for draft_path in sorted(drafts_root.glob("*.json")):
+        source = read_json(draft_path)
+        original = json_bytes(source)
+        _apply_response_route(source, indexed, summary, route_key)
+        if json_bytes(source) != original:
+            write_json(draft_path, source)
+            summary["files_changed"] += 1
+    covered = int(summary["with_static_candidates"])
+    summary["average_candidate_fields"] = (
+        round(int(summary["candidate_fields_total"]) / covered, 3) if covered else 0.0
+    )
+    summary["blockers_advanced_by_static_plus_probe"] = 0
+    return summary
