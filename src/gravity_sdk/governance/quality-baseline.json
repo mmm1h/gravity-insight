@@ -56,7 +56,6 @@
       "src/gravity_sdk/quality.py::main": 17,
       "src/gravity_sdk/registry.py::_request_parts": 25,
       "src/gravity_sdk/sql/client.py::_extract_rows": 23,
-      "src/gravity_sdk/sql/credentials.py::self_test": 16,
       "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 50
     },
     "function_sloc": {
