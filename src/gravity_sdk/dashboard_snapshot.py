@@ -447,7 +447,7 @@ def _result_items(results: Sequence[Mapping[str, Any]]) -> int:
 def _positive_app_id(value: Any) -> str:
     rendered = str(value).strip() if isinstance(value, (str, int)) and not isinstance(value, bool) else ""
     if not rendered.isascii() or not rendered.isdigit() or int(rendered) <= 0:
-        raise InputValidationError(f"actual value: {actual_value(app_id)}; " + ("dashboard snapshot app_id must be a positive integer"), field="app_id")
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("dashboard snapshot app_id must be a positive integer"), field="app_id")
     return str(int(rendered))
 
 

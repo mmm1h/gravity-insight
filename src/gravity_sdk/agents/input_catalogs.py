@@ -312,7 +312,7 @@ def _mapping_items(value: Any) -> list[dict[str, Any]]:
 def _required_app(value: Mapping[str, Any]) -> Any:
     if "app" not in value:
         raise InputValidationError(
-            f"actual value: {actual_value(known_inputs.get('app'))}; " + ("online input resolution requires known_inputs.app for this catalog"),
+            f"actual value: {actual_value(value.get('app'))}; " + ("online input resolution requires known_inputs.app for this catalog"),
             field="known_inputs.app",
         )
     return value["app"]
@@ -322,7 +322,7 @@ def _required_platforms(value: Mapping[str, Any]) -> Sequence[str]:
     platforms = value.get("platforms")
     if not isinstance(platforms, Sequence) or isinstance(platforms, (str, bytes)):
         raise InputValidationError(
-            f"actual value: {actual_value(known_inputs.get('platforms'))}; " + ("online input resolution requires known_inputs.platforms"),
+            f"actual value: {actual_value(value.get('platforms'))}; " + ("online input resolution requires known_inputs.platforms"),
             field="known_inputs.platforms",
         )
     return platforms

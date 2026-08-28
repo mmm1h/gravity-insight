@@ -1,6 +1,7 @@
 """Public envelopes and completion classification for governed exports."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from .errors import ErrorCategory, ErrorCode, ErrorDetail

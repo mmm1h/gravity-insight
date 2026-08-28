@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from gravity_sdk.dashboard_snapshot import dashboard_snapshot
+from gravity_sdk.dashboard_snapshot import _positive_app_id, dashboard_snapshot
 from gravity_sdk.errors import (
     ContractChangedError, GravityInsightError, InputValidationError, LocalIOError,
     PaginationError,
@@ -60,6 +60,13 @@ class _Client:
 
 
 class DashboardSnapshotTests(unittest.TestCase):
+    def test_invalid_app_id_returns_input_validation_error(self):
+        with self.assertRaises(InputValidationError) as raised:
+            _positive_app_id(False)
+
+        self.assertEqual("app_id", raised.exception.field)
+        self.assertIn("actual value: false", str(raised.exception))
+
     def test_resolves_exact_dashboard_and_returns_five_safe_ordered_sources(self):
         client = _Client(fail="members")
         result = dashboard_snapshot(client, 17, "Overview", max_workers=4,

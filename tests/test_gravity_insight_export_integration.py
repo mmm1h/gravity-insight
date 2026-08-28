@@ -37,7 +37,7 @@ from gravity_sdk.export_models import (
     ExportState,
 )
 from gravity_sdk.export_privacy import ExportPrivacyFinalizer
-from gravity_sdk.export_results import export_result_envelope
+from gravity_sdk.export_results import _snapshot_completeness, export_result_envelope
 from gravity_sdk.models import load_operation_manifest
 from gravity_sdk.registry import (
     EffectRoute,
@@ -295,6 +295,12 @@ class ExportContractTests(unittest.TestCase):
             payload={"field_map": {"ClientID": "客户ID", "CreateTime": "注册时间"}},
             requested_columns=("ClientID", "CreateTime"),
         ))
+
+    def test_snapshot_completeness_includes_mapping_values(self):
+        self.assertEqual(
+            {"completeness": {"complete": True}},
+            _snapshot_completeness(SimpleNamespace(completeness={"complete": True})),
+        )
 
     def test_empty_export_input_reports_a_field_and_public_recovery_command(self):
         contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
