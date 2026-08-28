@@ -17,11 +17,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "e618e52c73a3e830c607c24e86b069daac1ba38bc7c0c3c854ab51f1eca00e4d",
-    "manual_review_sha256": "3d3c725c4cbc8f33568a6c05855579215ce6ead324a38c2fb25cd6357df784a7",
+    "reference_evidence_sha256": "cf848ba7da5b5c44e088f9eb644989ce4446dd781ca000827a34b5989ce4dc5f",
+    "manual_review_sha256": "0134b02325f2b851f2e4c52a4ef46c8b29f5905a8f371c13a2b5e8eb9554a6e1",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3146,
-    "scanned_file_count": 3138,
+    "version_controlled_file_count": 3147,
+    "scanned_file_count": 3139,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 309
     },
-    "sites_sha256": "10960badd83736f24235689afb9a1d223ebd9a2390f6a90a99ee566ad3b379fd"
+    "sites_sha256": "a01247e4ddb28e6ee710d74decab3057269a9fb4c94802300687e39f51cf8920"
   },
   "blockers": [],
   "site_fields": [
@@ -3622,7 +3622,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_agent_surface.py:385:14:patch.object",
+      "tests/test_gravity_insight_agent_surface.py:414:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "client",
@@ -3637,7 +3637,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_agent_surface.py:437:18:patch.object",
+      "tests/test_gravity_insight_agent_surface.py:466:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "runtime",

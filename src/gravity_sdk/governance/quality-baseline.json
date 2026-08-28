@@ -3,7 +3,6 @@
   "debt": {
     "cyclomatic_complexity": {
       "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
-      "src/gravity_sdk/catalog.py::OperationCatalog.describe": 19,
       "src/gravity_sdk/census/cli.py::run": 26,
       "src/gravity_sdk/census/coverage.py::identify_contract_families": 18,
       "src/gravity_sdk/census/coverage.py::reconcile_stable_operations": 17,
@@ -41,10 +40,9 @@
       "src/gravity_sdk/quality.py::debt_snapshot": 24,
       "src/gravity_sdk/quality.py::evaluate_ratchet": 22,
       "src/gravity_sdk/quality.py::main": 17,
-      "src/gravity_sdk/registry.py::_request_parts": 25
+      "src/gravity_sdk/registry.py::_request_parts": 17
     },
     "function_sloc": {
-      "src/gravity_sdk/catalog.py::OperationCatalog.describe": 109,
       "src/gravity_sdk/census/cli.py::run": 83,
       "src/gravity_sdk/census/impact.py::locate_route_impacts": 171,
       "src/gravity_sdk/census/params.py::_extract_occurrence": 104,
@@ -65,20 +63,6 @@
       "src/gravity_sdk/quality.py::render_markdown": 81
     },
     "operation_literals": {
-      "src/gravity_sdk/catalog.py": {
-        "analysis.dashboard.detail": 1,
-        "analysis.dashboard.tree": 1,
-        "analysis.event.info": 1,
-        "analysis.event.list": 1,
-        "analysis.order_detail.list": 1,
-        "analysis.report_config.list": 1,
-        "analysis.segment.list": 1,
-        "analysis.user_detail.list": 1,
-        "analysis.user_property.list": 1,
-        "app.list": 1,
-        "report.multidim.query": 1,
-        "report.multidim.template.preset.list": 1
-      },
       "src/gravity_sdk/executor.py": {
         "analysis.user_event.list": 1
       },
@@ -94,21 +78,6 @@
         "promotion.bytedance.promotion_filter.list": 1,
         "promotion.honor.campaign.list": 1,
         "promotion.tencent.adgroup_filter.list": 2
-      },
-      "src/gravity_sdk/registry.py": {
-        "analysis.account_user.list": 1,
-        "analysis.monetization_detail.list": 1,
-        "analysis.order_detail.list": 1,
-        "analysis.order_split_detail.list": 1,
-        "analysis.segment.evaluate_percent": 1,
-        "analysis.segment.list": 1,
-        "analysis.segment.uid_result.list": 1,
-        "analysis.segment.user_detail.list": 1,
-        "analysis.user_detail.list": 1,
-        "analysis.user_event.list": 1,
-        "analysis.user_postback_log.list": 1,
-        "material.report.query": 1,
-        "report.business.query": 1
       }
     }
   },
@@ -206,10 +175,10 @@
   ],
   "legacy_files": {
     "src/gravity_sdk/catalog.py": {
-      "ast_hard_limit": 5284,
-      "ast_nodes": 5284,
+      "ast_hard_limit": 5277,
+      "ast_nodes": 5277,
       "migration_sloc": 664,
-      "sloc_hard_limit": 665
+      "sloc_hard_limit": 636
     },
     "src/gravity_sdk/census/coverage.py": {
       "ast_hard_limit": 5140,
@@ -290,10 +259,10 @@
       "sloc_hard_limit": 1022
     },
     "src/gravity_sdk/registry.py": {
-      "ast_hard_limit": 4751,
-      "ast_nodes": 4751,
+      "ast_hard_limit": 4724,
+      "ast_nodes": 4724,
       "migration_sloc": 746,
-      "sloc_hard_limit": 747
+      "sloc_hard_limit": 741
     },
     "src/gravity_sdk/sql/products.py": {
       "ast_hard_limit": 3622,

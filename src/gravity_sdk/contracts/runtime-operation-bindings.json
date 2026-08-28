@@ -1,0 +1,40 @@
+{
+  "schema_version": "gravity-insight.runtime-operation-bindings.v1",
+  "catalog": {
+    "parent_input_placeholders": {
+      "analysis.dashboard.detail": ["$first_dashboard_id", "$first_dashboard_space_id"],
+      "analysis.dashboard.tree": ["$first_dashboard_id", "$first_dashboard_space_id"],
+      "analysis.event.info": ["$first_event_property_name"],
+      "analysis.event.list": ["$first_event_name"],
+      "analysis.order_detail.list": ["$first_order_*"],
+      "analysis.report_config.list": ["$first_report_config_id"],
+      "analysis.segment.list": ["$first_segment_id"],
+      "analysis.user_detail.list": ["$first_client_id"],
+      "analysis.user_property.list": ["$first_user_property_name"],
+      "app.list": ["$first_app_id"],
+      "report.multidim.template.preset.list": ["$first_preset_template_id", "$first_preset_template_category"]
+    },
+    "parent_target_inputs": {
+      "report.multidim.query": "data_list"
+    },
+    "roles": {
+      "app_list": "app.list"
+    }
+  },
+  "request_builders": {
+    "analysis.account_user.list": "analysis_account_user_request_parts",
+    "analysis.monetization_detail.list": "_analysis_monetization_detail_request_parts",
+    "analysis.order_detail.list": "_analysis_order_detail_request_parts",
+    "analysis.order_split_detail.list": "_analysis_order_split_detail_request_parts",
+    "analysis.segment.evaluate_percent": "_analysis_segment_rule_request_parts",
+    "analysis.segment.list": "analysis_segment_request_parts",
+    "analysis.segment.uid_result.list": "_analysis_segment_uid_result_request_parts",
+    "analysis.segment.user_detail.list": "_analysis_segment_user_detail_request_parts",
+    "analysis.user_detail.list": "_analysis_user_detail_request_parts",
+    "analysis.user_event.list": "_analysis_user_event_request_parts",
+    "analysis.user_postback_log.list": "_analysis_user_postback_log_request_parts",
+    "app.onelink.list": "app_onelink_request_parts",
+    "material.report.query": "_material_report_request_parts",
+    "report.business.query": "_business_report_request_parts"
+  }
+}

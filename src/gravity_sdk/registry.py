@@ -11,6 +11,7 @@ import time
 import weakref
 from dataclasses import dataclass
 from datetime import date as calendar_date
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping
 
@@ -36,6 +37,21 @@ from .request_codecs import (
     analysis_segment_request_parts,
     app_onelink_request_parts,
 )
+_RUNTIME_BINDINGS_PATH = (
+    Path(__file__).resolve().parent / "contracts" / "runtime-operation-bindings.json"
+)
+
+
+def _load_request_builder_names(
+    path: Path = _RUNTIME_BINDINGS_PATH,
+) -> dict[str, str]:
+    try:
+        return dict(json.loads(path.read_text(encoding="utf-8"))["request_builders"])
+    except (KeyError, OSError, TypeError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ManifestError("could not load runtime operation bindings") from exc
+
+
+_REQUEST_BUILDER_NAMES = _load_request_builder_names()
 _READ_ACTIONS = frozenset(
     {"get", "list", "read", "query", "detail", "tree", "status", "metadata", "schema", "calc_total"})
 _BLOCKED_STABILITY = frozenset({"permission_unavailable", "blocked_privacy", "blocked_write"})
@@ -365,34 +381,16 @@ def _request_parts(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Build the wire payload exclusively from the manifest request codec."""
 
-    builder = segment_mutation_request_builder(operation.operation_id) or {
-        "analysis.segment.list": analysis_segment_request_parts,
-        "analysis.segment.evaluate_percent": _analysis_segment_rule_request_parts,
-        "analysis.account_user.list": analysis_account_user_request_parts,
-        "app.onelink.list": app_onelink_request_parts,
-    }.get(operation.operation_id)
+    builder = segment_mutation_request_builder(
+        operation.operation_id
+    )
+    builder_name = _REQUEST_BUILDER_NAMES.get(operation.operation_id)
+    if builder is None and builder_name is not None:
+        builder = globals().get(builder_name)
+        if not callable(builder):
+            raise ManifestError("runtime operation binding names an unavailable builder")
     if builder:
         return builder(values)
-    if operation.operation_id == "analysis.order_detail.list":
-        return _analysis_order_detail_request_parts(values)
-    if operation.operation_id == "analysis.monetization_detail.list":
-        return _analysis_monetization_detail_request_parts(values)
-    if operation.operation_id == "analysis.user_detail.list":
-        return _analysis_user_detail_request_parts(values)
-    if operation.operation_id == "analysis.user_event.list":
-        return _analysis_user_event_request_parts(values)
-    if operation.operation_id == "analysis.segment.uid_result.list":
-        return _analysis_segment_uid_result_request_parts(values)
-    if operation.operation_id == "analysis.segment.user_detail.list":
-        return _analysis_segment_user_detail_request_parts(values)
-    if operation.operation_id == "analysis.order_split_detail.list":
-        return _analysis_order_split_detail_request_parts(values)
-    if operation.operation_id == "analysis.user_postback_log.list":
-        return _analysis_user_postback_log_request_parts(values)
-    if operation.operation_id == "report.business.query":
-        return _business_report_request_parts(values)
-    if operation.operation_id == "material.report.query":
-        return _material_report_request_parts(values)
     if operation.operation_id in MULTIDIM_OPERATIONS:
         return _isolated_wire({}, build_request_body(operation.operation_id, values))
 
