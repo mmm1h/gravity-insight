@@ -16,6 +16,7 @@ from gravity_sdk.prober import batch as prober_batch
 from gravity_sdk.prober import cli as prober_cli
 from gravity_sdk.prober import online, probe_support, transport as prober_transport
 from gravity_sdk.prober.batch import finalize_batch_report
+from gravity_sdk.prober.drafts import _resource_action
 from gravity_sdk.prober.model import (
     build_draft,
     build_projection,
@@ -207,6 +208,33 @@ class GravityInsightProberTests(unittest.TestCase):
         assert source["operation"]["executable"] is False
         assert source["operation"]["response_projection"]["item_keys"] == []
         assert source["draft"]["promotion_gate"]["eligible"] is False
+
+    def test_resource_action_table_preserves_rule_precedence(self) -> None:
+        cases = (
+            (("manager", "account", "by_company"), "GET", (), ("account_company", "list")),
+            (("campaign", "tree"), "GET", (), ("campaign", "tree")),
+            (("report", "calc_total"), "GET", (), ("report", "calc_total")),
+            (("manager", "campaign", "list"), "GET", (), ("campaign_option", "list")),
+            (("account", "public_list"), "GET", (), ("account_public", "list")),
+            (("campaigns",), "GET", (), ("campaign", "list")),
+            (("campaign", "filters"), "GET", (), ("campaign_filter", "list")),
+            (("campaign", "detail"), "GET", (), ("campaign", "detail")),
+            (("campaign", "get"), "GET", (), ("campaign", "get")),
+            (("fetch_app_info",), "GET", (), ("app_info", "get")),
+            (("campaign", "custom_get"), "POST", (), ("campaign", "query")),
+            (("query_company_amount",), "POST", (), ("company_amount", "query")),
+            (("campaign", "report"), "GET", (), ("campaign", "list")),
+            (("report", "campaign"), "POST", (), ("campaign", "list")),
+            (("opaque",), "GET", (), ("opaque", "get")),
+            (("opaque",), "POST", ("read_action_path_token",), ("opaque", "query")),
+            (("set",), "POST", ("read_action_path_token",), ("unknown", "unknown")),
+        )
+        for segments, method, evidence, expected in cases:
+            with self.subTest(segments=segments, method=method):
+                route = {"method": method, "semantic_evidence": list(evidence)}
+                assert _resource_action(
+                    route, segments, domain="promotion"
+                ) == expected
 
     def test_draft_generator_rejects_stable_id_collision(self) -> None:
         tmp_path = self.tmp_path

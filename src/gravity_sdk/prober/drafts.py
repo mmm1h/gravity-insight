@@ -51,16 +51,6 @@ DOMAIN_BY_MODULE = {
     "资产": "material",
 }
 
-PLURAL_RESOURCES = {
-    "ad_groups": "ad_group",
-    "campaigns": "campaign",
-    "components": "component",
-    "favorites": "favorite",
-    "keys": "key",
-    "members": "member",
-}
-
-AMBIGUOUS_POST_TAILS = {"manage", "set"}
 RESERVATION_ROOT = CONTRACT_ROOT / "reservations"
 ROUTE_REGISTRY_PATH = CONTRACT_ROOT / "routes" / "registry.json"
 WRITE_REPORT_ROOT = REPO_ROOT / "tmp" / "codex" / "gi-write-registry"
@@ -116,6 +106,26 @@ _ACTION_TOKENS = frozenset(
     }
 )
 
+_MUTATION_KIND_RULES = (
+    ("delete", frozenset({"clear", "kill", "terminate", "delete", "remove", "dl"})),
+    ("approve", frozenset({"approve", "audit", "examine", "review"})),
+    ("upload", frozenset({"upload"})),
+    ("import", frozenset({"import"})),
+    ("sync", frozenset({"sync", "async", "handsel"})),
+    ("state_change", frozenset({"enable", "disable", "start", "stop", "cancel", "switch", "status", "change"})),
+    ("bind", frozenset({"bind", "unbind", "binding", "unbinding", "auth2user"})),
+    ("copy", frozenset({"copy", "clone"})),
+    ("move", frozenset({"move", "transfer"})),
+    ("share", frozenset({"share"})),
+    ("execute", frozenset({"submit", "execute", "push", "send", "test", "debug"})),
+    ("create", frozenset({"create", "add", "append", "register", "generate"})),
+    ("update", frozenset({
+        "update", "edit", "modify", "save", "manage", "setting", "config",
+        "set", "reset", "rename", "opt", "override", "collect", "distinct",
+        "mark", "use", "undelete", "restore",
+    })),
+)
+
 
 def existing_operations(operation_root: Path) -> dict[str, Mapping[str, Any]]:
     result: dict[str, Mapping[str, Any]] = {}
@@ -155,15 +165,11 @@ def select_routes(
     for route in routes:
         if not isinstance(route, Mapping) or route.get("status") != "uncovered_read":
             continue
-        matches = (
-            (not path_set or route.get("path") in path_set)
-            and (not family_set or route_family_id(route) in family_set)
-            and (not module_set or route.get("business_module") in module_set)
-            and (not cost_set or route.get("estimated_implementation_cost") in cost_set)
-            and (not method_certainty or route.get("method_certainty") == method_certainty)
-            and str(route.get("method", "")).upper() in {"GET", "POST"}
-        )
-        if matches:
+        if _route_matches(
+            route, path_set=path_set, family_set=family_set,
+            module_set=module_set, cost_set=cost_set,
+            method_certainty=method_certainty,
+        ):
             selected.append(route)
     selected.sort(key=lambda item: (str(item.get("path", "")), str(item.get("method", ""))))
     if len(selected) > limit:
@@ -175,6 +181,20 @@ def select_routes(
             + ", ".join(sorted(missing_paths))
         )
     return selected
+
+
+def _route_matches(
+    route: Mapping[str, Any], *, path_set: set[str], family_set: set[str],
+    module_set: set[str], cost_set: set[str], method_certainty: str | None,
+) -> bool:
+    return (
+        (not path_set or route.get("path") in path_set)
+        and (not family_set or route_family_id(route) in family_set)
+        and (not module_set or route.get("business_module") in module_set)
+        and (not cost_set or route.get("estimated_implementation_cost") in cost_set)
+        and (not method_certainty or route.get("method_certainty") == method_certainty)
+        and str(route.get("method", "")).upper() in {"GET", "POST"}
+    )
 
 
 def _platform_from_route(route: Mapping[str, Any]) -> str | None:
@@ -209,13 +229,9 @@ def _domain_from_route(route: Mapping[str, Any], platform: str | None) -> str:
     module = str(route.get("business_module", ""))
     path = str(route.get("path", ""))
     if path.startswith("/openapi/api/"):
-        _, segments = _semantic_segments(path)
-        if "open_develop" in segments:
-            return "developer"
-        if "promoted_object" in segments:
-            return "promotion"
-        if segments and segments[0] == "report":
-            return "report"
+        openapi_domain = _openapi_domain(path)
+        if openapi_domain is not None:
+            return openapi_domain
     if module in DOMAIN_BY_MODULE:
         domain = DOMAIN_BY_MODULE[module]
         if domain == "promotion" and any(
@@ -228,30 +244,73 @@ def _domain_from_route(route: Mapping[str, Any], platform: str | None) -> str:
         return "app"
     if path.startswith("/openapi/api/"):
         return "candidate"
-    if any(token in path for token in ("/health_status/", "/base/company_config/")):
-        return "metadata"
-    if any(token in path for token in ("/common/media_report/", "/monetization/", "/subscribe/")):
-        return "report"
-    if "/event/" in path:
-        return "analysis"
-    if "/portal/" in path or "/oplog/" in path:
-        return "account"
-    if any(token in path for token in ("/common/", "/media/", "/task/")):
-        return "promotion"
+    path_domain = _path_domain(path)
+    if path_domain is not None:
+        return path_domain
     if platform:
         return "promotion"
     return "unknown"
 
 
+def _openapi_domain(path: str) -> str | None:
+    _, segments = _semantic_segments(path)
+    if "open_develop" in segments:
+        return "developer"
+    if "promoted_object" in segments:
+        return "promotion"
+    if segments and segments[0] == "report":
+        return "report"
+    return None
+
+
+def _path_domain(path: str) -> str | None:
+    rules = (
+        (("/health_status/", "/base/company_config/"), "metadata"),
+        (("/common/media_report/", "/monetization/", "/subscribe/"), "report"),
+        (("/event/",), "analysis"),
+        (("/portal/", "/oplog/"), "account"),
+        (("/common/", "/media/", "/task/"), "promotion"),
+    )
+    return next(
+        (domain for tokens, domain in rules if any(token in path for token in tokens)),
+        None,
+    )
+
+
 def _normal_token(value: str) -> str:
-    value = value.casefold().replace("-", "_")
-    value = re.sub(r"[^a-z0-9_]+", "_", value)
-    return re.sub(r"_+", "_", value).strip("_")
+    from .parameter_types import normal_route_token
+
+    return normal_route_token(value)
+
+
+def _suffix_list_resource(tail: str, values: Sequence[str]) -> str:
+    prefix = tail[: -len("_list")]
+    if prefix in {"public", "info", "user"} and len(values) > 1:
+        return _normal_token(values[-2]) + "_" + prefix
+    return prefix or "unknown"
+
+
+def _resource_fallback(
+    route: Mapping[str, Any], values: Sequence[str], tail: str, method: str,
+) -> tuple[str, str]:
+    report_resources = {
+        "account", "adcreative", "adgroup", "campaign", "creative",
+        "keyword", "plan", "unit",
+    }
+    if "report" in values and tail in report_resources:
+        return tail, "list"
+    if method == "GET":
+        return tail, "get"
+    if "read_action_path_token" in route.get("semantic_evidence", []):
+        return tail, "query"
+    return "unknown", "unknown"
 
 
 def _resource_action(
     route: Mapping[str, Any], segments: Sequence[str], *, domain: str,
 ) -> tuple[str, str]:
+    from .parameter_types import resource_action_rule
+
     if not segments:
         return "unknown", "unknown"
     values = list(segments)
@@ -261,66 +320,14 @@ def _resource_action(
         return "unknown", "unknown"
     tail = _normal_token(values[-1])
     method = str(route.get("method", "")).upper()
-    if method == "POST" and tail in AMBIGUOUS_POST_TAILS:
+    if method == "POST" and tail in {"manage", "set"}:
         return "unknown", "unknown"
-    if tail == "by_company":
-        return "account_company", "list"
-    if tail in {"tree", "whole_tree"}:
-        resource = _normal_token(values[-2]) if len(values) > 1 else "unknown"
-        return resource, "tree"
-    if tail == "calc_total":
-        resource = _normal_token(values[-2]) if len(values) > 1 else "report"
-        return resource, "calc_total"
-    if tail == "list":
-        if len(values) < 2:
-            return "unknown", "list"
-        resource = _normal_token(values[-2])
-        if "manager" in values and resource in {"campaign", "adgroup", "ad_group"}:
-            resource += "_option"
-        return resource, "list"
+    resolved = resource_action_rule(tail, values, domain)
+    if resolved is not None:
+        return resolved
     if tail.endswith("_list"):
-        prefix = tail[: -len("_list")]
-        if prefix in {"public", "info", "user"} and len(values) > 1:
-            resource = _normal_token(values[-2])
-            resource += "_" + prefix
-        else:
-            resource = prefix
-        return resource or "unknown", "list"
-    if tail in PLURAL_RESOURCES:
-        return PLURAL_RESOURCES[tail], "list"
-    if tail == "filters":
-        resource = _normal_token(values[-2]) if len(values) > 1 else "filter"
-        return resource + "_filter", "list"
-    if tail in {"detail", "info"}:
-        resource = _normal_token(values[-2]) if len(values) > 1 else "unknown"
-        return resource, tail
-    if tail in {
-        "get", "preview", "check", "history", "binding_url", "click_info",
-        "device_info", "fetch_app_info", "get_file_params", "get_metrics",
-        "get_result", "latest_account_status", "role_get", "sensitive_info",
-        "test_message", "tutorial_mark", "use_template", "user_privacy_policy",
-        "version_id_set",
-    }:
-        if tail == "get" and len(values) > 1:
-            resource = _normal_token(values[-2])
-        else:
-            resource = re.sub(r"^(fetch|get)_", "", tail)
-        return resource or "unknown", "get"
-    if tail == "custom_get" and len(values) > 1:
-        return _normal_token(values[-2]), "query"
-    if tail in {"query", "data_analysis", "hour_comparison", "overview", "query_company_amount", "setting", "attribution"}:
-        resource = re.sub(r"^(custom_|query_)", "", tail) or "report"
-        return resource, "query"
-    if tail == "report":
-        resource = _normal_token(values[-2]) if len(values) > 1 else "report"
-        return resource, "list" if domain == "promotion" else "query"
-    if "report" in values and tail in {"account", "adcreative", "adgroup", "campaign", "creative", "keyword", "plan", "unit"}:
-        return tail, "list"
-    if method == "GET":
-        return tail, "get"
-    if "read_action_path_token" in route.get("semantic_evidence", []):
-        return tail, "query"
-    return "unknown", "unknown"
+        return _suffix_list_resource(tail, values), "list"
+    return _resource_fallback(route, values, tail, method)
 
 
 def _resource_context(
@@ -670,77 +677,73 @@ def build_conservative_draft(
         "source_schema_version": 2,
         "target_manifest": TARGET_MANIFESTS.get(str(identity["domain"]), "other.json"),
         "manifest_order": 10000,
-        "operation": {
-            "operation_id": operation_id,
-            "domain": identity["domain"],
-            "resource": identity["resource"],
-            "action": identity["action"],
-            "platform": identity.get("platform"),
-            "description": (
-                f"Draft catalog entry inferred from census route {route['method']} {path}; "
-                "request binding, pagination, and response projection remain unverified."
-            ),
-            "contract_version": 1,
-            "upstream_method": str(route["method"]).upper(),
-            "path_template": path,
-            "auth_profile": "gravity_authorization",
-            "stability": "experimental",
-            "executable": False,
-            "block_reason": None,
-            "input_fields": input_fields,
-            "request": {
-                "path_fields": path_fields,
-                "query_fields": [],
-                "body_fields": [],
-                "defaults": {},
-                "fixed_query": {},
-                "fixed_body": {},
-            },
-            "response_projection": {
-                "data_keys": [],
-                "required_data_keys": [],
-                "item_keys": [],
-                "dynamic_item_fields": [],
-            },
-            "pagination": {
-                "kind": "unverified",
-                "page_field": "",
-                "page_size_field": "",
-                "list_path": "",
-                "page_info_path": "",
-                "total_page_field": "",
-            },
-            "semantic_error_rules": [],
-            "privacy_policy": {
-                "classification": "unverified",
-                "redact_fields": list(DEFAULT_REDACT_FIELDS),
-            },
-            "required_parent": [],
-            "live_probe": {"enabled": False, "inputs": {}},
-            "effect": "read",
-            "examples": [],
-            "provenance": {
-                "source_files": [f"drafts/{operation_id}.json"],
-                "family": route_family_id(route),
-                "platform": identity.get("platform"),
-                "applied_overrides": [],
-            },
-        },
-        "draft": {
-            "status": "draft",
-            "generated_at": now_utc(),
-            "coverage_reference": _coverage_reference(
-                route, coverage_path=coverage_path, route_index=route_index
-            ),
-            "route_evidence": _route_evidence(route),
-            "candidate_fields": [],
-            "manual_review_fields": [],
-            "probe_evidence": [],
-            "blockers": [],
-            "promotion_gate": {"eligible": False, "missing": []},
-        },
+        "operation": _conservative_operation(
+            route, identity, path=path, path_fields=path_fields,
+            input_fields=input_fields,
+        ),
+        "draft": _conservative_metadata(
+            route, coverage_path=coverage_path, route_index=route_index
+        ),
     }
     return refresh_structured_blockers(source, route)
+
+
+def _conservative_operation(
+    route: Mapping[str, Any], identity: Mapping[str, Any], *, path: str,
+    path_fields: Sequence[str], input_fields: Mapping[str, Any],
+) -> dict[str, Any]:
+    operation_id = str(identity["operation_id"])
+    return {
+        "operation_id": operation_id, "domain": identity["domain"],
+        "resource": identity["resource"], "action": identity["action"],
+        "platform": identity.get("platform"),
+        "description": (
+            f"Draft catalog entry inferred from census route {route['method']} {path}; "
+            "request binding, pagination, and response projection remain unverified."
+        ),
+        "contract_version": 1, "upstream_method": str(route["method"]).upper(),
+        "path_template": path, "auth_profile": "gravity_authorization",
+        "stability": "experimental", "executable": False, "block_reason": None,
+        "input_fields": input_fields,
+        "request": {
+            "path_fields": list(path_fields), "query_fields": [], "body_fields": [],
+            "defaults": {}, "fixed_query": {}, "fixed_body": {},
+        },
+        "response_projection": {
+            "data_keys": [], "required_data_keys": [], "item_keys": [],
+            "dynamic_item_fields": [],
+        },
+        "pagination": {
+            "kind": "unverified", "page_field": "", "page_size_field": "",
+            "list_path": "", "page_info_path": "", "total_page_field": "",
+        },
+        "semantic_error_rules": [],
+        "privacy_policy": {
+            "classification": "unverified",
+            "redact_fields": list(DEFAULT_REDACT_FIELDS),
+        },
+        "required_parent": [], "live_probe": {"enabled": False, "inputs": {}},
+        "effect": "read", "examples": [],
+        "provenance": {
+            "source_files": [f"drafts/{operation_id}.json"],
+            "family": route_family_id(route), "platform": identity.get("platform"),
+            "applied_overrides": [],
+        },
+    }
+
+
+def _conservative_metadata(
+    route: Mapping[str, Any], *, coverage_path: Path, route_index: int,
+) -> dict[str, Any]:
+    return {
+        "status": "draft", "generated_at": now_utc(),
+        "coverage_reference": _coverage_reference(
+            route, coverage_path=coverage_path, route_index=route_index
+        ),
+        "route_evidence": _route_evidence(route),
+        "candidate_fields": [], "manual_review_fields": [], "probe_evidence": [],
+        "blockers": [], "promotion_gate": {"eligible": False, "missing": []},
+    }
 
 
 def build_draft(route: Mapping[str, Any], existing_ids: set[str]) -> dict[str, Any]:
@@ -1252,47 +1255,10 @@ def classify_mutation_kind(route: Mapping[str, Any]) -> tuple[str, str | None, l
     tokens = _route_tokens(path)
     token_set = set(tokens)
     evidence: list[str] = []
-
-    def has(*names: str) -> bool:
-        return any(name in token_set for name in names)
-
-    def base_kind() -> str:
-        if has("clear", "kill", "terminate", "delete", "remove", "dl"):
-            return "delete"
-        if has("approve", "audit", "examine", "review"):
-            return "approve"
-        if has("upload"):
-            return "upload"
-        if has("import"):
-            return "import"
-        if has("sync", "async", "handsel"):
-            return "sync"
-        if has("enable", "disable", "start", "stop", "cancel", "switch", "status", "change") or (
-            "open" in token_set and "close" in token_set
-        ):
-            return "state_change"
-        if has("bind", "unbind", "binding", "unbinding", "auth2user"):
-            return "bind"
-        if has("copy", "clone"):
-            return "copy"
-        if has("move", "transfer"):
-            return "move"
-        if has("share"):
-            return "share"
-        if has("submit", "execute", "push", "send", "test", "debug") or path.endswith("/event/click/"):
-            return "execute"
-        if has("create", "add", "append", "register", "generate"):
-            return "create"
-        if has(
-            "update", "edit", "modify", "save", "manage", "setting", "config",
-            "set", "reset", "rename", "opt", "override", "collect", "distinct",
-            "mark", "use", "undelete", "restore",
-        ):
-            return "update"
-        return "other"
-
-    inferred = base_kind()
-    batch = has("batch", "bulk", "onekey") or "one_key" in path.casefold()
+    inferred = _base_mutation_kind(path, token_set)
+    batch = bool(token_set.intersection({"batch", "bulk", "onekey"})) or (
+        "one_key" in path.casefold()
+    )
     if batch:
         evidence.append("explicit_batch_path_token")
         return "batch", inferred if inferred != "other" else "other", evidence
@@ -1301,6 +1267,74 @@ def classify_mutation_kind(route: Mapping[str, Any]) -> tuple[str, str | None, l
     else:
         evidence.append("conservative_write_fallback")
     return inferred, None, evidence
+
+
+def _base_mutation_kind(path: str, token_set: set[str]) -> str:
+    for kind, rule_tokens in _MUTATION_KIND_RULES:
+        if token_set.intersection(rule_tokens):
+            return kind
+        if kind == "state_change" and {"open", "close"}.issubset(token_set):
+            return kind
+        if kind == "execute" and path.endswith("/event/click/"):
+            return kind
+    return "other"
+
+
+def _mutation_reversibility(
+    path: str, tokens: set[str], kind: str, ui_text: str,
+) -> tuple[str, str]:
+    if tokens.intersection({"clear", "kill", "terminate", "resetkey"}) or "reset_key" in path:
+        return "irreversible", "explicit_irreversible_action"
+    if kind in {"update", "state_change", "bind", "move", "share"}:
+        return "reversible", "subsequent_mutation_can_restore_state"
+    if "undelete" in tokens or "恢复" in ui_text:
+        return "reversible", "explicit_restore_semantics"
+    return "unknown", "reversal_contract_not_observed"
+
+
+def _mutation_idempotency(kind: str) -> str:
+    if kind in {"create", "upload", "import", "copy", "execute", "approve"}:
+        return "non_idempotent"
+    if kind in {"update", "delete", "state_change", "bind", "move", "share"}:
+        return "conditional"
+    return "unknown"
+
+
+def _live_delivery_effect(
+    tokens: set[str], module: str,
+) -> tuple[str, str]:
+    delivery_tokens = {
+        "ad", "adgroup", "adplan", "advertisement", "advertiser", "campaign",
+        "creative", "delivery", "materialpush", "plan", "project", "promotion",
+        "publish", "stardelivery", "trackurl",
+    }
+    compact_tokens = {token.replace("_", "") for token in tokens}
+    attribution = {"postback", "attribution", "reattribution", "click", "impress"}
+    if compact_tokens.intersection(delivery_tokens) or (
+        module in {"推广平台", "归因"} and tokens.intersection(attribution)
+    ):
+        return "yes", "delivery_or_attribution_resource"
+    administration = {"tutorial", "message", "password", "member", "dept", "role"}
+    if module == "App 与账号" and tokens.intersection(administration):
+        return "no", "account_administration_not_delivery"
+    return "unknown", "live_delivery_effect_not_proven"
+
+
+def _mutation_risk_level(
+    kind: str, scope: str, reversibility: str, affects_live_delivery: str,
+) -> str:
+    if reversibility == "irreversible" or (
+        affects_live_delivery == "yes"
+        and (scope == "batch" or kind in {"approve", "delete", "execute", "state_change"})
+    ):
+        return "high"
+    if affects_live_delivery == "yes" or scope == "batch" or kind in {
+        "approve", "delete", "import", "sync", "upload",
+    }:
+        return "medium"
+    if affects_live_delivery == "no" and reversibility == "reversible":
+        return "low"
+    return "unknown"
 
 
 def _mutation_risk(
@@ -1312,64 +1346,17 @@ def _mutation_risk(
     ui_text = " ".join(str(item) for item in route.get("ui_texts", [])).casefold()
     scope = "batch" if kind == "batch" else "unknown"
     risk_evidence = list(evidence)
-
-    if tokens.intersection({"clear", "kill", "terminate", "resetkey"}) or "reset_key" in path:
-        reversibility = "irreversible"
-        risk_evidence.append("explicit_irreversible_action")
-    elif kind in {"update", "state_change", "bind", "move", "share"}:
-        reversibility = "reversible"
-        risk_evidence.append("subsequent_mutation_can_restore_state")
-    elif "undelete" in tokens or "恢复" in ui_text:
-        reversibility = "reversible"
-        risk_evidence.append("explicit_restore_semantics")
-    else:
-        reversibility = "unknown"
-        risk_evidence.append("reversal_contract_not_observed")
-
-    if kind in {"create", "upload", "import", "copy", "execute", "approve"}:
-        idempotency = "non_idempotent"
-    elif kind in {"update", "delete", "state_change", "bind", "move", "share"}:
-        idempotency = "conditional"
-    elif kind in {"sync", "batch"}:
-        idempotency = "unknown"
-    else:
-        idempotency = "unknown"
-
-    delivery_tokens = {
-        "ad", "adgroup", "adplan", "advertisement", "advertiser", "campaign",
-        "creative", "delivery", "materialpush", "plan", "project", "promotion",
-        "publish", "stardelivery", "trackurl",
-    }
-    compact_tokens = {token.replace("_", "") for token in tokens}
+    reversibility, reversibility_evidence = _mutation_reversibility(
+        path, tokens, kind, ui_text
+    )
+    risk_evidence.append(reversibility_evidence)
+    idempotency = _mutation_idempotency(kind)
     module = str(route.get("business_module", ""))
-    if compact_tokens.intersection(delivery_tokens) or (
-        module in {"推广平台", "归因"}
-        and tokens.intersection({"postback", "attribution", "reattribution", "click", "impress"})
-    ):
-        affects_live_delivery = "yes"
-        risk_evidence.append("delivery_or_attribution_resource")
-    elif module == "App 与账号" and tokens.intersection(
-        {"tutorial", "message", "password", "member", "dept", "role"}
-    ):
-        affects_live_delivery = "no"
-        risk_evidence.append("account_administration_not_delivery")
-    else:
-        affects_live_delivery = "unknown"
-        risk_evidence.append("live_delivery_effect_not_proven")
-
-    if reversibility == "irreversible" or (
-        affects_live_delivery == "yes"
-        and (scope == "batch" or kind in {"approve", "delete", "execute", "state_change"})
-    ):
-        risk_level = "high"
-    elif affects_live_delivery == "yes" or scope == "batch" or kind in {
-        "approve", "delete", "import", "sync", "upload",
-    }:
-        risk_level = "medium"
-    elif affects_live_delivery == "no" and reversibility == "reversible":
-        risk_level = "low"
-    else:
-        risk_level = "unknown"
+    affects_live_delivery, delivery_evidence = _live_delivery_effect(tokens, module)
+    risk_evidence.append(delivery_evidence)
+    risk_level = _mutation_risk_level(
+        kind, scope, reversibility, affects_live_delivery
+    )
 
     return {
         "kind": kind,
@@ -1526,30 +1513,37 @@ def _reservation_source(
 
 def _auth_proxy_decision(route: Mapping[str, Any]) -> tuple[str, str, str, str]:
     path = str(route.get("path", "")).casefold()
-    if "query_api" in path or "/post/api/" in path or "/proxy/" in path:
-        return "proxy", "third_party_api_proxy", "third_party_proxy_not_sdk_operation", (
-            "Generic third-party API proxy routes are not exposed as atomic SDK capabilities."
-        )
-    if "callback_url" in path or "event_callback" in path:
-        return "auth", "callback_configuration", "callback_configuration_out_of_scope", (
-            "Callback configuration belongs to authentication/integration administration."
-        )
-    if "auth_callback" in path or "login_request" in path or "login_url" in path or "oauth_url" in path:
-        return "auth", "oauth_flow", "interactive_oauth_flow", (
-            "Interactive OAuth navigation and callbacks are not agent-callable API operations."
-        )
-    if "login" in path or "without_passwd" in path:
-        return "auth", "login", "interactive_login_flow", (
-            "Login and passwordless session establishment remain in the credential subsystem."
-        )
-    if "token" in path or "authorization" in path:
-        return "auth", "credential_management", "credential_material_route", (
-            "Credential and authorization material must not enter the business capability catalog."
-        )
-    if "auth2user" in path or "auth_user" in path or path.endswith("/auth/"):
-        return "auth", "authorization_assignment", "authorization_administration", (
-            "Authorization assignment is an administrative auth surface, not a business operation."
-        )
+    rules = (
+        (("query_api", "/post/api/", "/proxy/"), (
+            "proxy", "third_party_api_proxy", "third_party_proxy_not_sdk_operation",
+            "Generic third-party API proxy routes are not exposed as atomic SDK capabilities.",
+        )),
+        (("callback_url", "event_callback"), (
+            "auth", "callback_configuration", "callback_configuration_out_of_scope",
+            "Callback configuration belongs to authentication/integration administration.",
+        )),
+        (("auth_callback", "login_request", "login_url", "oauth_url"), (
+            "auth", "oauth_flow", "interactive_oauth_flow",
+            "Interactive OAuth navigation and callbacks are not agent-callable API operations.",
+        )),
+        (("login", "without_passwd"), (
+            "auth", "login", "interactive_login_flow",
+            "Login and passwordless session establishment remain in the credential subsystem.",
+        )),
+        (("token", "authorization"), (
+            "auth", "credential_management", "credential_material_route",
+            "Credential and authorization material must not enter the business capability catalog.",
+        )),
+        (("auth2user", "auth_user"), (
+            "auth", "authorization_assignment", "authorization_administration",
+            "Authorization assignment is an administrative auth surface, not a business operation.",
+        )),
+    )
+    for tokens, decision in rules:
+        if any(token in path for token in tokens):
+            return decision
+    if path.endswith("/auth/"):
+        return rules[-1][1]
     return "auth", "third_party_auth", "authentication_surface", (
         "Authentication and third-party authorization surfaces are intentionally unsupported."
     )

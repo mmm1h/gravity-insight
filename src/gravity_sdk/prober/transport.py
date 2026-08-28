@@ -24,6 +24,26 @@ from .privacy import response_schema_sketch
 from .read_semantics import CONFIRMATIONS_PATH, confirmation_keys
 
 
+def trusted_export_download(
+    url: str, trusted: Mapping[str, Any]
+) -> tuple[Any, str, str, bytes, frozenset[str], dict[str, tuple[str, ...]]]:
+    parsed = urlsplit(url)
+    if not parsed.path.casefold().endswith(".xlsx"):
+        raise ValueError("export download has an unverified file extension")
+    extension = ".xlsx"
+    mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    hosts = frozenset(str(value) for value in trusted["allowed_hosts"])
+    prefixes = {
+        str(host): tuple(str(value) for value in values)
+        for host, values in trusted["allowed_path_prefixes"].items()
+    }
+    if parsed.scheme != "https" or parsed.hostname not in hosts:
+        raise RuntimeError("export download host is outside the verified allowlist")
+    if not any(parsed.path.startswith(prefix) for prefix in prefixes.get(parsed.hostname, ())):
+        raise RuntimeError("export download path is outside the verified tenant prefix")
+    return parsed, extension, mime_type, b"PK\x03\x04", hosts, prefixes
+
+
 _CONFIRMED_READ_NAMESPACES = (
     "/account_center/api/",
     "/apprank/api/",

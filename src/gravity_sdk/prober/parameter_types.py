@@ -27,6 +27,68 @@ _INTEGER_PAGINATION_FIELDS = {
     "size",
 }
 
+_RESOURCE_RULE_GROUPS = (
+    (("by_company",), "account_company", "list"),
+    (("tree", "whole_tree"), "previous", "tree"),
+    (("calc_total",), "previous_or_report", "calc_total"),
+    (("list",), "list_resource", "list"),
+    (("filters",), "previous_filter", "list"),
+    (("detail", "info"), "previous", "tail"),
+    (("get",), "get_resource", "get"),
+    (("preview", "check", "history", "binding_url", "click_info", "device_info", "fetch_app_info", "get_file_params", "get_metrics", "get_result", "latest_account_status", "role_get", "sensitive_info", "test_message", "tutorial_mark", "use_template", "user_privacy_policy", "version_id_set"), "read_tail", "get"),
+    (("custom_get",), "previous", "query"),
+    (("query", "data_analysis", "hour_comparison", "overview", "query_company_amount", "setting", "attribution"), "query_tail", "query"),
+    (("report",), "previous_or_report", "domain_report"),
+)
+_RESOURCE_ACTION_RULES = {
+    tail: (strategy, action)
+    for tails, strategy, action in _RESOURCE_RULE_GROUPS for tail in tails
+}
+_PLURAL_RESOURCES = {
+    "ad_groups": "ad_group", "campaigns": "campaign", "components": "component",
+    "favorites": "favorite", "keys": "key", "members": "member",
+}
+
+
+def normal_route_token(value: str) -> str:
+    value = re.sub(r"[^a-z0-9_]+", "_", value.casefold().replace("-", "_"))
+    return re.sub(r"_+", "_", value).strip("_")
+
+
+def _managed_resource(strategy: str, values: list[str], previous: str) -> str:
+    if strategy == "list_resource" and "manager" in values and previous in {
+        "campaign", "adgroup", "ad_group",
+    }:
+        return previous + "_option"
+    return previous
+
+
+def resource_action_rule(
+    tail: str, values: list[str], domain: str,
+) -> tuple[str, str] | None:
+    rule = _RESOURCE_ACTION_RULES.get(tail)
+    if tail == "custom_get" and len(values) == 1:
+        rule = None
+    if rule is None:
+        plural = _PLURAL_RESOURCES.get(tail)
+        return (plural, "list") if plural is not None else None
+    strategy, action = rule
+    previous = normal_route_token(values[-2]) if len(values) > 1 else "unknown"
+    previous = _managed_resource(strategy, values, previous)
+    resources = {
+        "account_company": "account_company", "previous": previous,
+        "previous_or_report": previous if len(values) > 1 else "report",
+        "list_resource": previous,
+        "previous_filter": (previous if len(values) > 1 else "filter") + "_filter",
+        "read_tail": re.sub(r"^(fetch|get)_", "", tail) or "unknown",
+        "query_tail": re.sub(r"^(custom_|query_)", "", tail) or "report",
+        "get_resource": previous if len(values) > 1 else tail,
+    }
+    resolved_action = tail if action == "tail" else action
+    if resolved_action == "domain_report":
+        resolved_action = "list" if domain == "promotion" else "query"
+    return resources[strategy], resolved_action
+
 
 def _field(
     type_name: str, *, default: Any = None, required: bool = False,

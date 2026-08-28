@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "27743bf583eb01f0a9ae91221108231afcfcb7a89f9f8b82075a53f9aa31db87",
-    "manual_review_sha256": "1f9e7165e6e1a5bcd1612039084f7acf3f2fe6b4e87082f4113c522049e547dd",
+    "reference_evidence_sha256": "3f203b06634818746797f071e17ca1b5cade2c507b5856b8e9aebc9d72bdd8db",
+    "manual_review_sha256": "0426e0be0ad307e426d3b477b80361b5946d96745927e6967ce48fe0f0edff85",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3147,
     "scanned_file_count": 3139,
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 309
     },
-    "sites_sha256": "414ea8a5f07a1913625c8726404f9033cef41595d8efba5d90b94c8f5a62d238"
+    "sites_sha256": "bfb7098c107ed02068077acce96e4897ce92e8bbe7d75cd9f11b4da3d5570c1d"
   },
   "blockers": [],
   "site_fields": [
@@ -2707,7 +2707,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/cli.py:325:14:importlib.import_module",
+      "src/gravity_sdk/prober/cli.py:328:14:importlib.import_module",
       "rm",
       "dynamic_import",
       "sdk.__name__ + \".errors\"",
@@ -2722,7 +2722,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/export_verify.py:52:12:importlib.import_module",
+      "src/gravity_sdk/prober/export_verify.py:56:12:importlib.import_module",
       "rm",
       "dynamic_import",
       "f\"{base}.{name}\"",
@@ -2737,7 +2737,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:176:19:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:196:19:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".models\"",
@@ -2752,7 +2752,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:177:21:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:197:21:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".registry\"",
@@ -2767,7 +2767,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:178:21:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:198:21:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".executor\"",
@@ -2782,7 +2782,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:179:22:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:199:22:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".transport\"",
@@ -2797,7 +2797,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:180:25:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:200:25:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".http_runtime\"",
@@ -2812,7 +2812,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:181:24:importlib.import_module",
+      "src/gravity_sdk/prober/transport.py:201:24:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".credentials\"",
@@ -4402,7 +4402,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:133:19:mock.patch",
+      "tests/test_gravity_insight_prober.py:134:19:mock.patch",
       "rm",
       "non_string_patch_expression",
       "target",
@@ -4417,7 +4417,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:133:80:mock.patch.object",
+      "tests/test_gravity_insight_prober.py:134:80:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "target",
@@ -4432,7 +4432,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:633:14:mock.patch.object",
+      "tests/test_gravity_insight_prober.py:661:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "online",
@@ -4447,7 +4447,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:633:81:mock.patch.object",
+      "tests/test_gravity_insight_prober.py:661:81:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "online",
@@ -4462,7 +4462,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:683:9:monkeypatch.setattr",
+      "tests/test_gravity_insight_prober.py:711:9:monkeypatch.setattr",
       "rm",
       "non_string_patch_expression",
       "online",
@@ -4477,7 +4477,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:684:9:monkeypatch.setattr",
+      "tests/test_gravity_insight_prober.py:712:9:monkeypatch.setattr",
       "rm",
       "non_string_patch_expression",
       "online",
@@ -4492,7 +4492,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:688:9:monkeypatch.setattr",
+      "tests/test_gravity_insight_prober.py:716:9:monkeypatch.setattr",
       "rm",
       "non_string_patch_expression",
       "prober_batch",
@@ -4507,7 +4507,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:689:9:monkeypatch.setattr",
+      "tests/test_gravity_insight_prober.py:717:9:monkeypatch.setattr",
       "rm",
       "non_string_patch_expression",
       "prober_batch",
@@ -4522,7 +4522,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_prober.py:693:9:monkeypatch.setattr",
+      "tests/test_gravity_insight_prober.py:721:9:monkeypatch.setattr",
       "rm",
       "non_string_patch_expression",
       "prober_cli.runtime",

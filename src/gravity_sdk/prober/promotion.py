@@ -28,96 +28,24 @@ from .privacy import (
     response_schema_sketch,
 )
 from .probe_support import evidence_path, privacy_summary
-from .promotion_normalization import complete_privacy_redactions
+from .promotion_normalization import (
+    complete_privacy_redactions,
+    evaluate_gate as _evaluate_gate,
+    legacy_privacy_evidence_reusable as _legacy_privacy_evidence_reusable_impl,
+)
 from .promotion_transaction import compile_contract_products, promote_atomically
 
 
-def _placeholder_supported(value: Any) -> bool:
-    supported = {
-        "$today", "$yesterday", "$analysis_query_id", "$first_app_id",
-        "$first_event_name", "$first_user_property_name",
-        "$first_event_property_name", "$first_segment_id",
-        "$first_report_config_id", "$first_dashboard_id",
-        "$first_dashboard_space_id", "$first_client_id",
-        "$first_bytedance_advertiser_id", "$first_tencent_advertiser_id",
-        "$first_kuaishou_advertiser_id", "$first_preset_template_id",
-        "$first_preset_template_category",
-    }
-    if isinstance(value, str):
-        return (
-            not value.startswith("$")
-            or value in supported
-            or value.startswith("$first_order_")
-            or value.startswith("$parent:")
-        )
-    if isinstance(value, Mapping):
-        return all(_placeholder_supported(item) for item in value.values())
-    if isinstance(value, list):
-        return all(_placeholder_supported(item) for item in value)
-    return True
-
-
 def evaluate_gate(source: Mapping[str, Any]) -> dict[str, Any]:
-    draft = source.get("draft") if isinstance(source, Mapping) else None
-    operation = source.get("operation") if isinstance(source, Mapping) else None
-    if not isinstance(draft, Mapping) or not isinstance(operation, Mapping):
-        return {"eligible": False, "missing": ["draft_metadata"]}
-    evidence = draft.get("probe_evidence")
-    latest = evidence[-1] if isinstance(evidence, list) and evidence else {}
-    missing: list[str] = []
-    if not isinstance(latest, Mapping) or not bool(latest.get("successful")):
-        missing.append("successful_probe")
-    projection = operation.get("response_projection")
-    exposed = 0
-    if isinstance(projection, Mapping):
-        exposed += len(projection.get("item_keys", []))
-        exposed += len(set(projection.get("data_keys", [])) - {"list", "page_info"})
-        exposed += len(projection.get("data_scalar_list_types", {}))
-    if exposed == 0:
-        missing.append("response_projection")
-    candidates = draft.get("candidate_fields")
-    if not isinstance(candidates, list):
-        missing.append("privacy_classification")
-    else:
-        manual_review = [
-            str(item.get("path"))
-            for item in candidates
-            if isinstance(item, Mapping)
-            and item.get("privacy_classification") == "manual_review"
-        ]
-        if manual_review:
-            missing.append("field_review_required")
-        unsafe_exposed = [
-            str(item.get("path")) for item in candidates
-            if isinstance(item, Mapping)
-            and item.get("privacy_classification") != "non_sensitive"
-            and isinstance(projection, Mapping)
-            and projection_exposes_path(str(item.get("path", "")), projection)
-        ]
-        if unsafe_exposed:
-            missing.append("unclassified_or_sensitive_field_exposed")
-    pagination = operation.get("pagination")
-    if (
-        isinstance(pagination, Mapping) and pagination.get("kind") != "none"
-        and not bool(latest.get("pagination_verified"))
-    ):
-        missing.append("pagination_unverified")
-    live_probe = operation.get("live_probe")
-    live_inputs = live_probe.get("inputs") if isinstance(live_probe, Mapping) else None
-    if not _placeholder_supported(live_inputs):
-        missing.append("runtime_probe_placeholder_unsupported")
-    blockers = draft.get("blockers")
-    if isinstance(blockers, list):
-        missing.extend(
-            str(item.get("code"))
-            for item in blockers
-            if isinstance(item, Mapping) and item.get("code") != "promotion_pending"
-        )
-    if str(operation.get("path_template", "")).startswith("/openapi/"):
-        missing.append("stable_runtime_route_unsupported")
-    if operation.get("auth_profile") == "gravity_openapi_signature":
-        missing.append("openapi_developer_credentials_unavailable")
-    return {"eligible": not missing, "missing": sorted(set(missing))}
+    return _evaluate_gate(source, projection_exposes_path)
+
+
+def _legacy_privacy_evidence_reusable(
+    source: Mapping[str, Any], evidence: Mapping[str, Any]
+) -> tuple[bool, list[str]]:
+    return _legacy_privacy_evidence_reusable_impl(
+        source, evidence, projection_exposes_path, canonical_fingerprint
+    )
 
 
 def update_draft_from_probe(
@@ -347,73 +275,6 @@ def _observed_pagination(evidence: Mapping[str, Any]) -> bool:
     return False
 
 
-def _legacy_privacy_evidence_reusable(
-    source: Mapping[str, Any], evidence: Mapping[str, Any]
-) -> tuple[bool, list[str]]:
-    operation = source.get("operation", {})
-    draft = source.get("draft", {})
-    operation_id = str(operation.get("operation_id", ""))
-    reasons: list[str] = []
-    if evidence.get("conclusion") != "privacy_review_required":
-        reasons.append("not_legacy_privacy_short_circuit")
-    if str(evidence.get("operation_id", "")) != operation_id:
-        reasons.append("operation_id_mismatch")
-
-    fields = draft.get("candidate_fields", [])
-    if not isinstance(fields, list):
-        reasons.append("candidate_fields_missing")
-        fields = []
-    sensitive = [
-        item for item in fields
-        if isinstance(item, Mapping)
-        and item.get("privacy_classification") == "sensitive"
-    ]
-    manual = [
-        item for item in fields
-        if isinstance(item, Mapping)
-        and item.get("privacy_classification") == "manual_review"
-    ]
-    if not sensitive:
-        reasons.append("no_sensitive_fields")
-    if manual:
-        reasons.append("manual_review_required")
-    projection = operation.get("response_projection", {})
-    if not isinstance(projection, Mapping) or any(
-        projection_exposes_path(str(item.get("path", "")), projection)
-        for item in sensitive
-    ):
-        reasons.append("sensitive_field_exposed")
-
-    observations = evidence.get("http", [])
-    discovery = [
-        item for item in observations
-        if isinstance(item, Mapping)
-        and item.get("operation_id") == operation_id
-        and item.get("purpose") == "discovery"
-    ] if isinstance(observations, list) else []
-    primary = discovery[-1] if discovery else None
-    status = primary.get("http_status") if isinstance(primary, Mapping) else None
-    if not isinstance(status, int) or not 200 <= status < 300:
-        reasons.append("successful_http_discovery_unproven")
-    sketch = primary.get("response_schema_sketch") if isinstance(primary, Mapping) else None
-    paths = sketch.get("paths", []) if isinstance(sketch, Mapping) else []
-    path_names = {
-        str(item.get("path")) for item in paths if isinstance(item, Mapping)
-    } if isinstance(paths, list) else set()
-    if not any(
-        path.startswith("$.data.") or path.startswith("$.data[]")
-        for path in path_names
-    ):
-        reasons.append("nonempty_data_shape_unproven")
-    fingerprint = evidence.get("raw_schema_fingerprint")
-    if not isinstance(sketch, Mapping) or fingerprint != canonical_fingerprint(sketch):
-        reasons.append("raw_schema_fingerprint_mismatch")
-    request_stats = evidence.get("request_stats", {})
-    if not isinstance(request_stats, Mapping) or int(request_stats.get("failed", 0)) != 0:
-        reasons.append("failed_request_observed")
-    return not reasons, sorted(set(reasons))
-
-
 def _reevaluation_document(
     source: Mapping[str, Any], source_evidence: Mapping[str, Any], *,
     source_path: Path, fields: Sequence[Mapping[str, Any]], reevaluated_at: str,
@@ -465,6 +326,76 @@ def _reevaluation_document(
     }
 
 
+def _manual_review_present(fields: Any) -> bool:
+    return isinstance(fields, list) and any(
+        isinstance(item, Mapping)
+        and item.get("privacy_classification") == "manual_review"
+        for item in fields
+    )
+
+
+def _legacy_reference(draft: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    references = draft.get("probe_evidence", [])
+    latest = references[-1] if isinstance(references, list) and references else None
+    if isinstance(latest, Mapping) and latest.get("conclusion") == "privacy_review_required":
+        return latest
+    return None
+
+
+def _reevaluate_draft(
+    draft_path: Path, *, draft_root: Path, evidence_root: Path,
+) -> tuple[bool, dict[str, Any] | None, dict[str, Any] | None]:
+    source = read_json(draft_path)
+    draft = source.get("draft", {})
+    fields = draft.get("candidate_fields", []) if isinstance(draft, Mapping) else []
+    manual_review = _manual_review_present(fields)
+    latest = _legacy_reference(draft) if isinstance(draft, Mapping) else None
+    if latest is None:
+        return manual_review, None, None
+    source_path = _resolve_evidence_reference(str(latest.get("path", "")), evidence_root)
+    source_evidence = read_json(source_path)
+    reusable, reasons = _legacy_privacy_evidence_reusable(source, source_evidence)
+    operation_id = str(source["operation"]["operation_id"])
+    if not reusable:
+        return manual_review, None, {"operation_id": operation_id, "reasons": reasons}
+
+    reevaluated_at = now_utc()
+    if _observed_pagination(source_evidence):
+        source["operation"]["pagination"] = {
+            "kind": "unverified", "page_field": "", "page_size_field": "",
+            "list_path": "", "page_info_path": "", "total_page_field": "",
+        }
+    derived_path = evidence_path(operation_id, evidence_root)
+    document = _reevaluation_document(
+        source, source_evidence, source_path=source_path, fields=fields,
+        reevaluated_at=reevaluated_at,
+    )
+    write_json(derived_path, document)
+    reference = {
+        "path": _display_evidence_path(derived_path),
+        "probed_at": str(source_evidence.get("probed_at") or reevaluated_at),
+        "conclusion": "success", "successful": True,
+        "pagination_verified": bool(document["pagination"]["verified"]),
+        "parent_resolved": not bool(source["operation"].get("required_parent")),
+        "method_verified": True,
+        "raw_schema_fingerprint": source_evidence.get("raw_schema_fingerprint"),
+        "projected_schema_fingerprint": document["projected_schema_fingerprint"],
+    }
+    references = draft.get("probe_evidence", [])
+    source["draft"]["probe_evidence"] = [*references, reference]
+    source = refresh_structured_blockers(source, source["draft"].get("route_evidence"))
+    source["draft"]["promotion_gate"] = evaluate_gate(source)
+    save_draft(source, draft_root)
+    gate = source["draft"]["promotion_gate"]
+    return manual_review, {
+        "operation_id": operation_id,
+        "eligible": bool(gate["eligible"]),
+        "missing": list(gate["missing"]),
+        "source_evidence": _display_evidence_path(source_path),
+        "derived_evidence": _display_evidence_path(derived_path),
+    }, None
+
+
 def reevaluate_drafts(
     *, draft_root: Path = DRAFT_ROOT, operation_root: Path = OPERATION_ROOT,
     evidence_root: Path = EVIDENCE_ROOT, promote: bool = True,
@@ -478,70 +409,14 @@ def reevaluate_drafts(
     rejected: list[dict[str, Any]] = []
     manual_review_blocked = 0
     for draft_path in draft_paths:
-        source = read_json(draft_path)
-        draft = source.get("draft", {})
-        fields = draft.get("candidate_fields", []) if isinstance(draft, Mapping) else []
-        if isinstance(fields, list) and any(
-            isinstance(item, Mapping)
-            and item.get("privacy_classification") == "manual_review"
-            for item in fields
-        ):
-            manual_review_blocked += 1
-        references = draft.get("probe_evidence", []) if isinstance(draft, Mapping) else []
-        latest = references[-1] if isinstance(references, list) and references else None
-        if not isinstance(latest, Mapping) or latest.get("conclusion") != "privacy_review_required":
-            continue
-        source_path = _resolve_evidence_reference(str(latest.get("path", "")), evidence_root)
-        source_evidence = read_json(source_path)
-        reusable, reasons = _legacy_privacy_evidence_reusable(source, source_evidence)
-        operation_id = str(source["operation"]["operation_id"])
-        if not reusable:
-            rejected.append({"operation_id": operation_id, "reasons": reasons})
-            continue
-
-        reevaluated_at = now_utc()
-        if _observed_pagination(source_evidence):
-            source["operation"]["pagination"] = {
-                "kind": "unverified",
-                "page_field": "",
-                "page_size_field": "",
-                "list_path": "",
-                "page_info_path": "",
-                "total_page_field": "",
-            }
-        derived_path = evidence_path(operation_id, evidence_root)
-        document = _reevaluation_document(
-            source,
-            source_evidence,
-            source_path=source_path,
-            fields=fields,
-            reevaluated_at=reevaluated_at,
+        manual_review, accepted, rejection = _reevaluate_draft(
+            draft_path, draft_root=draft_root, evidence_root=evidence_root
         )
-        write_json(derived_path, document)
-        reference = {
-            "path": _display_evidence_path(derived_path),
-            "probed_at": str(source_evidence.get("probed_at") or reevaluated_at),
-            "conclusion": "success",
-            "successful": True,
-            "pagination_verified": bool(document["pagination"]["verified"]),
-            "parent_resolved": not bool(source["operation"].get("required_parent")),
-            "method_verified": True,
-            "raw_schema_fingerprint": source_evidence.get("raw_schema_fingerprint"),
-            "projected_schema_fingerprint": document["projected_schema_fingerprint"],
-        }
-        source["draft"]["probe_evidence"] = [*references, reference]
-        source = refresh_structured_blockers(source, source["draft"].get("route_evidence"))
-        source["draft"]["promotion_gate"] = evaluate_gate(source)
-        save_draft(source, draft_root)
-        reevaluated.append(
-            {
-                "operation_id": operation_id,
-                "eligible": bool(source["draft"]["promotion_gate"]["eligible"]),
-                "missing": list(source["draft"]["promotion_gate"]["missing"]),
-                "source_evidence": _display_evidence_path(source_path),
-                "derived_evidence": _display_evidence_path(derived_path),
-            }
-        )
+        manual_review_blocked += int(manual_review)
+        if accepted is not None:
+            reevaluated.append(accepted)
+        if rejection is not None:
+            rejected.append(rejection)
 
     eligible_ids = [item["operation_id"] for item in reevaluated if item["eligible"]]
     promoted = promote_drafts(

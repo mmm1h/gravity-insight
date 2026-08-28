@@ -9,20 +9,6 @@
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 20,
-      "src/gravity_sdk/prober/cli.py::run": 17,
-      "src/gravity_sdk/prober/drafts.py::_auth_proxy_decision": 17,
-      "src/gravity_sdk/prober/drafts.py::_domain_from_route": 22,
-      "src/gravity_sdk/prober/drafts.py::_mutation_risk": 26,
-      "src/gravity_sdk/prober/drafts.py::_resource_action": 40,
-      "src/gravity_sdk/prober/drafts.py::classify_mutation_kind.base_kind": 17,
-      "src/gravity_sdk/prober/drafts.py::select_routes": 21,
-      "src/gravity_sdk/prober/parameters.py::_parent_candidate": 24,
-      "src/gravity_sdk/prober/parameters.py::bind_stable_parent_candidates": 21,
-      "src/gravity_sdk/prober/promotion.py::_legacy_privacy_evidence_reusable": 36,
-      "src/gravity_sdk/prober/promotion.py::evaluate_gate": 33,
-      "src/gravity_sdk/prober/promotion.py::reevaluate_drafts": 23,
-      "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 25,
-      "src/gravity_sdk/prober/reprobe.py::run_scoped_reprobes": 18,
       "src/gravity_sdk/quality.py::compare_baselines": 25,
       "src/gravity_sdk/quality.py::debt_snapshot": 24,
       "src/gravity_sdk/quality.py::evaluate_ratchet": 22,
@@ -32,13 +18,6 @@
     "function_sloc": {
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 81,
       "src/gravity_sdk/models.py::OperationSpec.schema": 98,
-      "src/gravity_sdk/prober/cli.py::run": 126,
-      "src/gravity_sdk/prober/draft_probe.py::probe_draft": 88,
-      "src/gravity_sdk/prober/drafts.py::build_conservative_draft": 86,
-      "src/gravity_sdk/prober/export_verify.py::ExportVerificationRunner._download_and_inspect": 102,
-      "src/gravity_sdk/prober/promotion.py::reevaluate_drafts": 101,
-      "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 127,
-      "src/gravity_sdk/prober/reprobe.py::run_scoped_reprobes": 93,
       "src/gravity_sdk/quality.py::evaluate_ratchet": 93,
       "src/gravity_sdk/quality.py::render_markdown": 81
     },
@@ -54,10 +33,10 @@
         "analysis.segment.user_detail.list": 2
       },
       "src/gravity_sdk/prober/parameters.py": {
-        "promotion.bytedance.project_filter.list": 2,
+        "promotion.bytedance.project_filter.list": 1,
         "promotion.bytedance.promotion_filter.list": 1,
         "promotion.honor.campaign.list": 1,
-        "promotion.tencent.adgroup_filter.list": 2
+        "promotion.tencent.adgroup_filter.list": 1
       }
     }
   },
@@ -203,22 +182,16 @@
       "sloc_hard_limit": 858
     },
     "src/gravity_sdk/prober/drafts.py": {
-      "ast_hard_limit": 12928,
-      "ast_nodes": 12928,
+      "ast_hard_limit": 12903,
+      "ast_nodes": 12903,
       "migration_sloc": 1805,
-      "sloc_hard_limit": 1667
+      "sloc_hard_limit": 1642
     },
     "src/gravity_sdk/prober/export_verify.py": {
-      "ast_hard_limit": 4491,
-      "ast_nodes": 4491,
+      "ast_hard_limit": 4391,
+      "ast_nodes": 4391,
       "migration_sloc": 655,
-      "sloc_hard_limit": 655
-    },
-    "src/gravity_sdk/prober/promotion.py": {
-      "ast_hard_limit": 4382,
-      "ast_nodes": 4382,
-      "migration_sloc": 581,
-      "sloc_hard_limit": 581
+      "sloc_hard_limit": 618
     },
     "src/gravity_sdk/quality.py": {
       "ast_hard_limit": 8462,
