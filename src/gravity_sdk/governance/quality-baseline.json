@@ -6,8 +6,6 @@
       "src/gravity_sdk/cli.py::_analysis": 19,
       "src/gravity_sdk/cli.py::run": 21,
       "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
-      "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
-      "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 20,
       "src/gravity_sdk/quality.py::compare_baselines": 25,
       "src/gravity_sdk/quality.py::debt_snapshot": 24,

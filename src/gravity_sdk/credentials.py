@@ -273,6 +273,10 @@ class CredentialProvider:
     def get(self, *, force_refresh: bool = False) -> Credential:
         return self._get(force_refresh=force_refresh, rejected_token=None)
 
+    def _replacement_for_rejected(self, rejected_token: str | None) -> Credential | None:
+        credential = self._credential
+        return credential if rejected_token is not None and self._usable(credential) and credential is not None and credential.token != rejected_token else None
+
     def _get(
         self,
         *,
@@ -282,25 +286,17 @@ class CredentialProvider:
         with self._condition:
             if self._credential is None:
                 self._credential = self._load()
-            if (
-                rejected_token is not None
-                and self._usable(self._credential)
-                and self._credential is not None
-                and self._credential.token != rejected_token
-            ):
-                return self._credential
+            replacement = self._replacement_for_rejected(rejected_token)
+            if replacement is not None:
+                return replacement
             start_generation = self._generation
             if not force_refresh and self._usable(self._credential):
                 return self._credential  # type: ignore[return-value]
             while self._refreshing:
                 self._condition.wait()
-                if (
-                    rejected_token is not None
-                    and self._usable(self._credential)
-                    and self._credential is not None
-                    and self._credential.token != rejected_token
-                ):
-                    return self._credential
+                replacement = self._replacement_for_rejected(rejected_token)
+                if replacement is not None:
+                    return replacement
                 if self._generation > start_generation and self._usable(self._credential):
                     return self._credential  # type: ignore[return-value]
                 if not force_refresh and self._usable(self._credential):
@@ -464,7 +460,9 @@ class CredentialProvider:
             raise TransportError("Gravity login returned an invalid envelope")
         return payload
 
-    def _credential_from_login(self, payload: Mapping[str, Any]) -> Credential:
+    def _login_credential_parts(
+        self, payload: Mapping[str, Any]
+    ) -> tuple[Mapping[str, Any], Mapping[str, Any], str, datetime, datetime]:
         if payload.get("code") not in (None, 0, 200):
             raise AuthenticationError("Gravity login was rejected")
         data = payload.get("data", payload)
@@ -485,6 +483,10 @@ class CredentialProvider:
         except (TypeError, ValueError):
             days = self._free_login_day
         expiry = explicit_expiry or now + timedelta(days=max(1, min(days, 7)))
+        return data, user, token, expiry, now
+
+    def _credential_from_login(self, payload: Mapping[str, Any]) -> Credential:
+        data, user, token, expiry, now = self._login_credential_parts(payload)
         return Credential(
             token.strip(),
             expiry,
