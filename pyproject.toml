@@ -37,6 +37,7 @@ dev = ["pytest>=9,<10"]
 gravity = "gravity_sdk.__main__:main"
 gravity-insight = "gravity_sdk.cli_stdio:insight_main"
 gravity-sql = "gravity_sdk.cli_stdio:sql_main"
+gravity-mcp = "gravity_sdk.mcp.server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

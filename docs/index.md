@@ -10,6 +10,7 @@
 | 让 Agent 发现并执行一个分析任务 | [团队上手包](team-onboarding.md) | [Agent 工作流](agent-workflow.md) |
 | 执行事件、漏斗、留存、导出或受治理写入 | [Agent 任务指南](agent-skills/index.md) | [CLI 参考](reference/cli.md)、[分页语义](reference/pagination.md) |
 | 在 Python 中长期集成 | [SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
+| 在本地 Host 试用 MCP stdio | [MCP stdio 试点](reference/mcp.md) | [团队上手包](team-onboarding.md) |
 | 生成或执行显式 DAG / playbook | [Plan 参考](reference/plan.md) | [Agent 工作流](agent-workflow.md) |
 | 配置 App、recipe、SQL 产品或调用方语义 | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md) |
 | 导出文件或把结果交给 LLM | [导出指南](guides/export.md) | [结果与 LLM 安全](guides/llm-output-safety.md) |
