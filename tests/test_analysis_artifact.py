@@ -174,7 +174,7 @@ class AnalysisArtifactTests(unittest.TestCase):
                 self.assertNotIn("Returned rows changed", rendering["content"])
                 if source["status"] == "blocked":
                     self.assertEqual(
-                        "e3f4622c8d27ed2f88db785a022f9fb071077e1baa0f1eac1a5c8b69379a2f5a",
+                        "2a86fbb373f95ec45c755aafb5afdf97daee7a44fd714e40477cbb0327b0b390",
                         rendering["content_sha256"],
                     )
 
