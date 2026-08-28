@@ -531,8 +531,16 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             ValueError, "stage=subprocess_execute.*exit code 7.*synthetic bridge crash"):
             _invoke_plugin(plugin, {"capabilities": []}, [], timeout_seconds=10)
 
-    def test_external_selection_default_dispatch_infers_host_from_selection(self) -> None:
-        from agent_usability_external_selector import _catalog, _selection_result
+    def test_default_dispatch_observes_two_real_public_routing_paths(self) -> None:
+        from agent_usability_external_selector import (
+            DEFAULT_DISPATCH_WITHOUT_SELECTION,
+            DEFAULT_DISPATCH_WITH_SELECTION,
+            _catalog,
+            _selection_result,
+        )
+        from agent_usability_host_arm_gap import (
+            _assert_distinct_default_dispatch_arms,
+        )
         from gravity_sdk.client import GravityInsightClient
 
         client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
@@ -543,18 +551,82 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             "reason": "registered host product",
         }
         metadata = {"selector": "synthetic.v1", "network_called": False}
-        actual = _selection_result(
-            case,
-            selected,
-            runtime_catalog,
-            client,
-            metadata,
-            plugin_sha256="a" * 64,
-            production_http_requests=lambda: 0,
-            dispatch_mode="default",
+        results = {
+            arm: _selection_result(
+                case,
+                selected,
+                runtime_catalog,
+                client,
+                metadata,
+                plugin_sha256="a" * 64,
+                production_http_requests=lambda: 0,
+                dispatch_mode=dispatch_mode,
+            )
+            for arm, dispatch_mode in (
+                ("recognizer", DEFAULT_DISPATCH_WITHOUT_SELECTION),
+                ("host_catalog", DEFAULT_DISPATCH_WITH_SELECTION),
+            )
+        }
+        self.assertEqual(
+            {
+                "recognizer": {
+                    "parsed_host_selection_present": False,
+                    "parsed_routing": None,
+                    "resolved_routing_mode": "recognizer",
+                },
+                "host_catalog": {
+                    "parsed_host_selection_present": True,
+                    "parsed_routing": None,
+                    "resolved_routing_mode": "host_catalog",
+                },
+            },
+            _assert_distinct_default_dispatch_arms(results),
         )
-        self.assertEqual("host_catalog", actual["routing_mode"])
-        self.assertFalse(actual["routing"]["floor"])
+
+    def test_default_dispatch_arm_guard_rejects_counterfactual_convergence(self) -> None:
+        from agent_usability_external_selector import (
+            DEFAULT_DISPATCH_WITHOUT_SELECTION,
+            DEFAULT_DISPATCH_WITH_SELECTION,
+            _catalog,
+            _selection_result,
+        )
+        from agent_usability_host_arm_gap import (
+            _assert_distinct_default_dispatch_arms,
+        )
+        from gravity_sdk.client import GravityInsightClient
+
+        client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
+        _selector_catalog, runtime_catalog = _catalog(client)
+        case = {"prompt": "show the business pulse across apps"}
+        selected = {
+            "selectors": ["composite:business_pulse"],
+            "reason": "registered host product",
+        }
+        metadata = {"selector": "synthetic.v1", "network_called": False}
+
+        def dispatch(dispatch_mode: str) -> dict:
+            return _selection_result(
+                case,
+                selected,
+                runtime_catalog,
+                client,
+                metadata,
+                plugin_sha256="a" * 64,
+                production_http_requests=lambda: 0,
+                dispatch_mode=dispatch_mode,
+            )
+
+        host_result = dispatch(DEFAULT_DISPATCH_WITH_SELECTION)
+        with patch(
+            "agent_usability_external_selector._default_dispatch_result",
+            return_value=host_result,
+        ):
+            converged = {
+                "recognizer": dispatch(DEFAULT_DISPATCH_WITHOUT_SELECTION),
+                "host_catalog": dispatch(DEFAULT_DISPATCH_WITH_SELECTION),
+            }
+        with self.assertRaisesRegex(RuntimeError, "arms converged"):
+            _assert_distinct_default_dispatch_arms(converged)
 
     def test_external_selector_blinds_ids_and_degroups_journeys(self) -> None:
         from agent_usability_external_selector import _blind_questions
@@ -752,205 +824,44 @@ json.dump({'schema_version': 'gravity.agent-external-selector-response.v1', 'res
                     self.subject.route_score(case, result),
                 )
 
-    def test_signed_default_dispatch_prediction_matches_schema_and_inputs(self) -> None:
-        import collections
-
-        from agent_usability_external_selector import (
-            REQUEST_SCHEMA,
-            _blind_questions,
-            _catalog,
-        )
+    def test_historical_default_dispatch_prediction_requires_remeasurement(self) -> None:
         from agent_usability_host_arm_gap import DEFAULT_DISPATCH_SCHEMA
-        from agent_usability_selector_measurements import request_sha256
-        from gravity_sdk.client import GravityInsightClient
 
         readme = (
             ROOT / "evals" / "agent_usability" / "README.md"
         ).read_text(encoding="utf-8")
+        invalidation = (
+            "DEFAULT_DISPATCH_EVIDENCE_STATUS: "
+            "INVALIDATED_REQUIRES_REMEASUREMENT at 9c9c78d3"
+        )
         start = "<!-- DEFAULT_DISPATCH_PREDICTION_EVIDENCE_START -->\n```json\n"
         end = "\n```\n<!-- DEFAULT_DISPATCH_PREDICTION_EVIDENCE_END -->"
+        self.assertEqual(1, readme.count(invalidation))
         self.assertEqual(1, readme.count(start))
         self.assertEqual(1, readme.count(end))
         evidence = json.loads(readme.split(start, 1)[1].split(end, 1)[0])
         self.assertEqual(
-            {
-                "blind_order_seed_sha256",
-                "case_count",
-                "checked_in_default",
-                "counterfactual_default",
-                "evidence_scope",
-                "protected_split_comparability",
-                "reliability_protocol",
-                "schema_version",
-                "score_differences",
-                "scores",
-                "scores_differ",
-                "selector_network_reported_trials",
-                "selector_plugin_sha256",
-                "selector_request_sha256",
-                "selector_request_sha256_by_trial",
-                "split",
-                "suite_version",
-                "trials",
-            },
-            set(evidence),
-        )
-        manifest, cases = self.subject.load_cases("development", None)
-        self.assertEqual(
             (
-                DEFAULT_DISPATCH_SCHEMA,
-                "development",
-                manifest["suite_version"],
-                manifest["trials"],
-                len(cases),
+                "gravity.agent-usability-default-dispatch.v2",
                 "recognizer",
                 "host_catalog",
+                298,
+                334,
+                {
+                    "counterfactual_minus_checked_in_pass^1": 36,
+                    "counterfactual_minus_checked_in_pass^N": 36,
+                },
             ),
             (
                 evidence["schema_version"],
-                evidence["split"],
-                evidence["suite_version"],
-                evidence["trials"],
-                evidence["case_count"],
                 evidence["checked_in_default"],
                 evidence["counterfactual_default"],
+                evidence["scores"]["checked_in"]["pass^N"]["passed"],
+                evidence["scores"]["counterfactual"]["pass^N"]["passed"],
+                evidence["score_differences"],
             ),
         )
-
-        scope = evidence["evidence_scope"]
-        self.assertEqual(
-            "development_counterfactual_prediction", scope["classification"]
-        )
-        self.assertFalse(scope["is_holdout_result"])
-        self.assertFalse(scope["is_post_flip_measurement"])
-        self.assertFalse(scope["checked_in_default_changed"])
-        self.assertGreaterEqual(len(scope["limitations"]), 3)
-        comparability = evidence["protected_split_comparability"]
-        self.assertFalse(comparability["same_multi_intent_scoring_contract"])
-        self.assertEqual(12, comparability[
-            "development_explicit_multi_intent_case_count"
-        ])
-        self.assertEqual(
-            ["J32.dev.v3.multiple", "J47.dev.v3.multiple"],
-            comparability["development_gap_identity_case_ids"],
-        )
-        self.assertEqual(
-            {
-                "max_cases_per_trial": 2,
-                "max_percentage_points": 0.595238,
-                "observed_cases_helped": None,
-            },
-            comparability["development_gap_identity_score_effect_bound"],
-        )
-        self.assertIsNone(comparability["protected_ambiguous_case_count"])
-        self.assertIsNone(comparability["protected_score_impact"])
-
-        plugin_path = ROOT / "scripts" / "agent_usability_host_selector.py"
-        self.assertEqual(
-            hashlib.sha256(plugin_path.read_bytes()).hexdigest(),
-            evidence["selector_plugin_sha256"],
-        )
-        client = GravityInsightClient.from_env(
-            transport=self.subject.BlockedTransport()
-        )
-        catalog, _runtime_catalog = _catalog(client)
-        questions, _aliases, blind_receipt = _blind_questions(cases)
-        expected_request_sha256 = request_sha256({
-            "schema_version": REQUEST_SCHEMA,
-            "catalog": catalog,
-            "questions": questions,
-        })
-        self.assertEqual(
-            (expected_request_sha256, blind_receipt["order_seed_sha256"]),
-            (
-                evidence["selector_request_sha256"],
-                evidence["blind_order_seed_sha256"],
-            ),
-        )
-        self.assertEqual(
-            [expected_request_sha256] * manifest["trials"],
-            evidence["selector_request_sha256_by_trial"],
-        )
-
-        expected = {
-            "checked_in": {
-                "per_trial": [298, 298, 298, 298],
-                "pass^1": 298,
-                "pass^N": 298,
-                "routing_mode_counts": {"recognizer": 1344},
-                "failure_classes": {
-                    "correct": 992,
-                    "correct_multiple_intents": 36,
-                    "environment_gap": 28,
-                    "no_candidate": 124,
-                    "target_gap": 136,
-                    "wrong_intent_candidates": 12,
-                    "wrong_product": 16,
-                },
-            },
-            "counterfactual": {
-                "per_trial": [334, 334, 334, 334],
-                "pass^1": 334,
-                "pass^N": 334,
-                "routing_mode_counts": {"host_catalog": 1344},
-                "failure_classes": {
-                    "correct": 1128,
-                    "correct_multiple_intents": 44,
-                    "environment_gap": 28,
-                    "target_gap": 136,
-                    "wrong_intent_candidates": 4,
-                    "wrong_product": 4,
-                },
-            },
-        }
-        for policy, wanted in expected.items():
-            with self.subTest(policy=policy):
-                score = evidence["scores"][policy]
-                self.assertEqual(
-                    wanted["per_trial"],
-                    [trial["passed"] for trial in score["per_trial_scores"]],
-                )
-                self.assertEqual(wanted["pass^1"], score["pass^1"]["passed"])
-                self.assertEqual(wanted["pass^N"], score["pass^N"]["passed"])
-                self.assertEqual(manifest["trials"], score["pass^N"]["N"])
-                self.assertEqual(
-                    wanted["routing_mode_counts"], score["routing_mode_counts"]
-                )
-                self.assertEqual(
-                    wanted["failure_classes"], score["failure_classes"]
-                )
-                self.assertEqual([], score["unstable_case_ids"])
-                self.assertEqual({}, score["unstable_selections"])
-                self.assertEqual(0, score["unstable_tasks"])
-                aggregate_failures = collections.Counter()
-                aggregate_routes = collections.Counter()
-                for trial_number, trial in enumerate(
-                    score["per_trial_scores"], start=1
-                ):
-                    self.assertEqual(trial_number, trial["trial"])
-                    self.assertEqual(len(cases), trial["total"])
-                    self.assertEqual(
-                        len(cases), sum(trial["failure_classes"].values())
-                    )
-                    self.assertEqual(
-                        len(cases), sum(trial["routing_mode_counts"].values())
-                    )
-                    aggregate_failures.update(trial["failure_classes"])
-                    aggregate_routes.update(trial["routing_mode_counts"])
-                self.assertEqual(
-                    dict(aggregate_failures), score["failure_classes"]
-                )
-                self.assertEqual(
-                    dict(aggregate_routes), score["routing_mode_counts"]
-                )
-        self.assertEqual(
-            {
-                "counterfactual_minus_checked_in_pass^1": 36,
-                "counterfactual_minus_checked_in_pass^N": 36,
-            },
-            evidence["score_differences"],
-        )
-        self.assertTrue(evidence["scores_differ"])
+        self.assertNotEqual(DEFAULT_DISPATCH_SCHEMA, evidence["schema_version"])
 
 
 def _fake_result(split: str) -> dict:

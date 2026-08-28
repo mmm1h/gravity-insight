@@ -327,13 +327,15 @@ repeats the plugin four times: `pass^4` still uses correctness, while
 expose the exact selected selector sets regardless of correctness.
 
 The `default-dispatch` mode of
-`scripts/agent_usability_host_arm_gap.py` measures the missing policy arm
-without editing the checked-in default. For each trial fixed by `suite.json`,
-it obtains one blinded external selection batch and sends it through the public
-`gravity agent` parser and runner without `--routing`, then AST-rewrites only the production
-`DEFAULT_ROUTING_MODE` assignment to `HOST_ROUTING_MODE` and reexecutes that
-module before replaying the same selections. The script is development-only
-and deliberately has no split argument:
+`scripts/agent_usability_host_arm_gap.py` measures two observable public call
+shapes without editing the checked-in default. For each trial fixed by
+`suite.json`, it obtains one blinded external selection batch. The recognizer
+arm sends each query through the public `gravity agent` parser and runner with
+both routing and host selection omitted; the host arm sends the same query and
+selection with routing omitted. Each result records parsed routing, selection
+presence, and resolved routing mode. The run fails closed unless the two shapes
+remain stable and resolve respectively to `recognizer` and `host_catalog`. The
+script is development-only and deliberately has no split argument:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\agent_usability_host_arm_gap.py default-dispatch `
@@ -342,14 +344,22 @@ and deliberately has no split argument:
   --output tmp\agent-usability-default-dispatch.json
 ```
 
-Its routing-mode counts prove which arm every case used. The trial count comes
-from `suite.json`, the same source used by the evaluator's
+Its dispatch observations and routing-mode counts prove which call shape and
+arm every case used. The trial count comes from `suite.json`, the same source used by the evaluator's
 `repeat_reliability`: `pass^1` counts first-trial correctness, `pass^N` counts
 cases correct in every trial, and `unstable_case_ids` compares exact runtime
 selection identities regardless of correctness. `scores_differ` must be true
-for the measurement to demonstrate a `pass^N` score effect. The signed JSON
-block below is a development counterfactual prediction, not a protected-split
-result and not a measurement after changing the checked-in default.
+for the measurement to demonstrate a `pass^N` score effect.
+
+`DEFAULT_DISPATCH_EVIDENCE_STATUS: INVALIDATED_REQUIRES_REMEASUREMENT at 9c9c78d3`
+
+The JSON block below is retained as historical evidence only. Its recognizer
+298 / host 334 figures were produced by the pre-`9c9c78d3` source-default
+counterfactual method. After that product change, a supplied host selection
+itself resolves omitted routing to `host_catalog`, so rewriting only
+`DEFAULT_ROUTING_MODE` no longer separated the arms. These figures require a
+fresh run with the observable two-call-shape method above; they are not current
+post-change measurements and are not a protected-split result.
 
 <!-- DEFAULT_DISPATCH_PREDICTION_EVIDENCE_START -->
 ```json

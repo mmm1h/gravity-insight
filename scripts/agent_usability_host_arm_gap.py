@@ -13,7 +13,7 @@ import socket
 import sys
 import tempfile
 from collections import Counter
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Mapping
 from unittest.mock import patch
@@ -437,60 +437,59 @@ def _recognizer_miss_class(row: Mapping[str, Any]) -> str:
     return reason
 
 
-DEFAULT_DISPATCH_SCHEMA = "gravity.agent-usability-default-dispatch.v2"
+DEFAULT_DISPATCH_SCHEMA = "gravity.agent-usability-default-dispatch.v3"
+DEFAULT_DISPATCH_ARMS = ("recognizer", "host_catalog")
 
 
-def _source_reexecuted_host_selection(default_symbol: str) -> Any:
-    """Execute production host-selection source with one default assignment changed."""
+def _assert_distinct_default_dispatch_arms(
+    results: Mapping[str, Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Fail closed unless the two public call shapes resolve to different arms."""
 
-    import ast
-    import importlib
-    import types
+    from agent_usability_external_selector import DEFAULT_DISPATCH_OBSERVATION_KEY
 
-    if default_symbol not in {"RECOGNIZER_ROUTING_MODE", "HOST_ROUTING_MODE"}:
-        raise ValueError("default_symbol must name one registered routing arm")
-    current = importlib.import_module("gravity_sdk.agents.host_selection")
-    source_path = Path(current.__file__).resolve()
-    tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
-    assignments = 0
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and any(
-            isinstance(target, ast.Name) and target.id == "DEFAULT_ROUTING_MODE"
-            for target in node.targets
-        ):
-            node.value = ast.copy_location(
-                ast.Name(id=default_symbol, ctx=ast.Load()), node.value
+    if set(results) != set(DEFAULT_DISPATCH_ARMS):
+        raise RuntimeError("default-dispatch evidence must contain both routing arms")
+    observations: dict[str, dict[str, Any]] = {}
+    for arm in DEFAULT_DISPATCH_ARMS:
+        result = results[arm]
+        observation = result.get(DEFAULT_DISPATCH_OBSERVATION_KEY)
+        if not isinstance(observation, Mapping) or set(observation) != {
+            "parsed_host_selection_present",
+            "parsed_routing",
+            "resolved_routing_mode",
+        }:
+            raise RuntimeError(
+                f"default-dispatch {arm} arm has no complete dispatch observation"
             )
-            assignments += 1
-    if assignments != 1:
+        materialized = dict(observation)
+        if materialized["resolved_routing_mode"] != result.get("routing_mode"):
+            raise RuntimeError(
+                f"default-dispatch {arm} observation disagrees with its result"
+            )
+        observations[arm] = materialized
+
+    resolved_modes = tuple(
+        observations[arm]["resolved_routing_mode"] for arm in DEFAULT_DISPATCH_ARMS
+    )
+    selection_shapes = tuple(
+        observations[arm]["parsed_host_selection_present"]
+        for arm in DEFAULT_DISPATCH_ARMS
+    )
+    parsed_routing = tuple(
+        observations[arm]["parsed_routing"] for arm in DEFAULT_DISPATCH_ARMS
+    )
+    if resolved_modes != DEFAULT_DISPATCH_ARMS:
         raise RuntimeError(
-            "host-selection source must have exactly one default routing assignment"
+            "default-dispatch arms converged or swapped: "
+            f"resolved routing modes were {resolved_modes!r}"
         )
-    ast.fix_missing_locations(tree)
-    module = types.ModuleType("gravity_sdk.agents._host_selection_counterfactual")
-    module.__file__ = str(source_path)
-    module.__package__ = "gravity_sdk.agents"
-    exec(compile(tree, str(source_path), "exec"), module.__dict__)
-    return module
-
-
-@contextmanager
-def _installed_host_selection(module: Any) -> Any:
-    """Install one fully executed routing module for dynamic public entry imports."""
-
-    import importlib
-
-    package = importlib.import_module("gravity_sdk.agents")
-    module_name = "gravity_sdk.agents.host_selection"
-    previous_module = sys.modules[module_name]
-    previous_attribute = package.host_selection
-    sys.modules[module_name] = module
-    package.host_selection = module
-    try:
-        yield
-    finally:
-        sys.modules[module_name] = previous_module
-        package.host_selection = previous_attribute
+    if selection_shapes != (False, True) or parsed_routing != (None, None):
+        raise RuntimeError(
+            "default-dispatch arms converged or changed call shape: "
+            f"selection={selection_shapes!r}, routing={parsed_routing!r}"
+        )
+    return observations
 
 
 def measure_default_dispatch(
@@ -498,11 +497,13 @@ def measure_default_dispatch(
     *,
     timeout_seconds: float,
 ) -> dict[str, Any]:
-    """Score two source defaults against the same development selections."""
+    """Score two observable public default-dispatch call shapes."""
 
     import hashlib
 
     from agent_usability_external_selector import (
+        DEFAULT_DISPATCH_WITHOUT_SELECTION,
+        DEFAULT_DISPATCH_WITH_SELECTION,
         _blind_questions,
         _catalog,
         _invoke_plugin,
@@ -530,7 +531,6 @@ def measure_default_dispatch(
 
         if checked_in.DEFAULT_ROUTING_MODE != checked_in.RECOGNIZER_ROUTING_MODE:
             raise RuntimeError("checked-in default must remain the recognizer")
-        counterfactual = _source_reexecuted_host_selection("HOST_ROUTING_MODE")
         client = GravityInsightClient.from_env(transport=blocker)
         selector_catalog, runtime_catalog = _catalog(client)
         questions, aliases, blind_receipt = _blind_questions(cases)
@@ -539,15 +539,18 @@ def measure_default_dispatch(
                 str(case["case_id"]): {"selection": [], "selected": []}
                 for case in cases
             }
-            for policy in ("checked_in", "counterfactual")
+            for policy in DEFAULT_DISPATCH_ARMS
         }
-        reasons = {"checked_in": Counter(), "counterfactual": Counter()}
-        routing_modes = {"checked_in": Counter(), "counterfactual": Counter()}
-        per_trial_scores = {"checked_in": [], "counterfactual": []}
+        reasons = {policy: Counter() for policy in DEFAULT_DISPATCH_ARMS}
+        routing_modes = {policy: Counter() for policy in DEFAULT_DISPATCH_ARMS}
+        per_trial_scores = {policy: [] for policy in DEFAULT_DISPATCH_ARMS}
+        dispatch_observations = {
+            policy: Counter() for policy in DEFAULT_DISPATCH_ARMS
+        }
         receipts: list[Mapping[str, Any]] = []
-        modules = {
-            "checked_in": checked_in,
-            "counterfactual": counterfactual,
+        dispatch_modes = {
+            "recognizer": DEFAULT_DISPATCH_WITHOUT_SELECTION,
+            "host_catalog": DEFAULT_DISPATCH_WITH_SELECTION,
         }
         plugin_sha256 = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
         for trial in range(1, trials + 1):
@@ -563,40 +566,47 @@ def measure_default_dispatch(
                 for case in cases
             }
             trial_reasons = {
-                "checked_in": Counter(), "counterfactual": Counter()
+                policy: Counter() for policy in DEFAULT_DISPATCH_ARMS
             }
             trial_routing_modes = {
-                "checked_in": Counter(), "counterfactual": Counter()
+                policy: Counter() for policy in DEFAULT_DISPATCH_ARMS
             }
-            trial_outcomes = {"checked_in": [], "counterfactual": []}
-            for policy, module in modules.items():
-                with _installed_host_selection(module):
-                    for case in cases:
-                        result = _selection_result(
-                            case,
-                            selected[str(case["case_id"])],
-                            runtime_catalog,
-                            client,
-                            metadata,
-                            plugin_sha256=plugin_sha256,
-                            production_http_requests=lambda: blocker.attempts,
-                            dispatch_mode="default",
-                        )
-                        ok, reason, _card = route_score(case, result)
-                        state = states[policy][str(case["case_id"])]
-                        state["selection"].append(ok)
-                        runtime_result = dict(result)
-                        runtime_result.pop("selected_selectors", None)
-                        state["selected"].append(
-                            _selection_identity(runtime_result)
-                        )
-                        trial_outcomes[policy].append(ok)
-                        trial_reasons[policy][reason] += 1
-                        trial_routing_modes[policy][
-                            str(result.get("routing_mode"))
-                        ] += 1
-                        reasons[policy][reason] += 1
-                        routing_modes[policy][str(result.get("routing_mode"))] += 1
+            trial_outcomes = {policy: [] for policy in DEFAULT_DISPATCH_ARMS}
+            for case in cases:
+                arm_results = {}
+                for policy, dispatch_mode in dispatch_modes.items():
+                    result = _selection_result(
+                        case,
+                        selected[str(case["case_id"])],
+                        runtime_catalog,
+                        client,
+                        metadata,
+                        plugin_sha256=plugin_sha256,
+                        production_http_requests=lambda: blocker.attempts,
+                        dispatch_mode=dispatch_mode,
+                    )
+                    arm_results[policy] = result
+                    ok, reason, _card = route_score(case, result)
+                    state = states[policy][str(case["case_id"])]
+                    state["selection"].append(ok)
+                    runtime_result = dict(result)
+                    runtime_result.pop("selected_selectors", None)
+                    state["selected"].append(
+                        _selection_identity(runtime_result)
+                    )
+                    trial_outcomes[policy].append(ok)
+                    trial_reasons[policy][reason] += 1
+                    trial_routing_modes[policy][
+                        str(result.get("routing_mode"))
+                    ] += 1
+                    reasons[policy][reason] += 1
+                    routing_modes[policy][str(result.get("routing_mode"))] += 1
+                observations = _assert_distinct_default_dispatch_arms(arm_results)
+                for policy, observation in observations.items():
+                    dispatch_observations[policy][json.dumps(
+                        observation, sort_keys=True, separators=(",", ":")
+                    )] += 1
+            for policy in DEFAULT_DISPATCH_ARMS:
                 passed = sum(trial_outcomes[policy])
                 per_trial_scores[policy].append({
                     "trial": trial,
@@ -621,7 +631,7 @@ def measure_default_dispatch(
     if len(set(request_hashes)) != 1:
         raise RuntimeError("default-dispatch selector request changed across trials")
     scores: dict[str, Any] = {}
-    for policy in ("checked_in", "counterfactual"):
+    for policy in DEFAULT_DISPATCH_ARMS:
         scores[policy] = _default_dispatch_score(
             states[policy],
             trials=trials,
@@ -629,14 +639,25 @@ def measure_default_dispatch(
             routing_mode_counts=routing_modes[policy],
             failure_classes=reasons[policy],
         )
-    pass1_difference = (
-        scores["counterfactual"]["pass^1"]["passed"]
-        - scores["checked_in"]["pass^1"]["passed"]
-    )
-    passn_difference = (
-        scores["counterfactual"]["pass^N"]["passed"]
-        - scores["checked_in"]["pass^N"]["passed"]
-    )
+    pass1_difference = scores["host_catalog"]["pass^1"]["passed"] - scores[
+        "recognizer"
+    ]["pass^1"]["passed"]
+    passn_difference = scores["host_catalog"]["pass^N"]["passed"] - scores[
+        "recognizer"
+    ]["pass^N"]["passed"]
+    dispatch_arms = {}
+    expected_observations = len(cases) * trials
+    for policy in DEFAULT_DISPATCH_ARMS:
+        observed = dispatch_observations[policy]
+        if len(observed) != 1 or sum(observed.values()) != expected_observations:
+            raise RuntimeError(
+                f"default-dispatch {policy} arm did not keep one stable call shape"
+            )
+        encoded, count = next(iter(observed.items()))
+        dispatch_arms[policy] = {
+            "observation": json.loads(encoded),
+            "observation_count": count,
+        }
     multiple_intent_cases = [
         case for case in cases
         if case["expected"].get("gap_code") == "MULTIPLE_INTENTS"
@@ -654,7 +675,7 @@ def measure_default_dispatch(
     return {
         "schema_version": DEFAULT_DISPATCH_SCHEMA,
         "evidence_scope": {
-            "classification": "development_counterfactual_prediction",
+            "classification": "development_default_dispatch_arm_measurement",
             "is_holdout_result": False,
             "is_post_flip_measurement": False,
             "checked_in_default_changed": False,
@@ -707,11 +728,11 @@ def measure_default_dispatch(
             receipt.get("network_called") is True for receipt in receipts
         ),
         "checked_in_default": checked_in.DEFAULT_ROUTING_MODE,
-        "counterfactual_default": counterfactual.DEFAULT_ROUTING_MODE,
+        "dispatch_arms": dispatch_arms,
         "scores": scores,
         "score_differences": {
-            "counterfactual_minus_checked_in_pass^1": pass1_difference,
-            "counterfactual_minus_checked_in_pass^N": passn_difference,
+            "host_catalog_minus_recognizer_pass^1": pass1_difference,
+            "host_catalog_minus_recognizer_pass^N": passn_difference,
         },
         "scores_differ": passn_difference != 0,
     }
@@ -803,9 +824,9 @@ def default_dispatch_main(argv: list[str] | None = None) -> int:
     )
     print(json.dumps({
         "checked_in_default": payload["checked_in_default"],
-        "checked_in_score": payload["scores"]["checked_in"],
-        "counterfactual_default": payload["counterfactual_default"],
-        "counterfactual_score": payload["scores"]["counterfactual"],
+        "dispatch_arms": payload["dispatch_arms"],
+        "recognizer_score": payload["scores"]["recognizer"],
+        "host_catalog_score": payload["scores"]["host_catalog"],
         "scores_differ": payload["scores_differ"],
     }, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
