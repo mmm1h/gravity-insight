@@ -189,5 +189,103 @@ class GravityInsightStablePrivacyTests(unittest.TestCase):
         }
 
 
+    def test_exposure_paths_characterize_every_projection_surface(self):
+        operation = _operation(
+            "analysis.example.list",
+            resource="example",
+            item_keys=["base", "config", "parent"],
+        )
+        projection = operation["response_projection"]
+        projection.update(  # type: ignore[union-attr]
+            {
+                "data_keys": ["list", "summary"],
+                "numeric_paths": ["totals.[].value", "data.count"],
+                "data_item_keys": {"groups": ["id"]},
+                "data_path_item_keys": {"outer.groups": ["name"]},
+                "nested_item_keys": {
+                    "parent": ["child"],
+                    "child": ["leaf"],
+                    "ignored": "not-a-list",
+                },
+                "recursive_data_item_keys": {
+                    "tree": ["id"],
+                    "ignored": "not-a-list",
+                },
+                "opaque_json_item_keys": ["config", "missing"],
+                "dynamic_item_fields": ["fields"],
+                "numeric_suffix_item_fields": ["metrics"],
+                "data_dynamic_item_fields": {
+                    "groups": ["group_fields"],
+                    "ignored": "not-a-list",
+                },
+                "data_numeric_suffix_item_fields": {
+                    "groups": ["group_metrics"],
+                    "ignored": "not-a-list",
+                },
+            }
+        )
+
+        assert operation_exposure_paths(operation) == {
+            "data.list",
+            "data.summary",
+            "data.list[].base",
+            "data.list[].config",
+            "data.list[].parent",
+            "data.totals[].value",
+            "data.count",
+            "data.groups[].id",
+            "data.outer.groups[].name",
+            "data.list[].parent.child",
+            "data.list[].parent.child.leaf",
+            "@recursive:data.tree",
+            "data.tree.**.id",
+            "@recursive:data.ignored",
+            "@opaque:data.list[].config",
+            "@opaque:data.list[].missing",
+            "@dynamic:item:fields",
+            "@dynamic-numeric:item:metrics",
+            "@dynamic:data:groups:group_fields",
+            "@dynamic-numeric:data:groups:group_metrics",
+        }
+
+
+    def test_list_root_precedence_and_non_mapping_projection_are_stable(self):
+        cases = (
+            (
+                "declared list shape",
+                {"data_shape": "list", "data_keys": ["list"], "item_keys": ["id"]},
+                "data[].id",
+            ),
+            (
+                "pagination list path",
+                {"data_keys": ["list"], "item_keys": ["id"]},
+                "data.list[].id",
+            ),
+            (
+                "projected list key",
+                {"data_keys": ["list"], "item_keys": ["id"]},
+                "data.list[].id",
+            ),
+            (
+                "default data list",
+                {"data_keys": [], "item_keys": ["id"]},
+                "data[].id",
+            ),
+        )
+        for name, projection, expected in cases:
+            operation = {
+                "response_projection": projection,
+                "pagination": (
+                    {"list_path": "data.list"}
+                    if name == "pagination list path"
+                    else {}
+                ),
+            }
+            with self.subTest(rule=name):
+                self.assertIn(expected, operation_exposure_paths(operation))
+
+        self.assertEqual(set(), operation_exposure_paths({"response_projection": []}))
+
+
     def test_repository_stable_privacy_baseline_is_zero(self):
         assert inspect_stable_response_privacy(ROOT) == []

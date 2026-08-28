@@ -308,12 +308,9 @@ def _find_status(payload: Any) -> str | None:
     return None
 
 
-def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
-    if isinstance(payload, list):
-        return payload if all(isinstance(row, dict) for row in payload) else None
-    if not isinstance(payload, Mapping):
-        return None
-
+def _extract_tabular_result(
+    payload: Mapping[str, Any],
+) -> tuple[bool, list[dict[str, Any]] | None]:
     result = payload.get("result")
     if isinstance(result, Mapping):
         columns = result.get("columns")
@@ -324,13 +321,20 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
                 for column in columns
             ]
             if not all(isinstance(name, str) and name for name in names):
-                return None
-            return [
-                {names[index]: item for index, item in enumerate(row) if index < len(names)}
+                return True, None
+            return True, [
+                {
+                    names[index]: item
+                    for index, item in enumerate(row)
+                    if index < len(names)
+                }
                 for row in rows
                 if isinstance(row, list)
             ]
+    return False, None
 
+
+def _extract_nested_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]] | None:
     for key in ("data", "rows", "result"):
         value = payload.get(key)
         if isinstance(value, list) and all(isinstance(row, dict) for row in value):
@@ -340,3 +344,14 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
             if nested is not None:
                 return nested
     return None
+
+
+def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
+    if isinstance(payload, list):
+        return payload if all(isinstance(row, dict) for row in payload) else None
+    if not isinstance(payload, Mapping):
+        return None
+    tabular_shape, rows = _extract_tabular_result(payload)
+    if tabular_shape:
+        return rows
+    return _extract_nested_rows(payload)

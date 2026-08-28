@@ -22,7 +22,6 @@
       "src/gravity_sdk/compiler.py::JsonSchemaValidator._validate": 50,
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
-      "src/gravity_sdk/governance/stable_privacy.py::operation_exposure_paths": 32,
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 20,
       "src/gravity_sdk/prober/cli.py::run": 17,
       "src/gravity_sdk/prober/drafts.py::_auth_proxy_decision": 17,
@@ -42,9 +41,7 @@
       "src/gravity_sdk/quality.py::debt_snapshot": 24,
       "src/gravity_sdk/quality.py::evaluate_ratchet": 22,
       "src/gravity_sdk/quality.py::main": 17,
-      "src/gravity_sdk/registry.py::_request_parts": 25,
-      "src/gravity_sdk/sql/client.py::_extract_rows": 23,
-      "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 50
+      "src/gravity_sdk/registry.py::_request_parts": 25
     },
     "function_sloc": {
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 109,
@@ -65,8 +62,7 @@
       "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 127,
       "src/gravity_sdk/prober/reprobe.py::run_scoped_reprobes": 93,
       "src/gravity_sdk/quality.py::evaluate_ratchet": 93,
-      "src/gravity_sdk/quality.py::render_markdown": 81,
-      "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 108
+      "src/gravity_sdk/quality.py::render_markdown": 81
     },
     "operation_literals": {
       "src/gravity_sdk/catalog.py": {

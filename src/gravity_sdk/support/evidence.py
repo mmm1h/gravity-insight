@@ -11,7 +11,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path, PurePosixPath
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from .documents import (
     load_document,
@@ -253,8 +253,8 @@ def validate_snapshot_directory(
     )
 
 
-def validate_evidence_manifest(manifest: dict[str, Any], *, result: Any | None = None) -> None:
-    required = {
+_REQUIRED_MANIFEST_FIELDS = frozenset(
+    {
         "schema_version",
         "data_product_id",
         "evidence_origin",
@@ -274,15 +274,45 @@ def validate_evidence_manifest(manifest: dict[str, Any], *, result: Any | None =
         "provenance_status",
         "unknown_fields",
     }
-    missing = sorted(required - set(manifest))
+)
+_RECOVERY_FIELDS = frozenset({"source_git_sha", "source_blob_oid"})
+
+
+@dataclass
+class _EvidenceManifestValidation:
+    manifest: dict[str, Any]
+    result: Any | None
+    start: datetime | None = None
+    unknown: set[str] | None = None
+    origin: str | None = None
+
+
+def _validate_manifest_required_fields(state: _EvidenceManifestValidation) -> None:
+    missing = sorted(_REQUIRED_MANIFEST_FIELDS - set(state.manifest))
     if missing:
         raise EvidenceSnapshotError(f"evidence manifest is missing fields: {', '.join(missing)}")
+
+
+def _validate_manifest_schema_version(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     if type(manifest["schema_version"]) is not int or manifest["schema_version"] != 1:
         raise EvidenceSnapshotError("evidence manifest schema_version must be integer 1")
+
+
+def _validate_manifest_identifiers(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     for field in ("data_product_id", "data_contract_version", "query_id", "query_version"):
         if not isinstance(manifest[field], str) or not manifest[field].strip():
             raise EvidenceSnapshotError(f"evidence manifest {field} must be a non-empty string")
+
+
+def _validate_manifest_generated_at(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     _aware_datetime(str(manifest["generated_at"]), "generated_at")
+
+
+def _validate_manifest_data_window(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     window = manifest["data_window"]
     if not isinstance(window, dict) or set(("start", "end")) - set(window):
         raise EvidenceSnapshotError("evidence manifest data_window must contain start and end")
@@ -290,14 +320,34 @@ def validate_evidence_manifest(manifest: dict[str, Any], *, result: Any | None =
     end = _aware_datetime(str(window["end"]), "data_window.end")
     if start >= end:
         raise EvidenceSnapshotError("evidence manifest data_window start must be before end")
+    state.start = start
+
+
+def _validate_manifest_timezone(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     if not isinstance(manifest["timezone"], str) or not manifest["timezone"].strip():
         raise EvidenceSnapshotError("evidence manifest timezone must be non-empty")
+
+
+def _validate_manifest_privacy_class(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     if manifest["privacy_class"] not in PRIVACY_CLASSES:
         raise EvidenceSnapshotError(f"unsupported evidence privacy_class: {manifest['privacy_class']!r}")
+
+
+def _validate_manifest_result_sha256(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     if not HASH_PATTERN.fullmatch(str(manifest["result_sha256"])):
         raise EvidenceSnapshotError("evidence manifest result_sha256 must be lowercase SHA-256")
+
+
+def _validate_manifest_result_file(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     _safe_relative(str(manifest["result_file"]), "result_file")
 
+
+def _validate_manifest_unknown_fields(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     unknown_fields = manifest["unknown_fields"]
     if not isinstance(unknown_fields, list) or not all(isinstance(item, str) for item in unknown_fields):
         raise EvidenceSnapshotError("evidence manifest unknown_fields must contain strings")
@@ -307,63 +357,132 @@ def validate_evidence_manifest(manifest: dict[str, Any], *, result: Any | None =
     for field in unknown:
         if field not in manifest:
             raise EvidenceSnapshotError(f"evidence manifest unknown field is not present: {field}")
+    state.unknown = unknown
 
+
+def _validate_manifest_origin(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
     origin = manifest["evidence_origin"]
     if origin not in {"generated", "rolling_baseline", "git_history_recovery"}:
         raise EvidenceSnapshotError(f"unsupported evidence_origin: {origin!r}")
-    recovery_fields = {"source_git_sha", "source_blob_oid"}
-    if origin == "generated":
-        latest_safe_date = manifest.get("latest_safe_date")
-        try:
-            parsed_safe_date = date.fromisoformat(str(latest_safe_date))
-        except ValueError as exc:
-            raise EvidenceSnapshotError("generated evidence requires latest_safe_date in YYYY-MM-DD format") from exc
-        if parsed_safe_date != start.date():
-            raise EvidenceSnapshotError("generated evidence latest_safe_date must equal data_window.start date")
-        if unknown or manifest["provenance_status"] != "complete":
-            raise EvidenceSnapshotError("generated evidence requires complete provenance and no unknown fields")
-        if GIT_SHA_PATTERN.fullmatch(str(manifest["git_sha"])) is None:
-            raise EvidenceSnapshotError("generated evidence requires a full lowercase Git SHA")
-        if type(manifest["git_dirty"]) is not bool:
-            raise EvidenceSnapshotError("generated evidence requires boolean git_dirty")
-    elif origin == "rolling_baseline":
-        if manifest["provenance_status"] != "partial_legacy":
-            raise EvidenceSnapshotError("rolling baseline evidence must declare partial_legacy provenance")
-        if not unknown:
-            raise EvidenceSnapshotError("rolling baseline evidence must identify unknown legacy fields")
-    else:
-        if manifest["provenance_status"] != "partial_legacy":
-            raise EvidenceSnapshotError("Git-history recovery evidence must declare partial_legacy provenance")
-        if not unknown:
-            raise EvidenceSnapshotError("Git-history recovery evidence must identify unknown legacy fields")
-        if manifest["git_sha"] != UNKNOWN_BEFORE_POLICY or manifest["git_dirty"] is not None:
-            raise EvidenceSnapshotError(
-                "Git-history recovery evidence must keep runtime git_sha and git_dirty explicitly unknown"
-            )
-        missing_recovery = sorted(recovery_fields - set(manifest))
-        if missing_recovery:
-            raise EvidenceSnapshotError(
-                "Git-history recovery evidence is missing source fields: " + ", ".join(missing_recovery)
-            )
-        if GIT_SHA_PATTERN.fullmatch(str(manifest["source_git_sha"])) is None:
-            raise EvidenceSnapshotError("Git-history recovery source_git_sha must be a full lowercase Git SHA")
-        if GIT_SHA_PATTERN.fullmatch(str(manifest["source_blob_oid"])) is None:
-            raise EvidenceSnapshotError("Git-history recovery source_blob_oid must be a full lowercase Git object ID")
-    if origin != "git_history_recovery" and recovery_fields.intersection(manifest):
+    state.origin = origin
+
+
+def _validate_generated_origin(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
+    try:
+        parsed_safe_date = date.fromisoformat(str(manifest.get("latest_safe_date")))
+    except ValueError as exc:
+        raise EvidenceSnapshotError("generated evidence requires latest_safe_date in YYYY-MM-DD format") from exc
+    start = cast(datetime, state.start)
+    if parsed_safe_date != start.date():
+        raise EvidenceSnapshotError("generated evidence latest_safe_date must equal data_window.start date")
+    if state.unknown or manifest["provenance_status"] != "complete":
+        raise EvidenceSnapshotError("generated evidence requires complete provenance and no unknown fields")
+    if GIT_SHA_PATTERN.fullmatch(str(manifest["git_sha"])) is None:
+        raise EvidenceSnapshotError("generated evidence requires a full lowercase Git SHA")
+    if type(manifest["git_dirty"]) is not bool:
+        raise EvidenceSnapshotError("generated evidence requires boolean git_dirty")
+
+
+def _validate_rolling_baseline_origin(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
+    if manifest["provenance_status"] != "partial_legacy":
+        raise EvidenceSnapshotError("rolling baseline evidence must declare partial_legacy provenance")
+    if not state.unknown:
+        raise EvidenceSnapshotError("rolling baseline evidence must identify unknown legacy fields")
+
+
+def _validate_git_history_recovery_origin(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
+    if manifest["provenance_status"] != "partial_legacy":
+        raise EvidenceSnapshotError("Git-history recovery evidence must declare partial_legacy provenance")
+    if not state.unknown:
+        raise EvidenceSnapshotError("Git-history recovery evidence must identify unknown legacy fields")
+    if manifest["git_sha"] != UNKNOWN_BEFORE_POLICY or manifest["git_dirty"] is not None:
+        raise EvidenceSnapshotError(
+            "Git-history recovery evidence must keep runtime git_sha and git_dirty explicitly unknown"
+        )
+    missing_recovery = sorted(_RECOVERY_FIELDS - set(manifest))
+    if missing_recovery:
+        raise EvidenceSnapshotError(
+            "Git-history recovery evidence is missing source fields: " + ", ".join(missing_recovery)
+        )
+    if GIT_SHA_PATTERN.fullmatch(str(manifest["source_git_sha"])) is None:
+        raise EvidenceSnapshotError("Git-history recovery source_git_sha must be a full lowercase Git SHA")
+    if GIT_SHA_PATTERN.fullmatch(str(manifest["source_blob_oid"])) is None:
+        raise EvidenceSnapshotError("Git-history recovery source_blob_oid must be a full lowercase Git object ID")
+
+
+_ORIGIN_RULES: dict[str, Callable[[_EvidenceManifestValidation], None]] = {
+    "generated": _validate_generated_origin,
+    "rolling_baseline": _validate_rolling_baseline_origin,
+    "git_history_recovery": _validate_git_history_recovery_origin,
+}
+
+
+def _validate_manifest_origin_rules(state: _EvidenceManifestValidation) -> None:
+    _ORIGIN_RULES[cast(str, state.origin)](state)
+
+
+def _validate_manifest_recovery_field_scope(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
+    if state.origin != "git_history_recovery" and _RECOVERY_FIELDS.intersection(manifest):
         raise EvidenceSnapshotError("source recovery fields are allowed only for Git-history recovery evidence")
+
+
+def _validate_manifest_legacy_sentinels(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
+    unknown = cast(set[str], state.unknown)
     for field in ("git_sha", "query_version", "data_contract_version"):
         if manifest[field] == UNKNOWN_BEFORE_POLICY and field not in unknown:
             raise EvidenceSnapshotError(f"{field} uses the legacy sentinel but is absent from unknown_fields")
 
+
+def _validate_manifest_row_count(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
+    unknown = cast(set[str], state.unknown)
     row_count = manifest["row_count"]
     if row_count is not None and (type(row_count) is not int or row_count < 0):
         raise EvidenceSnapshotError("evidence manifest row_count must be a non-negative integer or null")
     if row_count is None and "row_count" not in unknown:
         raise EvidenceSnapshotError("null row_count must be listed in unknown_fields")
-    if result is not None:
-        _validate_row_count(result, row_count, str(manifest["row_count_semantics"]))
+
+
+def _validate_manifest_result(state: _EvidenceManifestValidation) -> None:
+    manifest = state.manifest
+    if state.result is not None:
+        _validate_row_count(state.result, manifest["row_count"], str(manifest["row_count_semantics"]))
         if manifest["privacy_class"] == "aggregate":
-            _reject_user_level_fields(result)
+            _reject_user_level_fields(state.result)
+
+
+_EVIDENCE_MANIFEST_RULES: tuple[
+    Callable[[_EvidenceManifestValidation], None], ...
+] = (
+    _validate_manifest_required_fields,
+    _validate_manifest_schema_version,
+    _validate_manifest_identifiers,
+    _validate_manifest_generated_at,
+    _validate_manifest_data_window,
+    _validate_manifest_timezone,
+    _validate_manifest_privacy_class,
+    _validate_manifest_result_sha256,
+    _validate_manifest_result_file,
+    _validate_manifest_unknown_fields,
+    _validate_manifest_origin,
+    _validate_manifest_origin_rules,
+    _validate_manifest_recovery_field_scope,
+    _validate_manifest_legacy_sentinels,
+    _validate_manifest_row_count,
+    _validate_manifest_result,
+)
+
+
+def validate_evidence_manifest(manifest: dict[str, Any], *, result: Any | None = None) -> None:
+    state = _EvidenceManifestValidation(manifest=manifest, result=result)
+    for rule in _EVIDENCE_MANIFEST_RULES:
+        rule(state)
 
 
 def validate_latest_pointer(latest: dict[str, Any]) -> None:

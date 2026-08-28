@@ -79,6 +79,48 @@ class GravitySqlClientTests(unittest.TestCase):
     def tearDown(self) -> None:
         sql_client._CLIENT = None
 
+    def test_extract_rows_characterizes_supported_and_rejected_envelopes(self):
+        direct = [{"value": 1}]
+        cases = (
+            ("direct rows", direct, direct),
+            ("mixed direct rows", [{"value": 1}, [2]], None),
+            ("scalar", "not-tabular", None),
+            (
+                "tabular result",
+                {
+                    "result": {
+                        "columns": [{"name": "first"}, "second"],
+                        "rows": [[1, 2, 3], [4], "ignored"],
+                    }
+                },
+                [{"first": 1, "second": 2}, {"first": 4}],
+            ),
+            (
+                "invalid tabular columns block fallback",
+                {
+                    "result": {"columns": [{"name": ""}], "rows": [[1]]},
+                    "data": [{"fallback": True}],
+                },
+                None,
+            ),
+            ("data rows", {"data": direct}, direct),
+            ("rows rows", {"rows": direct}, direct),
+            ("result rows", {"result": direct}, direct),
+            (
+                "invalid earlier list permits later key",
+                {"data": [1], "rows": direct},
+                direct,
+            ),
+            ("nested data", {"data": {"result": direct}}, direct),
+            ("nested rows", {"rows": {"data": direct}}, direct),
+            ("nested result", {"result": {"rows": direct}}, direct),
+            ("no rows", {"data": {"value": 1}}, None),
+        )
+        for name, payload, expected in cases:
+            with self.subTest(shape=name):
+                self.assertEqual(expected, sql_client._extract_rows(payload))
+        self.assertIs(direct, sql_client._extract_rows(direct))
+
     def test_execute_sql_uses_only_the_fixed_sql_profile_and_envelope(self):
         runtime = _FakeRuntime()
         client = GravityClient(runtime)
