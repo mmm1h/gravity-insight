@@ -213,6 +213,13 @@ class PlanExecutionTests(unittest.TestCase):
         self.assertEqual(result["exit_code"], 4)
         self.assertEqual(result["success_count"], 1)
         self.assertIsNone(result["results"][0]["result"])
+        self.assertEqual(
+            ("PLAN_ADAPTER_EXCEPTION", "adapter_execute", "unexpected_exception"),
+            tuple(
+                result["results"][0]["error"][key]
+                for key in ("code", "stage", "cause")
+            ),
+        )
         self.assertNotIn("hunter2", str(result))
         self.assertNotIn('"message": "token"', str(result))
 

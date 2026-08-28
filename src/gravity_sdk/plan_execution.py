@@ -19,6 +19,7 @@ from .plan_budget import PlanConcurrencyBudget
 from .plan_error import (
     category_action,
     detail_exit_code,
+    item_limit_detail,
     safe_detail,
     safe_native_error,
 )
@@ -193,26 +194,49 @@ def execute_one(
             max_items=node.limits.max_items,
             _worker_lease=lease,
         )
+        stage = "adapter_execute"
+        cause = "unexpected_exception"
         try:
             with governor_journey(execution_id):
                 result = adapter.execute(copy.deepcopy(dict(request)), context)
+            stage = "adapter_result_validation"
+            cause = "invalid_result_type"
             if not isinstance(result, Mapping):
                 raise TypeError("adapter result must be an object")
             if native_failure(result):
+                stage = "partial_result_validation"
+                cause = "invalid_partial_result"
                 partial = preserved_partial_result(result, adapter, node, context)
                 return adapter_failure_item(node, execution_id, foreach_index, result, partial)
+            stage = "output_copy"
+            cause = "result_copy_exception"
             projected: Any = copy.deepcopy(dict(result))
             if node.output_fields:
+                stage = "output_projection"
+                cause = "projection_exception"
                 projected = adapter.project(projected, node.output_fields, context)  # type: ignore[misc]
+            stage = "output_validation"
+            cause = "invalid_json_result"
             validate_json(projected)
-            if result_item_count(projected) > node.limits.max_items:
-                raise RuntimeError("plan adapter result exceeded its item budget")
+            stage = "output_budget"
+            cause = "item_count_exception"
+            item_count = result_item_count(projected)
+            if item_count > node.limits.max_items:
+                detail = item_limit_detail()
+                return result_item(
+                    node, execution_id, foreach_index, False, "error",
+                    detail_exit_code(detail), None, detail.to_dict(), [],
+                )
+            stage = "result_envelope"
+            cause = "result_envelope_exception"
             return result_item(
                 node, execution_id, foreach_index, True,
                 str(result.get("status", "success")), 0, projected, None, [],
             )
         except Exception as exc:
-            return exception_item(node, execution_id, foreach_index, exc)
+            return exception_item(
+                node, execution_id, foreach_index, exc, stage=stage, cause=cause
+            )
 
 
 def adapter_map(
@@ -333,6 +357,9 @@ def exception_item(
     execution_id: str,
     foreach_index: int | None,
     exc: Exception,
+    *,
+    stage: str,
+    cause: str,
 ) -> dict[str, Any]:
     if isinstance(exc, GravityInsightError):
         native = exc.to_error_detail()
@@ -343,7 +370,12 @@ def exception_item(
             next_action=native.next_action or category_action(native.category, native.code),
         )
     else:
-        detail = safe_detail("PLAN_ADAPTER_EXCEPTION", ErrorCategory.LOCAL.value)
+        detail = safe_detail(
+            "PLAN_ADAPTER_EXCEPTION",
+            ErrorCategory.LOCAL.value,
+            stage=stage,
+            cause=cause,
+        )
     return result_item(
         node, execution_id, foreach_index, False, "error", detail_exit_code(detail),
         None, detail.to_dict(), [],

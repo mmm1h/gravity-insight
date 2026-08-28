@@ -2,10 +2,30 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any
 
-from .errors import ErrorCategory, ErrorDetail, exit_code_for_error
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
+
+
+_DIAGNOSTIC_VALUE_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+
+
+@dataclass(frozen=True)
+class PlanErrorDetail(ErrorDetail):
+    """ErrorDetail with bounded Plan-local diagnostics."""
+
+    stage: str | None = None
+    cause: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        result = super().to_dict()
+        if self.stage is not None:
+            result["stage"] = self.stage
+            result["cause"] = self.cause
+        return result
 
 
 def detail_exit_code(detail: ErrorDetail) -> int:
@@ -24,12 +44,54 @@ def category_action(category: str, code: str) -> str:
     return "Inspect the controlled adapter and its governed contract before retrying."
 
 
-def safe_detail(code: str, category: str) -> ErrorDetail:
-    return ErrorDetail.create(
+def safe_detail(
+    code: str,
+    category: str,
+    *,
+    stage: str | None = None,
+    cause: str | None = None,
+    message: str | None = None,
+    field: str | None = None,
+    next_action: str | None = None,
+) -> ErrorDetail:
+    if (stage is None) != (cause is None):
+        raise ValueError("Plan error stage and cause must be provided together")
+    for name, value in (("stage", stage), ("cause", cause)):
+        if value is not None and _DIAGNOSTIC_VALUE_RE.fullmatch(value) is None:
+            raise ValueError(f"Plan error {name} must be a bounded identifier")
+    detail = ErrorDetail.create(
         code,
-        "Plan adapter failed locally." if category == "local" else "Plan adapter failed.",
+        message
+        or ("Plan adapter failed locally." if category == "local" else "Plan adapter failed."),
         category=category,
-        next_action=category_action(category, code),
+        field=field,
+        next_action=next_action or category_action(category, code),
+    )
+    return PlanErrorDetail(
+        code=detail.code,
+        category=detail.category,
+        message=detail.message,
+        field=detail.field,
+        retryable=detail.retryable,
+        retry_after_ms=detail.retry_after_ms,
+        next_action=detail.next_action,
+        stage=stage,
+        cause=cause,
+    )
+
+
+def item_limit_detail() -> ErrorDetail:
+    return safe_detail(
+        ErrorCode.PAGINATION_LIMIT.value,
+        ErrorCategory.CALLER.value,
+        stage="output_budget",
+        cause="max_items_exceeded",
+        message="Plan node result exceeded limits.max_items.",
+        field="limits.max_items",
+        next_action=(
+            "Increase this node's limits.max_items to a reviewed bound or narrow "
+            "the requested grouping, then retry."
+        ),
     )
 
 
@@ -73,6 +135,7 @@ def normalized_category(value: Any) -> str:
 __all__ = [
     "category_action",
     "detail_exit_code",
+    "item_limit_detail",
     "normalized_category",
     "safe_detail",
     "safe_native_error",
