@@ -18,7 +18,6 @@
       "src/gravity_sdk/cli.py::_analysis": 19,
       "src/gravity_sdk/cli.py::run": 21,
       "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
-      "src/gravity_sdk/compiler.py::JsonSchemaValidator._validate": 50,
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 20,
@@ -49,7 +48,6 @@
       "src/gravity_sdk/census/params.py::_tokenize": 108,
       "src/gravity_sdk/census/parser.py::build_routes": 93,
       "src/gravity_sdk/census/response.py::apply_response_fields_to_drafts": 86,
-      "src/gravity_sdk/cli.py::build_parser": 146,
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 81,
       "src/gravity_sdk/models.py::OperationSpec.schema": 98,
       "src/gravity_sdk/prober/cli.py::run": 126,
@@ -199,10 +197,10 @@
       "sloc_hard_limit": 551
     },
     "src/gravity_sdk/cli.py": {
-      "ast_hard_limit": 3822,
-      "ast_nodes": 3822,
+      "ast_hard_limit": 3811,
+      "ast_nodes": 3811,
       "migration_sloc": 715,
-      "sloc_hard_limit": 671
+      "sloc_hard_limit": 670
     },
     "src/gravity_sdk/client.py": {
       "ast_hard_limit": 4148,
@@ -211,10 +209,10 @@
       "sloc_hard_limit": 730
     },
     "src/gravity_sdk/compiler.py": {
-      "ast_hard_limit": 5347,
-      "ast_nodes": 5347,
+      "ast_hard_limit": 5341,
+      "ast_nodes": 5341,
       "migration_sloc": 662,
-      "sloc_hard_limit": 662
+      "sloc_hard_limit": 657
     },
     "src/gravity_sdk/executor.py": {
       "ast_hard_limit": 4588,
