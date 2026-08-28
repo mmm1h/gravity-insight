@@ -427,6 +427,23 @@ class UnifiedModuleDependencyGraphTests(unittest.TestCase):
             definition["profiles"]["canonical"],
         )
 
+    def test_plan_analysis_contract_has_no_package_internal_imports(self) -> None:
+        path = PACKAGE_ROOT / "plan_analysis_contract.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        package_imports = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and (
+                node.level > 0
+                or (node.module or "").split(".", 1)[0] == "gravity_sdk"
+            ):
+                package_imports.append(ast.unparse(node))
+            elif isinstance(node, ast.Import) and any(
+                alias.name.split(".", 1)[0] == "gravity_sdk"
+                for alias in node.names
+            ):
+                package_imports.append(ast.unparse(node))
+        self.assertEqual([], package_imports)
+
     def test_unified_edge_kinds_follow_the_declared_runtime_rules(self) -> None:
         files = {
             "__init__.py": """
@@ -574,14 +591,14 @@ def run():
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
         expected = module_graph_baseline()
         self.assertEqual(
-            "e29781bf90fdb7be3de91beaacf8e5d02b09600be22cb778a4a1a39243f1b308",
+            "985bed7bb7ad043031dfa80ce65567149e28e9001e992976856d24f535539c0a",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
-                "ast-only": 44,
+                "ast-only": 41,
                 "ast+lazy-exports": 422,
-                "canonical": 522,
+                "canonical": 523,
                 "eager-ast-only": 5,
             },
             {
@@ -590,11 +607,11 @@ def run():
             },
         )
         self.assertEqual(
-            [44, 41, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1],
+            [41, 11, 8, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 1],
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
-            [522, 15, 3, 2, 2],
+            [523, 15, 3, 2, 2],
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())

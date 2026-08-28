@@ -179,7 +179,7 @@ def plan_schema() -> dict[str, Any]:
     """Return the compact, machine-readable v1 contract."""
 
     from .host_effects import host_effect_schema
-    from .plan_analysis_adapter import (
+    from .plan_analysis_contract import (
         ANALYSIS_QUERY_BINDING_TARGETS,
         ANALYSIS_QUERY_NAME,
         ANALYSIS_QUERY_REQUEST_FIELDS,

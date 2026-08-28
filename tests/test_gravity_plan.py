@@ -495,10 +495,36 @@ class PlanExecutionTests(unittest.TestCase):
 
     def test_plan_schema_declares_analysis_query_binding_contract(self):
         analysis = plan_schema()["composites"]["analysis_query"]
-        self.assertEqual(["/app"], analysis["binding_targets"])
-        self.assertIs(False, analysis["spec_binding"])
-        self.assertIn("compare_start", analysis["request_fields"])
-        self.assertIn("compare_end", analysis["request_fields"])
+        self.assertEqual(
+            {
+                "binding_targets": ["/app"],
+                "spec_binding": False,
+                "request_fields": [
+                    "app",
+                    "compare_end",
+                    "compare_start",
+                    "end",
+                    "kind",
+                    "metadata_snapshot",
+                    "name",
+                    "spec",
+                    "start",
+                ],
+            },
+            analysis,
+        )
+
+    def test_analysis_query_contract_constants_are_adapter_reexports(self):
+        from gravity_sdk import plan_analysis_adapter as adapter
+        from gravity_sdk import plan_analysis_contract as contract
+
+        for name in (
+            "ANALYSIS_QUERY_BINDING_TARGETS",
+            "ANALYSIS_QUERY_NAME",
+            "ANALYSIS_QUERY_REQUEST_FIELDS",
+        ):
+            with self.subTest(name=name):
+                self.assertIs(getattr(contract, name), getattr(adapter, name))
 
     def test_analysis_query_rejected_binding_lists_allowed_targets(self):
         workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
