@@ -370,168 +370,24 @@ def infer_identity(route: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _field(type_name: str, *, default: Any = None, required: bool = False) -> dict[str, Any]:
-    value: dict[str, Any] = {"type": type_name}
-    if required:
-        value["required"] = True
-    elif default is not None:
-        value["default"] = default
-    return value
-
-
-def _option_contract(
-    platform: Any, existing_ids: set[str]
-) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
-    input_type = "array" if platform == "kuaishou" else "string"
-    fields = {"advertiser_id": _field(input_type, required=True)}
-    parents: list[dict[str, Any]] = []
-    parent_candidates = [
-        f"promotion.{platform}.account.list",
-        f"promotion.{platform}.advertiser.list",
-    ]
-    parent_id = next((item for item in parent_candidates if item in existing_ids), None)
-    probe_inputs: dict[str, Any] = {}
-    if parent_id:
-        parents.append(
-            {
-                "operation_id": parent_id, "input_field": "advertiser_id",
-                "output_path": "data.list[].advertiser_id", "selection": "caller_select",
-            }
-        )
-        placeholder = (
-            f"$first_{platform}_advertiser_id"
-            if platform in {"bytedance", "tencent", "kuaishou"} else "$parent"
-        )
-        probe_inputs["advertiser_id"] = [placeholder] if input_type == "array" else placeholder
-    return fields, probe_inputs, parents
-
-
-def _report_contract() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    fields = {
-        "date_list": _field("array", required=True), "filtering": _field("object", default={}),
-        "filters": _field("array", default=[]), "order_by": _field("array", default=[]),
-        "page": _field("integer", default=1), "page_size": _field("integer", default=10),
-        "query_fields": _field("array", default=[]),
-    }
-    defaults = {
-        "filtering": {}, "filters": [], "order_by": [], "page": 1,
-        "page_size": 10, "query_fields": [],
-    }
-    probe_inputs = {**defaults, "date_list": ["$yesterday", "$today"], "page_size": 2}
-    return fields, defaults, probe_inputs
-
-
-def _openapi_adreport_contract() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    fields = {
-        "time_dims": {
-            "type": "string", "required": True,
-            "enum": ["total", "month", "week", "day", "hour"],
-        },
-        "data_dims": _field("array", default=[]),
-        "relate_dims": _field("object", default={}),
-        "date_list": _field("array", required=True),
-        "metrics_list": _field("array", required=True),
-        "custom_metrics_list": _field("array", default=[]),
-        "filters": _field("array", required=True),
-        "data_conf": _field("object", default={}),
-    }
-    defaults = {
-        "data_dims": [], "relate_dims": {}, "custom_metrics_list": [],
-        "data_conf": {},
-    }
-    probe_inputs = {
-        **defaults,
-        "time_dims": "day",
-        "date_list": ["$today", "$today"],
-        "metrics_list": ["ap_cost"],
-        "filters": [
-            {"field": "app_id", "operator": "EQUALS", "values": ["$first_app_id"]}
-        ],
-    }
-    return fields, defaults, probe_inputs
-
-
-def _openapi_metric_contract() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    fields = {
-        "data_topic": {
-            "type": "string", "default": "adreport", "enum": ["adreport"],
-        },
-        "metric_type": {
-            "type": "string", "required": True,
-            "enum": ["gravity_preset", "user_custom"],
-        },
-    }
-    defaults = {"data_topic": "adreport"}
-    probe_inputs = {**defaults, "metric_type": "gravity_preset"}
-    return fields, defaults, probe_inputs
-
-
 def _infer_contract_parts(
-    route: Mapping[str, Any], identity: Mapping[str, Any], existing_ids: set[str]
+    route: Mapping[str, Any], identity: Mapping[str, Any], existing_ids: set[str],
 ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
-    method, path = str(route["method"]).upper(), str(route["path"])
-    resource, platform = str(identity["resource"]), identity.get("platform")
-    fields: dict[str, Any] = {}
-    defaults: dict[str, Any] = {}
-    query_fields: list[str] = []
-    body_fields: list[str] = []
-    parents: list[dict[str, Any]] = []
-    probe_inputs: dict[str, Any] = {}
-    if path.endswith("/openapi/api/v1/report/adreport/custom_get/"):
-        fields, defaults, probe_inputs = _openapi_adreport_contract()
-        body_fields.extend(fields)
-    elif path.endswith("/openapi/api/v1/report/metrics/list/"):
-        fields, defaults, probe_inputs = _openapi_metric_contract()
-        body_fields.extend(fields)
-    elif resource == "account_company" and platform == "kuaishou":
-        fields["need_company"] = _field("boolean", default=True)
-        defaults["need_company"] = probe_inputs["need_company"] = True
-        body_fields.append("need_company")
-    elif resource.endswith("_option"):
-        fields, probe_inputs, parents = _option_contract(platform, existing_ids)
-        body_fields.append("advertiser_id")
-    elif "/report/" in path and identity.get("domain") == "promotion":
-        fields, defaults, probe_inputs = _report_contract()
-        body_fields.extend(
-            ["filtering", "page", "page_size", "query_fields", "date_list", "order_by", "filters"]
-        )
-    elif path.endswith("/list/") and not any(
-        token in path for token in ("/datamanageconfig/", "/const/", "/health_status/")
-    ):
-        fields.update({"page": _field("integer", default=1), "page_size": _field("integer", default=20)})
-        defaults.update({"page": 1, "page_size": 20})
-        probe_inputs.update({"page": 1, "page_size": 2})
-        (query_fields if method == "GET" else body_fields).extend(["page", "page_size"])
-        if path.endswith("/open_develop/list/"):
-            fields["filters"] = _field("array", default=[])
-            defaults["filters"] = probe_inputs["filters"] = []
-            body_fields.append("filters")
-        if resource == "brand":
-            fields["filters"] = _field("array", default=[])
-            defaults["filters"] = probe_inputs["filters"] = []
-            body_fields.append("filters")
-    request = {
-        "path_fields": [], "query_fields": query_fields, "body_fields": body_fields,
-        "defaults": defaults, "fixed_query": {}, "fixed_body": {},
-    }
-    return fields, request, parents, probe_inputs
+    from .parameter_types import infer_contract_parts
+
+    return infer_contract_parts(route, identity, existing_ids)
 
 
 def _auth_profile(path: str) -> str:
-    if not path.startswith("/openapi/api/v1/"):
-        return "gravity_authorization"
-    if any(segment in path for segment in ("/open_develop/", "/open_app/")):
-        return "gravity_authorization"
-    return "gravity_openapi_signature"
+    from .parameter_types import auth_profile
+
+    return auth_profile(path)
 
 
 def _initial_gate_missing(path: str, auth_profile: str) -> list[str]:
-    missing = ["successful_probe", "classified_projection", "response_projection"]
-    if path.startswith("/openapi/"):
-        missing.append("stable_runtime_route_unsupported")
-    if auth_profile == "gravity_openapi_signature":
-        missing.append("openapi_developer_credentials_unavailable")
-    return sorted(missing)
+    from .parameter_types import initial_gate_missing
+
+    return initial_gate_missing(path, auth_profile)
 
 
 def _route_evidence(route: Mapping[str, Any]) -> dict[str, Any]:
@@ -564,105 +420,103 @@ def _blocker(code: str, detail: str, evidence: str | None = None) -> dict[str, A
     return result
 
 
-def structured_blockers(
-    source: Mapping[str, Any], route: Mapping[str, Any] | None = None,
+def _probe_evidence_blockers(
+    latest: Mapping[str, Any] | None, latest_path: str | None,
 ) -> list[dict[str, Any]]:
-    operation = source.get("operation", {})
-    draft = source.get("draft", {})
-    evidence = draft.get("probe_evidence", []) if isinstance(draft, Mapping) else []
-    latest = evidence[-1] if isinstance(evidence, list) and evidence else None
-    latest_path = str(latest.get("path", "")) if isinstance(latest, Mapping) else None
     result: list[dict[str, Any]] = []
     if not isinstance(latest, Mapping):
-        result.extend(
-            [
-                _blocker("not_probed", "No live probe evidence exists for this route."),
-                _blocker(
-                    "request_binding_unverified",
-                    "Query/body fields and fixed request values have not been observed.",
-                ),
-            ]
-        )
-    else:
-        conclusion = str(latest.get("conclusion", ""))
-        if conclusion in {"inconclusive_empty", "available_empty"}:
-            result.append(
-                _blocker(
-                    "empty_sample",
-                    "The observed tenant response was empty and cannot prove an item schema.",
-                    latest_path,
-                )
-            )
-        elif conclusion == "semantic_error":
-            result.append(
-                _blocker(
-                    "request_parameters_required",
-                    "The observed request reached a semantic error; required request fields remain unknown.",
-                    latest_path,
-                )
-            )
-        elif not bool(latest.get("successful")):
-            result.append(
-                _blocker(
-                    "probe_inconclusive",
-                    "The latest probe did not satisfy the promotion gate.",
-                    latest_path,
-                )
-            )
+        return [
+            _blocker("not_probed", "No live probe evidence exists for this route."),
+            _blocker(
+                "request_binding_unverified",
+                "Query/body fields and fixed request values have not been observed.",
+            ),
+        ]
+    conclusion = str(latest.get("conclusion", ""))
+    if conclusion in {"inconclusive_empty", "available_empty"}:
+        result.append(_blocker(
+            "empty_sample",
+            "The observed tenant response was empty and cannot prove an item schema.",
+            latest_path,
+        ))
+    elif conclusion == "semantic_error":
+        result.append(_blocker(
+            "request_parameters_required",
+            "The observed request reached a semantic error; required request fields remain unknown.",
+            latest_path,
+        ))
+    elif not bool(latest.get("successful")):
+        result.append(_blocker(
+            "probe_inconclusive",
+            "The latest probe did not satisfy the promotion gate.",
+            latest_path,
+        ))
+    return result
+
+
+def _parent_binding_blocker(
+    *, indicated: bool, resolved: bool, resolution: Any,
+    latest_path: str | None,
+) -> dict[str, Any] | None:
+    if not indicated or resolved:
+        return None
+    detail = "A parent account/campaign selector is indicated, but its binding and cardinality require proof."
+    evidence = latest_path
+    if isinstance(resolution, Mapping):
+        detail = str(resolution.get("detail") or detail)
+        evidence = str(resolution.get("evidence")) if resolution.get("evidence") else latest_path
+    return _blocker("parent_resource_required", detail, evidence)
+
+
+def _parent_data_blocker(
+    conclusion: str, resolution: Any, latest_path: str | None,
+) -> dict[str, Any] | None:
+    if conclusion != "blocked_by_data" or not isinstance(resolution, Mapping):
+        return None
+    replacement = str(resolution.get("replacement_blocker", "empty_sample"))
+    if replacement not in {"empty_sample", "permission_unavailable"}:
+        replacement = "empty_sample"
+    details = {
+        "empty_sample": "The proven parent operation returned no selectable parent resource for this tenant.",
+        "permission_unavailable": "The proven parent operation is unavailable to the current account.",
+    }
+    return _blocker(
+        replacement, details[replacement],
+        str(resolution.get("evidence") or latest_path or ""),
+    )
+
+
+def _parent_resource_blockers(
+    operation: Mapping[str, Any], route: Mapping[str, Any] | None,
+    latest: Mapping[str, Any] | None, latest_path: str | None,
+) -> list[dict[str, Any]]:
     cost_reason = str((route or {}).get("cost_reason", ""))
-    required_parent = operation.get("required_parent", []) if isinstance(operation, Mapping) else []
-    parent_indicated = bool(
-        required_parent
+    indicated = bool(
+        operation.get("required_parent", [])
         or "depends on a parent" in cost_reason
         or "requires a parent" in cost_reason
     )
-    parent_resolved = bool(
-        isinstance(latest, Mapping) and latest.get("parent_resolved") is True
-    )
-    parent_resolution = (
-        (route or {}).get("parent_resolution", {})
-        if isinstance(route, Mapping)
-        else {}
-    )
-    resolution_conclusion = (
-        str(parent_resolution.get("conclusion", ""))
-        if isinstance(parent_resolution, Mapping)
-        else ""
-    )
-    if resolution_conclusion in {"unblocked", "blocked_by_data"}:
-        parent_resolved = True
-    if parent_indicated and not parent_resolved:
-        result.append(
-            _blocker(
-                "parent_resource_required",
-                str(parent_resolution.get("detail"))
-                if isinstance(parent_resolution, Mapping)
-                and parent_resolution.get("detail")
-                else "A parent account/campaign selector is indicated, but its binding and cardinality require proof.",
-                str(parent_resolution.get("evidence"))
-                if isinstance(parent_resolution, Mapping)
-                and parent_resolution.get("evidence")
-                else latest_path,
-            )
+    resolution = (route or {}).get("parent_resolution", {})
+    conclusion = str(resolution.get("conclusion", "")) if isinstance(resolution, Mapping) else ""
+    resolved = bool(latest and latest.get("parent_resolved") is True)
+    resolved = resolved or conclusion in {"unblocked", "blocked_by_data"}
+    result = [
+        blocker for blocker in (
+            _parent_binding_blocker(
+                indicated=indicated, resolved=resolved,
+                resolution=resolution, latest_path=latest_path,
+            ),
+            _parent_data_blocker(conclusion, resolution, latest_path),
         )
-    if resolution_conclusion == "blocked_by_data" and isinstance(
-        parent_resolution, Mapping
-    ):
-        replacement = str(parent_resolution.get("replacement_blocker", "empty_sample"))
-        if replacement not in {"empty_sample", "permission_unavailable"}:
-            replacement = "empty_sample"
-        details = {
-            "empty_sample": "The proven parent operation returned no selectable parent resource for this tenant.",
-            "permission_unavailable": "The proven parent operation is unavailable to the current account.",
-        }
-        if not any(item.get("code") == replacement for item in result):
-            result.append(
-                _blocker(
-                    replacement,
-                    details[replacement],
-                    str(parent_resolution.get("evidence") or latest_path or ""),
-                )
-            )
+        if blocker is not None
+    ]
+    return result
+
+
+def _response_policy_blockers(
+    operation: Mapping[str, Any], draft: Mapping[str, Any], latest_path: str | None,
+) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
     manual_fields = draft.get("manual_review_fields", []) if isinstance(draft, Mapping) else []
     if manual_fields:
         result.append(
@@ -672,7 +526,7 @@ def structured_blockers(
                 latest_path,
             )
         )
-    projection = operation.get("response_projection", {}) if isinstance(operation, Mapping) else {}
+    projection = operation.get("response_projection", {})
     exposed = set()
     if isinstance(projection, Mapping):
         exposed = set(projection.get("item_keys", []))
@@ -686,7 +540,7 @@ def structured_blockers(
                 latest_path,
             )
         )
-    privacy = operation.get("privacy_policy", {}) if isinstance(operation, Mapping) else {}
+    privacy = operation.get("privacy_policy", {})
     if isinstance(privacy, Mapping) and privacy.get("classification") == "unverified":
         result.append(
             _blocker(
@@ -694,7 +548,15 @@ def structured_blockers(
                 "The route-level privacy classification has not been established.",
             )
         )
-    pagination = operation.get("pagination", {}) if isinstance(operation, Mapping) else {}
+    return result
+
+
+def _request_contract_blockers(
+    operation: Mapping[str, Any], latest: Mapping[str, Any] | None,
+    latest_path: str | None,
+) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    pagination = operation.get("pagination", {})
     pagination_kind = pagination.get("kind") if isinstance(pagination, Mapping) else None
     pagination_verified = bool(
         isinstance(latest, Mapping) and latest.get("pagination_verified") is True
@@ -709,8 +571,8 @@ def structured_blockers(
                 latest_path,
             )
         )
-    fields = operation.get("input_fields", {}) if isinstance(operation, Mapping) else {}
-    request = operation.get("request", {}) if isinstance(operation, Mapping) else {}
+    fields = operation.get("input_fields", {})
+    request = operation.get("request", {})
     path_fields = request.get("path_fields", []) if isinstance(request, Mapping) else []
     if isinstance(fields, Mapping) and any(
         isinstance(fields.get(name), Mapping) and fields[name].get("type") == "any"
@@ -722,6 +584,13 @@ def structured_blockers(
                 "A path placeholder is proven syntactically, but its value type and semantics are unknown.",
             )
         )
+    return result
+
+
+def _openapi_contract_blockers(
+    operation: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
     path_template = str(operation.get("path_template", ""))
     if path_template.startswith("/openapi/"):
         result.append(
@@ -737,6 +606,25 @@ def structured_blockers(
                 "OpenAPI developer signing credentials are unavailable to the stable runtime.",
             )
         )
+    return result
+
+
+def structured_blockers(
+    source: Mapping[str, Any], route: Mapping[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    operation_value = source.get("operation", {})
+    draft_value = source.get("draft", {})
+    operation = operation_value if isinstance(operation_value, Mapping) else {}
+    draft = draft_value if isinstance(draft_value, Mapping) else {}
+    evidence = draft.get("probe_evidence", [])
+    latest_value = evidence[-1] if isinstance(evidence, list) and evidence else None
+    latest = latest_value if isinstance(latest_value, Mapping) else None
+    latest_path = str(latest.get("path", "")) if latest is not None else None
+    result = _probe_evidence_blockers(latest, latest_path)
+    result.extend(_parent_resource_blockers(operation, route, latest, latest_path))
+    result.extend(_response_policy_blockers(operation, draft, latest_path))
+    result.extend(_request_contract_blockers(operation, latest, latest_path))
+    result.extend(_openapi_contract_blockers(operation))
     if not result:
         result.append(
             _blocker(
@@ -1061,57 +949,54 @@ def _report_route(route: Mapping[str, Any], route_index: int) -> dict[str, Any]:
     }
 
 
-def create_bulk_drafts(
-    *, method_certainty: str = "high", limit: int = 321,
-    coverage_path: Path = COVERAGE_PATH, draft_root: Path = DRAFT_ROOT,
-    operation_root: Path = OPERATION_ROOT, report_root: Path = BULK_REPORT_ROOT,
-) -> dict[str, Any]:
-    coverage = read_json(coverage_path)
-    routes = coverage.get("routes") if isinstance(coverage, Mapping) else None
-    if not isinstance(routes, list):
-        raise ValueError("coverage.json has no routes array")
+def _select_bulk_routes(
+    routes: Sequence[Any], method_certainty: str, limit: int,
+) -> tuple[list[tuple[int, Mapping[str, Any]]], list[tuple[int, Mapping[str, Any]]]]:
     selected = [
-        (index, route)
-        for index, route in enumerate(routes)
+        (index, route) for index, route in enumerate(routes)
         if isinstance(route, Mapping)
         and route.get("status") == "uncovered_read"
         and route.get("method_certainty") == method_certainty
         and str(route.get("method", "")).upper() in {"GET", "POST"}
     ]
     if len(selected) > limit:
-        raise ValueError(
-            f"route selection produced {len(selected)} entries; limit is {limit}"
-        )
+        raise ValueError(f"route selection produced {len(selected)} entries; limit is {limit}")
     excluded = [
-        (index, route)
-        for index, route in enumerate(routes)
+        (index, route) for index, route in enumerate(routes)
         if isinstance(route, Mapping)
         and route.get("status") == "uncovered_read"
         and route.get("method_certainty") != method_certainty
     ]
+    return selected, excluded
 
-    stable_sources = existing_operations(operation_root)
-    stable_routes = {
-        (
-            str(source["operation"]["upstream_method"]),
-            str(source["operation"]["path_template"]),
-        )
-        for source in stable_sources.values()
-    }
+
+def _existing_draft_indexes(
+    draft_root: Path,
+) -> tuple[
+    dict[str, Mapping[str, Any]],
+    dict[tuple[str, str], tuple[str, Mapping[str, Any]]],
+]:
     existing_drafts: dict[str, Mapping[str, Any]] = {}
     existing_by_route: dict[tuple[str, str], tuple[str, Mapping[str, Any]]] = {}
-    if draft_root.is_dir():
-        for path in sorted(draft_root.glob("*.json")):
-            source = read_json(path)
-            operation = source.get("operation", {})
-            operation_id = str(operation.get("operation_id", path.stem))
-            existing_drafts[operation_id] = source
-            route_key = (
-                str(operation.get("upstream_method", "")),
-                str(operation.get("path_template", "")),
-            )
-            existing_by_route[route_key] = (operation_id, source)
+    if not draft_root.is_dir():
+        return existing_drafts, existing_by_route
+    for path in sorted(draft_root.glob("*.json")):
+        source = read_json(path)
+        operation = source.get("operation", {})
+        operation_id = str(operation.get("operation_id", path.stem))
+        existing_drafts[operation_id] = source
+        route_key = (
+            str(operation.get("upstream_method", "")),
+            str(operation.get("path_template", "")),
+        )
+        existing_by_route[route_key] = (operation_id, source)
+    return existing_drafts, existing_by_route
 
+
+def _provisional_bulk_drafts(
+    selected: Sequence[tuple[int, Mapping[str, Any]]],
+    existing_by_route: Mapping[tuple[str, str], tuple[str, Mapping[str, Any]]],
+) -> list[dict[str, Any]]:
     provisional: list[dict[str, Any]] = []
     for route_index, route in selected:
         route_key = (str(route.get("method", "")).upper(), str(route.get("path", "")))
@@ -1119,32 +1004,31 @@ def create_bulk_drafts(
         if existing:
             operation = existing[1]["operation"]
             identity = {
-                "operation_id": existing[0],
-                "domain": operation["domain"],
-                "resource": operation["resource"],
-                "action": operation["action"],
+                "operation_id": existing[0], "domain": operation["domain"],
+                "resource": operation["resource"], "action": operation["action"],
                 "platform": operation.get("platform"),
                 "resource_context": infer_identity(route).get("resource_context"),
             }
         else:
             identity = infer_identity(route)
-        provisional.append(
-            {
-                "route_index": route_index,
-                "route": route,
-                "route_key": route_key,
-                "identity": identity,
-                "existing": existing,
-            }
-        )
+        provisional.append({
+            "route_index": route_index, "route": route, "route_key": route_key,
+            "identity": identity, "existing": existing,
+        })
+    return provisional
 
+
+def _assign_bulk_operation_ids(
+    provisional: Sequence[dict[str, Any]], stable_ids: set[str],
+    existing_ids: set[str],
+) -> None:
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for item in provisional:
         groups[str(item["identity"]["operation_id"])].append(item)
-    reserved_ids = set(stable_sources) | set(existing_drafts)
+    reserved_ids = stable_ids | existing_ids
     assigned_ids: set[str] = set()
     for initial_id, items in sorted(groups.items()):
-        conflict = len(items) > 1 or initial_id in stable_sources
+        conflict = len(items) > 1 or initial_id in stable_ids
         for item in sorted(items, key=lambda value: value["route_key"]):
             identity = item["identity"]
             if item["existing"]:
@@ -1161,10 +1045,18 @@ def create_bulk_drafts(
                     ).hexdigest()[:8]
                     resource = f"{resource}_{suffix}"
                     operation_id = _operation_id(identity, resource)
-                identity = {**identity, "resource": resource, "operation_id": operation_id}
-                item["identity"] = identity
+                item["identity"] = {
+                    **identity, "resource": resource, "operation_id": operation_id,
+                }
             assigned_ids.add(operation_id)
 
+
+def _accepted_bulk_drafts(
+    provisional: Sequence[dict[str, Any]], *, coverage_path: Path,
+    stable_routes: set[tuple[str, str]],
+) -> tuple[
+    list[tuple[dict[str, Any], dict[str, Any], str]], list[dict[str, Any]],
+]:
     accepted: list[tuple[dict[str, Any], dict[str, Any], str]] = []
     rejected: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -1182,116 +1074,102 @@ def create_bulk_drafts(
             disposition = "updated_existing"
         else:
             source = build_conservative_draft(
-                route,
-                identity=item["identity"],
-                coverage_path=coverage_path,
+                route, identity=item["identity"], coverage_path=coverage_path,
                 route_index=route_index,
             )
             disposition = "created"
         reasons = _quality_reasons(
-            source,
-            stable_routes=stable_routes,
-            seen_ids=seen_ids,
-            seen_routes=seen_routes,
+            source, stable_routes=stable_routes,
+            seen_ids=seen_ids, seen_routes=seen_routes,
         )
         if not reasons:
             try:
                 validate_source(source)
             except (TypeError, ValueError) as exc:
-                reasons.append(
-                    {"code": "schema_validation_failed", "detail": str(exc)}
-                )
+                reasons.append({"code": "schema_validation_failed", "detail": str(exc)})
         if reasons:
-            rejected.append(
-                {
-                    **_report_route(route, route_index),
-                    "inferred_identity": copy.deepcopy(item["identity"]),
-                    "reasons": reasons,
-                }
-            )
+            rejected.append({
+                **_report_route(route, route_index),
+                "inferred_identity": copy.deepcopy(item["identity"]), "reasons": reasons,
+            })
             continue
         operation_id = str(source["operation"]["operation_id"])
         seen_ids.add(operation_id)
         seen_routes.add(item["route_key"])
         accepted.append((item, source, disposition))
+    return accepted, rejected
 
+
+def _write_bulk_drafts(
+    accepted: Sequence[tuple[dict[str, Any], dict[str, Any], str]], draft_root: Path,
+) -> list[dict[str, Any]]:
     draft_rows: list[dict[str, Any]] = []
     for item, source, disposition in accepted:
         operation_id = str(source["operation"]["operation_id"])
         destination = draft_root / f"{operation_id}.json"
         write_json(destination, source)
-        draft_rows.append(
-            {
-                "operation_id": operation_id,
-                "domain": source["operation"]["domain"],
-                "resource": source["operation"]["resource"],
-                "action": source["operation"]["action"],
-                "platform": source["operation"].get("platform"),
-                "method": source["operation"]["upstream_method"],
-                "path": source["operation"]["path_template"],
-                "coverage_reference": copy.deepcopy(
-                    source["draft"]["coverage_reference"]
-                ),
-                "blockers": copy.deepcopy(source["draft"]["blockers"]),
-                "disposition": disposition,
-                "draft_path": display_path(destination),
-            }
-        )
+        draft_rows.append({
+            "operation_id": operation_id, "domain": source["operation"]["domain"],
+            "resource": source["operation"]["resource"],
+            "action": source["operation"]["action"],
+            "platform": source["operation"].get("platform"),
+            "method": source["operation"]["upstream_method"],
+            "path": source["operation"]["path_template"],
+            "coverage_reference": copy.deepcopy(source["draft"]["coverage_reference"]),
+            "blockers": copy.deepcopy(source["draft"]["blockers"]),
+            "disposition": disposition, "draft_path": display_path(destination),
+        })
+    return draft_rows
 
-    reason_counts = Counter(
-        reason["code"] for row in rejected for reason in row["reasons"]
-    )
+
+def _bulk_draft_report(
+    *, coverage_path: Path, method_certainty: str,
+    selected: Sequence[tuple[int, Mapping[str, Any]]],
+    excluded: Sequence[tuple[int, Mapping[str, Any]]],
+    stable_sources: Mapping[str, Any],
+    accepted: Sequence[tuple[dict[str, Any], dict[str, Any], str]],
+    rejected: Sequence[Mapping[str, Any]], draft_rows: Sequence[Mapping[str, Any]],
+    draft_root: Path, report_root: Path,
+) -> dict[str, Any]:
+    reason_counts = Counter(reason["code"] for row in rejected for reason in row["reasons"])
     blocker_counts = Counter(
         blocker["code"] for row in draft_rows for blocker in row["blockers"]
     )
     certainty_counts = Counter(str(route.get("method_certainty", "unknown")) for _, route in excluded)
     module_counts = Counter(str(route.get("business_module", "unknown")) for _, route in excluded)
+    draft_count = len(list(draft_root.glob("*.json")))
     summary = {
         "schema_version": "gravity-insight.bulk-draft-summary.v1",
-        "coverage_path": display_path(coverage_path),
-        "method_certainty": method_certainty,
-        "attempted": len(selected),
-        "successful": len(draft_rows),
+        "coverage_path": display_path(coverage_path), "method_certainty": method_certainty,
+        "attempted": len(selected), "successful": len(draft_rows),
         "created": sum(row["disposition"] == "created" for row in draft_rows),
-        "updated_existing": sum(
-            row["disposition"] == "updated_existing" for row in draft_rows
-        ),
-        "with_probe_evidence": sum(
-            bool(source["draft"].get("probe_evidence")) for _, source, _ in accepted
-        ),
-        "without_probe_evidence": sum(
-            not bool(source["draft"].get("probe_evidence")) for _, source, _ in accepted
-        ),
+        "updated_existing": sum(row["disposition"] == "updated_existing" for row in draft_rows),
+        "with_probe_evidence": sum(bool(source["draft"].get("probe_evidence")) for _, source, _ in accepted),
+        "without_probe_evidence": sum(not bool(source["draft"].get("probe_evidence")) for _, source, _ in accepted),
         "rejected": len(rejected),
         "rejected_reason_counts": dict(sorted(reason_counts.items())),
-        "blocker_counts": dict(sorted(blocker_counts.items())),
-        "excluded": len(excluded),
+        "blocker_counts": dict(sorted(blocker_counts.items())), "excluded": len(excluded),
         "excluded_certainty_counts": dict(sorted(certainty_counts.items())),
         "excluded_module_counts": dict(sorted(module_counts.items())),
-        "stable_operation_contracts": len(stable_sources),
-        "draft_contracts": len(list(draft_root.glob("*.json"))),
-        "total_contracts": len(stable_sources) + len(list(draft_root.glob("*.json"))),
+        "stable_operation_contracts": len(stable_sources), "draft_contracts": draft_count,
+        "total_contracts": len(stable_sources) + draft_count,
     }
     report_root.mkdir(parents=True, exist_ok=True)
-    write_json(
-        report_root / "drafts.json",
-        {"schema_version": "gravity-insight.bulk-drafts.v1", "count": len(draft_rows), "drafts": draft_rows},
-    )
-    write_json(
-        report_root / "rejected.json",
-        {"schema_version": "gravity-insight.bulk-rejected.v1", "count": len(rejected), "routes": rejected},
-    )
+    write_json(report_root / "drafts.json", {
+        "schema_version": "gravity-insight.bulk-drafts.v1",
+        "count": len(draft_rows), "drafts": draft_rows,
+    })
+    write_json(report_root / "rejected.json", {
+        "schema_version": "gravity-insight.bulk-rejected.v1",
+        "count": len(rejected), "routes": rejected,
+    })
     excluded_rows = [_report_route(route, index) for index, route in excluded]
-    write_json(
-        report_root / "excluded-certainty.json",
-        {
-            "schema_version": "gravity-insight.bulk-excluded-certainty.v1",
-            "count": len(excluded_rows),
-            "certainty_counts": dict(sorted(certainty_counts.items())),
-            "module_counts": dict(sorted(module_counts.items())),
-            "routes": excluded_rows,
-        },
-    )
+    write_json(report_root / "excluded-certainty.json", {
+        "schema_version": "gravity-insight.bulk-excluded-certainty.v1",
+        "count": len(excluded_rows),
+        "certainty_counts": dict(sorted(certainty_counts.items())),
+        "module_counts": dict(sorted(module_counts.items())), "routes": excluded_rows,
+    })
     summary["reports"] = {
         "drafts": display_path(report_root / "drafts.json"),
         "rejected": display_path(report_root / "rejected.json"),
@@ -1300,6 +1178,41 @@ def create_bulk_drafts(
     }
     write_json(report_root / "summary.json", summary)
     return summary
+
+
+def create_bulk_drafts(
+    *, method_certainty: str = "high", limit: int = 321,
+    coverage_path: Path = COVERAGE_PATH, draft_root: Path = DRAFT_ROOT,
+    operation_root: Path = OPERATION_ROOT, report_root: Path = BULK_REPORT_ROOT,
+) -> dict[str, Any]:
+    coverage = read_json(coverage_path)
+    routes = coverage.get("routes") if isinstance(coverage, Mapping) else None
+    if not isinstance(routes, list):
+        raise ValueError("coverage.json has no routes array")
+    selected, excluded = _select_bulk_routes(routes, method_certainty, limit)
+
+    stable_sources = existing_operations(operation_root)
+    stable_routes = {
+        (
+            str(source["operation"]["upstream_method"]),
+            str(source["operation"]["path_template"]),
+        )
+        for source in stable_sources.values()
+    }
+    existing_drafts, existing_by_route = _existing_draft_indexes(draft_root)
+    provisional = _provisional_bulk_drafts(selected, existing_by_route)
+    _assign_bulk_operation_ids(provisional, set(stable_sources), set(existing_drafts))
+    accepted, rejected = _accepted_bulk_drafts(
+        provisional, coverage_path=coverage_path, stable_routes=stable_routes
+    )
+    draft_rows = _write_bulk_drafts(accepted, draft_root)
+
+    return _bulk_draft_report(
+        coverage_path=coverage_path, method_certainty=method_certainty,
+        selected=selected, excluded=excluded, stable_sources=stable_sources,
+        accepted=accepted, rejected=rejected, draft_rows=draft_rows,
+        draft_root=draft_root, report_root=report_root,
+    )
 
 
 def _route_tokens(path: str) -> list[str]:
@@ -1674,15 +1587,8 @@ def _validate_route_registry(document: Mapping[str, Any]) -> None:
         raise ValueError("route classification registry contains duplicate method+path")
 
 
-def create_write_registry(
-    *, coverage_path: Path = COVERAGE_PATH,
-    reservation_root: Path = RESERVATION_ROOT,
-    route_registry_path: Path = ROUTE_REGISTRY_PATH,
-    report_root: Path = WRITE_REPORT_ROOT,
-    overwrite: bool = False,
-) -> dict[str, Any]:
-    coverage = read_json(coverage_path)
-    routes = coverage.get("routes")
+def _validated_routes(coverage_path: Path) -> list[Any]:
+    routes = read_json(coverage_path).get("routes")
     if not isinstance(routes, list):
         raise ValueError("coverage.json has no routes array")
     source_counts = Counter(
@@ -1699,14 +1605,10 @@ def create_write_registry(
     }
     if mismatches:
         raise ValueError(f"coverage target counts drifted: {mismatches}")
+    return routes
 
-    generated_at = now_utc()
-    existing_ids = set(existing_operations(OPERATION_ROOT))
-    existing_ids.update(path.stem for path in DRAFT_ROOT.glob("*.json"))
-    reservations: list[dict[str, Any]] = []
-    reservation_by_route: dict[tuple[str, str], str] = {}
-    rejected: list[dict[str, Any]] = []
 
+def _selected_routes(routes: Sequence[Any]) -> list[tuple[int, Mapping[str, Any]]]:
     selected: list[tuple[int, Mapping[str, Any]]] = []
     for route_index, route in enumerate(routes):
         if not isinstance(route, Mapping):
@@ -1718,15 +1620,26 @@ def create_write_registry(
             classification, _, disposition, _, _ = _unclassified_decision(route)
             if classification == "write" and disposition == "blocked_write":
                 selected.append((route_index, route))
+    return selected
 
+
+def _create_reservations(
+    selected: Sequence[tuple[int, Mapping[str, Any]]], *,
+    coverage_path: Path, reservation_root: Path, existing_ids: set[str],
+    generated_at: str, overwrite: bool,
+) -> tuple[
+    list[dict[str, Any]], dict[tuple[str, str], str], list[dict[str, Any]],
+]:
+    reservations: list[dict[str, Any]] = []
+    reservation_by_route: dict[tuple[str, str], str] = {}
+    rejected: list[dict[str, Any]] = []
     for route_index, route in selected:
         try:
             source = _reservation_source(
                 route, route_index=route_index, coverage_path=coverage_path,
                 existing_ids=existing_ids, generated_at=generated_at,
             )
-            operation = source["operation"]
-            operation_id = str(operation["operation_id"])
+            operation_id = str(source["operation"]["operation_id"])
             if operation_id in existing_ids:
                 raise ValueError(f"duplicate operation_id after disambiguation: {operation_id}")
             destination = reservation_root / f"{operation_id}.json"
@@ -1737,26 +1650,23 @@ def create_write_registry(
             existing_ids.add(operation_id)
             key = (str(route["method"]).upper(), str(route["path"]))
             reservation_by_route[key] = operation_id
-            semantics = source["reservation"]["mutation_semantics"]
-            reservations.append(
-                {
-                    "operation_id": operation_id,
-                    "method": key[0],
-                    "path": key[1],
-                    "source_status": _source_route_status(route),
-                    "route_index": route_index,
-                    "reservation_path": display_path(destination),
-                    "mutation_semantics": semantics,
-                }
-            )
+            reservations.append({
+                "operation_id": operation_id, "method": key[0], "path": key[1],
+                "source_status": _source_route_status(route), "route_index": route_index,
+                "reservation_path": display_path(destination),
+                "mutation_semantics": source["reservation"]["mutation_semantics"],
+            })
         except (OSError, TypeError, ValueError) as exc:
-            rejected.append(
-                {
-                    "method": route.get("method"), "path": route.get("path"),
-                    "route_index": route_index, "reason": str(exc),
-                }
-            )
+            rejected.append({
+                "method": route.get("method"), "path": route.get("path"),
+                "route_index": route_index, "reason": str(exc),
+            })
+    return reservations, reservation_by_route, rejected
 
+
+def _classification_decisions(
+    routes: Sequence[Any], reservation_by_route: Mapping[tuple[str, str], str],
+) -> list[dict[str, Any]]:
     decisions: list[dict[str, Any]] = []
     for route_index, route in enumerate(routes):
         if not isinstance(route, Mapping):
@@ -1773,37 +1683,40 @@ def create_write_registry(
         operation_id = reservation_by_route.get(key)
         if disposition == "blocked_write" and not operation_id:
             raise ValueError(f"blocked write decision has no reservation: {key[0]} {key[1]}")
-        decisions.append(
-            {
-                "method": key[0], "path": key[1], "source_status": source_status,
-                "classification": classification, "subtype": subtype,
-                "disposition": disposition, "reason_code": reason_code,
-                "reason": reason, "operation_id": operation_id,
-                "route_index": route_index,
-                "route_sha256": _route_evidence_fingerprint(route),
-            }
-        )
+        decisions.append({
+            "method": key[0], "path": key[1], "source_status": source_status,
+            "classification": classification, "subtype": subtype,
+            "disposition": disposition, "reason_code": reason_code,
+            "reason": reason, "operation_id": operation_id, "route_index": route_index,
+            "route_sha256": _route_evidence_fingerprint(route),
+        })
+    return decisions
 
-    registry = {
-        "schema_version": "gravity-insight.route-classification.v1",
-        "generated_at": generated_at,
-        "source": display_path(coverage_path),
-        "routes": decisions,
+
+def _risk_counts(routes: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        "irreversible": sum(
+            item["mutation_semantics"]["reversibility"] == "irreversible"
+            for item in routes
+        ),
+        "batch": sum(item["mutation_semantics"]["scope"] == "batch" for item in routes),
+        "affects_live_delivery": sum(
+            item["mutation_semantics"]["affects_live_delivery"] == "yes"
+            for item in routes
+        ),
     }
-    _validate_route_registry(registry)
-    write_json(route_registry_path, registry)
 
+
+def _summary(
+    *, generated_at: str, coverage_path: Path,
+    reservations: Sequence[Mapping[str, Any]], rejected: Sequence[Mapping[str, Any]],
+    decisions: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
     baseline = [item for item in reservations if item["source_status"] == "uncovered_write"]
     extra = [item for item in reservations if item["source_status"] == "unclassified"]
-    semantic_counts = Counter(
-        item["mutation_semantics"]["kind"] for item in reservations
-    )
-    baseline_semantic_counts = Counter(
-        item["mutation_semantics"]["kind"] for item in baseline
-    )
-    extra_semantic_counts = Counter(
-        item["mutation_semantics"]["kind"] for item in extra
-    )
+    semantic_counts = Counter(item["mutation_semantics"]["kind"] for item in reservations)
+    baseline_semantic_counts = Counter(item["mutation_semantics"]["kind"] for item in baseline)
+    extra_semantic_counts = Counter(item["mutation_semantics"]["kind"] for item in extra)
     auth_counts = Counter(
         item["subtype"] for item in decisions
         if item["source_status"] == "uncovered_auth_or_proxy"
@@ -1812,120 +1725,97 @@ def create_write_registry(
         item["classification"] for item in decisions
         if item["source_status"] == "unclassified"
     )
-    summary = {
+    return {
         "schema_version": "gravity-insight.write-registry-summary.v1",
-        "generated_at": generated_at,
-        "source": display_path(coverage_path),
+        "generated_at": generated_at, "source": display_path(coverage_path),
         "baseline_write_routes": len(baseline),
         "extra_unclassified_write_routes": len(extra),
-        "reservations_created": len(reservations),
-        "rejected": len(rejected),
+        "reservations_created": len(reservations), "rejected": len(rejected),
         "auth_proxy_registered": sum(auth_counts.values()),
         "unclassified_registered": sum(unclassified_counts.values()),
         "mutation_semantics": dict(sorted(semantic_counts.items())),
         "baseline_mutation_semantics": dict(sorted(baseline_semantic_counts.items())),
         "extra_mutation_semantics": dict(sorted(extra_semantic_counts.items())),
-        "risk": {
-            "irreversible": sum(
-                item["mutation_semantics"]["reversibility"] == "irreversible"
-                for item in reservations
-            ),
-            "batch": sum(
-                item["mutation_semantics"]["scope"] == "batch"
-                for item in reservations
-            ),
-            "affects_live_delivery": sum(
-                item["mutation_semantics"]["affects_live_delivery"] == "yes"
-                for item in reservations
-            ),
-        },
-        "baseline_risk": {
-            "irreversible": sum(
-                item["mutation_semantics"]["reversibility"] == "irreversible"
-                for item in baseline
-            ),
-            "batch": sum(
-                item["mutation_semantics"]["scope"] == "batch"
-                for item in baseline
-            ),
-            "affects_live_delivery": sum(
-                item["mutation_semantics"]["affects_live_delivery"] == "yes"
-                for item in baseline
-            ),
-        },
-        "extra_risk": {
-            "irreversible": sum(
-                item["mutation_semantics"]["reversibility"] == "irreversible"
-                for item in extra
-            ),
-            "batch": sum(
-                item["mutation_semantics"]["scope"] == "batch"
-                for item in extra
-            ),
-            "affects_live_delivery": sum(
-                item["mutation_semantics"]["affects_live_delivery"] == "yes"
-                for item in extra
-            ),
-        },
+        "risk": _risk_counts(reservations), "baseline_risk": _risk_counts(baseline),
+        "extra_risk": _risk_counts(extra),
         "auth_proxy_subtypes": dict(sorted(auth_counts.items())),
         "unclassified_classifications": dict(sorted(unclassified_counts.items())),
     }
-    write_json(
-        report_root / "write-reservations.json",
-        {"schema_version": "gravity-insight.write-reservations.v1", "routes": reservations},
-    )
-    write_json(
-        report_root / "auth-proxy.json",
-        {
-            "schema_version": "gravity-insight.auth-proxy-classification.v1",
-            "routes": [
-                item for item in decisions
-                if item["source_status"] == "uncovered_auth_or_proxy"
-            ],
-        },
-    )
-    write_json(
-        report_root / "unclassified.json",
-        {
-            "schema_version": "gravity-insight.unclassified-resolution.v1",
-            "routes": [
-                item for item in decisions if item["source_status"] == "unclassified"
-            ],
-        },
-    )
-    write_json(
-        report_root / "rejected.json",
-        {"schema_version": "gravity-insight.write-rejected.v1", "routes": rejected},
-    )
+
+
+def _write_reports(
+    *, report_root: Path, reservations: Sequence[Mapping[str, Any]],
+    decisions: Sequence[Mapping[str, Any]], rejected: Sequence[Mapping[str, Any]],
+    summary: Mapping[str, Any],
+) -> None:
+    write_json(report_root / "write-reservations.json", {
+        "schema_version": "gravity-insight.write-reservations.v1", "routes": reservations,
+    })
+    write_json(report_root / "auth-proxy.json", {
+        "schema_version": "gravity-insight.auth-proxy-classification.v1",
+        "routes": [item for item in decisions if item["source_status"] == "uncovered_auth_or_proxy"],
+    })
+    write_json(report_root / "unclassified.json", {
+        "schema_version": "gravity-insight.unclassified-resolution.v1",
+        "routes": [item for item in decisions if item["source_status"] == "unclassified"],
+    })
+    write_json(report_root / "rejected.json", {
+        "schema_version": "gravity-insight.write-rejected.v1", "routes": rejected,
+    })
     write_json(report_root / "summary.json", summary)
+
+
+def _create_write_registry_impl(
+    *, coverage_path: Path, reservation_root: Path,
+    route_registry_path: Path, report_root: Path, overwrite: bool,
+) -> dict[str, Any]:
+    routes = _validated_routes(coverage_path)
+    generated_at = now_utc()
+    existing_ids = set(existing_operations(OPERATION_ROOT))
+    existing_ids.update(path.stem for path in DRAFT_ROOT.glob("*.json"))
+    reservations, reservation_by_route, rejected = _create_reservations(
+        _selected_routes(routes), coverage_path=coverage_path,
+        reservation_root=reservation_root, existing_ids=existing_ids,
+        generated_at=generated_at, overwrite=overwrite,
+    )
+    decisions = _classification_decisions(routes, reservation_by_route)
+    registry = {
+        "schema_version": "gravity-insight.route-classification.v1",
+        "generated_at": generated_at, "source": display_path(coverage_path),
+        "routes": decisions,
+    }
+    _validate_route_registry(registry)
+    write_json(route_registry_path, registry)
+    summary = _summary(
+        generated_at=generated_at, coverage_path=coverage_path,
+        reservations=reservations, rejected=rejected, decisions=decisions,
+    )
+    _write_reports(
+        report_root=report_root, reservations=reservations,
+        decisions=decisions, rejected=rejected, summary=summary,
+    )
     return summary
+
+
+def create_write_registry(
+    *, coverage_path: Path = COVERAGE_PATH,
+    reservation_root: Path = RESERVATION_ROOT,
+    route_registry_path: Path = ROUTE_REGISTRY_PATH,
+    report_root: Path = WRITE_REPORT_ROOT,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    return _create_write_registry_impl(
+        coverage_path=coverage_path,
+        reservation_root=reservation_root,
+        route_registry_path=route_registry_path,
+        report_root=report_root,
+        overwrite=overwrite,
+    )
 
 
 def _apply_method_evidence(
     coverage: Mapping[str, Any], evidence: Mapping[str, Any]
 ) -> dict[str, Any]:
-    updated = copy.deepcopy(dict(coverage))
-    route_section = evidence.get("routes")
-    observed = route_section.get("results") if isinstance(route_section, Mapping) else None
-    if not isinstance(observed, list):
-        raise ValueError("method evidence has no routes.results array")
-    methods: dict[str, str] = {}
-    for item in observed:
-        options = item.get("options") if isinstance(item, Mapping) else None
-        allow = options.get("allow") if isinstance(options, Mapping) else None
-        candidates = [str(value).upper() for value in allow] if isinstance(allow, list) else []
-        accepted = [value for value in candidates if value in {"GET", "POST"}]
-        if len(accepted) == 1 and isinstance(item.get("path"), str):
-            methods[str(item["path"])] = accepted[0]
-    routes = updated.get("routes")
-    if not isinstance(routes, list):
-        raise ValueError("coverage.json has no routes array")
-    for route in routes:
-        if not isinstance(route, dict) or route.get("path") not in methods:
-            continue
-        route["method"] = methods[str(route["path"])]
-        route["method_certainty"] = "high"
-        current = route.get("method_evidence")
-        values = [str(value) for value in current] if isinstance(current, list) else []
-        route["method_evidence"] = sorted(set(values + ["live_options_allow"]))
-    return updated
+    from .parameter_types import apply_method_evidence
+
+    return apply_method_evidence(coverage, evidence)
