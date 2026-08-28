@@ -21,6 +21,9 @@ from agent_usability_selector_measurements import validate_selector_version_bind
 
 REQUEST_SCHEMA = "gravity.agent-external-selector-request.v1"
 RESPONSE_SCHEMA = "gravity.agent-external-selector-response.v1"
+DEFAULT_DISPATCH_WITHOUT_SELECTION = "default_without_selection"
+DEFAULT_DISPATCH_WITH_SELECTION = "default_with_selection"
+DEFAULT_DISPATCH_OBSERVATION_KEY = "default_dispatch_observation"
 TERMINAL_OFFLINE_MEASUREMENT_REASON = (
     "selection-only harness does not execute products"
 )
@@ -366,11 +369,23 @@ def _selection_result(
             workspace=None,
             plan_node_namespace=None,
         )
-    elif dispatch_mode == "default":
-        result = _default_dispatch_result(query, selection, client)
+    elif dispatch_mode in {
+        DEFAULT_DISPATCH_WITHOUT_SELECTION,
+        DEFAULT_DISPATCH_WITH_SELECTION,
+    }:
+        result = _default_dispatch_result(
+            query,
+            selection,
+            client,
+            include_host_selection=(
+                dispatch_mode == DEFAULT_DISPATCH_WITH_SELECTION
+            ),
+        )
     else:
         raise ValueError(
-            "dispatch_mode must be 'explicit_host' or 'default'"
+            "dispatch_mode must be 'explicit_host', "
+            f"'{DEFAULT_DISPATCH_WITHOUT_SELECTION}', or "
+            f"'{DEFAULT_DISPATCH_WITH_SELECTION}'"
         )
     if result is None:
         raise RuntimeError(f"{dispatch_mode} dispatcher returned no selection result")
@@ -397,28 +412,36 @@ def _default_dispatch_result(
     query: str,
     selection: Mapping[str, Any],
     client: Any,
+    *,
+    include_host_selection: bool,
 ) -> dict[str, Any]:
-    """Enter the public CLI command without spelling a routing mode."""
+    """Enter the public CLI command and record its value-free call shape."""
 
     from gravity_sdk.agent import run_agent_command
-    from gravity_sdk.agents.host_selection import HOST_ROUTING_MODE
     from gravity_sdk.cli import build_parser
 
-    argv = [
-        "agent",
-        query,
-        "--host-selection",
-        json.dumps(selection, ensure_ascii=False, separators=(",", ":")),
-    ]
+    argv = ["agent", query]
+    if include_host_selection:
+        argv.extend([
+            "--host-selection",
+            json.dumps(selection, ensure_ascii=False, separators=(",", ":")),
+        ])
     args = build_parser().parse_args(argv)
     if args.routing is not None:
         raise RuntimeError("public default dispatcher unexpectedly specified routing")
+    parsed_selection_present = args.host_selection is not None
+    if parsed_selection_present is not include_host_selection:
+        raise RuntimeError("public default dispatcher changed the host-selection shape")
     result = run_agent_command(args, client)
     if not isinstance(result, Mapping):
         raise RuntimeError("public default dispatcher returned a non-object result")
-    if result.get("routing_mode") != HOST_ROUTING_MODE:
-        raise RuntimeError("public default dispatcher did not infer the host arm")
-    return dict(result)
+    materialized = dict(result)
+    materialized[DEFAULT_DISPATCH_OBSERVATION_KEY] = {
+        "parsed_routing": args.routing,
+        "parsed_host_selection_present": parsed_selection_present,
+        "resolved_routing_mode": result.get("routing_mode"),
+    }
+    return materialized
 
 
 def _runtime_selection(
@@ -475,6 +498,9 @@ def _terminal_network_fact(
 
 
 __all__ = [
+    "DEFAULT_DISPATCH_OBSERVATION_KEY",
+    "DEFAULT_DISPATCH_WITHOUT_SELECTION",
+    "DEFAULT_DISPATCH_WITH_SELECTION",
     "REQUEST_SCHEMA",
     "RESPONSE_SCHEMA",
     "SELECTION_NETWORK_MEASUREMENT_REASON",

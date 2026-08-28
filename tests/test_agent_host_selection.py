@@ -367,7 +367,6 @@ class HostProductSelectionTests(unittest.TestCase):
         exec(compile(tree, str(source_path), "exec"), rebound.__dict__)
 
         self.assertEqual(("recognizer", "host_catalog"), rebound.ROUTING_MODES)
-        self.assertEqual(2, len(set(rebound.ROUTING_MODES)))
         self.assertEqual("recognizer", rebound.RECOGNIZER_ROUTING_MODE)
         self.assertEqual("host_catalog", rebound.DEFAULT_ROUTING_MODE)
 
