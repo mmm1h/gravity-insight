@@ -87,6 +87,16 @@ class InstalledWheelTests(unittest.TestCase):
                 self.assertEqual(1, len(metadata_paths))
                 metadata = wheel.read(metadata_paths[0]).decode("utf-8")
                 self.assertIn("Root-Is-Purelib: true", metadata)
+                entry_point_paths = [
+                    entry
+                    for entry in entries
+                    if entry.endswith(".dist-info/entry_points.txt")
+                ]
+                self.assertEqual(1, len(entry_point_paths))
+                entry_points = wheel.read(entry_point_paths[0]).decode("utf-8")
+                self.assertIn(
+                    "gravity-mcp = gravity_sdk.mcp.server:main", entry_points
+                )
                 wheel.extractall(extracted)
 
             expected_modules = {

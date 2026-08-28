@@ -1,0 +1,17 @@
+{
+  "schema_version": "gravity.mcp-removability-surfaces.v1",
+  "baseline": "824f92524f5703d7cb7ba0b2d6a671befb51a45f",
+  "journeys": {
+    "analysis.business-pulse": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.event-trend": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.experiment-outcome-evaluation": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
+    "analysis.ltv-curve-fit": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
+    "analysis.merge2.ap-cost-anomaly-localization": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.readable-app-catalog": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.thinkingai.community-context-correlation": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
+    "analysis.thinkingai.device-segment-event-review": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.thinkingai.project-metric-contract-check": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
+    "analysis.thinkingai.returned-filter-comparison": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
+    "analysis.thinkingai.revenue-forecast-readiness": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"}
+  }
+}

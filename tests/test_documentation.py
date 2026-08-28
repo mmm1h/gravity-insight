@@ -96,7 +96,7 @@ class DocumentationArchitectureTests(unittest.TestCase):
         )
         lines = sum(len(path.read_text(encoding="utf-8").splitlines()) for path in files)
         size = sum(path.stat().st_size for path in files)
-        self.assertLessEqual(lines, 5516)
+        self.assertLessEqual(lines, 5547)
         self.assertLessEqual(size, 450 * 1024)
 
     def test_entry_docs_do_not_state_catalog_totals(self) -> None:

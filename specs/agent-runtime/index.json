@@ -29,7 +29,46 @@
     {"id":"R09A","path":"R09A-core-skill-runtime.md","status":"fixed_dev","dependencies":["R02","R03","R05","R06","R07"],"parallel_group":"core-runtime","shared_spine":true},
     {"id":"R09B","path":"R09B-team-hub-binding.md","status":"fixed_dev","dependencies":["R04","R09A"],"parallel_group":"optional-binding","shared_spine":true},
     {"id":"R09C","path":"R09C-external-context-binding.md","status":"fixed_dev","dependencies":["R08","R09A"],"parallel_group":"optional-binding","shared_spine":true},
-    {"id":"R10","path":"R10-mcp-thin-surface.md","status":"specified","dependencies":["R09A"],"parallel_group":"optional-surface","shared_spine":true,"trigger":"two_real_consumers_or_explicit_pilot"},
+    {
+      "id": "R10",
+      "path": "R10-mcp-thin-surface.md",
+      "status": "in_progress",
+      "dependencies": ["R09A"],
+      "parallel_group": "optional-surface",
+      "shared_spine": false,
+      "trigger": "two_real_consumers_or_explicit_pilot",
+      "trigger_evidence": {
+        "branch": "explicit_bounded_pilot",
+        "source": "2026-08-28 owner task directive",
+        "recorded_by": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "exit_condition_bound": true
+      },
+      "implementation_binding": {
+        "baseline": "824f92524f5703d7cb7ba0b2d6a671befb51a45f",
+        "github_issue": null,
+        "issue_binding": "no_matching_r10_mcp_issue_found_explicit_owner_task_directive",
+        "branch": "codex/r10-mcp-stdio-pilot",
+        "worktree": "D:/git-pjt/gravity-sdk-r10mcp",
+        "transport": "stdio",
+        "protocol_version": "2026-07-28",
+        "dependency_decision": "minimal_in_repository_json_rpc_no_new_runtime_dependency"
+      },
+      "lifecycle_transition": {
+        "specified_to_reviewed_to_ready": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "current": "in_progress",
+        "dev_integration": "pending"
+      },
+      "pilot_exit": {
+        "development_first_choice_minimum": "18/20",
+        "development_legal_answer_minimum": "12/20",
+        "blind_holdout_required": true,
+        "second_adopter_required": true,
+        "judge": "plan_owner",
+        "failure_action": "block_and_remove_server_retain_schema_only"
+      }
+    },
     {"id":"R11","path":"R11-pap-pilot.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
     {"id":"R12","path":"R12-action-experiment-receipt.md","status":"fixed_dev","dependencies":["R09A"],"parallel_group":"governed-action","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R12-A","status":"fixed_dev","dependencies":[]},{"id":"R12-B","status":"fixed_dev","dependencies":["R12-A"]},{"id":"R12-C","status":"fixed_dev","dependencies":["R12-B"]}]},
     {"id":"R13A","path":"R13A-artifact-transfer.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"artifact-transfer","shared_spine":true},
@@ -122,9 +161,9 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "1907ba032d49bac974876510aa3662d46ec753f53e59b293f28af8b768c3c026",
+          "live_checkpoint_sha256": "bbabccadeaf5b437d948c569ad3744497e3ec3f3d5c8f7b37e69177681ee0d50",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
-          "live_checkpoint_tracked_sites": 305,
+          "live_checkpoint_tracked_sites": 309,
           "live_checkpoint_unclassified_sites": 0,
           "live_checkpoint_blocking_sites": 0,
           "requires": [

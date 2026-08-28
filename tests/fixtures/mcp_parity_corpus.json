@@ -1,0 +1,42 @@
+{
+  "schema_version": "gravity.mcp-parity-corpus.v1",
+  "baseline": "824f92524f5703d7cb7ba0b2d6a671befb51a45f",
+  "cases": [
+    {
+      "case_id": "journey-list",
+      "question": "Which governed Journeys are registered?",
+      "cli": "gravity journey list",
+      "sdk": "GravitySDK.journeys.list",
+      "mcp_tool": "gravity.inspect",
+      "arguments": {"kind": "journey"},
+      "semantic_fields": ["schema_version", "status", "count", "journeys", "network_called"]
+    },
+    {
+      "case_id": "journey-can-run",
+      "question": "Can the registered event-trend Journey run now?",
+      "cli": "gravity journey can-run analysis.event-trend --input {}",
+      "sdk": "GravitySDK.journeys.can_run",
+      "mcp_tool": "gravity.journey_can_run",
+      "arguments": {"journey_id": "analysis.event-trend", "inputs": {}},
+      "semantic_fields": ["schema_version", "status", "exit_code", "journey", "can_run_status", "reason_codes", "network_called"]
+    },
+    {
+      "case_id": "capability-describe",
+      "question": "Describe current Trust for the event-analysis product.",
+      "cli": "gravity capabilities trust product analysis.query.spec:event",
+      "sdk": "GravitySDK.capability_trust.trust",
+      "mcp_tool": "gravity.capability_describe",
+      "arguments": {"identity_kind": "product", "selector": "analysis.query.spec:event"},
+      "semantic_fields": ["schema_version", "identity_kind", "selector", "trust_status", "completeness", "reason_codes", "network_called"]
+    },
+    {
+      "case_id": "journey-execute-blocked",
+      "question": "Execute the event-trend Journey through its governed owner.",
+      "cli": "gravity journey run analysis.event-trend --input {}",
+      "sdk": "GravitySDK.journeys.run",
+      "mcp_tool": "gravity.execute",
+      "arguments": {"journey_id": "analysis.event-trend", "inputs": {}},
+      "semantic_fields": ["schema_version", "status", "exit_code", "journey", "can_run_status", "reason_codes", "completeness", "network_called"]
+    }
+  ]
+}

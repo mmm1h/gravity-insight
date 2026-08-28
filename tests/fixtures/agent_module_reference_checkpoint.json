@@ -17,11 +17,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "df9ecdbad5497cc6b1081067582fcaed3b3d53f9a25caa94a286568a2fe5cf18",
-    "manual_review_sha256": "30bf4267c0902f2916037e0982d3fed266d80b2864fd4bff140fe8fdc88119aa",
+    "reference_evidence_sha256": "cb5e11344bf4ab5eedb638edbf5e27cffb55a3821b9f843131ab9eb4b4071618",
+    "manual_review_sha256": "eef2864b173a6eecdf351ff5f9aa93014f64ad0b622f1f24c4e99c94d7bd0de3",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3128,
-    "scanned_file_count": 3120,
+    "version_controlled_file_count": 3144,
+    "scanned_file_count": 3136,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -651,12 +651,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 305,
-    "reference_site_count": 303,
+    "tracked_site_count": 309,
+    "reference_site_count": 307,
     "manual_review_site_count": 221,
     "reference_manual_overlap_count": 219,
     "manual_only_site_count": 2,
-    "unique_source_keys": 305,
+    "unique_source_keys": 309,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -666,7 +666,7 @@
       "dynamic_import": 11,
       "manual_patch_expression": 117,
       "module_qualname_dependency": 7,
-      "static_import": 73,
+      "static_import": 77,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -677,9 +677,9 @@
       "non_string_patch_expression": 117
     },
     "dispositions": {
-      "no_migration_effect": 305
+      "no_migration_effect": 309
     },
-    "sites_sha256": "48c3afc47c95308295482e8d0bb7bdd9cca3138aef4b5605aa19403df959b329"
+    "sites_sha256": "3ddc75b27c61473f888228feff3ee5ad219060759908465cbaf132e38d8f4c5e"
   },
   "blockers": [],
   "site_fields": [
@@ -2062,7 +2062,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:66:12:bare text module string",
+      "specs/agent-runtime/index.json:105:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2077,7 +2077,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:69:12:bare text module string",
+      "specs/agent-runtime/index.json:108:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2092,7 +2092,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:112:29:bare text module string",
+      "specs/agent-runtime/index.md:122:29:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2107,7 +2107,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:112:2:bare text module string",
+      "specs/agent-runtime/index.md:122:2:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2573,6 +2573,66 @@
     ],
     [
       "src/gravity_sdk/journey_service.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/resources.py:15:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/results.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/server.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/tool_catalog.py:9:1:from import",
       "r",
       "exact_reference",
       "gravity_sdk.agent_runtime_contracts",
