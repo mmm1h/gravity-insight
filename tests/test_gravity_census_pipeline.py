@@ -9,7 +9,7 @@ from unittest.mock import patch
 from gravity_sdk.census.cli import _coverage_summary, build_parser
 from gravity_sdk.census.coverage import build_coverage
 from gravity_sdk.census.diffing import diff_routes
-from gravity_sdk.census.fetcher import StaticFetcher, _looks_like_vite_chunk, check_upstream
+from gravity_sdk.census.fetcher import StaticFetcher, _FetchError, _looks_like_vite_chunk, check_upstream
 from gravity_sdk.census.io import json_bytes, sha256_bytes, stable_bundle_id
 from gravity_sdk.census.normalize import comparison_path, normalize_path
 from gravity_sdk.census.parser import build_routes, parse_text
@@ -299,6 +299,87 @@ class GravityCensusFetcherTests(unittest.TestCase):
         self.assertTrue(result["upstream_changed"])
         self.assertEqual('"entry-v2"', result["etag"])
         self.assertEqual("Sun, 09 Aug 2026 00:00:00 GMT", result["last_modified"])
+
+    def test_fetch_crawls_manifest_and_recursive_references_without_network(self) -> None:
+        html = (
+            b'<link rel="manifest" href="/manifest.json">'
+            b'<script type="module" src="/assets/index-ABCDEFGH.js"></script>'
+        )
+        responses = {
+            "https://example.test/": SimpleNamespace(
+                content=html, encoding="utf-8", url="https://example.test/", headers={}
+            ),
+            "https://example.test/manifest.json": SimpleNamespace(
+                content=b"{}", encoding="utf-8", url="https://example.test/manifest.json",
+                headers={"Content-Type": "application/json"},
+                json=lambda: {"entry": {"file": "assets/manifest-ABCDEFGH.js"}},
+            ),
+            "https://example.test/assets/index-ABCDEFGH.js": SimpleNamespace(
+                content=(b'import "./chunk-ABCDEFGH.js";import "./core-js/modules/es.promise.js";'
+                         b'import "https://cdn.test/external-ABCDEFGH.js";'),
+                encoding="utf-8", url="https://example.test/assets/index-ABCDEFGH.js",
+            ),
+            "https://example.test/assets/chunk-ABCDEFGH.js": SimpleNamespace(
+                content=b"export const value=1", encoding="utf-8",
+                url="https://example.test/assets/chunk-ABCDEFGH.js",
+            ),
+            "https://example.test/assets/manifest-ABCDEFGH.js": SimpleNamespace(
+                content=b"export const manifest=1", encoding="utf-8",
+                url="https://example.test/assets/manifest-ABCDEFGH.js",
+            ),
+        }
+
+        class FakeFetcher(StaticFetcher):
+            def _get(self, url):
+                self._reserve_attempt()
+                if url.endswith("/core-js/modules/es.promise.js"):
+                    raise _FetchError("missing lexical candidate", url=url, status_code=404)
+                return responses[url]
+
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temp:
+            root = Path(temp)
+            fetcher = FakeFetcher(max_requests=20, concurrency=2)
+            result = fetcher.fetch(
+                site_url="https://example.test", raw_dir=root,
+                snapshot_path=root / "snapshot.json", probe_manifests=False,
+            )
+            self.assertTrue(result["summary"]["complete"])
+            self.assertEqual(3, result["summary"]["bundle_files"])
+            self.assertEqual(1, result["summary"]["rejected_non_resource_candidates"])
+            self.assertEqual(
+                ["https://cdn.test/external-ABCDEFGH.js"],
+                result["discovery"]["ignored_cross_origin_js"],
+            )
+            self.assertTrue((root / "snapshot.json").is_file())
+
+    def test_fetch_marks_snapshot_incomplete_when_entry_changes(self) -> None:
+        initial = b'<script type="module" src="/assets/index-ABCDEFGH.js"></script>'
+        changed = b'<script type="module" src="/assets/index-IJKLMNOP.js"></script>'
+        entry_calls = 0
+
+        class ChangingEntryFetcher(StaticFetcher):
+            def _get(self, url):
+                nonlocal entry_calls
+                self._reserve_attempt()
+                if url == "https://example.test/":
+                    entry_calls += 1
+                    content = initial if entry_calls == 1 else changed
+                    return SimpleNamespace(
+                        content=content, encoding="utf-8", url=url, headers={}
+                    )
+                return SimpleNamespace(content=b"export{}", encoding="utf-8", url=url)
+
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temp:
+            root = Path(temp)
+            result = ChangingEntryFetcher(max_requests=10).fetch(
+                site_url="https://example.test/", raw_dir=root,
+                snapshot_path=root / "snapshot.json", probe_manifests=False,
+            )
+        self.assertFalse(result["summary"]["complete"])
+        self.assertEqual(
+            "entry HTML changed while static graph was being fetched",
+            result["discovery"]["failures"][0]["error"],
+        )
 
 
 class GravityCensusDiffTests(unittest.TestCase):
