@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress` |
+| Status | `fixed_dev` |
 | Track | Isolated exploratory product |
 | Dependencies | R02, R05 |
 | Parallel group | `isolated-product` |
@@ -49,10 +49,9 @@ production database, Gravity SQL, credentials, network calls, release or `main`.
   and unavailable to stable dependencies. SQL/path/parameters never enter safe
   session/error/promotion metadata or public Receipts.
 - Promotion requires a successful value-free source, explicit approval and
-  independent review-evidence digest. It validates and returns an inert
-  installation artifact containing a versioned `custom-sql` definition and
-  consumer contract; it does not install or register the product and grants no
-  stable Trust.
+  independent review-evidence digest. It validates and explicitly installs a
+  versioned `custom-sql` definition, returns its consumer contract, and grants
+  no stable Trust.
 - Acceptance binds the attack corpus, direct database mutation defense with AST
   bypassed, fake-clock/resource/output budgets, privacy snapshots, promotion
   lifecycle, registered-SQL no-fallback regression, full gates, isolated wheel
@@ -143,11 +142,10 @@ production database, Gravity SQL, credentials, network calls, release or `main`.
   Runtime evidence. Callers remain responsible for protecting any file/stdout to
   which they explicitly direct those rows.
 - Promotion review evidence is external and the Runtime does not infer semantic
-  equivalence between SQLite exploration and reviewed registered SQL. The
-  artifact is inert until explicit workspace install and same-layer Validation.
-  Promotion does not currently add it to `workspace.product_names`; R15 remains
-  `in_progress` until the reviewed definition is registered through an explicit
-  governed installation lifecycle.
+  equivalence between SQLite exploration and reviewed registered SQL. Explicit
+  promotion validates and atomically installs the reviewed definition, while
+  stable Trust still requires the normal same-layer validation lifecycle. R15
+  is `fixed_dev`; installation grants no stable identity by itself.
 
 ## Scope
 

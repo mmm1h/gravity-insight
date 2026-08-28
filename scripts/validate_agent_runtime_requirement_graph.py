@@ -13,6 +13,7 @@ DEFAULT_INDEX = ROOT / "specs/agent-runtime/index.json"
 DEFAULT_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
 _TABLE_LINK = re.compile(r"^\[(?P<id>[A-Z0-9-]+)\]\((?P<path>[^)]+)\)$")
 _CODE_VALUE = re.compile(r"`([^`]+)`")
+_STATUS_ROW = re.compile(r"^\|\s*Status\s*\|(?P<value>.*)\|\s*$")
 
 
 class RequirementGraphError(ValueError):
@@ -164,6 +165,56 @@ def parse_markdown_requirement_table(markdown: str) -> dict[str, dict[str, str]]
     return rows
 
 
+def parse_markdown_milestone_table(markdown: str) -> dict[str, dict[str, Any]]:
+    lines = markdown.splitlines()
+    try:
+        start = lines.index("## Milestones") + 1
+    except ValueError as exc:
+        raise RequirementGraphError("index.md has no Milestones section") from exc
+
+    rows: dict[str, dict[str, Any]] = {}
+    for line in lines[start:]:
+        if line.startswith("## "):
+            break
+        if not line.startswith("| R"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        _require(len(cells) == 4, f"malformed milestone table row: {line}")
+        milestone_id, parent_id, dependencies_cell, status_cell = cells
+        status_match = _CODE_VALUE.search(status_cell)
+        _require(status_match is not None, f"missing milestone state: {line}")
+        _require(
+            milestone_id not in rows,
+            f"duplicate index.md milestone ID: {milestone_id}",
+        )
+        dependencies = (
+            []
+            if dependencies_cell == "-"
+            else [value.strip() for value in dependencies_cell.split(",")]
+        )
+        _require(
+            all(dependencies),
+            f"malformed milestone dependencies: {line}",
+        )
+        rows[milestone_id] = {
+            "parent_id": parent_id,
+            "dependencies": dependencies,
+            "status": status_match.group(1),
+        }
+    return rows
+
+
+def parse_spec_status(markdown: str, requirement_id: str) -> str:
+    rows = [match for line in markdown.splitlines() if (match := _STATUS_ROW.match(line))]
+    _require(
+        len(rows) == 1,
+        f"{requirement_id} spec must contain exactly one Status row; found={len(rows)}",
+    )
+    status_match = _CODE_VALUE.search(rows[0].group("value"))
+    _require(status_match is not None, f"{requirement_id} spec Status row has no code value")
+    return status_match.group(1)
+
+
 def validate_markdown_projection(
     document: dict[str, Any], markdown: str
 ) -> dict[str, int]:
@@ -188,7 +239,60 @@ def validate_markdown_projection(
             f"{requirement_id} status differs: "
             f"json={requirement['status']} markdown={row['status']}",
         )
-    return {"markdown_requirement_count": len(actual)}
+
+    expected_milestones = {
+        milestone["id"]: {
+            "parent_id": requirement["id"],
+            "dependencies": [
+                *_references(milestone, "dependencies", milestone["id"]),
+                *_references(
+                    milestone,
+                    "milestone_dependencies",
+                    milestone["id"],
+                ),
+            ],
+            "status": milestone["status"],
+        }
+        for requirement in requirements
+        for milestone in requirement.get("milestones", [])
+    }
+    actual_milestones = parse_markdown_milestone_table(markdown)
+    _require(
+        set(actual_milestones) == set(expected_milestones),
+        "index.md milestone IDs differ from index.json: "
+        f"missing={sorted(set(expected_milestones) - set(actual_milestones))}, "
+        f"extra={sorted(set(actual_milestones) - set(expected_milestones))}",
+    )
+    for milestone_id, expected_row in expected_milestones.items():
+        _require(
+            actual_milestones[milestone_id] == expected_row,
+            f"{milestone_id} milestone projection differs: "
+            f"json={expected_row} markdown={actual_milestones[milestone_id]}",
+        )
+    return {
+        "markdown_requirement_count": len(actual),
+        "markdown_milestone_count": len(actual_milestones),
+    }
+
+
+def validate_spec_status_projection(
+    document: dict[str, Any], *, index_path: Path = DEFAULT_INDEX
+) -> dict[str, int]:
+    requirements = document.get("requirements")
+    _require(isinstance(requirements, list), "requirements must be an array")
+    index_root = index_path.resolve().parent
+    for requirement in requirements:
+        requirement_id = requirement["id"]
+        spec_path = (index_root / requirement["path"]).resolve()
+        spec_status = parse_spec_status(
+            spec_path.read_text(encoding="utf-8"), requirement_id
+        )
+        _require(
+            spec_status == requirement["status"],
+            f"{requirement_id} spec status differs: "
+            f"json={requirement['status']} spec={spec_status}",
+        )
+    return {"spec_status_count": len(requirements)}
 
 
 def validate_repository(
@@ -199,7 +303,8 @@ def validate_repository(
     projection = validate_markdown_projection(
         document, markdown_path.read_text(encoding="utf-8")
     )
-    return {**graph, **projection}
+    spec_projection = validate_spec_status_projection(document, index_path=index_path)
+    return {**graph, **projection, **spec_projection}
 
 
 def main(argv: list[str] | None = None) -> int:

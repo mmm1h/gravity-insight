@@ -75,6 +75,32 @@ R17 方括号是交付验收记录，不是新增 Requirement 或 milestone；R1
 
 [R09 legacy overview](R09-skill-runtime-project-overlay.md) and [R13 legacy overview](R13-artifact-analysis-delivery.md) are `superseded` navigation records and are not executable graph nodes.
 
+## Milestones
+
+| ID | Parent | Dependencies | State |
+| --- | --- | --- | --- |
+| R12-A | R12 | - | `fixed_dev` |
+| R12-B | R12 | R12-A | `fixed_dev` |
+| R12-C | R12 | R12-B | `fixed_dev` |
+| R14-A | R14 | - | `fixed_dev` |
+| R14-B | R14 | R14-A | `fixed_dev` |
+| R14-C | R14 | - | `fixed_dev` |
+| R14-D | R14 | R14-B, R14-C | `fixed_dev` |
+
+## Integrated Validation
+
+`integrated_validation_green` 仅在同一个 clean `dev` SHA 和该 worktree 的独立
+`.venv` 上成立：运行
+`.venv/Scripts/python.exe scripts/run_integrated_validation.py`，25 个 included
+gate 全部退出 0，运行前后 HEAD 不变且工作树保持 clean，并生成绑定 exact HEAD 的
+`tmp/integrated-validation/{commit_sha}/receipt.json`。receipt 是 ignored run
+artifact，不是新的 canonical source；脏树在生成前直接拒绝。
+
+机器定义、完整 gate 清单和排除项以 [index.json](index.json) 的
+`integrated_validation` 为准。真实 PyPI provenance 只在发布后存在，因此明确属于
+post-release gate；合 `main` 前只运行已纳入清单的离线 provenance fixture。所有
+included gate 均禁用真实网络。
+
 ## Integration Ownership
 
 The following files are shared-spine integration points and cannot be wired concurrently across worktrees:
@@ -143,7 +169,7 @@ manifest、公开 owner、现有 eager SCC、concept/errata/wheel 和 consumer g
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=4be1c3d3f98dca02cea986d05e47e772b6d47aa2534a20d6faadd3d96dd65ded`；
+`live_checkpoint_sha256=6ef5cfe2e1d5100d38ba7294aff9b73ccf8e88f0330862005cdfcf80ba965941`；
 `live_checkpoint_tracked_sites=309`。
 
 The user approved the R01 binding and designated the Requirement document as
