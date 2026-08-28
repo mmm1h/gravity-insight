@@ -32,8 +32,24 @@ from gravity_sdk.execution_snapshot import build_execution_snapshot
 from tests.test_analysis_result_contract import execution_snapshot, success_result
 
 
+BLOCKED_RENDER_RUNTIME_VERSION = "test-runtime-v1"
+
+
 def blocked_result(*, invalid: bool = False):
     snapshot = execution_snapshot(context=False, status="blocked")
+    snapshot = build_execution_snapshot(
+        status=snapshot["status"],
+        journey=snapshot["journey"],
+        skill=snapshot["skill"],
+        project_overlay=snapshot["project_overlay"],
+        capabilities=snapshot["capabilities"],
+        semantics=snapshot["semantics"],
+        operators=snapshot["operators"],
+        models=snapshot["models"],
+        context_packs=snapshot["context_packs"],
+        contracts=snapshot["contracts"],
+        runtime_version=BLOCKED_RENDER_RUNTIME_VERSION,
+    )
     status = "invalid" if invalid else "blocked"
     return compile_analysis_result({
         "schema_version": "gravity.analysis-result.v1",
@@ -174,7 +190,7 @@ class AnalysisArtifactTests(unittest.TestCase):
                 self.assertNotIn("Returned rows changed", rendering["content"])
                 if source["status"] == "blocked":
                     self.assertEqual(
-                        "2a86fbb373f95ec45c755aafb5afdf97daee7a44fd714e40477cbb0327b0b390",
+                        "4fe07ab6079861066d6c6f9e402a69811f7a129ba8d1152912d1efe873bc2bf0",
                         rendering["content_sha256"],
                     )
 
