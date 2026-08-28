@@ -33,6 +33,20 @@ from gravity_sdk.promotion_performance_rows import (
 from gravity_sdk.promotion_snapshot_compat import _compatibility_snapshot
 
 
+SNAPSHOT_INVENTORY = (
+    Path(__file__).parent / "fixtures" / "promotion_snapshot_inventory.json"
+)
+
+
+def _frozen_snapshot_inventory():
+    payload = json.loads(SNAPSHOT_INVENTORY.read_text(encoding="utf-8"))
+    formal = {tuple(entry) for entry in payload["formal_snapshot_operations"]}
+    compatibility = {
+        tuple(entry) for entry in payload["compatibility_snapshot_operations"]
+    }
+    return formal, compatibility
+
+
 def _safe(value, metrics=("stat_cost",)):
     return safe_component(value, "tencent", metrics=metrics, expected_app_id="17", expected_window=("2026-08-01", "2026-08-07"), max_pages=3)
 
@@ -413,16 +427,27 @@ class PromotionPerformanceTests(unittest.TestCase):
             for resource, operations in PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS.items()
             for platform in operations
         }
-        remaining = []
+        stable = set()
+        remaining = set()
         for platform, resources in PROMOTION_PLATFORMS.items():
             for resource, operation_id in resources.items():
                 formal_primary = (
                     platform in SUPPORTED_PLATFORMS
                     and operation_id == PROMOTION_PRIMARY_OPERATIONS[platform]
                 )
+                triple = (platform, resource, operation_id)
+                stable.add(triple)
                 if not formal_primary and (platform, resource) not in formal_pairs:
-                    remaining.append((platform, resource, operation_id))
-        self.assertEqual(32, len(remaining))
+                    remaining.add(triple)
+        frozen_formal, frozen_compatibility = _frozen_snapshot_inventory()
+        # Set equality, not counts: a swapped platform/resource pair would keep
+        # the totals intact while silently changing what is formally bound.
+        self.assertEqual(frozen_compatibility, remaining)
+        self.assertEqual(frozen_formal | frozen_compatibility, stable)
+        self.assertEqual(set(), frozen_formal & frozen_compatibility)
+        self.assertEqual(25, len(frozen_formal))
+        self.assertEqual(32, len(frozen_compatibility))
+        self.assertEqual(57, len(stable))
         contracts = (
             Path(__file__).parents[1]
             / "src"
@@ -430,7 +455,7 @@ class PromotionPerformanceTests(unittest.TestCase):
             / "contracts"
             / "operations"
         )
-        for platform, resource, operation_id in remaining:
+        for platform, resource, operation_id in sorted(remaining):
             with self.subTest(platform=platform, resource=resource):
                 operation = json.loads(
                     (contracts / f"{operation_id}.json").read_text(encoding="utf-8")

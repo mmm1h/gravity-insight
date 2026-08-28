@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from collections import Counter
 from copy import deepcopy
@@ -15,6 +16,18 @@ from gravity_sdk.pagination_contract_audit import (
     load_pagination_audit,
     reconcile_pagination_audit,
 )
+
+
+PAGINATION_EVIDENCE_PLAN = (
+    Path(__file__).parents[1] / "docs" / "maintainers" / "pagination-evidence-plan.md"
+)
+
+
+def _planned_production_evidence_targets() -> set[str]:
+    """The collectable targets the plan actually lists, excluding permanent unknown."""
+    plan = PAGINATION_EVIDENCE_PLAN.read_text(encoding="utf-8")
+    collectable = plan.split("## 永久 unknown", maxsplit=1)[0]
+    return set(re.findall(r"^\| `([^`]+)` \|", collectable, re.MULTILINE))
 
 
 class PaginationContractAuditTests(unittest.TestCase):
@@ -140,7 +153,11 @@ class PaginationContractAuditTests(unittest.TestCase):
             },
             reconciled["unknown_evidence_actions"],
         )
-        self.assertEqual(85, len(reconciled["production_evidence_targets"]))
+        # Set equality against the plan, not a bare count: swapping one target
+        # for another keeps len() at 85 while silently changing the debt scope.
+        planned_targets = _planned_production_evidence_targets()
+        self.assertEqual(85, len(planned_targets))
+        self.assertEqual(planned_targets, set(reconciled["production_evidence_targets"]))
         self.assertEqual(83, len(reconciled["permanent_unknown"]))
         self.assertEqual(
             {
