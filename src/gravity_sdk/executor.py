@@ -18,9 +18,14 @@ from .analysis_projection_contract import (
     operation_uses_dynamic_aggregate,
 )
 from .drift import ProjectionDrift, projection_drift_status
-from .errors import PolicyViolation, error_for_status
+from .errors import ManifestError, PolicyViolation, error_for_status
 from .list_row_projection import _project_list_rows
-from .models import OperationSpec, ReadResult
+from .models import (
+    OperationSpec,
+    ReadResult,
+    _RESPONSE_PROJECTOR_NAMES,
+    safe_read_inputs,
+)
 from .page_envelope import page_envelope
 from .read_result_support import pagination_result_dimensions, result_warnings
 from .receipt import capture_http_receipt_references, record_response_drift
@@ -45,9 +50,6 @@ _RESPONSE_CREDENTIALS = frozenset(
      "refresh_token", "secret", "session_token", "token"}
 )
 _RESPONSE_CREDENTIAL_SUFFIXES = tuple(f"_{key}" for key in _RESPONSE_CREDENTIALS)
-_ANALYSIS_USER_EVENT_OPERATION = "analysis.user_event.list"
-
-
 class ReadExecutor:
     def __init__(self, registry: Registry, policy: PolicyEngine, transport: Transport) -> None:
         self._registry = registry
@@ -122,16 +124,7 @@ class ReadExecutor:
             else {}
         )
         page = page_envelope(operation, values, page_info, len(items))
-        safe_inputs = {
-            key: "[REDACTED]" if spec.sensitive else value
-            for key, value in values.items()
-            if (spec := operation.fields.get(key)) is not None
-        }
-        safe_inputs = _redact(
-            safe_inputs,
-            operation.privacy_policy.redact_fields,
-            allow_contracted_identifiers=False,
-        )
+        safe_inputs = safe_read_inputs(operation, values, _redact)
         status = _read_status(getattr(response, "status_code", 200), semantic_status, projection_drift, _is_empty(projected, items))
         return ReadResult(
             schema_version="gravity-insight.read.v1",
@@ -194,8 +187,12 @@ def _project(
 ) -> tuple[Any, tuple[str, ...], ProjectionDrift, Mapping[str, Any] | None]:
     data = payload.get("data")
     recorder = ResponseDriftRecorder()
-    if operation.operation_id == _ANALYSIS_USER_EVENT_OPERATION:
-        result = project_analysis_user_event(operation, data, values, recorder)
+    projector_name = _RESPONSE_PROJECTOR_NAMES.get(operation.operation_id)
+    projector = globals().get(projector_name)
+    if projector_name is not None and not callable(projector):
+        raise ManifestError("runtime response projector binding names an unavailable projector")
+    if projector is not None:
+        result = projector(operation, data, values, recorder)
         return *result, recorder.to_contract()
     if operation_uses_dynamic_aggregate(operation):
         result = _project_analysis_aggregate(operation, data, values, recorder)

@@ -505,7 +505,7 @@ def sample(value):
         self.assertFalse(profile.scan_errors, profile.scan_errors)
         self.assertIn("src/gravity_sdk/compiler.py", profile.file_sloc)
         self.assertIn("src/gravity_sdk/quality.py", profile.file_sloc)
-        self.assertTrue(
+        self.assertFalse(
             any(
                 item.value == "analysis.user_event.list"
                 for item in profile.operation_literals
