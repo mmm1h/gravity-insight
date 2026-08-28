@@ -73,11 +73,11 @@
   以整理目录为由损失调用能力或改变执行 owner。
 - **已解前置（2026-08-27）**：[模块依赖图 v1](#14-机器图合同) 把节点、四类边、动态导出排除边界与 Tarjan
   cyclic SCC 口径写成机器定义，可重建完整图，并由测试锁住定义摘要、图摘要与 SCC 成员及规模。
-- **未解前置**：最大 SCC 按口径累计为 AST-only `96`、加 `_EXPORTS` 边 `422`、再加 package parent `521`，已成
-  受测基线。canonical 那个数不表示「八成模块缠死」：63 条 lazy 边全出自 `gravity_sdk` 单节点，parent 边让每个
-  模块都能到它——新增 `_version.py` 只让它 `520`→`521` 而 `96` 不动。拆环按 `96` 估工作量。仍无可靠门禁识别
-  不带 `agent_` 前缀却被误放根目录的未来 Agent owner，本条只记录该缺口。明确不恢复 v4 职责契约判据：其成员集合
-  由预选 `included_layers` 决定，回答不了未来模块是否属于该域。
+- **第一有界单元（2026-08-28）**：`to_jsonable` 纯实现已从 `runtime` 下沉至叶模块 `json_output`；`runtime` 仅直接再导出，
+  credential sanitizer 改依赖 `json_output`。eager AST-only 仍为 `5`，AST-only `96`→`44`（完整序列 `44,41,3,3,3,2,2,2,2,2,2,1`），加 `_EXPORTS` 仍为 `422`。
+  canonical `521`→`522`：`json_output` 原本不在该 SCC 内，`runtime` 新增指向它的 AST 边后，经 package-parent 边并入；
+  canonical 包含 lazy export/package-parent，因此上涨不表示拆环工作量回退，拆环仍按 AST-only `44`。仍无可靠门禁识别不带 `agent_` 前缀却被误放根目录的未来 Agent owner；
+  明确不恢复 v4 职责契约判据：其成员集合由预选 `included_layers` 决定，回答不了未来模块是否属于该域。
 - **退出条件**：以该定义批准有界迁移单元，使上述家族迁入明确 owner 或留可机器验证的根级保留理由，消除大环，
   建立非前缀 Agent owner 判据；全程保持公开导入、运行时行为、执行 owner 与调用能力不变，并以门禁锁住结果。
 - **委托决策**：`agent_under_standing_owner_delegation`；`owner_review: pending`。
@@ -109,6 +109,6 @@
 <!-- MODULE_GRAPH_DEFINITION_V1_END -->
 <!-- MODULE_GRAPH_BASELINE_V1_START -->
 ```json
-{"definition_id":"gravity-sdk-runtime-possible-module-dependency-graph.v1","definition_sha256":"8ed98cb1e136461612495d3b0187bae3756f4fbe09cde63a9905e838c8ded95f","edge_kind_counts":{"ast_delayed_import":467,"ast_eager_import":2452,"lazy_export_owner":63,"package_parent":644},"node_count":645,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"7d07b8d38abd147ddf22e64dcdb7e36e8fe401d0de497a36eeebb2304a7df7dc","cyclic_scc_sizes":[422,3,2],"edge_count":2960,"graph_sha256":"59a8bf90654cd96ca32ec2e03363d8bb43f0d19d29b7cf2c4363ad5a131eecc5","largest_cyclic_scc_size":422,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":10,"cyclic_scc_sha256":"754b2698eb2b7352dd28743446eaccbfecbfd8c1d1f8ce0267256e77b076c7ca","cyclic_scc_sizes":[96,41,3,3,3,2,2,2,2,2],"edge_count":2897,"graph_sha256":"a072a8f15165476c744a4c7e866936b21bc2a3fda9213208b9334e1da7e21484","largest_cyclic_scc_size":96,"self_loop_scc_count":0},"canonical":{"cyclic_scc_count":5,"cyclic_scc_sha256":"1eb4c544c851180fae62050505ce04ff7d87db4775d48a07286f337639cfeb81","cyclic_scc_sizes":[521,15,3,2,2],"edge_count":3525,"graph_sha256":"f06acd2e8359134e16a3c7a99a1b7db8a6752e220fc2a243639c8dcfd4393154","largest_cyclic_scc_size":521,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"afc924028fae98ca426f1d1f6622233562e693d3ee04064bd90569aa4795ec88","cyclic_scc_sizes":[5],"edge_count":2452,"graph_sha256":"5f4560abc997480fc46ef9b5a3fba14c3c09f641d9bdba3269c503442b29b9b2","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
+{"definition_id":"gravity-sdk-runtime-possible-module-dependency-graph.v1","definition_sha256":"8ed98cb1e136461612495d3b0187bae3756f4fbe09cde63a9905e838c8ded95f","edge_kind_counts":{"ast_delayed_import":467,"ast_eager_import":2453,"lazy_export_owner":63,"package_parent":644},"node_count":645,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"7d07b8d38abd147ddf22e64dcdb7e36e8fe401d0de497a36eeebb2304a7df7dc","cyclic_scc_sizes":[422,3,2],"edge_count":2961,"graph_sha256":"ab07f98b2635759d11ca49b2cb4328beab586d6f828cedf3e2efae968c290b4b","largest_cyclic_scc_size":422,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":12,"cyclic_scc_sha256":"28f2f7cf47fb1e797d92cc5e53742fc3d4d969e7796694b2f7b0b7c70491c0dd","cyclic_scc_sizes":[44,41,3,3,3,2,2,2,2,2,2,1],"edge_count":2898,"graph_sha256":"e1ed4766d9be8e01c38f8924da605ce5ad8b5f56fb69075ddee1af703935dc78","largest_cyclic_scc_size":44,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":5,"cyclic_scc_sha256":"a1d1f0af1895ab15b8edabe92eb057de8c7359a91937d7756efeeb48ad63476a","cyclic_scc_sizes":[522,15,3,2,2],"edge_count":3526,"graph_sha256":"ac63be2d8159a28ef1cc4f228a2741fb55bd581a0ca4c2cdf2c42e14b8eb3373","largest_cyclic_scc_size":522,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"afc924028fae98ca426f1d1f6622233562e693d3ee04064bd90569aa4795ec88","cyclic_scc_sizes":[5],"edge_count":2453,"graph_sha256":"9c25b92249222973a22df648f1d1ccae879b9216c039be8ce0d45505fac19ce2","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
 ```
 <!-- MODULE_GRAPH_BASELINE_V1_END -->
