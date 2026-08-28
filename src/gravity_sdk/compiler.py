@@ -140,82 +140,80 @@ class JsonSchemaValidator:
             raise ContractError(f"{self.label}: schema reference {reference} is not an object")
         return node
 
-    def _validate(self, value: Any, schema: Any, path: str) -> None:
-        if schema is False:
-            raise ContractError(f"{self.label}: {path} is not allowed")
-        if schema is True:
-            return
+    def _validate(self, value, schema, path):
+        error = f"{self.label}: {path}"
+        if schema is False: raise ContractError(f"{error} is not allowed")
+        if schema is True: return
+        self._validate_composition(value, schema, path, error)
+        self._validate_common_constraints(value, schema, error)
+        if isinstance(value, Mapping):
+            self._validate_object(value, schema, path, error)
+        if isinstance(value, list):
+            self._validate_array(value, schema, path, error)
+        if isinstance(value, str):
+            self._validate_string(value, schema, error)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            self._validate_number(value, schema, error)
+
+    def _validate_composition(self, value, schema, path, error):
         if "$ref" in schema:
             self._validate(value, self._resolve(schema["$ref"]), path)
         for child in schema.get("allOf", ()):
             self._validate(value, child, path)
-        if "anyOf" in schema:
-            if not any(self._matches(value, child, path) for child in schema["anyOf"]):
-                raise ContractError(f"{self.label}: {path} does not match any allowed shape")
-        if "oneOf" in schema:
-            matches = sum(self._matches(value, child, path) for child in schema["oneOf"])
-            if matches != 1:
-                raise ContractError(f"{self.label}: {path} must match exactly one allowed shape")
+        if "anyOf" in schema and not any(self._matches(value, child, path) for child in schema["anyOf"]):
+            raise ContractError(f"{error} does not match any allowed shape")
+        if "oneOf" in schema and sum(self._matches(value, child, path) for child in schema["oneOf"]) != 1:
+            raise ContractError(f"{error} must match exactly one allowed shape")
         if "not" in schema and self._matches(value, schema["not"], path):
-            raise ContractError(f"{self.label}: {path} matches a forbidden shape")
+            raise ContractError(f"{error} matches a forbidden shape")
+
+    def _validate_common_constraints(self, value, schema, error):
         if "const" in schema and value != schema["const"]:
-            raise ContractError(f"{self.label}: {path} must equal {schema['const']!r}")
+            raise ContractError(f"{error} must equal {schema['const']!r}")
         if "enum" in schema and value not in schema["enum"]:
-            raise ContractError(f"{self.label}: {path} is outside its enum")
+            raise ContractError(f"{error} is outside its enum")
         if "type" in schema and not self._matches_type(value, schema["type"]):
-            raise ContractError(f"{self.label}: {path} has the wrong JSON type")
+            raise ContractError(f"{error} has the wrong JSON type")
 
-        if isinstance(value, Mapping):
-            required = schema.get("required", ())
-            missing = [name for name in required if name not in value]
-            if missing:
-                raise ContractError(
-                    f"{self.label}: {path} is missing required fields: "
-                    + ", ".join(missing)
-                )
-            minimum = schema.get("minProperties")
-            if minimum is not None and len(value) < minimum:
-                raise ContractError(f"{self.label}: {path} has too few properties")
-            properties = schema.get("properties", {})
-            additional = schema.get("additionalProperties", True)
-            for name, item in value.items():
-                child_path = f"{path}.{name}"
-                if name in properties:
-                    self._validate(item, properties[name], child_path)
-                elif additional is False:
-                    raise ContractError(f"{self.label}: {child_path} is not declared")
-                elif isinstance(additional, Mapping):
-                    self._validate(item, additional, child_path)
+    def _validate_object(self, value, schema, path, error):
+        if missing := [name for name in schema.get("required", ()) if name not in value]:
+            raise ContractError(f"{error} is missing required fields: " + ", ".join(missing))
+        if (minimum := schema.get("minProperties")) is not None and len(value) < minimum:
+            raise ContractError(f"{error} has too few properties")
+        properties, additional = schema.get("properties", {}), schema.get("additionalProperties", True)
+        for name, item in value.items():
+            child_path = f"{path}.{name}"
+            if name in properties:
+                self._validate(item, properties[name], child_path)
+            elif additional is False:
+                raise ContractError(f"{error}.{name} is not declared")
+            elif isinstance(additional, Mapping):
+                self._validate(item, additional, child_path)
 
-        if isinstance(value, list):
-            if len(value) < schema.get("minItems", 0):
-                raise ContractError(f"{self.label}: {path} has too few items")
-            maximum = schema.get("maxItems")
-            if maximum is not None and len(value) > maximum:
-                raise ContractError(f"{self.label}: {path} has too many items")
-            if schema.get("uniqueItems"):
-                encoded = [_canonical_text(item) for item in value]
-                if len(encoded) != len(set(encoded)):
-                    raise ContractError(f"{self.label}: {path} must contain unique items")
-            if "items" in schema:
-                for index, item in enumerate(value):
-                    self._validate(item, schema["items"], f"{path}[{index}]")
+    def _validate_array(self, value, schema, path, error):
+        self._validate_length(value, schema, error, "minItems", "maxItems", " has too few items", " has too many items")
+        if schema.get("uniqueItems") and len(encoded := [_canonical_text(item) for item in value]) != len(set(encoded)):
+            raise ContractError(f"{error} must contain unique items")
+        if "items" in schema:
+            for index, item in enumerate(value):
+                self._validate(item, schema["items"], f"{path}[{index}]")
 
-        if isinstance(value, str):
-            if len(value) < schema.get("minLength", 0):
-                raise ContractError(f"{self.label}: {path} is too short")
-            maximum = schema.get("maxLength")
-            if maximum is not None and len(value) > maximum:
-                raise ContractError(f"{self.label}: {path} is too long")
-            pattern = schema.get("pattern")
-            if pattern is not None and re.fullmatch(pattern, value) is None:
-                raise ContractError(f"{self.label}: {path} does not match {pattern!r}")
+    def _validate_string(self, value, schema, error):
+        self._validate_length(value, schema, error, "minLength", "maxLength", " is too short", " is too long")
+        if (pattern := schema.get("pattern")) is not None and re.fullmatch(pattern, value) is None:
+            raise ContractError(f"{error} does not match {pattern!r}")
 
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            if "minimum" in schema and value < schema["minimum"]:
-                raise ContractError(f"{self.label}: {path} is below its minimum")
-            if "maximum" in schema and value > schema["maximum"]:
-                raise ContractError(f"{self.label}: {path} exceeds its maximum")
+    def _validate_length(self, value, schema, error, minimum_key, maximum_key, too_small, too_large):
+        if len(value) < schema.get(minimum_key, 0):
+            raise ContractError(f"{error}{too_small}")
+        if (maximum := schema.get(maximum_key)) is not None and len(value) > maximum:
+            raise ContractError(f"{error}{too_large}")
+
+    def _validate_number(self, value, schema, error):
+        if "minimum" in schema and value < schema["minimum"]:
+            raise ContractError(f"{error} is below its minimum")
+        if "maximum" in schema and value > schema["maximum"]:
+            raise ContractError(f"{error} exceeds its maximum")
 
     def _matches(self, value: Any, schema: Any, path: str) -> bool:
         try:
