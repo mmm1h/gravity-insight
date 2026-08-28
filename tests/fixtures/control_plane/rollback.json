@@ -1,0 +1,6 @@
+{
+  "schema_version": "gravity.control-plane-test-case.v1",
+  "scenario": "rollback",
+  "expected_reason": "ROLLBACK",
+  "minimum_versions": {"targets": 3}
+}

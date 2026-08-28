@@ -1,0 +1,5 @@
+{
+  "schema_version": "gravity.control-plane-test-case.v1",
+  "scenario": "trust-root-mismatch",
+  "expected_reason": "TRUST_ROOT_MISMATCH"
+}
