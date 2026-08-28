@@ -16,15 +16,10 @@
       "src/gravity_sdk/registry.py::_request_parts": 17
     },
     "function_sloc": {
-      "src/gravity_sdk/executor.py::ReadExecutor.execute": 81,
-      "src/gravity_sdk/models.py::OperationSpec.schema": 98,
       "src/gravity_sdk/quality.py::evaluate_ratchet": 93,
       "src/gravity_sdk/quality.py::render_markdown": 81
     },
     "operation_literals": {
-      "src/gravity_sdk/executor.py": {
-        "analysis.user_event.list": 1
-      },
       "src/gravity_sdk/prober/batch.py": {
         "material.tag_category.tree": 1,
         "report.metric.list": 1
@@ -164,10 +159,10 @@
       "sloc_hard_limit": 657
     },
     "src/gravity_sdk/executor.py": {
-      "ast_hard_limit": 4588,
-      "ast_nodes": 4588,
+      "ast_hard_limit": 4582,
+      "ast_nodes": 4582,
       "migration_sloc": 1330,
-      "sloc_hard_limit": 720
+      "sloc_hard_limit": 719
     },
     "src/gravity_sdk/http_runtime.py": {
       "ast_hard_limit": 2901,
@@ -176,10 +171,10 @@
       "sloc_hard_limit": 572
     },
     "src/gravity_sdk/models.py": {
-      "ast_hard_limit": 6225,
-      "ast_nodes": 6225,
+      "ast_hard_limit": 6202,
+      "ast_nodes": 6202,
       "migration_sloc": 1071,
-      "sloc_hard_limit": 858
+      "sloc_hard_limit": 833
     },
     "src/gravity_sdk/prober/drafts.py": {
       "ast_hard_limit": 12903,

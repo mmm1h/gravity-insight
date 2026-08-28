@@ -36,5 +36,8 @@
     "app.onelink.list": "app_onelink_request_parts",
     "material.report.query": "_material_report_request_parts",
     "report.business.query": "_business_report_request_parts"
+  },
+  "response_projectors": {
+    "analysis.user_event.list": "project_analysis_user_event"
   }
 }

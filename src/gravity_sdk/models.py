@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 import re
 import string
@@ -36,6 +37,27 @@ _FIELD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 _RESPONSE_FIELD_NAME_RE = re.compile(r"^[A-Za-z_$][A-Za-z0-9_.$-]*$")
 _SAFE_PATH_RE = re.compile(r"^/[A-Za-z0-9_{}./-]+/$")
 _MISSING = object()
+_RESPONSE_PROJECTOR_NAMES = json.loads(
+    (Path(__file__).resolve().parent / "contracts" / "runtime-operation-bindings.json")
+    .read_text(encoding="utf-8")
+)["response_projectors"]
+
+
+def safe_read_inputs(
+    operation: Any,
+    values: Mapping[str, Any],
+    redact: Any,
+) -> Mapping[str, Any]:
+    safe_inputs = {
+        key: "[REDACTED]" if spec.sensitive else value
+        for key, value in values.items()
+        if (spec := operation.fields.get(key)) is not None
+    }
+    return redact(
+        safe_inputs,
+        operation.privacy_policy.redact_fields,
+        allow_contracted_identifiers=False,
+    )
 
 
 def _mapping(value: Any, label: str) -> Mapping[str, Any]:
@@ -762,67 +784,7 @@ class OperationSpec:
                 "query_fields": list(self.request.query_fields),
                 "body_fields": list(self.request.body_fields),
             },
-            "response_projection": {
-                "leaf_contract": "json_scalar",
-                "data_shape": self.response_projection.data_shape,
-                "data_keys": list(self.response_projection.data_keys),
-                "required_data_keys": list(self.response_projection.required_data_keys),
-                "item_keys": list(self.response_projection.item_keys),
-                "dynamic_item_fields": list(self.response_projection.dynamic_item_fields),
-                **numeric_suffix_schema(self.response_projection),
-                "nested_item_keys": {
-                    name: list(fields)
-                    for name, fields in self.response_projection.nested_item_keys.items()
-                },
-                "known_omitted_nested_item_keys": {
-                    name: list(fields)
-                    for name, fields in (
-                        self.response_projection.known_omitted_nested_item_keys.items()
-                    )
-                },
-                "data_item_keys": {
-                    name: list(fields)
-                    for name, fields in self.response_projection.data_item_keys.items()
-                },
-                "scalar_list_item_types": dict(self.response_projection.scalar_list_item_types),
-                "data_scalar_list_types": dict(
-                    self.response_projection.data_scalar_list_types
-                ),
-                "data_path_item_keys": {
-                    name: list(fields)
-                    for name, fields in self.response_projection.data_path_item_keys.items()
-                },
-                "data_dynamic_item_fields": {
-                    name: list(fields)
-                    for name, fields in self.response_projection.data_dynamic_item_fields.items()
-                },
-                "known_omitted_item_keys": list(
-                    self.response_projection.known_omitted_item_keys
-                ),
-                "recursive_data_item_keys": {
-                    name: list(fields)
-                    for name, fields in self.response_projection.recursive_data_item_keys.items()
-                },
-                "known_omitted_data_keys": list(
-                    self.response_projection.known_omitted_data_keys
-                ),
-                "known_omitted_data_item_keys": {
-                    name: list(fields)
-                    for name, fields in (
-                        self.response_projection.known_omitted_data_item_keys.items()
-                    )
-                },
-                "numeric_paths": list(self.response_projection.numeric_paths),
-                "empty_object_as_empty_page": (
-                    self.response_projection.empty_object_as_empty_page
-                ),
-                "empty_object_as_empty_result": (
-                    self.response_projection.empty_object_as_empty_result
-                ),
-                "opaque_json_item_keys": list(
-                    self.response_projection.opaque_json_item_keys
-                ),
-            },
+            "response_projection": _response_projection_schema(self.response_projection),
             "pagination": pagination_schema(self.pagination),
             "privacy": {"classification": self.privacy_policy.classification},
             "required_parent": [
@@ -858,6 +820,25 @@ class OperationSpec:
             "required_parent": bool(self.required_parent),
             "paginated": self.pagination.kind != "none",
         }
+
+
+_PROJECTION_VALUES = "data_shape empty_object_as_empty_page empty_object_as_empty_result".split()
+_PROJECTION_LISTS = "data_keys required_data_keys item_keys dynamic_item_fields known_omitted_item_keys known_omitted_data_keys numeric_paths opaque_json_item_keys".split()
+_PROJECTION_MAPPINGS = "nested_item_keys known_omitted_nested_item_keys data_item_keys data_path_item_keys data_dynamic_item_fields recursive_data_item_keys known_omitted_data_item_keys".split()
+
+
+def _response_projection_schema(projection: ResponseProjection) -> dict[str, Any]:
+    result = {"leaf_contract": "json_scalar"}
+    for name in _PROJECTION_VALUES:
+        result[name] = getattr(projection, name)
+    for name in _PROJECTION_LISTS:
+        result[name] = list(getattr(projection, name))
+    result.update(numeric_suffix_schema(projection))
+    for name in ("scalar_list_item_types", "data_scalar_list_types"):
+        result[name] = dict(getattr(projection, name))
+    for name in _PROJECTION_MAPPINGS:
+        result[name] = {key: list(value) for key, value in getattr(projection, name).items()}
+    return result
 
 
 @dataclass(frozen=True)
