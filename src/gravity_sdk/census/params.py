@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import bisect
 import json
 import re
 from collections import defaultdict
@@ -12,8 +11,11 @@ from urllib.parse import unquote_plus
 from .io import all_parameter_nodes as _all_parameter_nodes, batch_parameter_validation as _batch_validation, read_json, summarize_parameter_routes as _summary, write_json
 from .normalize import comparison_path, decode_js_escapes
 from .parser import (
+    _Lexed,
+    _Token,
     _api_exported_bases,
     _base_aliases,
+    _tokenize,
     parse_text,
 )
 
@@ -30,7 +32,6 @@ _TYPE_ORDER = {
     "null": 6,
     "unknown": 7,
 }
-_IDENTIFIER = re.compile(r"[A-Za-z_$][\w$]*")
 _PATH_PARAMETER = re.compile(r"\{([^{}]+)\}")
 _NO_DEFAULT = object()
 
@@ -43,15 +44,6 @@ PARAM_PARSER_LIMITATIONS = [
     "Minified bindings can be shadowed in a nested scope; lexical scope bounding reduces but cannot eliminate that ambiguity.",
     "Probe evidence persists schema shapes without response values, so the numeric code and error message cannot be replayed.",
 ]
-
-
-@dataclass(frozen=True)
-class _Token:
-    kind: str
-    value: str
-    start: int
-    end: int
-    quote: str | None = None
 
 
 @dataclass
@@ -92,141 +84,12 @@ class _OccurrenceResult:
     unresolved_reasons: set[str] = field(default_factory=set)
 
 
-@dataclass
-class _Lexed:
-    text: str
-    tokens: list[_Token]
-    pairs: dict[int, int]
-    starts: list[int]
-
-    def token_at_offset(self, offset: int) -> int | None:
-        index = bisect.bisect_left(self.starts, offset)
-        if index < len(self.tokens) and self.tokens[index].start == offset:
-            return index
-        if index and self.tokens[index - 1].start <= offset < self.tokens[index - 1].end:
-            return index - 1
-        return None
-
-
 def _worse(left: str, right: str) -> str:
     return max((left, right), key=lambda value: _CONFIDENCE_ORDER.get(value, 9))
 
 
 def _downgrade(value: str, floor: str) -> str:
     return _worse(value, floor)
-
-
-def _tokenize(text: str) -> _Lexed:
-    def scan_quoted(start: int) -> int:
-        quote = text[start]
-        cursor = start + 1
-        while cursor < length:
-            current = text[cursor]
-            if current == "\\":
-                cursor += 2
-                continue
-            if current == quote:
-                return cursor + 1
-            if quote == "`" and text.startswith("${", cursor):
-                cursor = scan_template_expression(cursor + 1)
-                continue
-            if quote != "`" and current in "\r\n":
-                return cursor
-            cursor += 1
-        return cursor
-
-    def scan_template_expression(open_brace: int) -> int:
-        depth = 1
-        cursor = open_brace + 1
-        while cursor < length and depth:
-            current = text[cursor]
-            if current in "'\"`":
-                cursor = scan_quoted(cursor)
-                continue
-            if current == "{":
-                depth += 1
-            elif current == "}":
-                depth -= 1
-            cursor += 1
-        return cursor
-
-    tokens: list[_Token] = []
-    index = 0
-    length = len(text)
-    operators = (
-        "===",
-        "!==",
-        ">>>",
-        "**=",
-        "...",
-        "=>",
-        "==",
-        "!=",
-        "<=",
-        ">=",
-        "&&",
-        "||",
-        "??",
-        "?.",
-        "++",
-        "--",
-        "**",
-        "+=",
-        "-=",
-        "*=",
-        "/=",
-    )
-    while index < length:
-        char = text[index]
-        if char.isspace():
-            index += 1
-            continue
-        if text.startswith("/*", index):
-            close = text.find("*/", index + 2)
-            index = length if close < 0 else close + 2
-            continue
-        if char in "'\"`":
-            quote = char
-            start = index
-            index = scan_quoted(start)
-            value_end = index - 1 if index <= length and text[index - 1 : index] == quote else index
-            tokens.append(_Token("string", text[start + 1 : value_end], start, index, quote))
-            continue
-        identifier = _IDENTIFIER.match(text, index)
-        if identifier:
-            tokens.append(_Token("identifier", identifier.group(0), index, identifier.end()))
-            index = identifier.end()
-            continue
-        if char.isdigit():
-            number = re.match(
-                r"(?:0[xX][0-9A-Fa-f]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)", text[index:]
-            )
-            if number:
-                end = index + number.end()
-                tokens.append(_Token("number", number.group(0), index, end))
-                index = end
-                continue
-        operator = next((item for item in operators if text.startswith(item, index)), None)
-        if operator:
-            tokens.append(_Token("punct", operator, index, index + len(operator)))
-            index += len(operator)
-            continue
-        tokens.append(_Token("punct", char, index, index + 1))
-        index += 1
-
-    pairs: dict[int, int] = {}
-    stacks: dict[str, list[int]] = {"(": [], "{": [], "[": []}
-    closing = {")": "(", "}": "{", "]": "["}
-    for token_index, token in enumerate(tokens):
-        if token.value in stacks:
-            stacks[token.value].append(token_index)
-        elif token.value in closing:
-            stack = stacks[closing[token.value]]
-            if stack:
-                open_index = stack.pop()
-                pairs[open_index] = token_index
-                pairs[token_index] = open_index
-    return _Lexed(text, tokens, pairs, [token.start for token in tokens])
 
 
 def _trim(tokens: Sequence[_Token], start: int, end: int) -> tuple[int, int]:
@@ -1000,6 +863,124 @@ def _find_forwarded_alias_calls(
     return [unique[offset] for offset in sorted(unique)]
 
 
+def _call_result(
+    lexed: _Lexed,
+    call_open: int,
+    locations: dict[str, _Shape],
+    unresolved: set[str],
+    evidence_kind: str,
+    *,
+    unresolved_reasons: set[str] | None = None,
+) -> _OccurrenceResult:
+    return _OccurrenceResult(
+        calls=[
+            _CallShape(
+                offset=lexed.tokens[call_open].start,
+                locations=locations,
+                unresolved_locations=unresolved,
+                evidence_kind=evidence_kind,
+            )
+        ],
+        unresolved_reasons=unresolved_reasons or set(),
+    )
+
+
+def _direct_request_result(
+    lexed: _Lexed,
+    token_index: int,
+    call_open: int,
+    call_close: int,
+    scope_start: int,
+    method: str,
+) -> _OccurrenceResult | None:
+    request_object = _object_containing(
+        lexed,
+        token_index,
+        inside_start=call_open,
+        inside_end=call_close,
+    )
+    if request_object is None:
+        return None
+    request_shape = _parse_object(lexed, request_object, scope_start=scope_start)
+    if not ({"url", "path"} & set(request_shape.fields)):
+        return None
+    locations, unresolved = _envelope_locations(request_shape, method=method)
+    return _call_result(
+        lexed, call_open, locations, unresolved, "direct_request_options"
+    )
+
+
+def _merge_default_locations(
+    calls: list[_CallShape], options: _Shape | None, method: str
+) -> None:
+    default_locations: dict[str, _Shape] = {}
+    default_unresolved: set[str] = set()
+    if options:
+        default_locations, default_unresolved = _envelope_locations(options, method=method)
+    for call in calls:
+        for location, shape in default_locations.items():
+            if location not in call.locations:
+                call.locations[location] = shape
+        call.unresolved_locations.update(default_unresolved)
+
+
+def _alias_occurrence_result(
+    lexed: _Lexed,
+    alias: str,
+    options: _Shape | None,
+    *,
+    call_open: int,
+    call_close: int,
+    scope_start: int,
+    scope_end: int,
+    method: str,
+) -> _OccurrenceResult:
+    calls = _find_alias_calls(
+        lexed,
+        alias,
+        after=call_close + 1,
+        scope_end=scope_end,
+        method=method,
+        scope_start=scope_start,
+    )
+    if not calls:
+        calls = _find_forwarded_alias_calls(
+            lexed,
+            alias,
+            after=call_close + 1,
+            scope_end=scope_end,
+            method=method,
+            scope_start=scope_start,
+        )
+    if calls:
+        _merge_default_locations(calls, options, method)
+        return _OccurrenceResult(calls=calls)
+    if options:
+        locations, unresolved = _envelope_locations(options, method=method)
+        if locations or unresolved:
+            return _call_result(
+                lexed,
+                call_open,
+                locations,
+                unresolved,
+                "factory_default_only",
+                unresolved_reasons={"load_alias_has_no_static_call"},
+            )
+    return _OccurrenceResult(unresolved_reasons={"load_alias_has_no_static_call"})
+
+
+def _inline_occurrence_result(
+    lexed: _Lexed, call_open: int, options: _Shape | None, method: str
+) -> _OccurrenceResult:
+    if options:
+        locations, unresolved = _envelope_locations(options, method=method)
+        if locations or unresolved:
+            return _call_result(
+                lexed, call_open, locations, unresolved, "inline_request_factory"
+            )
+    return _OccurrenceResult(unresolved_reasons={"request_binding_not_resolved"})
+
+
 def _extract_occurrence(
     lexed: _Lexed,
     occurrence: Mapping[str, Any],
@@ -1015,31 +996,11 @@ def _extract_occurrence(
         return _OccurrenceResult(unresolved_reasons={"unbalanced_request_call"})
     scope_start, scope_end = _enclosing_scope(lexed, call_open)
     method = str(occurrence["method"])
-
-    request_object = _object_containing(
-        lexed,
-        token_index,
-        inside_start=call_open,
-        inside_end=call_close,
+    direct = _direct_request_result(
+        lexed, token_index, call_open, call_close, scope_start, method
     )
-    if request_object is not None:
-        request_shape = _parse_object(
-            lexed,
-            request_object,
-            scope_start=scope_start,
-        )
-        if {"url", "path"} & set(request_shape.fields):
-            locations, unresolved = _envelope_locations(request_shape, method=method)
-            return _OccurrenceResult(
-                calls=[
-                    _CallShape(
-                        offset=lexed.tokens[call_open].start,
-                        locations=locations,
-                        unresolved_locations=unresolved,
-                        evidence_kind="direct_request_options",
-                    )
-                ]
-            )
+    if direct is not None:
+        return direct
 
     options = _route_options(
         lexed,
@@ -1049,64 +1010,17 @@ def _extract_occurrence(
     )
     alias = _load_alias(lexed, call_open)
     if alias:
-        calls = _find_alias_calls(
+        return _alias_occurrence_result(
             lexed,
             alias,
-            after=call_close + 1,
+            options,
+            call_open=call_open,
+            call_close=call_close,
+            scope_start=scope_start,
             scope_end=scope_end,
             method=method,
-            scope_start=scope_start,
         )
-        if not calls:
-            calls = _find_forwarded_alias_calls(
-                lexed,
-                alias,
-                after=call_close + 1,
-                scope_end=scope_end,
-                method=method,
-                scope_start=scope_start,
-            )
-        if calls:
-            default_locations: dict[str, _Shape] = {}
-            default_unresolved: set[str] = set()
-            if options:
-                default_locations, default_unresolved = _envelope_locations(options, method=method)
-            for call in calls:
-                for location, shape in default_locations.items():
-                    if location not in call.locations:
-                        call.locations[location] = shape
-                call.unresolved_locations.update(default_unresolved)
-            return _OccurrenceResult(calls=calls)
-        if options:
-            locations, unresolved = _envelope_locations(options, method=method)
-            if locations or unresolved:
-                return _OccurrenceResult(
-                    calls=[
-                        _CallShape(
-                            offset=lexed.tokens[call_open].start,
-                            locations=locations,
-                            unresolved_locations=unresolved,
-                            evidence_kind="factory_default_only",
-                        )
-                    ],
-                    unresolved_reasons={"load_alias_has_no_static_call"},
-                )
-        return _OccurrenceResult(unresolved_reasons={"load_alias_has_no_static_call"})
-
-    if options:
-        locations, unresolved = _envelope_locations(options, method=method)
-        if locations or unresolved:
-            return _OccurrenceResult(
-                calls=[
-                    _CallShape(
-                        offset=lexed.tokens[call_open].start,
-                        locations=locations,
-                        unresolved_locations=unresolved,
-                        evidence_kind="inline_request_factory",
-                    )
-                ]
-            )
-    return _OccurrenceResult(unresolved_reasons={"request_binding_not_resolved"})
+    return _inline_occurrence_result(lexed, call_open, options, method)
 
 
 def _raw_query_shape(raw_path: str) -> _Shape:
@@ -1306,14 +1220,11 @@ def _occurrences_by_route(
     return dict(grouped), dict(by_file)
 
 
-def _route_document(
-    route: Mapping[str, Any],
+def _route_call_sites(
     occurrences: Sequence[Mapping[str, Any]],
     results: Sequence[_OccurrenceResult],
-) -> dict[str, Any]:
-    calls = [call for result in results for call in result.calls]
-    unresolved_occurrences = sum(not result.calls for result in results)
-    call_sites = sorted(
+) -> list[dict[str, Any]]:
+    return sorted(
         (
             {
                 "call_offset": call.offset,
@@ -1332,37 +1243,61 @@ def _route_document(
             int(item["call_offset"] or -1),
         ),
     )
+
+
+def _merge_url_query_parameters(
+    route: Mapping[str, Any],
+    query_parameters: list[dict[str, Any]],
+    query_unresolved: bool,
+) -> tuple[list[dict[str, Any]], bool]:
+    url_query = _Shape()
+    for raw_path in route.get("raw_paths", []):
+        _merge_shape(url_query, _raw_query_shape(str(raw_path)))
+    if not url_query.fields:
+        return query_parameters, query_unresolved
+    synthetic = _CallShape(offset=-1, locations={"query": url_query})
+    url_parameters, url_unresolved = _aggregate_location([synthetic], "query")
+    by_name = {item["name"]: item for item in query_parameters}
+    for item in url_parameters:
+        by_name.setdefault(item["name"], item)
+    return [by_name[name] for name in sorted(by_name)], query_unresolved or url_unresolved
+
+
+def _parameter_status(
+    path_parameters: list[dict[str, Any]],
+    query_parameters: list[dict[str, Any]],
+    body_parameters: list[dict[str, Any]],
+    calls: list[_CallShape],
+    unresolved: bool,
+) -> str:
+    if path_parameters or query_parameters or body_parameters:
+        return "extracted"
+    if calls and not unresolved:
+        return "observed_empty"
+    return "unknown"
+
+
+def _route_document(
+    route: Mapping[str, Any],
+    occurrences: Sequence[Mapping[str, Any]],
+    results: Sequence[_OccurrenceResult],
+) -> dict[str, Any]:
+    calls = [call for result in results for call in result.calls]
+    unresolved_occurrences = sum(not result.calls for result in results)
     query_parameters, query_unresolved = _aggregate_location(
         calls, "query", unresolved_context=bool(unresolved_occurrences)
     )
     body_parameters, body_unresolved = _aggregate_location(
         calls, "body", unresolved_context=bool(unresolved_occurrences)
     )
-
-    url_query = _Shape()
-    for raw_path in route.get("raw_paths", []):
-        _merge_shape(url_query, _raw_query_shape(str(raw_path)))
-    if url_query.fields:
-        synthetic = _CallShape(offset=-1, locations={"query": url_query})
-        url_parameters, url_unresolved = _aggregate_location([synthetic], "query")
-        by_name = {item["name"]: item for item in query_parameters}
-        for item in url_parameters:
-            by_name.setdefault(item["name"], item)
-        query_parameters = [by_name[name] for name in sorted(by_name)]
-        query_unresolved = query_unresolved or url_unresolved
-
+    query_parameters, query_unresolved = _merge_url_query_parameters(
+        route, query_parameters, query_unresolved
+    )
     path_parameters = _path_parameters(route)
-    extracted = bool(path_parameters or query_parameters or body_parameters)
-    if extracted:
-        status = "extracted"
-    elif calls and not (query_unresolved or body_unresolved):
-        status = "observed_empty"
-    else:
-        status = "unknown"
     document: dict[str, Any] = {
         "analysis": {
             "analyzed_calls": len(calls),
-            "call_sites": call_sites,
+            "call_sites": _route_call_sites(occurrences, results),
             "route_occurrences": len(occurrences),
             "unresolved_calls": sum(bool(call.unresolved_locations) for call in calls),
             "unresolved_occurrences": unresolved_occurrences,
@@ -1377,7 +1312,13 @@ def _route_document(
         "path": route["path"],
         "path_parameters": path_parameters,
         "query_parameters": query_parameters,
-        "status": status,
+        "status": _parameter_status(
+            path_parameters,
+            query_parameters,
+            body_parameters,
+            calls,
+            query_unresolved or body_unresolved,
+        ),
     }
     document["contract_confidence"] = _contract_confidence(document)
     return document

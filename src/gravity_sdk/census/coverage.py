@@ -12,42 +12,16 @@ from gravity_sdk.prober.read_semantics import confirmation_keys
 from .io import read_json, render_coverage_report as _render_report, write_json
 from .normalize import comparison_path, normalize_path
 from .semantics import (
+    PLATFORMS,
     classify_route_accounting,
     classify_route_semantics,
     classify_semantics,
+    identify_contract_families,
+    reconcile_stable_operations,
 )
 
 
 MODULES = ("分析", "推广平台", "资产", "素材", "报表", "App 与账号", "归因", "元数据", "其它")
-PLATFORMS = (
-    "bytedance",
-    "tencent",
-    "kuaishou",
-    "oppo",
-    "bilibili",
-    "baidu",
-    "vivo",
-    "iqiyi",
-    "weibo",
-    "apple",
-    "asa",
-    "uc",
-    "huawei_store",
-    "huawei",
-    "honor",
-    "ubix",
-    "xiaohongshu",
-    "xiaomi",
-    "qihu360",
-    "360",
-    "sigmob",
-    "youdao",
-    "huya",
-    "alipay",
-    "bing",
-    "wechat_video",
-    "taptap",
-)
 LEVEL_RULES = (
     ("账户", ("account", "advertiser", "developer")),
     ("项目", ("project",)),
@@ -233,159 +207,6 @@ def estimate_read_cost(route: dict[str, Any]) -> tuple[str, str, str]:
     if method == "POST" and _contains_any(path, ("/detail", "/tree", "/options", "/components")):
         return "中", "POST read requires a parent or structured selector", "low"
     return "低", "flat list/detail lookup with no evident parent dependency", "medium"
-
-
-def _replace_platform(path: str) -> str:
-    value = path.lower()
-    value = value.replace("/huawei/store/", "/{platform}/")
-    value = value.replace("/wechat/video/", "/{platform}/")
-    for platform in sorted(PLATFORMS, key=len, reverse=True):
-        value = re.sub(
-            rf"(?<=/){re.escape(platform)}(?=/)", "{platform}", value
-        )
-    return value
-
-
-def _replace_level(path: str) -> str:
-    return re.sub(
-        r"(?<=/)(?:advertiser|account|developer|project|campaign|ad_plan|plan|"
-        r"ad_group|adgroup|ad_unit|unit|group|creative|creativity|advertisement|ad|"
-        r"material|asset|report|stat|data)(?=/)",
-        "{level}",
-        path.lower(),
-    )
-
-
-def identify_contract_families(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    reads = [
-        row
-        for row in rows
-        if row["status"] == "uncovered_read" and row["business_module"] == "推广平台"
-    ]
-    candidates: list[dict[str, Any]] = []
-    for kind, signature_fn in (
-        ("same_level_cross_platform", lambda row: (row["method"], _replace_platform(row["path"]))),
-        (
-            "same_platform_cross_level",
-            lambda row: (row["method"], row["promotion_platform"], _replace_level(row["path"])),
-        ),
-    ):
-        groups: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
-        for row in reads:
-            groups[signature_fn(row)].append(row)
-        for signature, members in groups.items():
-            unique_members = sorted({(item["method"], item["path"]) for item in members})
-            if len(unique_members) < 2:
-                continue
-            candidates.append(
-                {
-                    "family_kind": kind,
-                    "signature": " | ".join(str(item) for item in signature),
-                    "members": [
-                        {"method": method, "path": path} for method, path in unique_members
-                    ],
-                    "member_count": len(unique_members),
-                }
-            )
-    candidates.sort(
-        key=lambda item: (item["family_kind"], item["signature"], item["member_count"])
-    )
-    for index, family in enumerate(candidates, 1):
-        family["family_id"] = f"promotion.family.{index:03d}"
-    memberships: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
-    for family in candidates:
-        for member in family["members"]:
-            memberships[(member["method"], member["path"])].append(family)
-    for row in rows:
-        families = memberships.get((row["method"], row["path"]), [])
-        if families:
-            primary = sorted(
-                families,
-                key=lambda item: (-item["member_count"], item["family_kind"], item["family_id"]),
-            )[0]
-            row["contract_family"] = {
-                "family_id": primary["family_id"],
-                "family_kind": primary["family_kind"],
-                "member_count": primary["member_count"],
-            }
-            row["contract_family_alternates"] = [
-                item["family_id"] for item in families if item is not primary
-            ]
-        else:
-            row["contract_family"] = None
-            row["contract_family_alternates"] = []
-    return candidates
-
-
-def reconcile_stable_operations(
-    operations: list[dict[str, Any]],
-    routes: list[dict[str, Any]],
-    baseline_routes: list[dict[str, Any]] | None,
-) -> dict[str, Any]:
-    def api_tail(path: str) -> str:
-        parts = comparison_path(path).strip("/").split("/")
-        for index, part in enumerate(parts):
-            if re.fullmatch(r"v\d+(?:\.\d+)?", part):
-                return "/".join(parts[index + 1 :])
-        return "/".join(parts)
-
-    stable = [item for item in operations if item["stability"] == "stable"]
-    exact = {(item["method"], normalize_path(item["path"])) for item in routes}
-    normalized = {(item["method"], comparison_path(item["path"])) for item in routes}
-    baseline_normalized = {
-        (item["method"], comparison_path(item["path"])) for item in (baseline_routes or [])
-    }
-    rows: list[dict[str, Any]] = []
-    for operation in stable:
-        exact_key = (operation["method"], normalize_path(operation["path"]))
-        normalized_key = (operation["method"], comparison_path(operation["path"]))
-        baseline_match = normalized_key in baseline_normalized
-        if baseline_match:
-            category = "previously_covered"
-        elif exact_key in exact:
-            category = "newly_covered_from_previously_unfetched_chunk"
-        elif normalized_key in normalized:
-            category = "normalization_false_gap_fixed"
-        else:
-            category = "manifest_route_absent_from_frontend"
-        similar = sorted(
-            {
-                (route["method"], route["path"])
-                for route in routes
-                if api_tail(route["path"]) == api_tail(operation["path"])
-                and comparison_path(route["path"]) != comparison_path(operation["path"])
-            }
-        )
-        rows.append(
-            {
-                "operation_id": operation["operation_id"],
-                "method": operation["method"],
-                "path": operation["path"],
-                "manifest_file": operation["manifest_file"],
-                "category": category,
-                "similar_frontend_routes": [
-                    {"method": method, "path": path} for method, path in similar[:50]
-                ]
-                if category == "manifest_route_absent_from_frontend"
-                else [],
-            }
-        )
-    counts = Counter(item["category"] for item in rows)
-    return {
-        "baseline_supplied": baseline_routes is not None,
-        "stable_operations": len(stable),
-        "summary": dict(sorted(counts.items())),
-        "previously_missing_breakdown": {
-            "a_previously_unfetched_chunk": counts[
-                "newly_covered_from_previously_unfetched_chunk"
-            ],
-            "b_normalization_false_gap_fixed": counts["normalization_false_gap_fixed"],
-            "c_manifest_route_absent_from_frontend": counts[
-                "manifest_route_absent_from_frontend"
-            ],
-        },
-        "operations": sorted(rows, key=lambda item: item["operation_id"]),
-    }
 
 
 def _coverage_indexes(
@@ -608,6 +429,7 @@ def _coverage_document(
         "manifest_reconciliation": reconcile_stable_operations(
             operations, rows,
             baseline_routes_document.get("routes", []) if baseline_routes_document else None,
+            normalize_path=normalize_path, comparison_path=comparison_path,
         ),
         "contract_families": contract_families,
         "family_summary": {

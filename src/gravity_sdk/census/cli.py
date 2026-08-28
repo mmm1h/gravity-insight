@@ -183,93 +183,116 @@ def _smoke() -> dict[str, Any]:
     return {"status": "pass", "offline": True, "network_called": False, "manifest_operations": operations}
 
 
+def _run_fetch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    fetcher = StaticFetcher(
+        max_attempts=args.max_attempts,
+        max_requests=args.max_requests,
+        concurrency=args.concurrency,
+        timeout=args.timeout,
+    )
+    result = fetcher.fetch(
+        site_url=args.site,
+        raw_dir=args.raw_dir,
+        snapshot_path=args.output,
+        probe_manifests=not args.no_manifest_probes,
+    )
+    incomplete = args.require_complete and not result["summary"]["complete"]
+    return result["summary"], _UPSTREAM_EXIT if incomplete else 0
+
+
+def _run_parse(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    result = parse_snapshot(args.snapshot, args.raw_dir, args.output)
+    return result["summary"], 0
+
+
+def _run_params(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    from .params import extract_route_params
+
+    result = extract_route_params(
+        args.snapshot,
+        args.routes,
+        args.raw_dir,
+        args.output,
+        repo_root=REPO_ROOT,
+        batch_results_path=args.batch_results,
+        drafts_root=args.drafts,
+    )
+    return {**result["summary"], "validation": result["validation"]}, 0
+
+
+def _run_responses(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    from .response import apply_response_fields_to_drafts, extract_route_response_fields
+
+    result = extract_route_response_fields(args.snapshot, args.routes, args.raw_dir, args.output)
+    rendered = dict(result["summary"])
+    if args.apply_drafts:
+        rendered["draft_integration"] = apply_response_fields_to_drafts(result, args.drafts)
+    return rendered, 0
+
+
+def _run_apply_responses(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    from .response import apply_response_fields_to_drafts
+
+    return apply_response_fields_to_drafts(read_json(args.responses), args.drafts), 0
+
+
+def _run_diff(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    result = diff_files(args.old, args.new)
+    if args.output:
+        write_json(args.output, result)
+    changed = any(int(value) for value in result.get("summary", {}).values())
+    return result, 5 if args.fail_on_change and changed else 0
+
+
+def _run_impact(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    try:
+        from gravity_sdk.drift import HealthOverlay
+    except ModuleNotFoundError:  # source checkout before editable installation
+        from gravity_sdk.drift import HealthOverlay
+
+    overlay = HealthOverlay(args.overlay_output) if args.overlay_output else HealthOverlay()
+    result = impact_files(
+        args.diff,
+        args.provenance,
+        args.contracts_root,
+        census_complete=args.census_complete,
+        overlay=overlay,
+    )
+    if args.output:
+        write_json(args.output, result)
+    if args.overlay_output:
+        write_json(args.overlay_output, overlay.snapshot())
+    incomplete = not bool(result.get("census_complete"))
+    return result, _UPSTREAM_EXIT if args.require_complete and incomplete else 0
+
+
+def _run_check_upstream(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    result = check_upstream(args.site, read_json(args.baseline), timeout=args.timeout)
+    if args.output:
+        write_json(args.output, result)
+    return result, 0
+
+
 def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     if args.smoke:
         if args.command:
             raise ValueError("--smoke cannot be combined with a command")
         return _smoke(), 0
-    if args.command == "fetch":
-        fetcher = StaticFetcher(
-            max_attempts=args.max_attempts,
-            max_requests=args.max_requests,
-            concurrency=args.concurrency,
-            timeout=args.timeout,
-        )
-        result = fetcher.fetch(
-            site_url=args.site,
-            raw_dir=args.raw_dir,
-            snapshot_path=args.output,
-            probe_manifests=not args.no_manifest_probes,
-        )
-        return result["summary"], _UPSTREAM_EXIT if args.require_complete and not result["summary"]["complete"] else 0
-    if args.command == "parse":
-        result = parse_snapshot(args.snapshot, args.raw_dir, args.output)
-        return result["summary"], 0
-    if args.command == "params":
-        from .params import extract_route_params
-
-        result = extract_route_params(
-            args.snapshot,
-            args.routes,
-            args.raw_dir,
-            args.output,
-            repo_root=REPO_ROOT,
-            batch_results_path=args.batch_results,
-            drafts_root=args.drafts,
-        )
-        return {**result["summary"], "validation": result["validation"]}, 0
-    if args.command == "responses":
-        from .response import apply_response_fields_to_drafts, extract_route_response_fields
-
-        result = extract_route_response_fields(
-            args.snapshot, args.routes, args.raw_dir, args.output
-        )
-        rendered = dict(result["summary"])
-        if args.apply_drafts:
-            rendered["draft_integration"] = apply_response_fields_to_drafts(
-                result, args.drafts
-            )
-        return rendered, 0
-    if args.command == "apply-responses":
-        from .response import apply_response_fields_to_drafts
-
-        return apply_response_fields_to_drafts(
-            read_json(args.responses), args.drafts
-        ), 0
-    if args.command == "coverage":
-        return _run_coverage(args)
-    if args.command == "diff":
-        result = diff_files(args.old, args.new)
-        if args.output:
-            write_json(args.output, result)
-        changed = any(int(value) for value in result.get("summary", {}).values())
-        return result, 5 if args.fail_on_change and changed else 0
-    if args.command == "impact":
-        try:
-            from gravity_sdk.drift import HealthOverlay
-        except ModuleNotFoundError:  # source checkout before editable installation
-            from gravity_sdk.drift import HealthOverlay
-
-        overlay = HealthOverlay(args.overlay_output) if args.overlay_output else HealthOverlay()
-        result = impact_files(
-            args.diff,
-            args.provenance,
-            args.contracts_root,
-            census_complete=args.census_complete,
-            overlay=overlay,
-        )
-        if args.output:
-            write_json(args.output, result)
-        if args.overlay_output:
-            write_json(args.overlay_output, overlay.snapshot())
-        incomplete = not bool(result.get("census_complete"))
-        return result, _UPSTREAM_EXIT if args.require_complete and incomplete else 0
-    if args.command == "check-upstream":
-        result = check_upstream(args.site, read_json(args.baseline), timeout=args.timeout)
-        if args.output:
-            write_json(args.output, result)
-        return result, 0
-    raise ValueError("choose --smoke or a subcommand")
+    handlers = {
+        "fetch": _run_fetch,
+        "parse": _run_parse,
+        "params": _run_params,
+        "responses": _run_responses,
+        "apply-responses": _run_apply_responses,
+        "coverage": _run_coverage,
+        "diff": _run_diff,
+        "impact": _run_impact,
+        "check-upstream": _run_check_upstream,
+    }
+    handler = handlers.get(args.command)
+    if handler is None:
+        raise ValueError("choose --smoke or a subcommand")
+    return handler(args)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

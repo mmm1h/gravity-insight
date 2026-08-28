@@ -195,6 +195,27 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
         self.assertEqual(1, result["summary"]["unmapped_changes"])
         self.assertEqual("route_added", result["unmapped_changes"][0]["impact_type"])
 
+    def test_path_change_maps_through_the_old_registered_route(self) -> None:
+        route_diff = {
+            "kind": "route_diff",
+            "new_bundle_complete": True,
+            "added": [],
+            "removed": [],
+            "method_changes": [],
+            "path_changes": [
+                {
+                    "method": "GET",
+                    "old_path": REMOVED_ROUTE,
+                    "new_path": "/turbo_engine/api/v3/event/event_list/",
+                }
+            ],
+        }
+
+        result = assess_route_impacts(route_diff, self.provenance, CONTRACTS_ROOT)
+
+        self.assertEqual([REMOVED_OPERATION], result["probe_plan"]["direct_operation_ids"])
+        self.assertEqual(["path_changed"], result["operations"][0]["impact_types"])
+
 
 if __name__ == "__main__":
     unittest.main()
