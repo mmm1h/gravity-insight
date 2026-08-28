@@ -17,10 +17,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
           cache: pip
@@ -47,6 +47,8 @@ jobs:
           }
           Write-Output "PASS agent-usability development eval"
       - name: Check all CLI namespaces offline
+        env:
+          GRAVITY_SDK_AUTO_UPGRADE: "0"
         shell: pwsh
         run: |
           gravity --help
