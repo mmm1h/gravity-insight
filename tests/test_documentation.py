@@ -36,7 +36,7 @@ def reachable_markdown(start: Path, allowed: set[Path]) -> set[Path]:
 
 class DocumentationArchitectureTests(unittest.TestCase):
     def test_all_local_markdown_links_exist(self) -> None:
-        sources = [ROOT / "README.md", ROOT / "MIGRATION.md", *DOCS.rglob("*.md")]
+        sources = [ROOT / "README.md", *DOCS.rglob("*.md")]
         missing: list[str] = []
         for source in sources:
             for target in local_markdown_targets(source):
@@ -87,7 +87,7 @@ class DocumentationArchitectureTests(unittest.TestCase):
         self.assertEqual({}, excess)
 
     def test_active_human_docs_stay_within_consolidation_budget(self) -> None:
-        files = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "MIGRATION.md"]
+        files = [ROOT / "README.md", ROOT / "AGENTS.md"]
         files.extend(
             path
             for path in DOCS.rglob("*.md")
@@ -161,7 +161,7 @@ class DocumentationArchitectureTests(unittest.TestCase):
         self.assertEqual([], [str(path.relative_to(ROOT)) for path in retired if path.exists()])
 
     def test_current_markdown_does_not_reference_retired_locations(self) -> None:
-        sources = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "MIGRATION.md"]
+        sources = [ROOT / "README.md", ROOT / "AGENTS.md"]
         sources.extend(
             path for path in DOCS.rglob("*.md") if ARCHIVE.resolve() not in path.resolve().parents
         )
@@ -191,7 +191,6 @@ class DocumentationArchitectureTests(unittest.TestCase):
         # by the ledger parser, the leftover markers were caught by nothing.
         sources = [
             ROOT / "README.md",
-            ROOT / "MIGRATION.md",
             *DOCS.rglob("*.md"),
             *(ROOT / "src").rglob("*.py"),
             *(ROOT / "src").rglob("*.json"),

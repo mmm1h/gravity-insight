@@ -49,4 +49,4 @@ result = gravity.read("app.list", {"page": 1, "page_size": 20})
 
 [文档导航](docs/index.md)按任务给出最短阅读路径。接口签名以 [CLI](docs/reference/cli.md)、[SDK](docs/reference/sdk.md) 和 [Plan](docs/reference/plan.md) 参考为准；当前能力以本机 `agent-catalog` 与合同编译结果为准，完整目标以 [canonical architecture source](specs/agent-runtime/architecture-source.md) 为准，交付顺序由批准 directive 与[需求索引](specs/agent-runtime/index.md)约束。
 
-历史拆仓来源见 [MIGRATION.md](MIGRATION.md)。
+历史归档的拆仓来源见 [2026-08-10 拆仓记录](docs/archive/repository-migration-2026-08-10.md)。
