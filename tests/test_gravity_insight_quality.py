@@ -505,7 +505,21 @@ def sample(value):
         self.assertFalse(profile.scan_errors, profile.scan_errors)
         self.assertIn("src/gravity_sdk/compiler.py", profile.file_sloc)
         self.assertIn("src/gravity_sdk/quality.py", profile.file_sloc)
-        self.assertTrue(any(item.value == "app.list" for item in profile.operation_literals))
+        self.assertTrue(
+            any(
+                item.value == "analysis.user_event.list"
+                for item in profile.operation_literals
+            )
+        )
+        self.assertFalse(
+            any(
+                item.path in {
+                    "src/gravity_sdk/catalog.py",
+                    "src/gravity_sdk/registry.py",
+                }
+                for item in profile.operation_literals
+            )
+        )
         self.assertFalse(any(item.value == "gravity_sdk" for item in profile.operation_literals))
 
     def test_repository_profile_metrics_and_markdown_match_baseline(self) -> None:

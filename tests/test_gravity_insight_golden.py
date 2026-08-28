@@ -409,6 +409,22 @@ class GravityInsightGoldenTests(unittest.TestCase):
                     }
                     self.assertEqual(case["wire"], actual)
 
+    def test_runtime_binding_contract_dispatches_every_special_codec(self) -> None:
+        document = json.loads(
+            (
+                ROOT
+                / "src/gravity_sdk/contracts/runtime-operation-bindings.json"
+            ).read_text(encoding="utf-8")
+        )
+        bindings = document["request_builders"]
+        self.assertEqual(
+            WIRE_OPERATION_IDS | {"app.onelink.list"}, set(bindings)
+        )
+        self.assertEqual(bindings, registry._REQUEST_BUILDER_NAMES)
+        for operation_id, builder_name in bindings.items():
+            with self.subTest(operation_id=operation_id):
+                self.assertTrue(callable(getattr(registry, builder_name, None)))
+
 
 if __name__ == "__main__":
     unittest.main()
