@@ -5,30 +5,29 @@
 ## 当前条目
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
 ### 2. legacy promotion snapshot 的兼容分支仍缺正式绑定
-**状态（2026-08-25）**：除 `primary` 21 平台外，`bytedance/project`、`honor/ad_group`、`honor/campaign`、
-`kuaishou/ad_unit`、`ubix/group` 已复用 Promotion Performance 的 App、日期、平台/指标、分页和结果绑定。逐条重列
-发现原记 32 实为 33：漏记的 `ubix/group` 五项条件全满足，已转正；其余 32 个组合的卡点逐条复核后全部仍准确。
-- **转正证据**：五项 stable contract（`21 primary + 5 + 32 = 58`）均有必填 `date_list`、App 等值 `filters`、动态 `query_fields`、同构
+**状态（2026-08-28）**：未关闭。stable `(platform, resource, operation)` 唯一三元组实为 **57** 而非 58：正式并集 **25**
+（`21 primary ∪ 5`，`ubix/group` 同属两者不可相加），其余 **32** 为兼容；按调用参数路径计则为 26/56。集合冻结在
+[`promotion_snapshot_inventory.json`](../../tests/fixtures/promotion_snapshot_inventory.json)，由测试做集合相等校验（非计数）。
+- **正式绑定证据**：25 个正式 stable contract 均有必填 `date_list`、App 等值 `filters`、动态 `query_fields`、同构
   `page_info` 和登记行投影；合同漂移 fail-closed。同一 canonical 输入经原 inventory 内核与正式入口产生完全相同的
   operation payload 和原生行，正式结果使用 `gravity-insight.promotion-performance.v1`，不再携带 compatibility marker。
 - **primary 卡点**：`bing/advertiser`、`xiaohongshu/advertiser` 无日期/动态指标；`taptap/group`、
   `wechat_video/report` 有 App/日期但无 `query_fields` 与动态指标结果绑定。
 - **其余层级卡点**：`bilibili/account` 无动态指标；`bytedance/advertiser_performance` 无 App/动态指标；
-  `tencent/tencent_adgroup_v2` 虽接收 `query_fields` 但结果未登记动态字段。其余 25 个 account/config/parent 层级
-  无必填日期和动态指标（多项也无 App）：bytedance 除 project/advertiser/performance 外 9 项、honor/account、
-  huya/account、kuaishou/account+account_company、oppo/qihu360/sigmob/ubix/vivo/weibo/xiaomi/youdao 八项 account、
-  tencent 的 3 个配置层级及 xiaohongshu/developer。
+  `tencent/tencent_adgroup_v2` 接收 `query_fields` 但结果未登记动态字段；其余 25 个 account/config/parent 层级均
+  无必填日期和动态指标（多项亦无 App）。逐条名单见上述冻结 fixture，不在本页重复维护。
 - **兼容边界**：上述 32 项仍从 stable inventory 精确匹配后透传 raw input，保持
   `gravity-insight.composite.promotion.v1` 和 `formal_binding_validation=not_performed`；零匹配 unavailable，多匹配或
-  不适用 shortcut 执行前失败。`query_fields` 仍过 `FieldPolicy`；无消费者遥测时不得删除，Agent/Plan 仍不宣传。
+  不适用 shortcut 执行前失败。`query_fields` 仍过 `FieldPolicy`。57 条均已有请求 schema、响应投影、隐私与分页合同；缺
+  日期/动态指标只说明套不进 `promotion-performance` 模型，不妨碍形式化——须等外部证据的只有**删除**分支。Agent/Plan 仍不宣传。
 - **触发条件**：兼容平台/层级出现第二个同资源 stable read，取得正式输入/结果绑定，或能证明无消费者。
 - **退出条件**：为所有保留兼容平台/层级建立不损失读取能力的正式请求/结果绑定并移入正式路径，或证实无消费者
   后删除；不得以 raw `promotion query` 替代 snapshot 聚合职责。
 
 ### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
 - **静态复核（2026-08-25）**：风险实际覆盖 5 个引用型 composite 的 6 个目录 operation。按版本词、结构化
-  `response_projection` 和 exact operation/evidence 三路复核，只有 `create_time`/`modify_time` 等普通时间字段；
-  它们没有不复用/单调语义，不能代替 revision/ETag/incarnation token。Dashboard/Segment 又无 production/wire
+  `response_projection` 和 exact operation/evidence 三路复核，没有一个投影具备不复用或单调语义的标识，故不能代替
+  revision/ETag token（`analysis.segment.list` 的 `latest_version_calculation_status` 属计算状态，例外但不改结论）。Dashboard/Segment 又无 production/wire
   item sketch，故只能证明“Runtime 当前没有可用版本标识”，不能证明实际上游响应绝对没有。
 - **未扩散**：`_REFERENCE_COMPOSITES` 自首次实现仍精确为原 5 个；唯一 `live_catalog_for_card` 调用链仍由
   `resolve_capabilities` 降次。后来加入 call-bound 的 Segment members/Attribution detail 保持 3 次；测试锁住集合。
@@ -41,6 +40,7 @@
   token、执行前重读并比较，漂移/复用 fail-closed 后才能关闭；此前不扩大该模式。
 
 ### 7. 稳定 operation 的分页形状仍有系统性证据债
+- **债务口径**：范围仅为**可采集的 85 条**，非全部 `237-25=212` 条 unknown；83 条 permanent unknown 是机器可验证的能力边界，不计入待关闭债务。
 - **证据**：当前 237 条编译 operation 为 `60 complete / 177 unknown`，228 条 stable 为 `60 / 168`，stable
   `page_info` 子集为 `60 / 58`；证据为 `97 production / 9 wire / 131 template`。仅 `template_default` 的 49 条
   live `page_info` 被 `reconcile_pagination_audit` 标为 `shape_unproven`。
@@ -58,7 +58,7 @@
   同轮把 `analysis.segment.evaluate_percent` 转为永久 unknown（响应严格为 `part/percent/total` 三个必需数值标量，
   根本无集合语义；237 条中仅此 1 条通过该谓词），机器处置变为 `85 collect / 83 no-new-signal / 9 non-stable`，
   永久 unknown 为 `47 非集合 + 36 无信号`。完整性总账仍是 `60 complete / 177 unknown`，不伪装成 complete。
-- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 的 85 条分 59、26 两批；改 unknown 分页、
+- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 精确列出这 85 条（分 59、26 两批，测试按集合相等锁定而非计数）；改 unknown 分页、
   新产品依赖其全集或 exact method+path 取得新 production/wire 字段证据时触发。
 - **退出条件**：逐条以同 method+path production sketch/wire 字段把 58 条 stable `page_info` unknown 归入真实形状
   并修正合同；另 27 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
