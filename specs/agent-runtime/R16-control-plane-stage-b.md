@@ -13,6 +13,40 @@
 
 Document an external trust/compliance boundary: untrusted transport, cross-organization or cross-trust-domain distribution, centralized revocation, signer identity or regulated supply-chain requirement. Team-internal cross-repository reuse alone triggers Stage B only when the Stage A controlled-source model is insufficient.
 
+## Disposition (2026-08-28)
+
+The trigger **has fired**, and the earlier `not triggered` record was wrong. The
+repository distributes publicly: GitHub Releases plus `gravity-insight` on PyPI.
+Public index distribution is cross-trust-domain distribution, so the
+"team-internal cross-repository reuse alone" carve-out does not apply — you
+cannot publish to a public index and still call the boundary team-internal.
+
+Implementation is nonetheless **deliberately deferred**, not started. What the
+trigger demands in substance is already met by Stage A plus the current release
+path: PyPI Trusted Publishing supplies signer identity through OIDC with no
+long-lived credential, PEP 740 attestations supply provenance,
+`scripts/verify_release_provenance.py` and the pinned provenance fixtures verify
+it, and R04 supplies digest locks and a local CAS. The genuine additions Stage B
+would bring — centralized revocation, TUF trust-root rotation, offline bundles
+and coordinated canary/activation — have no present consumer. Building an
+OCI/TUF control plane for one team-internal consumer would be disproportionate.
+
+This requirement does **not** independently gate `main` promotion. Promotion is
+already governed by whole-program completion plus explicit owner re-approval,
+and this specification decouples the two itself: "package publication is not
+activation and activation is not `main` promotion". `R10` is also below
+`fixed_dev`, so `R16` is not the unique outstanding item either.
+
+Revisit when any of these becomes true: a consumer outside this team adopts the
+published package; a regulated or contractual supply-chain requirement appears;
+a published artifact must be revoked; or offline/air-gapped installation is
+required. Until then `R16` stays `specified` and unimplemented by decision, not
+by oversight.
+
+recorded_by: `agent_under_standing_owner_delegation`; the owner delegated this
+call on 2026-08-28 with the instruction to decide from product direction and the
+architecture source.
+
 ## Outcome
 
 An External Control Plane builds, publishes, verifies, stages, canaries and rolls back Runtime/Skill/Provider/Operator artifacts while preserving Stage A Skill-content and Trusted-Pack artifact kinds, digests and lock semantics. Runtime never replaces its own loaded wheel.

@@ -23,6 +23,12 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 - The install channel is an immutable `v<version>` tag. Tags are cut from `dev`
   now and from `main` after the future dev-to-main promotion; the channel itself
   is not bound to either branch.
+- `v0.3.2` — decided 2026-08-28: **not cut yet**, deliberately. A tag from `dev` is
+  allowed, but a PyPI version is burned permanently even if yanked, `R10` landed the
+  same day as an experimental pilot with unmet graduation criteria, and auto-upgrade
+  has never run against a real release — a defect there would upgrade `0.3.1`
+  consumers into it. Cut once `R10` graduates or is removed and auto-upgrade is
+  exercised against a test index. `recorded_by: agent_under_standing_owner_delegation`.
 - `pyproject.toml` now uses the confirmed repository and issue URLs under
   `https://github.com/mmm1h/gravity-sdk`.
 - `authors`/`maintainers` use `mmm1h`; owner confirmed 2026-08-28 that this is an
@@ -50,14 +56,10 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 ## Findings measured once, not yet wired into CI
 
-CI gained no new jobs this round — Linux runners were declined, and every
-candidate job (wheel smoke, Ruff, dependency audit, secret scan) was written
-against `ubuntu-latest`. The checks were run locally instead, so the facts are
-known even though nothing enforces them yet.
-
-Reported by the executing agent on 2026-08-20. The `pip-audit` finding below
-was independently re-measured; the remaining counts are leads rather than
-settled counts.
+CI gained no new jobs — Linux runners were declined and every candidate job (wheel
+smoke, Ruff, dependency audit, secret scan) targeted `ubuntu-latest`. These ran
+locally on 2026-08-20 instead, so the facts are known but nothing enforces them.
+The `pip-audit` finding was independently re-measured; the other counts are leads.
 
 | Check | Result | Follow-up |
 |---|---|---|
@@ -66,10 +68,8 @@ settled counts.
 | Ruff, `F` (pyflakes) only | 69 findings | worth a pass — `F` catches unused imports and undefined names, not style |
 | pip-audit | `PYSEC-2026-2275` is real; `requests==2.32.5` was affected and `2.33.0` fixes it | upgraded both exact pins to `2.33.0`; this SDK does not call the sole affected API, `extract_zipped_paths()`; range-based library pinning remains an owner decision |
 
-The dependency advisory applies to all Requests releases before `2.33.0`, but
-only applications that directly call `requests.utils.extract_zipped_paths()`
-are exposed. This SDK has no such call, so the completed bump is routine
-dependency maintenance rather than an emergency runtime mitigation. The
-runtime pins remain exact and synchronized; changing the library pin policy to
-a compatible range would alter downstream installation behavior and needs a
-separate owner decision.
+The advisory covers all Requests before `2.33.0` but only exposes callers of
+`requests.utils.extract_zipped_paths()`; this SDK has none, so the completed bump
+was routine maintenance, not an emergency mitigation. Pins stay exact and
+synchronized — moving to compatible ranges changes downstream installs and needs
+a separate owner decision.
