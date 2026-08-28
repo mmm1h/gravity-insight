@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A/B/C `fixed_dev`, R14-D `in_progress` |
+| Status | `fixed_dev`; R14-A/B/C/D `fixed_dev` |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A/B/C `fixed_dev`; R14-D `in_progress` |
+| Milestones | R14-A/B/C/D `fixed_dev` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
@@ -418,11 +418,9 @@ probes, Variant execution, release or `main`.
 
 ## R14-D Known Limits
 
-- Selection returns a fixed Variant identity and explanation, but neither
-  existing execution owner consumes `selected_variant_uri`. It therefore does
-  not yet select an execution path. R14-D remains `in_progress` until automatic
-  selection is consumed by the existing execution chain without adding a second
-  execution owner. Only the characterized event Analysis Product is in scope.
+- The existing Analysis execution owner consumes `selected_variant_uri` and
+  dispatches the selected Direct or Plan path without adding a second execution
+  owner. Only the characterized event Analysis Product is in scope.
 - Default current Product Trust remains blocked, so the current environment
   returns Direct fallback. A stable automatic decision also remains Direct
   until governed evidence proves a truthful secondary advantage for Plan.

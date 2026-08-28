@@ -34,12 +34,15 @@ import-time side-effect misresolutions did not supply an independent boundary
 proof. Their helpers, embedded contracts, signed summaries and self-tests are
 retired; Git retains the historical evidence without a new active archive.
 
-The root package fell from 578 to 495 Python files. The complete package remains
-642 files, with 82 implementation modules under `agents/`, 147 lazy owners and
-148 root `__all__` names. Runtime responses, request volume, privacy, execution
-ownership and supported read capability are unchanged; removed deep paths have
-no shim. The five facade dependencies listed below are intentional shared
-discovery/protocol-owner reuse, not unfinished work for technical debt #11.
+At accepted dev integration `125bb84cbb98a575a2ef3c4a577f174027bc908d`,
+the root package fell from 578 to 495 Python files and the complete package had
+642 files. Those totals are immutable delivery-baseline evidence, not rolling
+limits on the evolving package. The delivered boundary had 82 implementation
+modules under `agents/`, 147 lazy owners and 148 root `__all__` names. Runtime
+responses, request volume, privacy, execution ownership and supported read
+capability were unchanged; removed deep paths had no shim. The five facade
+dependencies listed below are intentional shared discovery/protocol-owner reuse,
+not unfinished work for technical debt #11.
 
 R17 remains one delivered leaf. Phase 1 and Phase 2 are the original serial
 commit/rollback checkpoints, not independent milestones. This post-delivery
@@ -104,7 +107,7 @@ Machine state shared by this Requirement and `index.md`: `status=fixed_dev`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=1b75248c2f80426da84711aed020e50ce3ee15daa3a9ed18e52e5ffcac80b8d0`;
+`live_checkpoint_sha256=1907ba032d49bac974876510aa3662d46ec753f53e59b293f28af8b768c3c026`;
 `live_checkpoint_tracked_sites=305`.
 
 The required cross-file state gate is
@@ -298,7 +301,7 @@ Final required output is `implementation_modules=82`, `core=34`,
 & ./.venv/Scripts/python.exe -c "import gravity_sdk,json; from pathlib import Path; r=Path('src/gravity_sdk'); a=r/'agents'; s=json.loads(Path('tests/fixtures/public_api_exports.json').read_text(encoding='utf-8')); print(json.dumps({'root_py':len(list(r.glob('*.py'))),'root_agent_py':len(list(r.glob('agent_*.py'))),'package_py':len(list(r.rglob('*.py'))),'agents_implementation_py':len([p for p in a.glob('*.py') if p.name!='__init__.py']) if a.exists() else 0,'lazy_snapshot':len(s),'runtime_exports':len(gravity_sdk._EXPORTS),'root_all':len(gravity_sdk.__all__)},sort_keys=True))"
 ```
 
-| Metric | Baseline | Final exit |
+| Metric | Pre-migration baseline | Immutable delivery exit |
 | --- | ---: | ---: |
 | Root Python files | 578 | 495 |
 | Root `agent_*.py` | 83 | 1 |
@@ -1014,9 +1017,12 @@ if ($LASTEXITCODE) { throw 'git diff --check failed' }
 R17 exits only at the final Phase 2 checkpoint on the single implementation
 branch when:
 
-- root Python files equal 495; root `agent_*.py` equals the sole retained
-  `agent_runtime_contracts.py`; `agents/` has exactly 82 implementation modules;
-  the complete package has 642 Python files;
+- at immutable delivery baseline
+  `125bb84cbb98a575a2ef3c4a577f174027bc908d`, root Python files equalled 495
+  and the complete package had 642 Python files; these are delivery evidence,
+  not current-tree limits;
+- root `agent_*.py` equals the sole retained `agent_runtime_contracts.py`, and
+  `agents/` has exactly 82 implementation modules;
 - the physical cohort graph has 34 core and 48 peripheral modules, 153 unique
   core-to-peripheral edges, and zero reverse edges; the physical graph check does
   not re-select membership, and every `agents/` module maps to the reviewed
