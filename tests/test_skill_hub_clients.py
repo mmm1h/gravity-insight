@@ -20,7 +20,12 @@ from gravity_sdk.trusted_pack_hub import (
     verify_trusted_pack_startup,
 )
 from tests.test_skill_hub_io import GitHubFixture, bound_entry, skill_archive, trusted_wheel
-from tests.test_skill_hub_contracts import hub_index, skill_entry, trusted_entry
+from tests.test_skill_hub_contracts import (
+    _render_without_wheel_paths,
+    hub_index,
+    skill_entry,
+    trusted_entry,
+)
 
 
 class RaisingEntryPoint:
@@ -179,8 +184,9 @@ class SkillHubClientTests(unittest.TestCase):
 
         plan = trusted.install_plan(lock)
         self.assertEqual("external_installer", plan["installation_owner"])
-        self.assertNotIn("command", repr(plan))
-        self.assertNotIn("pip", repr(plan))
+        rendered = _render_without_wheel_paths(plan)
+        self.assertNotIn("command", rendered)
+        self.assertNotIn("pip", rendered)
 
         item = lock["packs"][0]
         state = build_trusted_installation_state(

@@ -154,6 +154,23 @@ def git_source() -> dict:
     }
 
 
+def _render_without_wheel_paths(plan: dict) -> str:
+    """Render an install plan for forbidden-token scanning, minus wheel paths.
+
+    ``wheel_path`` names which artifact to install; it is data, not an
+    instruction. It also carries a random temporary directory supplied by the
+    test, so scanning it for short tokens such as ``pip`` or ``command``
+    produces failures that depend on ``tempfile`` naming rather than on the
+    plan itself. Drop only those values and scan everything else verbatim.
+    """
+    rendered = repr(plan)
+    for action in plan.get("actions", ()):
+        wheel_path = action.get("wheel_path")
+        if isinstance(wheel_path, str):
+            rendered = rendered.replace(repr(wheel_path), "'<wheel-path>'")
+    return rendered
+
+
 class SkillHubContractTests(unittest.TestCase):
     def test_source_contract_separates_git_and_exact_static_https(self) -> None:
         git = compile_hub_source(git_source())
@@ -346,7 +363,7 @@ class SkillHubContractTests(unittest.TestCase):
         self.assertEqual(plan, compile_trusted_pack_install_plan(plan))
         self.assertEqual("external_installer", plan["installation_owner"])
         self.assertEqual("install_exact_wheel", plan["actions"][0]["effect"])
-        rendered = repr(plan)
+        rendered = _render_without_wheel_paths(plan)
         for forbidden in ("pip", "command", "entry_point", "http://", "https://"):
             self.assertNotIn(forbidden, rendered)
 

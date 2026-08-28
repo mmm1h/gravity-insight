@@ -10,7 +10,13 @@ from unittest.mock import patch
 
 from gravity_sdk import SkillHubClient, TrustedPackHubClient
 from gravity_sdk.cli import build_parser, main
-from tests.test_skill_hub_contracts import git_source, hub_index, skill_entry, trusted_entry
+from tests.test_skill_hub_contracts import (
+    _render_without_wheel_paths,
+    git_source,
+    hub_index,
+    skill_entry,
+    trusted_entry,
+)
 from tests.test_skill_hub_io import GitHubFixture, bound_entry, skill_archive, trusted_wheel
 
 
@@ -255,8 +261,9 @@ class SkillHubCliTests(unittest.TestCase):
         self.assertEqual("written", plan_result["status"])
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual("external_installer", plan["installation_owner"])
-        self.assertNotIn("command", repr(plan))
-        self.assertNotIn("pip", repr(plan))
+        rendered = _render_without_wheel_paths(plan)
+        self.assertNotIn("command", rendered)
+        self.assertNotIn("pip", rendered)
 
         code, error, stderr = self.invoke("trusted-packs", "install", *common)
         self.assertNotEqual(0, code)
