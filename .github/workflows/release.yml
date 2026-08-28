@@ -83,6 +83,22 @@ jobs:
           path: dist/
       - name: Publish distributions to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
+        with:
+          attestations: true
+
+  release-provenance:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verify PyPI provenance binds to published files
+        run: python scripts/verify_release_provenance.py gravity-insight "${GITHUB_REF_NAME#v}"
 
   github-release:
     needs: publish
