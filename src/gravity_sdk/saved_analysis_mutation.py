@@ -15,6 +15,8 @@ from .errors import (
     InputValidationError,
     MutationReadbackError,
     ObjectAlreadyExistsError,
+    UnsupportedOperationError,
+    UpstreamError,
 )
 from .mutation_lifecycle import WRITE_LOCK, mutation_marker
 from .mutation_ownership import (
@@ -33,6 +35,7 @@ UPDATE_OPERATION_ID = stable_operation(
     "analysis", "report_config", action="update"
 ).operation_id
 SCHEMA_VERSION = "gravity-insight.saved-analysis-mutation.v1"
+CREATE_UNSUPPORTED_CODE = "SAVED_ANALYSIS_CREATE_UNSUPPORTED"
 
 
 def create_saved_analysis(
@@ -103,7 +106,7 @@ def create_saved_analysis(
                 field="name",
                 next_action="Choose another name and repeat the same dry-run before executing.",
             )
-        mutation = client._execute_mutation(UPDATE_OPERATION_ID, inputs)
+        mutation = _execute_create(client, inputs)
         created = _unique_marker(
             _catalog(client, selected_app, workspace), selected_marker
         )
@@ -241,6 +244,38 @@ def _definition(
     return str(subject), json.dumps(
         prepared, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
     )
+
+
+def _execute_create(client: Any, inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+    try:
+        return client._execute_mutation(UPDATE_OPERATION_ID, inputs)
+    except InputValidationError as error:
+        code = getattr(error.code, "value", error.code)
+        if code != "INPUT_INVALID" or error.field != "mutation":
+            raise
+        raise _create_unsupported(error) from None
+    except UpstreamError as error:
+        if type(error) is not UpstreamError:
+            raise
+        raise _create_unsupported(error) from None
+
+
+def _create_unsupported(error: BaseException) -> UnsupportedOperationError:
+    classified = UnsupportedOperationError(
+        "actual value: upstream rejected a locally replay-validated saved Analysis create; "
+        "allowed value: a create definition accepted by the registered upstream write contract",
+        field="saved_analysis.create",
+        code=CREATE_UNSUPPORTED_CODE,
+        next_action=(
+            "Treat this exact subject/config definition as unsupported and do not retry it. "
+            "Reuse an accessible saved Analysis, or wait until upstream-accepted write evidence "
+            "is registered."
+        ),
+    )
+    references = getattr(error, "http_receipt_references", ())
+    if references:
+        classified.http_receipt_references = references
+    return classified
 
 
 def _catalog(client: Any, app_id: str, workspace: Any) -> list[Mapping[str, Any]]:
@@ -499,6 +534,7 @@ def _idempotent(value: Mapping[str, Any], *, status: str = "already_exists") -> 
 
 
 __all__ = [
+    "CREATE_UNSUPPORTED_CODE",
     "SCHEMA_VERSION",
     "UPDATE_OPERATION_ID",
     "create_saved_analysis",

@@ -12,10 +12,17 @@ from gravity_sdk.agents.saved_analysis_mutation import (
     saved_analysis_mutation_cards,
 )
 from gravity_sdk.cache import is_metadata_operation
-from gravity_sdk.errors import ContractChangedError, InputValidationError
+from gravity_sdk.errors import (
+    ContractChangedError,
+    InputValidationError,
+    PermissionUnavailableError,
+    UnsupportedOperationError,
+    UpstreamError,
+)
 from gravity_sdk.mutation_ownership import single_creator_owner
 from gravity_sdk.saved_analysis_catalog import GET_OPERATION_ID, LIST_OPERATION_ID
 from gravity_sdk.saved_analysis_mutation import (
+    CREATE_UNSUPPORTED_CODE,
     UPDATE_OPERATION_ID,
     create_saved_analysis,
     delete_saved_analysis,
@@ -137,6 +144,19 @@ class _Client:
         return "7"
 
 
+class _RejectedCreateClient(_Client):
+    def __init__(self, error: Exception) -> None:
+        super().__init__()
+        self.error = error
+
+    def _execute_mutation(
+        self, operation_id: str, inputs: dict[str, Any]
+    ) -> dict[str, Any]:
+        self.calls.append(("execute", copy.deepcopy(inputs)))
+        self.writes.append(copy.deepcopy(inputs))
+        raise self.error
+
+
 class SavedAnalysisMutationTests(unittest.TestCase):
     def test_compact_create_submits_generated_web_config(self) -> None:
         client = _Client()
@@ -185,6 +205,56 @@ class SavedAnalysisMutationTests(unittest.TestCase):
             end="2026-08-02",
         )
         self.assertEqual(config, json.loads(client.calls[0][1]["config"]))
+
+    def test_create_classifies_only_unresolved_semantic_rejections_as_unsupported(self) -> None:
+        cases = (
+            InputValidationError(
+                "private generic mutation failure",
+                field="mutation",
+            ),
+            UpstreamError("Gravity rejected the mutation without a classified error"),
+        )
+        for rejection in cases:
+            with self.subTest(rejection=type(rejection).__name__):
+                receipts = ({"receipt_id": "a" * 32, "storage_status": "stored"},)
+                rejection.http_receipt_references = receipts
+                client = _RejectedCreateClient(rejection)
+                with self.assertRaises(UnsupportedOperationError) as captured:
+                    create_saved_analysis(
+                        client,
+                        app_id=101,
+                        name="rejected",
+                        subject="analysis_event",
+                        config=_config(),
+                        workspace=_workspace(),
+                        execute=True,
+                    )
+                error = captured.exception
+                self.assertEqual(CREATE_UNSUPPORTED_CODE, error.code)
+                self.assertEqual("saved_analysis.create", error.field)
+                self.assertEqual("local", error.category)
+                self.assertFalse(error.retryable)
+                self.assertNotIn("private generic", str(error))
+                self.assertEqual(receipts, error.http_receipt_references)
+                self.assertEqual(1, len(client.writes))
+                self.assertEqual([], client.rows)
+
+        permission = PermissionUnavailableError(
+            "the authenticated account cannot perform this mutation",
+            field="permission",
+        )
+        client = _RejectedCreateClient(permission)
+        with self.assertRaises(PermissionUnavailableError) as captured:
+            create_saved_analysis(
+                client,
+                app_id=101,
+                name="forbidden",
+                subject="analysis_event",
+                config=_config(),
+                workspace=_workspace(),
+                execute=True,
+            )
+        self.assertIs(permission, captured.exception)
 
     def test_complete_create_update_delete_lifecycle_and_wire_actions(self) -> None:
         client = _Client()
