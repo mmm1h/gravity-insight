@@ -17,11 +17,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "9b797bf9a3a520d6a818f423f083e3c315c0e69e4fa9e9283a6f08e994c1b385",
-    "manual_review_sha256": "a014bc9249db5a249db021a8b41697b339feda7ef7ffb719f4a22b2aeb762abf",
+    "reference_evidence_sha256": "3586a06dd34149ec3bec933f14bd1194f9db098f99030034c85b0976c8637e4b",
+    "manual_review_sha256": "8ef1db1edc36fcd56874fe5118b6ab7633790ee56e77803447823e36ed70ffa7",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3145,
-    "scanned_file_count": 3137,
+    "version_controlled_file_count": 3146,
+    "scanned_file_count": 3138,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 309
     },
-    "sites_sha256": "6424db4026e47fd712588fd8b957841122b6c3beb3f5a27f600b7e597e17bca3"
+    "sites_sha256": "b4d209654956e1c04588934ec2df20accaa5a4c337508b32373020772d7d2add"
   },
   "blockers": [],
   "site_fields": [
@@ -4687,7 +4687,7 @@
       }
     ],
     [
-      "tests/test_gravity_sql_client.py:440:14:mock.patch.object",
+      "tests/test_gravity_sql_client.py:482:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_client",
