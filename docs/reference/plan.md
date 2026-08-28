@@ -870,8 +870,8 @@ binding 只复制 JSON Pointer 标量。每节点最多一个 `foreach`，默认
 worker 固定为 1，避免嵌套并发。一个查询失败时独立 sibling 继续；最终数组仍按声明顺序，
 而不是完成顺序。节点 `limits.max_items` 与 Plan 总 `max_total_items` 同时生效。
 
-错误结果 `result=null`，并使用完整 ErrorDetail。绑定失败为 `BINDING_FAILED`；顶层退出码保持
-local 4 > upstream 3 > caller 2 > success 0。
+错误结果 `result=null`，并使用完整 ErrorDetail。绑定失败为 `BINDING_FAILED`；adapter 结果超过节点 `limits.max_items` 时返回 caller `PAGINATION_LIMIT` 与 `stage=output_budget/cause=max_items_exceeded`。
+未知 `PLAN_ADAPTER_EXCEPTION` 也携带固定脱敏 `stage/cause`，不暴露异常类型、文本或请求/结果值；顶层退出码保持 local 4 > upstream 3 > caller 2 > success 0。
 
 成功结果保留受治理的原生 envelope（如 `operation_id/source/page/data/warnings`），但不会回显
 request、literal spec、compiled input 或绑定值；失败也不回显原始异常。筛选值等敏感内容继续
