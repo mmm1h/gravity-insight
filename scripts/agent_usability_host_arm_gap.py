@@ -2,7 +2,7 @@
 
 Does not change the evaluator, suite, scorer, layers, or thresholds.
 Does not read holdout/final keys or sealed files.
-One trial only. Writes a compact JSON summary; no production HTTP.
+Uses development reliability trials; writes a compact JSON summary; no production HTTP.
 """
 
 from __future__ import annotations
@@ -55,9 +55,9 @@ def main() -> int:
         )
         stack.enter_context(patch.object(socket.socket, "connect", network.block))
         stack.enter_context(patch("socket.create_connection", network.block))
-        from gravity_sdk.agent_batch import capabilities_many
-        from gravity_sdk.agent_host_catalog import host_product_catalog
-        from gravity_sdk.agent_host_selection import resolve_host_product_selection
+        from gravity_sdk.agents.batch import capabilities_many
+        from gravity_sdk.agents.host_catalog import host_product_catalog
+        from gravity_sdk.agents.host_selection import resolve_host_product_selection
         from gravity_sdk.client import GravityInsightClient
         from gravity_sdk.errors import InputValidationError
 
@@ -437,5 +437,402 @@ def _recognizer_miss_class(row: Mapping[str, Any]) -> str:
     return reason
 
 
+DEFAULT_DISPATCH_SCHEMA = "gravity.agent-usability-default-dispatch.v3"
+DEFAULT_DISPATCH_ARMS = ("recognizer", "host_catalog")
+
+
+def _assert_distinct_default_dispatch_arms(
+    results: Mapping[str, Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Fail closed unless the two public call shapes resolve to different arms."""
+
+    from agent_usability_external_selector import DEFAULT_DISPATCH_OBSERVATION_KEY
+
+    if set(results) != set(DEFAULT_DISPATCH_ARMS):
+        raise RuntimeError("default-dispatch evidence must contain both routing arms")
+    observations: dict[str, dict[str, Any]] = {}
+    for arm in DEFAULT_DISPATCH_ARMS:
+        result = results[arm]
+        observation = result.get(DEFAULT_DISPATCH_OBSERVATION_KEY)
+        if not isinstance(observation, Mapping) or set(observation) != {
+            "parsed_host_selection_present",
+            "parsed_routing",
+            "resolved_routing_mode",
+        }:
+            raise RuntimeError(
+                f"default-dispatch {arm} arm has no complete dispatch observation"
+            )
+        materialized = dict(observation)
+        if materialized["resolved_routing_mode"] != result.get("routing_mode"):
+            raise RuntimeError(
+                f"default-dispatch {arm} observation disagrees with its result"
+            )
+        observations[arm] = materialized
+
+    resolved_modes = tuple(
+        observations[arm]["resolved_routing_mode"] for arm in DEFAULT_DISPATCH_ARMS
+    )
+    selection_shapes = tuple(
+        observations[arm]["parsed_host_selection_present"]
+        for arm in DEFAULT_DISPATCH_ARMS
+    )
+    parsed_routing = tuple(
+        observations[arm]["parsed_routing"] for arm in DEFAULT_DISPATCH_ARMS
+    )
+    if resolved_modes != DEFAULT_DISPATCH_ARMS:
+        raise RuntimeError(
+            "default-dispatch arms converged or swapped: "
+            f"resolved routing modes were {resolved_modes!r}"
+        )
+    if selection_shapes != (False, True) or parsed_routing != (None, None):
+        raise RuntimeError(
+            "default-dispatch arms converged or changed call shape: "
+            f"selection={selection_shapes!r}, routing={parsed_routing!r}"
+        )
+    return observations
+
+
+def measure_default_dispatch(
+    plugin_path: Path,
+    *,
+    timeout_seconds: float,
+) -> dict[str, Any]:
+    """Score two observable public default-dispatch call shapes."""
+
+    import hashlib
+
+    from agent_usability_external_selector import (
+        DEFAULT_DISPATCH_WITHOUT_SELECTION,
+        DEFAULT_DISPATCH_WITH_SELECTION,
+        _blind_questions,
+        _catalog,
+        _invoke_plugin,
+        _selection_result,
+    )
+    from agent_usability_eval import _selection_identity
+
+    manifest, cases = load_cases("development", None)
+    trials = int(manifest["trials"])
+    if trials < 1:
+        raise ValueError("development reliability trials must be at least one")
+    blocker, network = BlockedTransport(), NetworkGuard()
+    with tempfile.TemporaryDirectory(
+        prefix="gravity-default-dispatch-"
+    ) as cache, ExitStack() as stack:
+        stack.enter_context(patch.dict(os.environ, {
+            "GRAVITY_CACHE_HOME": cache,
+            "LOCALAPPDATA": cache,
+            "XDG_CACHE_HOME": cache,
+        }))
+        stack.enter_context(patch("socket.socket.connect", network.block))
+        stack.enter_context(patch("socket.create_connection", network.block))
+        from gravity_sdk.agents import host_selection as checked_in
+        from gravity_sdk.client import GravityInsightClient
+
+        if checked_in.DEFAULT_ROUTING_MODE != checked_in.RECOGNIZER_ROUTING_MODE:
+            raise RuntimeError("checked-in default must remain the recognizer")
+        client = GravityInsightClient.from_env(transport=blocker)
+        selector_catalog, runtime_catalog = _catalog(client)
+        questions, aliases, blind_receipt = _blind_questions(cases)
+        states = {
+            policy: {
+                str(case["case_id"]): {"selection": [], "selected": []}
+                for case in cases
+            }
+            for policy in DEFAULT_DISPATCH_ARMS
+        }
+        reasons = {policy: Counter() for policy in DEFAULT_DISPATCH_ARMS}
+        routing_modes = {policy: Counter() for policy in DEFAULT_DISPATCH_ARMS}
+        per_trial_scores = {policy: [] for policy in DEFAULT_DISPATCH_ARMS}
+        dispatch_observations = {
+            policy: Counter() for policy in DEFAULT_DISPATCH_ARMS
+        }
+        receipts: list[Mapping[str, Any]] = []
+        dispatch_modes = {
+            "recognizer": DEFAULT_DISPATCH_WITHOUT_SELECTION,
+            "host_catalog": DEFAULT_DISPATCH_WITH_SELECTION,
+        }
+        plugin_sha256 = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
+        for trial in range(1, trials + 1):
+            selected, metadata = _invoke_plugin(
+                plugin_path,
+                selector_catalog,
+                questions,
+                timeout_seconds=timeout_seconds,
+            )
+            receipts.append(metadata)
+            selected = {
+                str(case["case_id"]): selected[aliases[str(case["case_id"])]]
+                for case in cases
+            }
+            trial_reasons = {
+                policy: Counter() for policy in DEFAULT_DISPATCH_ARMS
+            }
+            trial_routing_modes = {
+                policy: Counter() for policy in DEFAULT_DISPATCH_ARMS
+            }
+            trial_outcomes = {policy: [] for policy in DEFAULT_DISPATCH_ARMS}
+            for case in cases:
+                arm_results = {}
+                for policy, dispatch_mode in dispatch_modes.items():
+                    result = _selection_result(
+                        case,
+                        selected[str(case["case_id"])],
+                        runtime_catalog,
+                        client,
+                        metadata,
+                        plugin_sha256=plugin_sha256,
+                        production_http_requests=lambda: blocker.attempts,
+                        dispatch_mode=dispatch_mode,
+                    )
+                    arm_results[policy] = result
+                    ok, reason, _card = route_score(case, result)
+                    state = states[policy][str(case["case_id"])]
+                    state["selection"].append(ok)
+                    runtime_result = dict(result)
+                    runtime_result.pop("selected_selectors", None)
+                    state["selected"].append(
+                        _selection_identity(runtime_result)
+                    )
+                    trial_outcomes[policy].append(ok)
+                    trial_reasons[policy][reason] += 1
+                    trial_routing_modes[policy][
+                        str(result.get("routing_mode"))
+                    ] += 1
+                    reasons[policy][reason] += 1
+                    routing_modes[policy][str(result.get("routing_mode"))] += 1
+                observations = _assert_distinct_default_dispatch_arms(arm_results)
+                for policy, observation in observations.items():
+                    dispatch_observations[policy][json.dumps(
+                        observation, sort_keys=True, separators=(",", ":")
+                    )] += 1
+            for policy in DEFAULT_DISPATCH_ARMS:
+                passed = sum(trial_outcomes[policy])
+                per_trial_scores[policy].append({
+                    "trial": trial,
+                    "passed": passed,
+                    "total": len(cases),
+                    "rate": _default_dispatch_rate(passed, len(cases)),
+                    "routing_mode_counts": dict(sorted(
+                        trial_routing_modes[policy].items()
+                    )),
+                    "failure_classes": dict(sorted(
+                        trial_reasons[policy].items()
+                    )),
+                })
+
+    if blocker.attempts or network.attempts:
+        raise RuntimeError("measurement attempted prohibited Gravity network access")
+    request_hashes = [receipt.get("request_sha256") for receipt in receipts]
+    if not all(isinstance(value, str) and value for value in request_hashes):
+        raise RuntimeError(
+            "default-dispatch evidence requires one verified request SHA-256 per trial"
+        )
+    if len(set(request_hashes)) != 1:
+        raise RuntimeError("default-dispatch selector request changed across trials")
+    scores: dict[str, Any] = {}
+    for policy in DEFAULT_DISPATCH_ARMS:
+        scores[policy] = _default_dispatch_score(
+            states[policy],
+            trials=trials,
+            per_trial_scores=per_trial_scores[policy],
+            routing_mode_counts=routing_modes[policy],
+            failure_classes=reasons[policy],
+        )
+    pass1_difference = scores["host_catalog"]["pass^1"]["passed"] - scores[
+        "recognizer"
+    ]["pass^1"]["passed"]
+    passn_difference = scores["host_catalog"]["pass^N"]["passed"] - scores[
+        "recognizer"
+    ]["pass^N"]["passed"]
+    dispatch_arms = {}
+    expected_observations = len(cases) * trials
+    for policy in DEFAULT_DISPATCH_ARMS:
+        observed = dispatch_observations[policy]
+        if len(observed) != 1 or sum(observed.values()) != expected_observations:
+            raise RuntimeError(
+                f"default-dispatch {policy} arm did not keep one stable call shape"
+            )
+        encoded, count = next(iter(observed.items()))
+        dispatch_arms[policy] = {
+            "observation": json.loads(encoded),
+            "observation_count": count,
+        }
+    multiple_intent_cases = [
+        case for case in cases
+        if case["expected"].get("gap_code") == "MULTIPLE_INTENTS"
+    ]
+    gap_identity_case_ids = sorted(
+        str(case["case_id"])
+        for case in multiple_intent_cases
+        if any(
+            str(selector).startswith("gap:")
+            for selector in case["expected"].get(
+                "candidate_selectors", {}
+            ).values()
+        )
+    )
+    return {
+        "schema_version": DEFAULT_DISPATCH_SCHEMA,
+        "evidence_scope": {
+            "classification": "development_default_dispatch_arm_measurement",
+            "is_holdout_result": False,
+            "is_post_flip_measurement": False,
+            "checked_in_default_changed": False,
+            "limitations": [
+                "This development result does not establish protected-split generalization.",
+                "Protected legacy ambiguous prompts do not carry development's explicit multi-journey expectations.",
+                "The selector subprocess reports its own network activity; the parent cannot independently instrument it.",
+            ],
+        },
+        "suite_version": manifest["suite_version"],
+        "split": "development",
+        "case_count": len(cases),
+        "trials": trials,
+        "reliability_protocol": {
+            "trials_source": "evals/agent_usability/suite.json#trials",
+            "N": trials,
+            "pass^1_definition": "cases correct on the first trial",
+            "pass^N_definition": "cases correct on every one of N trials",
+            "instability_definition": "case IDs whose exact runtime selection identity differs across trials",
+        },
+        "protected_split_comparability": {
+            "same_multi_intent_scoring_contract": False,
+            "development_explicit_multi_intent_case_count": len(
+                multiple_intent_cases
+            ),
+            "development_gap_identity_case_ids": gap_identity_case_ids,
+            "development_gap_identity_score_effect_bound": {
+                "max_cases_per_trial": len(gap_identity_case_ids),
+                "max_percentage_points": round(
+                    100 * len(gap_identity_case_ids) / len(cases), 6
+                ),
+                "observed_cases_helped": None,
+            },
+            "protected_legacy_behavior": (
+                "cases without an explicit multiple-intent declaration retain "
+                "single-journey scoring"
+            ),
+            "protected_ambiguous_case_count": None,
+            "protected_score_impact": None,
+            "unquantified_reason": (
+                "Determining protected ambiguous cases or score impact would "
+                "require opening a protected payload; this measurement did not."
+            ),
+        },
+        "selector_plugin_sha256": plugin_sha256,
+        "selector_request_sha256": request_hashes[0],
+        "selector_request_sha256_by_trial": request_hashes,
+        "blind_order_seed_sha256": blind_receipt["order_seed_sha256"],
+        "selector_network_reported_trials": sum(
+            receipt.get("network_called") is True for receipt in receipts
+        ),
+        "checked_in_default": checked_in.DEFAULT_ROUTING_MODE,
+        "dispatch_arms": dispatch_arms,
+        "scores": scores,
+        "score_differences": {
+            "host_catalog_minus_recognizer_pass^1": pass1_difference,
+            "host_catalog_minus_recognizer_pass^N": passn_difference,
+        },
+        "scores_differ": passn_difference != 0,
+    }
+
+
+def _default_dispatch_rate(passed: int, total: int) -> float | None:
+    return round(passed / total, 6) if total else None
+
+
+def _default_dispatch_score(
+    states: Mapping[str, Mapping[str, list[Any]]],
+    *,
+    trials: int,
+    per_trial_scores: list[dict[str, Any]],
+    routing_mode_counts: Counter[str],
+    failure_classes: Counter[str],
+) -> dict[str, Any]:
+    pass1 = sum(state["selection"][0] is True for state in states.values())
+    passn = sum(
+        all(value is True for value in state["selection"])
+        for state in states.values()
+    )
+    unstable = sorted(
+        case_id for case_id, state in states.items()
+        if len(set(state["selected"])) > 1
+    )
+    return {
+        "pass^1": {
+            "passed": pass1,
+            "total": len(states),
+            "rate": _default_dispatch_rate(pass1, len(states)),
+        },
+        "pass^N": {
+            "N": trials,
+            "passed": passn,
+            "total": len(states),
+            "rate": _default_dispatch_rate(passn, len(states)),
+        },
+        "unstable_tasks": len(unstable),
+        "unstable_case_ids": unstable,
+        "unstable_selections": {
+            case_id: [
+                list(value) for value in sorted(set(states[case_id]["selected"]))
+            ]
+            for case_id in unstable
+        },
+        "routing_mode_counts": dict(sorted(routing_mode_counts.items())),
+        "failure_classes": dict(sorted(failure_classes.items())),
+        "per_trial_scores": per_trial_scores,
+    }
+
+
+def default_dispatch_parser() -> Any:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Measure public default routing on the visible development suite; "
+            "there is intentionally no split option."
+        )
+    )
+    parser.add_argument("--selector-plugin", type=Path, required=True)
+    parser.add_argument("--selector-timeout", type=float, default=300.0)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=ROOT / "tmp" / "agent-usability-default-dispatch.json",
+    )
+    return parser
+
+
+def default_dispatch_main(argv: list[str] | None = None) -> int:
+    args = default_dispatch_parser().parse_args(argv)
+    try:
+        payload = measure_default_dispatch(
+            args.selector_plugin.resolve(),
+            timeout_seconds=float(args.selector_timeout),
+        )
+    except Exception as error:
+        print(
+            f"default-dispatch measurement failed: {type(error).__name__}: {error}",
+            file=sys.stderr,
+        )
+        return 1
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "checked_in_default": payload["checked_in_default"],
+        "dispatch_arms": payload["dispatch_arms"],
+        "recognizer_score": payload["scores"]["recognizer"],
+        "host_catalog_score": payload["scores"]["host_catalog"],
+        "scores_differ": payload["scores_differ"],
+    }, ensure_ascii=False, indent=2, sort_keys=True))
+    return 0
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "default-dispatch":
+        raise SystemExit(default_dispatch_main(sys.argv[2:]))
     raise SystemExit(main())

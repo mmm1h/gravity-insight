@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping
 from unittest.mock import patch
 
-from gravity_sdk import models, registry
+from gravity_sdk import executor, models, registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -408,6 +408,26 @@ class GravityInsightGoldenTests(unittest.TestCase):
                         "body": body,
                     }
                     self.assertEqual(case["wire"], actual)
+
+    def test_runtime_binding_contract_dispatches_every_special_codec(self) -> None:
+        document = json.loads(
+            (
+                ROOT
+                / "src/gravity_sdk/contracts/runtime-operation-bindings.json"
+            ).read_text(encoding="utf-8")
+        )
+        bindings = document["request_builders"]
+        response_projectors = document["response_projectors"]
+        self.assertEqual(
+            WIRE_OPERATION_IDS | {"app.onelink.list"}, set(bindings)
+        )
+        self.assertEqual(bindings, registry._REQUEST_BUILDER_NAMES)
+        self.assertEqual(response_projectors, models._RESPONSE_PROJECTOR_NAMES)
+        for name in response_projectors.values():
+            self.assertTrue(callable(getattr(executor, name, None)))
+        for operation_id, builder_name in bindings.items():
+            with self.subTest(operation_id=operation_id):
+                self.assertTrue(callable(getattr(registry, builder_name, None)))
 
 
 if __name__ == "__main__":

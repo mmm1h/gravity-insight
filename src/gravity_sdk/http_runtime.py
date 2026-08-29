@@ -6,8 +6,8 @@ module; SQL has one exact POST route.
 
 ``get_shared_runtime()`` (in ``shared_runtime``) is shared **per resolved
 credential file** inside one process: that file's session, credential
-provider, and connection pool. The 10 rps host limiter and 24 in-flight
-slots stay process-wide so two accounts in one process cannot multiply
+provider, and connection pool. The 10 rps host limiter and 25-total/24-business
+Governor stay process-wide so two accounts in one process cannot multiply
 upstream traffic. Different credential files no longer reuse one runtime.
 """
 
@@ -16,16 +16,20 @@ from __future__ import annotations
 import os
 import random
 import re
-import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Collection, Mapping, MutableMapping
-from urllib.parse import urlsplit
 
 from .content_encoding import ACCEPT_ENCODING
+from .adaptive_governor import (
+    AdaptiveRequestGovernor,
+    SQL_CAPACITY,
+    get_process_governor,
+)
+from .adaptive_governor_contract import raise_request_failure
 from .credentials import (
     GRAVITY_HOST,
     CredentialProvider,
@@ -44,12 +48,16 @@ from .http_retry import (
     retry_delay as _retry_delay,
     unit_random as _unit_random,
 )
+from .host_rate_limiter import (
+    DEFAULT_REQUESTS_PER_SECOND,
+    HostRateLimiter,
+)
+from .http_runtime_observation import perform_runtime_attempt
 from .paths import STATE_ROOT
 from .process_limits import MAX_CONCURRENCY
 from .runtime_scope import resolve_env_path
 from .receipt import (
     authorized_request_receipt_context,
-    perform_http_request,
     request_attempt_context,
     request_receipt_context,
 )
@@ -60,17 +68,13 @@ from .runtime_principal import (
 )
 
 
-DEFAULT_REQUESTS_PER_SECOND = 10.0
-MAX_REQUESTS_PER_SECOND = 100.0
 DEFAULT_CONCURRENCY = 6
-MAX_SQL_CONCURRENCY = 2
+MAX_SQL_CONCURRENCY = SQL_CAPACITY
 # One spare connection allows a login on the 401 recovery path while twenty-four
 # business requests are in flight.
 CONNECTION_POOL_SIZE = MAX_CONCURRENCY + 1
 FALLBACK_CHROME_MAJOR = 150
 _RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
-_PROCESS_BUSINESS_SLOTS = threading.BoundedSemaphore(MAX_CONCURRENCY)
-_PROCESS_SQL_SLOTS = threading.BoundedSemaphore(MAX_SQL_CONCURRENCY)
 _AUTH_HEADER_NAMES = frozenset(
     {"Authorization", "Gravity_Id", "gravity_Cid", "gravity_Super", "gravity_Email"}
 )
@@ -185,99 +189,6 @@ def browser_headers(chrome_major: int | None = None) -> dict[str, str]:
 BROWSER_HEADERS: Mapping[str, str] = MappingProxyType(browser_headers(_detect_chrome_major()))
 
 
-@dataclass
-class _HostBucket:
-    requests_per_second: float
-    lock: threading.Lock = field(default_factory=threading.Lock)
-    next_at: float = 0.0
-    cooldown_until: float = 0.0
-    cooldown_generation: int = 0
-
-
-class HostRateLimiter:
-    """Thread-safe proactive limiter with an independent bucket for each host."""
-
-    def __init__(
-        self,
-        *,
-        clock: Callable[[], float] = time.monotonic,
-        random_source: Callable[[], float] = random.random,
-        interval_jitter_ratio: float = 0.1,
-    ) -> None:
-        if not 0 <= interval_jitter_ratio <= 1:
-            raise ValueError("rate-limit jitter ratio must be between 0 and 1")
-        self._clock = clock
-        self._random = random_source
-        self._jitter_ratio = interval_jitter_ratio
-        self._buckets_lock = threading.Lock()
-        self._buckets: dict[str, _HostBucket] = {}
-
-    def configure(self, host: str, requests_per_second: float) -> None:
-        key = _canonical_host(host)
-        rate = _validated_rate(requests_per_second)
-        with self._buckets_lock:
-            bucket = self._buckets.get(key)
-            if bucket is None:
-                self._buckets[key] = _HostBucket(rate)
-            elif bucket.requests_per_second != rate:
-                raise ValueError("a Gravity host cannot use conflicting rate-limit quotas")
-
-    def acquire(self, host: str, sleeper: Callable[[float], None] = time.sleep) -> float:
-        """Reserve under lock, wait outside it, and honor late server cooldowns."""
-
-        bucket = self._bucket(host)
-        with bucket.lock:
-            now = self._clock()
-            slot = max(now, bucket.next_at, bucket.cooldown_until)
-            interval = 1.0 / bucket.requests_per_second
-            jitter = interval * self._jitter_ratio * _unit_random(self._random)
-            bucket.next_at = slot + interval + jitter
-            delay = max(0.0, slot - now)
-            cooldown_generation = bucket.cooldown_generation
-        total_delay = delay
-        if delay:
-            sleeper(delay)
-
-        # A concurrent 429 may publish a cooldown after this caller reserved its
-        # original slot. Re-reserve only when the generation changes, keeping
-        # every sleep outside the bucket lock and preserving post-cooldown spacing.
-        while True:
-            with bucket.lock:
-                if cooldown_generation == bucket.cooldown_generation:
-                    return total_delay
-                cooldown_generation = bucket.cooldown_generation
-                now = self._clock()
-                slot = max(now, bucket.next_at, bucket.cooldown_until)
-                interval = 1.0 / bucket.requests_per_second
-                jitter = interval * self._jitter_ratio * _unit_random(self._random)
-                bucket.next_at = slot + interval + jitter
-                delay = max(0.0, slot - now)
-            total_delay += delay
-            if delay:
-                sleeper(delay)
-
-    def defer(self, host: str, delay: float) -> None:
-        """Publish a server-directed cooldown to all callers of this host."""
-
-        if delay <= 0:
-            return
-        bucket = self._bucket(host)
-        with bucket.lock:
-            proposed = self._clock() + float(delay)
-            if proposed > bucket.cooldown_until:
-                bucket.cooldown_until = proposed
-                bucket.next_at = max(bucket.next_at, proposed)
-                bucket.cooldown_generation += 1
-
-    def _bucket(self, host: str) -> _HostBucket:
-        key = _canonical_host(host)
-        with self._buckets_lock:
-            bucket = self._buckets.get(key)
-        if bucket is None:
-            raise ValueError("Gravity host rate limit was not configured")
-        return bucket
-
-
 @dataclass(frozen=True)
 class RuntimeResponse:
     status_code: int
@@ -301,6 +212,9 @@ class _GravityRequester:
         wall_clock: Callable[[], datetime] | None = None,
         random_source: Callable[[], float] = random.random,
         receipt_root: Path = STATE_ROOT,
+        observation_scope_key: str = "local-runtime",
+        observation_clock: Callable[[], float] = time.monotonic,
+        governor: AdaptiveRequestGovernor | None = None,
     ) -> None:
         if timeout <= 0 or attempts < 1 or attempts > 5:
             raise ValueError("invalid Gravity timeout or retry count")
@@ -312,6 +226,11 @@ class _GravityRequester:
         self.wall_clock = wall_clock or (lambda: datetime.now(timezone.utc))
         self.random_source = random_source
         self.receipt_root = receipt_root
+        self.observation_scope_key = observation_scope_key
+        self.observation_clock = observation_clock
+        self.governor = governor if governor is not None else get_process_governor()
+        self.business_limit = self.governor.business_capacity
+        self.sql_limit = self.governor.sql_capacity
 
     def request(
         self,
@@ -342,57 +261,50 @@ class _GravityRequester:
             "Origin": profile.origin, "Referer": profile.referer,
         }
         for attempt in range(request_attempts):
-            retry_after_ms = None
-            self.limiter.acquire(GRAVITY_HOST, self.sleeper)
+            rate_delay = self.limiter.acquire(GRAVITY_HOST, self.sleeper)
             attempt_receipt = request_attempt_context(receipt_context, attempt)
-            try:
-                response = perform_http_request(self.session.request,
-                    normalized_method,
-                    GRAVITY_HOST + path,
-                    headers=request_headers,
-                    params=dict(params or {}),
-                    json=dict(json_body) if json_body is not None else None,
-                    timeout=request_timeout,
-                    allow_redirects=False,
-                    http_receipt=attempt_receipt,
-                    receipt_root=self.receipt_root,
-                )
-            except Exception as exc:
-                if attempt + 1 < request_attempts and _is_retryable_exception(exc):
-                    self.sleeper(self._backoff(attempt))
-                    continue
-                raise TransportError(
-                    "Gravity request failed before a response was received"
-                ) from exc
-            status = int(getattr(response, "status_code", 0))
-            if status == 429:
-                delay = _retry_delay(
-                    response,
-                    attempt,
-                    wall_clock=self.wall_clock,
-                    random_source=self.random_source,
-                )
-                self.limiter.defer(GRAVITY_HOST, delay)
-                retry_after_ms = int(delay * 1_000)
-            if status in _RETRYABLE_STATUS and attempt + 1 < request_attempts:
-                if status != 429:
-                    self.sleeper(self._backoff(attempt))
-                continue
-            payload = _response_payload(response)
-            fetched_at = (
-                self.wall_clock()
-                .astimezone(timezone.utc)
-                .isoformat(timespec="seconds")
-                .replace("+00:00", "Z")
+            result = self._request_attempt(
+                profile, normalized_method, path, request_headers, params, json_body,
+                request_timeout, request_attempts, attempt, attempt_receipt, rate_delay,
             )
-            raw_headers = getattr(response, "headers", {})
-            response_headers = (
-                {str(key): str(value) for key, value in raw_headers.items()}
-                if isinstance(raw_headers, Mapping)
-                else {}
-            )
-            return RuntimeResponse(status, payload, fetched_at, response_headers, retry_after_ms)
+            if result is not None:
+                return result
         raise TransportError("Gravity request failed after bounded retries")
+
+    def _request_attempt(
+        self, profile: RequestProfile, normalized_method: str, path: str,
+        request_headers: Mapping[str, str], params: Mapping[str, Any] | None,
+        json_body: Mapping[str, Any] | None, request_timeout: float, request_attempts: int,
+        attempt: int, attempt_receipt: Mapping[str, Any], rate_delay: float,
+    ) -> RuntimeResponse | None:
+        retry_after_ms = None
+        try:
+            response = perform_runtime_attempt(
+                self, profile, normalized_method, path, request_headers,
+                params, json_body, request_timeout, request_attempts, attempt_receipt, rate_delay,
+            )
+        except Exception as exc:
+            if attempt + 1 < request_attempts and _is_retryable_exception(exc):
+                self.sleeper(self._backoff(attempt))
+                return None
+            raise_request_failure(exc)
+        status = int(getattr(response, "status_code", 0))
+        if status == 429:
+            delay = _retry_delay(
+                response, attempt, wall_clock=self.wall_clock, random_source=self.random_source,
+            )
+            self.limiter.defer(GRAVITY_HOST, delay)
+            retry_after_ms = int(delay * 1_000)
+        if status in _RETRYABLE_STATUS and attempt + 1 < request_attempts:
+            if status != 429:
+                self.sleeper(self._backoff(attempt))
+            return None
+        payload = _response_payload(response)
+        fetched_at = self.wall_clock().astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        raw_headers = getattr(response, "headers", {})
+        response_headers = ({str(key): str(value) for key, value in raw_headers.items()}
+                            if isinstance(raw_headers, Mapping) else {})
+        return RuntimeResponse(status, payload, fetched_at, response_headers, retry_after_ms)
 
     def login(self, body: Mapping[str, Any], timeout: float) -> Mapping[str, Any]:
         response = self.request(
@@ -406,6 +318,7 @@ class _GravityRequester:
                 method="POST",
                 path="/account_center/api/v1/user_login/v2/",
                 body=body,
+                effect="login",
             ),
         )
         return validated_login_payload(response.status_code, response.payload, response.retry_after_ms)
@@ -433,18 +346,21 @@ class GravityHttpRuntime:
         wall_clock: Callable[[], datetime] | None = None,
         random_source: Callable[[], float] = random.random,
         interval_jitter_ratio: float = 0.1,
-        business_slots: threading.BoundedSemaphore | None = None,
-        sql_slots: threading.BoundedSemaphore | None = None,
+        governor: AdaptiveRequestGovernor | None = None,
         persist_credentials: bool = True,
         environ: MutableMapping[str, str] | None = None,
         receipt_root: Path = STATE_ROOT,
         isolated: bool = False,
+        observation_scope_key: str | None = None,
     ) -> None:
         selected_env, resolved_isolated = resolve_env_path(env_path)
         if isolated:
             resolved_isolated = True
         env_path = selected_env
         isolated = resolved_isolated
+        selected_observation_scope = observation_scope_key or (
+            f"local-runtime:{id(self)}:{time.monotonic_ns()}"
+        )
         self.__session = session or _build_session()
         self.__limiter = limiter or HostRateLimiter(
             clock=rate_clock,
@@ -452,8 +368,9 @@ class GravityHttpRuntime:
             interval_jitter_ratio=interval_jitter_ratio,
         )
         self.__limiter.configure(GRAVITY_HOST, requests_per_second)
-        self.__business_slots = business_slots or _PROCESS_BUSINESS_SLOTS
-        self.__sql_slots = sql_slots or _PROCESS_SQL_SLOTS
+        self.__governor = (
+            governor if governor is not None else get_process_governor()
+        )
         self.__requester = _GravityRequester(
             self.__session,
             self.__limiter,
@@ -463,7 +380,11 @@ class GravityHttpRuntime:
             wall_clock=wall_clock,
             random_source=random_source,
             receipt_root=receipt_root,
+            observation_scope_key=selected_observation_scope,
+            observation_clock=rate_clock,
+            governor=self.__governor,
         )
+        self.__observation_scope_key = selected_observation_scope
         if credentials is None:
             self.__credentials = CredentialProvider.from_env(
                 env_path,
@@ -485,6 +406,24 @@ class GravityHttpRuntime:
         """Expose only the authenticated upstream account identifier."""
 
         return _current_principal_id(self.__credentials)
+
+    def governor_observations(
+        self, *, after_sequence: int = 0, limit: int = 1_000
+    ) -> dict[str, Any]:
+        """Return this private Runtime partition without performing I/O."""
+
+        from .governor_observation import observation_snapshot
+
+        return observation_snapshot(
+            self.__observation_scope_key,
+            after_sequence=after_sequence,
+            limit=limit,
+        )
+
+    def adaptive_governor_snapshot(self) -> dict[str, Any]:
+        """Return this private Runtime scope's active policy without I/O."""
+
+        return self.__governor.snapshot(self.__observation_scope_key)
 
     def request(
         self,
@@ -518,6 +457,8 @@ class GravityHttpRuntime:
                 path=path,
                 query=params,
                 body=json_body,
+                effect="read",
+                coalesce_safe=True,
             ),
         )
 
@@ -574,53 +515,42 @@ class GravityHttpRuntime:
         attempts: int | None,
         receipt_context: Mapping[str, Any],
     ) -> RuntimeResponse:
-        is_sql = profile is SQL_PROFILE
-        if is_sql:
-            self.__sql_slots.acquire()
-        try:
-            self.__business_slots.acquire()
-            try:
-                refreshed = False
-                while True:
-                    credential = self.__credentials.get()
-                    response = self.__requester.request(
-                        profile,
-                        method,
-                        path,
-                        headers=credential.authorization_headers(),
-                        params=params,
-                        json_body=json_body,
-                        timeout=timeout,
-                        attempts=attempts,
-                        receipt_context={**receipt_context, "retry": refreshed},
+        refreshed = False
+        while True:
+            credential = self.__credentials.get()
+            response = self.__requester.request(
+                profile,
+                method,
+                path,
+                headers=credential.authorization_headers(),
+                params=params,
+                json_body=json_body,
+                timeout=timeout,
+                attempts=attempts,
+                receipt_context={**receipt_context, "retry": refreshed},
+            )
+            semantic_code = (
+                response.payload.get("code")
+                if isinstance(response.payload, Mapping)
+                else None
+            )
+            rejected = (
+                response.status_code in {401, 403}
+                or semantic_code in semantic_auth_codes
+            )
+            if rejected and not refreshed:
+                _refresh_if_rejected(self.__credentials, credential)
+                refreshed = True
+                continue
+            if rejected:
+                if response.status_code == 403:
+                    raise PermissionUnavailableError(
+                        "the authenticated Gravity account cannot read this capability"
                     )
-                    semantic_code = (
-                        response.payload.get("code")
-                        if isinstance(response.payload, Mapping)
-                        else None
-                    )
-                    rejected = (
-                        response.status_code in {401, 403}
-                        or semantic_code in semantic_auth_codes
-                    )
-                    if rejected and not refreshed:
-                        _refresh_if_rejected(self.__credentials, credential)
-                        refreshed = True
-                        continue
-                    if rejected:
-                        if response.status_code == 403:
-                            raise PermissionUnavailableError(
-                                "the authenticated Gravity account cannot read this capability"
-                            )
-                        raise AuthenticationError(
-                            "Gravity authorization is invalid or expired"
-                        )
-                    return response
-            finally:
-                self.__business_slots.release()
-        finally:
-            if is_sql:
-                self.__sql_slots.release()
+                raise AuthenticationError(
+                    "Gravity authorization is invalid or expired"
+                )
+            return response
 
 
 def _build_session() -> Any:
@@ -691,41 +621,6 @@ def _validate_profile_payload(
             "Gravity SQL tabId must be the fixed value 1",
             field="tabId",
         )
-
-
-def _canonical_host(host: str) -> str:
-    parsed = urlsplit(host)
-    if (
-        parsed.scheme != "https"
-        or not parsed.hostname
-        or parsed.username is not None
-        or parsed.password is not None
-        or parsed.path not in {"", "/"}
-        or parsed.query
-        or parsed.fragment
-    ):
-        raise ValueError("Gravity rate-limit host must be an HTTPS origin")
-    port = f":{parsed.port}" if parsed.port else ""
-    return f"https://{parsed.hostname.lower()}{port}"
-
-
-def _validated_rate(value: float) -> float:
-    if isinstance(value, bool):
-        raise ValueError("requests_per_second must be numeric")
-    try:
-        rate = float(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("requests_per_second must be numeric") from exc
-    if not 0 < rate <= MAX_REQUESTS_PER_SECOND:
-        raise ValueError(
-            f"requests_per_second must be greater than 0 and at most {MAX_REQUESTS_PER_SECOND:g}"
-        )
-    return rate
-
-
-def _rate_from_environment() -> float:
-    value = os.environ.get("GRAVITY_REQUESTS_PER_SECOND", "").strip()
-    return DEFAULT_REQUESTS_PER_SECOND if not value else _validated_rate(value)
 
 
 __all__ = [

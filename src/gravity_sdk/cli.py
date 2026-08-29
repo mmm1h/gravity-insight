@@ -137,20 +137,7 @@ def _write_json(value: Any, *, stream=None) -> None:
     )
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = AgentArgumentParser(prog="gravity", description="Governed Gravity Insight read and export operations.")
-    parser.set_defaults(network_required=True)
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Run offline smoke checks; never call Gravity.",
-    )
-    commands = parser.add_subparsers(dest="command")
-
-    add_root_commands(commands, _agent_limit, _operation_limit, _positive_int, _client)
-
-    add_plan_commands(commands, _concurrency, _add_input, handler=dispatch_plan)
-
+def _add_validate_command(commands):
     validate = commands.add_parser(
         "validate", help="Validate one operation input without network access."
     )
@@ -159,15 +146,8 @@ def build_parser() -> argparse.ArgumentParser:
     _add_input(validate, required=True)
     validate.add_argument("--render-wire", action="store_true")
 
-    add_read_command(commands, _add_input, _add_all_pages, _positive_int)
 
-    add_resolver_command(commands, _add_input, _add_all_pages)
-
-    nonempty_cli.register(commands, _add_input)
-
-    batch_input, batch_concurrency, batch_positive = _add_input, _concurrency, _positive_int
-    add_batch_commands(commands, batch_input, batch_concurrency, batch_positive)
-
+def _add_auth_commands(commands):
     auth = commands.add_parser(
         "auth", help="Inspect or refresh local Gravity credentials."
     )
@@ -176,14 +156,8 @@ def build_parser() -> argparse.ArgumentParser:
     auth_status.set_defaults(network_required=False)
     auth_commands.add_parser("refresh")
 
-    add_parent_commands(commands)
 
-    add_business_pulse_command(commands, _concurrency, _positive_int)
-
-    add_material_commands(
-        commands, _add_input, _add_all_pages, _concurrency, _positive_int
-    )
-
+def _add_doctor_command(commands):
     doctor = add_export_commands(commands, _add_input, _positive_int).add_parser(
         "doctor",
         help="Validate local contracts; --live runs every stable minimum probe.",
@@ -192,11 +166,8 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--concurrency", type=_concurrency, default=6)
     doctor.set_defaults(network_required=False)
 
-    apps_commands, _ = add_metadata_commands(
-        commands, _concurrency, _add_input, _add_all_pages
-    )
 
-    analysis_commands = add_saved_analysis_commands(commands, _positive_int)
+def _add_analysis_metadata_commands(apps_commands, analysis_commands):
     analysis_metadata = analysis_commands.add_parser("metadata")
     analysis_metadata.add_argument("--app-id", required=True)
     _add_input(analysis_metadata)
@@ -210,95 +181,125 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_input(analysis_segments)
     _add_all_pages(analysis_segments)
+
+
+def _add_typed_analysis_read_command(
+    commands, name, help_text, choices, *, required_input, paginated, fields=False
+):
+    command = commands.add_parser(name, help=help_text)
+    command.add_argument("--kind", required=True, choices=sorted(choices))
+    if fields:
+        command.add_argument(
+            "--fields",
+            action="append",
+            help="Comma-separated contracted response fields; may be repeated.",
+        )
+    _add_input(command, required=required_input)
+    if paginated:
+        _add_all_pages(command)
+
+
+def _add_analysis_read_commands(analysis_commands):
+    _add_typed_analysis_read_command(
+        analysis_commands, "report-config",
+        "List or read a saved Analysis configuration.", ANALYSIS_REPORT_CONFIG_OPERATIONS,
+        required_input=True, paginated=True,
+    )
+    add_dashboard_commands(
+        analysis_commands, _add_input, _add_all_pages, _concurrency, _positive_int
+    )
+    _add_typed_analysis_read_command(
+        analysis_commands, "values",
+        "Read enumerable user or event property values.", ANALYSIS_VALUE_OPERATIONS,
+        required_input=True, paginated=False,
+    )
+    analysis_users = analysis_commands.add_parser("users", help="Read the account member directory.")
+    _add_input(analysis_users)
+    _add_all_pages(analysis_users)
+    _add_typed_analysis_read_command(
+        analysis_commands, "templates",
+        "Read Analysis template subjects or template rows.", ANALYSIS_TEMPLATE_OPERATIONS,
+        required_input=False, paginated=True,
+    )
+    _add_typed_analysis_read_command(
+        analysis_commands, "auxiliary",
+        "Read hidden properties or task event catalogs.", ANALYSIS_AUXILIARY_OPERATIONS,
+        required_input=True, paginated=True,
+    )
+    _add_typed_analysis_read_command(
+        analysis_commands, "detail",
+        "Read order, monetization, user, event, or postback detail.", ANALYSIS_DETAIL_OPERATIONS,
+        required_input=True, paginated=True, fields=True,
+    )
+
+
+def _add_analysis_commands(commands):
+    apps_commands, _ = add_metadata_commands(commands, _concurrency, _add_input, _add_all_pages)
+    analysis_commands = add_saved_analysis_commands(commands, _positive_int)
+    _add_analysis_metadata_commands(apps_commands, analysis_commands)
     add_analysis_query_commands(
         analysis_commands, _add_input, _add_query_shortcuts, _concurrency
     )
     add_user_journey_command(analysis_commands, _concurrency, _positive_int)
     add_segment_commands(analysis_commands, _add_input, _add_all_pages)
-    analysis_report_config = analysis_commands.add_parser(
-        "report-config", help="List or read a saved Analysis configuration."
-    )
-    analysis_report_config.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_REPORT_CONFIG_OPERATIONS)
-    )
-    _add_input(analysis_report_config, required=True)
-    _add_all_pages(analysis_report_config)
-    add_dashboard_commands(
-        analysis_commands, _add_input, _add_all_pages, _concurrency, _positive_int
-    )
-    analysis_values = analysis_commands.add_parser(
-        "values", help="Read enumerable user or event property values."
-    )
-    analysis_values.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_VALUE_OPERATIONS)
-    )
-    _add_input(analysis_values, required=True)
-    analysis_users = analysis_commands.add_parser(
-        "users", help="Read the account member directory."
-    )
-    _add_input(analysis_users)
-    _add_all_pages(analysis_users)
-    analysis_templates = analysis_commands.add_parser(
-        "templates", help="Read Analysis template subjects or template rows."
-    )
-    analysis_templates.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_TEMPLATE_OPERATIONS)
-    )
-    _add_input(analysis_templates)
-    _add_all_pages(analysis_templates)
-    analysis_auxiliary = analysis_commands.add_parser(
-        "auxiliary", help="Read hidden properties or task event catalogs."
-    )
-    analysis_auxiliary.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_AUXILIARY_OPERATIONS)
-    )
-    _add_input(analysis_auxiliary, required=True)
-    _add_all_pages(analysis_auxiliary)
-    analysis_detail = analysis_commands.add_parser(
-        "detail", help="Read order, monetization, user, event, or postback detail."
-    )
-    analysis_detail.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_DETAIL_OPERATIONS)
-    )
-    analysis_detail.add_argument(
-        "--fields",
-        action="append",
-        help="Comma-separated contracted response fields; may be repeated.",
-    )
-    _add_input(analysis_detail, required=True)
-    _add_all_pages(analysis_detail)
+    _add_analysis_read_commands(analysis_commands)
 
-    add_multidim_commands(
-        commands,
-        _add_input,
-        _add_all_pages,
-    )
 
-    add_promotion_commands(
-        commands, _add_input, _add_all_pages, _concurrency, _positive_int
-    )
+def _add_paginated_input_command(commands, name):
+    command = commands.add_parser(name)
+    _add_input(command)
+    _add_all_pages(command)
 
+
+def _add_domain_commands(commands):
     business = commands.add_parser("business-report")
     business_commands = business.add_subparsers(dest="business_command", required=True)
-    business_query = business_commands.add_parser("query")
-    _add_input(business_query)
-    _add_all_pages(business_query)
+    _add_paginated_input_command(business_commands, "query")
 
     objects = commands.add_parser("objects")
     object_commands = objects.add_subparsers(dest="objects_command", required=True)
-    objects_list = object_commands.add_parser("list")
-    _add_input(objects_list)
-    _add_all_pages(objects_list)
+    _add_paginated_input_command(object_commands, "list")
 
     attribution = commands.add_parser("attribution")
     attribution_commands = attribution.add_subparsers(
         dest="attribution_command", required=True
     )
     for name in ("status", "maps"):
-        item = attribution_commands.add_parser(name)
-        _add_input(item)
-        _add_all_pages(item)
+        _add_paginated_input_command(attribution_commands, name)
     add_snapshot_command(attribution_commands, _concurrency)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = AgentArgumentParser(prog="gravity", description="Governed Gravity Insight read and export operations.")
+    parser.set_defaults(network_required=True)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run offline smoke checks; never call Gravity.",
+    )
+    commands = parser.add_subparsers(dest="command")
+
+    add_root_commands(commands, _agent_limit, _operation_limit, _positive_int, _client)
+    add_plan_commands(commands, _concurrency, _add_input, handler=dispatch_plan)
+    _add_validate_command(commands)
+    add_read_command(commands, _add_input, _add_all_pages, _positive_int)
+    add_resolver_command(commands, _add_input, _add_all_pages)
+    nonempty_cli.register(commands, _add_input)
+    batch_input, batch_concurrency, batch_positive = _add_input, _concurrency, _positive_int
+    add_batch_commands(commands, batch_input, batch_concurrency, batch_positive)
+    _add_auth_commands(commands)
+    add_parent_commands(commands)
+    add_business_pulse_command(commands, _concurrency, _positive_int)
+    add_material_commands(
+        commands, _add_input, _add_all_pages, _concurrency, _positive_int
+    )
+    _add_doctor_command(commands)
+    _add_analysis_commands(commands)
+    add_multidim_commands(commands, _add_input, _add_all_pages)
+    add_promotion_commands(
+        commands, _add_input, _add_all_pages, _concurrency, _positive_int
+    )
+    _add_domain_commands(commands)
     add_find_command(commands, _operation_limit)
     add_recipe_commands(commands)
     return parser
@@ -350,40 +351,60 @@ def _domain_read(
     )
 
 
-def _analysis(args: argparse.Namespace) -> Any:
+def _special_analysis_command(args: argparse.Namespace) -> tuple[bool, Any]:
     if args.analysis_command == "metadata":
-        return run_analysis_metadata(args, _client, _object_input)
+        return True, run_analysis_metadata(args, _client, _object_input)
     if args.analysis_command == _ANALYSIS_QUERY_COMMAND:
-        return run_analysis_query_command(args, runtime.build_client, _object_input, _merge_query_shortcuts, runtime.call_read)
+        return True, run_analysis_query_command(
+            args, runtime.build_client, _object_input, _merge_query_shortcuts,
+            runtime.call_read,
+        )
     if args.analysis_command == "segment":
-        return run_segment_command(
+        return True, run_segment_command(
             args, runtime.build_client, _object_input, runtime.call_read
         )
+    return False, None
+
+
+def _analysis_operation_id(args: argparse.Namespace, supplied: dict[str, Any]) -> str:
+    if args.analysis_command == "segments": return DOMAIN_OPERATIONS["analysis.segments"][0]
+    if args.analysis_command == "report-config": return ANALYSIS_REPORT_CONFIG_OPERATIONS[args.kind]
+    if args.analysis_command == "values": return ANALYSIS_VALUE_OPERATIONS[args.kind]
+    if args.analysis_command == "users": return ANALYSIS_DIRECTORY_OPERATIONS["users"]
+    if args.analysis_command == "templates": return ANALYSIS_TEMPLATE_OPERATIONS[args.kind]
+    if args.analysis_command == "auxiliary": return ANALYSIS_AUXILIARY_OPERATIONS[args.kind]
+
+    operation_id = ANALYSIS_DETAIL_OPERATIONS[args.kind]
+    selected_fields = _split_values(args.fields)
+    if selected_fields is not None:
+        supplied["fields"] = selected_fields
+    if args.kind == "user-event" and bool(getattr(args, "all_pages", False)):
+        raise ValueError(
+            "analysis user-event has no upstream page_info contract; "
+            "read one page at a time with explicit page/page_size until "
+            "event_timeline[*].list is empty"
+        )
+    return operation_id
+
+
+def _analysis_client(args: argparse.Namespace, operation_id: str) -> Any:
+    client = runtime.build_client()
+    schema = client.schema(operation_id)
+    stability = schema.get("stability", "stable") if isinstance(schema, Mapping) else "stable"
+    if stability == "stable":
+        return client
+    if not bool(getattr(args, "experimental", False)):
+        raise ValueError("experimental analysis reads require explicit --experimental")
+    return runtime.build_client(allow_experimental=True)
+
+
+def _analysis(args: argparse.Namespace) -> Any:
+    handled, result = _special_analysis_command(args)
+    if handled:
+        return result
 
     supplied = _object_input(args.input)
-    if args.analysis_command == "segments":
-        operation_id = DOMAIN_OPERATIONS["analysis.segments"][0]
-    elif args.analysis_command == "report-config":
-        operation_id = ANALYSIS_REPORT_CONFIG_OPERATIONS[args.kind]
-    elif args.analysis_command == "values":
-        operation_id = ANALYSIS_VALUE_OPERATIONS[args.kind]
-    elif args.analysis_command == "users":
-        operation_id = ANALYSIS_DIRECTORY_OPERATIONS["users"]
-    elif args.analysis_command == "templates":
-        operation_id = ANALYSIS_TEMPLATE_OPERATIONS[args.kind]
-    elif args.analysis_command == "auxiliary":
-        operation_id = ANALYSIS_AUXILIARY_OPERATIONS[args.kind]
-    else:
-        operation_id = ANALYSIS_DETAIL_OPERATIONS[args.kind]
-        selected_fields = _split_values(args.fields)
-        if selected_fields is not None:
-            supplied["fields"] = selected_fields
-        if args.kind == "user-event" and bool(getattr(args, "all_pages", False)):
-            raise ValueError(
-                "analysis user-event has no upstream page_info contract; "
-                "read one page at a time with explicit page/page_size until "
-                "event_timeline[*].list is empty"
-            )
+    operation_id = _analysis_operation_id(args, supplied)
 
     read_all = bool(getattr(args, "all_pages", False))
     if read_all and operation_id not in ANALYSIS_PAGINATED_OPERATIONS:
@@ -391,17 +412,7 @@ def _analysis(args: argparse.Namespace) -> Any:
             f"--all-pages is not supported for non-paginated operation {operation_id}"
         )
 
-    client = runtime.build_client()
-    schema = client.schema(operation_id)
-    stability = (
-        schema.get("stability", "stable") if isinstance(schema, Mapping) else "stable"
-    )
-    if stability != "stable":
-        if not bool(getattr(args, "experimental", False)):
-            raise ValueError(
-                "experimental analysis reads require explicit --experimental"
-            )
-        client = runtime.build_client(allow_experimental=True)
+    client = _analysis_client(args, operation_id)
 
     if args.analysis_command == "segments":
         supplied["app_id"] = str(args.app_id)
@@ -455,27 +466,58 @@ def _run_discovery(args: argparse.Namespace) -> Any:
     return run_operation_command(args, _client(args), filter_operations)
 
 
+def _run_dry_validation(args: argparse.Namespace) -> dict[str, Any]:
+    if args.command:
+        raise ValueError("--dry-run cannot be combined with a command")
+    checks = runtime.validate_manifest_json()
+    client = _client(args)
+    operations = client.operations(stability=None)
+    operation_ids = runtime.operation_ids(operations)
+    if not operation_ids:
+        raise ValueError("core registry returned no operations")
+    for operation_id in sorted(operation_ids):
+        client.schema(operation_id)
+    return {
+        "status": "pass", "offline": True, "network_called": False,
+        "core_registry_validated": True,
+        "registered_operations": len(operation_ids),
+        **checks,
+    }
+
+
+def _run_batch(args: argparse.Namespace) -> Mapping[str, Any]:
+    result = run_batch_command(
+        args, _client, _load_json_input, runtime.call_batch,
+        DOMAIN_OPERATIONS["apps.list"][0],
+    )
+    batch_command = args.batch_command
+    expected_schema = batch_schema_version(args)
+    if not isinstance(result, Mapping):
+        raise RuntimeError("batch command returned a non-object envelope")
+    if result.get("schema_version") != expected_schema:
+        raise RuntimeError("batch command returned the wrong public schema")
+    if batch_command in {"read", "run"} and "exit_code" not in result:
+        raise RuntimeError("batch execution omitted its aggregate exit code")
+    return result
+
+
+def _run_domain_command(args: argparse.Namespace) -> Any:
+    if args.command in {"auth", "parents"}: return _auth_or_parents(args)
+    if args.command == "doctor": return run_doctor(args)
+    if args.command in {"apps", "metadata", "find"}: return _apps_or_metadata(args)
+    if args.command == "analysis": return _analysis(args)
+    if args.command == "promotion": return dispatch_promotion_command(args, _object_input)
+    if args.command == "business-report": return _domain_read(args, "business_report.query")
+    if args.command == "objects": return _domain_read(args, "objects.list")
+    if args.command == "materials": return dispatch_material_command(args, _object_input)
+    if args.command == "attribution": return _attribution(args)
+    return dispatch_root_command(args)
+
+
 def run(args: argparse.Namespace) -> Any:
     _enforce_output_policy(args)
     if args.dry_run:
-        if args.command:
-            raise ValueError("--dry-run cannot be combined with a command")
-        checks = runtime.validate_manifest_json()
-        client = _client(args)
-        operations = client.operations(stability=None)
-        operation_ids = runtime.operation_ids(operations)
-        if not operation_ids:
-            raise ValueError("core registry returned no operations")
-        for operation_id in sorted(operation_ids):
-            client.schema(operation_id)
-        return {
-            "status": "pass",
-            "offline": True,
-            "network_called": False,
-            "core_registry_validated": True,
-            "registered_operations": len(operation_ids),
-            **checks,
-        }
+        return _run_dry_validation(args)
     if args.command in {"operations", "agent"}:
         return _run_discovery(args)
     if args.command == "validate":
@@ -485,38 +527,8 @@ def run(args: argparse.Namespace) -> Any:
             render_wire=args.render_wire,
         )
     if args.command == "batch":
-        result = run_batch_command(
-            args, _client, _load_json_input, runtime.call_batch,
-            DOMAIN_OPERATIONS["apps.list"][0],
-        )
-        batch_command = args.batch_command
-        expected_schema = batch_schema_version(args)
-        if not isinstance(result, Mapping):
-            raise RuntimeError("batch command returned a non-object envelope")
-        if result.get("schema_version") != expected_schema:
-            raise RuntimeError("batch command returned the wrong public schema")
-        if batch_command in {"read", "run"} and "exit_code" not in result:
-            raise RuntimeError("batch execution omitted its aggregate exit code")
-        return result
-    if args.command in {"auth", "parents"}:
-        return _auth_or_parents(args)
-    if args.command == "doctor":
-        return run_doctor(args)
-    if args.command in {"apps", "metadata", "find"}:
-        return _apps_or_metadata(args)
-    if args.command == "analysis":
-        return _analysis(args)
-    if args.command == "promotion":
-        return dispatch_promotion_command(args, _object_input)
-    if args.command == "business-report":
-        return _domain_read(args, "business_report.query")
-    if args.command == "objects":
-        return _domain_read(args, "objects.list")
-    if args.command == "materials":
-        return dispatch_material_command(args, _object_input)
-    if args.command == "attribution":
-        return _attribution(args)
-    return dispatch_root_command(args)
+        return _run_batch(args)
+    return _run_domain_command(args)
 
 
 def _summary_reference(operation_id: str | None, path: str, value: Any) -> dict[str, Any]:
@@ -656,7 +668,7 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
 
 def _iter_ndjson_lines(result: Any):
     if isinstance(result, Mapping) and result.get("schema_version") == "gravity.agent-batch.v1":
-        from gravity_sdk.agent_batch import iter_ndjson_records
+        from gravity_sdk.agents.batch import iter_ndjson_records
         for record in iter_ndjson_records(result):
             yield json_output.dumps(
                 _sanitize_credentials(record), ensure_ascii=False, sort_keys=True

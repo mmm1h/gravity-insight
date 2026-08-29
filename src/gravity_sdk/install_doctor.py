@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 from urllib.request import url2pathname
 
 
-_DISTRIBUTION_NAME = "gravity-sdk"
+_DISTRIBUTION_NAME = "gravity-insight"
 _PACKAGE_DIRECTORY = Path("src") / "gravity_sdk"
 _SCHEMA_VERSION = "gravity-sdk.install-consistency.v1"
 
@@ -277,7 +277,7 @@ def _canonical_name(value: Any) -> str:
 def _reinstall_commands(source: Mapping[str, Any] | None) -> list[str]:
     root = str(source.get("project_root")) if source else "<gravity-sdk-checkout>"
     return [
-        "python -m pip uninstall gravity-sdk -y",
+        "python -m pip uninstall gravity-insight -y",
         f'python -m pip install -e "{root}"',
         "python -m gravity_sdk doctor",
     ]
@@ -286,15 +286,15 @@ def _reinstall_commands(source: Mapping[str, Any] | None) -> list[str]:
 def _reason_message(reason_code: str) -> str:
     return {
         "INSTALL_METADATA_MISSING": (
-            "No gravity-sdk distribution metadata is visible to the active "
+            "No gravity-insight distribution metadata is visible to the active "
             "Python interpreter."
         ),
         "INSTALL_METADATA_AMBIGUOUS": (
-            "Multiple conflicting gravity-sdk distribution metadata records "
+            "Multiple conflicting gravity-insight distribution metadata records "
             "are visible."
         ),
         "INSTALL_METADATA_INVALID": (
-            "The gravity-sdk editable-install metadata is invalid or incomplete."
+            "The gravity-insight editable-install metadata is invalid or incomplete."
         ),
         "INSTALL_METADATA_VERSION_MISMATCH": (
             "The installed metadata version differs from the current source version."
@@ -304,7 +304,7 @@ def _reason_message(reason_code: str) -> str:
             "current source."
         ),
         "INSTALL_METADATA_NOT_EDITABLE": (
-            "A source checkout is active but gravity-sdk is not installed "
+            "A source checkout is active but gravity-insight is not installed "
             "editable from it."
         ),
         "INSTALL_EDITABLE_ROOT_MISMATCH": (

@@ -8,11 +8,11 @@ import unittest
 
 from gravity_sdk import GravityInsightClient
 from gravity_sdk.agent import SCHEMA_VERSION as AGENT_SCHEMA_VERSION, discover_capabilities
-from gravity_sdk.agent_catalog import SCHEMA_VERSION, _inventory, run_agent_catalog_command
-from gravity_sdk.agent_catalog_parity import validate_catalog_parity
-from gravity_sdk.agent_product_inventory import canonical_capability_cards
-from gravity_sdk.agent_unavailable import registered_unavailable_gaps
-from gravity_sdk.agent_unavailable import unavailable_journey_gap
+from gravity_sdk.agents.catalog import SCHEMA_VERSION, _inventory, run_agent_catalog_command
+from gravity_sdk.agents.catalog_parity import validate_catalog_parity
+from gravity_sdk.agents.product_inventory import canonical_capability_cards
+from gravity_sdk.agents.unavailable import registered_unavailable_gaps
+from gravity_sdk.agents.unavailable import unavailable_journey_gap
 from gravity_sdk.multidim_contract import (
     MULTIDIM_COHORT_HORIZON_GAP_CODE,
     multidim_multi_key_contract,

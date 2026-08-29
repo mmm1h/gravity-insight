@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.provider-rpc-response.v1",
+  "type": "object",
+  "required": ["schema_version", "request_id", "status", "resources", "next_cursor", "stats"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.provider-rpc-response.v1"},
+    "request_id": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
+    "status": {"enum": ["success", "empty", "denied", "unsupported", "unavailable", "error"]},
+    "resources": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/resource"}},
+    "next_cursor": {"type": ["string", "null"], "maxLength": 1024},
+    "stats": {"$ref": "#/$defs/stats"}
+  },
+  "$defs": {
+    "revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"},
+    "string_array": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
+    "date": {"type": ["string", "null"], "maxLength": 10},
+    "time_range": {"type": "object", "required": ["start", "end", "timezone"], "additionalProperties": false, "properties": {"start": {"$ref": "#/$defs/date"}, "end": {"$ref": "#/$defs/date"}, "timezone": {"type": "string", "minLength": 1, "maxLength": 64}}},
+    "date_range": {"type": "object", "required": ["start", "end"], "additionalProperties": false, "properties": {"start": {"$ref": "#/$defs/date"}, "end": {"$ref": "#/$defs/date"}}},
+    "citation": {"type": "object", "required": ["path", "line_start", "line_end"], "additionalProperties": false, "properties": {"path": {"type": "string", "minLength": 1, "maxLength": 1024}, "line_start": {"type": "integer", "minimum": 1, "maximum": 1000000000}, "line_end": {"type": "integer", "minimum": 1, "maximum": 1000000000}}},
+    "resource": {
+      "type": "object",
+      "required": ["uri", "title", "resource_type", "source_revision"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "minLength": 5, "maxLength": 2048},
+        "title": {"type": "string", "minLength": 1, "maxLength": 512},
+        "resource_type": {"enum": ["document", "code", "configuration", "contract", "release", "git_fact", "project_semantic"]},
+        "source_revision": {"$ref": "#/$defs/revision"},
+        "item_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 128},
+        "fact_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 128},
+        "entity_refs": {"$ref": "#/$defs/string_array"},
+        "valid_time": {"$ref": "#/$defs/time_range"},
+        "effective_range": {"$ref": "#/$defs/date_range"},
+        "observed_at": {"type": "string", "minLength": 20, "maxLength": 32},
+        "authority": {"enum": ["canonical", "supporting", "unverified"]},
+        "freshness": {"enum": ["current", "stale", "unknown"]},
+        "supersedes": {"$ref": "#/$defs/string_array"},
+        "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]},
+        "citation": {"$ref": "#/$defs/citation"},
+        "content": {"type": "string", "minLength": 1, "maxLength": 1048576},
+        "content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "stats": {
+      "type": "object",
+      "required": ["internal_requests", "retries", "cache_hits"],
+      "additionalProperties": false,
+      "properties": {
+        "internal_requests": {"type": ["integer", "null"], "minimum": 0, "maximum": 1000000000},
+        "retries": {"type": ["integer", "null"], "minimum": 0, "maximum": 1000000000},
+        "cache_hits": {"type": ["integer", "null"], "minimum": 0, "maximum": 1000000000}
+      }
+    }
+  }
+}

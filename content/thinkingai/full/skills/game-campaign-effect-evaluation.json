@@ -1,0 +1,85 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "incremental-lift",
+      "unobserved-campaign-effect"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/campaign-calendar@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "Reconcile project campaign timing, eligibility and outcome semantics before applying any comparative method.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use when a campaign definition, outcome metric and non-overlapping comparison design are reviewed.",
+    "context_boundary": "A campaign calendar supports timing only; it does not supply assignment, counterfactuals or causal authorization.",
+    "steps": [
+      "Resolve campaign eligibility, exposure, outcome, guardrail and comparison-window contracts.",
+      "Align campaign Context with governed observations and apply only a reviewed evaluation Operator.",
+      "Separate descriptive movement, supported association and experiment-grade evidence with explicit exclusions."
+    ],
+    "title": "Campaign outcome evidence assessment"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [
+    "operator://gravity/campaign-outcome-evaluation@1"
+  ],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://game-campaign-effect-evaluation",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/campaign-outcome@1"
+  ],
+  "skill_id": "game-campaign-effect-evaluation",
+  "specification": "specified",
+  "summary": "Assess observable campaign outcomes without upgrading correlation to lift.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

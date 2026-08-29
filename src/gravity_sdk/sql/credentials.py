@@ -11,7 +11,7 @@ import tempfile
 from contextlib import ExitStack, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator, Sequence
+from typing import Callable, Iterator, Sequence
 from unittest.mock import patch
 
 from gravity_sdk.paths import PROJECT_ROOT
@@ -316,60 +316,74 @@ def status() -> dict[str, object]:
     }
 
 
+def _self_test_expects_credential_error(action: Callable[[], object], message: str) -> None:
+    try:
+        action()
+    except CredentialSyncError:
+        return
+    raise AssertionError(message)
+
+
+def _self_test_bundle_round_trip(source: Path) -> tuple[dict[str, bytes], dict[str, bytes]]:
+    expected = {}
+    for index, name in enumerate(SECRET_FILES):
+        content = f"KEY_{index}=value_{index}\n".encode()
+        (source / name).write_bytes(content)
+        expected[name] = content
+    parsed = _parse_payload(_build_payload(source))
+    assert parsed == expected
+    invalid = json.loads(_build_payload(source))
+    invalid["version"] = 2
+    _self_test_expects_credential_error(
+        lambda: _parse_payload(json.dumps(invalid).encode()),
+        "an unsupported credential bundle version was accepted",
+    )
+    return parsed, expected
+
+
+def _self_test_rejects_tampered_bundle(source: Path) -> None:
+    invalid = json.loads(_build_payload(source))
+    invalid["files"][SECRET_FILES[0]]["sha256"] = "0" * 64
+    _self_test_expects_credential_error(
+        lambda: _parse_payload(json.dumps(invalid).encode()),
+        "a tampered credential bundle was accepted",
+    )
+
+
+def _self_test_rejects_permission_failure(parsed: dict[str, bytes], target: Path) -> None:
+    failed_target = target / "failed"
+    with patch(f"{__name__}.restrict_local_secret", side_effect=CredentialSyncError("probe")):
+        _self_test_expects_credential_error(
+            lambda: _write_secret_files(parsed, failed_target),
+            "a local permission failure was accepted",
+        )
+    assert not list(failed_target.iterdir())
+
+
+def _self_test_credential_fingerprint(source: Path) -> None:
+    credential_path = source / ".env.gravity.local"
+    credential_path.write_text("GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-1\n")
+    fingerprint = _credential_fingerprint(source)
+    credential_path.write_text(
+        "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-1\n# comment changed\n"
+    )
+    assert _credential_fingerprint(source) == fingerprint
+    credential_path.write_text("GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-2\n")
+    assert _credential_fingerprint(source) != fingerprint
+    credential_path.unlink()
+    _self_test_expects_credential_error(
+        lambda: _credential_fingerprint(source),
+        "a missing credential file was accepted",
+    )
+
+
 def self_test() -> None:
     with tempfile.TemporaryDirectory() as source_temp, tempfile.TemporaryDirectory() as target_temp:
         source = Path(source_temp)
-        expected = {}
-        for index, name in enumerate(SECRET_FILES):
-            content = f"KEY_{index}=value_{index}\n".encode()
-            (source / name).write_bytes(content)
-            expected[name] = content
-        parsed = _parse_payload(_build_payload(source))
-        assert parsed == expected
-        invalid = json.loads(_build_payload(source))
-        invalid["version"] = 2
-        try:
-            _parse_payload(json.dumps(invalid).encode())
-        except CredentialSyncError:
-            pass
-        else:
-            raise AssertionError("an unsupported credential bundle version was accepted")
-        invalid["version"] = 1
-        invalid["files"][SECRET_FILES[0]]["sha256"] = "0" * 64
-        try:
-            _parse_payload(json.dumps(invalid).encode())
-        except CredentialSyncError:
-            pass
-        else:
-            raise AssertionError("a tampered credential bundle was accepted")
         target = Path(target_temp)
+        parsed, expected = _self_test_bundle_round_trip(source)
+        _self_test_rejects_tampered_bundle(source)
         _write_secret_files(parsed, target)
         assert {name: (target / name).read_bytes() for name in SECRET_FILES} == expected
-        failed_target = target / "failed"
-        with patch(f"{__name__}.restrict_local_secret", side_effect=CredentialSyncError("probe")):
-            try:
-                _write_secret_files(parsed, failed_target)
-            except CredentialSyncError:
-                pass
-            else:
-                raise AssertionError("a local permission failure was accepted")
-        assert not list(failed_target.iterdir())
-        (source / ".env.gravity.local").write_text(
-            "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-1\n"
-        )
-        fingerprint = _credential_fingerprint(source)
-        (source / ".env.gravity.local").write_text(
-            "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-1\n# comment changed\n"
-        )
-        assert _credential_fingerprint(source) == fingerprint
-        (source / ".env.gravity.local").write_text(
-            "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-2\n"
-        )
-        assert _credential_fingerprint(source) != fingerprint
-        (source / ".env.gravity.local").unlink()
-        try:
-            _credential_fingerprint(source)
-        except CredentialSyncError:
-            pass
-        else:
-            raise AssertionError("a missing credential file was accepted")
+        _self_test_rejects_permission_failure(parsed, target)
+        _self_test_credential_fingerprint(source)

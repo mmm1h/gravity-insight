@@ -14,8 +14,10 @@ import pytest
 from gravity_sdk.errors import PolicyViolation, exit_code_for_error
 from gravity_sdk.prober import batch as prober_batch
 from gravity_sdk.prober import cli as prober_cli
+from gravity_sdk.prober import export_verify, parameters
 from gravity_sdk.prober import online, probe_support, transport as prober_transport
 from gravity_sdk.prober.batch import finalize_batch_report
+from gravity_sdk.prober.drafts import _resource_action
 from gravity_sdk.prober.model import (
     build_draft,
     build_projection,
@@ -71,6 +73,136 @@ def _route(
 def _write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+
+
+def _operation_binding_matrix(fixture: dict[str, object]) -> dict[str, object]:
+    batch_cases = fixture["batch_cases"]
+    assert isinstance(batch_cases, list)
+    batch = [
+        prober_batch.availability_tier(
+            {"operation": {"operation_id": row["operation_id"], "domain": row["domain"]}}
+        )
+        for row in batch_cases
+    ]
+    export = fixture["export"]
+    assert isinstance(export, dict)
+    item = {
+        "request": {"client_id": "$first_segment_client_id"},
+        "resolve_client_id": {
+            "app_id": export["app_id"], "segment_id": export["segment_id"],
+        },
+    }
+
+    class NormalClient:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, dict[str, str]]] = []
+
+        def read(self, operation_id: str, inputs: dict[str, str]) -> dict[str, object]:
+            self.calls.append((operation_id, inputs))
+            return {"data": {"list": [{"ClientID": export["normal_client_id"]}]}}
+
+    normal_client = NormalClient()
+    normal = export_verify.ExportVerificationRunner(
+        normal_client, object(), output_root=Path(tempfile.gettempdir())
+    )._resolved_request(item)
+
+    class InputValidationError(Exception):
+        pass
+
+    class FallbackOperation:
+        def validate_inputs(self, inputs: dict[str, str]) -> dict[str, str]:
+            return inputs
+
+    class FallbackPolicy:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, object]] = []
+
+        def authorize_operation(self, operation_id: str) -> FallbackOperation:
+            self.calls.append(("authorize_operation", operation_id))
+            return FallbackOperation()
+
+        def _prepare_request(
+            self, operation_id: str, inputs: dict[str, str]
+        ) -> SimpleNamespace:
+            self.calls.append(("prepare_request", operation_id))
+            return SimpleNamespace(method="GET", path="/fixture/", query={}, body={})
+
+    class FallbackTransport:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def request(self, _method: str, _path: str, **kwargs: object) -> SimpleNamespace:
+            self.calls.append(kwargs)
+            return SimpleNamespace(
+                payload={"code": 0, "data": {"list": [{"ClientID": export["fallback_client_id"]}]}}
+            )
+
+    policy = FallbackPolicy()
+    transport = FallbackTransport()
+
+    class FallbackClient:
+        _executor = SimpleNamespace(_policy=policy, _transport=transport)
+
+        @staticmethod
+        def read(_operation_id: str, _inputs: dict[str, str]) -> None:
+            raise InputValidationError("required live field metadata is unavailable")
+
+    fallback = export_verify.ExportVerificationRunner(
+        FallbackClient(), object(), output_root=Path(tempfile.gettempdir())
+    )._resolved_request(item)
+
+    candidates = fixture["parent_candidates"]
+    assert isinstance(candidates, list)
+    parent_results: list[dict[str, object]] = []
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        root = Path(temporary_directory)
+        draft_root = root / "drafts"
+        operation_root = root / "operations"
+        for index, row in enumerate(candidates):
+            operation_id = f"promotion.{row['platform']}.fixture_{index}.list"
+            source = build_draft(
+                _route(f"/turbo_engine/api/v1/{row['platform']}/fixture/{index}/"),
+                set(),
+            )
+            source["operation"].update(
+                {
+                    "operation_id": operation_id,
+                    "platform": row["platform"],
+                    "input_fields": {row["field_name"]: {"type": row["field_type"]}},
+                    "required_parent": [],
+                }
+            )
+            source["operation"]["live_probe"]["inputs"] = {}
+            source["operation"]["provenance"]["applied_overrides"] = []
+            source["draft"]["route_evidence"] = {}
+            _write_json(
+                draft_root / f"{operation_id}.json",
+                source,
+            )
+            _write_json(
+                operation_root / f"{row['expected_operation_id']}.json",
+                {"operation": {"operation_id": row["expected_operation_id"], "stability": "stable"}},
+            )
+            parameters.bind_stable_parent_candidates(
+                draft_root=draft_root,
+                operation_root=operation_root,
+                operation_ids=[operation_id],
+            )
+            persisted = json.loads(
+                (draft_root / f"{operation_id}.json").read_text(encoding="utf-8")
+            )
+            parent_results.extend(persisted["operation"]["required_parent"])
+    return {
+        "batch": batch,
+        "export": {
+            "normal_request": normal,
+            "normal_calls": [list(call) for call in normal_client.calls],
+            "fallback_request": fallback,
+            "fallback_policy_calls": [list(call) for call in policy.calls],
+            "fallback_transport_calls": len(transport.calls),
+        },
+        "parent_candidates": parent_results,
+    }
 
 
 
@@ -133,6 +265,23 @@ class GravityInsightProberTests(unittest.TestCase):
         patcher = mock.patch(target, new=name) if isinstance(target, str) else mock.patch.object(target, name, new=value)
         self.addCleanup(patcher.stop)
         patcher.start()
+
+    def test_operation_binding_matrix_matches_offline_fixture(self) -> None:
+        fixture = json.loads(
+            Path("tests/fixtures/prober_operation_binding_matrix.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        matrix = _operation_binding_matrix(fixture)
+        rendered = json.dumps(
+            matrix, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+
+        self.assertEqual(fixture["expected_matrix"], matrix)
+        self.assertEqual(
+            fixture["expected_sha256"],
+            __import__("hashlib").sha256(rendered.encode("utf-8")).hexdigest(),
+        )
 
     def test_evidence_display_path_accepts_scoped_root_outside_default(self):
         default_root = self.tmp_path / "default"
@@ -207,6 +356,33 @@ class GravityInsightProberTests(unittest.TestCase):
         assert source["operation"]["executable"] is False
         assert source["operation"]["response_projection"]["item_keys"] == []
         assert source["draft"]["promotion_gate"]["eligible"] is False
+
+    def test_resource_action_table_preserves_rule_precedence(self) -> None:
+        cases = (
+            (("manager", "account", "by_company"), "GET", (), ("account_company", "list")),
+            (("campaign", "tree"), "GET", (), ("campaign", "tree")),
+            (("report", "calc_total"), "GET", (), ("report", "calc_total")),
+            (("manager", "campaign", "list"), "GET", (), ("campaign_option", "list")),
+            (("account", "public_list"), "GET", (), ("account_public", "list")),
+            (("campaigns",), "GET", (), ("campaign", "list")),
+            (("campaign", "filters"), "GET", (), ("campaign_filter", "list")),
+            (("campaign", "detail"), "GET", (), ("campaign", "detail")),
+            (("campaign", "get"), "GET", (), ("campaign", "get")),
+            (("fetch_app_info",), "GET", (), ("app_info", "get")),
+            (("campaign", "custom_get"), "POST", (), ("campaign", "query")),
+            (("query_company_amount",), "POST", (), ("company_amount", "query")),
+            (("campaign", "report"), "GET", (), ("campaign", "list")),
+            (("report", "campaign"), "POST", (), ("campaign", "list")),
+            (("opaque",), "GET", (), ("opaque", "get")),
+            (("opaque",), "POST", ("read_action_path_token",), ("opaque", "query")),
+            (("set",), "POST", ("read_action_path_token",), ("unknown", "unknown")),
+        )
+        for segments, method, evidence, expected in cases:
+            with self.subTest(segments=segments, method=method):
+                route = {"method": method, "semantic_evidence": list(evidence)}
+                assert _resource_action(
+                    route, segments, domain="promotion"
+                ) == expected
 
     def test_draft_generator_rejects_stable_id_collision(self) -> None:
         tmp_path = self.tmp_path
@@ -723,6 +899,57 @@ class GravityInsightProberTests(unittest.TestCase):
         route["semantic_evidence"] = ["route_registry:read_contract_not_verified"]
         with pytest.raises(PolicyViolation, match="have not been verified"):
             assert_probe_read_semantics(source, confirmations_path=confirmations)
+
+    def test_batch_skip_reasons_keep_their_precedence(self) -> None:
+        row = {
+            "operation_id": "candidate.query",
+            "write_semantics_reason": "write route",
+            "privacy_name_risk": "user data",
+            "parent_indicated": False,
+        }
+
+        write_skip = prober_batch._unattempted_probe_result(
+            row, request_budget_exhausted=True, stop_loss=True
+        )
+        privacy_skip = prober_batch._unattempted_probe_result(
+            {**row, "write_semantics_reason": None},
+            request_budget_exhausted=True,
+            stop_loss=True,
+        )
+        budget_skip = prober_batch._unattempted_probe_result(
+            {**row, "write_semantics_reason": None, "privacy_name_risk": None},
+            request_budget_exhausted=True,
+            stop_loss=True,
+        )
+        stop_loss_skip = prober_batch._unattempted_probe_result(
+            {**row, "write_semantics_reason": None, "privacy_name_risk": None},
+            request_budget_exhausted=False,
+            stop_loss=True,
+        )
+        parent_attempt = prober_batch._unattempted_probe_result(
+            {
+                **row,
+                "write_semantics_reason": None,
+                "privacy_name_risk": None,
+                "parent_indicated": True,
+            },
+            request_budget_exhausted=False,
+            stop_loss=True,
+        )
+
+        assert [
+            write_skip["conclusion"],
+            privacy_skip["conclusion"],
+            budget_skip["conclusion"],
+            stop_loss_skip["conclusion"],
+            parent_attempt,
+        ] == [
+            "skipped_write_semantics",
+            "skipped_privacy_name_risk",
+            "not_attempted_budget",
+            "not_attempted_stop_loss",
+            None,
+        ]
 
     def test_probe_semantic_status_model_has_no_ambiguous_unknown(self) -> None:
         source = build_draft(_route("/candidate/query/"), set())

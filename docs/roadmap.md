@@ -11,6 +11,24 @@
 3. **只推进有新证据的候选。** 精确 blocker 与下一步最小证据见[候选矩阵](candidate-capability-matrix.md)；租户数据和权限未变化时不重复空探测。
 4. **控制结构增长。** 共享 spine 串行接线；领域 core 可并行；生成 compiler、provenance、coverage 产物时串行。
 
+## Gravity Agent Runtime program
+
+用户已批准将本仓库从当前 Gravity SDK 内核演进为 Gravity Agent Runtime。目标范围包括同层 Capability Trust/Data Quality、版本化 Skill、Business Semantic、确定性 Operator/Model、有界 Context、受治理 Action/Artifact 和按触发条件建设的 MCP、隔离 SQL Explorer 与 External Control Plane。
+
+目标架构与当前能力必须分开：当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；未实现的目标面不得写成已交付。完整批准总纲位于 [architecture source](../specs/agent-runtime/architecture-source.md)，通过 `directive.json` 绑定 digest；串并行依赖和状态以 [Requirement Index](../specs/agent-runtime/index.md) 为准。
+
+当前程序状态：
+
+1. **R00 产品宪法与需求拆分（fixed-dev）**：v9.1 canonical 总纲、directive 和细化后的无环需求图已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
+2. **R01 参考纵向切片（fixed-dev）**：`analysis.merge2.ap-cost-anomaly-localization` 已在 `dev@08b42971` 完成；真实路径因底层完整性仍为 `unknown` 而零请求阻断，交付账本和 R02-R08 extraction ledger 位于 R01 Requirement。
+3. **R02 Journey / Trust / DQ 泛化（fixed-dev）**：五个显式 Journey 已绑定严格 ledger projection；Operation/Product/Composite 使用同层 Trust、principal-scoped Validation、TTL、Data Quality 和 transitive impact。R01 仍因完整性不足以 exit 4 零请求阻断；旧私有 Trust owner 已删除，未扩建第二执行器或路由器。
+4. **R03 Built-in Skill Package / R04 Team Skill Hub Stage A（fixed-dev）**：Built-in 与团队无代码 Skill 共用 Manifest/Render Model；显式 Git/static HTTPS Source、exact lock、独立 CAS/offline materialize 已闭合，Trusted Pack 只生成外部 Installer Plan 并做 exact startup verification，未接入 Runtime 执行。
+5. **R05 Business Semantic Registry（fixed-dev）**：versioned Definition/Binding/Source、formula/unit/additivity/time/effective-range/conflict 门禁与离线 `SemanticRegistry`/复数 CLI 已集成；Runtime 只含通用 App Entity，Merge2 指标与 App/physical binding 已迁移到 work-dashboard 独立 Source。R01 仍因完整性 unknown 而零请求阻断。
+6. **R06 Operator / Model Contracts（fixed-dev）**：唯一 R01 deterministic Operator 已迁移到闭合 Registry 与 input/output/assumption/claim/golden/资源门禁；Model Registry 不内置模型，且要求 trusted digest + lineage/evaluation/approval/expiry/horizon 后才允许生产 claims，LTV gap 未提升；R04 trusted-pack descriptor 已冻结。
+7. **R07-R09、R11-R15、CT01-CT03（fixed-dev）；R10（in-progress bounded stdio pilot）；R16（conditional, trigger 已触发但实现暂缓）**：R10 只增加可移除的 `gravity-mcp` 叶子入口，不改共享 spine，不新增 operation，也不构成正式第五交付面；是否毕业由冻结/盲测 Host 准确率和第二采用方共同裁决。R16 处置见其规格 Disposition 一节。
+8. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
+9. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
+
 ## 已定决策
 
 - Insight-first；SQL 只执行 workspace 已登记产品。
@@ -20,14 +38,16 @@
 - recognizer 的零候选词法恢复保留原评分；只在原评分弃权且索引内证据足量、唯一并明显领先近邻时选择 owner，索引外填充词不单独构成召回依据。
 - recognizer 只对显式协调结构拆分多意图；中文成对 `既…也/又…`、保留右侧名词的 `和其他` 及 `和…一起/一并` 可由各子句独立 owner 组成精确 selector 集，已登记 unavailable gap 仍作为同次交接附件返回。
 - `report.get.query` 的 Agent owner card 暴露合同派生的顶层 raw 输入模板与完整 compact input schema，并优先于同 selector 的 generic operation card。
-- 业务语义、活动绑定和派生公式属于调用项目，不进入 SDK。
+- Runtime 拥有可复用 Semantic 类型/Schema、通用指标/方法定义、版本化 URI，以及单位、可加性、时间粒度、依赖、冲突和公式结构校验；调用项目拥有具体活动名称、SKU 实值、App/埋点绑定、项目专属公式参数与生效窗口和部门口径。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
-- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与进程级并发槽继续全局共享，scope 摘要不进入公开输出。
+- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。
 - Probe 语义只使用六态机器模型；`unknown` 不等于 read，静态 read candidate 不构成授权，未证实 POST
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
+- R17（`fixed_dev`）已移除 83 个旧 deep module path（82 迁移 + pagination 删除）且无 shim；人工审阅 compact Agent interaction manifest，固定 consumer census、M0/回归/wheel 已证明 root facade、CLI/SDK/Plan/Agent 读取能力、147 lazy owner/148 `__all__` 与请求行为无损；legacy/v4 脚手架退役后 #11 关闭，不声称完整 Agent domain 或自动独立证明。
+  五条依赖有意保留：`agents.batch`、`agents.input_resolution` → `agent.discover_capabilities`；`agents.batch_questions` → `agent.DEFAULT_LIMIT`；`agents.host_selection`、`agents.output` → `agent.SCHEMA_VERSION`。只有真实职责变化、第二 owner 或 eager cycle 才触发另行批准的拆分；零反向边不再作为 #11 退出目标。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、
   聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。
 - 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。
@@ -36,6 +56,11 @@
 - 媒体报表 gap owner 仅在紧邻“报表/投放报表”的领域短语内将“煤体”归一为“媒体”；明确“不要/别混入素材表现”时仍由 `MEDIA_REPORT_ITEM_SCHEMA_MISSING` 优先交接，不扩展全局模糊匹配。
 - 分析默认值 owner 仅在紧邻“字典”的领域短语内将“默人值”归一为“默认值”；不扩展全局编辑距离或通用错字表。
 - 归因表现 owner 仅在“归音”紧邻“表现/汇总/聚合”时将其归一为“归因”；配置否定仍由原有 affirmative-intent 解析，其他“归音”语境不参与全局模糊匹配。
+- **已批准的授权边界**：SDK 可由调用方在请求中承担授权决策；该边界覆盖调用方提供数据库路径与 `allowed_relations`（`sql_explorer_policy.py:158`）、原始行返回及作为标签的 `trust` / `allowed_claims`（`sql_explorer.py:137`）、Hub source 的 `index_url` / `artifact_base_url`（`skill_hub_contract.py:221`），以及按路径过滤敏感内容（`repo_context_index.py:349`）。这是一项设计决策，不作为技术债登记。
+
+## 待裁定设计
+
+- **Artifact transfer 的主机授权来源**：`artifact_transfer.py:152-156` 以 `replace()` 将上游素材响应中的 host 写入 `allowed_hosts`、`allowed_redirect_hosts` 和根路径前缀。该授权来自上游响应而非调用方，不在“调用方承担授权决策”的已批准边界内；所有者需单独裁定是否接受此信任来源，并据裁定保留受控边界或改为调用方/固定合同授权。
 
 ## 明确不做
 

@@ -1,0 +1,82 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-channel-population",
+      "optimal-budget-allocation"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Assess channel slices only after acquisition cost, downstream value and attribution windows share compatible units and scope.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use when a project has reviewed channel identity, cost and downstream-value semantics for the same cohort window.",
+    "context_boundary": "Channel labels and attribution windows cannot be inferred from result fields, and descriptive differences do not establish channel causality.",
+    "steps": [
+      "Resolve channel identity, acquisition-cost and downstream-value definitions for one cohort scope.",
+      "Compare matched returned channel rows while preserving missing, partial and unknown completeness states.",
+      "Report observable quality signals, excluded channels and the evidence still required for an allocation decision."
+    ],
+    "title": "Channel evidence quality review"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://channel-quality-analysis",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/acquisition-cost@1",
+    "metric://project/downstream-value@1"
+  ],
+  "skill_id": "channel-quality-analysis",
+  "specification": "specified",
+  "summary": "Compare returned channel observations under one explicit value and cost contract.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from gravity_sdk.census.io import json_bytes, sha256_bytes, stable_bundle_id
 from gravity_sdk.census.params import build_route_params
-from gravity_sdk.census.parser import build_routes
+from gravity_sdk.census.parser import _tokenize, build_routes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -115,6 +115,20 @@ class GravityCensusParameterTests(unittest.TestCase):
         self.assertNotIn("properties", body["page"])
         self.assertNotIn("properties", body["id"])
 
+    def test_infers_conversion_array_method_signed_literal_and_void(self) -> None:
+        result = self._build(
+            b'const{load:list}=request("/api/v1/types/list/",{type:"post"});'
+            b'list({body:{count:Number(raw),ratio:parseFloat(raw),label:String(raw),'
+            b'ids:rows.map(x=>x.id),offset:-2,missing:void 0}});'
+        )
+        body = {item["name"]: item for item in result["routes"][0]["body_parameters"]}
+        self.assertEqual(["integer"], body["count"]["types"])
+        self.assertEqual(["number"], body["ratio"]["types"])
+        self.assertEqual(["string"], body["label"]["types"])
+        self.assertEqual(["array"], body["ids"]["types"])
+        self.assertEqual(-2, body["offset"]["default"])
+        self.assertEqual(["unknown"], body["missing"]["types"])
+
     def test_parameter_document_is_byte_deterministic(self) -> None:
         source = (
             b'const{load:list}=request("/api/v1/search/list/",{type:"post"});'
@@ -123,6 +137,18 @@ class GravityCensusParameterTests(unittest.TestCase):
         first = json_bytes(self._build(source))
         second = json_bytes(self._build(source))
         self.assertEqual(first, second)
+
+    def test_lexer_keeps_nested_templates_offsets_and_pairs(self) -> None:
+        source = '/* ignored */ call?.(`${outer({key: "}"})}`, 0x10, value ?? fallback)'
+        lexed = _tokenize(source)
+        self.assertEqual(
+            ["call", "?.", "(", '${outer({key: "}"})}', ",", "0x10", ",", "value", "??", "fallback", ")"],
+            [token.value for token in lexed.tokens],
+        )
+        open_index = next(index for index, token in enumerate(lexed.tokens) if token.value == "(")
+        self.assertEqual(")", lexed.tokens[lexed.pairs[open_index]].value)
+        template_offset = source.index("`${")
+        self.assertEqual(3, lexed.token_at_offset(template_offset))
 
 
 if __name__ == "__main__":

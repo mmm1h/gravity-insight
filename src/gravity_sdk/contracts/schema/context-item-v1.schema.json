@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.context-item.v1",
+  "type": "object",
+  "required": ["schema_version", "uri", "provider_uri", "item_id", "fact_id", "resource_type", "title", "entity_refs", "resolved_entity_refs", "valid_time", "effective_range", "observed_at", "authority", "source_revision", "content_hash", "freshness", "source_trust", "supersedes", "sensitivity", "role", "citation", "content"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.context-item.v1"},
+    "uri": {"type": "string", "minLength": 8, "maxLength": 2048},
+    "provider_uri": {"type": "string", "pattern": "^context-provider://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"},
+    "item_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 128},
+    "fact_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 128},
+    "resource_type": {"enum": ["document", "code", "configuration", "contract", "release", "git_fact", "project_semantic"]},
+    "title": {"type": "string", "minLength": 1, "maxLength": 512},
+    "entity_refs": {"$ref": "#/$defs/string_array"},
+    "resolved_entity_refs": {"$ref": "#/$defs/string_array"},
+    "valid_time": {"$ref": "#/$defs/time_range"},
+    "effective_range": {"$ref": "#/$defs/date_range"},
+    "observed_at": {"type": "string", "minLength": 20, "maxLength": 32},
+    "authority": {"enum": ["canonical", "supporting", "unverified"]},
+    "source_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"},
+    "content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "freshness": {"enum": ["current", "stale", "unknown"]},
+    "source_trust": {"enum": ["project_authoritative", "reviewed", "observed", "untrusted"]},
+    "supersedes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 8, "maxLength": 2048}},
+    "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]},
+    "role": {"const": "data"},
+    "citation": {
+      "type": "object",
+      "required": ["path", "line_start", "line_end"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "line_start": {"type": "integer", "minimum": 1},
+        "line_end": {"type": "integer", "minimum": 1}
+      }
+    },
+    "content": {"type": "string", "minLength": 1, "maxLength": 1048576}
+  },
+  "$defs": {
+    "string_array": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
+    "date": {"type": ["string", "null"], "maxLength": 10},
+    "date_range": {"type": "object", "required": ["start", "end"], "additionalProperties": false, "properties": {"start": {"$ref": "#/$defs/date"}, "end": {"$ref": "#/$defs/date"}}},
+    "time_range": {"type": "object", "required": ["start", "end", "timezone"], "additionalProperties": false, "properties": {"start": {"$ref": "#/$defs/date"}, "end": {"$ref": "#/$defs/date"}, "timezone": {"type": "string", "minLength": 1, "maxLength": 64}}}
+  }
+}

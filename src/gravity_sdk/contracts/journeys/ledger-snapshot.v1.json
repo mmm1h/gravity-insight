@@ -1,0 +1,1321 @@
+{
+  "network_called": false,
+  "row_count": 69,
+  "rows": [
+    {
+      "blocker_note": "2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=[\"/app\"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。2026-08-19 #222：组/身份不变量按响应形状生效，新同形 route 不再靠手写 operation_id。2026-08-19 #226：host `boundaries` 改为卡上 owner 字段，加载缺字段即红；不改状态、不改冻结 case。2026-08-19 #227：带 UV 的分维结果信封现有 `interpretation.metrics[].additivity=non_additive`；投放中 App `29034827` 同窗生产确认声明与响应一致。2026-08-19 #229：`NO_CANDIDATE` 信封另带 8 条已登记可执行问法；2026-08-19 #228：跨进程磁盘命中后冷启动 metadata HTTP 不再每进程重打；十人合计 metadata 从 20 降到 2。不改状态、不改冻结 case。2026-08-20 #22：条件 `type=user_property` 改为离线拒绝，`global_filters` 与 `steps[].conditions` 两处都在发请求前失败，错误指向条件路径而不是上游误报的 `group_by_list`；`type=user` 行为不变。`spec-schema` 的 `type` 枚举跨 kind 共用，未收窄，限制只加在编译期的 event/funnel 上。不改状态、不改冻结 case。2026-08-20 #23：上游反报编译器自己生成的 `create_time/day` 分组\"缺失\"时，不再让调用方重加已发的分组，改判 `upstream` + `retryable`（同一请求实测可在另一次执行成功）；未分类的 analysis 拒绝也不再默认把 `field` 说成 `group_by_list`。`SemanticRejectedError` 的\"确定性\"前提对这类自相矛盾的拒绝不成立。不改状态、不改冻结 case。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "看某事件随时间、分组和条件的变化",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "看某事件随时间、分组和条件的变化",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "0eccd32c11ae66c97571fa2834ac2c25065ce05f406ece47f41b70991317fd32",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "2026-08-18 生产对账：单调、第一步=注册分母、分日可加成立；响应不返回率。合同/describe/`spec-schema` 现已声明：只返回人数、不代算率、两种分母口径。compact 用户分维曾编成 `user_property` 被拒，现映射为可自纠错误。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：`$UserFirstRegister→$AdClick` 近 7 天单调且分日可加；中文长问默认识别器落到不可执行 `analysis.task.handoff`，短问/宿主臂命中产品卡。不改状态。2026-08-19 #227：漏斗结果信封现有 `interpretation.returns_conversion_rate=false` 与两种 `rate_denominators`；投放中 App 同窗生产确认 data 无率字段、未代算。不改状态、不改冻结 case。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "看多步行为的转化漏斗",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "看多步行为的转化漏斗",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "a7dca1077884ad0183660def139980256a61ada7fe552da7e1699ac9b0a13968",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。2026-08-19 #219：同类本地校验现带 `actual value`（类型/长度/传入值），条件值仍不回显。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "看起始行为后的用户留存",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "看起始行为后的用户留存",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "ab3ce411542b93e339a96f290aa6bb19dbba6fd3a4fd4dbba899ebe872c82427",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "看用户或事件属性的分布与聚合",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "看用户或事件属性的分布与聚合",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "b1a8e2b1e36cbe41fcd2c1b29dafd39436fe0912a4f7bf3185d3de35e4ffb6f6",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "看事件指标之间的散点关系",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "看事件指标之间的散点关系",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "2bb59134606c4a9b04e4620121f00b1f2ce79cabbe5816b71fb78186e8de8ff6",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "2026-08-19 #225：同一 Plan 的 `compare_by_os` 节点带 `compare_start`/`compare_end` 生产 success，信封含 `windows` 与 `delta`（按日绝对变化）。CLI `--compare-* --dry-run` 仍拒绝（`field=dry_run`）。`plan schema` 的 `request_fields` 含这对字段。不改状态、不改冻结 case。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "用同一分析定义比较两个时期",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "用同一分析定义比较两个时期",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "f62ec52a6a52a5c8ad553c6b040caafe2add362878d261b546be237d425809c4",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`gravity.derived-metrics.v1` 只变换调用方提供的已有结果，不独立取得上游数据；业务公式、总体、单位和声明集合权威性由调用方负责。",
+      "can_return_business_content": false,
+      "counted": false,
+      "display_name": "在已有结果上执行调用方绑定的派生算术与声明集合对账",
+      "ledger_status": "不计独立动线（调用方派生便利面）",
+      "legacy_display_key": "在已有结果上执行调用方绑定的派生算术与声明集合对账",
+      "request_budget": {
+        "raw": "1 / 2（公式未知；workspace 声明后）"
+      },
+      "row_digest": "ae7aebdbf6ad9b22cc3c5e144733fe95a139974995e44d4a923b12fbb4b55ed5",
+      "surfaces": {
+        "agent": "有（未声明公式返回目标 gap）",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有（未声明公式返回目标 gap）",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "评估一组人群规则命中的人数与占比",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "评估一组人群规则命中的人数与占比",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "b109592f8591b2e761a5628f0f63bbe4095e0f6abe6f099441526f1fb67aaf8a",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "一次取得构造分析所需的事件、属性、指标和模板上下文",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "一次取得构造分析所需的事件、属性、指标和模板上下文",
+      "request_budget": {
+        "raw": "1 / 2（实测）"
+      },
+      "row_digest": "f300f075fa565137af1b3863c65628a3a43e386bfea069fafbf716a5f67ac3c2",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "一次查看 App 的容量、角色、权限菜单和实时事件治理快照",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "一次查看 App 的容量、角色、权限菜单和实时事件治理快照",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "65e25e6fcbf174c610bbcfce0eeec204048920554095ba576f8735792c75da22",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "一次查看 App 已登记的归因配置、映射与回溯设置",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "一次查看 App 已登记的归因配置、映射与回溯设置",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "3be65a225c95c61b1bbdd8b74da95fcc950270c004e797a27b9bd63ce519d944",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看单个用户某日的画像、事件时间线和回传记录",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看单个用户某日的画像、事件时间线和回传记录",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "2f38966541805966977f97570be9a44e2535db136bb04123a29005cefc558685",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "汇总多个 App 的业务趋势和小时脉搏",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "汇总多个 App 的业务趋势和小时脉搏",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "576ed24ff68c7be9bd6c12f23cea5362ed3522b797894d06f09198f3b62de852",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看公司资源用量趋势",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看公司资源用量趋势",
+      "request_budget": {
+        "raw": "1 / 2（实测）"
+      },
+      "row_digest": "422f7f2fff0695e5d8dbf850b7dc152223a74f7f950cfea2bbbb4ace6dee2c30",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看自定义人群覆盖与状态",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看自定义人群覆盖与状态",
+      "request_budget": {
+        "raw": "1 / 2（实测）"
+      },
+      "row_digest": "5f7bdfa798ab3727f337a71e9f31a9232b0a393c0bc72722fcc66c45381adda7",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "比较已支持平台的素材表现",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "比较已支持平台的素材表现",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "6ec153e90210027e981b8d7bfd07a9014781ea3c2fd4e1f88d4c2d866a766b0a",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "当前只返回已登记合同字段；新观察字段登记后按投影总裁决暴露。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "读取单日订单目录",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "读取单日订单目录",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "4e66ff7fa8e4310095f5c1a75aac709b6f65a49b75bf903036e3fd8b4a424ef0",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "按 TraceID 追踪单日订单拆单结果",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "按 TraceID 追踪单日订单拆单结果",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "f417437fd0ecd444a3242af5f793eab6b93fb1899ccffea624be55eca34d8ac7",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "当前返回全部已登记合同字段；新观察字段登记后按投影总裁决暴露，字段/筛选/分组意图转 raw operation 并走 live metadata 校验。空结果与权限裁剪空集不可区分；不确定权限时运行 `gravity apps permission-profile`。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "读取单日完整已登记变现明细（D27）",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "读取单日完整已登记变现明细（D27）",
+      "request_budget": {
+        "raw": "1 / 2（控制流）"
+      },
+      "row_digest": "db26644546487de87dd33edea4cc6bf31aed28cc9887daa65bbb211ebd718185",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "执行 workspace 登记的聚合 SQL 分析产品",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "执行 workspace 登记的聚合 SQL 分析产品",
+      "request_budget": {
+        "raw": "1 / 2（实测）"
+      },
+      "row_digest": "854be2989d7b02898391140e229d7ba027829f85f1302ffee1a61310fb5868d6",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "-",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看看板详情、成员和筛选收藏",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看看板详情、成员和筛选收藏",
+      "request_budget": {
+        "raw": "1 / 2（引用未知、在线解析）"
+      },
+      "row_digest": "fb5582cd8b6f569a45dcfbae6ab39ab1d121644725c7d3454a458616f20d48ec",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "能力边界不变：非空页面 `config.filter` 仍 fail-closed；bundle 只证明页面与图表条件分字段发往服务端，异维度组合与同维度冲突仍无权威语义。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "忠实重放看板图表及页面条件（D22）",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "忠实重放看板图表及页面条件（D22）",
+      "request_budget": {
+        "raw": "1 / 2（引用未知、在线解析）"
+      },
+      "row_digest": "13b693847be552510a6e3aa3a707af89accbaecd33e5d2b71d20fb4642e3172b",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`space → folder → dashboard` 是上游目录层级，note 是 dashboard `ui_config` 中的嵌入项，不是第四层目录资源。生产闭环完成 create/rename/move/copy/note update+delete/readback/父删除迁移/批量清理，以及自有保存分析的 link/detail readback/unlink；父删除 dry-run 在写前给出精确迁移数与 `dashboards_deleted=0`。所有可删除对象须有 `GSDK-<12 hex>` marker；Plan 只接受显式 `preview/execute` mode，Agent 自然语言永不自动写。share、所有权 transfer、素材/资产仍不在闭环证据内。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "创建并管理可持久化的看板工作区与分析便签",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "创建并管理可持久化的看板工作区与分析便签",
+      "request_budget": {
+        "raw": "2（dry-run / 人工确认后同参数 execute）"
+      },
+      "row_digest": "764935447565cdae45f8e6a9ebcc2e59511fbdbe7910e848f0b2980f1323009d",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "保存目录不读取 config，catalog v2 统一返回 `replay_supported=null/replay_status=unchecked`；subject 命中只证明 compiler family 存在。exact get/prepare 才检查 Web artifact 并给出 true/false，成功 Plan 只接受一致的 `true/supported`。目录仍无逐项 detail fan-out。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "按精确引用重放保存分析",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "按精确引用重放保存分析",
+      "request_budget": {
+        "raw": "1 / 2（引用未知、在线解析）"
+      },
+      "row_digest": "353f2c0fab387319ca65f727de4d3c3c6b58b470bc5d502d43e7d3eb9252b68a",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`report_config/update` 以无 `id` 创建、带 `id` 更新、带 `id + is_deleted=true` 删除；事件分析已生产完成 create/list/get/update/readback/replay/delete/消失确认且最终 marker 为 0。2026-08-17 又以精确 GET 的原样保存对象重放 `analysis.event.query`，HTTP 200，`2026-06-01..07` 聚合值 `235176.0` 已随 governed response 落入 `evidence/forensics/20260817_saved_analysis_replay.json`；receipt 保持值无关。2026-08-19 compact 保存定义改由 SDK 合成已登记 Web config，event/funnel/retention/scatter/user-property 五类都在 App `29034827` 完成 create/list/get/config 相等读回/delete/消失确认，最终全 App `GSDK-` marker 为 0；现有 Web artifact 提交路径保持原样。离线编译零网络，返回完整 live metadata 依赖；真正执行在 query 前联网复验。update/delete 以 GSDK marker 或 list/get `create_user_id == gravity_id` 放行；本轮只读复核 7 个 App 首页 313 条均有稳定 int `create_user_id`，0 条缺字段，App `29034827` 首页有 42 条当前 principal 自有且无 marker。五类已证明 strict replay 的 subject 可写；`analysis_cash/order/user` 因本租户无样本且内部 config 异构而保持未开放。三张 mutation 卡只交接同参数 dry-run/execute，自然语言不自动写；share 不在产品内。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "创建、更新、重放并删除可复用保存分析",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "创建、更新、重放并删除可复用保存分析",
+      "request_budget": {
+        "raw": "mutation 2（dry-run / 显式 execute）；重放 1"
+      },
+      "row_digest": "40f8c9e1c5d9bfdc45fc335777b0cce829d42c87f5fca20cc2563dc529309133",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "设计不适用",
+        "raw": "有 / 有 / 设计不适用 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "未经证明的 artifact 继续隔离，不因目录可选而放宽回放合同。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "按精确引用重放分析模板",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "按精确引用重放分析模板",
+      "request_budget": {
+        "raw": "1 / 2（引用未知、在线解析）"
+      },
+      "row_digest": "01d1c8392055a28be584b31139e427982a36d419e5016284d7f6a65928f70eb6",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "分群目录 `analysis.segment.list` 空结果与权限裁剪空集不可区分；不确定权限时运行 `gravity apps permission-profile`。2026-08-18：已算完分群的 list/detail/history/daily_result/members 人数一致；明细导出行数=人数。未改状态。评测冻结 case 未改。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看分群详情、版本和单日聚合结果",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看分群详情、版本和单日聚合结果",
+      "request_budget": {
+        "raw": "1 / 2（引用未知、在线解析）"
+      },
+      "row_digest": "e82e1cbe95b5b7ede3b37ab0101667c22c037f6acf3462aec5ca903850eb6132",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`gravity-insight.segment-members.v1` 全量交付上游授权字段；目标非空实证登记 147 个顶层字段，未登记字段仍 fail-closed。route 忽略 `page/page_size` 并一次返回完整结果；触及 `max_items` 显式 `partial`。`fields` 是固定 profile + live `analysis.user_property.list` 动态属性的本地选列输入；未知引用仍按 call-bound 显式声明 3 次，不扩大无 revision/ETag 的在线两次解析模式。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看精确分群成员及逐人属性",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看精确分群成员及逐人属性",
+      "request_budget": {
+        "raw": "1 / 2（自然语言实测、卡面）"
+      },
+      "row_digest": "10885b429540c34ec9e433e45302b0ab648a22c54698bdc2b666a8fc71255cf8",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "独立任务产出上游分群对象，不与“查看已有分群详情/成员”合并计数。`from_analysis`、`from_rule`、`by_manual`、`save` 已有生产创建/更新/刷新/删除与读回证据；历史版本和临时分群两个 create 变体未生产验证，不作为本行闭环证据。update/delete 以 GSDK marker 或 list/detail `create_user_id == gravity_id` 放行；本轮只读复核 7 个 App 首页 32 条分群均有稳定 int `create_user_id`，0 条缺字段，首页未见当前 principal 自有无 marker 样本。Plan v1 不承诺不可重放写、人工确认、preimage 或写后读回，Agent 只交接两步命令。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "从分析结果或规则创建并管理可复用分群",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "从分析结果或规则创建并管理可复用分群",
+      "request_budget": {
+        "raw": "2（dry-run / 显式 execute）"
+      },
+      "row_digest": "88c8cc43117f942225ae123e4e1be3c3bfc4e78584afb09ce25dc13e90429d64",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "设计不适用",
+        "raw": "有 / 有 / 设计不适用 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "闭合 schema + live metadata 提供物理指标/维度候选；日期和 filter value 仍须由调用方精确提供。query 实测为单响应 + `page_info.total`，改变 page/page_size 不控制结果；完整读取只发一次 query。队列观察窗以已编译 `multi_keys.item_enum` 为准；超出上界返回已登记 `MULTIDIM_COHORT_HORIZON_CONTRACT_MISSING`，不改用通用 Analysis 留存。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "用显式物理维度、指标和筛选读取多维报表",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "用显式物理维度、指标和筛选读取多维报表",
+      "request_budget": {
+        "raw": "1 / 2（物理字段未知、在线解析）"
+      },
+      "row_digest": "a4816356494cedc3f9e2efb3618b36a787589757290d631cc9ef325e90114b23",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`gravity.semantic-compose-result.v1` 记录 definition/version/fingerprint、实际成员、生成查询、验证和 `allowed_claims`。`@1` 保持 `ap_cost` day/week/total 且 filter 为空；`@2` 增加 dimension-bound `click_company IN` 与 3 个 day/week 指标；`@3` 保留旧成员并增加 9 个 day/week 指标，注册数因已证空排除；`@4` 保持成员面并把结果限定为 fetched-at 时点观察，同输入跨执行不保证数值相同。v3/v4 维度兼容性为 4 个代表实测、5 个同族外推；未知成员、缺失 filter dimension、禁止 join、指标粒度冲突均在发网前失败。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "用版本化语义成员组合已登记指标、维度与时间粒度",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "用版本化语义成员组合已登记指标、维度与时间粒度",
+      "request_budget": {
+        "raw": "1 / 2（成员未知、机器 schema）"
+      },
+      "row_digest": "3dbd1eac211708b8e05791486a8c6daff30f202c66feb4348f6188653dcd5a1f",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`metric-anomaly-localization@1` 只编排上一行现有语义成员；固定 CLI/SDK 输入编译为四个 `semantic_compose` 节点，不新增 operation、adapter 或 worker。checkpoint 用 own-input/result fingerprint 和 definition DAG 仅失效后继；成功 sibling 原 Plan item 复用。结论只称返回 click-company 行之和，且每个数字引用结果内 fact path；partial/gap/error/skipped/empty 一律 `conclusion=null/allowed_claims=[]`。独立 envelope 需要台账可见，但没有解锁上一行之外的问题，故不计新产品动线，也不新增 Agent 卡。",
+      "can_return_business_content": false,
+      "counted": false,
+      "display_name": "可恢复地执行已登记 ap_cost 异常定位调查",
+      "ledger_status": "不计独立动线（既有语义组合调查编排）",
+      "legacy_display_key": "可恢复地执行已登记 ap_cost 异常定位调查",
+      "request_budget": {
+        "raw": "首跑 1；续跑 1"
+      },
+      "row_digest": "60e5d17cc024abc28d44f3ac8754bf3f87e471ab6925bf39eecbc359e3d18945",
+      "surfaces": {
+        "agent": "设计不新增卡",
+        "cli": "有",
+        "plan": "编译为既有 Plan",
+        "raw": "有 / 有 / 编译为既有 Plan / 设计不新增卡",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`analysis.merge2.ap-cost-anomaly-localization` 由 `project.merge2` Overlay 显式扩展 Built-in Skill，绑定 project Semantic、deterministic Operator 与两份 `role=data` Repo Context；Core 将 exact Journey/Skill package/Overlay/Trust/Semantic/Operator/Context/执行合同冻结为值无关 `gravity.execution-snapshot.v1`，既有 runner/Plan 是唯一执行者并产出正式 `gravity.analysis-result.v1`。当前 `report.multidim.query` 权威完整性仍为 `unknown`，故 `can-run/run` 都返回 `blocked/COMPLETENESS_INSUFFICIENT`、空 findings/claims/receipts 且零请求；synthetic complete/fresh 只证明组合等价，不提升生产 Trust。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
+      "ledger_status": "当前阻塞（R09A Core readiness 已机器闭合）",
+      "legacy_display_key": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
+      "request_budget": {
+        "raw": "can-run 0；当前 run 0"
+      },
+      "row_digest": "a4bac63bf7d61b6f2fdf79c0fdd31c2c2a08caae67107099262af3c5247ffa3c",
+      "surfaces": {
+        "agent": "有（Built-in Agent Skill）",
+        "cli": "有",
+        "plan": "复用既有 Plan",
+        "raw": "有 / 有 / 复用既有 Plan / 有（Built-in Agent Skill）",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`analysis.experiment-outcome-evaluation` 与原建议 Journey 分离；Outcome Handoff 只绑定外部 observation digest 和后置非重叠证据窗，不执行评估。当前 `operator://gravity/significance-test@1` 未登记，故 `can-run` 必须返回 `blocked/OPERATOR_UNAVAILABLE`；不得让 Proposal、原建议或同一运行自证结果。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "基于独立实验观察窗评估实验结果",
+      "ledger_status": "当前阻塞（R12-C 仅交付 handoff）",
+      "legacy_display_key": "基于独立实验观察窗评估实验结果",
+      "request_budget": {
+        "raw": "0 / 0"
+      },
+      "row_digest": "ba8d1db31c899523c276425a15ac23f3e8caa65143318ecb554e17df3e58e4d6",
+      "surfaces": {
+        "agent": "无",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 无",
+        "sdk": "无"
+      }
+    },
+    {
+      "blocker_note": "R02 只登记机器 Journey 和预期缺口，不实现模型。当前必须返回 `OPERATOR_UNAVAILABLE` 与 `MODEL_UNVALIDATED`，不得由 Prompt 临时选模型或输出精确预测。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "拟合 LT/LTV 曲线并给出安全预测区间",
+      "ledger_status": "完全缺失",
+      "legacy_display_key": "拟合 LT/LTV 曲线并给出安全预测区间",
+      "request_budget": {
+        "raw": "0 / 0"
+      },
+      "row_digest": "097e6754f9b9e7a7882086315e2fe5a11678dd5eb447f8b6f451eefa51f1db99",
+      "surfaces": {
+        "agent": "无（目标 gap）",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 无（目标 gap）",
+        "sdk": "无"
+      }
+    },
+    {
+      "blocker_note": "当前 turbo `edit` 是 create/update upsert，字符串 ID 省略为 create、带 ID 为 update；删除使用当前 turbo delete。生产闭环以 `ap_cost` 公式创建 marker 指标，更新名称/展示格式后由既有旧前缀 mine/shared metadata 目录验证，再发真实 Multidim 查询取得 40 个非空日行，最后删除并连续两次确认当前目录为空。四张产品卡分别表达 list/create/update/delete；自然语言不自动写，Plan 只接受显式 preview/execute。permission edit 会覆盖角色可见指标，未实现。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "定义、更新并在多维查询中使用可复用自定义指标",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "定义、更新并在多维查询中使用可复用自定义指标",
+      "request_budget": {
+        "raw": "mutation 2（preview / execute）；查询 1"
+      },
+      "row_digest": "8642a6f9b49efa0bdb0236f78f40148ce65fcde696acd6b249afeada215848ce",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "生产创建 marker 模板并把源属性读回为独立成员 ID，随后按成员 preimage 移除并读回空集合，再软删 master 并确认 ID 消失；最终无残留。create/append 以 App 目录 ID 输入、按稳定名称映射成员读回，remove 明确使用模板成员 ID。既有 master 变更须通过 `marker OR create_user_id == gravity_id`；本轮只读复核 master 列表 5/5 均有稳定 int `create_user_id`，0 条缺字段，当前租户 5 条均为他人无 marker。四张 Agent 卡均不允许自然语言自动执行。分组 UI、无 owner 证据的属性批删和不可清理的 XLSX 导入不在产品内。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "创建并维护可复用的事件/属性元数据模板",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "创建并维护可复用的事件/属性元数据模板",
+      "request_budget": {
+        "raw": "mutation 2（preview / execute）"
+      },
+      "row_digest": "538cc1746ea52cd8fa1231bbfa6db6e6974b10b751903fd6f9c8df1b64a494d5",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "平台须已知；第二次执行重新按平台复验物理指标。2026-08-20 #26：Bytedance `advertiser.list` 补齐已由同平台兄弟合同投影的 `delay/operator_id/operator_name`，恢复 operation 层读取。#27：产品结果边界从编译合同派生 opaque JSON 字段并有界保留，结构拒绝给出值无关的检查类别与字段路径；破坏性、类型变化、未登记字段和 App/date 绑定继续硬失败。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "按平台和物理指标读取推广表现",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "按平台和物理指标读取推广表现",
+      "request_budget": {
+        "raw": "1 / 2（指标未知、在线解析）"
+      },
+      "row_digest": "d3a46de34c072ea3f8eac069124780b97195b02779b7dcf56fa13faa0c26a28c",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "独立于 Promotion Performance；只声明请求日期范围，不伪称结果行有日期或 App/物理指标绑定。`advertiser_name` 等已观察字段受投影总裁决约束：登记后全部暴露，不再按本地隐私策略省略。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看 B 站账户/产品投放表现",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看 B 站账户/产品投放表现",
+      "request_budget": {
+        "raw": "1 / 2（日期未知）"
+      },
+      "row_digest": "540d1c130fba764419bd65ee9bcb5aced4c667510533b1b0d7f5d6e084bf6d7d",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "独立 `advertiser_profile` 完整读取，不并入明确排除广告主目录的跨平台推广表现；本轮 `page_size=1` 的页 1/页 2 各 1 次，均 HTTP 200 / `success`，页码回显 1/2 且登记投影行不同，页码分页已验证。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "读取巨量广告主消耗、余额、预算模式和状态",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "读取巨量广告主消耗、余额、预算模式和状态",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "6719265eaae5ccfe27da2d64ff57066f0010c56a76e12bb955442e8d90b16917",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "独立 `gravity-insight.title-package.v1`，`package_kind=regular\\|standard` 两个显式变体不合并、不拍平；`title_list` 等已观察字段按投影总裁决登记并暴露，未登记新增字段继续按合同漂移 fail-closed。它是 D32 之下一个具体产品，不代表 D32 本身有进展。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "读取巨量普通/标准标题包的标题数、计划数与成本表现",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "读取巨量普通/标准标题包的标题数、计划数与成本表现",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "5db308cc85d0d1806118a8e5b453cb09d6ca1a0517c734a57f1df88036fc285d",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "refresh 不完整时不发布 staging catalog；成功查询仍是带同步时刻的 observed snapshot。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "离线查找可用于分析的事件、属性、指标和模板名称",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "离线查找可用于分析的事件、属性、指标和模板名称",
+      "request_budget": {
+        "raw": "1 / 2（冷目录在线刷新）"
+      },
+      "row_digest": "60f5b44a879e3f7d4b437b12525835ac4a85ddb8070749c790bf453329d10d1a",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "只证明带同步时刻的沿革观察，不回答 F41 的当前 schema。2026-08-18：与当前 schema 同问时不再被整句 gap 短路，终态为 `MULTIPLE_INTENTS` 并列 `metadata:table_lineage` 与 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查询已同步的数据表版本与变更观察",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查询已同步的数据表版本与变更观察",
+      "request_budget": {
+        "raw": "1 / 2（冷目录在线刷新）"
+      },
+      "row_digest": "8bd60d5ce8a079c687f4d0005fd8e291f8aa6f3c6347314df9e5abf99aa54f58",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "文件 effect 由一次 `export run` 完成 create→poll→download、校验与原子提交；卡声明发现后 1 次调用。Plan v1 不承诺文件副作用、超时恢复或部分下载语义。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "创建、轮询并下载素材分析报表",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "创建、轮询并下载素材分析报表",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "dba860c759d952e3a3d759572150481e285cc83acb913909cd192a01de96dc33",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "设计不适用",
+        "raw": "有 / 有 / 设计不适用 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CLI/SDK 旧入口按输入分流：`primary` 加正式 21 平台返回 `promotion performance` 的强绑定 envelope；非 primary 层级及 `bing/xiaohongshu/taptap/wechat_video` 保留 inventory 兼容读取，结果以 `compatibility.formal_binding_validation=not_performed` 标明未经正式绑定。兼容匹配只执行唯一 operation，多候选失败并列候选；shortcut 不适用时仍显式失败。Agent/Plan 只暴露正式产品。",
+      "can_return_business_content": false,
+      "counted": false,
+      "display_name": "跨平台读取推广各已登记层级的兼容快照",
+      "ledger_status": "不计独立动线（legacy 兼容面）",
+      "legacy_display_key": "跨平台读取推广各已登记层级的兼容快照",
+      "request_budget": {
+        "raw": "1 / 不提供"
+      },
+      "row_digest": "97b7cfb3e255cd3e17f3c2d466f997a9b091950295fc115fbe44cb1534dc0d84",
+      "surfaces": {
+        "agent": "设计不暴露",
+        "cli": "有",
+        "plan": "设计不暴露",
+        "raw": "有 / 有 / 设计不暴露 / 设计不暴露",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "inventory 驱动且会跳过缺必填 input 的 operation，不构成稳定调用方任务；在线固定上下文走 `analysis context`，离线发现走 `metadata search` / `metadata vocabulary`。",
+      "can_return_business_content": false,
+      "counted": false,
+      "display_name": "读取任意稳定元数据 operation 的统一快照",
+      "ledger_status": "不计独立动线（SDK 便利面）",
+      "legacy_display_key": "读取任意稳定元数据 operation 的统一快照",
+      "request_budget": {
+        "raw": "1 / 不提供"
+      },
+      "row_digest": "1f94c6ecb63cc7e91c6810f7e6496212a57acbeac4adccb52fe1868350bba2cf",
+      "surfaces": {
+        "agent": "设计不暴露",
+        "cli": "设计不暴露",
+        "plan": "设计不暴露",
+        "raw": "设计不暴露 / 有 / 设计不暴露 / 设计不暴露",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "2026-08-16 按 catalog 枚举：第 1 个 App HTTP 200 空，第 2 个 App HTTP 200 非空后立即停止。`gravity-insight.analysis-default-dictionary.v1` 登记并暴露已观察的 `api`、`cocoscreator` string array；新增字典键继续 fail-closed。Core/CLI/SDK/Plan/Agent 共用产品合同，卡与 Plan 节点声明 `gravity.agent-call-bound.v1`。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查询分析默认值字典",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查询分析默认值字典",
+      "request_budget": {
+        "raw": "1 / 2（App 已知；App 未知 3）"
+      },
+      "row_digest": "5fdf0299978e65292190ede0263ecb8b0fb61237dc57b6db90d6f2d24057bae3",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "2026-08-18 18:41 只对 `29034827` 开 2h 窗，`filters.event_type=profile` 当天窗第一次即 HTTP 200、`data.list` 长度 1000、无 `page_info`。已关回 `is_enabled=0`，`modify_time=2026-08-18 18:45:19`。产品 `gravity-insight.realtime-event-catalog.v1` 暴露 6 个顶层 item 键；`raw_properties` 等 6 键省略。分页按实测声明为 `none`。Agent 首问命中 `composite:realtime_event_catalog`。前三轮空形状记录仍成立：空 filters / `event_type=track` / `event_name=microgame_window_click` 在开窗后仍空。Agent 首问不再返回 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING`。hash-matched `Debug-hpZqESZ9.js`（sha256 `36bf9a81…afe44bf`）证明装载列表的 body 是 `{page,page_size,request_time,app_id,filters}`；默认 `request_time` 为当天 `startOf('day')..endOf('day')`（含此刻），空控件把 `filters` 各键省略成 `{}`，`page=1`、`page_size=50`。同页另有独立开关 `app.realtime_event.list`/`manage`：默认开启 2 小时入库。2026-08-18 后半趟只对投放中 App `29034827` 走受治理写入：dry-run 后 `is_enabled=1`、`start_time=now`、`end_time=now+2h`、`time_slot=2`；读回 `conf.is_enabled=1`（上游把窗收成自己的时钟，约 −59s）。对该开启窗按前端当天窗 `request_time=[\"2026-08-18 00:00:00\",\"2026-08-18 23:59:59\"]`、`filters={}`、`page=1`、`page_size=1` 连发 10 次，间隔 60s，均 HTTP 200，`response_drift` 只见 additive `/data/list`（array），无 item、无 `page_info`。随即 `is_enabled=0` 关窗并重读：`modify_time=2026-08-18 03:30:35`，`is_enabled=0`。2026-08-18 午间峰值再打一趟：仍只对 `29034827` dry-run 后开窗 `12:19:49..14:19:49`，读回 `is_enabled=1`（窗被收成 `12:19:28..14:19:28`，`modify_time=2026-08-18 12:20:28`）。对该开启窗按前端当天窗 `request_time=[\"2026-08-18 00:00:00\",\"2026-08-18 23:59:59\"]` 与近 1h 窗 `request_time=[now-1h, now]`，`filters={}`、`page=1`、`page_size=50` 交替连发 12 次（6 周期 × 2 形状），间隔 60s，均 HTTP 200，`response_drift` 只见 additive `/data/list`（array），无 item、无 `page_info`。随即 `is_enabled=0` 关窗并重读：`modify_time=2026-08-18 12:26:13`，`is_enabled=0`。未碰其余 6 个 App。未试非空 `event_type`/`event_name`。两个时段（凌晨 03:21、午间 12:20）都空，时段假阴性已排除。2026-08-18 再打等待时长：仍只对 `29034827` dry-run 后开窗 `12:40:56..14:40:56`，读回 `is_enabled=1`（窗被收成 `12:40:37..14:40:37`，`modify_time=2026-08-18 12:41:37`）。对该开启窗按前端当天窗 `request_time=[\"2026-08-18 00:00:00\",\"2026-08-18 23:59:59\"]`、`filters={}`、`page=1`、`page_size=50` 在开窗后 2 / 5 / 10 / 15 / 20 / 30 / 40 / 50 分钟各读一次，8/8 HTTP 200，`response_drift` 只见 additive `/data/list`（array），无 item、无 `page_info`。窗仍开着时 `analysis.event.list` 全量 117 条的 `yesterday_count` 均为 0；取已存在自定义事件 `microgame_window_click` 与前端合法值 `event_type=track` 再打两次非空 filters，仍空。随即 `is_enabled=0` 关窗并重读：`modify_time=2026-08-18 13:33:34`，`is_enabled=0`。开窗后持续 50 分钟、8 个时间点 + 2 种非空 filters 仍空，入库延迟假说不成立。未把空 list 当 schema，读产品仍完全缺失。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查询实时事件目录",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查询实时事件目录",
+      "request_budget": {
+        "raw": "1 / 2（中英首问；缺 start/end 时 3）"
+      },
+      "row_digest": "16f74e6310e80cacd543790e4d03dff264691ab14a42e47008bcbcce015b9766",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`analysis.setting.query` 仍由完整控制流证明为 mutation。冻结 inventory 的 987 个唯一 `(method,path)` 经 375/375 hash-matched bundle 重放完全一致；378 条语义超集展开为 52 条 owner 命名空间全集后，确认四条真读：`analysis.dashboard.tree/detail` 装载空间树和看板设置，`analysis.report_config.list/get` 装载保存分析配置。四条均已有 stable 合同、Core/CLI/SDK/Plan/Agent 卡和 `gravity.agent-call-bound.v1`；一条最小 `report_config.list` probe 为 HTTP 200 非空，未重试、翻页或扩窗。本行与“查看看板详情、成员和筛选收藏”及“按精确引用重放保存分析”重复，故不新建产品。若未来提出更宽的通用设置面，`config/ui_config/remark` 与人员字段须先取得合同证据并登记后全部暴露；未登记时仅按合同漂移 fail-closed，不等待隐私批准。",
+      "can_return_business_content": false,
+      "counted": false,
+      "display_name": "查询分析空间或报表设置",
+      "ledger_status": "不计独立动线（既有稳定读取面重复）",
+      "legacy_display_key": "查询分析空间或报表设置",
+      "request_budget": {
+        "raw": "1 / 2（引用未知、在线解析）"
+      },
+      "row_digest": "5034ded42e6aba9626dd9d69d7542519a371af688bb0a6c66fcf014716380898",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "写入 1 条 marker-owned 自有报表后，`report.report.list` 与父值绑定的 `report.report.detail` 均取得非空 schema；旧 shared/MasterKey 账号级空合同仍保留，不把空样本伪作 item schema。`report.shared_to_me.list` 无时间窗、无 App 输入，扩窗/枚举不适用，08-16 账号级最小第一页空结论不变。`report.masterkey_report_group.list` 合同有 `date_list`：2026-08-17 用 `date_list=[\"2026-07-17\",\"2026-08-16\"]`、`filtering={}`、`filters=[]`、`order_by=[]`、`query_fields=[]`、`real_data=1`、`page=1`、`page_size=1` 发 1 次，HTTP 200 / `code=0` / `msg=成功` / `data.list=[]` / `page_info.total_number=0`，无 `extra.error`；App 枚举仍不适用。`gravity-insight.report-directory.v1` 完整分页后有界并发读 detail；列表/detail 观察字段全部登记暴露，新增字段继续 drift fail-closed。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查找自有、共享和 MasterKey 报表并读取其定义",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查找自有、共享和 MasterKey 报表并读取其定义",
+      "request_budget": {
+        "raw": "1 / 2（中英首问、卡面）"
+      },
+      "row_digest": "5feebdcabe0f5f6824e4c5ac6736605a772d7a374c103474b4978014c290ed57",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "创建 1 条 disabled、`send_way=[]`、无收件人的 marker-owned 订阅后，`report.subscribe.list` 取得非空 schema；旧 08-16 最小第一页空已被该非空样本覆盖，本轮不重打。`gravity-insight.report-subscriptions.v1` 完整分页返回全部登记字段。未调用 `subscribe/test`，清理后列表确认空。低权限账号在同 route 上也可拿到成功空集（见 #159），本行非空来自高权限账号的 marker 自建，不改错误分类。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看报表订阅清单",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看报表订阅清单",
+      "request_budget": {
+        "raw": "1 / 2（中英首问、卡面）"
+      },
+      "row_digest": "bb11fcf9248d5c531018f7d17f15cd72e3338c95c0cecbc85e03d4b5d088a913",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "独立任务终点是可复用上游报表对象，不与目录读取合并计数。`report.report.update` 已生产验证 create/delete；marker 在 `remark` 经 list/detail round-trip，删除前 detail 闸门、删除后完整列表确认。Plan v1 不承诺人工确认、不可重放写、preimage 或写后读回，Agent 只交接两步命令且自然语言不自动执行。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "创建或删除可复用报表",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "创建或删除可复用报表",
+      "request_budget": {
+        "raw": "2（dry-run / 显式 execute）"
+      },
+      "row_digest": "78b8d7c9503a60f268bcfbe4d16c2d73cfef80c1b1a7f1e0a6beef3e4a5b7116",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "设计不适用",
+        "raw": "有 / 有 / 设计不适用 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "独立任务终点是可管理的上游订阅对象；生产验证 v3 报表父项 create/delete 与 subscription create/delete。订阅 marker 在 `name/wildcard_name` round-trip；创建强制 disabled 与空收件人，绝不调用 test route。v3 父项是本任务脚手架，不另拆动线；Plan 窄例外与报表写相同并逐条登记。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "创建或删除报表订阅",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "创建或删除报表订阅",
+      "request_budget": {
+        "raw": "2（dry-run / 显式 execute）"
+      },
+      "row_digest": "cd07781062d01f42ccbf758f56a3ef742335cc2453b3c29a8599d8b54dc68341",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "设计不适用",
+        "raw": "有 / 有 / 设计不适用 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "阻塞归因：需上游人工动作。证据见 [媒体报表本轮结论](archive/decisions/2026-08/media-report-ad-platform.md)。Agent 首问返回 `MEDIA_REPORT_ITEM_SCHEMA_MISSING`。hash-matched `GeneralImportAd-CKb38unY.js`（sha256 `21961901fc606dbae4bfc432e0ab1272006435d1e4571ac3e95724b81a53424d`）证明装载 body 为 `ad_platform`/`app_id`（空则省略）、`start_date`/`end_date`/`page`/`page_size`/`order_by`，故省略 `ad_platform` 就是查全集。2026-08-18 对投放中 App `29034827` 发 11 次最小第一页：`bytedance` 字符串/整数 `app_id`、省略 App、以及 `bytedance_std` / `bytedance_star` / `bytedance_dy_game` / `gravity` / `tiktok`；窗为 `2026-07-17..2026-08-16`、当天 `2026-08-18`、`2026-08-17..2026-08-18`。11/11 HTTP 200 / `code=0` / `data.list=[]` / `page_info.total_number=0` / `total.cost=null`。item schema 未成立，不晋升。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "查找可用的媒体报表",
+      "ledger_status": "完全缺失",
+      "legacy_display_key": "查找可用的媒体报表",
+      "request_budget": {
+        "raw": "未验证"
+      },
+      "row_digest": "bcedd6182adf58fb72a19602ec9a1d9bcd24d43324071081e88d159e68ed7384",
+      "surfaces": {
+        "agent": "有（目标 gap）",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 有（目标 gap）",
+        "sdk": "无"
+      }
+    },
+    {
+      "blocker_note": "设置 → 应用管理的真实账号级列表为既有 stable `app.list`：`GET /turbo_engine/api/v1/user/open_app/list/`，不是 `app.project.list` 的 `POST /turbo_engine/api/v1/user/project/list/`。自然页面首屏 HTTP 200 非空 7 行；`cid/create_time/download_url/event_version/icon_url/id/industry_id/is_enabled/is_iaa/modify_time/name/os/package_name/remark/sub_package_list/wechat_app_id/wechat_origin_id` 与 `page_info.page/page_size/total_number/total_page` 均已在 v4 投影登记暴露。`app.project.list` 无时间窗、无 App 输入，扩窗/枚举不适用；08-16 账号级最小第一页空仍只约束该 draft，本轮不重打。CLI/SDK/Plan 复用 raw `app.list`，Agent 中英首问均交付 `app.list` 卡；英文冻结问法为 “List the app projects that the current account is allowed to read.”。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查找当前账号可读的 App 项目",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查找当前账号可读的 App 项目",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "79807e95679335f4fe50c017cc037425a1c33146e8544674f60e4cece54d9671",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "OneLink 仍由既有 GET 父链证明当前账号明确空，不拿空样本补成功合同。调用方第 1 条 URL `https://apps.apple.com/cn/app/id414478124` 的唯一 GET 即 HTTP 200 / `code=0` 成功，随后按停止条件未请求第 2/3 条；成功字段 `app_id/icon_url/image_data/name/package_name/platform/version` 与旧 error-shaped 样本的 `error` 全部登记暴露。stable `app.app_info.get` 固定上游 host/path/method，`data.error` 离散为 `semantic_error`；raw operation 由 CLI/SDK/Plan/Agent 共用 `gravity-insight.read.v1` 与 `gravity.result-source.v1`。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查看 App 的 OneLink 与公开信息绑定",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查看 App 的 OneLink 与公开信息绑定",
+      "request_budget": {
+        "raw": "1 / 2（公开 URL 已知 / 未知）"
+      },
+      "row_digest": "5390d6a37c00a2ed73f263bd26601ed61496d13080a522cc1c2254c6d81ff702",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "2026-08-17 按 catalog 枚举：7 个可绑定 App，0 个失败；`catalog#1` 在 `2026-07-17..2026-08-16` HTTP 200 / `code=0` 明确空，`catalog#2` 同窗首次非空（13 行）后立即停止，其余 5 个未试。item/total 观察字段为 `stat_time/monetization_platform/ad_unit_id` 加请求指标动态列；`page_info` 只有 `total`，bundle 对完整 `data.list` 做客户端 slice，故分页声明为实测 `none`，不复制模板 `page_info`。stable `report.get.query` 由 CLI `gravity run`、SDK `read`、Plan operation node 与 Agent 产品卡共用 `gravity-insight.read.v1` + `gravity.result-source.v1`。2026-08-18：`agent-catalog describe` 对该 selector 补齐完整 `input_schema`（含 `time_dims`/`data_dims`）；resolver 对可加指标 `list` 之和 ≠ `total` 给出 `dimension_sum_mismatch`。状态仍为已闭环，不改总表。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "按平台、广告位和日期汇总变现结果（D28）",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "按平台、广告位和日期汇总变现结果（D28）",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "920d86e4c05d6c2ac91d4695b446e5a19478a8c0d7ea6dfa129058121ae2b50e",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "2026-08-18：封闭相对短语（昨天/yesterday、最近 N 天/last N days 等）在 CLI/Agent 解析为 Asia/Shanghai 日历窗并回显 `resolved_date_window`；模糊短语 fail-closed。生产对账 App `29034827` 上 `yesterday` 与手填 `2026-08-17` 四个归因画像数字相等。状态仍为已闭环，不改总表。hash-matched 前端控制流证明 14 恒发字段、2 条条件省略和四个固定指标画像。2026-08-16 生产账本为 1 次 App catalog + 2 次单日目标 POST：首 App `code=0/msg=成功/extra.error=无数据` 明确空，第二 App 非空后立即停止；无重试、翻页或扩窗。2026-08-17 按 D28 方法重测同一画像：`app.list` 1 次取得 7 个可绑定 App；`date_list=[\"2026-07-17\",\"2026-08-16\"]`、`dims_list=[\"date\",\"ad_platform\"]`、`metrics_list=[\"AppRealRegisterCnt\"]`、`statistics_caliber=user_activated_time`，按 catalog 顺序发 2 次，`catalog#1` envelope `status=empty`，`catalog#2` HTTP 200 / envelope `status=success` / `columns=3` / `items=23` / `static=21` / `total=1` 后立即停止，其余 5 个未试。短窗下的“无数据”只对当时那一个 App 和单日窗成立，不是租户真空。stable `attribution.attribution.query` 暴露全部观察字段；Core/CLI/SDK/Plan/Agent 共用 `gravity-insight.attribution-performance.v1` 和 `gravity.agent-call-bound.v1`。旧 evidence 未保存 error 正文，不能声称服务端曾拒绝某字段；当前合同将“无数据”规范化为空，其他未知 error fail-closed。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "查询归因表现聚合（D35）",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "查询归因表现聚合（D35）",
+      "request_budget": {
+        "raw": "1 / 2（实测；未知 App 离线默认 3）"
+      },
+      "row_digest": "b1df7d43de921d79394866ef72ecb7f452c6a109e36bf74a760fd69c64bdf169",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "第 6 个 catalog App 的 `app.testing_tool.list` 首次非空后停止；完整目录行与 `page_info` 字段/type 已登记。以内存 `data.list[].id` 构造整数 `device_id`，详情仅发 1 次且成功；`device_white` 完整字段/type 已登记，`attribution_list/postback_list/pay_list` 明确为空。三种 item schema 仍是未观察事实，未来非空即 fail-closed，不作为本次明确空闭环的猜测字段。Core/CLI/SDK/Plan/Agent 共用 `gravity-insight.attribution-user-detail.v1` 与 `gravity.agent-call-bound.v1`。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "下钻单用户归因明细（F40）",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "下钻单用户归因明细（F40）",
+      "request_budget": {
+        "raw": "1 / 2（未知 App 3；未知设备父行 3；二者均未知 4）"
+      },
+      "row_digest": "5799a3f9117d8d424c4f18114816de70b07d7d694c65392d47fcc240d1558f35",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "阻塞归因：上游无数据；需上游人工动作。Agent 首问仍返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。2026-08-18 hash-matched `DataSheet`/`AppSelect` 已坐实 list 自然 body 为 `page`/`page_size`/`app_id_list`/`name_like`，detail 只要 list item 的 `id`；绑投放中 App `29034827`（整数与字符串）、7 个 App、省略筛选、`name_like=dim_` 共 7 种 list 形状均为 HTTP 200 / `code=0` / `total=0`，`page_info` 仍无 `total_page`。`operation_log` 本页 16 个近期非 delete 的 32 位 `table_id` 对 `detail` 为 `code=1004` / `extra.error=table_id not exist`。读产品未实现。写产品仍不做。证据见 [F41 本轮结论](archive/decisions/2026-08/f41-data-table.md)。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "按表名或 App 查询数据表当前 schema、字段和版本（F41）",
+      "ledger_status": "完全缺失",
+      "legacy_display_key": "按表名或 App 查询数据表当前 schema、字段和版本（F41）",
+      "request_budget": {
+        "raw": "未验证"
+      },
+      "row_digest": "d821cb41a022bd9b9b9e81090da48fd44eb4e90849fe8a0d8f0c89b9f8109a30",
+      "surfaces": {
+        "agent": "有（目标 gap）",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 有（目标 gap）",
+        "sdk": "无"
+      }
+    },
+    {
+      "blocker_note": "阻塞归因：上游无数据；上游无权限。证据见 [非 Bytedance 投放前提](archive/decisions/2026-08/nonbytedance.md)。2026-08-17 hash-matched `index-D9HAN43D.js` 证明 `promotion.tencent.tencent_adgroup_v2.list` 是 TencentAdReport 装载列表；写操作走独立 `/tencent/batch_options/`。最小第一页非空，分页实测 `page_info`（`total_page`），已晋升 stable 并由 `gravity run` / SDK `read` / Plan operation / Agent raw 共用。`promotion.tencent.ad.list` 已 `confirmed_read`，但对声明父对象返回 `code=2000` / `permission_unavailable`，不再换父重试。同日 hash-matched `KuaishouAd-CEw_EhuL.js` 证明 `promotion.kuaishou.campaign.list` 是计划报表装载列表；写走独立 `/kuaishou/batch_options/`。最小第一页 HTTP 200 明确空，无 item schema，不晋升。快手投放行仍明确空。2026-08-18 先用已闭环 route 反查投放前提，未再打卡住的快手 route：对投放中抖音 App `29034827` 与快手分身 `27018426` 各发 1 次 `attribution.attribution.query`（`date_list=[\"2026-07-19\",\"2026-08-17\"]`、`dims_list=[\"date\",\"ad_platform\"]`、`metrics_list=[\"AppRealRegisterCnt\"]`、`statistics_caliber=user_activated_time`）和 1 次 `report.get.query`（同窗、`data_dims=[\"monetization_platform\"]`、`time_dims=total`、`metrics_list=[\"reporting_ad_revenue\"]`、字符串 `app_id` EQUALS），共 4 次生产请求。`29034827` 归因 `status=success` / `items=60`，`ad_platform` 仅 `bytedance` 30 行 + `natural` 30 行；变现 `status=success` / `list=2`，`monetization_platform` 仅 `dy_mini_game` 与空串（变现平台，不是投放平台）。`27018426` 归因 `status=empty`、变现 `status=empty` / `list=0`。因此本租户在这两个投放相关 App、该 30 日窗内没有可绑定的非 Bytedance `ad_platform`，剩余快手计划子路径按已知无数据阻塞，不晋升。冻结评测问法继续期待原 gap。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "下钻非 Bytedance 平台的计划、组和创意表现（D33/D34）",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "下钻非 Bytedance 平台的计划、组和创意表现（D33/D34）",
+      "request_budget": {
+        "raw": "未验证"
+      },
+      "row_digest": "a682ca74718f0467bf724a24f4c13eacf290db95f431f6f4a962027efa3deb95",
+      "surfaces": {
+        "agent": "有（目标 gap）",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有（目标 gap）",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "阻塞归因：上游无数据。证据见 [非 Bytedance 投放前提](archive/decisions/2026-08/nonbytedance.md)。2026-08-17 hash-matched `Rules-ChMHnW7I.js` 证明 `material.tencent_medium_creative.list` 是托管规则抽屉装载可选创意；写操作走独立 `/task/ai_trusteeship/create/`。最小第一页非空，分页实测 `none`（无 `page_info`），`creative_components` 按 opaque JSON 暴露，已晋升 stable。`material.tencent.list` 仍是既有非空素材合同。同日 hash-matched `Gdt-zhrkAV97.js` / `KuaishouAd-CEw_EhuL.js` 证明 `material.tencent_asset_text_title.list` 与 `material.kuaishou_creative.list` 是装载列表；写走独立 add/delete/batch 或 `/kuaishou/batch_options/`。两条最小第一页均 HTTP 200 明确空，无 item schema，不晋升。4 个空数组人员容器仍无非空样本，继续不登记。2026-08-18 同一 4 次前提反查未给出 `tencent`/`kuaishou` 投放平台值（见 D33/D34 行），故未再打 `material.kuaishou_creative.list` 与 `material.tencent_asset_text_title.list`。剩余专属素材子路径按这两个 App 在该窗内无非 Bytedance 归因平台阻塞，不晋升。冻结评测问法继续期待原 gap。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "深查各平台专属素材与创意（D32）",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "深查各平台专属素材与创意（D32）",
+      "request_budget": {
+        "raw": "未验证"
+      },
+      "row_digest": "e1b1ea02b1a3d0bedeed8fae22f527f652090c05f5ce860089ac30b801bb26f7",
+      "surfaces": {
+        "agent": "有（目标 gap）",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有（目标 gap）",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "`user_event`、`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 均已有各自的非空 create→poll→download→validate XLSX shape，并经 CLI/SDK/Agent 可调用；后四族文件行/受管总数复核为 1/1、1/1、255/255、217/217，无需降级。`origin_event` 现已经 CLI/SDK/Agent 可调用：第三 catalog App 的 `analysis.event.list` 两页共 129 个事件 `yesterday_count` 全为 0，不能当 create 门；2026-08-18 再量 7/7 App 的 `yesterday_count` 仍全为 0，而投放中抖音 App 与 Android 分身同日 `attribution.attribution.query` 有正 `AppRealRegisterCnt`，故该字段按租户级死字段标注，不改动线状态；同 App 7 日窗 `evaluate_data` 对一个非预设事件返回 `data.total=0`，对第一个可见 `$` 预设事件返回 `data.total=1`。随后一次 create 得 task id，首次 poll READY，文件为 511-byte gzip CSV（`text/csv`、magic `1f8b`、URL 后缀 `.csv.gz`、展开 803 bytes），表头 `客户ID(client_id)/用户注册时间/事件发生时间/事件/事件属性`，1 行且五列皆非空。empty gzip 形状未在线验证。`monetization_detail` 现已经 CLI/SDK/Agent 可调用：READY 文件已证明是安全 ZIP：13,588,076 bytes、9 entries、总展开 166,683,292 bytes、最高压缩比 12.269763，route-scoped 192 MiB policy 可通过；shape 为 `Sheet1`、1,000,000 行、`事件发生时间/客户ID` 两列。task list/progress/file 仍无 task-bound total；SDK 在 create 前用同一 App/日的 `analysis.monetization_detail.list` 第一页钉住 `page.total_items`，标注 `create_time_preflight`，下载后把文件行数与该钉住总量并排返回。钉住总量 > 1e6 且文件恰为 1,000,000 行时 `completion_status=truncated`，并给出已知总量与实际行数；只有原子提交且 `file_rows == pinned_total > 0` 且未触顶才是 `complete`。异步重读列表不得当分母。目标日仍单日超限，小时条件仍返回全日量级。2026-08-18 在投放中 App 上再发 2 次 create：用户明细单日 `file_rows` 与列表 `page.total_items` 相等且 `completion_status=complete`；变现明细单日列表总量已过百万上限、文件恰为 1,000,000 行，但当时 `export run` 轮询覆盖了 create 时钉住的总量，信封报 `partial` 且无 `completeness`，未能诚实报 `truncated`。该丢钉已修。2026-08-18 再发一次同 App 同日 create：文件仍恰为 1,000,000 行，`create_time_preflight` 还在，但钉住的是 26 列产品字段 list 的 `total_items=19196`，不是导出两列的 13,497,911，故信封仍是 `partial` 而非 `truncated`。pin 已改为按导出 `field_map` 预检。2026-08-18 第三次同 App 同日 create（#205）：信封 `completion_status=truncated`，钉住总量 13,497,923（两列 list 量级），`file.rows=1,000,000`，`known_total_freshness=create_time_preflight`；同日用户明细对照 `complete` 且 `file_rows=4,556` 等于 list `total_items`。`export run` 另修一处：`--columns` 必须用 `describe` 的请求代码，不能用文件表头。`export.analysis.origin_event.evaluate` 可 describe，但不能 `gravity run`；2026-08-18 补独立入口 `gravity export evaluate`，`export task-types` 覆盖 `export.task_type.list`。台账状态由维护者按闭环判据另判。`completion_status` 将 `empty/partial/truncated/expired/complete/gap` 机械分开；只有原子提交且完整的非空文件是 `complete`。`stream_event` 仍为 `not_applicable`。D28 本轮已证明当前租户有变现聚合数据，故变现明细导出不再是“无数据”，仍是既有超限/无 task-bound total 的文件合同阻塞。聚合动线因两个 gap 保持部分闭环，冻结评测宽问法继续期待兼容 `code=ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。2026-08-18：与素材下载同问时不再被整句 gap 短路，终态为 `MULTIPLE_INTENTS` 并列 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING` 与 `material.asset.fetch`。2026-08-19 #217 冷启动复跑：`29034827` 单日用户明细父读取 `total_items` 等于当天漏斗第一步，一次 `export run` `complete` 且 `file.rows` 相等；`--columns` 误用中文表头仍本地失败。不改状态。2026-08-19：宽问法信封顶层 `next.argv` 现与 gap 相同（`export list-capabilities`），不再被盖成 `agent-catalog categories`。同日短宽问法升级为不可执行选择交接：保留旧 `code` 兼容冻结评测，权威 `reason_code=ANALYSIS_EXPORT_FAMILY_SELECTION_REQUIRED`；`selection_required=true`，`candidate_selectors` 明列七族，`family_choices[]` 从当前合同派生每族 `selector`、`request_required_fields`、精确 Agent 选择 argv 与 describe argv。没有统一执行 dispatcher，不合并七份输入合同。状态仍为部分闭环。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "导出事件、分群、用户、付费或变现分析结果",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "导出事件、分群、用户、付费或变现分析结果",
+      "request_budget": {
+        "raw": "1 / 2（七个可调子路径中英首问）"
+      },
+      "row_digest": "c1eacbc908b82ad1a929d93b70f69ad9604d35068e6108e9b219f58c8c61ec98",
+      "surfaces": {
+        "agent": "有（七个具体卡；宽问法目标 gap）",
+        "cli": "部分",
+        "plan": "设计不适用",
+        "raw": "部分 / 部分 / 设计不适用 / 有（七个具体卡；宽问法目标 gap）",
+        "sdk": "部分"
+      }
+    },
+    {
+      "blocker_note": "`material.asset.fetch` 不接收 URL：一次调用先重读 `local` 或 `bytedance_project` stable source，再按精确引用从唯一行取私有 URL。R13A v2 通过共享 Artifact Transfer 完整流式下载：fresh 首跳精确 host/path 动态授权、redirect 仅同 host，root/reparse/overwrite/extension 在 source read 前检查，JPEG/MP4 分别受 16 MiB/1 GiB cap 与 MIME/magic/size/MD5/SHA-256/原子 no-clobber 约束；公开只含相对 `local_ref` 和值无关 Receipt 引用。既有生产样本均无 redirect；HTTP terminal 状态仍统一归 upstream/3，不创造素材失效 taxonomy。",
+      "can_return_business_content": true,
+      "counted": true,
+      "display_name": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
+      "ledger_status": "已闭环",
+      "legacy_display_key": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
+      "request_budget": {
+        "raw": "1 / 2（中英首问）"
+      },
+      "row_digest": "63888f0af5eeb069563df83eef93bb11566f64cb63b064f81b76574ae72c4512",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "设计不适用",
+        "raw": "有 / 有 / 设计不适用 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CT02 独立作者 Team Skill 只读取明确事件指标与设备分组，复用 `analysis.query.spec:event`；完整性保持 unknown，不声明完整设备总体或因果。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Review one declared event metric by device segment",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "Review one declared event metric by device segment",
+      "request_budget": {
+        "raw": "1 / 2（精确输入 / 目录发现）"
+      },
+      "row_digest": "f51ba79f7f463ccbd0435e6db04cd181410672f1de0da3d72bce8d6fa3ee1240",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CT02 独立作者 Team Skill 要求 `metric://project/primary-analysis-metric@1`；未提供项目 Definition/Binding 时以 `SEMANTIC_DEFINITION_MISSING` 阻断，不从字段名或第三方文本推断。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Validate one project metric definition before analysis",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "Validate one project metric definition before analysis",
+      "request_budget": {
+        "raw": "1 / 2（绑定已知 / 绑定发现）"
+      },
+      "row_digest": "91ea6299736f692f02ab701e87d4c3b438b1eb6232b8c8fd70e549822e3330a7",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CT02 独立作者 Team Skill 复用 event Product 与 `operator://gravity/returned-dimension-change@1`，只比较匹配的返回行；不推断未返回总体或因果。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Compare returned rows to diagnose filter selection bias",
+      "ledger_status": "部分闭环",
+      "legacy_display_key": "Compare returned rows to diagnose filter selection bias",
+      "request_budget": {
+        "raw": "1 / 2（精确输入 / 目录发现）"
+      },
+      "row_digest": "bb4d67c1addd9a1f19890ab9a192f53b73922c36d3320f356b737602d43b428f",
+      "surfaces": {
+        "agent": "有",
+        "cli": "有",
+        "plan": "有",
+        "raw": "有 / 有 / 有 / 有",
+        "sdk": "有"
+      }
+    },
+    {
+      "blocker_note": "CT02 package 可发现，但 `context://project/community-signal@1` 缺失时以 `CONTEXT_REQUIRED_MISSING` 阻断；Context 固定为 data，不能选择 selector、授权或覆盖 claim policy。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Relate returned behavior observations to bounded community context",
+      "ledger_status": "完全缺失（依赖阻断）",
+      "legacy_display_key": "Relate returned behavior observations to bounded community context",
+      "request_budget": {
+        "raw": "0 / 0"
+      },
+      "row_digest": "769216ebd06d4ea6ce81f115d19d83c48cc236930ac3cc6f1c14fbb7daeac9de",
+      "surfaces": {
+        "agent": "无",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 无",
+        "sdk": "无"
+      }
+    },
+    {
+      "blocker_note": "CT02 package 可发现，但 `model://gravity/game-revenue-forecast@1` 无 trusted pack、lineage/evaluation/approval/expiry/horizon，以 `HUB_TRUSTED_PACK_MISSING` / `MODEL_UNVALIDATED` 阻断且禁止 forecast claim。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "Assess whether a revenue forecast has validated model support",
+      "ledger_status": "完全缺失（依赖阻断）",
+      "legacy_display_key": "Assess whether a revenue forecast has validated model support",
+      "request_budget": {
+        "raw": "0 / 0"
+      },
+      "row_digest": "cccf380b13651a05718efec3baa615669f58419220b492b6d359c5c33e623ca8",
+      "surfaces": {
+        "agent": "无",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 无",
+        "sdk": "无"
+      }
+    }
+  ],
+  "schema_version": "gravity.journey-ledger-snapshot.v1",
+  "snapshot_digest": "282fd5d12ca8d7d3311242bb2a08f24678e8d193be6d9a80567b4bc7ebec3674",
+  "source_path": "docs/analysis-journeys.md",
+  "source_sha256": "17dd2ffb8f91691ece7bfe288c0c39d7d3488c9546dd13253b3b37bdec0ed5d6"
+}

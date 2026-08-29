@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.capability-trust-result.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "identity_kind",
+    "selector",
+    "contract_version",
+    "lifecycle",
+    "trust_status",
+    "contract_digest",
+    "provider",
+    "validation",
+    "completeness",
+    "data_quality",
+    "dependencies",
+    "allowed_claims",
+    "reason_codes",
+    "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.capability-trust-result.v1"},
+    "identity_kind": {"enum": ["operation", "product", "composite"]},
+    "selector": {"type": "string", "minLength": 1, "maxLength": 256},
+    "contract_version": {"type": ["string", "null"], "maxLength": 64},
+    "lifecycle": {"type": ["string", "null"], "enum": ["active", "deprecated", "revoked", null]},
+    "trust_status": {"enum": ["stable", "unknown", "degraded", "blocked", "quarantined"]},
+    "contract_digest": {"type": ["string", "null"], "maxLength": 64},
+    "provider": {
+      "type": "object",
+      "required": ["kind", "expected_fingerprint", "current_fingerprint", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"type": ["string", "null"], "maxLength": 64},
+        "expected_fingerprint": {"type": ["string", "null"], "maxLength": 64},
+        "current_fingerprint": {"type": ["string", "null"], "maxLength": 64},
+        "status": {"enum": ["matched", "missing", "mismatch", "unavailable"]}
+      }
+    },
+    "validation": {
+      "type": ["object", "null"],
+      "properties": {
+        "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "validated_at": {"type": "string"},
+        "expires_at": {"type": "string"},
+        "trust_status": {"enum": ["stable", "unknown", "degraded", "blocked", "quarantined"]},
+        "completeness": {"enum": ["complete", "prefix", "unknown"]},
+        "data_quality": {"$ref": "#/$defs/data_quality"},
+        "evidence_references": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/evidence"}}
+      },
+      "required": ["digest", "validated_at", "expires_at", "trust_status", "completeness", "data_quality", "evidence_references"],
+      "additionalProperties": false
+    },
+    "completeness": {"enum": ["complete", "prefix", "unknown"]},
+    "data_quality": {"$ref": "#/$defs/data_quality"},
+    "dependencies": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/dependency"}},
+    "allowed_claims": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+    "reason_codes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"}},
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "data_quality": {
+      "type": "object",
+      "required": ["schema_version", "status", "checks", "reason_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.data-quality-result.v1"},
+        "status": {"enum": ["pass", "warn", "fail", "unknown"]},
+        "checks": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/check"}},
+        "reason_codes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"}}
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["check_id", "status", "scope"],
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "status": {"enum": ["pass", "warn", "fail", "unknown"]},
+        "scope": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["kind", "reference"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"type": "string", "minLength": 1, "maxLength": 32},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "required": ["identity_kind", "selector", "contract_version", "trust_status", "contract_digest", "completeness", "data_quality_status", "reason_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "identity_kind": {"enum": ["operation", "product", "composite"]},
+        "selector": {"type": "string", "minLength": 1, "maxLength": 256},
+        "contract_version": {"type": ["string", "null"], "maxLength": 64},
+        "trust_status": {"enum": ["stable", "unknown", "degraded", "blocked", "quarantined"]},
+        "contract_digest": {"type": ["string", "null"], "maxLength": 64},
+        "completeness": {"enum": ["complete", "prefix", "unknown"]},
+        "data_quality_status": {"enum": ["pass", "warn", "fail", "unknown"]},
+        "reason_codes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"}}
+      }
+    }
+  }
+}

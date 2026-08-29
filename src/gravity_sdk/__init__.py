@@ -6,11 +6,13 @@ before any workspace-dependent module is imported.
 
 from __future__ import annotations
 
+import sys
 from importlib import import_module
+from types import ModuleType
 from typing import Any
 
 
-__version__ = "0.3.0"
+from ._version import __version__
 
 _EXPORTS = {
     "DEFAULT_METADATA_TTL_SECONDS": (".cache", "DEFAULT_METADATA_TTL_SECONDS"),
@@ -24,6 +26,99 @@ _EXPORTS = {
     "GravityInsightClient": (".client", "GravityInsightClient"),
     "GravitySDK": (".sdk", "GravitySDK"),
     "connect": (".sdk", "connect"),
+    "JourneyService": (".journey_service", "JourneyService"),
+    "CoreSkillRuntime": (".core_skill_runtime", "CoreSkillRuntime"),
+    "RuntimeSkillResolver": (".runtime_skill_resolver", "RuntimeSkillResolver"),
+    "PreparedAnalysisPlanService": (
+        ".prepared_analysis_plan", "PreparedAnalysisPlanService"
+    ),
+    "ActionPlanService": (".action_plan", "ActionPlanService"),
+    "ExperimentHandoffService": (
+        ".experiment_handoff", "ExperimentHandoffService"
+    ),
+    "AnalysisArtifactService": (
+        ".analysis_artifact", "AnalysisArtifactService"
+    ),
+    "GovernorObservationService": (
+        ".governor_observation", "GovernorObservationService"
+    ),
+    "validate_governor_observation": (
+        ".governor_observation", "validate_governor_observation"
+    ),
+    "validate_governor_observation_snapshot": (
+        ".governor_observation", "validate_governor_observation_snapshot"
+    ),
+    "validate_adaptive_governor_snapshot": (
+        ".adaptive_governor", "validate_adaptive_governor_snapshot"
+    ),
+    "ExecutionVariantService": (
+        ".execution_variant", "ExecutionVariantService"
+    ),
+    "SqlExplorerService": (
+        ".sql_explorer", "SqlExplorerService"
+    ),
+    "validate_execution_variant": (
+        ".execution_variant", "validate_execution_variant"
+    ),
+    "validate_execution_variant_characterization": (
+        ".execution_variant", "validate_execution_variant_characterization"
+    ),
+    "validate_execution_variant_selection": (
+        ".execution_variant", "validate_execution_variant_selection"
+    ),
+    "validate_sql_explorer_request": (
+        ".sql_explorer", "validate_sql_explorer_request"
+    ),
+    "validate_sql_explorer_result": (
+        ".sql_explorer", "validate_sql_explorer_result"
+    ),
+    "validate_sql_explorer_promotion": (
+        ".sql_explorer", "validate_sql_explorer_promotion"
+    ),
+    "compile_analysis_artifact": (
+        ".analysis_artifact", "compile_analysis_artifact"
+    ),
+    "render_analysis_artifact_markdown": (
+        ".analysis_artifact_markdown", "render_analysis_artifact_markdown"
+    ),
+    "validate_analysis_artifact": (
+        ".analysis_artifact", "validate_analysis_artifact"
+    ),
+    "verify_analysis_artifact_source": (
+        ".analysis_artifact", "verify_analysis_artifact_source"
+    ),
+    "compile_analysis_result": (
+        ".analysis_result_contract", "compile_analysis_result"
+    ),
+    "compile_execution_snapshot": (
+        ".execution_snapshot", "compile_execution_snapshot"
+    ),
+    "compile_project_skill_overlay": (
+        ".project_skill_overlay", "compile_project_skill_overlay"
+    ),
+    "CapabilityTrustService": (
+        ".capability_trust", "CapabilityTrustService"
+    ),
+    "LocalSkillResolver": (".skill_package", "LocalSkillResolver"),
+    "CallableProviderTransport": (
+        ".provider_rpc_transport", "CallableProviderTransport"
+    ),
+    "ExternalContextProvider": (
+        ".external_context_provider", "ExternalContextProvider"
+    ),
+    "ExternalContextBindingResolver": (
+        ".external_context_binding", "ExternalContextBindingResolver"
+    ),
+    "ProviderRpcGuard": (".provider_rpc_guard", "ProviderRpcGuard"),
+    "subprocess_context_provider": (
+        ".external_context_provider", "subprocess_context_provider"
+    ),
+    "SkillHubClient": (".skill_hub_client", "SkillHubClient"),
+    "TrustedPackHubClient": (".trusted_pack_hub", "TrustedPackHubClient"),
+    "SemanticRegistry": (".semantic_registry", "SemanticRegistry"),
+    "OperatorRegistry": (".operator_registry", "OperatorRegistry"),
+    "ModelRegistry": (".model_registry", "ModelRegistry"),
+    "RepoContextProvider": (".repo_context_provider", "RepoContextProvider"),
     "CompositeService": (".composite", "CompositeService"),
     "Credential": (".credentials", "Credential"),
     "CredentialConfig": (".credentials", "CredentialConfig"),
@@ -58,23 +153,23 @@ _EXPORTS = {
     "normalized_host_plan_request": (
         ".host_effects", "normalized_host_plan_request"
     ),
-    "host_product_catalog": (".agent_host_catalog", "host_product_catalog"),
+    "host_product_catalog": (".agents.host_catalog", "host_product_catalog"),
     "host_product_selection_schema": (
-        ".agent_host_catalog", "host_product_selection_schema"
+        ".agents.host_catalog", "host_product_selection_schema"
     ),
     "assess_host_product_selection": (
-        ".agent_host_selection", "assess_host_product_selection"
+        ".agents.host_selection", "assess_host_product_selection"
     ),
     "compile_host_product_selection": (
-        ".agent_host_selection", "compile_host_product_selection"
+        ".agents.host_selection", "compile_host_product_selection"
     ),
     "resolve_host_product_selection": (
-        ".agent_host_selection", "resolve_host_product_selection"
+        ".agents.host_selection", "resolve_host_product_selection"
     ),
     "PlanRecipe": (".workspace_plan_recipe", "PlanRecipe"),
     "PlanRecipeError": (".workspace_plan_recipe", "PlanRecipeError"),
     "expand_plan_recipe": (".workspace_plan_recipe", "expand_plan_recipe"),
-    "capabilities_many": (".agent_batch", "capabilities_many"),
+    "capabilities_many": (".agents.batch", "capabilities_many"),
     "CompiledAnalysisQuery": (".analysis_spec", "CompiledAnalysisQuery"),
     "analysis_query_spec_schema": (".analysis_spec", "analysis_query_spec_schema"),
     "compile_query_spec": (".analysis_spec", "compile_query_spec"),
@@ -168,14 +263,29 @@ for _sql_error_name in (
     _EXPORTS[_sql_error_name] = (".error_sql", _sql_error_name)
 
 
-def __getattr__(name: str) -> Any:
+_MISSING_EXPORT = object()
+
+
+def _is_shadowing_module(name: str, value: Any) -> bool:
+    return isinstance(value, ModuleType) and value.__name__ == f"{__name__}.{name}"
+
+
+def _load_export(name: str) -> Any:
     try:
         module_name, attribute = _EXPORTS[name]
     except KeyError as exc:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
     value = getattr(import_module(module_name, __name__), attribute)
+    if _is_shadowing_module(name, value):
+        raise TypeError(
+            f"public export {__name__}.{name} resolved to its shadowing module"
+        )
     globals()[name] = value
     return value
+
+
+def __getattr__(name: str) -> Any:
+    return _load_export(name)
 
 
 def __dir__() -> list[str]:
@@ -183,3 +293,21 @@ def __dir__() -> list[str]:
 
 
 __all__ = [*_EXPORTS, "__version__"]
+
+
+class _ExportAwareModule(ModuleType):
+    """Keep declared root exports authoritative over child-module bindings."""
+
+    def __getattribute__(self, name: str) -> Any:
+        namespace = ModuleType.__getattribute__(self, "__dict__")
+        exports = namespace["_EXPORTS"]
+        if name in exports:
+            missing = namespace["_MISSING_EXPORT"]
+            value = namespace.get(name, missing)
+            if value is missing or namespace["_is_shadowing_module"](name, value):
+                return namespace["_load_export"](name)
+            return value
+        return ModuleType.__getattribute__(self, name)
+
+
+sys.modules[__name__].__class__ = _ExportAwareModule

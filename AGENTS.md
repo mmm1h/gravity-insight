@@ -7,18 +7,27 @@
 
 ## Product goal
 
-Every data-analysis task must be completable without opening Gravity Web, using
-this repository alone. Agents are first-class consumers: discovery, execution,
-and error classification stay machine-decidable. Progress is measured in closed
-analysis journeys, not in operation counts. See `docs/roadmap.md` for the
-current schedule, parallelism constraints, and the explicit non-goals.
+This repository is the implementation home of Gravity Agent Runtime. Every
+supported data-analysis task must be completable without opening Gravity Web,
+using the installed Runtime and its explicitly locked project artifacts. Agents
+are first-class consumers: discovery, execution, trust, completeness, method,
+context, and error classification stay machine-decidable. Progress is measured
+in closed analysis journeys, not in operation, Skill, or registry counts. See
+`docs/roadmap.md` and `specs/agent-runtime/index.md` for the current schedule,
+dependency graph, parallelism constraints, and explicit non-goals.
 
 ## Repository scope
 
-This repository owns the standalone Gravity SDK: Insight reads/exports, custom
-SQL reads and pagination, route census, contracts, probes, and their quality
-and privacy gates. Business-specific analysis and campaign strategy do not
-belong here.
+This repository owns the governed Runtime plane and its external control-plane
+clients: Insight reads/exports, registered and isolated SQL products, route
+census, contracts, probes, trust/data-quality/privacy gates, versioned Skills,
+reusable Semantic types/schemas/common definitions, Operator/Model contracts,
+bounded Context, governed Action and Artifact handoff, and their agent-facing
+CLI/SDK/Plan/MCP surfaces. Runtime owns versioned URIs plus unit, additivity,
+time-grain, dependency, conflict and formula-structure validation. Reusable
+industry methods may live here; concrete game activity names, SKU values,
+tracking/App bindings, project formula parameters/effective windows, department
+reporting language, and campaign decisions remain in the calling project.
 
 ## Development principles
 
@@ -36,12 +45,17 @@ belong here.
   volume at `1x` and raise only peak in-flight count.
 - **Do not replicate Gravity Web UI concepts.** Layout, favourites, drag-and-drop,
   and member permission management are permanently out of scope.
-- **Do not over-engineer.** No plugin mechanisms, registries, dependency
-  injection, or abstraction layers for a single call site. Reuse the existing
-  composite / plan adapter / agent card triad. When a central entry point nears
-  its ratchet, add a narrow domain family router instead.
-- **Opportunistic cleanup only in files the current change already touches.**
-  Do not open standalone refactor branches.
+- **Use controlled extension types only.** The approved Runtime architecture may
+  add typed Skill, Semantic, Operator/Model, Context Provider, and Action
+  Connector registries when their requirement is ready. Do not build a generic
+  executable plugin mechanism, dependency-injection framework, or abstraction
+  for a single call site. Reuse the existing composite / plan adapter / agent
+  card triad and keep one execution owner.
+- **No unrelated opportunistic refactors.** Cleanup outside the active
+  requirement's scope remains prohibited. An approved `ready` Requirement may
+  own an explicit structural migration, including a dedicated refactor branch,
+  only when its write scope, current-behavior characterization, capability
+  preservation, consumer migration, rollback and exit conditions are recorded.
 - **A breaking surface change must not cost capability.** Direct breaking
   upgrades are allowed, but first prove no read capability is lost; record the
   finding in `docs/roadmap.md`.
@@ -50,22 +64,28 @@ belong here.
   ledger in `tmp/`; update `docs/roadmap.md` for schedule and decisions,
   `docs/maintainers/technical-debt.md` for structural debt,
   `docs/candidate-capability-matrix.md` for capability evidence, or
-  `docs/analysis-journeys.md` for journey state. Do not create one-off proposal
-  files, a `docs/proposals/` tree, or new per-round archive logs.
+  `docs/analysis-journeys.md` for journey state. Approved Agent Runtime
+  requirements live only in `specs/agent-runtime/` and must bind the current
+  directive; they are delivery contracts, not per-round logs or a second
+  architecture. Do not create one-off proposal files, a `docs/proposals/` tree,
+  or new per-round archive logs.
 
 ## Parallel development
 
 Independent units develop on separate `codex/<unit>` branches and merge back to
 `dev` once green. Do not split one unit across branches by phase; core, surface,
-and agent handoff have ordering dependencies.
+and agent handoff have ordering dependencies. For a directive-approved
+`staged_epic`, each indexed milestone is an independent unit and branch, and
+must still deliver its own complete core/surface/handoff slice rather than
+splitting that milestone again by implementation phase.
 
-The shared spine is `plan_adapters.py`, `agent_capabilities.py`,
-`agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. All nine
-delivered product lines modified the first four. Treat these files as
-append-only, and serialize the final wiring of every unit that touches them
-through a single integrator. Domain cores, contract research, and evidence
-gathering may run fully in parallel. Regenerate compiler, provenance, and
-coverage artifacts serially.
+The shared spine is `plan_adapters.py`, `agents/capabilities.py`,
+`agents/composite.py`, `agents/handoff.py`, `cli.py`, and `__main__.py`. Preserve
+their characterized behavior unless the active requirement explicitly migrates
+it; do not create wrappers merely to avoid an approved structural change.
+Serialize the final wiring of every unit that touches the spine through a single
+integrator. Domain cores, contract research, and evidence gathering may run in
+parallel. Regenerate compiler, provenance, and coverage artifacts serially.
 
 ## Technical debt
 
@@ -91,10 +111,18 @@ Do not let the list become an archive.
   product.
 - SDK changes start at `docs/maintainers/index.md` and then read only the
   task-specific maintainer page.
+- Gravity Agent Runtime program work also reads
+  `specs/agent-runtime/directive.json`, the complete repository-canonical
+  `architecture-source.md`, the Requirement Index, and exactly one externally
+  approved `ready` requirement. A specification cannot approve itself or
+  silently change the parent architecture.
 - `docs/archive/` preserves non-normative history and evidence. Never use it as
   the source of current interfaces, schedule, capability state, or debt.
-- Business modules, campaign semantics, and tracking bindings belong in the
-  calling product knowledge base, not in this repository.
+- Runtime owns reusable Semantic types/schemas, common metric/method definitions,
+  versioned URIs and generic validation for units, additivity, time, dependencies
+  and conflicts. Project-specific activity names, SKU values, tracking/App
+  bindings, formula parameters/effective windows, campaign strategy, and final
+  reporting language belong in the calling product knowledge base.
 
 ## Consumer migration
 
@@ -131,9 +159,10 @@ python -m gravity_sdk --help
 git diff --check
 ```
 
-CI runs `pytest`, not `unittest discover`. The two collect different counts
-(946 vs 715 at `8fd278e`) because of how subtests are reported, so a green
-`unittest` run alone does not prove CI will pass. Run both.
+CI runs `pytest`, not `unittest discover`. The `946 vs 715` counts at `8fd278e`
+are a historical example, not the current baseline. Re-derive test and subtest
+counts each round from the latest fully green dual-collector gate, and run both
+collectors — CI gates on `pytest` alone.
 
 Tests isolate the developer's private cache in `tests/__init__.py`; without it a
 machine holding a real metadata cache fails discovery-ordering tests that pass
@@ -154,6 +183,11 @@ isolated.
   still resolve imports from the `main` checkout and produce false test results.
 - Promote validated changes from `dev` to `main` only as an explicit release
   action after the required checks pass.
+- For the Gravity Agent Runtime program, every executable node and staged-epic
+  milestone in `specs/agent-runtime/index.json` remains on `codex/*` branches
+  and `dev` until the whole program is complete, integrated validation is green,
+  and the user gives a new explicit approval. A single requirement reaching
+  `fixed_dev` is never a reason to merge it to `main`.
 - Push `dev` to GitHub at the end of every round. Remove a merged worktree and
   run `git worktree prune` as part of closing that unit, not as a later cleanup.
 

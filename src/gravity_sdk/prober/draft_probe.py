@@ -13,8 +13,9 @@ from .drafts import refresh_structured_blockers
 from .parameters import apply_error_learning
 from .probe_support import (
     assert_read_only_source, conclusion, contract_with_optional_required, evidence_path, family_id,
-    last_primary, observation_summary, privacy_summary, probe_pagination,
-    relative, request_stats, resolve_inputs, semantic_success,
+    collect_batch_evidence, final_batch_summary, final_operation_rows, last_primary,
+    observation_summary, privacy_summary, probe_pagination, relative, request_stats,
+    resolve_inputs, semantic_success, stable_operation_ids,
 )
 from .promotion import evaluate_gate, save_draft
 from .read_semantics import assert_probe_read_semantics
@@ -418,6 +419,32 @@ def _preflight_probe_draft(source: Mapping[str, Any]) -> None:
     assert_read_only_source(source)
 
 
+def _persist_discovery_outcome(
+    updated: Mapping[str, Any], *, recording: RecordingSession, start: int,
+    selected_family: str | None, result: str, discovery: Any, sketch: Mapping[str, Any],
+    pagination: Mapping[str, Any], pagination_verified: bool,
+    parent_summary: Mapping[str, Any] | None, fields: Sequence[Mapping[str, Any]],
+    parameter_adjustments: Sequence[Mapping[str, Any]], operation_id: str,
+    evidence_root: Path, draft_root: Path,
+) -> dict[str, Any]:
+    raw_fingerprint = canonical_fingerprint(sketch) if discovery else None
+    evidence = _evidence_document(
+        updated, recording.observations[start:], selected_family=selected_family,
+        result=result, successful=result == "available_empty",
+        raw_fingerprint=raw_fingerprint, projected_fingerprint=None,
+        pagination=pagination, pagination_verified=pagination_verified,
+        missing_parameter={"attempted": False, "shape_observed": False},
+        parent_summary=parent_summary, fields=fields,
+        parameter_adjustments=parameter_adjustments,
+    )
+    return _persist_observed(
+        updated, evidence, evidence_path(operation_id, evidence_root), fields,
+        pagination_verified=pagination_verified,
+        raw_fingerprint=raw_fingerprint, projected_fingerprint=None,
+        draft_root=draft_root,
+    )
+
+
 def probe_draft(
     source: Mapping[str, Any], *, stable_client: Any, runtime: Any,
     recording: RecordingSession, evidence_root: Path = EVIDENCE_ROOT,
@@ -448,41 +475,29 @@ def probe_draft(
         discovery.status_code if discovery else None, payload, None
     )
     if discovery_result not in {"inconclusive", "inconclusive_empty"}:
-        raw_fingerprint = canonical_fingerprint(sketch) if discovery else None
-        evidence = _evidence_document(
-            updated, recording.observations[start:], selected_family=selected_family,
-            result=discovery_result, successful=discovery_result == "available_empty",
-            raw_fingerprint=raw_fingerprint, projected_fingerprint=None,
+        return _persist_discovery_outcome(
+            updated, recording=recording, start=start,
+            selected_family=selected_family, result=discovery_result,
+            discovery=discovery, sketch=sketch,
             pagination={"kind": pagination["kind"]},
             pagination_verified=pagination["kind"] == "none",
-            missing_parameter={"attempted": False, "shape_observed": False},
             parent_summary=parent_summary, fields=fields,
             parameter_adjustments=parameter_adjustments,
-        )
-        return _persist_observed(
-            updated, evidence, evidence_path(operation_id, evidence_root), fields,
-            pagination_verified=pagination["kind"] == "none",
-            raw_fingerprint=raw_fingerprint, projected_fingerprint=None,
+            operation_id=operation_id, evidence_root=evidence_root,
             draft_root=draft_root,
         )
     verified, pagination_detail = _verify_pagination(
         updated, inputs, runtime, recording, selected_family, discovery
     )
     if discovery_result == "inconclusive_empty":
-        raw_fingerprint = canonical_fingerprint(sketch) if discovery else None
-        evidence = _evidence_document(
-            updated, recording.observations[start:], selected_family=selected_family,
-            result=discovery_result, successful=False,
-            raw_fingerprint=raw_fingerprint, projected_fingerprint=None,
-            pagination=pagination_detail, pagination_verified=verified,
-            missing_parameter={"attempted": False, "shape_observed": False},
-            parent_summary=parent_summary, fields=fields,
-            parameter_adjustments=parameter_adjustments,
-        )
-        return _persist_observed(
-            updated, evidence, evidence_path(operation_id, evidence_root), fields,
-            pagination_verified=verified, raw_fingerprint=raw_fingerprint,
-            projected_fingerprint=None, draft_root=draft_root,
+        return _persist_discovery_outcome(
+            updated, recording=recording, start=start,
+            selected_family=selected_family, result=discovery_result,
+            discovery=discovery, sketch=sketch, pagination=pagination_detail,
+            pagination_verified=verified, parent_summary=parent_summary,
+            fields=fields, parameter_adjustments=parameter_adjustments,
+            operation_id=operation_id, evidence_root=evidence_root,
+            draft_root=draft_root,
         )
     missing = _probe_missing_parameter(
         learned_source, updated, inputs, runtime, recording, selected_family, discovery

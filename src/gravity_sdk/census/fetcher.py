@@ -9,13 +9,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 from urllib.parse import urljoin, urlsplit
 
 import requests
 
 from gravity_sdk.paths import STATE_ROOT
-from gravity_sdk.receipt import perform_http_request, request_receipt_context
+from gravity_sdk.receipt import (
+    PRODUCTION_HTTP_KIND,
+    perform_http_request,
+    request_receipt_context,
+)
 
 from .io import sha256_bytes, stable_bundle_id, write_json
 
@@ -102,6 +106,17 @@ def _manifest_assets(value: Any) -> Iterable[str]:
             yield from _manifest_assets(nested)
 
 
+def _entry_build_info(html_text: str) -> dict[str, Any]:
+    match = _BUILD_INFO.search(html_text)
+    if not match:
+        return {}
+    try:
+        parsed = json.loads(match.group(1))
+        return parsed if isinstance(parsed, dict) else {}
+    except json.JSONDecodeError:
+        return {"raw": match.group(1)}
+
+
 class StaticFetcher:
     def __init__(
         self,
@@ -151,6 +166,7 @@ class StaticFetcher:
                 response = perform_http_request(
                     self._session().get,
                     url,
+                    kind=PRODUCTION_HTTP_KIND,
                     timeout=self.timeout,
                     allow_redirects=True,
                     http_receipt={
@@ -158,6 +174,7 @@ class StaticFetcher:
                             operation_id="census_fetch",
                             method="GET",
                             path=urlsplit(url).path,
+                            effect="read",
                         ),
                         "attempt": attempt + 1,
                         "retry": attempt > 0,
@@ -208,52 +225,33 @@ class StaticFetcher:
             "reused": reused,
         }
 
-    def fetch(
-        self,
-        *,
-        site_url: str,
-        raw_dir: Path,
-        snapshot_path: Path,
-        probe_manifests: bool = True,
+    def _entry_seeds(
+        self, site_url: str, raw_dir: Path, probe_manifests: bool
     ) -> dict[str, Any]:
-        started = time.monotonic()
-        site_url = site_url if site_url.endswith("/") else site_url + "/"
-        raw_dir.mkdir(parents=True, exist_ok=True)
-        html_response = self._get(site_url)
-        html_bytes = html_response.content
-        html_text = html_bytes.decode(html_response.encoding or "utf-8", errors="replace")
-        html_url = str(html_response.url)
+        response = self._get(site_url)
+        html_bytes = response.content
+        html_text = html_bytes.decode(response.encoding or "utf-8", errors="replace")
+        html_url = str(response.url)
         html_local = _local_relative(html_url)
         (raw_dir / html_local).parent.mkdir(parents=True, exist_ok=True)
         (raw_dir / html_local).write_bytes(html_bytes)
-
-        html_parser = _EntryHTMLParser()
-        html_parser.feed(html_text)
-        entry_urls = sorted({urljoin(html_url, item) for item in html_parser.module_scripts})
-        preload_urls = sorted({urljoin(html_url, item) for item in html_parser.module_preloads})
+        parser = _EntryHTMLParser()
+        parser.feed(html_text)
+        entry_urls = sorted({urljoin(html_url, item) for item in parser.module_scripts})
+        preload_urls = sorted({urljoin(html_url, item) for item in parser.module_preloads})
         if not entry_urls:
             raise RuntimeError("HTML contains no module entry script")
-
-        build_info: dict[str, Any] = {}
-        build_match = _BUILD_INFO.search(html_text)
-        if build_match:
-            try:
-                parsed_build = json.loads(build_match.group(1))
-                if isinstance(parsed_build, dict):
-                    build_info = parsed_build
-            except json.JSONDecodeError:
-                build_info = {"raw": build_match.group(1)}
-
-        manifest_urls = {urljoin(html_url, item) for item in html_parser.manifests}
+        build_info = _entry_build_info(html_text)
+        manifest_urls = {urljoin(html_url, item) for item in parser.manifests}
         if probe_manifests:
             manifest_urls.update(urljoin(html_url, item) for item in MANIFEST_CANDIDATES)
         manifest_results: list[dict[str, Any]] = []
         manifest_seed_urls: set[str] = set()
         for manifest_url in sorted(manifest_urls):
             try:
-                response = self._get(manifest_url)
-                content_type = response.headers.get("Content-Type", "")
-                parsed = response.json() if "json" in content_type.lower() else None
+                manifest_response = self._get(manifest_url)
+                content_type = manifest_response.headers.get("Content-Type", "")
+                parsed = manifest_response.json() if "json" in content_type.lower() else None
                 if not isinstance(parsed, (dict, list)):
                     manifest_results.append(
                         {"url": manifest_url, "status": "not_json", "content_type": content_type}
@@ -264,19 +262,50 @@ class StaticFetcher:
                 manifest_results.append({"url": manifest_url, "status": "parsed", "assets": assets})
             except (RuntimeError, requests.JSONDecodeError, ValueError) as exc:
                 manifest_results.append({"url": manifest_url, "status": "unavailable", "error": str(exc)})
+        return {
+            "bytes": html_bytes, "url": html_url, "local": html_local, "parser": parser,
+            "entry_urls": entry_urls, "preload_urls": preload_urls, "build_info": build_info,
+            "manifest_results": manifest_results, "manifest_seed_urls": sorted(manifest_seed_urls),
+        }
 
-        queue = deque(entry_urls + preload_urls + sorted(manifest_seed_urls))
+    def _fetch_batch(
+        self,
+        batch: list[str],
+        raw_dir: Path,
+        fetched: set[str],
+        failures: list[dict[str, Any]],
+        rejected: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
+        with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
+            futures = {executor.submit(self._fetch_js, url, raw_dir): url for url in batch}
+            for future in as_completed(futures):
+                url = futures[future]
+                try:
+                    results.append(future.result())
+                except _FetchError as exc:
+                    if exc.status_code == 404 and not _looks_like_vite_chunk(url):
+                        rejected.append(
+                            {"url": url, "status_code": 404,
+                             "reason": "lexical .js candidate is not a deployed Vite hash chunk"}
+                        )
+                        fetched.add(url)
+                    else:
+                        failures.append(
+                            {"url": url, "status_code": exc.status_code, "error": str(exc)}
+                        )
+        return sorted(results, key=lambda item: item["requested_url"])
+
+    def _crawl_static_graph(self, seeds: Sequence[str], raw_dir: Path) -> dict[str, Any]:
+        queue = deque(seeds)
         discovered = set(queue)
         fetched: set[str] = set()
-        allowed_origins = {
-            (urlsplit(url).scheme, urlsplit(url).netloc)
-            for url in entry_urls + preload_urls + sorted(manifest_seed_urls)
-        }
+        allowed_origins = {(urlsplit(url).scheme, urlsplit(url).netloc) for url in seeds}
         external_references: set[str] = set()
         failures: list[dict[str, Any]] = []
-        rejected_candidates: list[dict[str, Any]] = []
+        rejected: list[dict[str, Any]] = []
         files: list[dict[str, Any]] = []
-        discovery_signals = {"vite_map_deps": False, "webpack_chunk_loader": False}
+        signals = {"vite_map_deps": False, "webpack_chunk_loader": False}
         while queue:
             batch: list[str] = []
             while queue and len(batch) < self.concurrency:
@@ -285,43 +314,16 @@ class StaticFetcher:
                     batch.append(url)
             if not batch:
                 continue
-            with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
-                futures = {executor.submit(self._fetch_js, url, raw_dir): url for url in batch}
-                results: list[dict[str, Any]] = []
-                for future in as_completed(futures):
-                    url = futures[future]
-                    try:
-                        results.append(future.result())
-                    except _FetchError as exc:
-                        if exc.status_code == 404 and not _looks_like_vite_chunk(url):
-                            rejected_candidates.append(
-                                {
-                                    "url": url,
-                                    "status_code": 404,
-                                    "reason": "lexical .js candidate is not a deployed Vite hash chunk",
-                                }
-                            )
-                            fetched.add(url)
-                        else:
-                            failures.append(
-                                {
-                                    "url": url,
-                                    "status_code": exc.status_code,
-                                    "error": str(exc),
-                                }
-                            )
-            for result in sorted(results, key=lambda item: item["requested_url"]):
+            for result in self._fetch_batch(batch, raw_dir, fetched, failures, rejected):
                 url = result["requested_url"]
                 final_url = result["url"]
                 text = result.pop("text")
-                discovery_signals["vite_map_deps"] |= "__vite__mapDeps" in text
-                discovery_signals["webpack_chunk_loader"] |= any(
-                    signal in text
-                    for signal in ("__webpack_require__.u", ".miniCssF=", "webpackChunk")
+                signals["vite_map_deps"] |= "__vite__mapDeps" in text
+                signals["webpack_chunk_loader"] |= any(
+                    signal in text for signal in ("__webpack_require__.u", ".miniCssF=", "webpackChunk")
                 )
-                all_references = _extract_js_references(text, final_url)
                 references = []
-                for reference in all_references:
+                for reference in _extract_js_references(text, final_url):
                     parsed_reference = urlsplit(reference)
                     if (parsed_reference.scheme, parsed_reference.netloc) in allowed_origins:
                         references.append(reference)
@@ -335,101 +337,106 @@ class StaticFetcher:
                 result.pop("requested_url")
                 result["references"] = references
                 files.append(result)
-
             if self.attempts >= self.max_requests and queue:
                 break
-
         files.sort(key=lambda item: item["url"])
-        pending = sorted(discovered - fetched)
+        return {
+            "files": files, "discovered": discovered, "fetched": fetched,
+            "external_references": external_references, "failures": failures,
+            "rejected": rejected, "signals": signals,
+        }
+
+    def _entry_remained_stable(
+        self, site_url: str, entry: dict[str, Any], failures: list[dict[str, Any]]
+    ) -> bool:
+        try:
+            response = self._get(site_url)
+            final_html = response.content
+            parser = _EntryHTMLParser()
+            parser.feed(final_html.decode(response.encoding or "utf-8", errors="replace"))
+            final_entries = sorted(
+                {urljoin(str(response.url), item) for item in parser.module_scripts}
+            )
+            if final_entries == entry["entry_urls"] and sha256_bytes(final_html) == sha256_bytes(entry["bytes"]):
+                return True
+            failures.append({"url": site_url, "error": "entry HTML changed while static graph was being fetched"})
+        except RuntimeError as exc:
+            failures.append({"url": site_url, "error": f"final entry verification failed: {exc}"})
+        return False
+
+    def _build_snapshot(
+        self, site_url: str, entry: dict[str, Any], crawl: dict[str, Any], started: float
+    ) -> dict[str, Any]:
+        files = crawl["files"]
+        failures = crawl["failures"]
+        rejected = crawl["rejected"]
+        pending = sorted(crawl["discovered"] - crawl["fetched"])
         complete = not pending and not failures
         if complete:
-            try:
-                final_html_response = self._get(site_url)
-                final_html = final_html_response.content
-                final_parser = _EntryHTMLParser()
-                final_parser.feed(
-                    final_html.decode(final_html_response.encoding or "utf-8", errors="replace")
-                )
-                final_entries = sorted(
-                    {urljoin(str(final_html_response.url), item) for item in final_parser.module_scripts}
-                )
-                if final_entries != entry_urls or sha256_bytes(final_html) != sha256_bytes(html_bytes):
-                    failures.append(
-                        {
-                            "url": site_url,
-                            "error": "entry HTML changed while static graph was being fetched",
-                        }
-                    )
-                    complete = False
-            except RuntimeError as exc:
-                failures.append({"url": site_url, "error": f"final entry verification failed: {exc}"})
-                complete = False
-        elapsed_seconds = round(time.monotonic() - started, 3)
+            complete = self._entry_remained_stable(site_url, entry, failures)
         if complete:
-            completeness_reason = (
+            reason = (
                 f"all {len(files)} deployed same-origin Vite JS chunks fetched; "
-                f"{len(rejected_candidates)} lexical .js candidates resolved as HTTP 404 "
+                f"{len(rejected)} lexical .js candidates resolved as HTTP 404 "
                 "non-resources; entry HTML remained stable"
             )
         elif pending:
-            completeness_reason = (
-                f"{len(pending)} recursively discovered JS URLs remain pending: "
-                + "; ".join(pending)
-            )
+            reason = f"{len(pending)} recursively discovered JS URLs remain pending: " + "; ".join(pending)
         else:
-            completeness_reason = (
-                f"{len(failures)} static resource failures: "
-                + "; ".join(f"{item['url']} ({item['error']})" for item in failures)
+            reason = f"{len(failures)} static resource failures: " + "; ".join(
+                f"{item['url']} ({item['error']})" for item in failures
             )
-        snapshot: dict[str, Any] = {
+        parser = entry["parser"]
+        return {
             "schema_version": 1,
             "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "site_url": site_url,
-            "html": {
-                "url": html_url,
-                "local_path": html_local.as_posix(),
-                "sha256": sha256_bytes(html_bytes),
-                "size": len(html_bytes),
-            },
-            "build_info": build_info,
-            "entry_urls": entry_urls,
-            "modulepreload_urls": preload_urls,
+            "html": {"url": entry["url"], "local_path": entry["local"].as_posix(),
+                     "sha256": sha256_bytes(entry["bytes"]), "size": len(entry["bytes"])},
+            "build_info": entry["build_info"],
+            "entry_urls": entry["entry_urls"],
+            "modulepreload_urls": entry["preload_urls"],
             "ignored_nonmodule_scripts": sorted(
-                {urljoin(html_url, item) for item in html_parser.other_scripts}
+                {urljoin(entry["url"], item) for item in parser.other_scripts}
             ),
-            "manifest_probes": manifest_results,
+            "manifest_probes": entry["manifest_results"],
             "bundle_id": stable_bundle_id(files),
             "files": files,
             "summary": {
-                "bundle_files": len(files),
-                "bundle_bytes": sum(item["size"] for item in files),
-                "discovered_js": len(discovered),
-                "pending_js": len(pending),
-                "failed_js": len(failures),
-                "rejected_non_resource_candidates": len(rejected_candidates),
-                "request_attempts": self.attempts,
-                "request_limit": self.max_requests,
+                "bundle_files": len(files), "bundle_bytes": sum(item["size"] for item in files),
+                "discovered_js": len(crawl["discovered"]), "pending_js": len(pending),
+                "failed_js": len(failures), "rejected_non_resource_candidates": len(rejected),
+                "request_attempts": self.attempts, "request_limit": self.max_requests,
                 "concurrency": self.concurrency,
-                "elapsed_seconds": elapsed_seconds,
-                "complete": complete,
-                "completeness_reason": completeness_reason,
+                "elapsed_seconds": round(time.monotonic() - started, 3),
+                "complete": complete, "completeness_reason": reason,
             },
             "discovery": {
-                "strategies": [
-                    "HTML module scripts",
-                    "HTML modulepreload links",
-                    "linked and conventional Vite/Webpack manifests",
-                    "recursive JS string-literal imports and chunk maps",
-                ],
-                "signals": discovery_signals,
-                "pending_urls": pending,
-                "failures": failures,
-                "rejected_non_resource_candidates": sorted(
-                    rejected_candidates, key=lambda item: item["url"]
-                ),
-                "ignored_cross_origin_js": sorted(external_references),
+                "strategies": ["HTML module scripts", "HTML modulepreload links",
+                               "linked and conventional Vite/Webpack manifests",
+                               "recursive JS string-literal imports and chunk maps"],
+                "signals": crawl["signals"], "pending_urls": pending, "failures": failures,
+                "rejected_non_resource_candidates": sorted(rejected, key=lambda item: item["url"]),
+                "ignored_cross_origin_js": sorted(crawl["external_references"]),
             },
         }
+
+    def fetch(
+        self,
+        *,
+        site_url: str,
+        raw_dir: Path,
+        snapshot_path: Path,
+        probe_manifests: bool = True,
+    ) -> dict[str, Any]:
+        started = time.monotonic()
+        site_url = site_url if site_url.endswith("/") else site_url + "/"
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        entry = self._entry_seeds(site_url, raw_dir, probe_manifests)
+        seeds = entry["entry_urls"] + entry["preload_urls"] + entry["manifest_seed_urls"]
+        snapshot = self._build_snapshot(
+            site_url, entry, self._crawl_static_graph(seeds, raw_dir), started
+        )
         write_json(snapshot_path, snapshot)
         return snapshot
 

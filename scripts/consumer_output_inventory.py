@@ -15,6 +15,8 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
+from gravity_sdk.journey_ledger import parse_journey_ledger
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_ROOT = ROOT / "src" / "gravity_sdk" / "manifests"
@@ -164,22 +166,18 @@ def _operations() -> list[dict[str, Any]]:
 
 
 def _journeys() -> list[dict[str, Any]]:
-    result = []
-    for line in JOURNEYS.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("| ") or line.startswith(("| ---", "| 动线")):
-            continue
-        cells = [cell.strip() for cell in line.strip("|").split("|")]
-        if len(cells) < 2:
-            continue
-        result.append(
-            {
-                "product": cells[0],
-                "status": cells[1],
-                "counted": not cells[1].startswith("不计独立动线"),
-                "can_return_business_content": cells[1] == "已闭环",
-            }
-        )
-    return result
+    snapshot = parse_journey_ledger(JOURNEYS.read_text(encoding="utf-8"))
+    return [
+        {
+            "product": row["display_name"],
+            "status": row["ledger_status"],
+            "counted": row["counted"],
+            "can_return_business_content": row[
+                "can_return_business_content"
+            ],
+        }
+        for row in snapshot["rows"]
+    ]
 
 
 def _schema_versions() -> list[dict[str, str]]:

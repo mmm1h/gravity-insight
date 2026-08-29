@@ -1,21 +1,110 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from gravity_sdk.pagination_contract_audit import (
     OPERATIONS_ROOT,
+    _response_scalar_only,
     current_operation_pagination,
     load_pagination_audit,
     reconcile_pagination_audit,
 )
 
 
+PAGINATION_EVIDENCE_PLAN = (
+    Path(__file__).parents[1] / "docs" / "maintainers" / "pagination-evidence-plan.md"
+)
+
+
+def _planned_production_evidence_targets() -> set[str]:
+    """The collectable targets the plan actually lists, excluding permanent unknown."""
+    plan = PAGINATION_EVIDENCE_PLAN.read_text(encoding="utf-8")
+    collectable = plan.split("## 永久 unknown", maxsplit=1)[0]
+    return set(re.findall(r"^\| `([^`]+)` \|", collectable, re.MULTILINE))
+
+
 class PaginationContractAuditTests(unittest.TestCase):
+    def test_response_scalar_only_rejects_all_missed_collection_capabilities(
+        self,
+    ) -> None:
+        scalar_projection = {
+            "data_keys": ["a"],
+            "required_data_keys": ["a"],
+            "numeric_paths": ["a"],
+        }
+        missed_capabilities = {
+            "data_path_item_keys": {"a.items": ["id"]},
+            "known_omitted_data_keys": ["omitted"],
+            "known_omitted_item_keys": ["omitted"],
+            "known_omitted_nested_item_keys": {"item": ["omitted"]},
+            "known_omitted_data_item_keys": {"a": ["omitted"]},
+            "opaque_json_item_keys": ["payload"],
+            "unreliable_item_keys": {
+                "value": {"reason": "unstable", "use_instead": "stable_value"}
+            },
+            "scalar_list_item_types": {"values": "number"},
+        }
+
+        self.assertTrue(_response_scalar_only(scalar_projection))
+        for field, capability in missed_capabilities.items():
+            with self.subTest(field=field):
+                self.assertFalse(
+                    _response_scalar_only(
+                        {**scalar_projection, field: capability}
+                    )
+                )
+
+    def test_response_scalar_only_fails_closed_for_invalid_or_unknown_shape(
+        self,
+    ) -> None:
+        scalar_projection = {
+            "data_keys": ["a"],
+            "required_data_keys": ["a"],
+            "numeric_paths": ["a"],
+        }
+        invalid_projections = {
+            "invalid data shape": {**scalar_projection, "data_shape": "array"},
+            "unknown model field": {
+                **scalar_projection,
+                "future_collection_capability": ["item"],
+            },
+            "non-string field": {
+                "data_keys": [1],
+                "required_data_keys": [1],
+                "numeric_paths": [1],
+            },
+            "duplicate field": {
+                "data_keys": ["a", "a"],
+                "required_data_keys": ["a", "a"],
+                "numeric_paths": ["a", "a"],
+            },
+        }
+
+        for case, projection in invalid_projections.items():
+            with self.subTest(case=case):
+                self.assertFalse(_response_scalar_only(projection))
+
+    def test_only_current_scalar_only_contract_is_segment_evaluate_percent(
+        self,
+    ) -> None:
+        current = current_operation_pagination()
+
+        self.assertEqual(
+            ["analysis.segment.evaluate_percent"],
+            sorted(
+                operation_id
+                for operation_id, pagination in current.items()
+                if pagination["_evidence_context"]["response_scalar_only"]
+            ),
+        )
+
     def test_snapshot_is_a_historical_verdict_joined_to_current_contracts(self) -> None:
         audit = load_pagination_audit()
         records = audit["records"]
@@ -57,6 +146,27 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual([], reconciled["coverage"]["missing_from_contracts"])
         self.assertEqual({"complete": 60, "unknown": 177}, reconciled["current_completeness"])
         self.assertEqual(
+            {
+                "collect_production_or_wire": 85,
+                "not_scheduled_non_stable": 9,
+                "not_scheduled_without_new_signal": 83,
+            },
+            reconciled["unknown_evidence_actions"],
+        )
+        # Set equality against the plan, not a bare count: swapping one target
+        # for another keeps len() at 85 while silently changing the debt scope.
+        planned_targets = _planned_production_evidence_targets()
+        self.assertEqual(85, len(planned_targets))
+        self.assertEqual(planned_targets, set(reconciled["production_evidence_targets"]))
+        self.assertEqual(83, len(reconciled["permanent_unknown"]))
+        self.assertEqual(
+            {
+                "no_falsifiable_completeness_signal": 36,
+                "not_collection_semantics": 47,
+            },
+            reconciled["permanent_unknown_dispositions"],
+        )
+        self.assertEqual(
             {"production": 97, "template": 131, "wire": 9},
             reconciled["current_pagination_evidence"],
         )
@@ -86,6 +196,78 @@ class PaginationContractAuditTests(unittest.TestCase):
         ]
         self.assertEqual(60, len(shape_a))
         self.assertTrue(all(item["current_total_page_field"] == "total_page" for item in shape_a))
+
+    def test_permanent_unknown_requires_a_narrow_reproducible_reason(self) -> None:
+        audit = load_pagination_audit()
+        current = current_operation_pagination()
+        reconciled = reconcile_pagination_audit(audit, current)
+        by_id = {item["operation_id"]: item for item in reconciled["records"]}
+
+        self.assertEqual(
+            "no_falsifiable_completeness_signal",
+            by_id["analysis.dashboard.tree"]["unknown_evidence_disposition"],
+        )
+        self.assertEqual(
+            "not_collection_semantics",
+            by_id["analysis.dashboard.detail"]["unknown_evidence_disposition"],
+        )
+        self.assertEqual(
+            "not_collection_semantics",
+            by_id["analysis.segment.evaluate_percent"][
+                "unknown_evidence_disposition"
+            ],
+        )
+        self.assertEqual(
+            "no_falsifiable_completeness_signal",
+            by_id["analysis.default_val.list"]["unknown_evidence_disposition"],
+        )
+        root = Path(__file__).resolve().parents[1]
+        for item in by_id.values():
+            if (
+                item["unknown_evidence_disposition"]
+                == "no_falsifiable_completeness_signal"
+                and item["review_status"]
+                in {"no_page_info_in_observed_response", "shape_verified"}
+            ):
+                self.assertEqual("production", item["evidence_level"])
+                self.assertTrue(all(
+                    (root / source.split("#", 1)[0]).is_file()
+                    for source in item["evidence_sources"]
+                ))
+
+        weakened_audit = deepcopy(audit)
+        default_value = next(
+            item for item in weakened_audit["records"]
+            if item["operation_id"] == "analysis.default_val.list"
+        )
+        default_value["evidence_level"] = "template_default"
+        weakened = reconcile_pagination_audit(weakened_audit, current)
+        weakened_by_id = {item["operation_id"]: item for item in weakened["records"]}
+        self.assertIsNone(
+            weakened_by_id["analysis.default_val.list"]["unknown_evidence_disposition"]
+        )
+
+        pageable_tree = deepcopy(current)
+        pageable_tree["analysis.dashboard.tree"]["_evidence_context"][
+            "request_fields"
+        ].append("page")
+        changed = reconcile_pagination_audit(audit, pageable_tree)
+        changed_by_id = {item["operation_id"]: item for item in changed["records"]}
+        self.assertIsNone(
+            changed_by_id["analysis.dashboard.tree"]["unknown_evidence_disposition"]
+        )
+
+        collection_evaluation = deepcopy(current)
+        collection_evaluation["analysis.segment.evaluate_percent"][
+            "_evidence_context"
+        ]["response_scalar_only"] = False
+        changed = reconcile_pagination_audit(audit, collection_evaluation)
+        changed_by_id = {item["operation_id"]: item for item in changed["records"]}
+        self.assertIsNone(
+            changed_by_id["analysis.segment.evaluate_percent"][
+                "unknown_evidence_disposition"
+            ]
+        )
 
     def test_undeclared_kind_change_is_unexpected_drift(self) -> None:
         audit = load_pagination_audit()

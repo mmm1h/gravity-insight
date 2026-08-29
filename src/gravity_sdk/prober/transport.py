@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 from gravity_sdk import runtime as tool_runtime
 from gravity_sdk.paths import PROJECT_ROOT, STATE_ROOT
 from gravity_sdk.receipt import (
+    PRODUCTION_HTTP_KIND,
     authorized_request_receipt_context,
     perform_http_request,
     record_active_http_response,
@@ -21,6 +22,26 @@ from gravity_sdk.receipt import (
 
 from .privacy import response_schema_sketch
 from .read_semantics import CONFIRMATIONS_PATH, confirmation_keys
+
+
+def trusted_export_download(
+    url: str, trusted: Mapping[str, Any]
+) -> tuple[Any, str, str, bytes, frozenset[str], dict[str, tuple[str, ...]]]:
+    parsed = urlsplit(url)
+    if not parsed.path.casefold().endswith(".xlsx"):
+        raise ValueError("export download has an unverified file extension")
+    extension = ".xlsx"
+    mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    hosts = frozenset(str(value) for value in trusted["allowed_hosts"])
+    prefixes = {
+        str(host): tuple(str(value) for value in values)
+        for host, values in trusted["allowed_path_prefixes"].items()
+    }
+    if parsed.scheme != "https" or parsed.hostname not in hosts:
+        raise RuntimeError("export download host is outside the verified allowlist")
+    if not any(parsed.path.startswith(prefix) for prefix in prefixes.get(parsed.hostname, ())):
+        raise RuntimeError("export download path is outside the verified tenant prefix")
+    return parsed, extension, mime_type, b"PK\x03\x04", hosts, prefixes
 
 
 _CONFIRMED_READ_NAMESPACES = (
@@ -223,11 +244,13 @@ class _OpenApiProbeRuntime:
             path=path,
             query=query,
             body=body,
+            coalesce_safe=False,
         )
         response = perform_http_request(
             self._recording.request,
             method,
             parts["credentials"].GRAVITY_HOST + path,
+            kind=PRODUCTION_HTTP_KIND,
             headers=headers,
             params=query,
             json=body or None,

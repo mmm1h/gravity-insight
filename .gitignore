@@ -25,3 +25,6 @@ evidence/daily-verification/
 *.log
 *.jsonl
 !evals/agent_usability/query-ledger.jsonl
+
+# transient codex worktrees
+_wt_*/

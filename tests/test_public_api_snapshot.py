@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import ast
 import json
+import tempfile
 import unittest
 from pathlib import Path
+
+from tests.agent_migration_characterization import expected_public_exports
 
 
 ROOT = Path(__file__).resolve().parents[1]
 INIT = ROOT / "src" / "gravity_sdk" / "__init__.py"
-SNAPSHOT = ROOT / "tests" / "fixtures" / "public_api_exports.json"
 
 
 def _lazy_exports() -> dict[str, list[str]]:
@@ -52,17 +54,32 @@ class PublicApiSnapshotTests(unittest.TestCase):
     """
 
     def test_lazy_root_exports_match_public_api_snapshot(self) -> None:
-        expected = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+        expected = expected_public_exports()
 
         self.assertEqual(expected, _lazy_exports())
-        self.assertEqual(108, len(expected))
+        self.assertEqual(147, len(expected))
+
+    def test_owner_migration_ledger_changes_only_the_declared_owner(self) -> None:
+        migration = [{
+            "symbol": "capabilities_many",
+            "from": ".agent_batch",
+            "to": ".agents.agent_batch",
+        }]
+        with tempfile.TemporaryDirectory() as raw:
+            ledger = Path(raw) / "ledger.json"
+            ledger.write_text(json.dumps(migration), encoding="utf-8")
+            expected = expected_public_exports(ledger=ledger)
+        self.assertEqual(
+            [".agents.agent_batch", "capabilities_many"],
+            expected["capabilities_many"],
+        )
 
     def test_every_snapshot_symbol_is_reachable_from_the_root_package(self) -> None:
         """An entry in the map is worthless if `from gravity_sdk import X` fails."""
 
         import gravity_sdk
 
-        expected = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+        expected = expected_public_exports()
         missing = [name for name in expected if not hasattr(gravity_sdk, name)]
 
         self.assertEqual([], missing)

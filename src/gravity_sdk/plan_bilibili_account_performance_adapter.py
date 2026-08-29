@@ -6,7 +6,7 @@ import copy
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_bilibili_account_performance import (
+from .agents.bilibili_account_performance import (
     BILIBILI_ACCOUNT_PERFORMANCE_NAME,
 )
 from .bilibili_account_performance import (

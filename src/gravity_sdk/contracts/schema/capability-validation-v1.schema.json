@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.capability-validation.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "identity_kind",
+    "selector",
+    "contract_version",
+    "contract_digest",
+    "provider_fingerprint",
+    "validated_at",
+    "expires_at",
+    "trust_status",
+    "completeness",
+    "data_quality",
+    "evidence_references",
+    "reason_codes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.capability-validation.v1"},
+    "identity_kind": {"enum": ["operation", "product", "composite"]},
+    "selector": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/-]*$"},
+    "contract_version": {"type": "string", "minLength": 1, "maxLength": 64},
+    "contract_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "provider_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "validated_at": {"type": "string", "minLength": 20, "maxLength": 32},
+    "expires_at": {"type": "string", "minLength": 20, "maxLength": 32},
+    "trust_status": {"enum": ["stable", "unknown", "degraded", "blocked", "quarantined"]},
+    "completeness": {"enum": ["complete", "prefix", "unknown"]},
+    "data_quality": {"$ref": "#/$defs/data_quality"},
+    "evidence_references": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"}
+    }
+  },
+  "$defs": {
+    "data_quality": {
+      "type": "object",
+      "required": ["schema_version", "status", "checks", "reason_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.data-quality-result.v1"},
+        "status": {"enum": ["pass", "warn", "fail", "unknown"]},
+        "checks": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/check"}
+        },
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"}
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["check_id", "status", "scope"],
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9_.-]*$"},
+        "status": {"enum": ["pass", "warn", "fail", "unknown"]},
+        "scope": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["kind", "reference"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["wire", "production", "receipt", "fixture", "consumer", "static"]},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"}
+      }
+    }
+  }
+}

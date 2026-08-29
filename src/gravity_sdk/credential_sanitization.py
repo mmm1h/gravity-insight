@@ -6,7 +6,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from . import runtime
+from . import json_output
 
 
 _CREDENTIAL_KEYS = {
@@ -43,7 +43,7 @@ _CREDENTIAL_ASSIGNMENT_RE = re.compile(
 def sanitize_credentials(value: Any) -> Any:
     """Remove credentials from a caller-visible value tree."""
 
-    value = runtime.to_jsonable(value)
+    value = json_output.to_jsonable(value)
     if isinstance(value, Mapping):
         result: dict[str, Any] = {}
         for key, item in value.items():

@@ -1,0 +1,32 @@
+[
+  {
+    "symbol": "assess_host_product_selection",
+    "from": ".agent_host_selection",
+    "to": ".agents.host_selection"
+  },
+  {
+    "symbol": "capabilities_many",
+    "from": ".agent_batch",
+    "to": ".agents.batch"
+  },
+  {
+    "symbol": "compile_host_product_selection",
+    "from": ".agent_host_selection",
+    "to": ".agents.host_selection"
+  },
+  {
+    "symbol": "host_product_catalog",
+    "from": ".agent_host_catalog",
+    "to": ".agents.host_catalog"
+  },
+  {
+    "symbol": "host_product_selection_schema",
+    "from": ".agent_host_catalog",
+    "to": ".agents.host_catalog"
+  },
+  {
+    "symbol": "resolve_host_product_selection",
+    "from": ".agent_host_selection",
+    "to": ".agents.host_selection"
+  }
+]

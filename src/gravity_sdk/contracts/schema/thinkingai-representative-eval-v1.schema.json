@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.thinkingai-representative-eval.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "suite_id", "representative_set_sha256",
+    "case_count", "scenarios", "cases", "network_called", "eval_sha256"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "thinkingai_representative_eval"},
+    "schema_version": {"const": "gravity.thinkingai-representative-eval.v1"},
+    "suite_id": {"const": "thinkingai-representative-regression-v1"},
+    "representative_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "case_count": {"const": 8},
+    "scenarios": {
+      "type": "array", "minItems": 8, "maxItems": 8, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/scenario"}
+    },
+    "cases": {
+      "type": "array", "minItems": 8, "maxItems": 8,
+      "items": {"$ref": "#/$defs/case"}
+    },
+    "network_called": {"const": false},
+    "eval_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "scenario": {
+      "enum": [
+        "happy", "empty", "partial", "gap", "invalid", "claim_boundary",
+        "prompt_injection", "marketing_leakage"
+      ]
+    },
+    "case": {
+      "type": "object",
+      "required": [
+        "case_id", "skill_uri", "journey_id", "scenario", "expected_outcome",
+        "result_status", "reason_codes", "allowed_claims", "forbidden_claims",
+        "network_called"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "type": "string", "minLength": 1, "maxLength": 96,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "skill_uri": {
+          "type": "string", "minLength": 24, "maxLength": 160,
+          "pattern": "^skill://gravity\\.game/[a-z0-9]+(?:-[a-z0-9]+)*@1\\.0\\.0$"
+        },
+        "journey_id": {
+          "type": "string", "minLength": 3, "maxLength": 256,
+          "pattern": "^analysis\\.thinkingai\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "scenario": {"$ref": "#/$defs/scenario"},
+        "expected_outcome": {"enum": ["pass", "blocked", "reject"]},
+        "result_status": {"enum": ["success", "empty", "partial", "blocked", "invalid"]},
+        "reason_codes": {
+          "type": "array", "maxItems": 16, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$"}
+        },
+        "allowed_claims": {
+          "type": "array", "maxItems": 16, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"}
+        },
+        "forbidden_claims": {
+          "type": "array", "maxItems": 32, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"}
+        },
+        "network_called": {"const": false}
+      }
+    }
+  }
+}

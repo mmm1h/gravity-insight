@@ -6,13 +6,17 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath
 import re
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 from urllib.parse import unquote, urlsplit
 
 from .blob_models import ArchivePolicy, BlobTransferError, MagicSignature
 
+if TYPE_CHECKING:
+    from .blob_models import AuthorizedBlobSource
+
 _DEFAULT_MAX_BYTES = 100 * 1024 * 1024
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_MD5 = re.compile(r"^[0-9a-f]{32}$")
 
 @dataclass(frozen=True)
 class BlobPolicy:
@@ -371,6 +375,21 @@ def _normalize_expected_digest(value: str | None) -> str | None:
     if not _SHA256.fullmatch(normalized):
         raise BlobTransferError(
             "authorized SHA-256 digest is malformed",
+            code="BLOB_DIGEST_INVALID",
+            stage="source_policy",
+        )
+    return normalized
+
+
+def _normalize_expected_md5(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if normalized.startswith("md5:"):
+        normalized = normalized[4:]
+    if not _MD5.fullmatch(normalized):
+        raise BlobTransferError(
+            "authorized MD5 digest is malformed",
             code="BLOB_DIGEST_INVALID",
             stage="source_policy",
         )

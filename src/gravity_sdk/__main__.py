@@ -16,6 +16,13 @@ Usage:
   gravity agent-catalog categories|category <domain>|describe <selector>|host
   gravity plan schema
   gravity plan run --input <plan.json>
+  gravity journey list|verify|describe|can-run|impact|run
+  gravity capabilities trust|validate|impact
+  gravity skills list|show|export-agent
+  gravity skills sync|search|resolve|lock|fetch|install|update|verify|audit
+  gravity trusted-packs resolve|lock|fetch|verify|install-plan
+  gravity action segment-update|dashboard-delivery preview|execute --input <json|file|->
+  gravity experiment propose|outcome-handoff --input <json|file|->
   gravity analysis saved list|get|prepare|run
   gravity analysis saved create|update|delete --dry-run|--execute
   gravity analysis template list|prepare|run
@@ -32,6 +39,10 @@ Usage:
   gravity analysis monetization detail --app <alias|id> --date <date>
   gravity multidim query --app <alias|id> --input <json|file|->
   gravity semantic compose --app <alias|id> --input <json|file|->
+  gravity semantics list|describe|resolve|validate [--source <semantic-source>]
+  gravity operators list|describe|validate
+  gravity models list|describe|evaluate [--source <model-artifact>]
+  gravity context project describe|index|search|get|pack|verify
   gravity derive --input <json|file|->
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity reports usage
@@ -82,6 +93,23 @@ def ensure_first_run_credentials(*, requires_credentials: bool) -> bool:
     return implementation(requires_credentials=requires_credentials)
 
 
+def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
+    from .auto_upgrade import (
+        TERMINAL_UPGRADE_STATUSES,
+        TARGET_PYTHON_ENV,
+        UPDATE_POLICY_EXIT_CODE,
+        maybe_auto_upgrade,
+        startup_update_enabled,
+    )
+
+    if not startup_update_enabled(args):
+        return None
+    result = maybe_auto_upgrade(
+        args, target_python=os.environ.get(TARGET_PYTHON_ENV)
+    )
+    return UPDATE_POLICY_EXIT_CODE if result.status in TERMINAL_UPGRADE_STATUSES else None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     from .cli_stdio import configure_utf8_stdio, emit_entry_error
 
@@ -101,6 +129,10 @@ def _main(argv: Sequence[str] | None = None) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return exit_code_for_category(ErrorCategory.CALLER)
+
+    upgrade_exit = _startup_upgrade_exit(args)
+    if upgrade_exit is not None:
+        return upgrade_exit
 
     from . import cli as insight_cli
     from .census import cli as census_cli

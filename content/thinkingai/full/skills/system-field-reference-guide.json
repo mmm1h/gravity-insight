@@ -1,0 +1,70 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "field-permission-inferred",
+      "inferred-field-definition",
+      "undocumented-binding"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/field-contracts@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "Assemble a bounded guide from project-authoritative event and property contracts with revision and ownership references.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use when the project Context Provider can return current reviewed field definitions and lineage.",
+    "context_boundary": "Field names and examples are not definitions; missing, stale or conflicting entries remain explicit gaps.",
+    "steps": [
+      "Resolve the requested entity, event or property scope and current authoritative project revision.",
+      "Collect only reviewed cited definitions, bindings, units, sensitivity and effective ranges.",
+      "Return the bounded guide with conflicts and gaps; do not infer undocumented meaning or permission."
+    ],
+    "title": "Project field contract guide"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://system-field-reference-guide",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 0,
+    "known_requests_min": 0,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 0
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "unknown"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [],
+  "skill_id": "system-field-reference-guide",
+  "specification": "specified",
+  "summary": "Expose reviewed field meanings and bindings without inferring semantics from names.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

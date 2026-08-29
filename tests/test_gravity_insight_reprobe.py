@@ -5,6 +5,7 @@ import tempfile
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from gravity_sdk.prober.model import build_draft
 from gravity_sdk.prober.drafts import validate_source
@@ -19,6 +20,7 @@ from gravity_sdk.prober.probe_support import resolve_inputs
 from gravity_sdk.prober.reprobe import (
     downgrade_auth_contaminated_draft,
     prune_missing_probe_references,
+    run_parameter_targets,
     select_parameter_reprobes,
 )
 from gravity_sdk.prober.transport import RecordingSession, RequestDiscipline
@@ -98,6 +100,28 @@ class GravityInsightReprobeTests(unittest.TestCase):
         self._temporary_directory = tempfile.TemporaryDirectory()
         self.addCleanup(self._temporary_directory.cleanup)
         self.tmp_path = Path(self._temporary_directory.name)
+
+    def test_parameter_target_runner_stops_before_request_at_budget_floor(self):
+        context = SimpleNamespace(
+            discipline=SimpleNamespace(
+                request_limit=7, total=0, domain_stopped=False
+            ),
+            stable_client=object(),
+            runtime=object(),
+            recording=object(),
+        )
+
+        results, stopped = run_parameter_targets(
+            context,
+            ["analysis.example.list"],
+            draft_root=self.tmp_path / "drafts",
+            evidence_root=self.tmp_path / "evidence",
+            results_path=self.tmp_path / "results.json",
+        )
+
+        assert results == []
+        assert stopped is True
+        assert not (self.tmp_path / "results.json").exists()
 
     def test_parameter_assembly_keeps_frontend_presence_distinct_from_required(self):
         source = build_draft(_route(), set())

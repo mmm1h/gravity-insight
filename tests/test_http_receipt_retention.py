@@ -7,10 +7,10 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUEST_SCRIPT = r"""
 import json,logging,sys,time
 from pathlib import Path
-from gravity_sdk.receipt import perform_http_request,request_receipt_context
+from gravity_sdk.receipt import PRODUCTION_HTTP_KIND,perform_http_request,request_receipt_context
 class Response: status_code=200
 root=Path(sys.argv[1]); operation=sys.argv[2]
-response=perform_http_request(lambda:Response(),http_receipt=request_receipt_context(operation_id=operation,method='GET',path='/synthetic'),receipt_root=root)
+response=perform_http_request(lambda:Response(),kind=PRODUCTION_HTTP_KIND,http_receipt=request_receipt_context(operation_id=operation,method='GET',path='/synthetic'),receipt_root=root)
 print(json.dumps({'status':response.status_code}))
 """
 def _environment(**values: str) -> dict[str, str]:

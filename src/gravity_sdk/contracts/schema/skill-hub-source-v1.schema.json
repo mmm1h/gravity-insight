@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.skill-hub-source.v1",
+  "type": "object",
+  "required": ["artifact_kind", "schema_version", "source_id", "transport", "owner", "trust_model", "git", "https", "limits"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "skill_hub_source"},
+    "schema_version": {"const": "gravity.skill-hub-source.v1"},
+    "source_id": {"type": "string", "pattern": "^hub-source://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256},
+    "transport": {"enum": ["git", "static_https"]},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "trust_model": {"const": "stage_a_team_controlled_reviewed"},
+    "git": {
+      "type": ["object", "null"],
+      "required": ["repository_uri", "ref", "index_path"],
+      "additionalProperties": false,
+      "properties": {
+        "repository_uri": {"type": "string", "minLength": 12, "maxLength": 1024},
+        "ref": {"type": "string", "pattern": "^refs/(heads|tags)/[A-Za-z0-9._/-]+$", "maxLength": 256},
+        "index_path": {"type": "string", "minLength": 1, "maxLength": 512}
+      }
+    },
+    "https": {
+      "type": ["object", "null"],
+      "required": ["index_url", "artifact_base_url", "source_revision"],
+      "additionalProperties": false,
+      "properties": {
+        "index_url": {"type": "string", "minLength": 12, "maxLength": 2048},
+        "artifact_base_url": {"type": "string", "minLength": 12, "maxLength": 2048},
+        "source_revision": {"type": "string", "pattern": "^[A-Za-z0-9._:-]+$", "maxLength": 256}
+      }
+    },
+    "limits": {
+      "type": "object",
+      "required": ["max_index_bytes", "max_artifact_bytes", "timeout_seconds"],
+      "additionalProperties": false,
+      "properties": {
+        "max_index_bytes": {"type": "integer", "minimum": 1024, "maximum": 16777216},
+        "max_artifact_bytes": {"type": "integer", "minimum": 1024, "maximum": 134217728},
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 120}
+      }
+    }
+  }
+}

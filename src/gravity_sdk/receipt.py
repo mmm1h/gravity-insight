@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import contextvars
+import copy
 import json
 import logging
+import time
 import uuid
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterator, Mapping
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
 from .errors import InputValidationError
 from .fingerprints import shape_fingerprint
@@ -25,6 +27,24 @@ from .result_output import write_rendered_result
 
 SCHEMA_VERSION = "gravity.receipt.v1"
 HTTP_SCHEMA_VERSION = "gravity.http-receipt.v1"
+PRODUCTION_HTTP_KIND = "production"
+DISTRIBUTION_HTTP_KIND = "code_distribution"
+HTTP_KINDS = frozenset({PRODUCTION_HTTP_KIND, DISTRIBUTION_HTTP_KIND})
+_FACET_FIELDS = frozenset(
+    {
+        "run",
+        "skill",
+        "journey",
+        "capability",
+        "semantics",
+        "operator_model",
+        "context",
+        "pagination",
+        "data_quality",
+        "policy",
+        "action",
+    }
+)
 _LOGGER = logging.getLogger("gravity_sdk")
 
 
@@ -52,6 +72,7 @@ _ACTIVE_RESULT_RECEIPTS: contextvars.ContextVar[_ReceiptReferences | None] = (
 @dataclass
 class RequestCounter:
     count: int = 0
+    attempts_by_kind: dict[str, int] = field(default_factory=dict)
 
 
 _ACTIVE_REQUEST_COUNTER: contextvars.ContextVar[RequestCounter | None] = (
@@ -69,10 +90,14 @@ def count_http_requests() -> Iterator[RequestCounter]:
         _ACTIVE_REQUEST_COUNTER.reset(token)
 
 
-def record_http_request() -> None:
+def record_http_request(*, kind: str) -> None:
+    if kind not in HTTP_KINDS:
+        raise ValueError("HTTP request kind is not governed")
     counter = _ACTIVE_REQUEST_COUNTER.get()
     if counter is not None:
-        counter.count += 1
+        counter.attempts_by_kind[kind] = counter.attempts_by_kind.get(kind, 0) + 1
+        if kind == PRODUCTION_HTTP_KIND:
+            counter.count += 1
 
 
 def bind_request_counter():
@@ -114,24 +139,54 @@ def capture_http_receipt_references() -> Iterator[_ReceiptReferences]:
 def perform_http_request(
     request: Callable[..., Any],
     *args: Any,
+    kind: str,
     http_receipt: Mapping[str, Any] | None = None,
     receipt_root: Path | None = None,
+    governor_context: Mapping[str, Any] | None = None,
+    governor_clock: Callable[[], float] = time.monotonic,
+    adaptive_governor: Any | None = None,
+    governor_cancellation: Any | None = None,
     **kwargs: Any,
 ) -> Any:
-    record_http_request()
-    active = (
-        _ActiveHttpReceipt(http_receipt, receipt_root)
-        if http_receipt is not None and receipt_root is not None
-        else None
+    """Govern one actual HTTP attempt before its canonical evidence boundary."""
+
+    from .http_attempt import perform_governed_http_request
+
+    return perform_governed_http_request(
+        request,
+        args,
+        kwargs,
+        kind=kind,
+        receipt_context=http_receipt,
+        receipt_root=receipt_root,
+        governor_context=governor_context,
+        governor_clock=governor_clock,
+        adaptive_governor=adaptive_governor,
+        cancellation=governor_cancellation,
     )
-    token = _ACTIVE_HTTP_RECEIPT.set(active) if active is not None else None
+
+
+def _governor_clock_value(
+    clock: Callable[[], float], *, fallback: float = 0.0
+) -> float:
     try:
-        response = request(*args, **kwargs)
-        record_active_http_response(response)
-        return response
-    finally:
-        if token is not None:
-            _ACTIVE_HTTP_RECEIPT.reset(token)
+        return float(clock())
+    except Exception:
+        return fallback
+
+
+def _record_governor_observation(
+    request_args: Sequence[Any],
+    request_kwargs: Mapping[str, Any],
+    **values: Any,
+) -> None:
+    try:
+        from .governor_observation import observe_http_attempt
+
+        observe_http_attempt(request_args, request_kwargs, **values)
+    except Exception:
+        # Observation can never change the authorized request outcome.
+        pass
 
 
 def record_active_http_response(response: Any) -> None:
@@ -153,6 +208,8 @@ def request_receipt_context(
     body: Mapping[str, Any] | None = None,
     page_number: int | None = None,
     retry: bool = False,
+    effect: str = "other",
+    coalesce_safe: bool = False,
 ) -> dict[str, Any]:
     """Build value-free metadata before a controlled request is sent."""
 
@@ -162,6 +219,8 @@ def request_receipt_context(
         "path": path,
         "page_number": page_number,
         "retry": retry,
+        "_governor_effect": effect,
+        "_governor_coalesce_safe": coalesce_safe is True and effect == "read",
         "request_shape_fingerprint": shape_fingerprint(
             {"query": dict(query or {}), "body": dict(body or {})}
         ),
@@ -184,6 +243,7 @@ def authorized_request_receipt_context(
     path: str,
     query: Mapping[str, Any] | None,
     body: Mapping[str, Any] | None,
+    coalesce_safe: bool = True,
 ) -> dict[str, Any]:
     """Derive safe operation and pagination identity from a policy receipt."""
 
@@ -191,6 +251,7 @@ def authorized_request_receipt_context(
         authorization, "route", None
     )
     operation_id = str(getattr(target, "operation_id", "unknown"))
+    effect = str(getattr(target, "effect", "other"))
     receipt_path = str(
         getattr(target, "path_template", None) or getattr(target, "path", None) or path
     )
@@ -209,6 +270,8 @@ def authorized_request_receipt_context(
         query=query,
         body=body,
         page_number=page_number,
+        effect=effect,
+        coalesce_safe=coalesce_safe and effect == "read",
     )
 
 
@@ -350,8 +413,10 @@ def build_receipt(
     status: str,
     duration_ms: float,
     request_count: int,
+    operator_model: Mapping[str, Any] | None = None,
+    facets: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    receipt = {
         "schema_version": SCHEMA_VERSION,
         "receipt_id": uuid.uuid4().hex,
         "created_at": datetime.now(timezone.utc)
@@ -365,20 +430,129 @@ def build_receipt(
         "duration_ms": round(max(0.0, duration_ms), 3),
         "request_count": max(0, int(request_count)),
     }
+    selected_facets = validate_receipt_facets(
+        facets if facets is not None else {}
+    )
+    if operator_model is not None:
+        from .operator_model_receipt import validate_operator_model_receipt_facet
+
+        if "operator_model" in selected_facets:
+            raise ValueError("operator_model receipt facet was supplied twice")
+        selected_facets["operator_model"] = validate_operator_model_receipt_facet(
+            operator_model
+        )
+    receipt.update(selected_facets)
+    validate_receipt(receipt)
+    return receipt
+
+
+def validate_receipt(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate one legacy or facet-enriched Receipt without changing its shape."""
+
+    if not isinstance(value, Mapping):
+        raise ValueError("Receipt must be an object")
+    selected = copy.deepcopy(dict(value))
+    from .agent_runtime_contracts import AgentRuntimeContractError, validate_schema
+
+    try:
+        validate_schema(selected, "receipt-v1.schema.json", "Receipt v1")
+    except AgentRuntimeContractError as exc:
+        raise ValueError("Receipt v1 is invalid") from exc
+    operator_model = selected.get("operator_model")
+    if operator_model is not None:
+        from .operator_model_receipt import validate_operator_model_receipt_facet
+
+        validate_operator_model_receipt_facet(operator_model)
+    _validate_facet_order(selected)
+    return selected
+
+
+def validate_receipt_facets(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate only the optional part against the canonical Receipt schema."""
+
+    if not isinstance(value, Mapping):
+        raise ValueError("Receipt facets must be an object")
+    selected = copy.deepcopy(dict(value))
+    unknown = set(selected) - _FACET_FIELDS
+    if unknown:
+        raise ValueError(
+            "Receipt facets contain non-facet fields: "
+            + ", ".join(sorted(str(item) for item in unknown))
+        )
+    placeholder = {
+        "schema_version": SCHEMA_VERSION,
+        "receipt_id": "0" * 32,
+        "created_at": "1970-01-01T00:00:00Z",
+        "operation_id": "receipt.validation",
+        "input_shape_fingerprint": "0" * 64,
+        "contract_fingerprint": None,
+        "output_shape_fingerprint": "0" * 64,
+        "status": "success",
+        "duration_ms": 0.0,
+        "request_count": 0,
+        **selected,
+    }
+    validate_receipt(placeholder)
+    return selected
+
+
+def _validate_facet_order(receipt: Mapping[str, Any]) -> None:
+    _validate_capability_facet_order(receipt.get("capability"))
+    _validate_semantics_facet_order(receipt.get("semantics"))
+    _validate_context_facet_order(receipt.get("context"))
+
+
+def _validate_capability_facet_order(capability: Any) -> None:
+    if isinstance(capability, Mapping):
+        references = capability.get("references", [])
+        expected = sorted(
+            references,
+            key=lambda item: (item["identity_kind"], item["selector"]),
+        )
+        identities = [
+            (item["identity_kind"], item["selector"]) for item in references
+        ]
+        if references != expected or len(identities) != len(set(identities)):
+            raise ValueError("Receipt Capability references are not deterministic")
+
+
+def _validate_semantics_facet_order(semantics: Any) -> None:
+    if isinstance(semantics, Mapping):
+        references = semantics.get("references", [])
+        uris = [item["uri"] for item in references]
+        if uris != sorted(uris) or len(uris) != len(set(uris)):
+            raise ValueError("Receipt Semantic references are not deterministic")
+
+
+def _validate_context_facet_order(context: Any) -> None:
+    if isinstance(context, Mapping):
+        packs = context.get("packs", [])
+        keys = [
+            (item["requirement_uri"], item["pack_digest"] or "") for item in packs
+        ]
+        if keys != sorted(keys) or len(keys) != len(set(keys)):
+            raise ValueError("Receipt Context Pack references are not deterministic")
+        for pack in packs:
+            uris = [item["uri"] for item in pack["resources"]]
+            if uris != sorted(uris) or len(uris) != len(set(uris)):
+                raise ValueError(
+                    "Receipt Context resource references are not deterministic"
+                )
 
 
 def persist_receipt(
     receipt: Mapping[str, Any], state_root: Path
 ) -> tuple[bool, Path]:
-    created_at = str(receipt.get("created_at", "unknown")).replace(":", "").replace(
+    selected = validate_receipt(receipt)
+    created_at = str(selected["created_at"]).replace(":", "").replace(
         "-", ""
     )
-    receipt_id = str(receipt.get("receipt_id", "unknown"))
+    receipt_id = str(selected["receipt_id"])
     path = state_root / "receipts" / f"{created_at}-{receipt_id}.json"
     try:
         write_rendered_result(
             str(path),
-            json.dumps(dict(receipt), ensure_ascii=False, sort_keys=True) + "\n",
+            json.dumps(selected, ensure_ascii=False, sort_keys=True) + "\n",
         )
     except (OSError, UnicodeError):
         return False, path
@@ -386,6 +560,9 @@ def persist_receipt(
 
 
 __all__ = [
+    "DISTRIBUTION_HTTP_KIND",
+    "HTTP_KINDS",
+    "PRODUCTION_HTTP_KIND",
     "build_receipt",
     "capture_http_receipt_references",
     "count_http_requests",
@@ -399,4 +576,6 @@ __all__ = [
     "request_receipt_context",
     "record_completed_http_response",
     "record_http_request",
+    "validate_receipt",
+    "validate_receipt_facets",
 ]

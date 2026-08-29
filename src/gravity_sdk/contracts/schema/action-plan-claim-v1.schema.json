@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.action-plan-claim.v1",
+  "type": "object",
+  "required": ["schema_version", "plan_digest", "claimed_at"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.action-plan-claim.v1"},
+    "plan_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "claimed_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"}
+  }
+}

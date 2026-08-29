@@ -9,7 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import cli, runtime
+from gravity_sdk import catalog, cli, runtime
 
 try:
     from gravity_sdk import GravityInsightClient
@@ -108,6 +108,35 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = GravityInsightClient.from_env()
+
+    def test_catalog_runtime_bindings_match_the_packaged_contract(self):
+        document = json.loads(
+            (
+                ROOT
+                / "src/gravity_sdk/contracts/runtime-operation-bindings.json"
+            ).read_text(encoding="utf-8")
+        )
+        bindings = document["catalog"]
+        self.assertEqual(
+            "gravity-insight.runtime-operation-bindings.v1",
+            document["schema_version"],
+        )
+        self.assertEqual(
+            bindings["roles"]["app_list"], catalog.APP_LIST_OPERATION_ID
+        )
+        self.assertEqual(
+            bindings["parent_input_placeholders"],
+            catalog._PARENT_INPUT_PLACEHOLDERS,
+        )
+        self.assertEqual(
+            bindings["parent_target_inputs"], catalog._PARENT_TARGET_INPUTS
+        )
+        for operation_id in (
+            bindings["parent_input_placeholders"]
+            | bindings["parent_target_inputs"]
+        ):
+            with self.subTest(operation_id=operation_id):
+                self.client._registry.get(operation_id)
 
     def test_error_code_table_is_stable_and_extension_codes_are_accepted(self):
         self.assertEqual(

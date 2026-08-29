@@ -51,6 +51,6 @@ HTTP 200 不等于业务成功。`empty` 只约束当前输入、时间窗和权
 
 ## 5. 交付声明
 
-面向人的结论至少写明：输入范围、解析日期窗、结果状态、数据来源、对账方式、已知限制和下一步。只声称 envelope 的 `allowed_claims` 支持的事实；推测与实测分开。
+面向人的结论至少写明输入范围、日期窗、状态、来源、Operator/Model 版本、对账、限制和下一步。只声称 `allowed_claims`；Model 未命中 trusted digest、未验证/批准、已过期或超 horizon 时只能写 scenario/hypothesis，推测与实测分开。
 
 需要原始明细时，交付文件路径和 schema 摘要，不把文件内容复制进聊天或仓库。

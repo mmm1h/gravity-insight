@@ -27,6 +27,11 @@ from .plan_adapter_support import (
     request_object,
     validate_exact_targets,
 )
+from .plan_analysis_contract import (
+    ANALYSIS_QUERY_BINDING_TARGETS,
+    ANALYSIS_QUERY_NAME,
+    ANALYSIS_QUERY_REQUEST_FIELDS,
+)
 from . import plan_analysis_default_adapter as defaults_plan
 from . import plan_derived_metrics_adapter as derived_plan
 from . import plan_monetization_adapter as monetization_plan
@@ -34,7 +39,6 @@ from . import plan_realtime_event_catalog_adapter as realtime_catalog_plan
 from .actionable_error_values import actual_value
 
 
-ANALYSIS_QUERY_NAME = "analysis_query"
 COMPOSITE_NAMES = frozenset(
     {
         ANALYSIS_QUERY_NAME,
@@ -44,13 +48,6 @@ COMPOSITE_NAMES = frozenset(
         derived_plan.DERIVED_METRICS_NAME,
     }
 )
-ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
-    {
-        "name", "kind", "app", "spec", "start", "end", "compare_start",
-        "compare_end", "metadata_snapshot",
-    }
-)
-ANALYSIS_QUERY_BINDING_TARGETS = frozenset({"/app"})
 _ANALYSIS_OPERATIONS = frozenset(ANALYSIS_QUERY_OPERATIONS.values())
 _SAFE_ENVELOPE_FIELDS = frozenset(
     {
@@ -268,13 +265,16 @@ def execute_analysis_query_plan(
         "output_fields": context.output_fields or None,
     }
     snapshot = request.get("metadata_snapshot")
+    query_owner = getattr(sdk, "_analysis_query_direct", None)
+    if not callable(query_owner):
+        query_owner = sdk.analysis_query
     if snapshot is None:
-        result = sdk.analysis_query(
+        result = query_owner(
             request.get("kind"), request.get("spec"), **options
         )
     else:
         with use_field_metadata_loader(metadata_snapshot_loader(snapshot)):
-            result = sdk.analysis_query(
+            result = query_owner(
                 request.get("kind"), request.get("spec"), **options
             )
     return safe_analysis_envelope(

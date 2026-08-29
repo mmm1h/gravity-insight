@@ -15,7 +15,7 @@ def environment_components(
     attempts: int,
     workspace: Any,
     env_path: Any | None,
-) -> tuple[Callable[[], Any], Callable[[], Any], Any]:
+) -> tuple[Callable[[], Any], Callable[[], Any], Any, Callable[[], Any]]:
     base_workspace = workspace
     selected_env, isolated = resolve_env_path(env_path)
     selected_workspace = scope_workspace(
@@ -54,7 +54,7 @@ def environment_components(
 
         return GravityClient(runtime())
 
-    return build_insight, build_sql, selected_workspace
+    return build_insight, build_sql, selected_workspace, runtime
 
 
 __all__ = ["environment_components"]

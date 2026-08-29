@@ -10,16 +10,16 @@
 | 已知 Analysis kind 和 compact spec | `gravity analysis query` |
 | 多个独立任务或存在依赖 | 一个显式 `gravity plan run` |
 | 未知当前能力 | `agent-catalog categories → category → describe` |
-| 调用方能选择目录项 | `agent-catalog host` + `host-selection` |
+| 调用方能选择目录项 | `agent-catalog host` + `host-selection`（省略 routing 即走宿主臂） |
 | 调用方无法选择 | 默认 `gravity agent` recognizer 保底 |
 
 目录浏览和 schema 查询离线完成。发现不会执行产品，自然语言不会执行写入。
 
-## 1. 在调用项目解析业务语义
+## 1. 解析 Semantic Schema 与项目绑定
 
-SDK 只拥有物理合同。活动名、SKU、投放窗口、业务指标公式、App alias 和埋点绑定属于调用项目，写入 `gravity.toml` 或调用方知识库。
+Runtime 拥有可复用 Semantic、确定性 Operator、Model lifecycle、Context、Project Overlay 与 Analysis Result Schema。Overlay 只提供项目 Semantic Source/Repo Context/default scope，不能覆盖 Trust、完整性、claims、隐私、selector、effect 或 Action authorization；Operator 只按 exact URI 执行静态方法，Model 未通过 trusted digest/验证/批准/时限/horizon 时只允许 scenario/hypothesis。
 
-未声明的业务词和派生公式必须返回绑定缺口；禁止从列名或自然语言补公式。需要事件、属性或维度时先查本地 metadata，执行前按产品合同复验。
+Semantic/Binding/Operator/Model/required Context 任一未登记必须返回机器 gap；Repo search 只发现 `role=data` 候选，只有显式 Requirement 可组装 Pack。Core Skill readiness 在执行前冻结值无关 `gravity.execution-snapshot.v1`，执行后必须逐项相等；禁止从列名、自然语言、Context 或 Skill 文本补公式、方法、selector 或授权。
 
 ## 2. 发现并选择
 
@@ -56,7 +56,7 @@ gravity agent-catalog describe <selector>
 2. 需要 workspace 已审查跨表聚合：使用登记 SQL product。
    间接问法只有在同时说明审核、跨表聚合、登记名称、日期窗和运行目标时才归属此路径；Agent 只按调用方给出的精确登记名选择 product。名称缺失或未登记时返回 `WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED`，不猜表、字段或 SQL。
 3. 已有结果上的比率、占比、变化和集合对账：使用调用方声明的 derived spec。
-4. 三者都不满足：返回 capability gap，不生成裸 SQL 或任意 HTTP。
+4. 三者都不满足：返回 capability gap，不生成裸 SQL 或任意 HTTP；隔离 SQL Explorer 只接受调用方另行显式构造的本地请求，绝不作为 Agent/Plan fallback，结果也不能进入 stable Journey。
 
 ## 5. 控制效果与写入
 
@@ -68,9 +68,9 @@ gravity agent-catalog describe <selector>
 
 调用方按以下顺序读取：
 
-1. `schema_version`、`status`、`ok`、`result_source`。
+1. `schema_version`、`status`、`ok`、`result_source`；Skill 结果还要校验完整 execution snapshot。
 2. 日期窗、分页/截断、组件状态和 partial failures。
-3. warnings、diagnostics、drift audit、interpretation 和 allowed claims。
+3. warnings、diagnostics、drift audit、DQ、evidence level、limitations 和 allowed/forbidden claims。
 4. 数据行与汇总。
 
 `empty` 是合法结果但只约束当前输入与权限上下文。重要结论需要第二条独立证据；不可加指标不能用分组和替代总计。详见[结果与 LLM 安全](guides/llm-output-safety.md)。
@@ -86,3 +86,6 @@ gravity agent-catalog describe <selector>
 ## 8. 交付
 
 交付物至少包含：执行入口、输入范围、解析后的日期窗、结果状态、可信度限制、receipt/checkpoint，以及下一步。不要包含凭据、原始请求、用户级明细或未登记响应字段。
+## 9. Experiment / Outcome 交接
+
+只有 verified Analysis Result 与 exact planning snapshot 才能编译 Experiment Proposal；缺 Target/Metric/Guardrail/Power/Context 时保持 `proposal_only`，齐全时也只是 `ready_for_review`，不授权创建。Outcome 必须来自绑定 Proposal 的外部 completed observation，使用不同 Journey 和原分析之后的独立 evidence window；`handoff_ready` 不等于 evaluation 已执行，原建议和同一运行不得自证。

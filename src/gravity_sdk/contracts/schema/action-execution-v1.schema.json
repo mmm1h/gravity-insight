@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.action-execution.v1",
+  "type": "object",
+  "required": ["schema_version", "ok", "status", "plan_id", "action_kind", "connector", "write_attempted", "write_attempts", "automatic_retry", "target", "readback", "receipt_references", "reason_codes", "policy"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.action-execution.v1"},
+    "ok": {"type": "boolean"},
+    "status": {"enum": ["succeeded", "stale", "uncertain"]},
+    "plan_id": {"type": "string", "pattern": "^act1_[0-9a-f]{32}_[0-9a-f]{32}$"},
+    "action_kind": {"enum": ["segment.update_metadata", "dashboard.publish_analysis_artifact"]},
+    "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"enum": ["gravity.segment-metadata-update", "gravity.analysis-dashboard-notes"]}, "version": {"const": 1}}},
+    "write_attempted": {"type": "boolean"},
+    "write_attempts": {"type": "integer", "minimum": 0, "maximum": 1},
+    "automatic_retry": {"const": false},
+    "target": {"type": ["object", "null"]},
+    "readback": {"type": "object", "required": ["status", "assertions"], "additionalProperties": false, "properties": {"status": {"enum": ["verified", "unverified"]}, "assertions": {"type": "array", "maxItems": 3, "items": {"type": "object"}}}},
+    "receipt_references": {"type": "array", "maxItems": 64, "items": {"type": "object", "required": ["receipt_id", "storage_status"], "additionalProperties": false, "properties": {"receipt_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"}, "storage_status": {"enum": ["stored", "write_failed"]}}}},
+    "reason_codes": {"type": "array", "maxItems": 16, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}},
+    "policy": {"$ref": "#/$defs/policy"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "action_kind": {"const": "segment.update_metadata"},
+        "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.segment-metadata-update"}, "version": {"const": 1}}}
+      }
+    },
+    {
+      "properties": {
+        "action_kind": {"const": "dashboard.publish_analysis_artifact"},
+        "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.analysis-dashboard-notes"}, "version": {"const": 1}}}
+      }
+    }
+  ],
+  "$defs": {
+    "policy": {
+      "type": "object",
+      "required": ["schema_version", "decision_id", "policy_revision", "decision", "reason_codes", "evaluated_effect", "masked_paths"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.policy-decision.v1"},
+        "decision_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "policy_revision": {"const": "gravity.action-policy.v1"},
+        "decision": {"enum": ["allow", "deny", "require_confirmation"]},
+        "reason_codes": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}},
+        "evaluated_effect": {"const": "mutation"},
+        "masked_paths": {"type": "array", "maxItems": 16, "items": {"type": "string", "minLength": 1, "maxLength": 256}}
+      }
+    }
+  }
+}

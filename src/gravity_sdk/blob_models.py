@@ -11,7 +11,7 @@ import requests
 
 from .errors import GravityInsightError
 from .paths import STATE_ROOT
-from .receipt import perform_http_request, request_receipt_context
+from .receipt import PRODUCTION_HTTP_KIND, perform_http_request, request_receipt_context
 
 class BlobTransferError(GravityInsightError):
     """A structured, caller-safe transfer failure."""
@@ -80,6 +80,7 @@ class AuthorizedBlobSource:
     declared_size: int | None = None
     declared_mime_type: str = ""
     expected_sha256: str | None = None
+    expected_md5: str | None = None
     effect_receipt: object | None = None
 
 
@@ -198,6 +199,7 @@ class RequestsBlobTransport:
         return perform_http_request(
             self._session.get,
             url,
+            kind=PRODUCTION_HTTP_KIND,
             headers=dict(headers),
             timeout=timeout,
             stream=True,
@@ -206,6 +208,7 @@ class RequestsBlobTransport:
                 operation_id="export_blob_download",
                 method="GET",
                 path="/<authorized-export-blob>",
+                effect="stream",
             ),
             receipt_root=STATE_ROOT,
         )
@@ -224,6 +227,7 @@ class RequestsBlobTransport:
             return perform_http_request(
                 self._session.post,
                 url,
+                kind=PRODUCTION_HTTP_KIND,
                 data=dict(form_fields),
                 files={file_field: (file_path.name, handle, content_type)},
                 timeout=timeout,
@@ -233,6 +237,7 @@ class RequestsBlobTransport:
                     method="POST",
                     path="/<authorized-export-blob>",
                     body={"form": dict(form_fields), "file": file_field},
+                    effect="mutation",
                 ),
                 receipt_root=STATE_ROOT,
             )

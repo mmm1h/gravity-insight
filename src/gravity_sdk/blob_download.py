@@ -112,18 +112,22 @@ def _materialize_download(
     staging_path: Path,
     extension: str,
     expected_digest: str | None,
-) -> tuple[int, int, str]:
+    expected_md5: str | None,
+) -> tuple[int, int, str, str]:
     digest = hashlib.sha256()
+    md5 = hashlib.md5(usedforsecurity=False)
+    digests = _DigestSet(digest, md5)
     with staging_path.open("wb") as output:
         response_bytes, bytes_written = _write_download_stream(
             response,
             output,
-            digest,
+            digests,
             resume_path=resume_path,
             staging_path=staging_path,
             policy=policy,
         )
     source_sha256 = digest.hexdigest()
+    source_md5 = md5.hexdigest()
     _verify_download_integrity(
         source,
         header_info,
@@ -131,12 +135,14 @@ def _materialize_download(
         total_bytes=bytes_written,
         source_sha256=source_sha256,
         expected_digest=expected_digest,
+        expected_md5=expected_md5,
+        source_md5=source_md5,
         staging_path=staging_path,
         extension=extension,
         content_type=header_info.content_type,
         policy=policy,
     )
-    return response_bytes, bytes_written, source_sha256
+    return response_bytes, bytes_written, source_sha256, source_md5
 
 
 def _finish_download(
@@ -148,13 +154,14 @@ def _finish_download(
     destination_path: Path,
     extension: str,
     expected_digest: str | None,
+    expected_md5: str | None,
     resume: BlobResumeState | None,
     resume_path: Path | None,
     staging_path: Path,
     finalizer: BlobFinalizer | None,
     observer: Callable[[str, BlobMetadata], None] | None,
 ) -> tuple[BlobReceipt, bool]:
-    _response_bytes, bytes_written, source_sha256 = _materialize_download(
+    _response_bytes, bytes_written, source_sha256, _source_md5 = _materialize_download(
         response,
         source,
         policy,
@@ -163,6 +170,7 @@ def _finish_download(
         staging_path=staging_path,
         extension=extension,
         expected_digest=expected_digest,
+        expected_md5=expected_md5,
     )
     content_type = header_info.content_type
     source_metadata = BlobMetadata(
@@ -219,6 +227,8 @@ def _verify_download_integrity(
     total_bytes: int,
     source_sha256: str,
     expected_digest: str | None,
+    expected_md5: str | None,
+    source_md5: str,
     staging_path: Path,
     extension: str,
     content_type: str,
@@ -237,7 +247,22 @@ def _verify_download_integrity(
             stage="integrity",
             details={"expected": expected_digest, "actual": source_sha256},
         )
+    if expected_md5 is not None and source_md5 != expected_md5:
+        raise BlobTransferError(
+            "download MD5 does not match the authorized secondary digest",
+            code="BLOB_MD5_MISMATCH",
+            stage="integrity",
+        )
     _inspect_type_and_archive(staging_path, extension, content_type, policy)
+
+
+class _DigestSet:
+    def __init__(self, *digests: Any) -> None:
+        self._digests = digests
+
+    def update(self, value: bytes) -> None:
+        for digest in self._digests:
+            digest.update(value)
 
 
 def _apply_download_finalizer(

@@ -1,0 +1,122 @@
+name: SDK Release
+
+"on":
+  push:
+    tags:
+      - "v*"
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and test runner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Run tests
+        run: python -m pytest -q -n auto --dist load
+      - name: Check deterministic contracts
+        run: python -m gravity_sdk.compiler check
+      - name: Check quality ratchet
+        run: python -m gravity_sdk.quality check
+      - name: Check release tag matches package version
+        run: python scripts/check_release_tag.py
+      - name: Check development Agent usability eval
+        env:
+          PYTHONPATH: src
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path tmp | Out-Null
+          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content tmp/agent-usability-gate.log -Tail 40
+            exit $LASTEXITCODE
+          }
+          Write-Output "PASS agent-usability development eval"
+      - name: Check all CLI namespaces offline
+        env:
+          GRAVITY_SDK_AUTO_UPGRADE: "0"
+        shell: pwsh
+        run: |
+          gravity --help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gravity --workspace examples/workspace sql --dry-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gravity census --smoke
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gravity insight --dry-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install release tooling
+        run: python -m pip install --disable-pip-version-check build twine
+      - name: Build wheel and source distribution
+        run: python -m build
+      - name: Check distributions
+        run: python -m twine check dist/*
+      - name: Upload checked distributions
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download checked distributions
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: python-distributions
+          path: dist/
+      - name: Publish distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
+        with:
+          attestations: true
+
+  release-provenance:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verify PyPI provenance binds to published files
+        run: python scripts/verify_release_provenance.py gravity-insight "${GITHUB_REF_NAME#v}"
+
+  github-release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download published distributions
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: python-distributions
+          path: dist/
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          assets=(dist/*)
+          gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+            --verify-tag --generate-notes --title "$GITHUB_REF_NAME"

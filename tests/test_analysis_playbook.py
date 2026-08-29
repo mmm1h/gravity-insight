@@ -12,6 +12,7 @@ from gravity_sdk.analysis_playbook import (
 from gravity_sdk.errors import InputValidationError
 from gravity_sdk.result_source import GOVERNED_PRODUCT, result_source
 from gravity_sdk.semantic_compose import compile_semantic_compose
+from tests.test_project_skill_overlay import project_semantic_source
 
 
 APP_ID = 17
@@ -155,12 +156,34 @@ class AnalysisPlaybookTests(unittest.TestCase):
             {node["request"]["name"] for node in compiled["plan"]["nodes"]},
         )
 
+    def test_validated_project_binding_drives_the_existing_plan_compiler(self):
+        base = compile_metric_anomaly_playbook(playbook_input())
+        binding = project_semantic_source()["bindings"][0]
+        binding["provider"]["definition"]["version"] = 3
+
+        bound = compile_metric_anomaly_playbook(
+            playbook_input(), semantic_binding=binding
+        )
+
+        definitions = {
+            node["request"]["inputs"]["definition"]["version"]
+            for node in bound["plan"]["nodes"]
+        }
+        self.assertEqual({3}, definitions)
+        self.assertNotEqual(
+            base["playbook"]["fingerprint"], bound["playbook"]["fingerprint"]
+        )
+
     def test_completed_investigation_resumes_only_hypothesis_descendants(self):
         first_executor = FakePlanExecutor()
         first = run_metric_anomaly_playbook(
             object(), playbook_input(), execute_plan=first_executor
         )
         self.assertTrue(first["ok"])
+        self.assertEqual(
+            "gravity.metric-anomaly-conclusion.v1",
+            first["conclusion"]["schema_version"],
+        )
         self.assertEqual("selected_slice_moved_with_observed_decrease", first["conclusion"]["verdict"])
         self.assertEqual("-30", first["conclusion"]["returned_sum_absolute_change"])
         self.assertEqual("100", first["conclusion"]["selected_share_of_returned_sum_change_percent"])

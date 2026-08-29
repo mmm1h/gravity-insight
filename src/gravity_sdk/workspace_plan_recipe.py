@@ -137,7 +137,7 @@ def parse_plan_recipe_parameters(values: list[str] | None) -> dict[str, Any]:
     parameters: dict[str, Any] = {}
     for assignment in values or []:
         if "=" not in assignment:
-            raise PlanRecipeError(f"actual value: {actual_value(raw)}; " + ("--param must use NAME=VALUE"), field="param")
+            raise PlanRecipeError(f"actual value: {actual_value(assignment)}; " + ("--param must use NAME=VALUE"), field="param")
         name, raw = assignment.split("=", 1)
         if not _NAME_RE.fullmatch(name) or name in parameters:
             raise PlanRecipeError(

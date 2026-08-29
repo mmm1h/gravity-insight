@@ -1,0 +1,13 @@
+{
+  "artifact_kind": "skill_provenance",
+  "manifest_digest": "6b89a35e352a3c7337d5a532188a567b2b41fed23b8b00930302f173e7db62b2",
+  "schema_version": "gravity.skill-provenance.v1",
+  "skill_uri": "skill://gravity.game/ap-cost-anomaly-localization@1.0.0",
+  "source": {
+    "authorship": "independently_authored",
+    "license_review": "not_required",
+    "source_kind": "built_in",
+    "source_ref": "gravity-sdk/R01",
+    "source_revision": "R01-fixed-dev"
+  }
+}

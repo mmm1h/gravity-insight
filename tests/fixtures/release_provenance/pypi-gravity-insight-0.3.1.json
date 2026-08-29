@@ -1,0 +1,115 @@
+{
+  "info": {
+    "author": "mmm1h",
+    "author_email": null,
+    "bugtrack_url": null,
+    "classifiers": [
+      "Development Status :: 4 - Beta",
+      "Intended Audience :: Developers",
+      "Programming Language :: Python :: 3",
+      "Programming Language :: Python :: 3 :: Only",
+      "Programming Language :: Python :: 3.11",
+      "Programming Language :: Python :: 3.12",
+      "Topic :: Software Development :: Libraries :: Python Modules"
+    ],
+    "description": "# Gravity SDK\r\n\r\nGravity Agent Runtime \u7684\u5b9e\u73b0\u4ed3\u5e93\uff0c\u5f53\u524d\u7a33\u5b9a\u5185\u6838\u662f\u9762\u5411\u6570\u636e\u5206\u6790\u56e2\u961f\u7684 Agent-first Python SDK \u4e0e CLI\u3002\u4ed3\u5e93\u628a Gravity \u7684\u53d1\u73b0\u3001\u8bfb\u53d6\u3001\u5bfc\u51fa\u548c\u53d7\u6cbb\u7406\u5199\u5165\u6536\u655b\u4e3a\u7248\u672c\u5316\u5408\u540c\uff0c\u5e76\u6309\u5df2\u6279\u51c6\u8def\u7ebf\u6269\u5c55\u7248\u672c\u5316 Skill\u3001\u4e1a\u52a1\u8bed\u4e49\u3001\u786e\u5b9a\u6027\u5206\u6790\u65b9\u6cd5\u548c\u6709\u754c Context\uff0c\u8ba9\u5206\u6790\u4efb\u52a1\u65e0\u9700\u6253\u5f00 Gravity Web \u4e5f\u80fd\u5b8c\u6210\u3002\r\n\r\n## \u4ece\u8fd9\u91cc\u5f00\u59cb\r\n\r\n- **\u4f7f\u7528 SDK \u53d6\u6570\u6216\u5206\u6790**\uff1a\u8bfb [\u56e2\u961f\u4e0a\u624b\u5305](docs/team-onboarding.md)\uff0c\u7136\u540e\u8fd0\u884c\uff1a\r\n\r\n  ```powershell\r\n  $env:PYTHONPATH='src'\r\n  python -m gravity_sdk agent-catalog categories\r\n  ```\r\n\r\n- **\u4fee\u6539\u672c\u4ed3\u5e93**\uff1a\u5148\u8bfb [AGENTS.md](AGENTS.md)\uff0c\u518d\u4ece [\u7ef4\u62a4\u8005\u5165\u53e3](docs/maintainers/index.md) \u9009\u62e9\u5f53\u524d\u4efb\u52a1\u3002\r\n\r\n## \u4ea7\u54c1\u5165\u53e3\r\n\r\n- `gravity insight`\uff1a\u53d7\u5408\u540c\u6cbb\u7406\u7684 Insight \u67e5\u8be2\u4e0e\u5bfc\u51fa\uff0c\u65e5\u5e38\u5206\u6790\u9996\u9009\u3002\r\n- `gravity sql`\uff1a\u4ec5\u6267\u884c workspace \u5df2\u767b\u8bb0\u7684 SQL \u4ea7\u54c1\uff0c\u4e0d\u63a5\u53d7\u4efb\u610f SQL\u3002\r\n- `gravity census`\uff1a\u76d8\u70b9\u524d\u7aef\u8def\u7531\u3001\u53d1\u73b0\u5019\u9009\u5408\u540c\u5e76\u68c0\u67e5\u4e0a\u6e38\u6f02\u79fb\u3002\r\n- `gravity agent-catalog` / `gravity agent` / `gravity plan`\uff1a\u4f9b Agent \u6e10\u8fdb\u53d1\u73b0\u3001\u8865\u53c2\u548c\u663e\u5f0f\u6267\u884c\u3002\r\n\r\n\u81ea\u7136\u8bed\u8a00\u4e0d\u4f1a\u81ea\u52a8\u6267\u884c\u5199\u5165\u3002\u6240\u6709 mutation \u5148\u9884\u89c8\uff0c\u518d\u7531\u8c03\u7528\u65b9\u7528\u540c\u4e00\u8f93\u5165\u663e\u5f0f\u786e\u8ba4\u6267\u884c\u3002\r\n\r\n## Agent Runtime \u6f14\u8fdb\u8ba1\u5212\r\n\r\n\u5f53\u524d\u53ef\u6267\u884c\u80fd\u529b\u4ecd\u4ee5\u4e0a\u8ff0 CLI\u3001SDK\u3001Plan\u3001\u8fd0\u884c\u65f6 catalog \u548c\u673a\u5668\u5408\u540c\u4e3a\u51c6\uff1b\u76ee\u6807\u67b6\u6784\u4e0d\u7b49\u4e8e\u5df2\u7ecf\u4ea4\u4ed8\u3002\u6279\u51c6\u7684 Gravity Agent Runtime \u6539\u9020\u5df2\u62c6\u6210\u7248\u672c\u5316[\u9700\u6c42\u7d22\u5f15](specs/agent-runtime/index.md)\uff0c\u6bcf\u4e2a\u5355\u5143\u72ec\u7acb\u9a8c\u6536\u5e76\u96c6\u6210\u5230 `dev`\u3002\r\n\r\n\u672c\u8ba1\u5212\u5b8c\u6574\u5b8c\u6210\u524d\u4e0d\u628a\u5176\u4e2d\u7684\u529f\u80fd\u5f00\u53d1\u5408\u5165 `main`\u3002Skill Hub\u3001Context\u3001Operator/Model\u3001MCP\u3001SQL Explorer \u7b49\u53ea\u6709\u5728\u5bf9\u5e94\u9700\u6c42\u8fbe\u5230 `ready` \u5e76\u5b9e\u9645\u843d\u5730\u540e\uff0c\u624d\u4f1a\u8fdb\u5165\u5f53\u524d\u80fd\u529b\u6587\u6863\u548c\u516c\u5171\u63a5\u53e3\u627f\u8bfa\u3002\r\n\r\n## \u5b89\u88c5\r\n\r\n```powershell\r\npython -m pip install -e .\r\ngravity --help\r\ngravity agent-catalog categories\r\n```\r\n\r\nPython \u6700\u5c0f\u5165\u53e3\uff1a\r\n\r\n```python\r\nfrom gravity_sdk import connect\r\n\r\ngravity = connect()\r\nresult = gravity.read(\"app.list\", {\"page\": 1, \"page_size\": 20})\r\n```\r\n\r\n## \u6587\u6863\r\n\r\n[\u6587\u6863\u5bfc\u822a](docs/index.md)\u6309\u4efb\u52a1\u7ed9\u51fa\u6700\u77ed\u9605\u8bfb\u8def\u5f84\u3002\u63a5\u53e3\u7b7e\u540d\u4ee5 [CLI](docs/reference/cli.md)\u3001[SDK](docs/reference/sdk.md) \u548c [Plan](docs/reference/plan.md) \u53c2\u8003\u4e3a\u51c6\uff1b\u5f53\u524d\u80fd\u529b\u4ee5\u672c\u673a `agent-catalog` \u4e0e\u5408\u540c\u7f16\u8bd1\u7ed3\u679c\u4e3a\u51c6\uff0c\u5b8c\u6574\u76ee\u6807\u4ee5 [canonical architecture source](specs/agent-runtime/architecture-source.md) \u4e3a\u51c6\uff0c\u4ea4\u4ed8\u987a\u5e8f\u7531\u6279\u51c6 directive \u4e0e[\u9700\u6c42\u7d22\u5f15](specs/agent-runtime/index.md)\u7ea6\u675f\u3002\r\n\r\n\u5386\u53f2\u62c6\u4ed3\u6765\u6e90\u89c1 [MIGRATION.md](MIGRATION.md)\u3002\r\n",
+    "description_content_type": "text/markdown",
+    "docs_url": null,
+    "download_url": null,
+    "downloads": {
+      "last_day": -1,
+      "last_month": -1,
+      "last_week": -1
+    },
+    "dynamic": null,
+    "home_page": null,
+    "keywords": "analytics, cli, governance, gravity, sdk",
+    "license": null,
+    "license_expression": null,
+    "license_files": null,
+    "maintainer": "mmm1h",
+    "maintainer_email": null,
+    "name": "gravity-insight",
+    "package_url": "https://pypi.org/project/gravity-insight/",
+    "platform": null,
+    "project_url": "https://pypi.org/project/gravity-insight/",
+    "project_urls": {
+      "Issues": "https://github.com/mmm1h/gravity-sdk/issues",
+      "Repository": "https://github.com/mmm1h/gravity-sdk"
+    },
+    "provides_extra": [
+      "dev"
+    ],
+    "release_url": "https://pypi.org/project/gravity-insight/0.3.1/",
+    "requires_dist": [
+      "requests==2.33.0",
+      "sqlglot==30.17.0",
+      "tzdata==2026.3",
+      "pytest<10,>=9; extra == \"dev\""
+    ],
+    "requires_python": ">=3.11",
+    "summary": "Agent-first governed data-analysis runtime, Python SDK, and CLI for Gravity",
+    "version": "0.3.1",
+    "yanked": false,
+    "yanked_reason": null
+  },
+  "last_serial": 40458580,
+  "ownership": {
+    "organization": null,
+    "roles": [
+      {
+        "role": "Owner",
+        "user": "hihvnkg"
+      }
+    ]
+  },
+  "urls": [
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "dc8ba35fad71e3292d3919a7356e7e9b59f523d79bc67b815e0598012dc9693f"
+      },
+      "digests": {
+        "blake2b_256": "4bdee84b516c392452b2a3bd54cc30eabc43869fbefad91f49bf3247f8a88648",
+        "md5": "b9f04088e01a12656dfdc1444a0f83b1",
+        "sha256": "9d13828e7d7782059fc1e4cb6c718749dafa4c75280d0a9c52fcbfdf757bdacc"
+      },
+      "downloads": -1,
+      "filename": "gravity_insight-0.3.1-py3-none-any.whl",
+      "has_sig": false,
+      "md5_digest": "b9f04088e01a12656dfdc1444a0f83b1",
+      "packagetype": "bdist_wheel",
+      "python_version": "py3",
+      "requires_python": ">=3.11",
+      "size": 3961655,
+      "upload_time": "2026-08-27T19:06:22",
+      "upload_time_iso_8601": "2026-08-27T19:06:22.978414Z",
+      "url": "https://files.pythonhosted.org/packages/4b/de/e84b516c392452b2a3bd54cc30eabc43869fbefad91f49bf3247f8a88648/gravity_insight-0.3.1-py3-none-any.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": false,
+      "digests": {
+        "blake2b_256": "f74535d86584dce3352c950cbb5d5df7763e9b46b2b36787f8b0b5db19e8c915",
+        "md5": "3a424e74a617b8362ad6ccaff59c79a4",
+        "sha256": "27308e7beec576c8639c4ae6000c3882d9d3f5dcbf7a5b7ce91dfef139c3a464"
+      },
+      "downloads": -1,
+      "filename": "gravity_insight-0.3.1.tar.gz",
+      "has_sig": false,
+      "md5_digest": "3a424e74a617b8362ad6ccaff59c79a4",
+      "packagetype": "sdist",
+      "python_version": "source",
+      "requires_python": ">=3.11",
+      "size": 2772902,
+      "upload_time": "2026-08-27T19:06:24",
+      "upload_time_iso_8601": "2026-08-27T19:06:24.953504Z",
+      "url": "https://files.pythonhosted.org/packages/f7/45/35d86584dce3352c950cbb5d5df7763e9b46b2b36787f8b0b5db19e8c915/gravity_insight-0.3.1.tar.gz",
+      "yanked": false,
+      "yanked_reason": null
+    }
+  ],
+  "vulnerabilities": []
+}

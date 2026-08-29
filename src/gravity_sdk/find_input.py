@@ -72,7 +72,7 @@ def normalize_input_arguments(args: argparse.Namespace) -> None:
 
 def set_input_path(target: dict[str, Any], assignment: str) -> None:
     if "=" not in assignment:
-        raise InputValidationError(f"actual value: {actual_value(raw)}; " + ("--set must use PATH=VALUE"), field="set")
+        raise InputValidationError(f"actual value: {actual_value(assignment)}; " + ("--set must use PATH=VALUE"), field="set")
     path, raw_value = assignment.split("=", 1)
     parts = path.split(".")
     if not path or any(not part for part in parts):

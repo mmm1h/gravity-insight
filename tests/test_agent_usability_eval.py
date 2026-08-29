@@ -449,6 +449,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_external_selector_stub_receives_catalog_and_is_scored(self) -> None:
         from agent_usability_external_selector import _invoke_plugin, external_selector_trials
+        from gravity_sdk.agents.host_selection import host_routing_discovery
         from gravity_sdk.client import GravityInsightClient
 
         cases = [{
@@ -463,26 +464,54 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             Path(__file__).resolve().parents[1]
             / "scripts" / "agent_usability_selector_stub.py"
         )
-        states, calls, observations, receipt = external_selector_trials(
-            cases,
-            GravityInsightClient.from_env(transport=self.subject.BlockedTransport()),
-            4,
-            plugin_path=plugin,
-            timeout_seconds=10,
-            route_score=self.subject.route_score,
-            parameter_score=self.subject.parameter_score,
-            terminal_score=self.subject.terminal_score,
-            production_http_requests=lambda: 0,
-        )
+        with patch(
+            "gravity_sdk.agents.host_selection.host_routing_discovery",
+            wraps=host_routing_discovery,
+        ) as dispatcher:
+            states, calls, observations, receipt = external_selector_trials(
+                cases,
+                GravityInsightClient.from_env(transport=self.subject.BlockedTransport()),
+                4,
+                plugin_path=plugin,
+                timeout_seconds=10,
+                route_score=self.subject.route_score,
+                parameter_score=self.subject.parameter_score,
+                terminal_score=self.subject.terminal_score,
+                production_http_requests=lambda: 0,
+            )
         self.assertEqual([True] * 4, states["stub-business-pulse"]["selection"])
         self.assertEqual(4, calls)
+        self.assertEqual(4, dispatcher.call_count)
+        self.assertTrue(all(
+            call.kwargs["routing"] == "host_catalog"
+            for call in dispatcher.call_args_list
+        ))
         self.assertEqual("external_selector", receipt["mode"])
+        self.assertEqual(
+            "gravity_sdk.agents.host_selection.host_routing_discovery",
+            receipt["runtime_dispatcher"],
+        )
+        self.assertEqual("host_catalog", receipt["runtime_routing_mode"])
+        self.assertEqual(
+            "gravity.host-product-selection.v1",
+            receipt["runtime_selection_schema_version"],
+        )
+        self.assertEqual(64, len(receipt["runtime_host_catalog_sha256"]))
         self.assertTrue(receipt["blind_presentation"]["randomized"])
         self.assertTrue(receipt["blind_presentation"]["case_ids_anonymized"])
         self.assertEqual(1, len(observations))
         self.assertEqual(
             "composite:business_pulse",
             observations[0]["result"]["candidates"][0]["selector"],
+        )
+        self.assertEqual("host_catalog", observations[0]["result"]["routing_mode"])
+        self.assertEqual(
+            "host_catalog",
+            observations[0]["result"]["candidates"][0]["match"]["confidence"],
+        )
+        self.assertEqual(
+            "gravity.host-product-selection-compiled.v1",
+            observations[0]["result"]["selection_receipt"]["schema_version"],
         )
         self.assertFalse(observations[0]["result"]["selection_network_measured"])
         self.assertIn("plugin-reported", observations[0]["result"][
@@ -501,6 +530,103 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         with patch("agent_usability_external_selector.subprocess.run", return_value=failed), self.assertRaisesRegex(
             ValueError, "stage=subprocess_execute.*exit code 7.*synthetic bridge crash"):
             _invoke_plugin(plugin, {"capabilities": []}, [], timeout_seconds=10)
+
+    def test_default_dispatch_observes_two_real_public_routing_paths(self) -> None:
+        from agent_usability_external_selector import (
+            DEFAULT_DISPATCH_WITHOUT_SELECTION,
+            DEFAULT_DISPATCH_WITH_SELECTION,
+            _catalog,
+            _selection_result,
+        )
+        from agent_usability_host_arm_gap import (
+            _assert_distinct_default_dispatch_arms,
+        )
+        from gravity_sdk.client import GravityInsightClient
+
+        client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
+        _selector_catalog, runtime_catalog = _catalog(client)
+        case = {"prompt": "show the business pulse across apps"}
+        selected = {
+            "selectors": ["composite:business_pulse"],
+            "reason": "registered host product",
+        }
+        metadata = {"selector": "synthetic.v1", "network_called": False}
+        results = {
+            arm: _selection_result(
+                case,
+                selected,
+                runtime_catalog,
+                client,
+                metadata,
+                plugin_sha256="a" * 64,
+                production_http_requests=lambda: 0,
+                dispatch_mode=dispatch_mode,
+            )
+            for arm, dispatch_mode in (
+                ("recognizer", DEFAULT_DISPATCH_WITHOUT_SELECTION),
+                ("host_catalog", DEFAULT_DISPATCH_WITH_SELECTION),
+            )
+        }
+        self.assertEqual(
+            {
+                "recognizer": {
+                    "parsed_host_selection_present": False,
+                    "parsed_routing": None,
+                    "resolved_routing_mode": "recognizer",
+                },
+                "host_catalog": {
+                    "parsed_host_selection_present": True,
+                    "parsed_routing": None,
+                    "resolved_routing_mode": "host_catalog",
+                },
+            },
+            _assert_distinct_default_dispatch_arms(results),
+        )
+
+    def test_default_dispatch_arm_guard_rejects_counterfactual_convergence(self) -> None:
+        from agent_usability_external_selector import (
+            DEFAULT_DISPATCH_WITHOUT_SELECTION,
+            DEFAULT_DISPATCH_WITH_SELECTION,
+            _catalog,
+            _selection_result,
+        )
+        from agent_usability_host_arm_gap import (
+            _assert_distinct_default_dispatch_arms,
+        )
+        from gravity_sdk.client import GravityInsightClient
+
+        client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
+        _selector_catalog, runtime_catalog = _catalog(client)
+        case = {"prompt": "show the business pulse across apps"}
+        selected = {
+            "selectors": ["composite:business_pulse"],
+            "reason": "registered host product",
+        }
+        metadata = {"selector": "synthetic.v1", "network_called": False}
+
+        def dispatch(dispatch_mode: str) -> dict:
+            return _selection_result(
+                case,
+                selected,
+                runtime_catalog,
+                client,
+                metadata,
+                plugin_sha256="a" * 64,
+                production_http_requests=lambda: 0,
+                dispatch_mode=dispatch_mode,
+            )
+
+        host_result = dispatch(DEFAULT_DISPATCH_WITH_SELECTION)
+        with patch(
+            "agent_usability_external_selector._default_dispatch_result",
+            return_value=host_result,
+        ):
+            converged = {
+                "recognizer": dispatch(DEFAULT_DISPATCH_WITHOUT_SELECTION),
+                "host_catalog": dispatch(DEFAULT_DISPATCH_WITH_SELECTION),
+            }
+        with self.assertRaisesRegex(RuntimeError, "arms converged"):
+            _assert_distinct_default_dispatch_arms(converged)
 
     def test_external_selector_blinds_ids_and_degroups_journeys(self) -> None:
         from agent_usability_external_selector import _blind_questions
@@ -525,17 +651,26 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_external_selector_can_select_an_exact_registered_gap(self) -> None:
         from agent_usability_external_selector import _catalog, _selection_result
+        from gravity_sdk.agents.host_selection import EMPTY_SELECTION_GAP
         from gravity_sdk.client import GravityInsightClient
 
         client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
-        _, inventory = _catalog(client)
+        catalog, runtime_catalog = _catalog(client)
+        self.assertEqual(
+            set(runtime_catalog["catalog_refs"]),
+            {item["selector"] for item in catalog["capabilities"]},
+        )
+        self.assertNotIn(
+            "analysis.event.list",
+            {item["selector"] for item in catalog["capabilities"]},
+        )
         result = _selection_result(
             {"prompt": "media reports"},
             {
                 "selectors": ["gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING"],
                 "reason": "registered unavailable product",
             },
-            inventory,
+            runtime_catalog,
             client,
             {"selector": "synthetic.v1", "network_called": False},
             plugin_sha256="a" * 64,
@@ -546,6 +681,16 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
             result["capability_gaps"][0]["code"],
         )
+        empty = _selection_result(
+            {"prompt": "no matching product"},
+            {"selectors": [], "reason": "none"},
+            runtime_catalog,
+            client,
+            {"selector": "synthetic.v1", "network_called": False},
+            plugin_sha256="a" * 64,
+            production_http_requests=lambda: 0,
+        )
+        self.assertEqual(EMPTY_SELECTION_GAP, empty["capability_gaps"][0]["code"])
 
     def test_external_selector_derives_terminal_network_from_http_counter(self) -> None:
         from agent_usability_external_selector import _catalog, _selection_result
@@ -553,7 +698,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
         blocker = self.subject.BlockedTransport()
         client = GravityInsightClient.from_env(transport=blocker)
-        _, inventory = _catalog(client)
+        _, runtime_catalog = _catalog(client)
         with self.assertRaisesRegex(RuntimeError, "production HTTP is disabled"):
             blocker.request({"operation_id": "synthetic.execution"})
         result = _selection_result(
@@ -562,7 +707,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                 "selectors": ["gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING"],
                 "reason": "registered unavailable product",
             },
-            inventory,
+            runtime_catalog,
             client,
             {"selector": "synthetic.v1", "network_called": True},
             plugin_sha256="a" * 64,
@@ -573,6 +718,9 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             "gap_code": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
         }}
         self.assertEqual(1, blocker.attempts)
+        self.assertTrue(result["offline"])
+        self.assertFalse(result["network_called"])
+        self.assertTrue(result["selection_network_called"])
         self.assertEqual(1, result["execution_http_requests"])
         self.assertTrue(result["execution_network_called"])
         self.assertFalse(result["terminal_offline_measured"])
@@ -645,6 +793,75 @@ json.dump({'schema_version': 'gravity.agent-external-selector-response.v1', 'res
                     terminal_score=lambda *_: (None, "skipped_production"),
                     production_http_requests=lambda: 0,
                 )
+
+    def test_multiple_intents_derive_exact_gap_candidate_identities(self) -> None:
+        _manifest, cases = self.subject.load_cases("development", None)
+        expected = {
+            "J32.dev.v3.multiple": {
+                "J32": "metadata:table_lineage",
+                "J44": "gap:CURRENT_TABLE_SCHEMA_PARENT_MISSING",
+            },
+            "J47.dev.v3.multiple": {
+                "J47": "gap:ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
+                "J48": "material.asset.fetch",
+            },
+        }
+        for case_id, candidate_selectors in expected.items():
+            with self.subTest(case_id=case_id):
+                case = next(item for item in cases if item["case_id"] == case_id)
+                self.assertEqual(
+                    candidate_selectors,
+                    case["expected"]["candidate_selectors"],
+                )
+                result = {"capability_gaps": [{
+                    "code": "MULTIPLE_INTENTS",
+                    "candidate_selectors": list(reversed(
+                        candidate_selectors.values()
+                    )),
+                }]}
+                self.assertEqual(
+                    (True, "correct_multiple_intents", None),
+                    self.subject.route_score(case, result),
+                )
+
+    def test_historical_default_dispatch_prediction_requires_remeasurement(self) -> None:
+        from agent_usability_host_arm_gap import DEFAULT_DISPATCH_SCHEMA
+
+        readme = (
+            ROOT / "evals" / "agent_usability" / "README.md"
+        ).read_text(encoding="utf-8")
+        invalidation = (
+            "DEFAULT_DISPATCH_EVIDENCE_STATUS: "
+            "INVALIDATED_REQUIRES_REMEASUREMENT at 9c9c78d3"
+        )
+        start = "<!-- DEFAULT_DISPATCH_PREDICTION_EVIDENCE_START -->\n```json\n"
+        end = "\n```\n<!-- DEFAULT_DISPATCH_PREDICTION_EVIDENCE_END -->"
+        self.assertEqual(1, readme.count(invalidation))
+        self.assertEqual(1, readme.count(start))
+        self.assertEqual(1, readme.count(end))
+        evidence = json.loads(readme.split(start, 1)[1].split(end, 1)[0])
+        self.assertEqual(
+            (
+                "gravity.agent-usability-default-dispatch.v2",
+                "recognizer",
+                "host_catalog",
+                298,
+                334,
+                {
+                    "counterfactual_minus_checked_in_pass^1": 36,
+                    "counterfactual_minus_checked_in_pass^N": 36,
+                },
+            ),
+            (
+                evidence["schema_version"],
+                evidence["checked_in_default"],
+                evidence["counterfactual_default"],
+                evidence["scores"]["checked_in"]["pass^N"]["passed"],
+                evidence["scores"]["counterfactual"]["pass^N"]["passed"],
+                evidence["score_differences"],
+            ),
+        )
+        self.assertNotEqual(DEFAULT_DISPATCH_SCHEMA, evidence["schema_version"])
 
 
 def _fake_result(split: str) -> dict:

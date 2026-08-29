@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.semantic-binding.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "binding_uri", "semantic_uri",
+    "project_id", "owner", "app_alias", "effective_range", "provider",
+    "parameters"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "semantic_binding"},
+    "schema_version": {"const": "gravity.semantic-binding.v1"},
+    "binding_uri": {"type": "string", "minLength": 8, "maxLength": 256, "pattern": "^binding://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"},
+    "semantic_uri": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256,
+      "pattern": "^(metric|dimension|entity|cohort|event|sku|activity|release)://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"
+    },
+    "project_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "app_alias": {"type": ["string", "null"], "maxLength": 128},
+    "effective_range": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {"type": ["string", "null"], "maxLength": 10},
+        "end": {"type": ["string", "null"], "maxLength": 10}
+      }
+    },
+    "provider": {
+      "type": "object",
+      "required": ["kind", "definition", "members"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "semantic_compose"},
+        "definition": {"$ref": "#/$defs/reference"},
+        "members": {"type": "object", "minProperties": 1, "additionalProperties": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/reference"}]}}
+      }
+    },
+    "parameters": {"type": "object", "additionalProperties": {"type": ["string", "number", "integer", "boolean", "null"]}}
+  },
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "required": ["definition_id", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "definition_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "version": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+      }
+    }
+  }
+}

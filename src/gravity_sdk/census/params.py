@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-import bisect
 import json
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 from urllib.parse import unquote_plus
 
-from .io import read_json, write_json
+from .io import all_parameter_nodes as _all_parameter_nodes, batch_parameter_validation as _batch_validation, read_json, summarize_parameter_routes as _summary, write_json
 from .normalize import comparison_path, decode_js_escapes
 from .parser import (
+    _Lexed,
+    _Token,
     _api_exported_bases,
     _base_aliases,
+    _tokenize,
     parse_text,
 )
 
@@ -30,7 +32,6 @@ _TYPE_ORDER = {
     "null": 6,
     "unknown": 7,
 }
-_IDENTIFIER = re.compile(r"[A-Za-z_$][\w$]*")
 _PATH_PARAMETER = re.compile(r"\{([^{}]+)\}")
 _NO_DEFAULT = object()
 
@@ -43,15 +44,6 @@ PARAM_PARSER_LIMITATIONS = [
     "Minified bindings can be shadowed in a nested scope; lexical scope bounding reduces but cannot eliminate that ambiguity.",
     "Probe evidence persists schema shapes without response values, so the numeric code and error message cannot be replayed.",
 ]
-
-
-@dataclass(frozen=True)
-class _Token:
-    kind: str
-    value: str
-    start: int
-    end: int
-    quote: str | None = None
 
 
 @dataclass
@@ -92,141 +84,12 @@ class _OccurrenceResult:
     unresolved_reasons: set[str] = field(default_factory=set)
 
 
-@dataclass
-class _Lexed:
-    text: str
-    tokens: list[_Token]
-    pairs: dict[int, int]
-    starts: list[int]
-
-    def token_at_offset(self, offset: int) -> int | None:
-        index = bisect.bisect_left(self.starts, offset)
-        if index < len(self.tokens) and self.tokens[index].start == offset:
-            return index
-        if index and self.tokens[index - 1].start <= offset < self.tokens[index - 1].end:
-            return index - 1
-        return None
-
-
 def _worse(left: str, right: str) -> str:
     return max((left, right), key=lambda value: _CONFIDENCE_ORDER.get(value, 9))
 
 
 def _downgrade(value: str, floor: str) -> str:
     return _worse(value, floor)
-
-
-def _tokenize(text: str) -> _Lexed:
-    def scan_quoted(start: int) -> int:
-        quote = text[start]
-        cursor = start + 1
-        while cursor < length:
-            current = text[cursor]
-            if current == "\\":
-                cursor += 2
-                continue
-            if current == quote:
-                return cursor + 1
-            if quote == "`" and text.startswith("${", cursor):
-                cursor = scan_template_expression(cursor + 1)
-                continue
-            if quote != "`" and current in "\r\n":
-                return cursor
-            cursor += 1
-        return cursor
-
-    def scan_template_expression(open_brace: int) -> int:
-        depth = 1
-        cursor = open_brace + 1
-        while cursor < length and depth:
-            current = text[cursor]
-            if current in "'\"`":
-                cursor = scan_quoted(cursor)
-                continue
-            if current == "{":
-                depth += 1
-            elif current == "}":
-                depth -= 1
-            cursor += 1
-        return cursor
-
-    tokens: list[_Token] = []
-    index = 0
-    length = len(text)
-    operators = (
-        "===",
-        "!==",
-        ">>>",
-        "**=",
-        "...",
-        "=>",
-        "==",
-        "!=",
-        "<=",
-        ">=",
-        "&&",
-        "||",
-        "??",
-        "?.",
-        "++",
-        "--",
-        "**",
-        "+=",
-        "-=",
-        "*=",
-        "/=",
-    )
-    while index < length:
-        char = text[index]
-        if char.isspace():
-            index += 1
-            continue
-        if text.startswith("/*", index):
-            close = text.find("*/", index + 2)
-            index = length if close < 0 else close + 2
-            continue
-        if char in "'\"`":
-            quote = char
-            start = index
-            index = scan_quoted(start)
-            value_end = index - 1 if index <= length and text[index - 1 : index] == quote else index
-            tokens.append(_Token("string", text[start + 1 : value_end], start, index, quote))
-            continue
-        identifier = _IDENTIFIER.match(text, index)
-        if identifier:
-            tokens.append(_Token("identifier", identifier.group(0), index, identifier.end()))
-            index = identifier.end()
-            continue
-        if char.isdigit():
-            number = re.match(
-                r"(?:0[xX][0-9A-Fa-f]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)", text[index:]
-            )
-            if number:
-                end = index + number.end()
-                tokens.append(_Token("number", number.group(0), index, end))
-                index = end
-                continue
-        operator = next((item for item in operators if text.startswith(item, index)), None)
-        if operator:
-            tokens.append(_Token("punct", operator, index, index + len(operator)))
-            index += len(operator)
-            continue
-        tokens.append(_Token("punct", char, index, index + 1))
-        index += 1
-
-    pairs: dict[int, int] = {}
-    stacks: dict[str, list[int]] = {"(": [], "{": [], "[": []}
-    closing = {")": "(", "}": "{", "]": "["}
-    for token_index, token in enumerate(tokens):
-        if token.value in stacks:
-            stacks[token.value].append(token_index)
-        elif token.value in closing:
-            stack = stacks[closing[token.value]]
-            if stack:
-                open_index = stack.pop()
-                pairs[open_index] = token_index
-                pairs[token_index] = open_index
-    return _Lexed(text, tokens, pairs, [token.start for token in tokens])
 
 
 def _trim(tokens: Sequence[_Token], start: int, end: int) -> tuple[int, int]:
@@ -439,6 +302,162 @@ def _select_member(inferred: _Field, members: Sequence[str], *, name: str) -> _F
     return selected
 
 
+def _unknown_expression(name: str, evidence: str = "runtime_expression") -> _Field:
+    return _Field(
+        name=name, types={"unknown"}, type_confidence="low", unresolved=True,
+        evidence={"literal_object_key", evidence},
+    )
+
+
+def _infer_collection(
+    lexed: _Lexed, start: int, end: int, name: str, scope_start: int, seen: frozenset[str]
+) -> _Field | None:
+    result = _Field(name=name, evidence={"literal_object_key"})
+    if lexed.tokens[start].value == "{" and lexed.pairs.get(start) == end - 1:
+        shape = _parse_object(lexed, start, scope_start=scope_start, seen=seen)
+        result.types.add("object")
+        result.type_confidence = "high"
+        result.children = shape.fields
+        result.unresolved = shape.unresolved
+        return result
+    if lexed.tokens[start].value != "[" or lexed.pairs.get(start) != end - 1:
+        return None
+    result.types.add("array")
+    result.type_confidence = "high"
+    for item_start, item_end in _segments(lexed, start + 1, end - 1):
+        item = _infer_expression(
+            lexed, item_start, item_end, name="[]", scope_start=scope_start, seen=seen
+        )
+        result.item_types.update(item.types)
+        result.item_confidence = _worse(result.item_confidence, item.type_confidence)
+        for child_name, child in item.children.items():
+            if child_name in result.item_children:
+                _merge_field(result.item_children[child_name], child)
+            else:
+                result.item_children[child_name] = _copy_field(child)
+    if not result.item_types:
+        result.item_types.add("unknown")
+    return result
+
+
+def _infer_literal_expression(tokens: Sequence[_Token], start: int, end: int, name: str) -> _Field | None:
+    result = _Field(name=name, evidence={"literal_object_key"})
+    literal = _literal(tokens[start]) if end - start == 1 else None
+    sign = tokens[start].value if end - start == 2 else None
+    signed_literal = _literal(tokens[start + 1]) if sign in {"+", "-"} else None
+    if literal:
+        value_type, value = literal
+    elif signed_literal and signed_literal[0] in {"integer", "number"}:
+        value_type, value = signed_literal
+        value = value if sign == "+" else -value
+    elif end - start == 2 and tokens[start].value == "!" and tokens[start + 1].value in {"0", "1"}:
+        value_type, value = "boolean", tokens[start + 1].value == "0"
+    else:
+        return None
+    result.types.add(value_type)
+    result.type_confidence = "high"
+    if value is not _NO_DEFAULT:
+        result.defaults.append(value)
+        result.default_confidence = "high"
+    return result
+
+
+def _infer_conditional(
+    lexed: _Lexed, start: int, end: int, name: str, scope_start: int, seen: frozenset[str]
+) -> _Field | None:
+    question = _top_level_token(lexed, start, end, {"?"})
+    if question is None:
+        return None
+    colon = _top_level_token(lexed, question + 1, end, {":"})
+    if colon is None:
+        return None
+    left = _infer_expression(
+        lexed, question + 1, colon, name=name, scope_start=scope_start, seen=seen
+    )
+    right = _infer_expression(
+        lexed, colon + 1, end, name=name, scope_start=scope_start, seen=seen
+    )
+    _merge_field(left, right)
+    left.defaults = []
+    left.default_confidence = None
+    left.type_confidence = _downgrade(left.type_confidence, "medium")
+    left.evidence.add("conditional_value")
+    return left
+
+
+def _infer_fallback(
+    lexed: _Lexed, start: int, end: int, name: str, scope_start: int, seen: frozenset[str]
+) -> _Field | None:
+    fallback = _top_level_token(lexed, start, end, {"||", "??"})
+    if fallback is None:
+        return None
+    left = _infer_expression(lexed, start, fallback, name=name, scope_start=scope_start, seen=seen)
+    right = _infer_expression(
+        lexed, fallback + 1, end, name=name, scope_start=scope_start, seen=seen
+    )
+    left.types.update(right.types)
+    left.type_confidence = _downgrade(_worse(left.type_confidence, right.type_confidence), "medium")
+    if right.defaults:
+        left.defaults = list(right.defaults)
+        left.default_confidence = _downgrade(right.default_confidence or "high", "medium")
+    left.evidence.add("fallback_literal")
+    return left
+
+
+def _infer_known_call(tokens: Sequence[_Token], start: int, end: int, name: str) -> _Field | None:
+    result = _Field(name=name, evidence={"literal_object_key"})
+    first_identifier = next(
+        (token.value for token in tokens[start:end] if token.kind == "identifier"), None
+    )
+    conversion_types = {"Number": "integer", "parseInt": "integer", "parseFloat": "number", "String": "string"}
+    if first_identifier in conversion_types:
+        result.types.add(conversion_types[first_identifier])
+        result.type_confidence = "medium"
+        result.evidence.add("conversion_call")
+        return result
+    if not any(token.value == "map" for token in tokens[start:end]):
+        return None
+    result.types.add("array")
+    result.item_types.add("unknown")
+    result.type_confidence = "medium"
+    result.evidence.add("array_method")
+    return result
+
+
+def _infer_identifier(
+    lexed: _Lexed, start: int, end: int, name: str, scope_start: int, seen: frozenset[str]
+) -> _Field | None:
+    tokens = lexed.tokens
+    if tokens[start].kind != "identifier":
+        return None
+    identifier = tokens[start].value
+    member_chain = _pure_member_chain(tokens, start, end)
+    if member_chain is None or identifier in seen:
+        return None
+    initializer = _initializer_range(lexed, identifier, start, scope_start)
+    if not initializer:
+        return None
+    inferred = _infer_expression(
+        lexed, *initializer, name=name, scope_start=scope_start, seen=seen | {identifier}
+    )
+    if inferred.types == {"unknown"} and initializer[0] + 1 < initializer[1]:
+        call_open = initializer[0] + 1
+        call_close = lexed.pairs.get(call_open) if tokens[call_open].value == "(" else None
+        if call_close and call_close < initializer[1]:
+            arguments = _segments(lexed, call_open + 1, call_close)
+            if arguments:
+                inferred = _infer_expression(
+                    lexed, *arguments[0], name=name, scope_start=scope_start, seen=seen | {identifier}
+                )
+    inferred = _select_member(inferred, member_chain, name=name)
+    inferred.confidence = _downgrade(inferred.confidence, "medium")
+    inferred.type_confidence = _downgrade(inferred.type_confidence, "medium")
+    inferred.defaults = []
+    inferred.default_confidence = None
+    inferred.evidence.add("variable_initializer")
+    return inferred
+
+
 def _infer_expression(
     lexed: _Lexed,
     start: int,
@@ -450,11 +469,8 @@ def _infer_expression(
 ) -> _Field:
     tokens = lexed.tokens
     start, end = _trim(tokens, start, end)
-    result = _Field(name=name, evidence={"literal_object_key"})
     if start >= end:
-        result.types.add("unknown")
-        result.unresolved = True
-        return result
+        return _unknown_expression(name)
     while (
         tokens[start].value == "("
         and start in lexed.pairs
@@ -463,190 +479,22 @@ def _infer_expression(
         start += 1
         end -= 1
     if start >= end:
-        result.types.add("unknown")
-        result.unresolved = True
-        return result
-
-    if tokens[start].value == "{" and lexed.pairs.get(start) == end - 1:
-        shape = _parse_object(lexed, start, scope_start=scope_start, seen=seen)
-        result.types.add("object")
-        result.type_confidence = "high"
-        result.children = shape.fields
-        result.unresolved = shape.unresolved
-        return result
-    if tokens[start].value == "[" and lexed.pairs.get(start) == end - 1:
-        result.types.add("array")
-        result.type_confidence = "high"
-        for item_start, item_end in _segments(lexed, start + 1, end - 1):
-            item = _infer_expression(
-                lexed,
-                item_start,
-                item_end,
-                name="[]",
-                scope_start=scope_start,
-                seen=seen,
-            )
-            result.item_types.update(item.types)
-            result.item_confidence = _worse(result.item_confidence, item.type_confidence)
-            for child_name, child in item.children.items():
-                if child_name in result.item_children:
-                    _merge_field(result.item_children[child_name], child)
-                else:
-                    result.item_children[child_name] = _copy_field(child)
-        if not result.item_types:
-            result.item_types.add("unknown")
-        return result
-
-    if end - start == 1:
-        literal = _literal(tokens[start])
-        if literal:
-            value_type, value = literal
-            result.types.add(value_type)
-            result.type_confidence = "high"
-            if value is not _NO_DEFAULT:
-                result.defaults.append(value)
-                result.default_confidence = "high"
-            return result
-
-    if end - start == 2 and tokens[start].value == "!" and tokens[start + 1].value in {"0", "1"}:
-        result.types.add("boolean")
-        result.type_confidence = "high"
-        result.defaults.append(tokens[start + 1].value == "0")
-        result.default_confidence = "high"
-        return result
-    if end - start == 2 and tokens[start].value in {"+", "-"}:
-        literal = _literal(tokens[start + 1])
-        if literal and literal[0] in {"integer", "number"}:
-            value_type, value = literal
-            result.types.add(value_type)
-            result.type_confidence = "high"
-            if value is not _NO_DEFAULT:
-                result.defaults.append(value if tokens[start].value == "+" else -value)
-                result.default_confidence = "high"
-            return result
+        return _unknown_expression(name)
     if tokens[start].value == "void":
-        result.types.add("unknown")
-        result.unresolved = True
-        return result
-
-    question = _top_level_token(lexed, start, end, {"?"})
-    if question is not None:
-        colon = _top_level_token(lexed, question + 1, end, {":"})
-        if colon is not None:
-            left = _infer_expression(
-                lexed,
-                question + 1,
-                colon,
-                name=name,
-                scope_start=scope_start,
-                seen=seen,
-            )
-            right = _infer_expression(
-                lexed,
-                colon + 1,
-                end,
-                name=name,
-                scope_start=scope_start,
-                seen=seen,
-            )
-            _merge_field(left, right)
-            left.defaults = []
-            left.default_confidence = None
-            left.type_confidence = _downgrade(left.type_confidence, "medium")
-            left.evidence.add("conditional_value")
-            return left
-
-    fallback = _top_level_token(lexed, start, end, {"||", "??"})
-    if fallback is not None:
-        left = _infer_expression(
-            lexed,
-            start,
-            fallback,
-            name=name,
-            scope_start=scope_start,
-            seen=seen,
-        )
-        right = _infer_expression(
-            lexed,
-            fallback + 1,
-            end,
-            name=name,
-            scope_start=scope_start,
-            seen=seen,
-        )
-        left.types.update(right.types)
-        left.type_confidence = _downgrade(_worse(left.type_confidence, right.type_confidence), "medium")
-        if right.defaults:
-            left.defaults = list(right.defaults)
-            left.default_confidence = _downgrade(right.default_confidence or "high", "medium")
-        left.evidence.add("fallback_literal")
-        return left
-
-    first_identifier = next(
-        (token.value for token in tokens[start:end] if token.kind == "identifier"), None
+        return _unknown_expression(name)
+    handlers = (
+        lambda: _infer_collection(lexed, start, end, name, scope_start, seen),
+        lambda: _infer_literal_expression(tokens, start, end, name),
+        lambda: _infer_conditional(lexed, start, end, name, scope_start, seen),
+        lambda: _infer_fallback(lexed, start, end, name, scope_start, seen),
+        lambda: _infer_known_call(tokens, start, end, name),
+        lambda: _infer_identifier(lexed, start, end, name, scope_start, seen),
     )
-    if first_identifier in {"Number", "parseInt", "parseFloat"}:
-        result.types.add("number" if first_identifier == "parseFloat" else "integer")
-        result.type_confidence = "medium"
-        result.evidence.add("conversion_call")
-        return result
-    if first_identifier == "String":
-        result.types.add("string")
-        result.type_confidence = "medium"
-        result.evidence.add("conversion_call")
-        return result
-    if any(token.value == "map" for token in tokens[start:end]):
-        result.types.add("array")
-        result.item_types.add("unknown")
-        result.type_confidence = "medium"
-        result.evidence.add("array_method")
-        return result
-
-    if tokens[start].kind == "identifier":
-        identifier = tokens[start].value
-        member_chain = _pure_member_chain(tokens, start, end)
-        if member_chain is not None and identifier not in seen:
-            initializer = _initializer_range(lexed, identifier, start, scope_start)
-            if initializer:
-                inferred = _infer_expression(
-                    lexed,
-                    initializer[0],
-                    initializer[1],
-                    name=name,
-                    scope_start=scope_start,
-                    seen=seen | {identifier},
-                )
-                if (
-                    inferred.types == {"unknown"}
-                    and initializer[0] + 1 < initializer[1]
-                    and lexed.tokens[initializer[0] + 1].value == "("
-                ):
-                    call_open = initializer[0] + 1
-                    call_close = lexed.pairs.get(call_open)
-                    if call_close and call_close < initializer[1]:
-                        arguments = _segments(lexed, call_open + 1, call_close)
-                        if arguments:
-                            inferred = _infer_expression(
-                                lexed,
-                                arguments[0][0],
-                                arguments[0][1],
-                                name=name,
-                                scope_start=scope_start,
-                                seen=seen | {identifier},
-                            )
-                inferred = _select_member(inferred, member_chain, name=name)
-                inferred.confidence = _downgrade(inferred.confidence, "medium")
-                inferred.type_confidence = _downgrade(inferred.type_confidence, "medium")
-                inferred.defaults = []
-                inferred.default_confidence = None
-                inferred.evidence.add("variable_initializer")
-                return inferred
-
-    result.types.add("unknown")
-    result.unresolved = True
-    result.type_confidence = "low"
-    result.evidence.add("runtime_expression")
-    return result
+    for handler in handlers:
+        inferred = handler()
+        if inferred is not None:
+            return inferred
+    return _unknown_expression(name)
 
 
 def _spread_shape(
@@ -1015,6 +863,124 @@ def _find_forwarded_alias_calls(
     return [unique[offset] for offset in sorted(unique)]
 
 
+def _call_result(
+    lexed: _Lexed,
+    call_open: int,
+    locations: dict[str, _Shape],
+    unresolved: set[str],
+    evidence_kind: str,
+    *,
+    unresolved_reasons: set[str] | None = None,
+) -> _OccurrenceResult:
+    return _OccurrenceResult(
+        calls=[
+            _CallShape(
+                offset=lexed.tokens[call_open].start,
+                locations=locations,
+                unresolved_locations=unresolved,
+                evidence_kind=evidence_kind,
+            )
+        ],
+        unresolved_reasons=unresolved_reasons or set(),
+    )
+
+
+def _direct_request_result(
+    lexed: _Lexed,
+    token_index: int,
+    call_open: int,
+    call_close: int,
+    scope_start: int,
+    method: str,
+) -> _OccurrenceResult | None:
+    request_object = _object_containing(
+        lexed,
+        token_index,
+        inside_start=call_open,
+        inside_end=call_close,
+    )
+    if request_object is None:
+        return None
+    request_shape = _parse_object(lexed, request_object, scope_start=scope_start)
+    if not ({"url", "path"} & set(request_shape.fields)):
+        return None
+    locations, unresolved = _envelope_locations(request_shape, method=method)
+    return _call_result(
+        lexed, call_open, locations, unresolved, "direct_request_options"
+    )
+
+
+def _merge_default_locations(
+    calls: list[_CallShape], options: _Shape | None, method: str
+) -> None:
+    default_locations: dict[str, _Shape] = {}
+    default_unresolved: set[str] = set()
+    if options:
+        default_locations, default_unresolved = _envelope_locations(options, method=method)
+    for call in calls:
+        for location, shape in default_locations.items():
+            if location not in call.locations:
+                call.locations[location] = shape
+        call.unresolved_locations.update(default_unresolved)
+
+
+def _alias_occurrence_result(
+    lexed: _Lexed,
+    alias: str,
+    options: _Shape | None,
+    *,
+    call_open: int,
+    call_close: int,
+    scope_start: int,
+    scope_end: int,
+    method: str,
+) -> _OccurrenceResult:
+    calls = _find_alias_calls(
+        lexed,
+        alias,
+        after=call_close + 1,
+        scope_end=scope_end,
+        method=method,
+        scope_start=scope_start,
+    )
+    if not calls:
+        calls = _find_forwarded_alias_calls(
+            lexed,
+            alias,
+            after=call_close + 1,
+            scope_end=scope_end,
+            method=method,
+            scope_start=scope_start,
+        )
+    if calls:
+        _merge_default_locations(calls, options, method)
+        return _OccurrenceResult(calls=calls)
+    if options:
+        locations, unresolved = _envelope_locations(options, method=method)
+        if locations or unresolved:
+            return _call_result(
+                lexed,
+                call_open,
+                locations,
+                unresolved,
+                "factory_default_only",
+                unresolved_reasons={"load_alias_has_no_static_call"},
+            )
+    return _OccurrenceResult(unresolved_reasons={"load_alias_has_no_static_call"})
+
+
+def _inline_occurrence_result(
+    lexed: _Lexed, call_open: int, options: _Shape | None, method: str
+) -> _OccurrenceResult:
+    if options:
+        locations, unresolved = _envelope_locations(options, method=method)
+        if locations or unresolved:
+            return _call_result(
+                lexed, call_open, locations, unresolved, "inline_request_factory"
+            )
+    return _OccurrenceResult(unresolved_reasons={"request_binding_not_resolved"})
+
+
 def _extract_occurrence(
     lexed: _Lexed,
     occurrence: Mapping[str, Any],
@@ -1030,31 +996,11 @@ def _extract_occurrence(
         return _OccurrenceResult(unresolved_reasons={"unbalanced_request_call"})
     scope_start, scope_end = _enclosing_scope(lexed, call_open)
     method = str(occurrence["method"])
-
-    request_object = _object_containing(
-        lexed,
-        token_index,
-        inside_start=call_open,
-        inside_end=call_close,
+    direct = _direct_request_result(
+        lexed, token_index, call_open, call_close, scope_start, method
     )
-    if request_object is not None:
-        request_shape = _parse_object(
-            lexed,
-            request_object,
-            scope_start=scope_start,
-        )
-        if {"url", "path"} & set(request_shape.fields):
-            locations, unresolved = _envelope_locations(request_shape, method=method)
-            return _OccurrenceResult(
-                calls=[
-                    _CallShape(
-                        offset=lexed.tokens[call_open].start,
-                        locations=locations,
-                        unresolved_locations=unresolved,
-                        evidence_kind="direct_request_options",
-                    )
-                ]
-            )
+    if direct is not None:
+        return direct
 
     options = _route_options(
         lexed,
@@ -1064,64 +1010,17 @@ def _extract_occurrence(
     )
     alias = _load_alias(lexed, call_open)
     if alias:
-        calls = _find_alias_calls(
+        return _alias_occurrence_result(
             lexed,
             alias,
-            after=call_close + 1,
+            options,
+            call_open=call_open,
+            call_close=call_close,
+            scope_start=scope_start,
             scope_end=scope_end,
             method=method,
-            scope_start=scope_start,
         )
-        if not calls:
-            calls = _find_forwarded_alias_calls(
-                lexed,
-                alias,
-                after=call_close + 1,
-                scope_end=scope_end,
-                method=method,
-                scope_start=scope_start,
-            )
-        if calls:
-            default_locations: dict[str, _Shape] = {}
-            default_unresolved: set[str] = set()
-            if options:
-                default_locations, default_unresolved = _envelope_locations(options, method=method)
-            for call in calls:
-                for location, shape in default_locations.items():
-                    if location not in call.locations:
-                        call.locations[location] = shape
-                call.unresolved_locations.update(default_unresolved)
-            return _OccurrenceResult(calls=calls)
-        if options:
-            locations, unresolved = _envelope_locations(options, method=method)
-            if locations or unresolved:
-                return _OccurrenceResult(
-                    calls=[
-                        _CallShape(
-                            offset=lexed.tokens[call_open].start,
-                            locations=locations,
-                            unresolved_locations=unresolved,
-                            evidence_kind="factory_default_only",
-                        )
-                    ],
-                    unresolved_reasons={"load_alias_has_no_static_call"},
-                )
-        return _OccurrenceResult(unresolved_reasons={"load_alias_has_no_static_call"})
-
-    if options:
-        locations, unresolved = _envelope_locations(options, method=method)
-        if locations or unresolved:
-            return _OccurrenceResult(
-                calls=[
-                    _CallShape(
-                        offset=lexed.tokens[call_open].start,
-                        locations=locations,
-                        unresolved_locations=unresolved,
-                        evidence_kind="inline_request_factory",
-                    )
-                ]
-            )
-    return _OccurrenceResult(unresolved_reasons={"request_binding_not_resolved"})
+    return _inline_occurrence_result(lexed, call_open, options, method)
 
 
 def _raw_query_shape(raw_path: str) -> _Shape:
@@ -1266,15 +1165,6 @@ def _aggregate_location(
     return parameters, unresolved
 
 
-def _all_parameter_nodes(parameters: Iterable[Mapping[str, Any]]) -> Iterable[Mapping[str, Any]]:
-    for parameter in parameters:
-        yield parameter
-        yield from _all_parameter_nodes(parameter.get("properties", []))
-        items = parameter.get("items")
-        if isinstance(items, Mapping):
-            yield from _all_parameter_nodes(items.get("properties", []))
-
-
 def _contract_confidence(route: Mapping[str, Any]) -> str:
     parameters = list(route.get("path_parameters", []))
     parameters.extend(route.get("query_parameters", []))
@@ -1330,14 +1220,11 @@ def _occurrences_by_route(
     return dict(grouped), dict(by_file)
 
 
-def _route_document(
-    route: Mapping[str, Any],
+def _route_call_sites(
     occurrences: Sequence[Mapping[str, Any]],
     results: Sequence[_OccurrenceResult],
-) -> dict[str, Any]:
-    calls = [call for result in results for call in result.calls]
-    unresolved_occurrences = sum(not result.calls for result in results)
-    call_sites = sorted(
+) -> list[dict[str, Any]]:
+    return sorted(
         (
             {
                 "call_offset": call.offset,
@@ -1356,37 +1243,61 @@ def _route_document(
             int(item["call_offset"] or -1),
         ),
     )
+
+
+def _merge_url_query_parameters(
+    route: Mapping[str, Any],
+    query_parameters: list[dict[str, Any]],
+    query_unresolved: bool,
+) -> tuple[list[dict[str, Any]], bool]:
+    url_query = _Shape()
+    for raw_path in route.get("raw_paths", []):
+        _merge_shape(url_query, _raw_query_shape(str(raw_path)))
+    if not url_query.fields:
+        return query_parameters, query_unresolved
+    synthetic = _CallShape(offset=-1, locations={"query": url_query})
+    url_parameters, url_unresolved = _aggregate_location([synthetic], "query")
+    by_name = {item["name"]: item for item in query_parameters}
+    for item in url_parameters:
+        by_name.setdefault(item["name"], item)
+    return [by_name[name] for name in sorted(by_name)], query_unresolved or url_unresolved
+
+
+def _parameter_status(
+    path_parameters: list[dict[str, Any]],
+    query_parameters: list[dict[str, Any]],
+    body_parameters: list[dict[str, Any]],
+    calls: list[_CallShape],
+    unresolved: bool,
+) -> str:
+    if path_parameters or query_parameters or body_parameters:
+        return "extracted"
+    if calls and not unresolved:
+        return "observed_empty"
+    return "unknown"
+
+
+def _route_document(
+    route: Mapping[str, Any],
+    occurrences: Sequence[Mapping[str, Any]],
+    results: Sequence[_OccurrenceResult],
+) -> dict[str, Any]:
+    calls = [call for result in results for call in result.calls]
+    unresolved_occurrences = sum(not result.calls for result in results)
     query_parameters, query_unresolved = _aggregate_location(
         calls, "query", unresolved_context=bool(unresolved_occurrences)
     )
     body_parameters, body_unresolved = _aggregate_location(
         calls, "body", unresolved_context=bool(unresolved_occurrences)
     )
-
-    url_query = _Shape()
-    for raw_path in route.get("raw_paths", []):
-        _merge_shape(url_query, _raw_query_shape(str(raw_path)))
-    if url_query.fields:
-        synthetic = _CallShape(offset=-1, locations={"query": url_query})
-        url_parameters, url_unresolved = _aggregate_location([synthetic], "query")
-        by_name = {item["name"]: item for item in query_parameters}
-        for item in url_parameters:
-            by_name.setdefault(item["name"], item)
-        query_parameters = [by_name[name] for name in sorted(by_name)]
-        query_unresolved = query_unresolved or url_unresolved
-
+    query_parameters, query_unresolved = _merge_url_query_parameters(
+        route, query_parameters, query_unresolved
+    )
     path_parameters = _path_parameters(route)
-    extracted = bool(path_parameters or query_parameters or body_parameters)
-    if extracted:
-        status = "extracted"
-    elif calls and not (query_unresolved or body_unresolved):
-        status = "observed_empty"
-    else:
-        status = "unknown"
     document: dict[str, Any] = {
         "analysis": {
             "analyzed_calls": len(calls),
-            "call_sites": call_sites,
+            "call_sites": _route_call_sites(occurrences, results),
             "route_occurrences": len(occurrences),
             "unresolved_calls": sum(bool(call.unresolved_locations) for call in calls),
             "unresolved_occurrences": unresolved_occurrences,
@@ -1401,7 +1312,13 @@ def _route_document(
         "path": route["path"],
         "path_parameters": path_parameters,
         "query_parameters": query_parameters,
-        "status": status,
+        "status": _parameter_status(
+            path_parameters,
+            query_parameters,
+            body_parameters,
+            calls,
+            query_unresolved or body_unresolved,
+        ),
     }
     document["contract_confidence"] = _contract_confidence(document)
     return document
@@ -1409,219 +1326,6 @@ def _route_document(
 
 def _route_key(method: Any, path: Any) -> tuple[str, str]:
     return str(method), str(path)
-
-
-def _external_route_key(method: Any, path: Any) -> tuple[str, str]:
-    return str(method).upper(), comparison_path(str(path))
-
-
-def _parameter_names(route: Mapping[str, Any]) -> set[str]:
-    result: set[str] = set()
-    for location in ("path_parameters", "query_parameters", "body_parameters"):
-        for item in _all_parameter_nodes(route.get(location, [])):
-            name = item.get("name")
-            if isinstance(name, str):
-                result.add(name)
-    return result
-
-
-def _coverage_for_keys(
-    keys: set[tuple[str, str]], routes: Mapping[tuple[str, str], Mapping[str, Any]]
-) -> dict[str, int]:
-    selected = [routes[key] for key in sorted(keys) if key in routes]
-    return {
-        "total": len(keys),
-        "route_matched": len(selected),
-        "with_parameter_contract": sum(item["status"] == "extracted" for item in selected),
-        "with_any_high_confidence_parameter": sum(
-            any(
-                node.get("confidence") == "high"
-                for location in ("path_parameters", "query_parameters", "body_parameters")
-                for node in _all_parameter_nodes(item.get(location, []))
-            )
-            for item in selected
-        ),
-        "with_high_confidence_complete_contract": sum(
-            item["status"] == "extracted" and item["contract_confidence"] == "high"
-            for item in selected
-        ),
-    }
-
-
-def _evidence_hint_names(evidence_path: Path) -> set[str]:
-    if not evidence_path.is_file():
-        return set()
-    evidence = read_json(evidence_path)
-    names: set[str] = set()
-    for observation in evidence.get("http", []):
-        sketch = observation.get("response_schema_sketch", {})
-        for item in sketch.get("paths", []):
-            raw = item.get("path") if isinstance(item, Mapping) else None
-            if not isinstance(raw, str) or not raw.startswith("$.extra."):
-                continue
-            name = raw[len("$.extra.") :].split(".", 1)[0].removesuffix("[]")
-            if name not in {"error", "show_message", "request_id"}:
-                names.add(name)
-    return names
-
-
-def _batch_validation(
-    route_documents: Sequence[Mapping[str, Any]],
-    *,
-    repo_root: Path,
-    batch_results_path: Path | None,
-    drafts_root: Path | None,
-) -> dict[str, Any]:
-    by_key = {
-        _external_route_key(item["method"], item["path"]): item for item in route_documents
-    }
-    result: dict[str, Any] = {
-        "code_1004_replayability": "unavailable_response_values_were_not_persisted",
-        "parameter_unknown_primary": _coverage_for_keys(set(), by_key),
-        "request_parameter_blockers": _coverage_for_keys(set(), by_key),
-        "semantic_error_parameter_hints": {
-            "assessable": 0,
-            "matched": 0,
-            "mismatched": 0,
-            "match_rate": None,
-        },
-        "successful_probes": {"total": 0, "route_matched": 0},
-    }
-    batch_items: list[Mapping[str, Any]] = []
-    if batch_results_path and batch_results_path.is_file():
-        payload = read_json(batch_results_path)
-        batch_items = list(payload.get("results", [])) if isinstance(payload, Mapping) else []
-        primary_keys = {
-            _external_route_key(item.get("method"), item.get("path"))
-            for item in batch_items
-            if item.get("failure_reason") == "参数不明"
-        }
-        result["parameter_unknown_primary"] = _coverage_for_keys(primary_keys, by_key)
-        successful = [item for item in batch_items if item.get("successful") is True]
-        result["successful_probes"] = {
-            "total": len(successful),
-            "route_matched": sum(
-                _external_route_key(item.get("method"), item.get("path")) in by_key
-                for item in successful
-            ),
-        }
-
-        validation_rows: list[dict[str, Any]] = []
-        semantic_errors = [
-            item for item in batch_items if item.get("latest_conclusion") == "semantic_error"
-        ]
-        for item in batch_items:
-            if item.get("latest_conclusion") != "semantic_error":
-                continue
-            raw_path = item.get("latest_evidence")
-            if not isinstance(raw_path, str):
-                continue
-            hints = _evidence_hint_names(repo_root / raw_path)
-            if not hints:
-                continue
-            route = by_key.get(_external_route_key(item.get("method"), item.get("path")))
-            extracted = _parameter_names(route) if route else set()
-            overlap = hints & extracted
-            validation_rows.append(
-                {
-                    "hint_fields": sorted(hints),
-                    "matched_fields": sorted(overlap),
-                    "method": item.get("method"),
-                    "operation_id": item.get("operation_id"),
-                    "path": item.get("path"),
-                    "verdict": "matched" if overlap else "mismatched",
-                }
-            )
-        matched = sum(row["verdict"] == "matched" for row in validation_rows)
-        assessable = len(validation_rows)
-        primary_rows = [
-            row
-            for row in validation_rows
-            if next(
-                (
-                    item.get("failure_reason")
-                    for item in batch_items
-                    if item.get("operation_id") == row["operation_id"]
-                ),
-                None,
-            )
-            == "参数不明"
-        ]
-        result["semantic_error_parameter_hints"] = {
-            "assessable": assessable,
-            "evidence_without_parameter_hint": len(semantic_errors) - assessable,
-            "matched": matched,
-            "mismatched": assessable - matched,
-            "match_rate": round(matched / assessable, 6) if assessable else None,
-            "parameter_unknown_primary_assessable": len(primary_rows),
-            "parameter_unknown_primary_matched": sum(
-                row["verdict"] == "matched" for row in primary_rows
-            ),
-            "semantic_error_responses": len(semantic_errors),
-            "rows": validation_rows,
-        }
-
-    blocker_keys: set[tuple[str, str]] = set()
-    if drafts_root and drafts_root.is_dir():
-        for path in sorted(drafts_root.glob("*.json")):
-            source = read_json(path)
-            blockers = source.get("draft", {}).get("blockers", [])
-            if not any(item.get("code") == "request_parameters_required" for item in blockers):
-                continue
-            operation = source.get("operation", {})
-            blocker_keys.add(
-                _external_route_key(
-                    operation.get("upstream_method"), operation.get("path_template")
-                )
-            )
-    result["request_parameter_blockers"] = _coverage_for_keys(blocker_keys, by_key)
-    return result
-
-
-def _summary(routes: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    nodes = [
-        node
-        for route in routes
-        for location in ("path_parameters", "query_parameters", "body_parameters")
-        for node in _all_parameter_nodes(route.get(location, []))
-    ]
-    confidence = {
-        level: sum(node.get("confidence") == level for node in nodes)
-        for level in ("high", "medium", "low")
-    }
-    top_level = {
-        location: sum(len(route.get(f"{location}_parameters", [])) for route in routes)
-        for location in ("path", "query", "body")
-    }
-    required = {
-        state: sum(node.get("required") == state for node in nodes)
-        for state in ("observed_always", "observed_conditional", "unknown")
-    }
-    return {
-        "confidence": confidence,
-        "defaults_observed": sum(
-            "default" in node or "observed_defaults" in node for node in nodes
-        ),
-        "parameter_nodes": len(nodes),
-        "parameter_nodes_by_location": {
-            location: sum(
-                1
-                for route in routes
-                for node in _all_parameter_nodes(route.get(f"{location}_parameters", []))
-            )
-            for location in ("path", "query", "body")
-        },
-        "required": required,
-        "routes_observed_empty": sum(route["status"] == "observed_empty" for route in routes),
-        "routes_total": len(routes),
-        "routes_unknown": sum(route["status"] == "unknown" for route in routes),
-        "routes_with_parameters": sum(route["status"] == "extracted" for route in routes),
-        "routes_with_high_confidence_complete_contract": sum(
-            route["status"] == "extracted" and route["contract_confidence"] == "high"
-            for route in routes
-        ),
-        "top_level_parameters": {**top_level, "total": sum(top_level.values())},
-    }
 
 
 def build_route_params(
@@ -1672,6 +1376,7 @@ def build_route_params(
         "summary": _summary(route_documents),
         "validation": _batch_validation(
             route_documents,
+            comparison_path,
             repo_root=repo_root,
             batch_results_path=batch_results_path,
             drafts_root=drafts_root,

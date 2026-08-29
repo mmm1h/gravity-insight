@@ -79,6 +79,48 @@ class GravitySqlClientTests(unittest.TestCase):
     def tearDown(self) -> None:
         sql_client._CLIENT = None
 
+    def test_extract_rows_characterizes_supported_and_rejected_envelopes(self):
+        direct = [{"value": 1}]
+        cases = (
+            ("direct rows", direct, direct),
+            ("mixed direct rows", [{"value": 1}, [2]], None),
+            ("scalar", "not-tabular", None),
+            (
+                "tabular result",
+                {
+                    "result": {
+                        "columns": [{"name": "first"}, "second"],
+                        "rows": [[1, 2, 3], [4], "ignored"],
+                    }
+                },
+                [{"first": 1, "second": 2}, {"first": 4}],
+            ),
+            (
+                "invalid tabular columns block fallback",
+                {
+                    "result": {"columns": [{"name": ""}], "rows": [[1]]},
+                    "data": [{"fallback": True}],
+                },
+                None,
+            ),
+            ("data rows", {"data": direct}, direct),
+            ("rows rows", {"rows": direct}, direct),
+            ("result rows", {"result": direct}, direct),
+            (
+                "invalid earlier list permits later key",
+                {"data": [1], "rows": direct},
+                direct,
+            ),
+            ("nested data", {"data": {"result": direct}}, direct),
+            ("nested rows", {"rows": {"data": direct}}, direct),
+            ("nested result", {"result": {"rows": direct}}, direct),
+            ("no rows", {"data": {"value": 1}}, None),
+        )
+        for name, payload, expected in cases:
+            with self.subTest(shape=name):
+                self.assertEqual(expected, sql_client._extract_rows(payload))
+        self.assertIs(direct, sql_client._extract_rows(direct))
+
     def test_execute_sql_uses_only_the_fixed_sql_profile_and_envelope(self):
         runtime = _FakeRuntime()
         client = GravityClient(runtime)
@@ -404,23 +446,13 @@ class GravitySqlClientTests(unittest.TestCase):
         self.assertEqual(3, len(local_runtime.calls))
         self.assertEqual([True, False, True, True], [item["ok"] for item in local_results])
 
-    def test_process_sql_limit_covers_direct_calls_across_client_instances(self):
-        lock = threading.Lock()
-        active = 0
-        max_active = 0
+    def test_direct_calls_delegate_concurrency_to_the_runtime_owner(self):
+        rendezvous = threading.Barrier(6, timeout=5)
 
         class ConcurrentRuntime(_FakeRuntime):
             def request(self, *args, **kwargs):
-                nonlocal active, max_active
-                with lock:
-                    active += 1
-                    max_active = max(max_active, active)
-                try:
-                    time.sleep(0.02)
-                    return super().request(*args, **kwargs)
-                finally:
-                    with lock:
-                        active -= 1
+                rendezvous.wait()
+                return super().request(*args, **kwargs)
 
         runtime = ConcurrentRuntime()
         clients = (GravityClient(runtime), GravityClient(runtime))
@@ -433,7 +465,6 @@ class GravitySqlClientTests(unittest.TestCase):
             )
 
         self.assertEqual(6, len(rows))
-        self.assertEqual(2, max_active)
 
     def test_build_sql_client_reuses_one_long_lived_instance(self):
         runtime = _FakeRuntime()

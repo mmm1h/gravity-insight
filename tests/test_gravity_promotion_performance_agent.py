@@ -3,9 +3,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agent_batch import capabilities_many
-from gravity_sdk.agent_capabilities import authoritative_capability_cards
-from gravity_sdk.agent_promotion_performance import (
+from gravity_sdk.agents.batch import capabilities_many
+from gravity_sdk.agents.capabilities import authoritative_capability_cards
+from gravity_sdk.agents.promotion_performance import (
     PROMOTION_PERFORMANCE_PLATFORMS,
     promotion_performance_query,
 )
@@ -101,7 +101,7 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
         self.assertEqual([operation_id], [card["selector"] for card in result["candidates"]])
         self.assertFalse(promotion_performance_query("promotion query"))
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_batch_product_intents_do_not_load_operation_inventory(self, _metadata):
         class NoOperationClient:
             def operation_inventory(self, **_options):

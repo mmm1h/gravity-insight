@@ -4,11 +4,12 @@ Static census input is package data; generated probe output uses workspace state
 from __future__ import annotations
 
 import copy
+import json
 import re
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from gravity_sdk.paths import CENSUS_DATA_ROOT
+from gravity_sdk.paths import CENSUS_DATA_ROOT, CONTRACT_ROOT
 
 from .core import DRAFT_ROOT, OPERATION_ROOT, canonical_fingerprint, read_json
 from .parameter_types import MISSING as _MISSING
@@ -25,6 +26,9 @@ from .promotion import save_draft
 
 
 ROUTE_PARAMETERS_PATH = CENSUS_DATA_ROOT / "route-params.json"
+_PROBER_BINDINGS = json.loads(
+    (CONTRACT_ROOT / "runtime-operation-bindings.json").read_text(encoding="utf-8")
+)["prober"]
 _EXACT_PARENT_CANDIDATES: Mapping[str, tuple[tuple[str, ...], str]] = {
     "ai_id": (("promotion", "ai_trusteeship", "list"), "data.list[].id"),
     "app_id": (("app", "list"), "data.list[].id"),
@@ -36,6 +40,12 @@ _EXACT_PARENT_CANDIDATES: Mapping[str, tuple[tuple[str, ...], str]] = {
     "material_id": (("material", "local", "list"), "data.list[].material_id"),
     "material_ids": (("material", "local", "list"), "data.list[].material_id"),
     "album_id": (("material", "album", "tree"), "data.tree..id"),
+}
+_PLATFORM_PARENT_CANDIDATES = {
+    (str(item["field_name"]), str(item["platform"])): (
+        str(item["operation_id"]), str(item["output_path"]),
+    )
+    for item in _PROBER_BINDINGS["parent_candidates"]
 }
 
 _VALID_PARAMETER_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -164,30 +174,9 @@ def _parent_candidate(
     if exact is not None:
         parent_operation = ".".join(exact[0])
         return (parent_operation, exact[1]) if parent_operation in stable_ids else None
-    if field_name == "promotion_id" and platform == "bytedance":
-        operation_id = "promotion.bytedance.promotion_filter.list"
-        if operation_id in stable_ids:
-            return operation_id, "data.list[].promotion_id"
-    if field_name == "project_id" and platform == "bytedance":
-        operation_id = "promotion.bytedance.project_filter.list"
-        if operation_id in stable_ids:
-            return operation_id, "data.list[].project_id"
-    if field_name == "adgroup_id" and platform == "tencent":
-        operation_id = "promotion.tencent.adgroup_filter.list"
-        if operation_id in stable_ids:
-            return operation_id, "data.list[].adgroup_id"
-    if field_name in {"advertiser_id", "advertiser_ids"} and platform == "bytedance":
-        operation_id = "promotion.bytedance.project_filter.list"
-        if operation_id in stable_ids:
-            return operation_id, "data.list[].advertiser_id"
-    if field_name in {"advertiser_id", "advertiser_ids"} and platform == "tencent":
-        operation_id = "promotion.tencent.adgroup_filter.list"
-        if operation_id in stable_ids:
-            return operation_id, "data.list[].advertiser_id"
-    if field_name == "campaign_id" and platform == "honor":
-        operation_id = "promotion.honor.campaign.list"
-        if operation_id in stable_ids:
-            return operation_id, "data.list[].campaign_id"
+    candidate = _PLATFORM_PARENT_CANDIDATES.get((field_name, platform))
+    if candidate is not None and candidate[0] in stable_ids:
+        return candidate
     if platform:
         operation_id = f"promotion.{platform}.advertiser.list"
         output_names = {
@@ -198,6 +187,53 @@ def _parent_candidate(
         if operation_id in stable_ids and output_name:
             return operation_id, f"data.list[].{output_name}"
     return None
+
+
+def _bind_source_parent_candidates(
+    source: dict[str, Any], stable_ids: set[str]
+) -> list[dict[str, Any]] | None:
+    operation = source["operation"]
+    platform = operation.get("platform")
+    original_parents = copy.deepcopy(operation.get("required_parent", []))
+    contract, existing_parents, prior_automatic, automatic = (
+        automatic_parent_state(source, operation)
+    )
+    bound_fields = {
+        str(item.get("input_field"))
+        for item in existing_parents
+        if isinstance(item, Mapping) and item.get("input_field")
+    }
+    bindings: list[dict[str, Any]] = []
+    for field_name, field in operation.get("input_fields", {}).items():
+        if field_name in bound_fields:
+            continue
+        candidate = _parent_candidate(
+            str(field_name), str(platform) if platform else None, stable_ids
+        )
+        if candidate is None:
+            continue
+        parent_operation, output_path = candidate
+        parent = {
+            "operation_id": parent_operation, "input_field": str(field_name),
+            "output_path": output_path,
+            "selection": "all" if field.get("type") == "array" else "caller_select",
+        }
+        existing_parents.append(parent)
+        operation["live_probe"]["inputs"][str(field_name)] = f"$parent:{field_name}"
+        bindings.append(parent)
+    if automatic:
+        restore_removed_parent_inputs(source, operation, prior_automatic, bindings)
+    operation["required_parent"] = existing_parents
+    if not bindings and not automatic:
+        return None
+    contract["stable_parent_candidates"] = copy.deepcopy(bindings)
+    if original_parents != existing_parents:
+        source["draft"]["route_evidence"].pop("parent_resolution", None)
+    applied = operation["provenance"].get("applied_overrides", [])
+    marker = "stable_parent_candidate_binding"
+    if marker not in applied:
+        operation["provenance"]["applied_overrides"] = [*applied, marker]
+    return bindings
 
 
 def bind_stable_parent_candidates(
@@ -218,56 +254,9 @@ def bind_stable_parent_candidates(
         if selected and path.stem not in selected:
             continue
         source = read_json(path)
-        operation = source["operation"]
-        platform = operation.get("platform")
-        original_parents = copy.deepcopy(operation.get("required_parent", []))
-        contract, existing_parents, prior_automatic, automatic = (
-            automatic_parent_state(source, operation)
-        )
-        bound_fields = {
-            str(item.get("input_field"))
-            for item in existing_parents
-            if isinstance(item, Mapping) and item.get("input_field")
-        }
-        bindings: list[dict[str, Any]] = []
-        for field_name in operation.get("input_fields", {}):
-            if field_name in bound_fields:
-                continue
-            candidate = _parent_candidate(
-                str(field_name), str(platform) if platform else None, stable_ids
-            )
-            if candidate is None:
-                continue
-            parent_operation, output_path = candidate
-            parent = {
-                "operation_id": parent_operation,
-                "input_field": str(field_name),
-                "output_path": output_path,
-                "selection": (
-                    "all"
-                    if operation["input_fields"][field_name].get("type") == "array"
-                    else "caller_select"
-                ),
-            }
-            existing_parents.append(parent)
-            operation["live_probe"]["inputs"][str(field_name)] = (
-                f"$parent:{field_name}"
-            )
-            bindings.append(parent)
-        if automatic:
-            restore_removed_parent_inputs(
-                source, operation, prior_automatic, bindings
-            )
-        operation["required_parent"] = existing_parents
-        if not bindings and not automatic:
+        bindings = _bind_source_parent_candidates(source, stable_ids)
+        if bindings is None:
             continue
-        contract["stable_parent_candidates"] = copy.deepcopy(bindings)
-        if original_parents != existing_parents:
-            source["draft"]["route_evidence"].pop("parent_resolution", None)
-        applied = operation["provenance"].get("applied_overrides", [])
-        marker = "stable_parent_candidate_binding"
-        if marker not in applied:
-            operation["provenance"]["applied_overrides"] = [*applied, marker]
         save_draft(source, draft_root)
         rows.append(
             {"operation_id": path.stem, "bindings": copy.deepcopy(bindings)}

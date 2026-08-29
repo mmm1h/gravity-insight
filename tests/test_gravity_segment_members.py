@@ -12,8 +12,8 @@ from gravity_sdk.segment_members import (
     segment_members,
 )
 from gravity_sdk.segment_spec_cli import run_segment_command
-from gravity_sdk.agent_segment_members import segment_members_query
-from gravity_sdk.agent_intent_routing import multiple_product_intents
+from gravity_sdk.agents.segment_members import segment_members_query
+from gravity_sdk.agents.intent_routing import multiple_product_intents
 
 
 def _member_read(*, truncated=False, status="success"):

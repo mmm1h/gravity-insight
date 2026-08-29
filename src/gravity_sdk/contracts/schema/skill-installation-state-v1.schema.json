@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.skill-installation-state.v1",
+  "type": "object",
+  "required": ["artifact_kind", "schema_version", "lock_digest", "installations", "state_digest"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "skill_installation_state"},
+    "schema_version": {"const": "gravity.skill-installation-state.v1"},
+    "lock_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "installations": {
+      "type": "array", "maxItems": 256,
+      "items": {
+        "type": "object",
+        "required": ["skill_uri", "package_digest", "installed_at", "local_path", "last_verified_at", "health"],
+        "additionalProperties": false,
+        "properties": {
+          "skill_uri": {"type": "string", "minLength": 8, "maxLength": 256},
+          "package_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "installed_at": {"type": "string", "minLength": 20, "maxLength": 32},
+          "local_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+          "last_verified_at": {"type": "string", "minLength": 20, "maxLength": 32},
+          "health": {"enum": ["healthy", "missing", "tampered"]}
+        }
+      }
+    },
+    "state_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

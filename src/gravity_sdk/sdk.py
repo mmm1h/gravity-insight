@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
+from .sdk_agent_runtime import AgentRuntimeSdkMixin
 from .sdk_bootstrap import BootstrapSdkMixin
 from .sdk_saved_analysis import SavedAnalysisSdkMixin
 from .sdk_analysis_default_dictionary import AnalysisDefaultDictionarySdkMixin
@@ -38,6 +39,7 @@ ClientFactory = Callable[[], Any]
 
 
 class GravitySDK(
+    AgentRuntimeSdkMixin,
     BootstrapSdkMixin,
     DerivedMetricsSdkMixin,
     SavedAnalysisSdkMixin,
@@ -66,6 +68,9 @@ class GravitySDK(
         insight_factory: ClientFactory | None = None,
         sql_factory: ClientFactory | None = None,
         workspace: Any | None = None,
+        external_context_providers: Any = (),
+        _runtime_scope_bound: bool = False,
+        _runtime_factory: ClientFactory | None = None,
     ) -> None:
         if insight is not None and insight_factory is not None:
             raise ValueError("pass either insight or insight_factory, not both")
@@ -76,8 +81,12 @@ class GravitySDK(
         self._insight_factory = insight_factory or _default_insight_client
         self._sql_factory = sql_factory or _default_sql_client
         self._workspace = _load_workspace(workspace)
+        self._external_context_providers = tuple(external_context_providers)
         self._insight_lock = threading.Lock()
         self._sql_lock = threading.Lock()
+        self._initialize_agent_runtime_services(
+            _runtime_scope_bound, _runtime_factory
+        )
 
     @classmethod
     def from_env(
@@ -93,7 +102,7 @@ class GravitySDK(
 
         from .sdk_environment import environment_components
 
-        build_insight, build_sql, selected_workspace = environment_components(
+        build_insight, build_sql, selected_workspace, runtime = environment_components(
             allow_experimental=allow_experimental,
             timeout=timeout,
             attempts=attempts,
@@ -104,6 +113,8 @@ class GravitySDK(
             insight_factory=build_insight,
             sql_factory=build_sql,
             workspace=selected_workspace,
+            _runtime_scope_bound=True,
+            _runtime_factory=runtime,
         )
 
     @property
@@ -218,11 +229,12 @@ class GravitySDK(
         platform: str | None = None,
         limit: int = 3,
         continuation: str | None = None,
+        routing: str | None = None, host_selection: Any | None = None,
     ) -> dict[str, Any]:
         """Discover recipes and executable Insight operations in one offline call."""
 
         from .agent import discover_capabilities
-        from .agent_client import DeferredAgentClient
+        from .agents.client import DeferredAgentClient
 
         client = DeferredAgentClient(lambda: self.insight) if str(query or "").strip() else None
         return discover_capabilities(
@@ -232,24 +244,24 @@ class GravitySDK(
             domain=domain,
             platform=platform,
             limit=limit,
-            continuation=continuation,
+            continuation=continuation, routing=routing, host_selection=host_selection,
         )
 
     def capabilities_many(
         self,
         questions: Mapping[str, Any] | Sequence[str | Mapping[str, Any]],
         *,
-        workspace: Any | None = None,
+        workspace: Any | None = None, routing: str | None = None,
     ) -> dict[str, Any]:
         """Discover up to 32 questions from one immutable offline catalog snapshot."""
 
-        from .agent_batch import capabilities_many
-        from .agent_client import DeferredAgentClient
+        from .agents.batch import capabilities_many
+        from .agents.client import DeferredAgentClient
 
         return capabilities_many(
             questions,
             client=DeferredAgentClient(lambda: self.insight),
-            workspace=self._select_workspace(workspace),
+            workspace=self._select_workspace(workspace), routing=routing,
         )
 
     def run(

@@ -1,7 +1,6 @@
 # 当前调研结论
 
-调研是证据层，不是产品合同。下面只保留仍影响当前工程选择的结论；完整来源、失败入口和
-当时样本见[调研归档](archive/research/index.md)，排期以[路线图](roadmap.md)为准。
+调研是证据层，不是产品合同。下面只保留仍影响当前工程选择的结论；完整来源、失败入口和当时样本见[调研归档](archive/research/index.md)，排期以[路线图](roadmap.md)为准。
 
 | 主题 | 当前采用的结论 | 证据 |
 | --- | --- | --- |
@@ -11,6 +10,7 @@
 | 安全治理 | 上游身份、最小投影和写前确认留在确定性边界；工具输出一律作为不可信数据 | [Agent 安全治理](archive/research/agent-security-governance.md) |
 | 协议与交付面 | CLI、SDK、Plan 仍是当前权威面；本地 MCP 只有出现第二个真实消费者和冻结验收题集后才重新评估 | [MCP 可行性](archive/research/mcp-feasibility.md)、[MCP 实现调研](archive/research/mcp-protocol-and-servers.md) |
 | 上游与 Census | 官方开放面和静态 route census 只能证明各自观察范围，不能当作平台能力全集 | [官方 API 面](archive/research/official-api-surface.md)、[Census 完整性](archive/research/census-completeness-audit.md) |
+| ThinkingAI 内容 | 公开主题只保留 metadata/hash；当前 snapshot 每项均有独立标准 Skill 规格或安全替代并由 Team Hub exact lock/阻断证据约束，正文、案例、图表和营销数字不得进入分发工件 | [CT01](../specs/agent-runtime/CT01-thinkingai-inventory.md)、[CT02](../specs/agent-runtime/CT02-thinkingai-representative-skills.md)、[CT03](../specs/agent-runtime/CT03-thinkingai-full-specification.md) |
 
 ## 使用边界
 

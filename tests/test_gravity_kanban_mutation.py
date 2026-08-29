@@ -5,7 +5,7 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agent_kanban_mutation import (
+from gravity_sdk.agents.kanban_mutation import (
     kanban_mutation_capability_inventory,
     kanban_mutation_cards,
 )

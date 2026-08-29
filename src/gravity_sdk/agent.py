@@ -9,13 +9,13 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from .agent_capabilities import (
+from .agents.capabilities import (
     AGENT_SCOPE,
     capability_handoff_cards,
     merge_catalog_handoff_cards,
     should_load_capability_catalog,
 )
-from .agent_handoff import (
+from .agents.handoff import (
     agent_execution_contract, agent_fallbacks,
     apply_workspace_prefix,
     attach_plan_node,
@@ -23,17 +23,17 @@ from .agent_handoff import (
     unify_capability_candidates,
     workspace_prefix,
 )
-from .agent_discovery_policy import safe_discovery_query
-from .agent_export import export_inventory_for_query
-from .agent_sources import (
+from .agents.discovery_policy import safe_discovery_query
+from .agents.export import export_inventory_for_query
+from .agents.sources import (
     catalog_cards,
     candidates_fingerprint,
     discover_operation_cards,
     workspace_catalog_fingerprint,
 )
-from .agent_batch_sources import AgentSourceSnapshot
-from .agent_client import DeferredAgentClient
-from .agent_discovery_support import (
+from .agents.batch_sources import AgentSourceSnapshot
+from .agents.client import DeferredAgentClient
+from .agents.discovery_support import (
     assert_discovery_page,
     finish_discovery_candidates,
     capability_gaps_for_page,
@@ -41,9 +41,9 @@ from .agent_discovery_support import (
     materialize_candidates,
     select_authoritative_cards,
 )
-from .agent_lexical_retrieval import response_match_policy
+from .agents.lexical_retrieval import response_match_policy
 from .errors import InputValidationError
-from .agent_output import ndjson_metadata
+from .agents.output import ndjson_metadata
 from .actionable_error_values import actual_value
 
 
@@ -97,7 +97,7 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
         help="Maximum fully described recipes and operations (default: 3, maximum: 5).",
     )
     command.add_argument("--continuation")
-    from .agent_host_selection import add_host_routing_arguments
+    from .agents.host_selection import add_host_routing_arguments
     add_host_routing_arguments(command)
     command.add_argument(
         "--input",
@@ -108,7 +108,7 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
             "array; cannot be combined with the positional query."
         ),
     )
-    from .agent_input_resolution import add_resolution_argument
+    from .agents.input_resolution import add_resolution_argument
     add_resolution_argument(command)
     command.add_argument(
         "--format",
@@ -121,10 +121,10 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
 def run_agent_command(args: Any, client: Any) -> dict[str, Any]:
     """Return the protocol or a bounded set of executable capability cards."""
 
-    from .agent_host_selection import host_routing_command
+    from .agents.host_selection import host_routing_command
     if (host_result := host_routing_command(args, client)) is not None:
         return host_result
-    from .agent_input_resolution import optional_agent_input_command
+    from .agents.input_resolution import optional_agent_input_command
     selected = optional_agent_input_command(args, client)
     if selected is not None:
         return selected
@@ -149,7 +149,7 @@ def discover_capabilities(
     continuation: str | None = None,
     sources: AgentSourceSnapshot | None = None,
     plan_node_namespace: str | None = None,
-    routing: str = "recognizer",
+    routing: str | None = None,
     host_selection: Any | None = None,
 ) -> dict[str, Any]:
     """Return the same bounded, offline protocol used by ``gravity agent``.
@@ -163,7 +163,7 @@ def discover_capabilities(
             f"actual value: {actual_value(limit)}; " + ("agent limit must be between 1 and 5"),
             field="limit",
         )
-    from .agent_host_selection import host_routing_discovery
+    from .agents.host_selection import host_routing_discovery
     host_result = host_routing_discovery(
         query, client, routing=routing, host_selection=host_selection,
         workspace=workspace, plan_node_namespace=plan_node_namespace,
@@ -211,11 +211,11 @@ def _discover(
                 "an Insight client is required for capability discovery",
                 field="client", next_action="Construct GravityClient.from_env() or pass an Insight client.",
             )
-        from .agent_monetization_guard import (
+        from .agents.monetization_guard import (
             MONETIZATION_DETAIL_RAW_SELECTOR,
             monetization_open_dimension_query,
         )
-        from .agent_app_catalog import app_catalog_operation_query
+        from .agents.app_catalog import app_catalog_operation_query
 
         operation_query = (
             MONETIZATION_DETAIL_RAW_SELECTOR
@@ -231,7 +231,7 @@ def _discover(
         )
         unified = unify_capability_candidates(page.catalog_cards, operations.matches)
         weak_operations = operations.weak
-    from .agent_lexical_retrieval import apply_lexical_fallback
+    from .agents.lexical_retrieval import apply_lexical_fallback
 
     lexical = apply_lexical_fallback(
         request.query, existing_candidates=unified,
@@ -275,8 +275,9 @@ def _discovery_response(
     semantic_context: dict[str, Any] | None,
     lexical_receipt: Mapping[str, Any],
 ) -> dict[str, Any]:
-    from .agent_discovery_support import recognizer_routing_declaration
+    from .agents.discovery_support import recognizer_routing_declaration
 
+    routing = recognizer_routing_declaration(request.query)
     candidates = [
         attach_plan_node(
             apply_workspace_prefix(item, workspace_path),
@@ -304,8 +305,8 @@ def _discovery_response(
         "offline": True,
         "network_called": False,
         "mode": "discover_and_describe",
-        "routing_mode": "recognizer",
-        "routing": recognizer_routing_declaration(request.query),
+        "routing_mode": routing["mode"],
+        "routing": routing,
         "scope": AGENT_SCOPE,
         "query": safe_discovery_query(request.query),
         "limit": request.limit,
@@ -332,7 +333,7 @@ def _discovery_page(
     sources: AgentSourceSnapshot | None = None,
 ) -> _DiscoveryPage:
     workspace_path = resolve_workspace_path(sources.workspace if sources is not None else workspace)
-    from .agent_semantic_context import load_agent_workspace
+    from .agents.semantic_context import load_agent_workspace
     selected_workspace = load_agent_workspace(workspace, sources)
     composite_inventory = (
         sources.composite_inventory if sources is not None else None
@@ -370,7 +371,7 @@ def _discovery_page(
             warnings=warnings,
             sources=sources,
         )
-    from .agent_semantic_context import resolve_semantic_context
+    from .agents.semantic_context import resolve_semantic_context
 
     semantic = resolve_semantic_context(
         query, selected_workspace, selected_cards, client, args.domain, args.platform, sources
@@ -404,8 +405,9 @@ def _discovery_page(
 
 
 def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
-    from .agent_discovery_support import recognizer_routing_declaration
+    from .agents.discovery_support import recognizer_routing_declaration
 
+    routing = recognizer_routing_declaration("")
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -413,8 +415,8 @@ def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
         "offline": True,
         "network_called": False,
         "mode": "protocol",
-        "routing_mode": "recognizer",
-        "routing": recognizer_routing_declaration(""),
+        "routing_mode": routing["mode"],
+        "routing": routing,
         "scope": AGENT_SCOPE,
         "goal": "Known inputs take one call; candidate.call_bound declares unknown-input lower bounds.",
         "workflow": [

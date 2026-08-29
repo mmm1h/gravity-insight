@@ -3,13 +3,13 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gravity-sdk"
-version = "0.3.0"
-description = "Governed Python SDK and CLI for Gravity Insight and custom SQL"
+name = "gravity-insight"
+version = "0.3.2"
+description = "Agent-first governed data-analysis runtime, Python SDK, and CLI for Gravity"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{name = "<PYPI_PACKAGE_OWNER>"}]
-maintainers = [{name = "<PYPI_MAINTAINER>"}]
+authors = [{name = "mmm1h"}]
+maintainers = [{name = "mmm1h"}]
 keywords = ["analytics", "cli", "governance", "gravity", "sdk"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -22,20 +22,29 @@ classifiers = [
 ]
 dependencies = [
   "requests==2.33.0",
+  "sqlglot==30.17.0",
   "tzdata==2026.3",
 ]
 
 [project.urls]
-Repository = "https://github.com/<GITHUB_ORG>/<REPOSITORY>"
-Issues = "https://github.com/<GITHUB_ORG>/<REPOSITORY>/issues"
+Repository = "https://github.com/mmm1h/gravity-sdk"
+Issues = "https://github.com/mmm1h/gravity-sdk/issues"
 
 [project.optional-dependencies]
-dev = ["pytest>=9,<10"]
+control-plane = ["PyNaCl==1.6.0"]
+dev = [
+  "PyNaCl==1.6.0",
+  "pytest>=9,<10",
+  "pytest-xdist>=3.8,<4",
+  "setuptools>=68",
+  "wheel",
+]
 
 [project.scripts]
 gravity = "gravity_sdk.__main__:main"
 gravity-insight = "gravity_sdk.cli_stdio:insight_main"
 gravity-sql = "gravity_sdk.cli_stdio:sql_main"
+gravity-mcp = "gravity_sdk.mcp.server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -48,10 +57,105 @@ include = ["gravity_sdk*"]
 [tool.setuptools.package-data]
 gravity_sdk = [
   "contracts/**/*.json",
+  "skills/**/*.md",
+  "skills/**/*.json",
   "manifests/*.json",
   "census/data/*",
   "governance/*.json",
 ]
 
+[tool.gravity_sdk.agent-package-membership]
+schema-version = 1
+members = [
+  "advertiser_profile.py",
+  "analysis.py",
+  "analysis_default_dictionary.py",
+  "analysis_task.py",
+  "app_catalog.py",
+  "app_public_info.py",
+  "attribution_performance.py",
+  "attribution_user_detail.py",
+  "batch.py",
+  "batch_questions.py",
+  "batch_sources.py",
+  "bilibili_account_performance.py",
+  "business_pulse.py",
+  "call_bound.py",
+  "caller_language.py",
+  "capabilities.py",
+  "catalog.py",
+  "catalog_parity.py",
+  "catalog_refresh.py",
+  "client.py",
+  "company_usage.py",
+  "composite.py",
+  "composite_inventory.py",
+  "custom_audience.py",
+  "custom_metric.py",
+  "dashboard.py",
+  "derived_metrics.py",
+  "discovery_policy.py",
+  "discovery_support.py",
+  "export.py",
+  "fixed_snapshots.py",
+  "gap.py",
+  "handoff.py",
+  "host_catalog.py",
+  "host_selection.py",
+  "input_catalogs.py",
+  "input_resolution.py",
+  "intent_routing.py",
+  "intent_text.py",
+  "kanban_mutation.py",
+  "lexical_rescue.py",
+  "lexical_retrieval.py",
+  "material_asset.py",
+  "material_performance.py",
+  "metadata_onboarding.py",
+  "metadata_search.py",
+  "metadata_template.py",
+  "monetization_aggregate.py",
+  "monetization_guard.py",
+  "multidim.py",
+  "mutation_cards.py",
+  "operation_contract.py",
+  "order_directory.py",
+  "order_trace.py",
+  "output.py",
+  "product_inventory.py",
+  "promotion_performance.py",
+  "realtime_event.py",
+  "realtime_event_catalog.py",
+  "relative_date.py",
+  "report_directory.py",
+  "report_mutation.py",
+  "report_routing.py",
+  "saved_analysis.py",
+  "saved_analysis_mutation.py",
+  "segment.py",
+  "segment_members.py",
+  "segment_snapshot.py",
+  "semantic_compose.py",
+  "semantic_context.py",
+  "semantic_derived.py",
+  "sources.py",
+  "sql_product_discovery.py",
+  "sql_product_gap.py",
+  "table_lineage.py",
+  "title_package.py",
+  "unavailable.py",
+  "unavailable_analysis.py",
+  "unavailable_promotion.py",
+  "unavailable_report.py",
+  "user_journey.py",
+  "vocabulary.py",
+]
+
 [tool.ruff.lint]
 select = ["F"]
+
+[tool.pytest.ini_options]
+addopts = "-n auto --dist load"
+# Transient codex worktrees live at the repository root and duplicate every
+# tests/ basename, which breaks pytest collection with import file mismatch.
+norecursedirs = ["_wt_*", ".venv", "build", "dist", "tmp"]

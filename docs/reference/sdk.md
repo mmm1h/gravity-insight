@@ -13,6 +13,9 @@ gravity = connect(workspace="/path/to/gravity.toml")
 # 与 `gravity agent` 相同的离线发现合同；一次得到 recipe/operation、输入 schema 和下一步。
 capabilities = gravity.capabilities("event analysis")
 
+# 给出严格 selection 而不写 routing 时，同一入口改走 host_catalog。
+selected = gravity.capabilities("event analysis", host_selection=selection)
+
 # 多个未知问题只做一次目录快照；每个候选带可直接组装的 plan_node。
 many = gravity.capabilities_many(
     [
@@ -170,8 +173,8 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `read_many()` | `GravityInsightClient.batch()` |
 | `list_http_receipts()` / `get_http_receipt()` / `export_http_receipts()` | 查询有界、布局无关的 `gravity.http-receipt-query.v1` 诊断合同 |
 | `export_run()` | 现有治理导出状态机：create、poll、download、隐私/schema 校验和原子提交 |
-| `describe_sql_products()` | 安全描述 workspace 产品，不返回 SQL 模板 |
-| `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
+| `describe_sql_products()` / `query_sql_products()` | 安全描述或执行 workspace registered products；不返回 SQL 模板，批量保序隔离失败 |
+| `sql_explorer.inspect()` / `execute()` / `promote()` | 显式 SQLite AST/只读身份/budget 探索与 reviewed product 编译；不自动安装、路由或授予 stable Trust |
 | `compile_analysis_query()` | 把 Analysis Spec v1 编译为稳定 operation input 并运行离线输入校验；带筛选值时预览脱敏且不返回 Plan node；零网络请求 |
 | `analysis_query()` | 使用同一编译器执行 `event/funnel/retention/property/scatter` 稳定查询 |
 | `bootstrap_event_analysis()` | 校验显式 App/日期/物理事件，按需同步单页 metadata 并返回已验证、固定 catalog 指纹的首条事件 Plan；不执行分析 |
@@ -181,7 +184,8 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `segment_members()` | 按稳定 ID 或精确名称返回完整成员行；动态字段由 user-property metadata 发现，历史用 `segment_version_id` |
 | `segment_create_from_analysis()` | 默认零网络预览，显式 `execute=True` 后把一个已验证 funnel step/loss 持久化为带标记分群 |
 | `segment_create_from_rule()` / `segment_create_from_history()` / `segment_create_from_tmp()` | 默认预览，显式确认后从规则、历史版本或临时分群创建带标记分群 |
-| `segment_update()` / `segment_update_rule()` / `segment_refresh()` | 默认预览；执行前读 exact preimage，单次更新且不自动重放 |
+| `segment_update()` / `segment_update_rule()` / `segment_refresh()` / `actions` | direct 方法保持默认预览；`actions` 为 Segment metadata 或 Analysis Artifact→note-only Dashboard 绑定 exact preimage/owner/expiry 与一次性确认 |
+| `experiments` | 离线 `ExperimentHandoffService`；编译 Proposal 与独立 Outcome Handoff，不创建实验、不执行评估 |
 | `segment_delete()` | 默认预览；执行时只删除 detail 读回仍带 SDK 标记的分群 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config；replay 资格固定为 unchecked/null |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
@@ -196,6 +200,13 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `metric_anomaly_playbook_schema()` | 离线返回唯一 playbook 的目标、必要输入、DAG、停止条件与 `allowed_claims` |
 | `prepare_metric_anomaly_playbook()` | 把完整或续跑调查编译为现有 Plan 并做零网络 adapter preflight |
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
+| `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
+| `analysis_artifacts.compile()` / `verify()` / `render_markdown()` / `write_artifact()` / `write_markdown()` | 从正式 Analysis Result 编译目标无关 Artifact，并离线确定性渲染/原子写入 Markdown |
+| `governor.policy()` / `observations(...)`; `execution_variants.list()` / `describe(uri)` / `characterization(product)` / `select(product, pinned_variant_uri=...)` | 零网络读取当前私有 Governor 状态，或检查固定 Variant 证据并作 Trust-gated 纯决策；不执行所选路径 |
+| `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
+| `LocalSkillResolver()` / `RuntimeSkillResolver(workspace=...).resolve(id, journey=...)` | 前者只读/导出 Built-in package；后者 Built-in-first，并只读项目 exact Team lock、CAS 与 Trusted Pack startup state；均不选择或执行 Product |
+| `SemanticRegistry(sources).list()` / `describe(uri)` / `resolve(uri)` / `validate(source)` / `dependencies(uris)` | 确定性编译并离线解析版本化 Business Semantic 与项目 Binding；缺失或冲突不猜测 |
+| `OperatorRegistry()` / `ModelRegistry(sources)` | 离线解析唯一内置 Operator 与显式 Model Artifact；Model 还必须命中 startup trusted digest 才允许生产 claims，Registry 本身不预测 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `fetch_material_asset()` | 从刚读取的已登记素材响应按精确引用完整下载图片/视频；不接受 URL |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
@@ -220,9 +231,14 @@ SQL product 的描述和执行仍使用同一个 workspace。
 需要完整 catalog、validate、probe、分阶段 export 恢复或测试注入时，使用公开属性 `gravity.insight`。
 `gravity.sql` 是兼容专家调用方的低层入口，不应注册给程序化 Agent。
 
+`capabilities(query, routing=None, host_selection=None)` 在没有 selection 时保留 recognizer 地板；
+省略 routing 但给出严格 selection 时走 `host_catalog`。显式 recognizer 不接受 selection，显式
+`host_catalog` 仍要求 selection。
+
 `capabilities_many()` 接受字符串或带稳定 `id` 的对象数组，也接受
 `{"questions":[...]}` wrapper；每次最多 32 个问题，ID 必须唯一。它只扫描一次 Workspace、
-stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。
+stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。问题对象可带与自身
+query 绑定的 `host_selection`；未带 selection 的项仍走 recognizer。
 
 `resolve_capabilities(query, *, known_inputs, workspace=None, domain=None, platform=None, limit=3)` 是
 加法在线入口。`known_inputs` 只接受 `app`、`platforms`、`catalog_policy`：Dashboard/Saved/Segment
@@ -322,11 +338,12 @@ delete_preview = gravity.segment_delete(segment_id)
 deleted = gravity.segment_delete(segment_id, execute=True)
 ```
 
-create 用确定性 marker 做读前幂等检查，并在单次写后通过完整 segment list 和 detail 读回；跨进程
-重名由上游唯一约束返回 caller/2，不会自动重试。delete 的 ownership 只来自执行时的 detail preimage，
-调用方不能通过传 remark 绕过。`segment_update()` 与 `segment_update_rule()` 会保留读到的 marker；
-`segment_refresh()` 可能异步改变成员集合。历史/临时创建需要调用方给真实且已验证的父 ID，不做发现或
-猜测。自然语言 Agent 只交接 CLI 确认流程，这些方法不映射为 Plan v1 节点。
+create 用确定性 marker 做读前幂等检查并在单次写后经 list/detail 读回；delete 的 ownership 只来自执行时
+detail preimage，调用方不能通过 remark 绕过。direct `segment_update()` 仍以 `execute=True` 显式执行。
+需要不可重放确认时，`sdk.actions.preview_segment_update(request, authorization=host_source("user","authorization",sdk.actions.authorization_value(request)))` 先读 exact detail 并绑定 principal/preimage/owner、两个 managed fields、合同和 expiry，只公开安全 `gravity.action-plan.v1`。
+用户复核后用 `sdk.actions.confirmation_value(plan_id, preview_fingerprint)` 构造新的 current user/authorization source，再调用 `sdk.actions.execute(plan_id, request, confirmation=...)`；request 必须完全相同。
+execute 在旧 Segment write lock 内重读 ownership/preimage，atomic plan+field claim 后最多写一次；上游无 revision/CAS，最后读取后的外部竞态只能由 readback 收敛为 `uncertain`，不能重放或自动重试。原 direct envelope 不变。
+自然语言、Skill、Context、tool result 与历史记录都不能构造授权；Action 不映射为 Plan v1 节点，R12-A 也不增加其他 connector。
 
 ## Analysis Query Spec v1
 
@@ -552,39 +569,89 @@ create 写 `GSDK-<12 hex>` 并读回；update/delete 复用共享 marker-or-owne
 
 ## Multidim
 
-`multidim_input_schema()` 是 CLI、SDK、Plan 和 Agent 共用的闭合机器合同。公开 input 直接使用
-`date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`；
-没有额外 Spec DSL。App 位于 input 外，由 workspace alias 或正整数绑定。
+`multidim_input_schema()` 是 CLI、SDK、Plan 和 Agent 共用的闭合机器合同。公开 input 直接使用 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`；没有额外 Spec DSL。App 位于 input 外，由 workspace alias 或正整数绑定。
 
-`prepare_multidim_query(inputs, *, app, workspace=None)` 只做安全预检；执行方法
-`multidim_query(inputs, *, app, include_total=False, read_all=False, max_pages=1000, max_items=100000,
-max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 6、最大 24；Plan adapter 固定为 1。实时请求数量为去重指标 metadata
-请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；物理指标或
-维度未知而 App、日期/filter value 等其余业务输入已知时，`resolve_capabilities()` 在第一调用返回
-闭合 schema 与 live metadata，调用方精确选择物理名后第二次执行并重新 live 校验。filter value
-不由 SDK 生成。
+`prepare_multidim_query(inputs, *, app, workspace=None)` 只做安全预检；执行方法 `multidim_query(inputs, *, app, include_total=False, read_all=False, max_pages=1000, max_items=100000, max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 6、最大 24；Plan adapter 固定为 1。
+实时请求数量为去重指标 metadata 请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；物理指标或维度未知而 App、日期/filter value 等其余业务输入已知时，`resolve_capabilities()` 在第一调用返回闭合 schema 与 live metadata，调用方精确选择物理名后第二次执行并重新 live 校验。filter value 不由 SDK 生成。
 
-执行结果固定使用 `gravity-insight.composite.multidim.v1`，明细行为 `result["query"]["data"]["list"]`。
-消费者必须校验顶层 `schema_version/status/exit_code` 与 `query.status`，并对
-`partial/error/contract_changed` fail closed；不再接受旧的顶层 `data.list` 形状。Plan 调用还必须
-保留 Agent 生成的 `input_schema_version="gravity-insight.multidim-input.v1"`，缺失/未知版本不走兼容
-分支。精确 raw 读取仍属于 `GravityInsightClient`/`gravity run report.multidim.*`，不属于该产品方法。
+执行结果固定使用 `gravity-insight.composite.multidim.v1`，明细行为 `result["query"]["data"]["list"]`。消费者必须校验顶层 `schema_version/status/exit_code` 与 `query.status`，并对 `partial/error/contract_changed` fail closed；不再接受旧的顶层 `data.list` 形状。
+Plan 调用还必须保留 Agent 生成的 `input_schema_version="gravity-insight.multidim-input.v1"`，缺失/未知版本不走兼容分支。精确 raw 读取仍属于 `GravityInsightClient`/`gravity run report.multidim.*`，不属于该产品方法。
 
-多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。
-Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value
-或业务指标口径。
+多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value 或业务指标口径。
 
-## Semantic Compose
+## Journey And Capability Trust
 
-`semantic_compose_input_schema()` 离线返回 `gravity.semantic-compose-input.v1`，并显式列出
-`report.ap-cost-observation@1`、`@2`、`@3` 与 `@4`。`@1` 保持 `report.metric.ap-cost@1`、day/week/total、可选
-click dimension + 必需 join，且过滤器上限为 0。`@2` 增加 dimension-bound `click_company IN` 和
-activate count、pay amount、total ROI 三个 day/week 指标；filter 必须同时选择 click dimension 与 join，
-`ap_cost` 仍允许 day/week/total。`@3` 再增加 9 个已登记 day/week 漏斗、成本、付费人数与收入指标；
-注册数与所有新指标的 total 保持未登记。`@4` 保持 v3 成员面，但将结果声明收窄为执行时点观察；
-编译 canonical bytes 仍确定，同输入跨执行的数值相等性不保证。`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出
-`gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和
-scoped `allowed_claims`。
+`sdk.journeys`、`sdk.capability_trust` 与 `sdk.skill_runtime` 是惰性、缓存且不构造 Insight/SQL client 的窄服务；Core Skill resolver 只组合 Built-in 或 exact locked Team 依赖，以及显式声明并注入的外部 Context，不执行数据：
+
+```python
+journeys = sdk.journeys.list()
+registry = sdk.journeys.verify()
+description = sdk.journeys.describe("analysis.merge2.ap-cost-anomaly-localization")
+readiness = sdk.journeys.can_run(
+    "analysis.merge2.ap-cost-anomaly-localization", request
+)
+result = sdk.journeys.run(
+    "analysis.merge2.ap-cost-anomaly-localization", request
+)
+
+trust = sdk.capability_trust.trust("operation", "app.list")
+validated = sdk.capability_trust.validate(validation_result)
+impact = sdk.capability_trust.impact(capability_impact_request)
+```
+
+当前机器 registry 固定绑定 readable App、event trend、Business Pulse、R01 与预期阻断的 LTV curve-fit 五个 ID；Markdown Journey ledger 仍是丰富人工状态的权威，`verify()` 检查精确 display/status/surface/budget/long-note 绑定。
+`can_run` 返回 `verified|unknown|blocked|invalid`、稳定 reason codes 和自验摘要的 `gravity.execution-snapshot.v1` 对象；snapshot 冻结 Runtime/Journey/Skill package/Project Overlay/Trust/Semantic/Operator/Model/Context/执行合同引用，正式 Analysis Result 使用有序 `context_packs[]` 与这些引用逐项对齐，不含问题、App/日期/hypothesis、Context body 或行值。当前允许 `verified=0`，不能因 operation 有返回行就推断 Product/Composite/Journey 可信。
+
+Operation、Product 和 Composite 分别拥有同层 Stable Contract 与当前 Validation Result。`GravitySDK.from_env()` 把 Validation store 绑定到 environment/principal/credential generation/workspace 隔离后的 state root；直接 `GravitySDK(...)` 只能检查静态合同，即使传入相同路径也不会读取持久 Validation。
+`validate()` 只校验调用方提供的 result 与当前合同/fingerprint/TTL/DQ，不写 store。`impact()` 接受 `gravity.capability-impact-request.v1`，只返回受影响 Capability、Skill 和 Journey identity，不执行、不探测，也不回显 scope key 或私有路径。
+
+R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一 Journey runner；`gravity.project-skill-overlay.v1` 只能绑定项目 Semantic Source、Repo Context Requirement 和 default scope，不能覆盖 Trust/completeness/DQ/claims/privacy/selector/effect/Action authorization。Built-in Skill 的 intrinsic readiness 为 `executable`，Core 当前 readiness 仍由全部依赖决定。
+当前底层完整性为 `unknown`，所以真实合同返回 `blocked/COMPLETENESS_INSUFFICIENT` 并保持零网络；不得由返回行、短页或 `page.has_more` 提升为 complete。测试中的 verified 路径只证明组合合同与既有 executor 及正式 `gravity.analysis-result.v1` 等价，不构成生产完整性证据；完整 snapshot 在执行前后不一致即拒绝结论。
+其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` 失败关闭。
+
+## Analysis Artifact And Markdown
+
+`sdk.analysis_artifacts` 是惰性、缓存、零网络且不构造 Insight/SQL client 的交付服务；根包同时导出 `compile_analysis_artifact`、`validate_analysis_artifact`、`verify_analysis_artifact_source` 与 `render_analysis_artifact_markdown`：
+
+```python
+artifact = sdk.analysis_artifacts.compile(analysis_result)
+sdk.analysis_artifacts.verify(artifact, analysis_result)
+rendering = sdk.analysis_artifacts.render_markdown(artifact)
+json_receipt = sdk.analysis_artifacts.write_artifact(artifact, "tmp/analysis.json")
+markdown_receipt = sdk.analysis_artifacts.write_markdown(artifact, "tmp/analysis.md")
+```
+
+编译入口始终先执行 `compile_analysis_result()`。`gravity.analysis-artifact.v1` 原样保留 source 的 status、scope、findings、claims、hypotheses、limitations、completeness、DQ、evidence level、Context/Receipt references，并以 Result、execution snapshot、Receipt 集合和 Artifact digest 绑定来源；不携带 Context body、完整 execution snapshot 或查询行。
+`metric_uris` / `dimension_uris` 只按显式 URI scheme 投影，`filters` 透明指向 `/scope`。source 没有视觉合同，因此 `visualization.intent=unspecified`，不得按问题、字段名或结论猜图表。
+
+固定上限为 source/Artifact 各 8 MiB、findings 256、sections 8、Markdown UTF-8 1 MiB；超限整体失败且不截断 claims/findings。`gravity.analysis-rendering.v1` 转义所有非固定文本，不生成链接、raw HTML、项目模板或部门措辞，并绑定 Artifact/Result/Receipt/content digest。JSON/Markdown 在完整校验后原子写；Artifact 服务不执行 Plan、查询或 Action。`sdk.actions.preview_dashboard_delivery()` 只接受 `markdown_notes + artifact_scope + single_column`、verified Artifact、resolved Metric/Dimension、Workspace App、有序日期和无 report association 的 owned Dashboard，完整行最多拆为 20 个 4,000 字符 note。
+确认后同一 Action store/claim owner 把 expected preimage 交给既有 `dashboard.notes.replace` write lock，最多写一次并用 marker 读回；request 永不接受 `ui_config`、`report_list` 或 raw Web config。成功 target/Receipts 绑定 Artifact、Result、snapshot、filters、claims、rendering、source/mutation Receipt digest；非 Gravity renderer 不依赖 Dashboard，最终报告语言仍由调用项目负责。
+
+## Adaptive Execution
+
+`sdk.governor.policy()` 返回 `gravity.adaptive-governor-snapshot.v1`：同一 shared Runtime 的当前私有 scope、25-total/24-business/two-SQL hard cap、最多 128 个 waiters 以及 bounded lane limit/circuit/counter/latency；默认 `adaptive`，`GRAVITY_GOVERNOR_MODE=static` 保留固定上限并关闭 AIMD、circuit 与 single-flight。真实 `perform_http_request()` attempt 在计数/HTTP Receipt/R14-A observation 前取得中央 lease；follower/rejection 不生成网络证据，策略不增加 retry，Host limiter 不变，Artifact stream 不合并，Provider RPC 仍只受 R08。查询只呈现 SHA-256 host key 且 `network_called=false`；未绑定 Runtime 返回 `GOVERNOR_SCOPE_UNBOUND`，进程重启清空内存状态。
+`sdk.execution_variants` 只离线处理 `analysis.query.spec:event` 的两个 `gravity.execution-variant.v1` 固定路径：当前 Direct Product 与既有 Plan `analysis_query` adapter。R14-C 的 `gravity.execution-variant-characterization.v1` 四类 value-free corpus 逐项证明九维等价并继续原样返回 `selection_status=disabled_until_r14_d`、`automatic_selection=false`；R14-D 的 `select()` 每次按 exact Characterization → 当前 Product Trust → `GRAVITY_EXECUTION_VARIANT_MODE=automatic|disabled` → 可选 exact pin → 次级目标裁决。非 `stable` Trust 或 disabled 一律返回 canonical Direct fallback，Plan pin 不能绕过硬门；stable exact pin 可选任一路径，stable 自动模式因请求数等价、freshness 同 Trust、无可信 latency/cost 差异且 Direct 本地 topology 更短而选 Direct。`gravity.execution-variant-selection.v1` 提供候选资格、五门 trace、客观事实、reason codes、rollback 与 decision digest；它不执行路径，且仍没有 `execute/register/benchmark` surface，不改变任何 SDK/Plan 路由。
+
+## Skill And Provider Control Planes
+
+```python
+import json
+from pathlib import Path
+from gravity_sdk import CallableProviderTransport, ExternalContextBindingResolver, ExternalContextProvider, GravitySDK, LocalSkillResolver, RuntimeSkillResolver, SkillHubClient, TrustedPackHubClient
+source = json.loads(Path("hub-source.json").read_text(encoding="utf-8"))
+hub = SkillHubClient(".gravity-state", cas_root=".gravity-cas")
+hub.sync(source, repository="/exact/local/git-mirror")
+transport = CallableProviderTransport("host", host_provider_call)
+external = ExternalContextProvider(external_descriptor, transport); sdk = GravitySDK(workspace="gravity.toml", external_context_providers=[external])
+```
+
+`LocalSkillResolver` 只读 Built-in package；`RuntimeSkillResolver` 对 Team identity 要求 tracked/clean `gravity.skills.lock.json`、当前 Runtime 与只读 CAS 完全一致，非 Built-in Operator/全部 Model 另须独立 Trusted Pack lock/state/startup verification。外部 Context 使用 tracked/clean `gravity.external-context.json` 的 exact descriptor/resource requirement，但 Runtime 只匹配调用方显式注入的 `ExternalContextProvider` URI/digest，绝不从项目数据构造 transport、进程、凭据或 list/search fallback；每个资源仅走 R08 `read`，再由同一 R07 Broker 校验 entity/time/authority/sensitivity/freshness/budget/conflict 并删除正文。required gap 只阻断声明 Skill，optional gap 按 `forbidden_without_context` 收窄 claims；Provider 内部网络始终 `not_observable`，R10 MCP Server 仍需独立 trigger。
+
+## Business Semantic 与 Semantic Compose
+
+`SemanticRegistry` 接受 `gravity.semantic-source.v1` mapping 或显式 JSON/TOML 路径，确定性、零网络地执行 `list/describe/resolve/validate/dependencies`；缺失、歧义、冲突、过期和无效定义返回稳定 reason，不扫描 workspace 或执行查询。`semantic_compose_input_schema()` 离线列出 `report.ap-cost-observation@1`～`@4`：`@1` 为 AP cost day/week/total、可选 click dimension + 必需 join 且无过滤；`@2` 增加 `click_company IN` 和 activate/pay/ROI day/week。
+`@3` 再增加 9 个已登记 day/week 漏斗、成本、付费人数与收入指标，注册数与新指标 total 保持未登记；`@4` 保持 v3 成员面但将声明收窄为执行时点观察，编译 canonical bytes 确定但跨执行数值相等性不保证。
+`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出 `gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和 scoped `allowed_claims`。
 
 `semantic_compose(inputs, *, app, max_pages=1000, max_items=100000, workspace=None)` 复用相同编译器，
 再委托既有 Multidim query；adapter 内 worker 固定 1，不叠加调度器。结果为
@@ -614,15 +681,15 @@ receipt = gravity.fetch_material_asset(
     "material_id",
     303,
     "thumbnail",
-    "tmp/thumbnail.jpg",
+    "tmp/thumbnail.jpg", output_root=".",
 )
 ```
 
-方法签名为 `fetch_material_asset(source, source_input, ref_field, ref, role, destination)`。它先执行
-source 对应的已登记 operation，并且只从这次响应的唯一匹配行读取 URL；公开方法没有 URL 参数。
-`destination` 是完整文件的触发条件和最终路径，结果为 `gravity.material-asset.v1` 收据，含大小、
-SHA-256、MIME/magic、完整性和重定向的值无关事实，不含完整 URL。错误分类与 CLI 相同；这是文件
-effect，不进入 Plan v1。
+方法签名为 `fetch_material_asset(source, source_input, ref_field, ref, role, destination, *, output_root=None)`。
+它只从 fresh 已登记 operation 的唯一匹配行读取 URL；公开方法没有 URL 参数，输出在 source read 前绑定 root。
+结果 `gravity.material-asset.v2` 嵌入 `gravity.artifact-transfer.v1`：只返回相对 `local_ref`、大小、
+SHA-256、MIME/extension/magic、同 host 重定向和完整性事实，不含 URL、请求输入或绝对 root；JPEG 上限
+16 MiB、MP4 上限 1 GiB。值无关 HTTP Receipt 引用沿标准 result audit 返回；文件 effect 不进入 Plan v1。
 
 ## Promotion Performance
 
@@ -766,10 +833,9 @@ spec。
 Python callback。若需要测试一个自定义 adapter，应直接使用 `gravity_sdk.plan.execute_plan`
 的依赖注入接口，而不是把自定义执行器注册到 Agent facade。
 
-宿主 LLM 生成的 Plan 使用模块级 `gravity_sdk.execute_host_plan(sdk, host_plan, sources)`，不要直接
-调用 `sdk.execute_plan`。`sources` 由模型外调用方按 `gravity.host-source.v1` 建立；tool result 只能是
+宿主 LLM 生成的 Plan 使用模块级 `gravity_sdk.execute_host_plan(sdk, host_plan, sources)`，不要直接调用 `sdk.execute_plan`。`sources` 由模型外调用方按 `gravity.host-source.v1` 建立；tool result 只能是
 data，SDK contract 提供控制身份，用户 instruction/authorization 提供对象、目的地和两步 mutation
-授权。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。
+授权。可选 `sdk.prepared_plans` 只为 `from_env()`、read-only stable-operation `run` host Plan 保存限时值无关绑定；prepare 和 execute 都重入上述来源边界，执行时须重交 exact Plan/source，其他拓扑继续用原入口。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。`sdk.experiments` 完全离线：`proposal_only|ready_for_review` 都不授权 experiment creation；Outcome Handoff 固定使用另一个 Journey 和后置 evidence window，当前 significance Operator 缺失仍返回独立 blocked readiness，不把 handoff 伪装成 evaluation。
 
 产品选择先调用 `gravity_sdk.host_product_catalog(client)`，把其厂商无关目录和
 `response_schema` 交给宿主，再将完整响应传入
@@ -900,7 +966,7 @@ batch = sql.execute_batch(
 必须自己拥有并审核 SQL 模板，不能把 `execute_sql()` 暴露为任意 SQL 工具。
 `execute_batch()` 会并发提交全部独立项并保持输入顺序；某项本地校验失败或引擎拒绝不会取消已经
 提交的其他项。该接口不伪装成可早停的依赖计划；需要统一失败诊断与有界请求计数时使用受治理的
-`gravity sql query` 产品信封。
+`gravity sql query` 产品信封。独立 `sdk.sql_explorer` 不使用本 facade 或 Gravity 凭据：它只处理显式 `gravity.sql-explorer-request.v1`，用锁定 SQLGlot SQLite AST、数据库 `mode=ro/query_only`、authorizer 和 engine/progress/output budgets 返回固定 exploratory/unknown/no-claims 结果。`promote()` 需要 successful value-free source、外部 review digest 和完整 current `custom-sql` definition，只编译 `gravity.sql-explorer-promotion.v1`；workspace install、同层 Validation、Skill/Journey/看板/Action 仍在边界外。
 
 ## 错误与输出
 

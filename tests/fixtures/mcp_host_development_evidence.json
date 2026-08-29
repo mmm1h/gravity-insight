@@ -1,0 +1,411 @@
+{
+  "schema_version": "gravity.mcp-host-development-evidence.v1",
+  "suite_id": "r10-mcp-host-development-2026-08-29",
+  "suite_sha256": "6cfdaeb0b9df0db16dae991794f1eaf9f5446884ca267d547dff198d8adf3a08",
+  "evaluated_at": "2026-08-29T00:16:51.068029+00:00",
+  "evaluator": {
+    "selector_id": "gravity.schema-aware-lexical-selector.v2",
+    "kind": "offline_schema_aware_lexical_surrogate",
+    "real_host": false,
+    "host_specific_prompt": false,
+    "declared_real_host_versions": [],
+    "limitation": "This suite does not represent Claude Desktop, Cursor, or another real MCP Host run."
+  },
+  "summary": {
+    "case_count": 20,
+    "first_choice_correct": 18,
+    "first_choice_minimum": 18,
+    "first_choice_pass": true,
+    "legal_answers": 18,
+    "legal_answer_minimum": 12,
+    "legal_answer_pass": true,
+    "mcp_rpcs": 120,
+    "internal_http_requests": 0,
+    "production_http_requests": 0
+  },
+  "cases": [
+    {
+      "case_id": "tool-inspect-server",
+      "question": "Inspect the MCP server version, supported protocol, and rollback metadata.",
+      "expected_first_choice": "tool:gravity.inspect:server",
+      "observed_first_choice": "resource:gravity://server/metadata",
+      "first_choice_correct": false,
+      "selection_score": 0.313827,
+      "matched_terms": [
+        "mcp",
+        "metadata",
+        "server"
+      ],
+      "legal_answer": false,
+      "terminal": "first_choice_incorrect",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-inspect-skills",
+      "question": "Inspect the installed Skill metadata before choosing a workflow.",
+      "expected_first_choice": "tool:gravity.inspect:skill",
+      "observed_first_choice": "tool:gravity.inspect:skill",
+      "first_choice_correct": true,
+      "selection_score": 0.750268,
+      "matched_terms": [
+        "inspect",
+        "installed",
+        "metadata",
+        "skill",
+        "workflow"
+      ],
+      "legal_answer": true,
+      "terminal": "success",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-can-run-event-trend",
+      "question": "Can the exact analysis.event-trend Journey run with the current locked inputs?",
+      "expected_first_choice": "tool:gravity.journey_can_run:default",
+      "observed_first_choice": "tool:gravity.journey_can_run:default",
+      "first_choice_correct": true,
+      "selection_score": 0.409798,
+      "matched_terms": [
+        "exact",
+        "inputs",
+        "journey",
+        "run"
+      ],
+      "legal_answer": true,
+      "terminal": "success",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-can-run-example",
+      "question": "Check readiness for the registered analysis.example Journey without executing it.",
+      "expected_first_choice": "tool:gravity.journey_can_run:default",
+      "observed_first_choice": "tool:gravity.journey_can_run:default",
+      "first_choice_correct": true,
+      "selection_score": 0.281452,
+      "matched_terms": [
+        "journey",
+        "readiness",
+        "registered"
+      ],
+      "legal_answer": true,
+      "terminal": "success",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-capability-product",
+      "question": "Describe current same-layer Trust for the product selector analysis.query.spec:event.",
+      "expected_first_choice": "tool:gravity.capability_describe:product",
+      "observed_first_choice": "tool:gravity.capability_describe:product",
+      "first_choice_correct": true,
+      "selection_score": 0.540492,
+      "matched_terms": [
+        "describe",
+        "layer",
+        "product",
+        "same",
+        "selector",
+        "trust"
+      ],
+      "legal_answer": true,
+      "terminal": "success",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-capability-composite",
+      "question": "Read the Trust result for the composite selector composite:business_pulse.",
+      "expected_first_choice": "tool:gravity.capability_describe:composite",
+      "observed_first_choice": "tool:gravity.capability_describe:composite",
+      "first_choice_correct": true,
+      "selection_score": 0.539271,
+      "matched_terms": [
+        "composite",
+        "read",
+        "selector",
+        "trust"
+      ],
+      "legal_answer": true,
+      "terminal": "success",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-execute-locked-journey",
+      "question": "Execute the exact registered analysis.example Journey through its governed Runtime owner.",
+      "expected_first_choice": "tool:gravity.execute:default",
+      "observed_first_choice": "tool:gravity.execute:default",
+      "first_choice_correct": true,
+      "selection_score": 0.671051,
+      "matched_terms": [
+        "exact",
+        "execute",
+        "its",
+        "journey",
+        "owner",
+        "registered",
+        "runtime"
+      ],
+      "legal_answer": true,
+      "terminal": "success",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-export-json",
+      "question": "Export this governed Analysis Result as JSON to a confirmed local destination.",
+      "expected_first_choice": "tool:gravity.export:json",
+      "observed_first_choice": "tool:gravity.export:json",
+      "first_choice_correct": true,
+      "selection_score": 0.817411,
+      "matched_terms": [
+        "analysis",
+        "destination",
+        "export",
+        "governed",
+        "json",
+        "local",
+        "result"
+      ],
+      "legal_answer": true,
+      "terminal": "written",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-export-markdown-unconfirmed",
+      "question": "Prepare a local Markdown export, but do not write anything before explicit confirmation.",
+      "expected_first_choice": "tool:gravity.export:markdown",
+      "observed_first_choice": "tool:gravity.export:markdown",
+      "first_choice_correct": true,
+      "selection_score": 0.466786,
+      "matched_terms": [
+        "confirmation",
+        "explicit",
+        "export",
+        "local",
+        "markdown"
+      ],
+      "legal_answer": true,
+      "terminal": "MCP_INPUT_INVALID",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "tool-context-pack",
+      "question": "Assemble a bounded project repository Context Pack for the current analysis window.",
+      "expected_first_choice": "tool:gravity.context_pack:default",
+      "observed_first_choice": "tool:gravity.context_pack:default",
+      "first_choice_correct": true,
+      "selection_score": 0.601475,
+      "matched_terms": [
+        "assemble",
+        "bounded",
+        "context",
+        "pack",
+        "project"
+      ],
+      "legal_answer": true,
+      "terminal": "available",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-server-metadata",
+      "question": "Open the read-only MCP server metadata Resource.",
+      "expected_first_choice": "resource:gravity://server/metadata",
+      "observed_first_choice": "resource:gravity://server/metadata",
+      "first_choice_correct": true,
+      "selection_score": 0.647489,
+      "matched_terms": [
+        "mcp",
+        "metadata",
+        "read",
+        "resource",
+        "server"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-capability-catalog",
+      "question": "Read the governed Capability catalog Resource.",
+      "expected_first_choice": "resource:gravity://catalog/capabilities",
+      "observed_first_choice": "resource:gravity://catalog/capabilities",
+      "first_choice_correct": true,
+      "selection_score": 1.0,
+      "matched_terms": [
+        "capability",
+        "catalog",
+        "governed",
+        "read",
+        "resource"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-journey-catalog",
+      "question": "Read the catalog of registered Journeys as a Resource.",
+      "expected_first_choice": "resource:gravity://catalog/journeys",
+      "observed_first_choice": "resource:gravity://catalog/journeys",
+      "first_choice_correct": true,
+      "selection_score": 1.0,
+      "matched_terms": [
+        "catalog",
+        "journeys",
+        "read",
+        "registered",
+        "resource"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-skill-catalog",
+      "question": "Read the catalog Resource for installed Built-in Skills.",
+      "expected_first_choice": "resource:gravity://catalog/skills",
+      "observed_first_choice": "resource:gravity://catalog/skills",
+      "first_choice_correct": true,
+      "selection_score": 1.0,
+      "matched_terms": [
+        "built",
+        "catalog",
+        "installed",
+        "read",
+        "resource",
+        "skills"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-workspace-apps",
+      "question": "Which configured workspace App aliases are available in the Resource catalog?",
+      "expected_first_choice": "resource:gravity://workspace/apps",
+      "observed_first_choice": "resource:gravity://workspace/apps",
+      "first_choice_correct": true,
+      "selection_score": 0.602328,
+      "matched_terms": [
+        "aliases",
+        "app",
+        "configured",
+        "resource",
+        "workspace"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-sql-products",
+      "question": "Open the registered SQL product catalog Resource.",
+      "expected_first_choice": "resource:gravity://catalog/sql-products",
+      "observed_first_choice": "resource:gravity://catalog/sql-products",
+      "first_choice_correct": true,
+      "selection_score": 0.746857,
+      "matched_terms": [
+        "catalog",
+        "product",
+        "registered",
+        "resource",
+        "sql"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-receipts",
+      "question": "Read my principal-scoped Runtime receipt page as a Resource.",
+      "expected_first_choice": "resource:gravity://receipts",
+      "observed_first_choice": "resource:gravity://receipts",
+      "first_choice_correct": true,
+      "selection_score": 1.0,
+      "matched_terms": [
+        "page",
+        "principal",
+        "read",
+        "receipt",
+        "resource",
+        "runtime",
+        "scoped"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-saved-analyses",
+      "question": "List saved analyses for the authorized demo App from its Resource directory.",
+      "expected_first_choice": "resource:gravity://apps/demo/saved-analyses",
+      "observed_first_choice": "resource:gravity://apps/{app}/saved-analyses",
+      "first_choice_correct": false,
+      "selection_score": 0.649654,
+      "matched_terms": [
+        "analyses",
+        "app",
+        "authorized",
+        "directory",
+        "resource",
+        "saved"
+      ],
+      "legal_answer": false,
+      "terminal": "first_choice_incorrect",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-table-lineage",
+      "question": "Search the offline table-lineage Resource for publish.",
+      "expected_first_choice": "resource:gravity://metadata/table-lineage/{query}",
+      "observed_first_choice": "resource:gravity://metadata/table-lineage/{query}",
+      "first_choice_correct": true,
+      "selection_score": 0.827899,
+      "matched_terms": [
+        "lineage",
+        "offline",
+        "resource",
+        "search",
+        "table"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    },
+    {
+      "case_id": "resource-analysis-vocabulary",
+      "question": "Search the workspace analysis-vocabulary Resource for event.",
+      "expected_first_choice": "resource:gravity://workspace/analysis-vocabulary/{query}",
+      "observed_first_choice": "resource:gravity://workspace/analysis-vocabulary/{query}",
+      "first_choice_correct": true,
+      "selection_score": 0.764233,
+      "matched_terms": [
+        "analysis",
+        "resource",
+        "search",
+        "vocabulary",
+        "workspace"
+      ],
+      "legal_answer": true,
+      "terminal": "resource_content",
+      "mcp_rpcs": 6,
+      "internal_http_requests": 0
+    }
+  ]
+}

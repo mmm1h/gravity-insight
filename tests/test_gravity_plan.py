@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk.agent import run_agent_command
-from gravity_sdk.agent_batch import capabilities_many
+from gravity_sdk.agents.batch import capabilities_many
 from gravity_sdk.plan import (
     PlanAdapter,
     PlanAdapters,
@@ -213,6 +213,13 @@ class PlanExecutionTests(unittest.TestCase):
         self.assertEqual(result["exit_code"], 4)
         self.assertEqual(result["success_count"], 1)
         self.assertIsNone(result["results"][0]["result"])
+        self.assertEqual(
+            ("PLAN_ADAPTER_EXCEPTION", "adapter_execute", "unexpected_exception"),
+            tuple(
+                result["results"][0]["error"][key]
+                for key in ("code", "stage", "cause")
+            ),
+        )
         self.assertNotIn("hunter2", str(result))
         self.assertNotIn('"message": "token"', str(result))
 
@@ -495,10 +502,36 @@ class PlanExecutionTests(unittest.TestCase):
 
     def test_plan_schema_declares_analysis_query_binding_contract(self):
         analysis = plan_schema()["composites"]["analysis_query"]
-        self.assertEqual(["/app"], analysis["binding_targets"])
-        self.assertIs(False, analysis["spec_binding"])
-        self.assertIn("compare_start", analysis["request_fields"])
-        self.assertIn("compare_end", analysis["request_fields"])
+        self.assertEqual(
+            {
+                "binding_targets": ["/app"],
+                "spec_binding": False,
+                "request_fields": [
+                    "app",
+                    "compare_end",
+                    "compare_start",
+                    "end",
+                    "kind",
+                    "metadata_snapshot",
+                    "name",
+                    "spec",
+                    "start",
+                ],
+            },
+            analysis,
+        )
+
+    def test_analysis_query_contract_constants_are_adapter_reexports(self):
+        from gravity_sdk import plan_analysis_adapter as adapter
+        from gravity_sdk import plan_analysis_contract as contract
+
+        for name in (
+            "ANALYSIS_QUERY_BINDING_TARGETS",
+            "ANALYSIS_QUERY_NAME",
+            "ANALYSIS_QUERY_REQUEST_FIELDS",
+        ):
+            with self.subTest(name=name):
+                self.assertIs(getattr(contract, name), getattr(adapter, name))
 
     def test_analysis_query_rejected_binding_lists_allowed_targets(self):
         workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
@@ -590,7 +623,7 @@ class AgentBatchTests(unittest.TestCase):
     def workspace():
         return SimpleNamespace(recipes={}, products={}, datasources={}, apps={})
 
-    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    @patch("gravity_sdk.agents.batch_sources.search_metadata")
     def test_capabilities_many_scans_sources_once_and_returns_plan_nodes(self, metadata):
         metadata.return_value = {"results": []}
         client = self.Client()
@@ -607,7 +640,7 @@ class AgentBatchTests(unittest.TestCase):
         self.assertTrue(all("complete_collection_count" not in card["allowed_claims"] for card in cards))
         self.assertTrue(all("complete_collection_count" in card["forbidden_claims"] for card in cards))
 
-    @patch("gravity_sdk.agent_batch.capabilities_many")
+    @patch("gravity_sdk.agents.batch.capabilities_many")
     def test_agent_input_routes_to_batch_without_positional_query(self, batch):
         batch.return_value = {"schema_version": "gravity.agent-batch.v1", "ok": True}
         args = SimpleNamespace(

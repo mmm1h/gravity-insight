@@ -1,0 +1,103 @@
+{
+  "schema_version": "gravity.agent-runtime-directive.v1",
+  "directive_id": "gravity-agent-runtime",
+  "version": "v9.3",
+  "status": "approved",
+  "canonical_source": {
+    "repository_path": "architecture-source.md",
+    "sha256": "0ba1cd5069d397bc067d88d21dea76b196f5c33404adba7a6f2322e926abd2ec",
+    "format": "markdown",
+    "retrieval": "repository_relative_to_directive"
+  },
+  "origin": {
+    "file_name": "gravity-agent-runtime_产品方向架构与Codex开发总纲 (1).md",
+    "imported_sha256": "bafee3deeb3268fdfe17845f8e9925a509db1b1a04aa15babc7ce38c01d3a46f",
+    "authority": "provenance_only"
+  },
+  "supersedes": {
+    "version": "v9.2",
+    "sha256": "54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c"
+  },
+  "approval": {
+    "approved_by": "user",
+    "approved_at": "2026-08-21",
+    "scope": "canonical_architecture_source_and_requirement_graph_corrections",
+    "implementation_requires_ready_requirement": true,
+    "program_implementation_authorized_by": "user",
+    "program_implementation_authorized_at": "2026-08-21",
+    "program_implementation_scope": "all indexed requirements after dependencies and machine gates are satisfied",
+    "repeat_requirement_approval_required": false,
+    "internal_delivery_ledger": "requirement_document"
+  },
+  "canonical_source_errata": {
+    "rule": "r17_v9_2_to_v9_3_one_shot_allowlist",
+    "requirement_id": "R17",
+    "authorized_by": "agent_under_standing_owner_delegation",
+    "owner_review": "pending",
+    "transition": {
+      "from_version": "v9.2",
+      "from_sha256": "54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c",
+      "from_git_revision": "24f16c667d80107e4149cf76742eab4ada564197",
+      "to_version": "v9.3"
+    },
+    "one_shot": {
+      "state": "consumed",
+      "reusable": false,
+      "consumed_by": "R17",
+      "consumed_at_checkpoint": "R17-phase-2-core"
+    },
+    "allowed_source_replacements": {
+      "derivation": "ledger_rewrite_actions_at_exact_source_coordinates",
+      "ledger_role": "r17_checked_in_governance_evidence",
+      "ledger_repository_path": "tests/fixtures/agent_module_reference_dispositions.json",
+      "ledger_git_blob": "0fcfa6c85e07c7cc901530ed8c2fe7516203e986",
+      "ledger_sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
+      "ledger_schema_version": "gravity.agent-module-reference-dispositions.v2",
+      "source_file": "specs/agent-runtime/architecture-source.md",
+      "disposition": "rewrite_reference",
+      "required_action_kind": "replace_text",
+      "required_count": 4,
+      "reviewed_at_revision": "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
+    },
+    "allowed_version_metadata_changes": [
+      {"operation":"insert_before","anchor":"## v9.2 修订摘要","text":"## v9.3 修订摘要\n\nfour physical path corrections; no architectural semantic change\n\n","count":1},
+      {"old":"gravity-agent-runtime / v9.2","new":"gravity-agent-runtime / v9.3","count":1},
+      {"old":"唯一架构总纲 v9.2（repository canonical source）","new":"唯一架构总纲 v9.3（repository canonical source）","count":1}
+    ],
+    "requires": [
+      "full_source_bytes_equal_v9_2_baseline_after_exact_allowlist",
+      "update_version_supersedes_digest_and_self_references_atomically",
+      "transition_one_shot_state_from_unconsumed_to_consumed"
+    ],
+    "does_not_authorize": [
+      "reuse_for_any_other_requirement_or_version_transition",
+      "any_source_change_outside_the_exact_allowlist",
+      "architectural_semantic_changes",
+      "a_claim_of_new_or_owner_approval",
+      "implementation_before_the_requirement_is_ready",
+      "release_or_main_promotion"
+    ]
+  },
+  "review_baseline": {
+    "branch": "main",
+    "sha": "b9c029db7f41fa90d04b4e019a892cba25eb9230"
+  },
+  "documentation_baseline": {
+    "branch": "dev",
+    "sha": "0ca8681f5c5206580fac86c1889ba66a3b032453",
+    "requirement": "R03",
+    "status": "fixed_dev"
+  },
+  "requirements_index": "index.json",
+  "active_feature_requirement": null,
+  "next_candidate": null,
+  "main_integration": {
+    "status": "frozen",
+    "development_target": "dev",
+    "unfreeze_requires": [
+      "all_index_requirements_fixed_dev",
+      "integrated_validation_green",
+      "explicit_new_user_approval"
+    ]
+  }
+}

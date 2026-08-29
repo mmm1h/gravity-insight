@@ -5,6 +5,7 @@
 
 | 目标 | 指南 |
 | --- | --- |
+| 从不可变 tag 安装并离线自检 | [Agent 安装契约](installation.md) |
 | 分三层浏览全部本地能力 | [完整目录发现](catalog-discovery.md) |
 | 调用方自己选产品时走宿主臂 | [完整目录发现](catalog-discovery.md) |
 | 十分钟内从本地能力走到第一次真实分析 | [十分钟路径](ten-minute-path.md) |
@@ -15,4 +16,5 @@
 | 用同一分析定义比较两个时期 | [时期对比](period-comparison.md) |
 | 预览并确认执行分群、报表、订阅或 Kanban 写入 | [受治理写入](governed-writes.md) |
 | 声明调用方语义和派生指标 | [调用方语义与派生指标](caller-semantics.md) |
+| 运行 R01 获客消耗异常定位 Journey | [获客消耗异常定位](ap-cost-anomaly-localization.md) |
 | Agent 返回 `capability_gap` | [能力缺口](capability-gap.md) |

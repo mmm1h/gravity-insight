@@ -22,8 +22,7 @@ from .paths import PROJECT_ROOT
 ROOT = PROJECT_ROOT
 RUNTIME_ROOT = Path("src/gravity_sdk")
 METRIC_SCOPE = (
-    "src/gravity_sdk/**/*.py",
-    "src/gravity_sdk/*.py (runtime CLI; excluding compiler.py and quality.py)",
+    "src/gravity_sdk/**/*.py (including compiler.py and quality.py)",
 )
 CONTRACT_ROOT = PACKAGE_CONTRACT_ROOT.relative_to(ROOT)
 MANIFEST_ROOT = PACKAGE_MANIFEST_ROOT.relative_to(ROOT)
@@ -31,8 +30,8 @@ BASELINE_PATH = Path("src/gravity_sdk/governance/quality-baseline.json")
 FILE_SLOC_LIMIT = 500
 FUNCTION_SLOC_LIMIT = 80
 COMPLEXITY_LIMIT = 15
-LEGACY_AST_GROWTH_BUDGET = 50
-BASELINE_VERSION = 2
+BASELINE_VERSION = 3
+PREVIOUS_BASELINE_VERSION = 2
 BASE_REF_ENV = "GRAVITY_QUALITY_BASE_REF"
 _IGNORED_TOKENS = {
     tokenize.ENCODING,
@@ -43,10 +42,12 @@ _IGNORED_TOKENS = {
     tokenize.COMMENT,
     tokenize.ENDMARKER,
 }
-_BUILD_TIME_FILES = {
-    "src/gravity_sdk/compiler.py",
-    "src/gravity_sdk/quality.py",
-}
+_V3_SCOPE_ADDITIONS = frozenset(
+    {
+        "src/gravity_sdk/compiler.py",
+        "src/gravity_sdk/quality.py",
+    }
+)
 _EXIT_CODE_EXEMPTION = "exit-code-guard: allow - "
 _ERROR_CATEGORY_VALUES = frozenset({"caller", "upstream", "local"})
 
@@ -160,63 +161,28 @@ class _ComplexityVisitor(ast.NodeVisitor):
         self.root = root
         self.value = 1
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        if node is self.root:
-            self.generic_visit(node)
-
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        if node is self.root:
-            self.generic_visit(node)
-
-    def visit_Lambda(self, node: ast.Lambda) -> None:
-        if node is self.root:
-            self.generic_visit(node)
-
-    def visit_If(self, node: ast.If) -> None:
-        self.value += 1
-        self.generic_visit(node)
-
-    def visit_IfExp(self, node: ast.IfExp) -> None:
-        self.value += 1
-        self.generic_visit(node)
-
-    def visit_For(self, node: ast.For) -> None:
-        self.value += 1 + bool(node.orelse)
-        self.generic_visit(node)
-
-    visit_AsyncFor = visit_For
-
-    def visit_While(self, node: ast.While) -> None:
-        self.value += 1 + bool(node.orelse)
-        self.generic_visit(node)
-
-    def visit_Try(self, node: ast.Try) -> None:
-        self.value += len(node.handlers) + bool(node.orelse)
-        self.generic_visit(node)
-
-    visit_TryStar = visit_Try
-
-    def visit_BoolOp(self, node: ast.BoolOp) -> None:
-        self.value += max(0, len(node.values) - 1)
-        self.generic_visit(node)
-
-    def visit_Assert(self, node: ast.Assert) -> None:
-        self.value += 1
-        self.generic_visit(node)
-
-    def visit_comprehension(self, node: ast.comprehension) -> None:
-        self.value += 1 + len(node.ifs)
-        self.generic_visit(node)
-
-    def visit_Match(self, node: ast.Match) -> None:
-        defaults = sum(
-            isinstance(case.pattern, ast.MatchAs)
-            and case.pattern.pattern is None
-            and case.pattern.name is None
-            for case in node.cases
-        )
-        self.value += max(0, len(node.cases) - defaults)
-        self.generic_visit(node)
+    def generic_visit(self, node: ast.AST) -> None:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)) and node is not self.root:
+            return
+        if isinstance(node, (ast.If, ast.IfExp, ast.Assert)):
+            self.value += 1
+        elif isinstance(node, (ast.For, ast.AsyncFor, ast.While)):
+            self.value += 1 + bool(node.orelse)
+        elif isinstance(node, (ast.Try, ast.TryStar)):
+            self.value += len(node.handlers) + bool(node.orelse)
+        elif isinstance(node, ast.BoolOp):
+            self.value += len(node.values) - 1
+        elif isinstance(node, ast.comprehension):
+            self.value += 1 + len(node.ifs)
+        elif isinstance(node, ast.Match):
+            defaults = sum(
+                isinstance(case.pattern, ast.MatchAs)
+                and case.pattern.pattern is None
+                and case.pattern.name is None
+                for case in node.cases
+            )
+            self.value += len(node.cases) - defaults
+        super().generic_visit(node)
 
 
 def cyclomatic_complexity(node: ast.AST) -> int:
@@ -240,7 +206,6 @@ class _FunctionCollector(ast.NodeVisitor):
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         start = min(
             [node.lineno, *(item.lineno for item in node.decorator_list)],
-            default=node.lineno,
         )
         end = node.end_lineno or node.lineno
         qualname = ".".join((*self.scope, node.name))
@@ -348,6 +313,7 @@ class _HardcodedExitCodeVisitor(ast.NodeVisitor):
     visit_AsyncFunctionDef = _visit_function
 
 
+# exit-code-guard: allow - this checker necessarily inspects protocol exit literals
 def hardcoded_exit_code_errors(path: str, source: str, tree: ast.Module) -> list[str]:
     """Reject numeric error exits unless a protocol exception gives a reason."""
 
@@ -430,8 +396,6 @@ def inspect_repository(root: Path) -> QualityProfile:
     functions: list[FunctionMetric] = []
     parsed: dict[str, ast.Module] = {}
     for path, source in _python_sources(root, RUNTIME_ROOT):
-        if path in _BUILD_TIME_FILES:
-            continue
         try:
             lines = _source_lines(source)
             tree = _parse(source, path)
@@ -495,7 +459,15 @@ def _legacy_files(document: Mapping[str, Any]) -> dict[str, dict[str, int]]:
             raise ValueError(f"legacy_files.{path} values must be non-negative integers")
         if entry["ast_hard_limit"] < entry["ast_nodes"]:
             raise ValueError(f"legacy_files.{path}.ast_hard_limit is below ast_nodes")
-        if entry["sloc_hard_limit"] < entry["migration_sloc"]:
+        version = document.get("baseline_version")
+        if version == BASELINE_VERSION and entry["ast_hard_limit"] != entry["ast_nodes"]:
+            raise ValueError(
+                f"legacy_files.{path}.ast_hard_limit must equal the v3 AST ratchet"
+            )
+        if (
+            version == PREVIOUS_BASELINE_VERSION
+            and entry["sloc_hard_limit"] < entry["migration_sloc"]
+        ):
             raise ValueError(f"legacy_files.{path}.sloc_hard_limit is below migration_sloc")
         result[str(path)] = entry
     return result
@@ -524,46 +496,58 @@ def _growth_ledger(document: Mapping[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
+def _legacy_file_snapshot(
+    profile: QualityProfile,
+    prior_version: Any,
+    prior_legacy: Mapping[str, Mapping[str, int]],
+) -> dict[str, dict[str, int]]:
+    legacy_files: dict[str, dict[str, int]] = {}
+    for path, sloc in profile.file_sloc.items():
+        if sloc <= FILE_SLOC_LIMIT:
+            continue
+        nodes = profile.file_ast_nodes[path]
+        old = prior_legacy.get(path)
+        if old is None:
+            if prior_version == BASELINE_VERSION:
+                raise ValueError(f"{path}: new file SLOC debt cannot be baselined")
+            if prior_version == PREVIOUS_BASELINE_VERSION and path not in _V3_SCOPE_ADDITIONS:
+                raise ValueError(f"{path}: new file SLOC debt cannot be added during v3 migration")
+            migration_sloc = sloc
+        else:
+            ast_limit = old["ast_nodes"] if prior_version == PREVIOUS_BASELINE_VERSION else old["ast_hard_limit"]
+            if sloc > old["sloc_hard_limit"] and prior_version == BASELINE_VERSION:
+                raise ValueError(f"{path}: SLOC exceeds its immutable legacy hard limit")
+            if nodes > ast_limit:
+                raise ValueError(f"{path}: AST nodes exceed its immutable legacy hard limit")
+            migration_sloc = old["migration_sloc"]
+        legacy_files[path] = {
+            "ast_nodes": nodes,
+            "ast_hard_limit": nodes,
+            "sloc_hard_limit": sloc,
+            "migration_sloc": migration_sloc,
+        }
+    return legacy_files
+
+
 def debt_snapshot(
     profile: QualityProfile,
     prior_baseline: Mapping[str, Any] | None = None,
     growth_reasons: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     reasons = dict(growth_reasons or {})
-    prior_version = prior_baseline.get("baseline_version") if prior_baseline else None
-    prior_legacy = _legacy_files(prior_baseline) if prior_version == BASELINE_VERSION else {}
-    ledger = _growth_ledger(prior_baseline) if prior_version == BASELINE_VERSION else []
-    legacy_files: dict[str, dict[str, int]] = {}
-    for path, sloc in profile.file_sloc.items():
-        if sloc <= FILE_SLOC_LIMIT:
-            continue
-        nodes = profile.file_ast_nodes[path]
-        if prior_version == BASELINE_VERSION:
-            if path not in prior_legacy:
-                raise ValueError(f"{path}: new file SLOC debt cannot be baselined")
-            old = prior_legacy[path]
-            entry = {**old, "ast_nodes": nodes}
-            if nodes > old["ast_nodes"]:
-                reason = reasons.pop(path, "").strip()
-                if not reason:
-                    raise ValueError(f"{path}: AST growth requires --record-ast-growth PATH=REASON")
-                ledger.append(
-                    {"path": path, "from": old["ast_nodes"], "to": nodes, "reason": reason}
-                )
-        else:
-            entry = {
-                "ast_nodes": nodes,
-                "ast_hard_limit": nodes + LEGACY_AST_GROWTH_BUDGET,
-                "sloc_hard_limit": profile.file_lines[path],
-                "migration_sloc": sloc,
-            }
-        if sloc > entry["sloc_hard_limit"]:
-            raise ValueError(f"{path}: SLOC exceeds its immutable legacy hard limit")
-        if nodes > entry["ast_hard_limit"]:
-            raise ValueError(f"{path}: AST nodes exceed its immutable legacy hard limit")
-        legacy_files[path] = entry
     if reasons:
-        raise ValueError(f"AST growth reasons do not match growing legacy files: {sorted(reasons)}")
+        raise ValueError(
+            "AST growth reasons are no longer supported; legacy ratchets may only decrease"
+        )
+    prior_version = prior_baseline.get("baseline_version") if prior_baseline else None
+    if prior_baseline and prior_version not in {PREVIOUS_BASELINE_VERSION, BASELINE_VERSION}:
+        raise ValueError(
+            f"cannot migrate quality baseline version {prior_version!r}; expected "
+            f"{PREVIOUS_BASELINE_VERSION} or {BASELINE_VERSION}"
+        )
+    prior_legacy = _legacy_files(prior_baseline) if prior_baseline else {}
+    ledger = _growth_ledger(prior_baseline) if prior_baseline else []
+    legacy_files = _legacy_file_snapshot(profile, prior_version, prior_legacy)
     function_debt: dict[str, int] = {}
     complexity_debt: dict[str, int] = {}
     for metric in profile.functions:
@@ -618,23 +602,11 @@ def _metric_label(category: str) -> tuple[str, int]:
     }[category]
 
 
-def evaluate_ratchet(profile: QualityProfile, baseline: Mapping[str, Any]) -> list[str]:
-    errors = list(profile.scan_errors)
-    if (
-        baseline.get("baseline_version") != BASELINE_VERSION
-        or baseline.get("scope") != list(METRIC_SCOPE)
-        or baseline.get("thresholds") != _thresholds()
-    ):
-        errors.append(
-            f"quality baseline header is invalid; run `{_baseline_command()}` and commit the result"
-        )
-        return errors
-    try:
-        legacy = _legacy_files(baseline)
-        _growth_ledger(baseline)
-    except (TypeError, ValueError) as exc:
-        errors.append(f"quality baseline legacy ratchet is invalid: {exc}")
-        return errors
+def _legacy_ratchet_errors(
+    profile: QualityProfile,
+    legacy: Mapping[str, Mapping[str, int]],
+    errors: list[str],
+) -> None:
     for path in sorted(set(profile.file_sloc) | set(legacy)):
         sloc = profile.file_sloc.get(path, 0)
         nodes = profile.file_ast_nodes.get(path, 0)
@@ -657,26 +629,29 @@ def evaluate_ratchet(profile: QualityProfile, baseline: Mapping[str, Any]) -> li
                 f"{path}: file SLOC current={sloc}, immutable hard limit="
                 f"{entry['sloc_hard_limit']}; split the file"
             )
+        elif sloc < entry["sloc_hard_limit"]:
+            errors.append(
+                f"{path}: file SLOC improved current={sloc}, old ratchet="
+                f"{entry['sloc_hard_limit']}; tighten and commit the baseline with "
+                f"`{_baseline_command()}`"
+            )
         if nodes > entry["ast_hard_limit"]:
             errors.append(
                 f"{path}: AST nodes current={nodes}, immutable hard limit="
                 f"{entry['ast_hard_limit']}; split the file"
             )
-        elif nodes > entry["ast_nodes"]:
+        elif nodes < entry["ast_hard_limit"]:
             errors.append(
-                f"{path}: AST nodes current={nodes}, ratchet={entry['ast_nodes']}, "
-                f"hard limit={entry['ast_hard_limit']}; record a bounded reason or split the file"
-            )
-        elif nodes < entry["ast_nodes"]:
-            errors.append(
-                f"{path}: AST nodes improved current={nodes}, old ratchet={entry['ast_nodes']}; "
+                f"{path}: AST nodes improved current={nodes}, old ratchet="
+                f"{entry['ast_hard_limit']}; "
                 f"tighten and commit the baseline with `{_baseline_command()}`"
             )
-    for category in (
-        "function_sloc",
-        "cyclomatic_complexity",
-        "operation_literals",
-    ):
+
+
+def _debt_ratchet_errors(
+    profile: QualityProfile, baseline: Mapping[str, Any], errors: list[str]
+) -> None:
+    for category in ("function_sloc", "cyclomatic_complexity", "operation_literals"):
         label, limit = _metric_label(category)
         current = _current_values(profile, category)
         allowed = _flatten_debt(baseline, category)
@@ -700,6 +675,27 @@ def evaluate_ratchet(profile: QualityProfile, baseline: Mapping[str, Any]) -> li
                     f"{key}: {label} improved current={value}, old ratchet={ceiling}, threshold={limit}; "
                     f"tighten and commit the baseline with `{_baseline_command()}`"
                 )
+
+
+def evaluate_ratchet(profile: QualityProfile, baseline: Mapping[str, Any]) -> list[str]:
+    errors = list(profile.scan_errors)
+    if (
+        baseline.get("baseline_version") != BASELINE_VERSION
+        or baseline.get("scope") != list(METRIC_SCOPE)
+        or baseline.get("thresholds") != _thresholds()
+    ):
+        errors.append(
+            f"quality baseline header is invalid; run `{_baseline_command()}` and commit the result"
+        )
+        return errors
+    try:
+        legacy = _legacy_files(baseline)
+        _growth_ledger(baseline)
+    except (TypeError, ValueError) as exc:
+        errors.append(f"quality baseline legacy ratchet is invalid: {exc}")
+        return errors
+    _legacy_ratchet_errors(profile, legacy, errors)
+    _debt_ratchet_errors(profile, baseline, errors)
     if profile.operation_count == 0:
         errors.append("provenance coverage cannot be measured because compilation produced no operations")
     elif profile.provenance_covered != profile.operation_count:
@@ -711,8 +707,12 @@ def evaluate_ratchet(profile: QualityProfile, baseline: Mapping[str, Any]) -> li
     return errors
 
 
-def compare_baselines(current: Mapping[str, Any], base: Mapping[str, Any]) -> list[str]:
-    errors: list[str] = []
+def _baseline_debt_relaxation_errors(
+    current: Mapping[str, Any],
+    base: Mapping[str, Any],
+    migrating: bool,
+    errors: list[str],
+) -> None:
     for category in (
         "function_sloc",
         "cyclomatic_complexity",
@@ -723,58 +723,41 @@ def compare_baselines(current: Mapping[str, Any], base: Mapping[str, Any]) -> li
         base_values = _flatten_debt(base, category)
         for key, value in sorted(current_values.items()):
             old = base_values.get(key)
+            path = key.partition("::")[0]
+            if old is None and migrating and path in _V3_SCOPE_ADDITIONS:
+                continue
             if old is None or value > old:
                 errors.append(
                     f"{key}: baseline relaxation rejected for {label}: "
                     f"base={old if old is not None else 'absent'}, proposed={value}, threshold={limit}; "
                     "a baseline may only decrease or remove debt"
                 )
-    try:
-        current_legacy = _legacy_files(current)
-        current_ledger = _growth_ledger(current)
-    except (TypeError, ValueError) as exc:
-        return [*errors, f"proposed legacy ratchet is invalid: {exc}"]
-    if base.get("baseline_version") == 1:
-        base_files = _flatten_debt(base, "file_sloc")
-        if set(current_legacy) != set(base_files):
-            errors.append("v1 to v2 migration must preserve the exact legacy file set")
-        migration_growth: dict[str, tuple[int, int]] = {}
-        for path, old_sloc in base_files.items():
-            if path not in current_legacy:
-                continue
-            entry = current_legacy[path]
-            if entry["migration_sloc"] != old_sloc:
-                errors.append(f"{path}: v2 migration_sloc must equal v1 baseline {old_sloc}")
-            migration_nodes = entry["ast_hard_limit"] - LEGACY_AST_GROWTH_BUDGET
-            if migration_nodes < 0:
-                errors.append(f"{path}: v2 AST hard limit omits the fixed migration budget")
-            elif entry["ast_nodes"] > migration_nodes:
-                migration_growth[path] = (migration_nodes, entry["ast_nodes"])
-        recorded = {
-            record["path"]: (record["from"], record["to"])
-            for record in current_ledger
-        }
-        if len(recorded) != len(current_ledger) or recorded != migration_growth:
-            errors.append(
-                f"v1 to v2 AST growth ledger mismatch: "
-                f"expected={migration_growth}, recorded={recorded}"
-            )
-        return errors
-    try:
-        base_legacy = _legacy_files(base)
-        base_ledger = _growth_ledger(base)
-    except (TypeError, ValueError) as exc:
-        return [*errors, f"base legacy ratchet is invalid: {exc}"]
-    if current_ledger[: len(base_ledger)] != base_ledger:
-        errors.append("growth ledger is append-only")
-        new_records = current_ledger
-    else:
-        new_records = current_ledger[len(base_ledger) :]
-    growth: dict[str, tuple[int, int]] = {}
+
+
+def _legacy_baseline_relaxation_errors(
+    current_legacy: Mapping[str, Mapping[str, int]],
+    base_legacy: Mapping[str, Mapping[str, int]],
+    migrating: bool,
+    errors: list[str],
+) -> None:
     for path, entry in current_legacy.items():
         old = base_legacy.get(path)
         if old is None:
-            errors.append(f"{path}: adding a new legacy file is rejected")
+            if not migrating or path not in _V3_SCOPE_ADDITIONS:
+                errors.append(f"{path}: adding a new legacy file is rejected")
+            elif entry["migration_sloc"] != entry["sloc_hard_limit"]:
+                errors.append(
+                    f"{path}: newly scanned migration_sloc must equal its SLOC ratchet"
+                )
+            continue
+        if migrating:
+            if entry["migration_sloc"] != old["migration_sloc"]:
+                errors.append(f"{path}: migration_sloc must preserve the v2 value")
+            if entry["ast_hard_limit"] > old["ast_nodes"]:
+                errors.append(
+                    f"{path}: v3 AST ratchet relaxation rejected: "
+                    f"v2 ratchet={old['ast_nodes']}, proposed={entry['ast_hard_limit']}"
+                )
             continue
         for field in ("ast_hard_limit", "sloc_hard_limit"):
             if entry[field] > old[field]:
@@ -784,41 +767,59 @@ def compare_baselines(current: Mapping[str, Any], base: Mapping[str, Any]) -> li
                 )
         if entry["migration_sloc"] != old["migration_sloc"]:
             errors.append(f"{path}: migration_sloc is immutable")
-        if entry["ast_nodes"] > old["ast_nodes"]:
-            growth[path] = (old["ast_nodes"], entry["ast_nodes"])
-    recorded: dict[str, tuple[int, int]] = {}
-    for record in new_records:
-        path = record["path"]
-        if path in recorded:
-            errors.append(f"{path}: at most one AST growth record is allowed per baseline update")
-        recorded[path] = (record["from"], record["to"])
-    if recorded != growth:
-        errors.append(f"AST growth ledger mismatch: expected={growth}, recorded={recorded}")
+
+
+def compare_baselines(current: Mapping[str, Any], base: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    current_version = current.get("baseline_version")
+    base_version = base.get("baseline_version")
+    if current_version != BASELINE_VERSION:
+        return [f"proposed baseline version must be {BASELINE_VERSION}, got {current_version!r}"]
+    if base_version not in {PREVIOUS_BASELINE_VERSION, BASELINE_VERSION}:
+        return [
+            f"base baseline version must be {PREVIOUS_BASELINE_VERSION} or "
+            f"{BASELINE_VERSION}, got {base_version!r}"
+        ]
+    migrating = base_version == PREVIOUS_BASELINE_VERSION
+    _baseline_debt_relaxation_errors(current, base, migrating, errors)
+    try:
+        current_legacy = _legacy_files(current)
+        current_ledger = _growth_ledger(current)
+    except (TypeError, ValueError) as exc:
+        return [*errors, f"proposed legacy ratchet is invalid: {exc}"]
+    try:
+        base_legacy = _legacy_files(base)
+        base_ledger = _growth_ledger(base)
+    except (TypeError, ValueError) as exc:
+        return [*errors, f"base legacy ratchet is invalid: {exc}"]
+    if current_ledger != base_ledger:
+        errors.append("historical growth ledger is immutable in baseline v3")
+    _legacy_baseline_relaxation_errors(current_legacy, base_legacy, migrating, errors)
     return errors
 
 
 def migration_source_errors(
     baseline: Mapping[str, Any], base_sources: Mapping[str, str]
 ) -> list[str]:
-    """Verify that one-time v2 hard limits are frozen from the v1 base source."""
+    """Verify that v3 ratchets do not exceed metrics in the v2 base source."""
 
     errors: list[str] = []
     legacy = _legacy_files(baseline)
-    if set(legacy) != set(base_sources):
-        return ["v2 migration source set does not match legacy_files"]
     for path, source in base_sources.items():
+        if path not in legacy:
+            continue
         entry = legacy[path]
-        expected_sloc_hard_limit = len(source.splitlines())
-        expected_ast_hard_limit = count_ast_nodes(source) + LEGACY_AST_GROWTH_BUDGET
-        if entry["sloc_hard_limit"] != expected_sloc_hard_limit:
+        expected_sloc_hard_limit = count_sloc(source)
+        expected_ast_hard_limit = count_ast_nodes(source)
+        if entry["sloc_hard_limit"] > expected_sloc_hard_limit:
             errors.append(
-                f"{path}: migration SLOC hard limit must equal base physical lines "
-                f"{expected_sloc_hard_limit}"
+                f"{path}: v3 SLOC ratchet {entry['sloc_hard_limit']} exceeds "
+                f"base SLOC {expected_sloc_hard_limit}"
             )
-        if entry["ast_hard_limit"] != expected_ast_hard_limit:
+        if entry["ast_hard_limit"] > expected_ast_hard_limit:
             errors.append(
-                f"{path}: migration AST hard limit must equal base AST nodes plus "
-                f"{LEGACY_AST_GROWTH_BUDGET}"
+                f"{path}: v3 AST ratchet {entry['ast_hard_limit']} exceeds "
+                f"base AST nodes {expected_ast_hard_limit}"
             )
     return errors
 
@@ -925,11 +926,12 @@ def validate(root: Path, *, base_ref: str | None = None) -> list[str]:
         if base is not None:
             try:
                 errors.extend(compare_baselines(baseline, base))
-                if base.get("baseline_version") == 1:
+                if base.get("baseline_version") == PREVIOUS_BASELINE_VERSION:
                     legacy = _legacy_files(baseline)
                     sources = {
                         path: _git_text(root, resolved_ref, path)
                         for path in legacy
+                        if path not in _V3_SCOPE_ADDITIONS
                     }
                     errors.extend(migration_source_errors(baseline, sources))
             except (TypeError, ValueError, UnicodeError, subprocess.CalledProcessError) as exc:
@@ -957,11 +959,26 @@ def _debt_by_file(profile: QualityProfile) -> dict[str, dict[str, int]]:
     return rows
 
 
+def _row_total(rows: Iterable[Mapping[str, int]], key: str) -> int:
+    return sum(row.get(key, 0) for row in rows)
+
+
+def _debt_summary(profile: QualityProfile) -> dict[str, int]:
+    rows = _debt_by_file(profile).values()
+    return {
+        "file_count": sum("file" in row for row in rows),
+        "file_excess": _row_total(rows, "file"),
+        "function_count": _row_total(rows, "functions"),
+        "function_excess": _row_total(rows, "function_excess"),
+        "complexity_count": _row_total(rows, "complexity"),
+        "complexity_excess": _row_total(rows, "complexity_excess"),
+        "operation_literals": len(profile.operation_literals),
+    }
+
+
 def render_markdown(profile: QualityProfile) -> str:
     rows = _debt_by_file(profile)
-    file_excess = sum(max(0, value - FILE_SLOC_LIMIT) for value in profile.file_sloc.values())
-    function_excess = sum(max(0, item.sloc - FUNCTION_SLOC_LIMIT) for item in profile.functions)
-    complexity_excess = sum(max(0, item.complexity - COMPLEXITY_LIMIT) for item in profile.functions)
+    summary = _debt_summary(profile)
     lines = [
         "# Gravity Insight 代码质量门禁",
         "",
@@ -971,15 +988,15 @@ def render_markdown(profile: QualityProfile) -> str:
         "## 口径与结论",
         "",
         f"- runtime/CLI 文件 SLOC 上限 `{FILE_SLOC_LIMIT}`；函数 SLOC 上限 `{FUNCTION_SLOC_LIMIT}`；圈复杂度上限 `{COMPLEXITY_LIMIT}`。",
-        "- SLOC 使用 tokenize 统计非空、非纯注释物理行；存量大文件用格式无关的 Python AST 节点数做增长 ratchet，并保留不可抬升的 SLOC/AST 硬顶。",
+        "- SLOC 使用 tokenize 统计非空、非纯注释物理行；存量大文件的 SLOC 与格式无关 AST 节点数均按当前值建立只降不升的 ratchet。",
         "- 圈复杂度从 1 起计，增加 if/条件表达式、循环及其 else、except/try else、布尔分支、assert、推导式分支和非默认 match case；外层函数不累计嵌套函数。",
         "- operation ID 使用编译器产出的精确 ID 集合做 AST 字符串常量匹配，不使用宽泛正则。",
-        "- 文件/函数范围为递归 `src/gravity_sdk` 与顶层运行时 CLI；build-time compiler/prober 和门禁自身不纳入产品代码债务。",
+        "- 文件/函数范围递归覆盖全部 `src/gravity_sdk/**/*.py`，包括 build-time compiler 与门禁自身。",
         "- 保留蓝图的 500/80/15：500 足以容纳单个完整引擎，80/15 与常用可评审函数边界一致；本仓存量由 ratchet 承接，无需放松绝对阈值。",
         "- 将蓝图的 dotted-string 正则改为编译 catalog 精确 ID 集合：这样既能抓到两段式 `app.list`，也不会把普通模块名或配置路径误判为 operation。",
         f"- 确定性编译：`{profile.compiler_check}`；provenance：`{profile.provenance_covered}/{profile.operation_count}`。",
         f"- 当前 runtime/CLI SLOC `{sum(profile.file_sloc.values())}`、AST 节点 `{sum(profile.file_ast_nodes.values())}`；全 `src/**/*.py` SLOC `{profile.src_python_sloc}`。",
-        f"- 总债务：文件超额 `{file_excess}` SLOC，函数超额 `{function_excess}` SLOC，复杂度超额 `{complexity_excess}`，operation 字面量 `{len(profile.operation_literals)}` 个。",
+        f"- 总债务：文件超额 `{summary['file_excess']}` SLOC，函数超额 `{summary['function_excess']}` SLOC，复杂度超额 `{summary['complexity_excess']}`，operation 字面量 `{len(profile.operation_literals)}` 个。",
         "- operation 字面量没有永久语义白名单；下表全部是上线时存量 ratchet，目标阈值仍为 0。",
         "",
         "## 逐文件债务",
@@ -1033,25 +1050,11 @@ def render_markdown(profile: QualityProfile) -> str:
             "",
             "## Ratchet",
             "",
-            f"机器基线位于 `{BASELINE_PATH.as_posix()}`。新文件继续执行 500/80/15/0；存量大文件的 AST 节点只能下降，或在固定 AST 硬顶内附带 path/from/to/reason 记录增长。SLOC 与 AST 硬顶均不可抬升。下降后运行 `{_baseline_command()}` 收紧基线；CI 与 PR base 比较硬顶和 append-only 增长台账。",
+            f"机器基线位于 `{BASELINE_PATH.as_posix()}`。新文件继续执行 500/80/15/0；存量大文件的 SLOC 与 AST ratchet 只能下降。下降后运行 `{_baseline_command()}` 收紧基线；CI 与 PR base 比较 ratchet，并保持 v2 历史增长台账不可变。",
             "",
         ]
     )
     return "\n".join(lines)
-
-
-def _parse_growth_reasons(values: Sequence[str]) -> dict[str, str]:
-    result: dict[str, str] = {}
-    for value in values:
-        path, separator, reason = value.partition("=")
-        path = path.strip().replace("\\", "/")
-        reason = reason.strip()
-        if not separator or not path or not reason:
-            raise ValueError("--record-ast-growth must be PATH=REASON")
-        if path in result:
-            raise ValueError(f"duplicate AST growth reason for {path}")
-        result[path] = reason
-    return result
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -1062,57 +1065,61 @@ def _parser() -> argparse.ArgumentParser:
     check.add_argument("--base-ref", default=None)
     baseline = subparsers.add_parser("baseline", help="render the current ratchet baseline")
     baseline.add_argument("--write", action="store_true")
-    baseline.add_argument(
-        "--record-ast-growth",
-        action="append",
-        default=[],
-        metavar="PATH=REASON",
-        help="append an audited, hard-limit-bounded AST baseline increase",
-    )
     profile = subparsers.add_parser("profile", help="render the current quality profile")
     profile.add_argument("--json-out", type=Path)
     profile.add_argument("--markdown-out", type=Path)
     return parser
 
 
+def _run_check(root: Path, base_ref: str | None) -> int:
+    errors = validate(root, base_ref=base_ref)
+    if errors:
+        for error in errors:
+            print(f"FAIL P1 gravity-insight-quality: {error}")
+        return 1
+    profile = inspect_repository(root)
+    debt = _debt_summary(profile)
+    print(
+        "PASS gravity-insight-quality: "
+        f"operations={profile.operation_count}, provenance={profile.provenance_covered}, "
+        f"debt_files={debt['file_count']} (+{debt['file_excess']} SLOC), "
+        f"debt_functions={debt['function_count']} (+{debt['function_excess']} SLOC), "
+        f"debt_complexity={debt['complexity_count']} (+{debt['complexity_excess']}), "
+        f"debt_operation_literals={debt['operation_literals']}"
+    )
+    return 0
+
+
+def _run_baseline(root: Path, profile: QualityProfile, write: bool) -> int:
+    path = root / BASELINE_PATH
+    try:
+        prior = _read_json(path) if path.is_file() else None
+        document = debt_snapshot(profile, prior)
+    except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+        print(f"FAIL P1 gravity-insight-quality: cannot update baseline: {exc}", file=sys.stderr)
+        return 1
+    payload = json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if profile.scan_errors:
+        for error in profile.scan_errors:
+            print(f"FAIL P1 gravity-insight-quality: {error}", file=sys.stderr)
+        return 1
+    if write:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(payload, encoding="utf-8", newline="\n")
+        print(f"wrote {path}")
+    else:
+        print(payload, end="")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     root = args.root.resolve()
     if args.command == "check":
-        errors = validate(root, base_ref=args.base_ref)
-        if errors:
-            for error in errors:
-                print(f"FAIL P1 gravity-insight-quality: {error}")
-            return 1
-        profile = inspect_repository(root)
-        print(
-            "PASS gravity-insight-quality: "
-            f"operations={profile.operation_count}, provenance={profile.provenance_covered}, "
-            f"operation_literals={len(profile.operation_literals)} (ratcheted)"
-        )
-        return 0
+        return _run_check(root, args.base_ref)
     profile = inspect_repository(root)
     if args.command == "baseline":
-        path = root / BASELINE_PATH
-        try:
-            prior = _read_json(path) if path.is_file() else None
-            reasons = _parse_growth_reasons(args.record_ast_growth)
-            document = debt_snapshot(profile, prior, reasons)
-        except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
-            print(f"FAIL P1 gravity-insight-quality: cannot update baseline: {exc}", file=sys.stderr)
-            return 1
-        payload = json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-        if profile.scan_errors:
-            for error in profile.scan_errors:
-                print(f"FAIL P1 gravity-insight-quality: {error}", file=sys.stderr)
-            return 1
-        if args.write:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(payload, encoding="utf-8", newline="\n")
-            print(f"wrote {path}")
-        else:
-            print(payload, end="")
-        return 0
+        return _run_baseline(root, profile, args.write)
     document = profile.document()
     payload = json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.json_out:

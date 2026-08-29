@@ -44,10 +44,6 @@ except ModuleNotFoundError:  # pragma: no cover - source-tree execution without 
 
 DEFAULT_ENDPOINT = "https://api-insight.gravity-engine.com/custom_sql/api/sql/execute"
 DEFAULT_ORIGIN = "https://bi.gravity-engine.com"
-# A controlled live probe on 2026-08-08 succeeded at two concurrent SQL reads,
-# while four caused three requests to enter long retry/failure paths.  Keep a
-# separate process-wide SQL ceiling below Insight's browser-aligned limit.
-_SQL_BUSINESS_SLOTS = threading.BoundedSemaphore(MAX_SQL_CONCURRENCY)
 _SQL_PATH = "/custom_sql/api/sql/execute"
 _SQL_TIMEOUT_SECONDS = 300.0
 _AUTH_CODES = frozenset({2001, 10000, 10001})
@@ -102,25 +98,21 @@ class GravityClient:
 
     def execute_sql(self, sql: str) -> list[dict[str, Any]]:
         normalized = _validate_sql(sql)
-        _SQL_BUSINESS_SLOTS.acquire()
         try:
-            try:
-                response = self._runtime.request(
-                    SQL_PROFILE,
-                    "POST",
-                    _SQL_PATH,
-                    json_body={"sql": normalized, "tabId": "1"},
-                    semantic_auth_codes=_AUTH_CODES,
-                    timeout=_SQL_TIMEOUT_SECONDS,
-                )
-            except GravityInsightError:
-                raise
-            except Exception:  # Keep dependency/session details out of errors and tracebacks.
-                raise annotate_sql_failure(
-                    TransportError("Gravity SQL request failed"), kind="transport"
-                ) from None
-        finally:
-            _SQL_BUSINESS_SLOTS.release()
+            response = self._runtime.request(
+                SQL_PROFILE,
+                "POST",
+                _SQL_PATH,
+                json_body={"sql": normalized, "tabId": "1"},
+                semantic_auth_codes=_AUTH_CODES,
+                timeout=_SQL_TIMEOUT_SECONDS,
+            )
+        except GravityInsightError:
+            raise
+        except Exception:  # Keep dependency/session details out of errors and tracebacks.
+            raise annotate_sql_failure(
+                TransportError("Gravity SQL request failed"), kind="transport"
+            ) from None
 
         status_code = getattr(response, "status_code", 200)
         if isinstance(status_code, bool) or not isinstance(status_code, int):
@@ -316,12 +308,9 @@ def _find_status(payload: Any) -> str | None:
     return None
 
 
-def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
-    if isinstance(payload, list):
-        return payload if all(isinstance(row, dict) for row in payload) else None
-    if not isinstance(payload, Mapping):
-        return None
-
+def _extract_tabular_result(
+    payload: Mapping[str, Any],
+) -> tuple[bool, list[dict[str, Any]] | None]:
     result = payload.get("result")
     if isinstance(result, Mapping):
         columns = result.get("columns")
@@ -332,13 +321,20 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
                 for column in columns
             ]
             if not all(isinstance(name, str) and name for name in names):
-                return None
-            return [
-                {names[index]: item for index, item in enumerate(row) if index < len(names)}
+                return True, None
+            return True, [
+                {
+                    names[index]: item
+                    for index, item in enumerate(row)
+                    if index < len(names)
+                }
                 for row in rows
                 if isinstance(row, list)
             ]
+    return False, None
 
+
+def _extract_nested_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]] | None:
     for key in ("data", "rows", "result"):
         value = payload.get(key)
         if isinstance(value, list) and all(isinstance(row, dict) for row in value):
@@ -348,3 +344,14 @@ def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
             if nested is not None:
                 return nested
     return None
+
+
+def _extract_rows(payload: Any) -> list[dict[str, Any]] | None:
+    if isinstance(payload, list):
+        return payload if all(isinstance(row, dict) for row in payload) else None
+    if not isinstance(payload, Mapping):
+        return None
+    tabular_shape, rows = _extract_tabular_result(payload)
+    if tabular_shape:
+        return rows
+    return _extract_nested_rows(payload)

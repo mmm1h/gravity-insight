@@ -11,11 +11,12 @@ gravity agent [query]         单问题发现；--input 批量发现并返回 Pl
 gravity agent-catalog ...     渐进浏览产品、raw operation 与登记 gap
 gravity plan schema|run       预检或执行受控跨能力 DAG
 gravity derive --input        对已有结果执行调用方绑定的本地派生算术
+gravity semantics|operators|models ...  离线检查 Semantic、Operator 与 Model 合同
 gravity metadata <command>    本地物理元数据目录
 gravity find <query>          跨 operation、recipe 与 metadata 检索
 gravity recipe <command>      离线校验 workspace recipe
 gravity run <selector>        单进程解析并执行 recipe 或 operation
-gravity sql <command>         受控 SQL 产品
+gravity sql <command>         登记 SQL 与显式隔离 Explorer
 gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
 gravity analysis defaults     读取一个 App 的 Analysis 默认值字典
@@ -25,7 +26,8 @@ gravity analysis dashboard prepare|run  编译或执行一个看板的受支持�
 gravity analysis dashboard kanban schema|mutate  查看或执行 Kanban 受治理写合同
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis segment members   读取一个分群的完整成员行与逐人属性
-gravity analysis segment create-from-*|update|update-rule|refresh|delete  预览或显式执行受治理分群写
+gravity analysis segment ... / gravity action segment-update|dashboard-delivery ...  direct 分群写或 Artifact→Dashboard 一次性 Action Plan 确认
+gravity experiment propose|outcome-handoff  离线编译实验评审材料或独立 Outcome 交接
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity analysis order directory  读取受控四字段的单日普通订单目录
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
@@ -61,6 +63,7 @@ gravity agent "retention" --limit 3
 gravity agent --input questions.json
 gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output catalog.json
 gravity agent-catalog host
+gravity agent "<query>" --host-selection selection.json
 gravity agent "<query>" --routing host_catalog --host-selection selection.json
 ```
 
@@ -78,7 +81,7 @@ gravity agent "<query>" --routing host_catalog --host-selection selection.json
 operation；每项固定给出目标、返回物、相邻边界、前置输入与 effect。宿主响应必须完整符合
 `gravity.host-product-selection.v1`，只能引用当前 `catalog_ref`。0 个引用由仓库生成固定路由 gap；
 多个引用固定为 `MULTIPLE_INTENTS`；未知字段、旧目录指纹、伪造产品或直接 operation/path 均整体拒绝。
-调用方能产出选择时推荐显式 `--routing host_catalog --host-selection`；未指定 `--routing` 的默认仍是 recognizer，那是够不着宿主时的地板，不是劣等品。识别器若没选中产品、只排出至少 3 条互不相同的 raw operation（短英文目录查找除外；挂在后面的非权威 catalog 卡不算选定），会返回 `UNRANKED_OPERATIONS`（不是错误），`next.argv` 指向 `gravity agent-catalog host`，由宿主走已有 `host_catalog` 路径完成选择。
+调用方能产出选择时直接传 `--host-selection`；省略 `--routing` 且给了 selection 会进入 `host_catalog`，省略两者才走 recognizer 地板。显式 `--routing recognizer` 不接受 selection，显式 `--routing host_catalog` 仍强制要求 selection。识别器若没选中产品、只排出至少 3 条互不相同的 raw operation（短英文目录查找除外；挂在后面的非权威 catalog 卡不算选定），会返回 `UNRANKED_OPERATIONS`（不是错误），`next.argv` 指向 `gravity agent-catalog host`，由宿主走已有 `host_catalog` 路径完成选择。
 
 `category` 的顺序是合同而不是模糊相关性：每个 category 内固定按
 `product → raw_operation → capability_gap` 排序，同类再按 selector 升序。于是第一页先展示 canonical
@@ -87,7 +90,8 @@ operation；每项固定给出目标、返回物、相邻边界、前置输入�
 无 query 时返回两步协议；有 query 时优先返回匹配的 workspace recipe，再用 stable operation
 补足 capability cards；可由 Plan 执行的卡含必填输入、下一条 `argv` 和 `plan_node`，默认 3 个、
 最多 5 个，不访问网络。`--input` 接受最多 32 个唯一 ID 问题的 `{"questions":[...]}`，为
-多个问题复用一次离线目录快照并按输入顺序返回；不能与 positional query、continuation、
+多个问题复用一次离线目录快照并按输入顺序返回；每个问题对象可带与自身 query 绑定的
+`host_selection`，未带的项仍走 recognizer。`--input` 不能与 positional query、continuation、
 domain 或 platform 组合。需要完整 catalog 或 blocked 覆盖信息时再进入
 `operations search/describe`。
 
@@ -115,7 +119,7 @@ catalog 使用 `{"catalog_policy":"refresh"}`；任一来源失败时不发布 s
 
 领域命令如 `analysis`、`multidim`、`promotion`、`materials` 是受控 operation 的易用门面；不确定时从 `operations search` 开始。
 
-`gravity doctor` 先在本地对齐当前源码 `pyproject.toml`、`gravity-sdk` distribution metadata、
+`gravity doctor` 先在本地对齐当前源码 `pyproject.toml`、`gravity-insight` distribution metadata、
 editable 根目录、实际 `gravity_sdk` import 路径和版本。重复 metadata、版本或根目录不一致会在任何
 客户端构造和 `--live` 探针前以 `INSTALL_*` reason code、local exit `4` 和有序
 `reinstall_commands` 失败；检查本身不访问网络。
@@ -265,14 +269,15 @@ App、日期或 filter value；物理指标/维度未知时可在 App 和其余�
 Multidim 不回放 template，不处理图表/透视、layout、收藏、拖拽、成员权限或业务指标语义；这些
 边界也不会通过 `--input` 扩张。
 
-## Semantic Compose
+## Business Semantic 与 Semantic Compose
 
-这是 Multidim 之上的窄受治理组合面，不接受物理字段名或裸 SQL：
+复数 `semantics` 只离线编译显式 JSON/TOML Source，默认仅含 wheel 通用定义；singular `semantic compose` 才是 Multidim 之上的物理执行面。两者都不接受推断的字段或裸 SQL：
 
 ```powershell
 gravity semantic compose --input-schema
 gravity semantic compose --app main --input semantic-request.json --dry-run
 gravity semantic compose --app main --input semantic-request.json
+gravity semantics list|describe|resolve|validate [--source <semantic-source>]
 ```
 
 input 必须逐项引用机器 schema 当前列出的 `{definition_id, version}`，并完整提供
@@ -286,8 +291,7 @@ day/week/total。`@3` 保留上述成员，并增加平台展示/点击/点击�
 降级为两个带时间戳的观察及算术差，不得称为确定性重放、稳定、已结算或因果变化。hour 或新指标 +
 total 等不兼容组合在编译时零网络拒绝。
 
-`--dry-run` 返回 `gravity.semantic-compose-compiled.v1`；同输入 canonical JSON 逐字节相同。执行返回
-`gravity.semantic-compose-result.v1`，包含 `resolution_tier`、定义 ID/版本/指纹、实际成员、生成的
+`--dry-run` 返回 `gravity.semantic-compose-compiled.v1`；同输入 canonical JSON 逐字节相同。执行返回 `gravity.semantic-compose-result.v1`，包含 `resolution_tier`、定义 ID/版本/指纹、实际成员、生成的
 Multidim 查询、验证结果和按 App/窗口/成员收窄的 `allowed_claims`。未知成员、禁止 join 或粒度冲突
 均不会构造客户端。该面复用既有 `report.multidim.query`，没有新增 operation，也不提供 Text-to-SQL。
 
@@ -319,29 +323,29 @@ gravity materials performance --app main --app secondary `
 gravity materials fetch --source local `
   --input '{"page":1,"page_size":20}' `
   --ref-field id --ref <exact-id> --role thumbnail `
-  --output tmp/thumbnail.jpg
+  --output-root . --output tmp/thumbnail.jpg
 
 gravity materials fetch --source bytedance_project `
   --input '{"advertiser_id":<id>,"project_id":<id>}' `
   --ref-field material_id --ref <exact-id> --role file `
-  --output tmp/video.mp4
+  --output-root . --output tmp/video.mp4
 ```
 
 `--input` 只接受所选 source 对应的已登记 operation 输入；命令先重新读取
 `material.local.list` 或 `material.bytedance.project_material.list`，再从这次通过投影的唯一匹配行
-取 `file_url` / `thumbnail_url`。没有 URL 参数，也不会从 `--input` 接受 URL。host、path 和重定向
-目标不枚举、不限制；重定向跟随，收据只返回 initial/final host family、redirect count 和是否跨 host，
-不回显完整 URL。
+取 `file_url` / `thumbnail_url`。没有 URL 参数，也不会从 `--input` 接受 URL。fresh URL 的精确 HTTPS
+host/path 动态成为本次授权，不静态枚举未来 shard；重定向最多 3 次且只能留在同一精确 host，逃逸在
+第二次请求前失败。结果只返回 host family、redirect count，绝不回显 URL。
 
-`--output` 一旦给出就表示调用方确实需要文件，因此执行完整流式下载、Content-Length、已声明
-source size/MD5（存在时）、MIME、magic、SHA-256、fsync 和同目录原子提交；它不是 JSON 输出路径。
-维护探测只读 64-byte Range，不等于产品完整下载。当前 source 合同覆盖已实证的 JPEG thumbnail 与
-MP4 file；其他类型会作为 upstream contract drift 失败关闭，而不是按 host 拒绝。
+`--output` 触发完整文件；`--output-root` 可显式绑定相对目标。省略 root 时相对路径绑定 cwd，旧绝对
+目标绑定其 parent；root、祖先、reparse、overwrite 和扩展名在 source read 前检查，提交时再检查。
+传输强制 Content-Length/stream cap、可用时的 source size/MD5、MIME+extension+magic、SHA-256、fsync
+和原子 no-clobber；JPEG 为 16 MiB，MP4 为 1 GiB。维护 Range probe 不等于产品完整下载。
 
-完整 GET 的 HTTP 200 才是成功；重定向继续跟随。terminal 401/403/404/410/429/5xx 及其他非 200
-状态都属于 upstream/exit 3，其中 408/425/429/5xx 标记 retryable；source/ref/role/input 错误属于
-caller/exit 2，本地 staging/fsync/atomic replace 错误属于 local/exit 4。不会生成
-`not_found/expired/not_cached/permission` 素材状态。
+完整 GET 的 HTTP 200 才成功；terminal 401/403/404/410/429/5xx 及其他非 200 仍为 upstream/exit 3，
+其中 408/425/429/5xx retryable。source/ref/role/input 与 output-root 错误为 caller/exit 2，本地 I/O 为
+local/exit 4；redirect/type/size/digest 以稳定 `ARTIFACT_*` reason code 失败关闭且不留 partial。
+结果为 `gravity.material-asset.v2` + `gravity.artifact-transfer.v1`，不会臆造素材失效状态。
 
 ## Promotion Performance
 
@@ -793,42 +797,36 @@ gravity analysis segment members --app main --ref <id-or-exact-name> `
   --fields 'Name,ClientID,user$level' --max-items 100000
 ```
 
-不传 `--fields` 时返回登记的完整 profile；固定字段可直接填写，动态属性先用
-`gravity metadata properties --app ...` 或 `gravity metadata search ...` 发现 live user-property 名称，
-再原样传给 `--fields`。字段选择在完整上游响应之后本地执行，不发送给上游。历史成员不用日期，
-而用可选 `--segment-version-id`。上游 route 没有可控分页；结果超过 `--max-items` 时 envelope 为
-`partial` / exit 3，不伪造 continuation。schema 为 `gravity-insight.segment-members.v1`。
+不传 `--fields` 时返回登记的完整 profile；固定字段可直接填写，动态属性先用 `gravity metadata properties --app ...` 或 `gravity metadata search ...` 发现 live user-property 名称，再原样传给 `--fields`。字段选择在完整上游响应之后本地执行，不发送给上游。历史成员不用日期，而用可选 `--segment-version-id`。上游 route 没有可控分页；结果超过 `--max-items` 时 envelope 为 `partial` / exit 3，不伪造 continuation。schema 为 `gravity-insight.segment-members.v1`。
 
 ### Segment Mutation v1
 
-分群写只通过领域命令开放；必须先 dry-run，再人工确认执行。dry-run 零网络并展示 exact request 或
-需要执行期 detail preimage 的 request template：
+分群写只通过领域命令开放；必须先 dry-run，再人工确认执行。dry-run 零网络并展示 exact request 或需要执行期 detail preimage 的 request template：
 
 ```powershell
 gravity analysis segment create-from-analysis --spec funnel.json --app main `
   --name SDK测试漏斗 --step 1 --loss --idempotency-key funnel-loss-20260816 --dry-run
 gravity analysis segment create-from-analysis --spec funnel.json --app main `
   --name SDK测试漏斗 --step 1 --loss --idempotency-key funnel-loss-20260816 --execute
-
 gravity analysis segment create-from-rule --spec segment-rule.json --app main --dry-run
 gravity analysis segment update --segment-id <id> --name SDK测试改名 --remark "待验证" --dry-run
-gravity analysis segment update-rule --segment-id <id> --spec segment-rule.json --app main --dry-run
-gravity analysis segment refresh --segment-id <id> --dry-run
-gravity analysis segment delete --segment-id <id> --dry-run
+gravity action segment-update preview --input segment-update-action.json
+gravity action segment-update execute --plan-id <plan-id> --confirm-plan <same-plan-id> `
+  --preview-fingerprint <reviewed-fingerprint> --input segment-update-action.json
+gravity action dashboard-delivery preview --input analysis-dashboard-action.json
+gravity action dashboard-delivery execute --plan-id <plan-id> --confirm-plan <same-plan-id> --preview-fingerprint <reviewed-fingerprint> --input analysis-dashboard-action.json
 ```
+其他 direct 入口包括 `create-from-history/create-from-tmp/update-rule/refresh/delete`；它们同样要求显式 `--dry-run|--execute`，行为不因 Action Plan 改变。`segment-update-action.json` 固定为 `gravity.segment-metadata-update-request.v1` 的 exact `segment_id/name/remark`；`analysis-dashboard-action.json` 固定为 `gravity.analysis-dashboard-request.v1` 的完整 Artifact、`app_id/space_id/dashboard_id` 和唯一 `markdown_notes/artifact_scope/single_column` presentation，二者都不接受自然语言授权，后者也不接受 `ui_config` 或 `report_list`。
 
-其他创建入口为 `create-from-history --source-segment-id ... --version-id ...` 和
-`create-from-tmp --tmp-segment-id ...`；二者同样要求 `--app/--name` 及显式模式。把上述命令的
-`--dry-run` 改为 `--execute` 才发送一次真实写，SDK 不自动重试。
+create 在 `segment_remark` 前缀写入可见 `GSDK-<12 hex>`，完整列表和 detail 读回后才返回 created；同 marker+同名复用已存在对象；direct update/delete 继续在执行时重读 exact detail 并要求 GSDK marker 或 `create_user_id == gravity_id`。Action preview 额外绑定同一 preimage/owner、managed fields、principal 与 expiry。
+Action execute 必须同时重交相同 request、`plan_id`、同值 `--confirm-plan` 和 preview fingerprint；CLI invocation 才构造 current user authorization，tool/Context/Skill/history 不能授权。
+确认先原子 plan+field claim，再由既有 Segment owner 在 write lock 内检查 preimage 并最多写一次；上游没有 revision/CAS，最后读取后的外部竞态只能靠 readback 判为 uncertain，确认不可重放。
+成功为 `gravity.action-execution.v1 status=succeeded` 且 managed-field/ownership readback verified；写后不确定为 `uncertain`、`automatic_retry=false`，不伪装成功。
+原 direct 结果仍是 `gravity-insight.segment-mutation.v1`；Action 不进入 Plan v1，也不改变其他 mutation family。
+### Experiment Proposal / Outcome Handoff
 
-create 在 `segment_remark` 前缀写入可见 `GSDK-<12 hex>`，完整列表和 detail 读回后才返回 created；
-同 marker+同名复用已存在对象，同名冲突为 caller/2。update/update-rule 保留已有 marker。delete
-不信任调用方提供的归属信息，执行时用 exact ID 重新读取 detail：GSDK marker 或
-`create_user_id == gravity_id` 即放行；否则以 `OWNERSHIP_REQUIRED` / exit 2 失败且不发删除，
-错误同时报告对象 ID、owner ID/name/字段、当前 principal 和下一步。结果 schema 为
-`gravity-insight.segment-mutation.v1`。自然语言只返回 dry-run→execute 命令交接，不自动执行，
-这些 effect 不进入 Plan v1。
-
+`gravity experiment propose --input proposal-request.json` 只编译 `gravity.experiment-proposal.v1`：source Analysis Result、planning snapshot、Target Segment、Primary Metric、Guardrails、预计算 power evidence 与 Context assumptions 任一缺失或未对齐时固定为 `proposal_only`；全部满足也只到 `ready_for_review`，`experiment_creation_authorized=false`，不联网、不创建实验。
+`gravity experiment outcome-handoff --input outcome-request.json` 要求 completed external observation 与 Proposal ID/digest 相等，并把后置、非重叠 evidence window 交给固定 `analysis.experiment-outcome-evaluation@1`。`handoff_ready` 只表示交接结构完整；当前 significance Operator 缺失使 Outcome Journey 继续 `blocked/OPERATOR_UNAVAILABLE`，且 `evaluation_performed=false`、同一运行与原建议自证永远禁止。
 ### Segment Rule Spec v1
 
 人群规则人数/占比评估使用紧凑 spec，不需要拼接 FE_CONFIG 或上游 Web JSON：
@@ -1028,6 +1026,63 @@ gravity promotion custom-audiences --max-pages 1000 --max-items 100000
 未登记字段失败关闭。未知入口使用 `gravity agent "custom audience coverage status"
 --domain promotion`，返回无缺失输入的唯一 `composite:custom_audience` 卡。
 
+## Journey And Capability Trust
+
+```powershell
+gravity journey list
+gravity journey verify
+gravity journey describe analysis.merge2.ap-cost-anomaly-localization
+gravity --workspace <project> journey can-run analysis.merge2.ap-cost-anomaly-localization --input <request.json>
+gravity journey impact --input <capability-impact-request.json>
+gravity --workspace <project> journey run analysis.merge2.ap-cost-anomaly-localization --input <request.json>
+
+gravity capabilities trust operation app.list
+gravity capabilities validate --input <capability-validation.json>
+gravity capabilities impact --input <capability-impact-request.json>
+```
+
+`list/verify/describe/can-run/impact` 严格离线；`run` 也先执行同一 readiness，只有
+`can_run_status=verified` 才委托既有 `metric-anomaly-localization@1` / Plan v1 路径。
+当前 `report.multidim.query` 的合同完整性是 `unknown`，低于 Journey 要求的 `complete`，
+因此真实项目 `can-run/run` 返回 exit 4、`blocked` 和
+`COMPLETENESS_INSUFFICIENT`，不构造凭据、不发目标请求、不发布 findings。
+Project Semantic 与 formal Context Requirement 来自调用项目；内置 Repo Provider 按实体、时间、authority、freshness、sensitivity 与预算组装 Pack。
+离线使用 `gravity context project describe|index|search|get|pack|verify --project-id <id>`；search 只返回 role=data 候选，不能自动进入 Pack。
+结果和 Receipt 只携带 URI、revision、hash、digest 与精确 citation，不保存正文；Skill/CLI 不新增 executor、binder、pagination 或 permission 逻辑。
+
+Capability Trust 的 `stable` 必须同时有同层合同、匹配 provider fingerprint、未过期的当前
+Validation、满足要求的 completeness 和 DQ；子 Operation 不能替 Product/Composite 生成
+Trust。`validate` 只验证输入，不写 principal-scoped store。impact 输入固定为：
+
+```json
+{
+  "schema_version": "gravity.capability-impact-request.v1",
+  "changes": [
+    {
+      "identity_kind": "operation",
+      "selector": "report.multidim.query",
+      "change_kind": "provider_fingerprint_changed"
+    }
+  ]
+}
+```
+
+合法 `change_kind` 为 `provider_fingerprint_changed|contract_changed|lifecycle_changed|validation_changed|data_quality_changed`。
+输出只列受影响 Capability、Skill、Journey identity 与稳定 reason code，不执行或重跑生产查询。
+
+## Skills and Team Hub
+
+```powershell
+gravity skills list
+gravity skills show skill://gravity.game/ap-cost-anomaly-localization@1.0.0
+gravity skills export-agent skill://gravity.game/ap-cost-anomaly-localization@1.0.0 --output <parent-directory>
+gravity skills sync --source hub-source.json --repository <local-git-mirror> --state-root <state>
+gravity skills lock --skill skill://org.example/team-analysis@1.0.0 --output gravity.skills.lock.json --state-root <state>
+gravity trusted-packs install-plan --lock gravity.trusted-packs.lock.json --output install-plan.json --state-root <state> --cas-root <cas>
+```
+
+`list/show/export-agent` 继续只读 Built-in package；Team Hub 的 `sync/search/show/resolve/lock/fetch/install/update/verify/audit` 只接受显式本地 Git mirror 或 exact static HTTPS Source，search 不选择版本，lock 不含本机状态，install 只物化无代码 Render Model。Trusted Pack 使用独立 `resolve/lock/fetch/verify/install-plan`、lock 与 CAS；计划只交给外部 Installer，不执行 pip、加载 entry point 或绑定 Runtime，R09B 才负责项目 Team lock。
+
 ## Analysis playbook
 
 ```powershell
@@ -1184,9 +1239,9 @@ workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](
 | `gravity sql status [--json]` | 查看最近 Evidence 与可查询状态 |
 | `gravity sql evidence-preflight` | Evidence 刷新前离线检查 |
 | `gravity sql verify [--date ...] [--publish]` | 验证最近安全自然日；显式发布才更新 Evidence |
-| `gravity sql query <product> ...` | 执行一个或批量已登记聚合产品 |
+| `gravity sql query <product> ...` / `gravity sql explorer inspect|execute|promote --input ...` | 执行已登记聚合产品，或显式运行/晋升隔离 SQLite 探索 |
 
-SQL CLI 不是任意查询入口。它只实现 `custom-sql` 这一种受治理的聚合产品机制；具体产品名称、SQL、App、数据源、输出字段和禁止结论全部由调用项目的 `gravity.toml` 维护。产品层校验固定占位符、聚合隐私、输出投影和行数上限；可选 `output_semantics` 把字段口径带入目录、dry-run 与查询摘要，但不内置业务事件、属性、动态 warning 或指标好坏判断。
+Registered SQL 只实现 `custom-sql` 受治理聚合产品；具体产品名称、SQL、App、数据源、输出字段和禁止结论全部由调用项目的 `gravity.toml` 维护。独立 Explorer 只接受显式 `gravity.sql-explorer-request.v1`：当前唯一方言为 SQLite，SQLGlot AST 单 SELECT、绝对本地 DB、`mode=ro` + `query_only` + authorizer、精确 relation/function/output allowlist、engine/progress/row/cell/byte budget 缺一即阻断；不会接管 registered SQL/Insight 失败。结果固定 `exploratory`、completeness `unknown`、allowed claims 空且零网络；SQL/path/parameters 不进入 session/error/promotion。`promote` 必须显式 review evidence 和 `--output`，只生成带 version/provenance/consumer contract 的普通 workspace product，不自动安装或授予 stable Trust。
 
 未知产品时先运行一次 `gravity sql products`；已知产品直接 `gravity sql query`。query 支持
 单个参数、`--input` 对象、数组或 `requests` wrapper，并以 `--concurrency 1..2` 保序并发。
@@ -1234,7 +1289,7 @@ GRAVITY_PASSWORD=...
 
 token 由 SDK 私有缓存维护。不要把 token、Cookie 或密码作为命令行参数，也不要把本地凭据文件提交到 Git。
 
-Resolver Receipt 写在 workspace 对应的 principal 私有缓存 `state_root/principals/<private-scope>/receipts/`。`<private-scope>` 只存在于磁盘布局，不进入 CLI、公开 envelope、错误或 receipt 内容。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。每个真实 HTTP response 另在同一私有 scope 的 `receipts/http/` 同步写入 `gravity.http-receipt.v1`；它只记录 method、合同 path、operation、status、完成时刻、页码、attempt/retry 和请求 shape fingerprint，不记录请求值、响应体或凭据。该逐请求账本先于本地投影、分页聚合与 composite/Plan envelope 组装完成。
+Resolver Receipt 写在 workspace 对应的 principal 私有缓存 `state_root/principals/<private-scope>/receipts/`。`<private-scope>` 只存在于磁盘布局，不进入 CLI、公开 envelope、错误或 receipt 内容。`gravity.receipt.v1` 的既有 base shape 不变；执行 owner 可按机器 schema 附加值无关的 run/Skill/Journey/Trust/Semantic/Operator/Context/Pagination/DQ/Policy/Action facets，但不得复制请求/结果值、Context 正文、用户行、账号/Scope/凭据或 Action target/preimage/owner/confirmation。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。每个真实 HTTP response 另在同一私有 scope 的 `receipts/http/` 同步写入 `gravity.http-receipt.v1`；它只记录 method、合同 path、operation、status、完成时刻、页码、attempt/retry 和请求 shape fingerprint，不记录请求值、响应体或凭据。该逐请求账本先于本地投影、分页聚合与 composite/Plan envelope 组装完成。
 
 逐 HTTP receipt 默认按数量与时间两者的更严格边界保留：最近 10,000 个且不老于 7 天，活动运行的全部 receipt 例外。可用正整数环境变量 `GRAVITY_HTTP_RECEIPT_MAX_FILES`、`GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS` 覆盖；非法值回退默认值。清理在当前 receipt 同步落盘后 best-effort 执行，失败只写 warning。使用 `gravity receipts list|get|export` 查询稳定只读合同，不要以目录 glob 当作 API。新增未登记响应字段会继续从 `data` 投影省略，但在结果 `result_audit.response_drift` 与对应 receipt 中记录 `gravity.response-drift.v1` 的 JSON Pointer 和观察类型；字段消失或类型变化仍 fail-closed。
 

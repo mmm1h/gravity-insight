@@ -1,0 +1,81 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-attribution",
+      "incremental-channel-value"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Require project-owned conversion, channel, window, refund and currency semantics before comparing attributed value.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use for a bounded payment window when the project has a reviewed attribution definition.",
+    "context_boundary": "Returned dimension labels cannot define attribution, and descriptive allocation does not prove channel causality.",
+    "steps": [
+      "Resolve payment, refund, channel, attribution-window, currency and identity semantics.",
+      "Use the registered anomaly product on matched returned dimensions with preserved coverage state.",
+      "Report attributed observations and unresolved allocation assumptions without incrementality claims."
+    ],
+    "title": "Payment attribution contract review"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://payment-attribution-analysis",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/payment-attribution@1"
+  ],
+  "skill_id": "payment-attribution-analysis",
+  "specification": "specified",
+  "summary": "Analyze returned payment dimensions only under one declared attribution contract.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

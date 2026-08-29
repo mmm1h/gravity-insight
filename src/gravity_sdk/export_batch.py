@@ -122,7 +122,7 @@ def validate_batch_item(value: Any) -> Mapping[str, Any]:
     _reject_unknown_item_fields(value)
     if "input" in value and "inputs" in value:
         raise batch_input_error(
-            f"actual value: {actual_value(item)}; " + ("batch input and inputs aliases cannot be combined; allowed fields: "
+            f"actual value: {actual_value(value)}; " + ("batch input and inputs aliases cannot be combined; allowed fields: "
             + ", ".join(sorted(BATCH_ITEM_FIELDS))),
             "inputs",
         )

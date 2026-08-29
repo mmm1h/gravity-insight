@@ -94,7 +94,7 @@ class SharedRuntimeIsolationTests(unittest.TestCase):
             directory = Path(raw)
             first = get_shared_runtime(env_path=_write_account(directory, "a.env", "fixture-a"))
             second = get_shared_runtime(env_path=_write_account(directory, "b.env", "fixture-b"))
-        for name in ("limiter", "business_slots", "sql_slots"):
+        for name in ("limiter", "governor"):
             self.assertIs(first.__dict__[f"_GravityHttpRuntime__{name}"], second.__dict__[f"_GravityHttpRuntime__{name}"])
 
     def test_default_env_path_stays_the_checkout_local_file(self) -> None:

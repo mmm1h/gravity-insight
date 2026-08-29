@@ -130,15 +130,24 @@ def _multiple_intent_expectation(
             f"case {case.get('case_id')!r} journey_ids do not preserve its target identity; "
             f"actual value: {selected!r}; primary: {primary!r}; unregistered: {invalid!r}"
         )
-    selectors = [candidate_selectors.get(journey_id) for journey_id in selected]
-    missing_products = [
+    selectors: list[str | None] = []
+    for journey_id in selected:
+        selector = candidate_selectors.get(journey_id)
+        gap = targets[journey_id].get("gap")
+        if selector is None and isinstance(gap, Mapping):
+            gap_code = gap.get("gap_code")
+            if isinstance(gap_code, str) and gap_code:
+                selector = f"gap:{gap_code}"
+        selectors.append(selector)
+    missing = [
         journey_id for journey_id, selector in zip(selected, selectors)
-        if selector is None and isinstance(targets[journey_id].get("product"), Mapping)
+        if selector is None
     ]
-    if missing_products:
+    if missing:
         raise ValueError(
-            f"case {case.get('case_id')!r} product journeys lack candidate selectors; "
-            f"actual value: {missing_products!r}; required action: register exact public selectors"
+            f"case {case.get('case_id')!r} journeys lack candidate identities; "
+            f"actual value: {missing!r}; required action: register exact public "
+            "product selectors or frozen target gaps"
         )
     return {
         "route_key": "multiple_intents",

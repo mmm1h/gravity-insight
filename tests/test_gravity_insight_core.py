@@ -2595,6 +2595,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         }
         authorization = policy._prepare_request(operation.operation_id, caller_inputs)
         failure = []
+        finished = threading.Event()
 
         def send():
             try:
@@ -2608,14 +2609,19 @@ class GravityInsightCoreTests(unittest.TestCase):
                 )
             except BaseException as exc:  # pragma: no cover - asserted below
                 failure.append(exc)
+            finally:
+                finished.set()
 
         thread = threading.Thread(target=send)
         thread.start()
-        self.assertTrue(entered.wait(2))
-        caller_inputs["filters"][0]["field"] = "new_sensitive_field"
-        authorization.body["filters"][0]["field"] = "new_sensitive_field"
-        release.set()
-        thread.join(2)
+        try:
+            self.assertTrue(entered.wait(30))
+            caller_inputs["filters"][0]["field"] = "new_sensitive_field"
+            authorization.body["filters"][0]["field"] = "new_sensitive_field"
+        finally:
+            release.set()
+        self.assertTrue(finished.wait(30))
+        thread.join()
         self.assertFalse(thread.is_alive())
         self.assertEqual([], failure)
         self.assertEqual("id", session.wire_body["filters"][0]["field"])
@@ -2776,3 +2782,268 @@ class GravityInsightCoreTests(unittest.TestCase):
                 "token-for-tester@example.invalid",
                 CredentialProvider(path, environ={}, persist=True, login=login).get().token,
             )
+
+
+class CredentialDecisionTests(unittest.TestCase):
+    future = NOW + timedelta(days=2)
+    expired = NOW - timedelta(days=2)
+
+    def provider(self, **kwargs):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        return CredentialProvider(
+            Path(directory.name) / ".env.gravity.local",
+            environ={"GRAVITY_USERNAME": "user", "GRAVITY_PASSWORD": "password"},
+            clock=lambda: NOW,
+            persist=False,
+            **kwargs,
+        )
+
+    @staticmethod
+    def payload(**user):
+        return {"code": 0, "data": {"day": 3, "user": user}}
+
+    def test_login_token_priority_stays_fail_closed(self):
+        from gravity_sdk.errors import TransportError
+
+        provider = self.provider()
+        for key, lower_key in (("Authorization", "authorization"), ("authorization", "token")):
+            with self.subTest(key=key, state="empty"):
+                credential = provider._credential_from_login(
+                    self.payload(**{key: "", lower_key: "lower-token"})
+                )
+                self.assertEqual("lower-token", credential.token)
+            with self.subTest(key=key, state="malformed"):
+                with self.assertRaisesRegex(
+                    TransportError, "Gravity login did not return an authorization token"
+                ):
+                    provider._credential_from_login(
+                        self.payload(**{key: 123, lower_key: "lower-token"})
+                    )
+
+    def test_login_envelope_failures_keep_their_error_classes(self):
+        from gravity_sdk.errors import AuthenticationError, TransportError
+
+        provider = self.provider()
+        cases = (
+            ({"code": 401}, AuthenticationError, "Gravity login was rejected"),
+            ({"code": 0, "data": []}, TransportError, "Gravity login returned an invalid envelope"),
+            ({"code": 0, "data": {"user": []}}, TransportError, "Gravity login did not return a user context"),
+            (self.payload(), TransportError, "Gravity login did not return an authorization token"),
+        )
+        for payload, error_type, message in cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(error_type, message):
+                    provider._credential_from_login(payload)
+
+    def test_login_expiry_priority_preserves_malformed_and_expired_semantics(self):
+        provider = self.provider()
+        malformed = provider._credential_from_login(
+            {
+                "code": 0,
+                "data": {
+                    "day": 3,
+                    "expires_at": self.future.isoformat(),
+                    "user": {"Authorization": "token", "expires_at": "not-a-date"},
+                },
+            }
+        )
+        expired = provider._credential_from_login(
+            self.payload(Authorization="token", expires_at=self.expired.isoformat())
+        )
+        self.assertEqual(NOW + timedelta(days=3), malformed.expires_at)
+        self.assertEqual(self.expired, expired.expires_at)
+
+    def test_configured_malformed_expiry_cannot_become_unbounded(self):
+        from gravity_sdk.errors import CredentialError
+
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name) / ".env.gravity.local"
+        with self.assertRaisesRegex(CredentialError, "credential expiry is invalid"):
+            CredentialProvider(
+                path,
+                environ={
+                    "GRAVITY_AUTH_TOKEN": "opaque-token",
+                    "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI": "not-a-datetime",
+                },
+                clock=lambda: NOW,
+                persist=False,
+            ).get()
+
+        exp = int(self.future.timestamp())
+        jwt_body = (
+            base64.urlsafe_b64encode(json.dumps({"exp": exp}).encode())
+            .decode()
+            .rstrip("=")
+        )
+        credential = CredentialProvider(
+            path,
+            environ={
+                "GRAVITY_AUTH_TOKEN": f"header.{jwt_body}.signature",
+                "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI": "not-a-datetime",
+            },
+            clock=lambda: NOW,
+            persist=False,
+        ).get()
+        self.assertEqual(datetime.fromtimestamp(exp, timezone.utc), credential.expires_at)
+
+    def test_login_malformed_day_gets_conservative_one_day_expiry(self):
+        provider = self.provider(
+            login=lambda *_: {
+                "code": 0,
+                "data": {"day": "not-a-day", "user": {"Authorization": "token"}},
+            }
+        )
+        self.assertEqual(NOW + timedelta(days=1), provider.get().expires_at)
+
+        provider = self.provider(
+            login=lambda *_: {
+                "code": 0,
+                "data": {
+                    "day": "not-a-day",
+                    "expires_at": self.future.isoformat(),
+                    "user": {"Authorization": "token"},
+                },
+            }
+        )
+        self.assertEqual(self.future, provider.get().expires_at)
+
+    def test_malformed_jwt_exp_requires_an_independent_expiry(self):
+        from gravity_sdk.errors import CredentialError, TransportError
+
+        jwt_body = base64.urlsafe_b64encode(
+            json.dumps({"exp": "not-a-number"}).encode()
+        ).decode().rstrip("=")
+        token = f"header.{jwt_body}.signature"
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        with self.assertRaisesRegex(CredentialError, "credential expiry is invalid"):
+            CredentialProvider(
+                Path(directory.name) / ".env.gravity.local",
+                environ={"GRAVITY_AUTH_TOKEN": token},
+                clock=lambda: NOW,
+                persist=False,
+            ).get()
+
+        provider = self.provider(
+            login=lambda *_: self.payload(Authorization=token)
+        )
+        with self.assertRaisesRegex(TransportError, "credential expiry is invalid"):
+            provider.get()
+
+        provider = self.provider(
+            login=lambda *_: {
+                "code": 0,
+                "data": {
+                    "day": 3,
+                    "expires_at": self.future.isoformat(),
+                    "user": {"Authorization": token},
+                },
+            }
+        )
+        self.assertEqual(self.future, provider.get().expires_at)
+
+    def test_get_uses_only_usable_cached_credentials(self):
+        login_calls = []
+
+        def login(_username, _password):
+            login_calls.append("login")
+            return self.payload(Authorization="login-token")
+
+        cases = (
+            (Credential("", self.future), "login-token", 1),
+            (Credential("malformed-token", None), "malformed-token", 0),
+            (Credential("valid-token", self.future), "valid-token", 0),
+            (Credential("expired-token", self.expired), "login-token", 1),
+        )
+        for cached, expected_token, expected_logins in cases:
+            with self.subTest(token=expected_token):
+                login_calls.clear()
+                provider = self.provider(login=login)
+                provider._credential = cached
+                self.assertEqual(expected_token, provider.get().token)
+                self.assertEqual(expected_logins, len(login_calls))
+
+    def test_refresh_failure_never_falls_back_to_stale_credential(self):
+        from gravity_sdk.errors import AuthenticationError
+
+        def rejected(_username, _password):
+            raise AuthenticationError("Gravity login was rejected")
+
+        provider = self.provider(login=rejected)
+        stale = Credential("stale-token", self.expired)
+        provider._credential = stale
+        with self.assertRaisesRegex(AuthenticationError, "Gravity login was rejected"):
+            provider.get()
+        self.assertIs(stale, provider._credential)
+        self.assertFalse(provider._refreshing)
+
+    def test_persistence_failure_never_publishes_login_credential(self):
+        provider = self.provider(
+            login=lambda *_: self.payload(Authorization="fresh-token")
+        )
+        provider._persist = True
+        provider._persist_credential = lambda _credential: (_ for _ in ()).throw(
+            OSError("persistence failed")
+        )
+        with self.assertRaisesRegex(OSError, "persistence failed"):
+            provider.get()
+        self.assertIsNone(provider._credential)
+        self.assertEqual(0, provider._generation)
+        self.assertFalse(provider._refreshing)
+
+    def test_credentials_do_not_leak_through_output_errors_logs_or_repr(self):
+        import io
+        import logging
+        from contextlib import redirect_stderr, redirect_stdout
+        from gravity_sdk.errors import CredentialError
+
+        class LogCapture(logging.Handler):
+            def __init__(self):
+                super().__init__()
+                self.messages = []
+
+            def emit(self, record):
+                self.messages.append(self.format(record))
+
+        sentinel = "CREDENTIAL_SENTINEL_7f6b2d"
+        output = io.StringIO()
+        errors = io.StringIO()
+        logs = LogCapture()
+        root_logger = logging.getLogger()
+        root_logger.addHandler(logs)
+        self.addCleanup(root_logger.removeHandler, logs)
+        observed = []
+        config = CredentialConfig(
+            username=sentinel,
+            password=sentinel,
+            token=sentinel,
+            gravity_id=sentinel,
+        )
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        persisted = CredentialProvider(
+            Path(directory.name) / ".env.gravity.local",
+            environ={"GRAVITY_USERNAME": sentinel, "GRAVITY_PASSWORD": sentinel},
+            login=lambda *_: self.payload(
+                Authorization=sentinel,
+                id=sentinel,
+                company_id=sentinel,
+                email=sentinel,
+            ),
+            clock=lambda: NOW,
+            persist=True,
+        )
+        rejected = self.provider(
+            login=lambda *_: {"code": 401, "data": {"echo": sentinel}}
+        )
+        with redirect_stdout(output), redirect_stderr(errors):
+            observed.append(repr(config))
+            observed.append(repr(persisted.get()))
+            try:
+                rejected.get()
+            except CredentialError as exc:
+                observed.extend((str(exc), repr(exc)))
+        observed.extend((output.getvalue(), errors.getvalue(), *logs.messages))
+        self.assertNotIn(sentinel, "\n".join(observed))

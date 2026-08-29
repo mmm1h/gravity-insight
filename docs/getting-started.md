@@ -4,20 +4,29 @@
 
 ## 1. 安装
 
-在仓库自己的虚拟环境中安装 editable 包：
+不要 `pip install gravity-sdk` 或 `pip install gravity`：前者是 Gravity Labs 的广告 SDK，后者是 galaxyproject 的 Galaxy 服务器管理 CLI，都是无关第三方包。权威发行源是 PyPI 上已通过门禁的 `gravity-insight`：
+
+```powershell
+python -m pip install gravity-insight
+```
+
+升级用 `python -m pip install --upgrade gravity-insight`；要固定发布版本则安装 `gravity-insight==<version>`。完整的 Agent 安装/自检合同见 [Agent 安装契约](agent-skills/installation.md)。
+
+只有要修改 SDK 源码时才 clone，并在该 worktree 自己的虚拟环境中安装 editable 包：
 
 ```powershell
 python -m venv .venv
-& .venv\Scripts\Activate.ps1
-python -m pip install -e .
+& .venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-源码检出但尚未安装时，可临时使用：
+源码检出但尚未安装时，仍可临时使用：
 
 ```powershell
 $env:PYTHONPATH='src'
 python -m gravity_sdk --help
 ```
+
+在源码检出目录中运行从 tag 非 editable 安装的 `gravity doctor` 会以 `INSTALL_METADATA_NOT_EDITABLE` 失败；这是正确的保护，不是安装故障。它阻止“当前目录源码是 A、实际执行的安装包是 B”。切换到源码检出目录之外再检查 tag 安装；在源码目录内开发则使用上面的 editable 安装。
 
 ## 2. 认证
 

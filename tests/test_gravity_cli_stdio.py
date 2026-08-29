@@ -24,10 +24,41 @@ class CliStdioTests(unittest.TestCase):
             self.assertEqual(0, run.returncode, run.stderr.decode("utf-8", "replace")); self.assertTrue((home / "结果.json").is_file()); self.assertFalse((cwd / "~").exists())
 
     def test_concurrent_output_has_one_explicit_local_failure(self):
-        script = "import sys,tempfile,time\nfrom pathlib import Path\nfrom unittest.mock import patch\nfrom gravity_sdk import __main__ as entry\ndef slow(handle,value):time.sleep(.5);return handle.file.write(value)\npatch.object(tempfile._TemporaryFileWrapper,'write',slow,create=True).start()\nwhile not Path(sys.argv[2]).exists():time.sleep(.001)\npatch('gravity_sdk.cli.dispatch_command',return_value={'marker':sys.argv[3]*100}).start()\npatch('gravity_sdk.__main__.ensure_first_run_credentials',return_value=True).start()\nraise SystemExit(entry.main(['reports','pulse','--app','1','--start','2026-08-01','--end','2026-08-02','--output',sys.argv[1]]))"
+        script = r"""import sys,tempfile,time
+from pathlib import Path
+from unittest.mock import patch
+from gravity_sdk import __main__ as entry
+
+output,gate,role,state=Path(sys.argv[1]),Path(sys.argv[2]),sys.argv[3],Path(sys.argv[4])
+
+def wait_for(path,participant):
+    deadline=time.monotonic()+20
+    while not path.exists():
+        if time.monotonic()>=deadline:
+            raise TimeoutError(f'timed out waiting for {participant}: {path.name}')
+        time.sleep(.001)
+
+def hold_output_lock(handle,value):
+    (state/'holder-in-write').write_text('ready',encoding='ascii')
+    wait_for(state/'contender-finished','contender to finish its locked output attempt')
+    return handle.file.write(value)
+
+if role=='A':
+    patch.object(tempfile._TemporaryFileWrapper,'write',hold_output_lock,create=True).start()
+wait_for(gate,'parent start gate')
+patch('gravity_sdk.cli.dispatch_command',return_value={'marker':role*100}).start()
+patch('gravity_sdk.__main__.ensure_first_run_credentials',return_value=True).start()
+if role=='B':
+    wait_for(state/'holder-in-write','holder to enter write while owning the output lock')
+code=entry.main(['reports','pulse','--app','1','--start','2026-08-01','--end','2026-08-02','--output',str(output)])
+if role=='B':
+    (state/'contender-finished').write_text(str(code),encoding='ascii')
+raise SystemExit(code)
+"""
         with tempfile.TemporaryDirectory() as folder:
             output, gate = Path(folder, "result.json"), Path(folder, "go"); env = dict(os.environ)
-            runs = [subprocess.Popen([sys.executable, "-c", script, str(output), str(gate), marker], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for marker in "AB"]
+            state = Path(folder, "rendezvous"); state.mkdir()
+            runs = [subprocess.Popen([sys.executable, "-c", script, str(output), str(gate), marker, str(state)], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for marker in "AB"]
             gate.write_text("go", encoding="ascii"); streams = [run.communicate(timeout=30) for run in runs]
             self.assertEqual([0, 4], sorted(run.returncode for run in runs)); failure = json.loads(next(stderr for run, (_, stderr) in zip(runs, streams) if run.returncode == 4).decode("utf-8")); self.assertEqual(("LOCAL_IO_ERROR", "local"), (failure["error"]["code"], failure["error"]["category"]))
 

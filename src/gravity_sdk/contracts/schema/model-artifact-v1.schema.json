@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.model-artifact.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "uri", "version", "alias", "owner",
+    "lifecycle", "operator_uri", "artifact", "lineage", "evaluation",
+    "safe_domain", "approval", "claim_policy"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "model"},
+    "schema_version": {"const": "gravity.model-artifact.v1"},
+    "uri": {"type": "string", "pattern": "^model://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256},
+    "version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "alias": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 128},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "lifecycle": {"enum": ["active", "deprecated", "revoked"]},
+    "operator_uri": {"type": "string", "pattern": "^operator://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256},
+    "artifact": {
+      "type": "object",
+      "required": ["kind", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["parameters", "file", "oci"]},
+        "digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "required": ["fitting_window", "data_uris", "source_digests", "sample_count"],
+      "additionalProperties": false,
+      "properties": {
+        "fitting_window": {"$ref": "#/$defs/date_range"},
+        "data_uris": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256}},
+        "source_digests": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/sha256"}},
+        "sample_count": {"type": "integer", "minimum": 1, "maximum": 2147483647}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "required": ["status", "evaluated_at", "expires_at", "metrics"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["validated", "unvalidated", "failed"]},
+        "evaluated_at": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/date"}]},
+        "expires_at": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/date"}]},
+        "metrics": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/metric"}}
+      }
+    },
+    "safe_domain": {
+      "type": "object",
+      "required": ["horizon_days", "minimum_samples", "units"],
+      "additionalProperties": false,
+      "properties": {
+        "horizon_days": {"type": "integer", "minimum": 1, "maximum": 3650},
+        "minimum_samples": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "units": {"type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}}
+      }
+    },
+    "approval": {
+      "type": "object",
+      "required": ["status", "approved_by", "approved_at"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["approved", "unapproved", "revoked"]},
+        "approved_by": {"type": ["string", "null"], "maxLength": 128},
+        "approved_at": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/date"}]}
+      }
+    },
+    "claim_policy": {
+      "type": "object",
+      "required": ["validated", "scenario", "forbidden"],
+      "additionalProperties": false,
+      "properties": {
+        "validated": {"$ref": "#/$defs/string_array"},
+        "scenario": {"$ref": "#/$defs/string_array"},
+        "forbidden": {"$ref": "#/$defs/string_array"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "maxLength": 10},
+    "date_range": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {"start": {"$ref": "#/$defs/date"}, "end": {"$ref": "#/$defs/date"}}
+    },
+    "metric": {
+      "type": "object",
+      "required": ["name", "value", "threshold", "passed"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]*$", "maxLength": 128},
+        "value": {"type": "number"},
+        "threshold": {"type": "number"},
+        "passed": {"type": "boolean"}
+      }
+    },
+    "string_array": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}}
+  }
+}

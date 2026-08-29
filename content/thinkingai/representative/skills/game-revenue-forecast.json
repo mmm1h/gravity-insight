@@ -1,0 +1,66 @@
+{
+  "artifact_kind": "skill",
+  "schema_version": "gravity.skill.v1",
+  "namespace": "gravity.game",
+  "skill_id": "game-revenue-forecast",
+  "version": "1.0.0",
+  "specification": "specified",
+  "lifecycle": "reviewed",
+  "readiness": "blocked",
+  "validation": "validated",
+  "summary": "Assess whether a revenue forecast has a governed and validated model dependency.",
+  "description": "Use the current business-pulse observation only as bounded input evidence and stop unless an exact approved forecast model, lineage, evaluation, expiry, and safe horizon are available.",
+  "runtime_requires": ">=0.3,<0.4",
+  "covers_journeys": ["analysis.thinkingai.revenue-forecast-readiness"],
+  "capability_dependencies": [
+    {
+      "identity_kind": "composite",
+      "selector": "composite:business_pulse",
+      "contract_version": "1",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "semantic_dependencies": [],
+  "operator_dependencies": [],
+  "model_dependencies": ["model://gravity/game-revenue-forecast@1"],
+  "context_dependencies": {"required": [], "optional": []},
+  "routing": {
+    "product_hints": [],
+    "host_catalog_required": true,
+    "recognizer_fallback_allowed": false
+  },
+  "requirements": {"completeness": "unknown", "data_quality": "pass"},
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": ["unvalidated-revenue-forecast", "invented-confidence", "causality"],
+    "forbidden_without_context": []
+  },
+  "effects": ["read"],
+  "request_budget": {
+    "known_requests_min": 2,
+    "known_requests_max": 3,
+    "unknown_discovery_max": 3,
+    "runtime_additional_requests": 0
+  },
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://game-revenue-forecast",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2",
+    "authorship": "independently_authored",
+    "license_review": "approved_internal"
+  },
+  "guide": {
+    "title": "Revenue forecast readiness",
+    "applicability": "Use to determine whether current observations and an exact validated model are sufficient for a bounded forecast; without that model the result is a gap only.",
+    "steps": [
+      "Verify the business-pulse capability and preserve its completeness and data-quality limits.",
+      "Resolve the exact model URI and verify trusted distribution, lineage, evaluation, approval, expiry, and safe horizon.",
+      "Stop with a model gap when any model requirement is absent; do not estimate a replacement with prompt reasoning.",
+      "When a future approved model exists, distinguish observed inputs, scenario assumptions, estimates, and validation limits."
+    ],
+    "context_boundary": "Narrative plans and vendor examples are not model artifacts, validation evidence, forecast inputs, or authorization to publish a prediction."
+  }
+}

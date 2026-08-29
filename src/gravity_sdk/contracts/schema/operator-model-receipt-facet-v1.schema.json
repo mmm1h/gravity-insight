@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.operator-model-receipt-facet.v1",
+  "type": "object",
+  "required": ["schema_version", "operators", "models", "dependencies_digest"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.operator-model-receipt-facet.v1"},
+    "operators": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/operator"}},
+    "models": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/model"}},
+    "dependencies_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "operator": {
+      "type": "object",
+      "required": ["uri", "version", "digest", "assumptions_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "pattern": "^operator://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "assumptions_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["uri", "version", "digest", "lineage_digest", "evaluation_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "pattern": "^model://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "lineage_digest": {"$ref": "#/$defs/sha256"},
+        "evaluation_digest": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

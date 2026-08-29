@@ -19,6 +19,62 @@
     ".analysis_primitives",
     "AnalysisStep"
   ],
+  "AnalysisArtifactService": [
+    ".analysis_artifact",
+    "AnalysisArtifactService"
+  ],
+  "GovernorObservationService": [
+    ".governor_observation",
+    "GovernorObservationService"
+  ],
+  "validate_governor_observation": [
+    ".governor_observation",
+    "validate_governor_observation"
+  ],
+  "validate_governor_observation_snapshot": [
+    ".governor_observation",
+    "validate_governor_observation_snapshot"
+  ],
+  "validate_adaptive_governor_snapshot": [
+    ".adaptive_governor",
+    "validate_adaptive_governor_snapshot"
+  ],
+  "ExecutionVariantService": [
+    ".execution_variant",
+    "ExecutionVariantService"
+  ],
+  "SqlExplorerService": [
+    ".sql_explorer",
+    "SqlExplorerService"
+  ],
+  "validate_execution_variant": [
+    ".execution_variant",
+    "validate_execution_variant"
+  ],
+  "validate_execution_variant_characterization": [
+    ".execution_variant",
+    "validate_execution_variant_characterization"
+  ],
+  "validate_execution_variant_selection": [
+    ".execution_variant",
+    "validate_execution_variant_selection"
+  ],
+  "validate_sql_explorer_request": [
+    ".sql_explorer",
+    "validate_sql_explorer_request"
+  ],
+  "validate_sql_explorer_result": [
+    ".sql_explorer",
+    "validate_sql_explorer_result"
+  ],
+  "validate_sql_explorer_promotion": [
+    ".sql_explorer",
+    "validate_sql_explorer_promotion"
+  ],
+  "ActionPlanService": [
+    ".action_plan",
+    "ActionPlanService"
+  ],
   "AuthenticationError": [
     ".error_types",
     "AuthenticationError"
@@ -31,9 +87,21 @@
     ".segment_spec",
     "CompiledSegmentSpec"
   ],
+  "CapabilityTrustService": [
+    ".capability_trust",
+    "CapabilityTrustService"
+  ],
+  "CallableProviderTransport": [
+    ".provider_rpc_transport",
+    "CallableProviderTransport"
+  ],
   "CompositeService": [
     ".composite",
     "CompositeService"
+  ],
+  "CoreSkillRuntime": [
+    ".core_skill_runtime",
+    "CoreSkillRuntime"
   ],
   "Credential": [
     ".credentials",
@@ -54,6 +122,10 @@
   "DEFAULT_METADATA_TTL_SECONDS": [
     ".cache",
     "DEFAULT_METADATA_TTL_SECONDS"
+  ],
+  "ExperimentHandoffService": [
+    ".experiment_handoff",
+    "ExperimentHandoffService"
   ],
   "ExportContractRegistry": [
     ".export_contracts",
@@ -95,6 +167,14 @@
     ".export_runtime",
     "ExportState"
   ],
+  "ExternalContextProvider": [
+    ".external_context_provider",
+    "ExternalContextProvider"
+  ],
+  "ExternalContextBindingResolver": [
+    ".external_context_binding",
+    "ExternalContextBindingResolver"
+  ],
   "GravityClient": [
     ".sql",
     "GravityClient"
@@ -119,6 +199,14 @@
     ".error_types",
     "InputValidationError"
   ],
+  "JourneyService": [
+    ".journey_service",
+    "JourneyService"
+  ],
+  "LocalSkillResolver": [
+    ".skill_package",
+    "LocalSkillResolver"
+  ],
   "ManifestError": [
     ".error_types",
     "ManifestError"
@@ -127,6 +215,10 @@
     ".cache",
     "MetadataCache"
   ],
+  "ModelRegistry": [
+    ".model_registry",
+    "ModelRegistry"
+  ],
   "OperationCatalog": [
     ".catalog",
     "OperationCatalog"
@@ -134,6 +226,10 @@
   "OperationProbe": [
     ".catalog",
     "OperationProbe"
+  ],
+  "OperatorRegistry": [
+    ".operator_registry",
+    "OperatorRegistry"
   ],
   "PaginationError": [
     ".error_types",
@@ -167,13 +263,37 @@
     ".plan",
     "PlanValidationError"
   ],
+  "PreparedAnalysisPlanService": [
+    ".prepared_analysis_plan",
+    "PreparedAnalysisPlanService"
+  ],
+  "ProviderRpcGuard": [
+    ".provider_rpc_guard",
+    "ProviderRpcGuard"
+  ],
   "PolicyViolation": [
     ".error_types",
     "PolicyViolation"
   ],
+  "RepoContextProvider": [
+    ".repo_context_provider",
+    "RepoContextProvider"
+  ],
+  "RuntimeSkillResolver": [
+    ".runtime_skill_resolver",
+    "RuntimeSkillResolver"
+  ],
   "SemanticRejectedError": [
     ".error_types",
     "SemanticRejectedError"
+  ],
+  "SemanticRegistry": [
+    ".semantic_registry",
+    "SemanticRegistry"
+  ],
+  "SkillHubClient": [
+    ".skill_hub_client",
+    "SkillHubClient"
   ],
   "SqlBatchRequest": [
     ".sql",
@@ -194,6 +314,10 @@
   "TransportError": [
     ".error_types",
     "TransportError"
+  ],
+  "TrustedPackHubClient": [
+    ".trusted_pack_hub",
+    "TrustedPackHubClient"
   ],
   "UnknownOperationError": [
     ".error_types",
@@ -266,6 +390,22 @@
   "compile_host_product_selection": [
     ".agent_host_selection",
     "compile_host_product_selection"
+  ],
+  "compile_analysis_result": [
+    ".analysis_result_contract",
+    "compile_analysis_result"
+  ],
+  "compile_analysis_artifact": [
+    ".analysis_artifact",
+    "compile_analysis_artifact"
+  ],
+  "compile_execution_snapshot": [
+    ".execution_snapshot",
+    "compile_execution_snapshot"
+  ],
+  "compile_project_skill_overlay": [
+    ".project_skill_overlay",
+    "compile_project_skill_overlay"
   ],
   "compile_query_spec": [
     ".analysis_spec",
@@ -383,6 +523,10 @@
     ".promotion_performance",
     "promotion_performance_input_schema"
   ],
+  "render_analysis_artifact_markdown": [
+    ".analysis_artifact_markdown",
+    "render_analysis_artifact_markdown"
+  ],
   "resolve_host_product_selection": [
     ".agent_host_selection",
     "resolve_host_product_selection"
@@ -399,6 +543,10 @@
     ".segment_spec",
     "segment_rule_spec_schema"
   ],
+  "subprocess_context_provider": [
+    ".external_context_provider",
+    "subprocess_context_provider"
+  ],
   "title_packages": [
     ".title_package",
     "title_packages"
@@ -406,6 +554,14 @@
   "validate_analysis_query_batch": [
     ".analysis_query_batch",
     "validate_analysis_query_batch"
+  ],
+  "validate_analysis_artifact": [
+    ".analysis_artifact",
+    "validate_analysis_artifact"
+  ],
+  "verify_analysis_artifact_source": [
+    ".analysis_artifact",
+    "verify_analysis_artifact_source"
   ],
   "validate_bilibili_account_request": [
     ".bilibili_account_performance",

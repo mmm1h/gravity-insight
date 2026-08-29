@@ -21,6 +21,8 @@ from typing import Any, Mapping, Sequence
 from unittest.mock import patch
 
 
+os.environ["GRAVITY_SDK_AUTO_UPGRADE"] = "0"
+
 ROOT = Path(__file__).resolve().parents[1]
 SUITE_ROOT = ROOT / "evals" / "agent_usability"
 LEDGER_PATH = SUITE_ROOT / "query-ledger.jsonl"
@@ -436,7 +438,7 @@ def _selection_identity(result: Mapping[str, Any] | None) -> tuple[str, ...]:
 def _discover_trials(
     cases: Sequence[Mapping[str, Any]], client: Any, trials: int
 ) -> tuple[dict[str, Any], int, list[dict[str, Any]]]:
-    from gravity_sdk.agent_batch import capabilities_many
+    from gravity_sdk.agents.batch import capabilities_many
 
     states = {
         case["case_id"]: {

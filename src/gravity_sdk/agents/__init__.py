@@ -1,0 +1,1 @@
+"""Compact Agent interaction owners."""

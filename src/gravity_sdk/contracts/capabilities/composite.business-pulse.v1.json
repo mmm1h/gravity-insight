@@ -1,0 +1,48 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "composite",
+  "selector": "composite:business_pulse",
+  "contract_version": "1",
+  "display_name": "Business Pulse Composite",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/report",
+  "effect": "read",
+  "privacy_classification": "internal_business",
+  "provider": {
+    "kind": "agent_product_card",
+    "fingerprint": "aadf535e8410759b8bd38ab59cb5b787fa9b65cf90e179b2e94103a93aca16f1"
+  },
+  "dependencies": [
+    {
+      "identity_kind": "operation",
+      "selector": "report.overview.query",
+      "contract_version": "2",
+      "minimum_trust": "stable",
+      "completeness": "complete",
+      "data_quality": "pass"
+    },
+    {
+      "identity_kind": "operation",
+      "selector": "report.business.query",
+      "contract_version": "2",
+      "minimum_trust": "stable",
+      "completeness": "complete",
+      "data_quality": "pass"
+    },
+    {
+      "identity_kind": "operation",
+      "selector": "report.hour_comparison.query",
+      "contract_version": "2",
+      "minimum_trust": "stable",
+      "completeness": "complete",
+      "data_quality": "pass"
+    }
+  ],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "multi-app-business-pulse-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

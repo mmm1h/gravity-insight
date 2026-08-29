@@ -1,0 +1,278 @@
+{
+  "schema_version": "gravity.agent-runtime-requirements.v1",
+  "directive_ref": "directive.json",
+  "architecture_source": "architecture-source.md",
+  "status_model": ["draft","specified","reviewed","ready","in_progress","fixed_dev","blocked","released","superseded"],
+  "main_integration": {
+    "policy": "frozen_until_program_complete",
+    "development_target": "dev",
+    "promotion_requires": ["all_index_requirements_fixed_dev","integrated_validation_green","explicit_new_user_approval"]
+  },
+  "integrated_validation": {
+    "schema_version": "gravity.integrated-validation-contract.v1",
+    "definition": "Every included gate exits 0 on one clean dev commit using that worktree's independent .venv, and one JSON receipt binds the result to that exact HEAD.",
+    "command": ".venv/Scripts/python.exe scripts/run_integrated_validation.py",
+    "preconditions": ["branch_is_dev","worktree_clean_before_and_after","head_unchanged","python_is_worktree_dot_venv"],
+    "receipt_path_template": "tmp/integrated-validation/{commit_sha}/receipt.json",
+    "receipt_policy": "ignored_run_artifact_not_canonical_source; dirty worktrees are refused before receipt generation",
+    "included_gates": [
+      "unittest_collector",
+      "pytest_collector",
+      "test_duration_budget",
+      "compiler_check",
+      "quality_check",
+      "agent_usability_development",
+      "cli_help",
+      "cli_sql_offline_smoke",
+      "cli_census_offline_smoke",
+      "cli_insight_offline_smoke",
+      "git_diff_check",
+      "r00_requirement_graph",
+      "generator_agent_guides",
+      "generator_skill_packages",
+      "generator_journey_ledger",
+      "generator_ct01",
+      "generator_ct02",
+      "generator_ct03",
+      "generator_execution_variant",
+      "r12_three_stage_rollback",
+      "r17_live_checkpoint",
+      "release_provenance_offline_fixture",
+      "installed_wheel_surface_matrix",
+      "installed_wheel_canonical_consumer",
+      "promotion_readiness",
+      "cumulative_capability"
+    ],
+    "excluded_post_release_gates": [
+      {
+        "name": "release_provenance_live_pypi",
+        "classification": "post_release",
+        "reason": "PyPI provenance exists only after publication and cannot gate a pre-main merge; the offline fixture remains included."
+      }
+    ],
+    "network_policy": "No real network; live PyPI provenance is post-release only."
+  },
+  "shared_spine": [
+    "src/gravity_sdk/plan_adapters.py",
+    "src/gravity_sdk/agents/capabilities.py",
+    "src/gravity_sdk/agents/composite.py",
+    "src/gravity_sdk/agents/handoff.py",
+    "src/gravity_sdk/cli.py",
+    "src/gravity_sdk/__main__.py"
+  ],
+  "requirements": [
+    {"id":"R00","path":"R00-product-constitution.md","status":"fixed_dev","dependencies":[],"parallel_group":"bootstrap","shared_spine":false},
+    {"id":"R01","path":"R01-reference-vertical-slice.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"reference","shared_spine":true},
+    {"id":"R02","path":"R02-journey-trust-data-quality.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"platform-core","shared_spine":true},
+    {"id":"R03","path":"R03-built-in-skill-package.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
+    {"id":"R04","path":"R04-team-skill-hub-stage-a.md","status":"fixed_dev","dependencies":["R03","R06"],"parallel_group":"foundation-b","shared_spine":true},
+    {"id":"R05","path":"R05-business-semantic-registry.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
+    {"id":"R06","path":"R06-operator-model-contracts.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
+    {"id":"R07","path":"R07-context-pack-repo-provider.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
+    {"id":"R08","path":"R08-external-provider-rpc-guard.md","status":"fixed_dev","dependencies":["R07"],"parallel_group":"foundation-b","shared_spine":false},
+    {"id":"R09A","path":"R09A-core-skill-runtime.md","status":"fixed_dev","dependencies":["R02","R03","R05","R06","R07"],"parallel_group":"core-runtime","shared_spine":true},
+    {"id":"R09B","path":"R09B-team-hub-binding.md","status":"fixed_dev","dependencies":["R04","R09A"],"parallel_group":"optional-binding","shared_spine":true},
+    {"id":"R09C","path":"R09C-external-context-binding.md","status":"fixed_dev","dependencies":["R08","R09A"],"parallel_group":"optional-binding","shared_spine":true},
+    {
+      "id": "R10",
+      "path": "R10-mcp-thin-surface.md",
+      "status": "fixed_dev",
+      "dependencies": ["R09A"],
+      "parallel_group": "optional-surface",
+      "shared_spine": false,
+      "trigger": "two_real_consumers_or_explicit_pilot",
+      "trigger_evidence": {
+        "branch": "explicit_bounded_pilot",
+        "source": "2026-08-28 owner task directive",
+        "recorded_by": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "exit_condition_bound": true
+      },
+      "implementation_binding": {
+        "baseline": "824f92524f5703d7cb7ba0b2d6a671befb51a45f",
+        "github_issue": null,
+        "issue_binding": "no_matching_r10_mcp_issue_found_explicit_owner_task_directive",
+        "branch": "codex/r10-mcp-stdio-pilot",
+        "worktree": "D:/git-pjt/gravity-sdk-r10mcp",
+        "transport": "stdio",
+        "protocol_version": "2026-07-28",
+        "dependency_decision": "minimal_in_repository_json_rpc_no_new_runtime_dependency"
+      },
+      "lifecycle_transition": {
+        "specified_to_reviewed_to_ready": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "current": "fixed_dev",
+        "dev_integration": "pending"
+      },
+      "pilot_exit": {
+        "development_first_choice_minimum": "18/20",
+        "development_legal_answer_minimum": "12/20",
+        "blind_holdout_required": true,
+        "second_adopter_required": true,
+        "judge": "plan_owner",
+        "failure_action": "block_and_remove_server_retain_schema_only"
+      },
+      "status_adjudication_2026_08_29": {
+        "recorded_by": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "fixed_dev_gate": {
+          "requirement": "frozen_development_20_question_set",
+          "basis": ["R10:122-126", "architecture-source:267-268"]
+        },
+        "released_permanent_surface_gate": {
+          "requirements": [
+            "blind_20_question_holdout",
+            "second_independent_host_or_consumer_adoption"
+          ],
+          "basis": ["R10:126-135", "architecture-source:269"]
+        },
+        "requirements_cancelled": [],
+        "development_evidence": {
+          "questions": "tests/fixtures/mcp_host_development_questions.json",
+          "evidence": "tests/fixtures/mcp_host_development_evidence.json",
+          "suite_sha256": "6cfdaeb0b9df0db16dae991794f1eaf9f5446884ca267d547dff198d8adf3a08",
+          "evaluator": "gravity.schema-aware-lexical-selector.v2",
+          "real_host": false,
+          "declared_real_host_versions": [],
+          "stage_a_first_choice": "18/20",
+          "stage_a_legal_answers": "18/20",
+          "first_choice": "18/20",
+          "legal_answers": "18/20",
+          "mcp_rpcs": 120,
+          "internal_http_requests": 0,
+          "production_http_requests": 0
+        },
+        "instrument_fairness": "explicit_supported_format_or_enum_term_binds_matching_schema_variant_within_each_tool_without_case_rules_or_weight_changes",
+        "stage_b_surface_scope": "description_only_skill_vs_journey_and_product_vs_operation_or_composite_boundaries",
+        "remaining_frozen_misses": [
+          "tool_inspect_expected_over_server_metadata_resource",
+          "materialized_saved_analysis_uri_expected_over_uri_template"
+        ],
+        "status_decision": "fixed_dev_development_thresholds_met_release_gates_unchanged"
+      }
+    },
+    {"id":"R11","path":"R11-pap-pilot.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
+    {"id":"R12","path":"R12-action-experiment-receipt.md","status":"fixed_dev","dependencies":["R09A"],"parallel_group":"governed-action","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R12-A","status":"fixed_dev","dependencies":[]},{"id":"R12-B","status":"fixed_dev","dependencies":["R12-A"]},{"id":"R12-C","status":"fixed_dev","dependencies":["R12-B"]}]},
+    {"id":"R13A","path":"R13A-artifact-transfer.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"artifact-transfer","shared_spine":true},
+    {"id":"R13B","path":"R13B-analysis-artifact-renderer.md","status":"fixed_dev","dependencies":["R09A"],"parallel_group":"analysis-delivery","shared_spine":false},
+    {"id":"R13C","path":"R13C-dashboard-connector.md","status":"fixed_dev","dependencies":["R13B"],"milestone_dependencies":["R12-A"],"parallel_group":"dashboard-delivery","shared_spine":true},
+    {"id":"R14","path":"R14-adaptive-governor-variants.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"runtime-infrastructure","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R14-A","status":"fixed_dev","dependencies":[]},{"id":"R14-B","status":"fixed_dev","dependencies":["R14-A"]},{"id":"R14-C","status":"fixed_dev","dependencies":[]},{"id":"R14-D","status":"fixed_dev","dependencies":["R14-B","R14-C"]}]},
+    {"id":"R15","path":"R15-isolated-sql-explorer.md","status":"fixed_dev","dependencies":["R02","R05"],"parallel_group":"isolated-product","shared_spine":true},
+    {"id":"R16","path":"R16-control-plane-stage-b.md","status":"fixed_dev","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
+    {
+      "id": "R17",
+      "path": "R17-agent-module-package-migration.md",
+      "status": "fixed_dev",
+      "dependencies": [],
+      "parallel_group": "structural-migration",
+      "shared_spine": true,
+      "delivery_mode": "leaf",
+      "implementation_binding": {
+        "dev_baseline": "26a765a34e16b167093f5133ff2982a5d07d167a",
+        "github_issue": null,
+        "issue_binding": "not_applicable_internal_structural_debt_issue_creation_prohibited_by_docs_maintainers_issues",
+        "branch": "codex/r17-migration",
+        "worktree": "D:/git-pjt/gravity-sdk-r17-migration"
+      },
+      "scope": {
+        "boundary_basis": "human_reviewed_compact_agent_interaction_manifest",
+        "manifest_path": "tests/fixtures/agent_module_reference_dispositions.json",
+        "manifest_sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
+        "boundary_claim": "compact_agent_interaction_only",
+        "complete_agent_domain_proven": false,
+        "automated_independence_proven": false,
+        "reviewed_root_modules": 84,
+        "migrated_modules": 82,
+        "consolidated_deleted_modules": [
+          "agent_pagination"
+        ],
+        "excluded_modules": [
+          "agent_runtime_contracts"
+        ],
+        "file_count_evidence_role": "immutable_delivery_baseline",
+        "file_count_evidence_revision": "125bb84cbb98a575a2ef3c4a577f174027bc908d",
+        "final_root_python_files": 495,
+        "final_root_agent_prefixed_modules": 1,
+        "complete_package_python_files": 642,
+        "core_modules": 34,
+        "moved_peripheral_modules": 48,
+        "core_to_moved_peripheral_edges": 153,
+        "moved_peripheral_to_core_edges": 0,
+        "baseline_non_agent_to_moved_module_edges": 17
+      },
+      "ready_prerequisites": [
+        {
+          "id": "m0_characterization",
+          "satisfied": true,
+          "satisfied_by": "agent_under_standing_owner_delegation",
+          "owner_review": "pending",
+          "bound_implementation_baseline": "113176a381b6d232e95a112d78d1d2f4bc5ac024",
+          "review_note": "scc_self_loop_detection_and_exact_82_move_ledger_derived_set_are_fixed_and_rebound_at_this_baseline",
+          "ancestor_candidate_commit": "088d1606127439943cab0b79c8cdbdf516af4839",
+          "bound_artifact_sha256": {
+            "tests/agent_migration_characterization.py": "97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640",
+            "tests/test_agent_module_migration_characterization.py": "6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc",
+            "tests/test_installed_wheel.py": "bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117",
+            "tests/fixtures/public_api_owner_migrations.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+            "tests/fixtures/public_api_exports.json": "d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053"
+          },
+          "requires": [
+            "candidate_commit_is_ancestor_of_bound_implementation_baseline",
+            "exact_test_ids_fixture_paths_and_digests_are_bound"
+          ]
+        },
+        {
+          "id": "dynamic_import_audit_classification",
+          "satisfied": true,
+          "satisfied_by": "agent_under_standing_owner_delegation",
+          "owner_review": "pending",
+          "review_note": "third_review_false_negatives_closed_dynamic_caller_tracking_now_covers_import_module_dunder_import_sys_modules_indirect_variables_and_string_patch_targets_residual_opaque_forms_are_listed_and_must_block",
+          "ledger_regenerated_from": "scripts/generate_agent_module_reference_dispositions.py, which scans git-tracked files directly; the prior gitignored tmp audit is no longer an input",
+          "ledger_path": "tests/fixtures/agent_module_reference_dispositions.json",
+          "ledger_sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
+          "required_schema_version": "gravity.agent-module-reference-dispositions.v2",
+          "candidate_sites": 238,
+          "classified_sites": 238,
+          "unclassified_sites": 0,
+          "blocking_sites": 0,
+          "disposition_counts": {
+            "no_migration_effect": 224,
+            "rewrite_reference": 13,
+            "rewrite_selector_data": 1
+          },
+          "required_unclassified_sites": 0,
+          "required_blocking_sites": 0,
+          "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
+          "live_checkpoint_sha256": "9243bf1c719790a18eb4c8d3bdaf1046880fa331d4cb2363743a1c6b23d19065",
+          "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
+          "live_checkpoint_tracked_sites": 310,
+          "live_checkpoint_unclassified_sites": 0,
+          "live_checkpoint_blocking_sites": 0,
+          "requires": [
+            "all_candidate_sites_have_reviewed_dispositions",
+            "classification_ledger_key_count_matches_the_bound_site_count",
+            "classification_ledger_path_and_sha256_are_bound",
+            "live_checkpoint_tracks_the_current_repository_and_fails_closed"
+          ]
+        }
+      ],
+      "delivery_acceptance": {
+        "accepted_by": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "evidence_source": "external_plan_owner_delivery_verdict",
+        "phase_1_commit": "4926362f42f9ea68a11e42559a802cb7ba67f6ee",
+        "phase_2_commit": "ea33c42eeb82fc7fb8a62ef60e11ba5a8527dc69",
+        "dev_integration_commit": "125bb84cbb98a575a2ef3c4a577f174027bc908d",
+        "rollback_to_phase_1": "exact_tree_match",
+        "ordered_full_rollback": "exact_tree_match",
+        "independent_thermo_review": "no_high_confidence_blockers",
+        "ready_history": "historical_evidence_retained_no_backdated_ready_or_new_per_requirement_user_approval",
+        "retirement_scope": "test_and_governance_scaffolding_only",
+        "maintenance_baseline": "125bb84cbb98a575a2ef3c4a577f174027bc908d"
+      }
+    },
+    {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
+    {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"fixed_dev","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
+    {"id":"CT03","path":"CT03-thinkingai-full-specification.md","status":"fixed_dev","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}
+  ]
+}

@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime, timezone
 
 from gravity_sdk.errors import InputValidationError
-from gravity_sdk.relative_date_agent import fill_agent_relative_dates
+from gravity_sdk.agents.relative_date import fill_agent_relative_dates
 from gravity_sdk.relative_dates import (
     DEFAULT_TIMEZONE,
     apply_relative_dates,

@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest import mock
 
 from gravity_sdk.sql import __main__ as gravity_cli
-from gravity_sdk.sql import products, provenance
+from gravity_sdk.sql import credentials, products, provenance
 from gravity_sdk.sql.client import GravityClient
 try:
     from gravity_sdk.errors import AuthenticationError, CredentialError, TransportError
@@ -57,6 +57,9 @@ class GravityProductTests(unittest.TestCase):
         )
         self.workspace_environment.start()
         self.addCleanup(self.workspace_environment.stop)
+
+    def test_credential_self_test_runs_directly(self):
+        self.assertIsNone(credentials.self_test())
 
     def test_latest_safe_day_changes_at_0200_beijing(self):
         self.assertEqual(

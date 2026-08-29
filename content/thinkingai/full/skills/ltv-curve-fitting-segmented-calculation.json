@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "invented-confidence",
+      "unsupported-segment-extrapolation"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Fit no curve until segment definitions, net-value semantics, observation horizons and Model evaluation are exact.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use to assess whether comparable project cohorts can support a bounded segmented value model.",
+    "context_boundary": "Segment labels, sparse tails and vendor examples cannot supply missing cohort coverage or validated parameters.",
+    "steps": [
+      "Resolve segment, cohort, net-value, currency, censoring and observation-horizon semantics.",
+      "Verify sample and coverage assumptions plus the exact approved curve Model and calibration evidence.",
+      "Stop on incompatible units or unsupported horizons; otherwise report estimates with segment-specific limitations."
+    ],
+    "title": "Segmented value-curve fit readiness"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [
+    "model://gravity/segmented-ltv-curve@1"
+  ],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://ltv-curve-fitting-segmented-calculation",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "analysis.query.spec:event"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/segmented-lifetime-value@1"
+  ],
+  "skill_id": "ltv-curve-fitting-segmented-calculation",
+  "specification": "specified",
+  "summary": "Gate segmented value-curve fitting on compatible cohorts, units and a validated Model.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

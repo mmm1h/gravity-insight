@@ -8,7 +8,7 @@ remain the authority for live metric membership.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from . import runtime
@@ -38,9 +38,11 @@ from .promotion_performance_result import (
     PROMOTION_PLATFORM_RESOURCES,
     SCHEMA_VERSION,
     SUPPORTED_PLATFORMS,
+    PromotionComponentBinding,
     product_envelope as _product_envelope,
     promotion_component_item_count,
     promotion_performance_item_count,
+    safe_bound_component as _safe_bound_component,
     safe_component as _safe_component,
 )
 from .promotion_snapshot_compat import promotion_snapshot_compat
@@ -64,15 +66,7 @@ def promotion_performance(
 ) -> dict[str, Any]:
     """Read native performance rows under deterministic platform shares."""
 
-    (
-        app,
-        window,
-        selected_platforms,
-        selected_metrics,
-        workers,
-        pages,
-        items,
-    ) = validate_promotion_performance_request(
+    request = validate_promotion_performance_request(
         app_id,
         start,
         end,
@@ -82,6 +76,24 @@ def promotion_performance(
         max_pages=max_pages,
         max_items=max_items,
     )
+    return _validated_performance(client, request)
+
+
+def _validated_performance(
+    client: Any,
+    request: tuple[
+        str,
+        tuple[str, str],
+        tuple[str, ...],
+        tuple[str, ...],
+        int,
+        int,
+        int,
+    ],
+    *,
+    bindings: Mapping[str, PromotionComponentBinding] | None = None,
+) -> dict[str, Any]:
+    app, window, platforms, metrics, workers, pages, items = request
     if not callable(getattr(client, "batch", None)):
         raise TypeError(
             "promotion performance requires the public batch facade"
@@ -90,18 +102,19 @@ def promotion_performance(
         client,
         app=app,
         window=window,
-        platforms=selected_platforms,
-        metrics=selected_metrics,
+        platforms=platforms,
+        metrics=metrics,
         workers=workers,
         max_pages=pages,
         max_items=items,
+        bindings=bindings,
     )
     return _product_envelope(
         results,
         app_id=app,
         window=window,
-        platforms=selected_platforms,
-        metric_count=len(selected_metrics),
+        platforms=platforms,
+        metric_count=len(metrics),
         max_pages=pages,
         max_items=items,
         max_workers=workers,
@@ -119,9 +132,18 @@ def _read_platform_results(
     workers: int,
     max_pages: int,
     max_items: int,
+    bindings: Mapping[str, PromotionComponentBinding] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     requests = [
-        _platform_request(platform, app, window, metrics)
+        _platform_request(
+            platform,
+            app,
+            window,
+            metrics,
+            operation_id=(
+                bindings[platform].operation_id if bindings is not None else None
+            ),
+        )
         for platform in platforms
     ]
     ordered = _execute_batch(
@@ -133,9 +155,10 @@ def _read_platform_results(
     )
     results = [
         project_result_audit(
-            _safe_component(
+            _project_component(
                 value,
                 platform,
+                binding=(bindings.get(platform) if bindings is not None else None),
                 metrics=metrics,
                 expected_app_id=app,
                 expected_window=window,
@@ -168,14 +191,38 @@ def _read_platform_results(
     return results, returned
 
 
+def _project_component(
+    value: Any,
+    platform: str,
+    *,
+    binding: PromotionComponentBinding | None,
+    metrics: tuple[str, ...],
+    expected_app_id: str,
+    expected_window: tuple[str, str],
+    max_pages: int,
+) -> dict[str, Any]:
+    projector = _safe_component if binding is None else _safe_bound_component
+    identity = platform if binding is None else binding
+    return projector(
+        value,
+        identity,
+        metrics=metrics,
+        expected_app_id=expected_app_id,
+        expected_window=expected_window,
+        max_pages=max_pages,
+    )
+
+
 def _platform_request(
     platform: str,
     app_id: str,
     window: tuple[str, str],
     metrics: tuple[str, ...],
+    *,
+    operation_id: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "operation_id": PROMOTION_PLATFORM_OPERATIONS[platform],
+        "operation_id": operation_id or PROMOTION_PLATFORM_OPERATIONS[platform],
         "request_id": platform,
         "inputs": {
             "date_list": list(window),

@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agent_metadata_template import (
+from gravity_sdk.agents.metadata_template import (
     SELECTORS,
     metadata_template_capability_inventory,
 )

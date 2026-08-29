@@ -16,7 +16,11 @@ from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan
 from gravity_sdk.plan_cli import run_plan_command
 from gravity_sdk.sdk import GravitySDK
 from gravity_sdk.workspace import load_workspace
-from gravity_sdk.workspace_plan_recipe import PlanRecipeError, expand_plan_recipe
+from gravity_sdk.workspace_plan_recipe import (
+    PlanRecipeError,
+    expand_plan_recipe,
+    parse_plan_recipe_parameters,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +41,13 @@ class PlanRecipeTests(unittest.TestCase):
         self.workspace = load_workspace(EXAMPLE, environ={})
         self.recipe = self.workspace.plan_recipe("demo-order-window")
         self.parameters = {"date": "2026-08-14", "app": "demo"}
+
+    def test_recipe_parameter_requires_name_value_pair_without_raising_name_error(self) -> None:
+        with self.assertRaises(PlanRecipeError) as raised:
+            parse_plan_recipe_parameters(["missing-separator"])
+
+        self.assertEqual("param", raised.exception.field)
+        self.assertIn('actual value: "missing-separator"', str(raised.exception))
 
     def test_example_expands_typed_parameters_to_every_declared_request(self) -> None:
         expanded = expand_plan_recipe(self.recipe, self.parameters)

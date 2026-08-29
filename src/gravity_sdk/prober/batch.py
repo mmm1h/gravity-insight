@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -11,30 +12,37 @@ from .core import (
     EVIDENCE_ROOT,
     OPERATION_ROOT,
     REPO_ROOT,
-    iter_json_evidence,
     read_json,
     write_json,
 )
-from .draft_probe import probe_draft
+from .draft_probe import (
+    collect_batch_evidence,
+    final_batch_summary,
+    final_operation_rows,
+    probe_draft,
+    stable_operation_ids,
+)
 from .promotion import evaluate_gate, promote_drafts
 from .read_semantics import assert_available_probe_items
 from .transport import RecordingSession, RequestDiscipline, build_runtime, sdk_parts
 
 
 BATCH_ROOT = REPO_ROOT / "tmp" / "codex" / "gi-batch-probe"
+_PROBER_BINDINGS = json.loads(
+    (Path(__file__).resolve().parents[1] / "contracts" / "runtime-operation-bindings.json").read_text(encoding="utf-8")
+)["prober"]
 
 _TIER_ONE_IDS = frozenset(
     {
         "material.file_params.get",
         "material.media_material_label.list",
-        "material.tag_category.tree",
         "promotion.batch_config.list",
         "promotion.media_directional_package.list",
         "report.confmetric_permission.list",
-        "report.metric.list",
         "report.report_confmetric_permission.list",
         "report.shared_to_me.list",
     }
+    | set(_PROBER_BINDINGS["batch"]["tier_one_operation_ids"])
 )
 
 _TIER_TWO_IDS = frozenset(
@@ -197,6 +205,216 @@ def _stable_count(operation_root: Path) -> int:
     )
 
 
+def _write_layering_report(
+    rows: Sequence[Mapping[str, Any]], report_root: Path,
+) -> Counter[int]:
+    tier_counts = Counter(int(row["tier"]) for row in rows)
+    write_json(
+        report_root / "layering.json",
+        {
+            "schema_version": "gravity-insight.batch-layering.v1",
+            "total": len(rows),
+            "tier_counts": {str(key): tier_counts[key] for key in range(1, 6)},
+            "drafts": rows,
+        },
+    )
+    return tier_counts
+
+
+def _unattempted_probe_result(
+    row: Mapping[str, Any], *, request_budget_exhausted: bool, stop_loss: bool,
+) -> dict[str, Any] | None:
+    operation_id = str(row["operation_id"])
+    if row["write_semantics_reason"]:
+        return {
+            "operation_id": operation_id, "conclusion": "skipped_write_semantics",
+            "eligible": False, "missing": ["write_semantics_route"],
+            "request_count": 0, "detail": row["write_semantics_reason"],
+        }
+    if row["privacy_name_risk"]:
+        return {
+            "operation_id": operation_id, "conclusion": "skipped_privacy_name_risk",
+            "eligible": False, "missing": ["privacy_review_required"],
+            "request_count": 0, "detail": row["privacy_name_risk"],
+        }
+    if request_budget_exhausted:
+        return {
+            "operation_id": operation_id, "conclusion": "not_attempted_budget",
+            "eligible": False, "missing": ["request_budget_exhausted"],
+            "request_count": 0,
+        }
+    if stop_loss and not row["parent_indicated"]:
+        return {
+            "operation_id": operation_id, "conclusion": "not_attempted_stop_loss",
+            "eligible": False, "missing": ["layer_stop_loss"], "request_count": 0,
+        }
+    return None
+
+
+def _probe_batch_row(
+    row: Mapping[str, Any], *, stop_loss: bool, discipline: RequestDiscipline,
+    stable_client: Any, runtime: Any, recording: RecordingSession,
+    draft_root: Path, evidence_root: Path,
+) -> tuple[dict[str, Any], bool, bool]:
+    skipped = _unattempted_probe_result(
+        row,
+        request_budget_exhausted=discipline.total >= discipline.request_limit,
+        stop_loss=stop_loss,
+    )
+    if skipped is not None:
+        return skipped, False, False
+    operation_id = str(row["operation_id"])
+    before = discipline.total
+    result = probe_draft(
+        read_json(draft_root / f"{operation_id}.json"),
+        stable_client=stable_client, runtime=runtime, recording=recording,
+        evidence_root=evidence_root, draft_root=draft_root,
+    )
+    result["request_count"] = discipline.total - before
+    return result, True, result.get("conclusion") == "success"
+
+
+def _probe_batch_layer(
+    tier: int, rows: Sequence[Mapping[str, Any]], *,
+    discipline: RequestDiscipline, stable_client: Any, runtime: Any,
+    recording: RecordingSession, draft_root: Path, evidence_root: Path,
+) -> tuple[list[dict[str, Any]], dict[str, Any], bool]:
+    layer_rows = _ordered([row for row in rows if row["tier"] == tier])
+    layer_start_requests = discipline.total
+    results: list[dict[str, Any]] = []
+    attempted = 0
+    successful = 0
+    stop_loss = False
+    for index, row in enumerate(layer_rows):
+        result, was_attempted, was_successful = _probe_batch_row(
+            row, stop_loss=stop_loss, discipline=discipline,
+            stable_client=stable_client, runtime=runtime, recording=recording,
+            draft_root=draft_root, evidence_root=evidence_root,
+        )
+        attempted += was_attempted
+        successful += was_successful
+        result.update({
+            "tier": tier,
+            "parent_indicated": bool(row["parent_indicated"]),
+            "bound_parent_count": int(row["bound_parent_count"]),
+        })
+        results.append(result)
+        if attempted >= 20 and successful == 0 and index + 1 < len(layer_rows):
+            stop_loss = True
+    summary = {
+        "tier": tier, "total": len(layer_rows), "attempted": attempted,
+        "successful": successful,
+        "success_rate": successful / attempted if attempted else 0.0,
+        "requests": discipline.total - layer_start_requests, "stop_loss": stop_loss,
+    }
+    return results, summary, stop_loss
+
+
+def _promote_batch_drafts(
+    *, draft_root: Path, operation_root: Path, promote: bool,
+) -> list[dict[str, Any]]:
+    eligible = [
+        path.stem for path in sorted(draft_root.glob("*.json"))
+        if evaluate_gate(read_json(path))["eligible"]
+    ]
+    if not promote or not eligible:
+        return []
+    return promote_drafts(
+        eligible, draft_root=draft_root, operation_root=operation_root,
+        compile_products=True,
+    )
+
+
+def _mark_batch_promotions(
+    results: Sequence[dict[str, Any]], promoted: Sequence[Mapping[str, Any]],
+) -> set[str]:
+    promoted_ids = {str(item["operation_id"]) for item in promoted}
+    for result in results:
+        result["promoted"] = str(result["operation_id"]) in promoted_ids
+        if not result["promoted"]:
+            result["failure_reason"] = _failure_reason({}, result)
+    return promoted_ids
+
+
+def _batch_parent_results(
+    rows: Sequence[Mapping[str, Any]], results: Sequence[Mapping[str, Any]],
+    draft_root: Path,
+) -> list[dict[str, Any]]:
+    by_id = {str(item["operation_id"]): item for item in results}
+    parent_results: list[dict[str, Any]] = []
+    for row in rows:
+        if not row["parent_indicated"]:
+            continue
+        operation_id = str(row["operation_id"])
+        result = by_id[operation_id]
+        attempted = int(result.get("request_count", 0)) > 0
+        parent_results.append({
+            "operation_id": operation_id, "attempted": attempted,
+            "bound_parent_count": row["bound_parent_count"],
+            "resolved": bool(_latest_reference(operation_id, draft_root).get("parent_resolved")),
+            "actual_stable_parent_attempted": bool(row["bound_parent_count"] and attempted),
+            "conclusion": result.get("conclusion"),
+        })
+    return parent_results
+
+
+def _uncertain_method_count(
+    rows: Sequence[Mapping[str, Any]], draft_root: Path,
+) -> int:
+    return sum(
+        str(read_json(path).get("draft", {}).get("route_evidence", {}).get(
+            "method_certainty", ""
+        )) != "high"
+        for row in rows for path in [draft_root / f"{row['operation_id']}.json"]
+        if path.is_file()
+    )
+
+
+def _run_batch_summary(
+    *, rows: Sequence[Mapping[str, Any]], tier_counts: Counter[int],
+    layer_summaries: Sequence[Mapping[str, Any]], results: Sequence[Mapping[str, Any]],
+    promoted: Sequence[Mapping[str, Any]], promoted_ids: set[str],
+    initial_stable: int, operation_root: Path, parent_results: Sequence[Mapping[str, Any]],
+    draft_root: Path, stop_loss_layers: Sequence[int], discipline: RequestDiscipline,
+) -> dict[str, Any]:
+    failure_counts = Counter(
+        str(item["failure_reason"]) for item in results if not item["promoted"]
+    )
+    return {
+        "schema_version": "gravity-insight.batch-probe-summary.v1",
+        "drafts": len(rows),
+        "tier_counts": {str(key): tier_counts[key] for key in range(1, 6)},
+        "layers": layer_summaries,
+        "attempted": sum(item["attempted"] for item in layer_summaries),
+        "successful": sum(item["successful"] for item in layer_summaries),
+        "promoted": len(promoted), "promoted_operation_ids": sorted(promoted_ids),
+        "initial_stable": initial_stable, "final_stable": _stable_count(operation_root),
+        "failure_counts": dict(sorted(failure_counts.items())),
+        "parent": {
+            "total": len(parent_results),
+            "attempted": sum(item["attempted"] for item in parent_results),
+            "resolved": sum(item["resolved"] for item in parent_results),
+            "actual_stable_parent_attempted": sum(
+                item["actual_stable_parent_attempted"] for item in parent_results
+            ),
+        },
+        "method": {
+            "uncertain_before_probe": _uncertain_method_count(rows, draft_root),
+            "verified_by_success": sum(item.get("conclusion") == "success" for item in results),
+        },
+        "skipped_write": sum(row["write_semantics_reason"] is not None for row in rows),
+        "skipped_privacy_name_risk": sum(row["privacy_name_risk"] is not None for row in rows),
+        "stop_loss_layers": list(stop_loss_layers),
+        "requests": {
+            "total": discipline.total, "failed": discipline.failed,
+            "backoff_events": discipline.backoff_events,
+            "backoff_terminations": discipline.backoff_terminations,
+            "limit": discipline.request_limit,
+            "minimum_interval_ms": int(discipline.interval_seconds * 1000),
+        },
+    }
+
+
 def run_batch_probes(
     *, request_limit: int = 900, interval_seconds: float = 0.31,
     draft_root: Path = DRAFT_ROOT, operation_root: Path = OPERATION_ROOT,
@@ -209,17 +427,7 @@ def run_batch_probes(
     if not rows:
         raise ValueError("no draft contracts are available for the batch")
     assert_available_probe_items(rows, draft_root=draft_root)
-    tier_counts = Counter(int(row["tier"]) for row in rows)
-    write_json(
-        report_root / "layering.json",
-        {
-            "schema_version": "gravity-insight.batch-layering.v1",
-            "total": len(rows),
-            "tier_counts": {str(key): tier_counts[key] for key in range(1, 6)},
-            "drafts": rows,
-        },
-    )
-
+    tier_counts = _write_layering_report(rows, report_root)
     discipline = RequestDiscipline(
         interval_seconds=interval_seconds, request_limit=request_limit,
         hard_limit=900,
@@ -235,127 +443,21 @@ def run_batch_probes(
     stop_loss_layers: list[int] = []
 
     for tier in range(1, 6):
-        layer_rows = _ordered([row for row in rows if row["tier"] == tier])
-        layer_start_requests = discipline.total
-        attempted = 0
-        successful = 0
-        stop_loss = False
-        for index, row in enumerate(layer_rows):
-            operation_id = str(row["operation_id"])
-            if row["write_semantics_reason"]:
-                result = {
-                    "operation_id": operation_id,
-                    "conclusion": "skipped_write_semantics",
-                    "eligible": False,
-                    "missing": ["write_semantics_route"],
-                    "request_count": 0,
-                    "detail": row["write_semantics_reason"],
-                }
-            elif row["privacy_name_risk"]:
-                result = {
-                    "operation_id": operation_id,
-                    "conclusion": "skipped_privacy_name_risk",
-                    "eligible": False,
-                    "missing": ["privacy_review_required"],
-                    "request_count": 0,
-                    "detail": row["privacy_name_risk"],
-                }
-            elif discipline.total >= discipline.request_limit:
-                result = {
-                    "operation_id": operation_id,
-                    "conclusion": "not_attempted_budget",
-                    "eligible": False,
-                    "missing": ["request_budget_exhausted"],
-                    "request_count": 0,
-                }
-            elif stop_loss and not row["parent_indicated"]:
-                result = {
-                    "operation_id": operation_id,
-                    "conclusion": "not_attempted_stop_loss",
-                    "eligible": False,
-                    "missing": ["layer_stop_loss"],
-                    "request_count": 0,
-                }
-            else:
-                before = discipline.total
-                source = read_json(draft_root / f"{operation_id}.json")
-                result = probe_draft(
-                    source,
-                    stable_client=stable_client,
-                    runtime=runtime,
-                    recording=recording,
-                    evidence_root=evidence_root,
-                    draft_root=draft_root,
-                )
-                result["request_count"] = discipline.total - before
-                attempted += 1
-                successful += result.get("conclusion") == "success"
-            result["tier"] = tier
-            result["parent_indicated"] = bool(row["parent_indicated"])
-            result["bound_parent_count"] = int(row["bound_parent_count"])
-            results.append(result)
-            if attempted >= 20 and successful == 0 and index + 1 < len(layer_rows):
-                stop_loss = True
-                if tier not in stop_loss_layers:
-                    stop_loss_layers.append(tier)
-        layer_summaries.append(
-            {
-                "tier": tier,
-                "total": len(layer_rows),
-                "attempted": attempted,
-                "successful": successful,
-                "success_rate": successful / attempted if attempted else 0.0,
-                "requests": discipline.total - layer_start_requests,
-                "stop_loss": stop_loss,
-            }
+        layer_results, layer_summary, stop_loss = _probe_batch_layer(
+            tier, rows, discipline=discipline, stable_client=stable_client,
+            runtime=runtime, recording=recording, draft_root=draft_root,
+            evidence_root=evidence_root,
         )
+        results.extend(layer_results)
+        layer_summaries.append(layer_summary)
+        if stop_loss:
+            stop_loss_layers.append(tier)
 
-    eligible: list[str] = []
-    for path in sorted(draft_root.glob("*.json")):
-        source = read_json(path)
-        if evaluate_gate(source)["eligible"]:
-            eligible.append(path.stem)
-    promoted = (
-        promote_drafts(
-            eligible,
-            draft_root=draft_root,
-            operation_root=operation_root,
-            compile_products=True,
-        )
-        if promote and eligible
-        else []
+    promoted = _promote_batch_drafts(
+        draft_root=draft_root, operation_root=operation_root, promote=promote
     )
-    promoted_ids = {str(item["operation_id"]) for item in promoted}
-    for result in results:
-        result["promoted"] = str(result["operation_id"]) in promoted_ids
-        if not result["promoted"]:
-            result["failure_reason"] = _failure_reason({}, result)
-
-    parent_rows = [row for row in rows if row["parent_indicated"]]
-    parent_results: list[dict[str, Any]] = []
-    by_id = {str(item["operation_id"]): item for item in results}
-    for row in parent_rows:
-        operation_id = str(row["operation_id"])
-        reference = _latest_reference(operation_id, draft_root)
-        result = by_id[operation_id]
-        parent_results.append(
-            {
-                "operation_id": operation_id,
-                "attempted": int(result.get("request_count", 0)) > 0,
-                "bound_parent_count": row["bound_parent_count"],
-                "resolved": bool(reference.get("parent_resolved")),
-                "actual_stable_parent_attempted": bool(
-                    row["bound_parent_count"] and int(result.get("request_count", 0)) > 0
-                ),
-                "conclusion": result.get("conclusion"),
-            }
-        )
-
-    failure_counts = Counter(
-        str(item["failure_reason"])
-        for item in results
-        if not item["promoted"]
-    )
+    promoted_ids = _mark_batch_promotions(results, promoted)
+    parent_results = _batch_parent_results(rows, results, draft_root)
     write_json(report_root / "probe-results.json", {"results": results})
     write_json(
         report_root / "skipped-write.json",
@@ -366,54 +468,13 @@ def run_batch_probes(
         },
     )
     write_json(report_root / "parent-results.json", {"results": parent_results})
-    summary = {
-        "schema_version": "gravity-insight.batch-probe-summary.v1",
-        "drafts": len(rows),
-        "tier_counts": {str(key): tier_counts[key] for key in range(1, 6)},
-        "layers": layer_summaries,
-        "attempted": sum(item["attempted"] for item in layer_summaries),
-        "successful": sum(item["successful"] for item in layer_summaries),
-        "promoted": len(promoted),
-        "promoted_operation_ids": sorted(promoted_ids),
-        "initial_stable": initial_stable,
-        "final_stable": _stable_count(operation_root),
-        "failure_counts": dict(sorted(failure_counts.items())),
-        "parent": {
-            "total": len(parent_results),
-            "attempted": sum(item["attempted"] for item in parent_results),
-            "resolved": sum(item["resolved"] for item in parent_results),
-            "actual_stable_parent_attempted": sum(
-                item["actual_stable_parent_attempted"] for item in parent_results
-            ),
-        },
-        "method": {
-            "uncertain_before_probe": sum(
-                str(read_json(draft_root / f"{row['operation_id']}.json")
-                    .get("draft", {}).get("route_evidence", {})
-                    .get("method_certainty", "")) != "high"
-                for row in rows
-                if (draft_root / f"{row['operation_id']}.json").is_file()
-            ),
-            "verified_by_success": sum(
-                item.get("conclusion") == "success" for item in results
-            ),
-        },
-        "skipped_write": sum(
-            row["write_semantics_reason"] is not None for row in rows
-        ),
-        "skipped_privacy_name_risk": sum(
-            row["privacy_name_risk"] is not None for row in rows
-        ),
-        "stop_loss_layers": stop_loss_layers,
-        "requests": {
-            "total": discipline.total,
-            "failed": discipline.failed,
-            "backoff_events": discipline.backoff_events,
-            "backoff_terminations": discipline.backoff_terminations,
-            "limit": discipline.request_limit,
-            "minimum_interval_ms": int(discipline.interval_seconds * 1000),
-        },
-    }
+    summary = _run_batch_summary(
+        rows=rows, tier_counts=tier_counts, layer_summaries=layer_summaries,
+        results=results, promoted=promoted, promoted_ids=promoted_ids,
+        initial_stable=initial_stable, operation_root=operation_root,
+        parent_results=parent_results, draft_root=draft_root,
+        stop_loss_layers=stop_loss_layers, discipline=discipline,
+    )
     write_json(report_root / "summary.json", summary)
     return summary
 
@@ -428,187 +489,21 @@ def finalize_batch_report(
 ) -> dict[str, Any]:
     """Reconcile a resumed batch into one operation-deduplicated report."""
 
-    layering = read_json(report_root / "layering.json")
-    rows = list(layering.get("drafts", []))
+    rows = list(read_json(report_root / "layering.json").get("drafts", []))
     if len(rows) != 309:
         raise ValueError("the canonical batch layering report must contain 309 drafts")
-    evidence_by_operation: dict[str, list[tuple[Path, Mapping[str, Any]]]] = {}
-    request_totals = Counter()
-    skipped_evidence_files: list[dict[str, str]] = []
-    for path, evidence in iter_json_evidence(
-        evidence_root, skipped_files=skipped_evidence_files
-    ):
-        timestamp = path.name.split("_", 1)[0]
-        if timestamp < task_evidence_floor:
-            continue
-        operation_id = str(evidence.get("operation_id", ""))
-        if not operation_id:
-            continue
-        evidence_by_operation.setdefault(operation_id, []).append((path, evidence))
-        stats = evidence.get("request_stats", {})
-        if isinstance(stats, Mapping):
-            request_totals["total"] += int(stats.get("total", 0))
-            request_totals["failed"] += int(stats.get("failed", 0))
-            request_totals["backoff_terminations"] += int(
-                stats.get("backoff_terminations", 0)
-            )
-
-    stable_ids = {
-        str(source["operation"]["operation_id"])
-        for path in operation_root.glob("*.json")
-        for source in [read_json(path)]
-        if source.get("operation", {}).get("stability") == "stable"
-    }
-    final_rows: list[dict[str, Any]] = []
-    parent_results: list[dict[str, Any]] = []
-    for row in rows:
-        operation_id = str(row["operation_id"])
-        evidence_rows = evidence_by_operation.get(operation_id, [])
-        latest = evidence_rows[-1][1] if evidence_rows else {}
-        successful = any(bool(item[1].get("successful")) for item in evidence_rows)
-        promoted = operation_id in stable_ids
-        missing: list[str] = []
-        draft_path = draft_root / f"{operation_id}.json"
-        if draft_path.is_file():
-            missing = list(evaluate_gate(read_json(draft_path))["missing"])
-        result = {
-            **dict(row),
-            "attempted": bool(evidence_rows),
-            "successful": successful,
-            "promoted": promoted,
-            "latest_conclusion": latest.get("conclusion") if latest else None,
-            "latest_evidence": (
-                evidence_rows[-1][0].relative_to(REPO_ROOT).as_posix()
-                if evidence_rows else None
-            ),
-            "evidence_count": len(evidence_rows),
-            "missing": missing,
-        }
-        if not promoted:
-            if row.get("write_semantics_reason"):
-                reason = "写语义跳过"
-            elif row.get("privacy_name_risk"):
-                reason = "字段待审"
-            elif latest.get("conclusion") in {
-                "privacy_review_required", "success"
-            } or "field_review_required" in missing:
-                reason = "字段待审"
-            elif latest.get("conclusion") in {"inconclusive_empty", "available_empty"}:
-                reason = "空数据"
-            elif latest.get("conclusion") == "permission_or_auth_unavailable":
-                reason = "无权限"
-            elif row.get("parent_indicated") and latest.get("conclusion") in {
-                "local_or_parent_inconclusive", "semantic_error"
-            }:
-                reason = "需父资源"
-            elif latest.get("conclusion") == "semantic_error":
-                reason = "参数不明"
-            else:
-                reason = "路由不可用"
-            result["failure_reason"] = reason
-        final_rows.append(result)
-
-        if row.get("parent_indicated"):
-            actual_parent_attempted = any(
-                any(
-                    isinstance(http, Mapping) and http.get("purpose") == "parent"
-                    for http in evidence.get("http", [])
-                )
-                for _, evidence in evidence_rows
-            )
-            resolved = any(
-                bool(evidence.get("successful"))
-                and (
-                    evidence.get("required_parent") is None
-                    or (
-                        isinstance(evidence.get("required_parent"), Mapping)
-                        and evidence["required_parent"].get("status") == "resolved"
-                    )
-                )
-                for _, evidence in evidence_rows
-            )
-            parent_results.append(
-                {
-                    "operation_id": operation_id,
-                    "attempted": bool(evidence_rows),
-                    "resolved": resolved,
-                    "actual_stable_parent_attempted": actual_parent_attempted,
-                    "bound_parent_count": row.get("bound_parent_count", 0),
-                    "latest_conclusion": latest.get("conclusion") if latest else None,
-                }
-            )
-
-    layer_results: list[dict[str, Any]] = []
-    for tier in range(1, 6):
-        selected = [item for item in final_rows if item["tier"] == tier]
-        attempted = sum(bool(item["attempted"]) for item in selected)
-        successful = sum(bool(item["successful"]) for item in selected)
-        layer_results.append(
-            {
-                "tier": tier,
-                "total": len(selected),
-                "attempted": attempted,
-                "successful": successful,
-                "promoted": sum(bool(item["promoted"]) for item in selected),
-                "success_rate": successful / attempted if attempted else 0.0,
-            }
-        )
-    failure_counts = Counter(
-        str(item["failure_reason"])
-        for item in final_rows
-        if not item["promoted"]
+    evidence_by_operation, request_totals, skipped_evidence_files = (
+        collect_batch_evidence(evidence_root, task_evidence_floor)
     )
-    summary = {
-        "schema_version": "gravity-insight.batch-probe-final.v1",
-        "tier_counts": {
-            str(item["tier"]): item["total"] for item in layer_results
-        },
-        "layers": layer_results,
-        "attempted": sum(bool(item["attempted"]) for item in final_rows),
-        "successful": sum(bool(item["successful"]) for item in final_rows),
-        "promoted": sum(bool(item["promoted"]) for item in final_rows),
-        "promoted_operation_ids": sorted(
-            str(item["operation_id"]) for item in final_rows if item["promoted"]
-        ),
-        "initial_stable": 124,
-        "final_stable": len(stable_ids),
-        "failure_counts": dict(sorted(failure_counts.items())),
-        "parent": {
-            "total": len(parent_results),
-            "attempted": sum(item["attempted"] for item in parent_results),
-            "resolved": sum(item["resolved"] for item in parent_results),
-            "actual_stable_parent_attempted": sum(
-                item["actual_stable_parent_attempted"] for item in parent_results
-            ),
-            "agent_cli_unknown_before": 22,
-            "agent_cli_unknown_clarified": 0,
-        },
-        "method": {
-            "uncertain_before_probe": 0,
-            "verified_by_success": sum(
-                bool(item["successful"]) for item in final_rows
-            ),
-        },
-        "skipped_write": sum(
-            bool(item.get("write_semantics_reason")) for item in final_rows
-        ),
-        "skipped_privacy_name_risk": sum(
-            bool(item.get("privacy_name_risk")) for item in final_rows
-        ),
-        "stop_loss_layers": [2, 3, 4],
-        "backfilled_after_stop_loss": 10,
-        "requests": {
-            "probe_total": request_totals["total"],
-            "probe_failed": request_totals["failed"],
-            "backoff_terminations": request_totals["backoff_terminations"],
-            "auth_refresh_and_smoke": auth_http_requests,
-            "http_total_upper_bound": request_totals["total"] + auth_http_requests,
-            "limit": 900,
-            "minimum_interval_ms": 310,
-        },
-        "skipped_evidence_file_count": len(skipped_evidence_files),
-        "skipped_evidence_files": skipped_evidence_files,
-    }
+    stable_ids = stable_operation_ids(operation_root)
+    final_rows, parent_results = final_operation_rows(
+        rows, evidence_by_operation, stable_ids, draft_root, evaluate_gate
+    )
+    summary = final_batch_summary(
+        final_rows=final_rows, parent_results=parent_results, stable_ids=stable_ids,
+        request_totals=request_totals, auth_http_requests=auth_http_requests,
+        skipped_evidence_files=skipped_evidence_files,
+    )
     write_json(report_root / "final-results.json", {"results": final_rows})
     write_json(report_root / "parent-results-final.json", {"results": parent_results})
     write_json(report_root / "summary.json", summary)

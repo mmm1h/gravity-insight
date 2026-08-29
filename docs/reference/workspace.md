@@ -118,10 +118,9 @@ adapter、也不发网络请求。
 日期等每次必须变化的值应声明为 required。这里没有字符串插值、模板继承、表达式、条件、循环、
 调度或通知。
 
-## 调用方语义上下文
+## Business Semantic 与调用方语义上下文
 
-可选 `[semantic_context]` 是独立版本的 `gravity.semantic-context.v1` 子合同。SDK 负责结构、引用
-校验、字面匹配和 Agent 交接；术语、说明、排除项、样例问法和具体 input 全部由调用项目维护。
+版本化 Definition/Binding 保存在显式 `gravity.semantic-source.v1` JSON/TOML 中，由 `SemanticRegistry` 或 `gravity semantics --source ...` 加载；不从 workspace 自动提升或推断。可选 `[semantic_context]` 是独立的词面匹配、verified query 和本地派生合同；SDK 负责结构、引用校验和 Agent 交接，具体声明由调用项目维护。
 下面只展示虚构形状：
 
 ```toml

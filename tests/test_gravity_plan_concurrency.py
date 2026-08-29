@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import threading
 import time
 import unittest
@@ -8,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from gravity_sdk.analysis_context import ANALYSIS_CONTEXT_SOURCES, analysis_context
+from gravity_sdk.adaptive_governor import AdaptiveRequestGovernor, STATIC
 from gravity_sdk.credentials import Credential
 from gravity_sdk.dashboard_analysis import run_dashboard_analysis
 from gravity_sdk.http_runtime import GravityHttpRuntime, HostRateLimiter, SQL_PROFILE
@@ -57,11 +57,20 @@ class PeakTransport:
         self.request_ids = []
 
     def batch(self, requests, *, max_workers, **_options):
+        first_wave = min(max_workers, len(requests))
+        barrier = threading.Barrier(first_wave) if first_wave > 1 else None
+        started = 0
+
         def send(request):
+            nonlocal started
             with self.lock:
                 self.active += 1
                 self.peak = max(self.peak, self.active)
                 self.request_ids.append(request["request_id"])
+                started += 1
+                synchronize = started <= first_wave
+            if barrier is not None and synchronize:
+                barrier.wait(timeout=2)
             time.sleep(0.01)
             try:
                 return self.response(request)
@@ -349,7 +358,7 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
                     call = self.calls
                 if call == 1:
                     first_http.set()
-                    case.assertTrue(return_429.wait(1))
+                    case.assertTrue(return_429.wait(30))
                     return Response(429, {"Retry-After": "3"})
                 return Response(200)
 
@@ -366,7 +375,7 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
             delays.append(delay)
             if len(delays) == 1:
                 waiting.set()
-                self.assertTrue(release.wait(1))
+                self.assertTrue(release.wait(30))
             now[0] += delay
 
         runtime = GravityHttpRuntime(
@@ -375,8 +384,12 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
             rate_clock=lambda: now[0], random_source=lambda: 0.0,
             interval_jitter_ratio=0.0,
             wall_clock=lambda: datetime(2026, 8, 13, tzinfo=timezone.utc),
-            business_slots=threading.BoundedSemaphore(2),
-            sql_slots=threading.BoundedSemaphore(2),
+            governor=AdaptiveRequestGovernor(
+                mode=STATIC,
+                total_capacity=3,
+                business_capacity=2,
+                sql_capacity=2,
+            ),
         )
 
         def request():
@@ -387,13 +400,17 @@ class PlanBorrowedConcurrencyTests(unittest.TestCase):
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             first = pool.submit(request)
-            self.assertTrue(first_http.wait(1))
-            second = pool.submit(request)
-            self.assertTrue(waiting.wait(1))
-            return_429.set()
-            self.assertEqual(429, first.result(timeout=2).status_code)
-            release.set()
-            self.assertEqual(200, second.result(timeout=2).status_code)
+            try:
+                self.assertTrue(first_http.wait(30))
+                second = pool.submit(request)
+                self.assertTrue(waiting.wait(30))
+                return_429.set()
+                self.assertEqual(429, first.result(timeout=30).status_code)
+                release.set()
+                self.assertEqual(200, second.result(timeout=30).status_code)
+            finally:
+                return_429.set()
+                release.set()
         self.assertGreaterEqual(sum(delays), 3.0)
         self.assertEqual(2, len(delays))
         self.assertEqual(2, session.calls)

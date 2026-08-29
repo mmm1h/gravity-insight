@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.operator-input.returned-dimension-change.v1",
+  "type": "object",
+  "required": [
+    "current_rows", "reference_rows", "selected_key", "selected_current",
+    "selected_reference", "current_rows_path", "reference_rows_path",
+    "selected_current_path", "selected_reference_path", "units", "additivity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "current_rows": {"$ref": "#/$defs/rows"},
+    "reference_rows": {"$ref": "#/$defs/rows"},
+    "selected_key": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "selected_current": {"$ref": "#/$defs/decimal_input"},
+    "selected_reference": {"$ref": "#/$defs/decimal_input"},
+    "current_rows_path": {"$ref": "#/$defs/pointer"},
+    "reference_rows_path": {"$ref": "#/$defs/pointer"},
+    "selected_current_path": {"$ref": "#/$defs/pointer"},
+    "selected_reference_path": {"$ref": "#/$defs/pointer"},
+    "current_step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "reference_step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "selected_current_step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "selected_reference_step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "metric": {"type": "string", "minLength": 1, "maxLength": 128},
+    "dimension": {"type": "string", "minLength": 1, "maxLength": 128},
+    "units": {
+      "type": "object",
+      "required": ["current", "reference", "output"],
+      "additionalProperties": false,
+      "properties": {
+        "current": {"type": "string", "minLength": 1, "maxLength": 128},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 128},
+        "output": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "additivity": {"enum": ["additive", "semi_additive", "non_additive"]}
+  },
+  "$defs": {
+    "rows": {"type": "array", "maxItems": 1000, "items": {"type": "object", "minProperties": 2}},
+    "decimal_input": {"type": ["string", "integer", "number"]},
+    "pointer": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^/.*$"}
+  }
+}

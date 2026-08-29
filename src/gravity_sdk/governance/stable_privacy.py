@@ -113,43 +113,88 @@ def _append_children(paths: set[str], children_by_parent: Mapping[str, Any]) -> 
         paths.update(added)
 
 
-def operation_exposure_paths(operation: Mapping[str, Any]) -> set[str]:
-    """Return exact static paths plus markers for non-static projection surfaces."""
-
-    projection = operation.get("response_projection", {})
-    if not isinstance(projection, Mapping):
-        return set()
-    paths: set[str] = set()
+def _add_data_key_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     for value in projection.get("data_keys", []):
         paths.add(f"data.{value}")
-    list_root = _list_root(operation)
+
+
+def _add_item_key_paths(
+    paths: set[str], projection: Mapping[str, Any], list_root: str
+) -> None:
     for value in projection.get("item_keys", []):
         paths.add(f"{list_root}.{value}")
+
+
+def _add_numeric_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     for value in projection.get("numeric_paths", []):
         normalized = str(value).replace(".[].", "[].").replace(".[]", "[]")
         paths.add(normalized if normalized.startswith("data") else f"data.{normalized}")
+
+
+def _add_data_item_key_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     for data_key, children in projection.get("data_item_keys", {}).items():
         if isinstance(children, list):
             paths.update(f"data.{data_key}[].{child}" for child in children)
+
+
+def _add_data_path_item_key_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     for data_path, children in projection.get("data_path_item_keys", {}).items():
         if isinstance(children, list):
             paths.update(f"data.{data_path}[].{child}" for child in children)
+
+
+def _add_nested_item_key_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     nested = projection.get("nested_item_keys", {})
     if isinstance(nested, Mapping):
         _append_children(paths, nested)
+
+
+def _add_recursive_data_item_key_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     recursive = projection.get("recursive_data_item_keys", {})
     if isinstance(recursive, Mapping):
         for data_key, children in recursive.items():
             paths.add(f"@recursive:data.{data_key}")
             if isinstance(children, list):
                 paths.update(f"data.{data_key}.**.{child}" for child in children)
+
+
+def _add_opaque_json_item_key_paths(
+    paths: set[str], projection: Mapping[str, Any], list_root: str
+) -> None:
     for field in projection.get("opaque_json_item_keys", []):
         matching = sorted(path for path in paths if _leaf(path) == str(field))
         paths.update(f"@opaque:{path}" for path in matching or [f"{list_root}.{field}"])
+
+
+def _add_dynamic_item_field_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     for input_name in projection.get("dynamic_item_fields", []):
         paths.add(f"@dynamic:item:{input_name}")
+
+
+def _add_numeric_suffix_item_field_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     for input_name in projection.get("numeric_suffix_item_fields", []):
         paths.add(f"@dynamic-numeric:item:{input_name}")
+
+
+def _add_data_dynamic_item_field_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     data_dynamic = projection.get("data_dynamic_item_fields", {})
     if isinstance(data_dynamic, Mapping):
         for data_key, input_names in data_dynamic.items():
@@ -158,6 +203,11 @@ def operation_exposure_paths(operation: Mapping[str, Any]) -> set[str]:
                     f"@dynamic:data:{data_key}:{input_name}"
                     for input_name in input_names
                 )
+
+
+def _add_data_numeric_suffix_item_field_paths(
+    paths: set[str], projection: Mapping[str, Any], _list_root: str
+) -> None:
     data_numeric = projection.get("data_numeric_suffix_item_fields", {})
     if isinstance(data_numeric, Mapping):
         for data_key, input_names in data_numeric.items():
@@ -166,6 +216,34 @@ def operation_exposure_paths(operation: Mapping[str, Any]) -> set[str]:
                     f"@dynamic-numeric:data:{data_key}:{input_name}"
                     for input_name in input_names
                 )
+
+
+_EXPOSURE_PATH_RULES = (
+    _add_data_key_paths,
+    _add_item_key_paths,
+    _add_numeric_paths,
+    _add_data_item_key_paths,
+    _add_data_path_item_key_paths,
+    _add_nested_item_key_paths,
+    _add_recursive_data_item_key_paths,
+    _add_opaque_json_item_key_paths,
+    _add_dynamic_item_field_paths,
+    _add_numeric_suffix_item_field_paths,
+    _add_data_dynamic_item_field_paths,
+    _add_data_numeric_suffix_item_field_paths,
+)
+
+
+def operation_exposure_paths(operation: Mapping[str, Any]) -> set[str]:
+    """Return exact static paths plus markers for non-static projection surfaces."""
+
+    projection = operation.get("response_projection", {})
+    if not isinstance(projection, Mapping):
+        return set()
+    paths: set[str] = set()
+    list_root = _list_root(operation)
+    for rule in _EXPOSURE_PATH_RULES:
+        rule(paths, projection, list_root)
     return paths
 
 

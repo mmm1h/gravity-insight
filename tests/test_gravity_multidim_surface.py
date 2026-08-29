@@ -19,7 +19,7 @@ from gravity_sdk.plan_multidim_adapter import (
     validate_multidim_plan,
 )
 from gravity_sdk.plan_multidim_result import sanitize_multidim_result
-from gravity_sdk.agent_multidim import MULTIDIM_CAPABILITY
+from gravity_sdk.agents.multidim import MULTIDIM_CAPABILITY
 from gravity_sdk.multidim_contract import multidim_multi_key_contract
 
 

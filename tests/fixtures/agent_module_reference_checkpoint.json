@@ -1,0 +1,5354 @@
+{
+  "schema_version": "gravity.agent-module-reference-checkpoint.v1",
+  "receipt_role": "live_checkpoint_scan_only; not authority for canonical errata replacements",
+  "immutable_baseline_ledger": {
+    "role": "errata_source_only_immutable_baseline",
+    "repository_path": "tests/fixtures/agent_module_reference_dispositions.json",
+    "git_blob": "0fcfa6c85e07c7cc901530ed8c2fe7516203e986",
+    "sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
+    "schema_version": "gravity.agent-module-reference-dispositions.v2"
+  },
+  "source_audit": {
+    "method": "direct repository scan",
+    "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
+    "file_universe": "git ls-files --cached --others --exclude-standard",
+    "scanner_path": "scripts/audit_agent_module_references.py",
+    "scanner_sha256": "90a5dbf090eed5152cdf19c8ebab7125ebeb4d105593be06ddc16d95ba69f762",
+    "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
+    "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
+    "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
+    "reference_evidence_sha256": "3058f9e2b9a0fbace3f47df1b688bd72139e22c01f80cf497892eb0564105135",
+    "manual_review_sha256": "2102eb7e018f167b318f7e60d4ed2b4c890f773f366cc3b8468ba3b376d99026",
+    "owner_state": "phase_2",
+    "version_controlled_file_count": 3193,
+    "scanned_file_count": 3185,
+    "excluded_files": [
+      "scripts/audit_agent_module_references.py",
+      "scripts/generate_agent_module_reference_dispositions.py",
+      "specs/agent-runtime/R17-agent-module-package-migration.md",
+      "tests/fixtures/agent_module_reference_checkpoint.json",
+      "tests/fixtures/agent_module_reference_dispositions.json",
+      "tests/test_agent_module_reference_dispositions.py",
+      "tmp/.gitkeep",
+      "tmp/codex/r17-disposition-ledger/generate_reference_dispositions.py"
+    ],
+    "governance_exclusion_rule": "Exclude only tmp/**, direct specs/agent-runtime/R17-*.md migration specifications, the checked-in baseline disposition fixture, live checkpoint receipt and their validator, and the two scripts that produce this audit. These paths define, generate, or validate R17 governance metadata rather than consume migrated runtime modules. Do not exclude AGENTS.md; specs/agent-runtime/architecture-source.md, index.json, or index.md; docs/maintainers/technical-debt.md; tests/agent_migration_characterization.py; or any other src, docs, specs, or tests path.",
+    "source_key_format": "{file}:{line}:{column}:{form}"
+  },
+  "scope": {
+    "audit_candidate_modules": 84,
+    "one_to_one_moves": [
+      {
+        "old_module": "gravity_sdk.agent_advertiser_profile",
+        "new_module": "gravity_sdk.agents.advertiser_profile"
+      },
+      {
+        "old_module": "gravity_sdk.agent_analysis",
+        "new_module": "gravity_sdk.agents.analysis"
+      },
+      {
+        "old_module": "gravity_sdk.agent_analysis_default_dictionary",
+        "new_module": "gravity_sdk.agents.analysis_default_dictionary"
+      },
+      {
+        "old_module": "gravity_sdk.agent_analysis_task",
+        "new_module": "gravity_sdk.agents.analysis_task"
+      },
+      {
+        "old_module": "gravity_sdk.agent_app_catalog",
+        "new_module": "gravity_sdk.agents.app_catalog"
+      },
+      {
+        "old_module": "gravity_sdk.agent_app_public_info",
+        "new_module": "gravity_sdk.agents.app_public_info"
+      },
+      {
+        "old_module": "gravity_sdk.agent_attribution_performance",
+        "new_module": "gravity_sdk.agents.attribution_performance"
+      },
+      {
+        "old_module": "gravity_sdk.agent_attribution_user_detail",
+        "new_module": "gravity_sdk.agents.attribution_user_detail"
+      },
+      {
+        "old_module": "gravity_sdk.agent_batch",
+        "new_module": "gravity_sdk.agents.batch"
+      },
+      {
+        "old_module": "gravity_sdk.agent_batch_questions",
+        "new_module": "gravity_sdk.agents.batch_questions"
+      },
+      {
+        "old_module": "gravity_sdk.agent_batch_sources",
+        "new_module": "gravity_sdk.agents.batch_sources"
+      },
+      {
+        "old_module": "gravity_sdk.agent_bilibili_account_performance",
+        "new_module": "gravity_sdk.agents.bilibili_account_performance"
+      },
+      {
+        "old_module": "gravity_sdk.agent_business_pulse",
+        "new_module": "gravity_sdk.agents.business_pulse"
+      },
+      {
+        "old_module": "gravity_sdk.agent_call_bound",
+        "new_module": "gravity_sdk.agents.call_bound"
+      },
+      {
+        "old_module": "gravity_sdk.agent_caller_language",
+        "new_module": "gravity_sdk.agents.caller_language"
+      },
+      {
+        "old_module": "gravity_sdk.agent_capabilities",
+        "new_module": "gravity_sdk.agents.capabilities"
+      },
+      {
+        "old_module": "gravity_sdk.agent_catalog",
+        "new_module": "gravity_sdk.agents.catalog"
+      },
+      {
+        "old_module": "gravity_sdk.agent_catalog_parity",
+        "new_module": "gravity_sdk.agents.catalog_parity"
+      },
+      {
+        "old_module": "gravity_sdk.agent_catalog_refresh",
+        "new_module": "gravity_sdk.agents.catalog_refresh"
+      },
+      {
+        "old_module": "gravity_sdk.agent_client",
+        "new_module": "gravity_sdk.agents.client"
+      },
+      {
+        "old_module": "gravity_sdk.agent_company_usage",
+        "new_module": "gravity_sdk.agents.company_usage"
+      },
+      {
+        "old_module": "gravity_sdk.agent_composite",
+        "new_module": "gravity_sdk.agents.composite"
+      },
+      {
+        "old_module": "gravity_sdk.agent_composite_inventory",
+        "new_module": "gravity_sdk.agents.composite_inventory"
+      },
+      {
+        "old_module": "gravity_sdk.agent_custom_audience",
+        "new_module": "gravity_sdk.agents.custom_audience"
+      },
+      {
+        "old_module": "gravity_sdk.agent_custom_metric",
+        "new_module": "gravity_sdk.agents.custom_metric"
+      },
+      {
+        "old_module": "gravity_sdk.agent_dashboard",
+        "new_module": "gravity_sdk.agents.dashboard"
+      },
+      {
+        "old_module": "gravity_sdk.agent_derived_metrics",
+        "new_module": "gravity_sdk.agents.derived_metrics"
+      },
+      {
+        "old_module": "gravity_sdk.agent_discovery_policy",
+        "new_module": "gravity_sdk.agents.discovery_policy"
+      },
+      {
+        "old_module": "gravity_sdk.agent_discovery_support",
+        "new_module": "gravity_sdk.agents.discovery_support"
+      },
+      {
+        "old_module": "gravity_sdk.agent_export",
+        "new_module": "gravity_sdk.agents.export"
+      },
+      {
+        "old_module": "gravity_sdk.agent_fixed_snapshots",
+        "new_module": "gravity_sdk.agents.fixed_snapshots"
+      },
+      {
+        "old_module": "gravity_sdk.agent_gap",
+        "new_module": "gravity_sdk.agents.gap"
+      },
+      {
+        "old_module": "gravity_sdk.agent_handoff",
+        "new_module": "gravity_sdk.agents.handoff"
+      },
+      {
+        "old_module": "gravity_sdk.agent_host_catalog",
+        "new_module": "gravity_sdk.agents.host_catalog"
+      },
+      {
+        "old_module": "gravity_sdk.agent_host_selection",
+        "new_module": "gravity_sdk.agents.host_selection"
+      },
+      {
+        "old_module": "gravity_sdk.agent_input_catalogs",
+        "new_module": "gravity_sdk.agents.input_catalogs"
+      },
+      {
+        "old_module": "gravity_sdk.agent_input_resolution",
+        "new_module": "gravity_sdk.agents.input_resolution"
+      },
+      {
+        "old_module": "gravity_sdk.agent_intent_routing",
+        "new_module": "gravity_sdk.agents.intent_routing"
+      },
+      {
+        "old_module": "gravity_sdk.agent_intent_text",
+        "new_module": "gravity_sdk.agents.intent_text"
+      },
+      {
+        "old_module": "gravity_sdk.agent_kanban_mutation",
+        "new_module": "gravity_sdk.agents.kanban_mutation"
+      },
+      {
+        "old_module": "gravity_sdk.agent_lexical_rescue",
+        "new_module": "gravity_sdk.agents.lexical_rescue"
+      },
+      {
+        "old_module": "gravity_sdk.agent_lexical_retrieval",
+        "new_module": "gravity_sdk.agents.lexical_retrieval"
+      },
+      {
+        "old_module": "gravity_sdk.agent_material_asset",
+        "new_module": "gravity_sdk.agents.material_asset"
+      },
+      {
+        "old_module": "gravity_sdk.agent_material_performance",
+        "new_module": "gravity_sdk.agents.material_performance"
+      },
+      {
+        "old_module": "gravity_sdk.agent_metadata_onboarding",
+        "new_module": "gravity_sdk.agents.metadata_onboarding"
+      },
+      {
+        "old_module": "gravity_sdk.agent_metadata_search",
+        "new_module": "gravity_sdk.agents.metadata_search"
+      },
+      {
+        "old_module": "gravity_sdk.agent_metadata_template",
+        "new_module": "gravity_sdk.agents.metadata_template"
+      },
+      {
+        "old_module": "gravity_sdk.agent_monetization_aggregate",
+        "new_module": "gravity_sdk.agents.monetization_aggregate"
+      },
+      {
+        "old_module": "gravity_sdk.agent_monetization_guard",
+        "new_module": "gravity_sdk.agents.monetization_guard"
+      },
+      {
+        "old_module": "gravity_sdk.agent_multidim",
+        "new_module": "gravity_sdk.agents.multidim"
+      },
+      {
+        "old_module": "gravity_sdk.agent_mutation_cards",
+        "new_module": "gravity_sdk.agents.mutation_cards"
+      },
+      {
+        "old_module": "gravity_sdk.agent_operation_contract",
+        "new_module": "gravity_sdk.agents.operation_contract"
+      },
+      {
+        "old_module": "gravity_sdk.agent_order_directory",
+        "new_module": "gravity_sdk.agents.order_directory"
+      },
+      {
+        "old_module": "gravity_sdk.agent_order_trace",
+        "new_module": "gravity_sdk.agents.order_trace"
+      },
+      {
+        "old_module": "gravity_sdk.agent_output",
+        "new_module": "gravity_sdk.agents.output"
+      },
+      {
+        "old_module": "gravity_sdk.agent_product_inventory",
+        "new_module": "gravity_sdk.agents.product_inventory"
+      },
+      {
+        "old_module": "gravity_sdk.agent_promotion_performance",
+        "new_module": "gravity_sdk.agents.promotion_performance"
+      },
+      {
+        "old_module": "gravity_sdk.agent_realtime_event",
+        "new_module": "gravity_sdk.agents.realtime_event"
+      },
+      {
+        "old_module": "gravity_sdk.agent_realtime_event_catalog",
+        "new_module": "gravity_sdk.agents.realtime_event_catalog"
+      },
+      {
+        "old_module": "gravity_sdk.agent_report_directory",
+        "new_module": "gravity_sdk.agents.report_directory"
+      },
+      {
+        "old_module": "gravity_sdk.agent_report_mutation",
+        "new_module": "gravity_sdk.agents.report_mutation"
+      },
+      {
+        "old_module": "gravity_sdk.agent_report_routing",
+        "new_module": "gravity_sdk.agents.report_routing"
+      },
+      {
+        "old_module": "gravity_sdk.agent_saved_analysis",
+        "new_module": "gravity_sdk.agents.saved_analysis"
+      },
+      {
+        "old_module": "gravity_sdk.agent_saved_analysis_mutation",
+        "new_module": "gravity_sdk.agents.saved_analysis_mutation"
+      },
+      {
+        "old_module": "gravity_sdk.agent_segment",
+        "new_module": "gravity_sdk.agents.segment"
+      },
+      {
+        "old_module": "gravity_sdk.agent_segment_members",
+        "new_module": "gravity_sdk.agents.segment_members"
+      },
+      {
+        "old_module": "gravity_sdk.agent_segment_snapshot",
+        "new_module": "gravity_sdk.agents.segment_snapshot"
+      },
+      {
+        "old_module": "gravity_sdk.agent_semantic_compose",
+        "new_module": "gravity_sdk.agents.semantic_compose"
+      },
+      {
+        "old_module": "gravity_sdk.agent_semantic_context",
+        "new_module": "gravity_sdk.agents.semantic_context"
+      },
+      {
+        "old_module": "gravity_sdk.agent_semantic_derived",
+        "new_module": "gravity_sdk.agents.semantic_derived"
+      },
+      {
+        "old_module": "gravity_sdk.agent_sources",
+        "new_module": "gravity_sdk.agents.sources"
+      },
+      {
+        "old_module": "gravity_sdk.agent_sql_product_discovery",
+        "new_module": "gravity_sdk.agents.sql_product_discovery"
+      },
+      {
+        "old_module": "gravity_sdk.agent_sql_product_gap",
+        "new_module": "gravity_sdk.agents.sql_product_gap"
+      },
+      {
+        "old_module": "gravity_sdk.agent_table_lineage",
+        "new_module": "gravity_sdk.agents.table_lineage"
+      },
+      {
+        "old_module": "gravity_sdk.agent_title_package",
+        "new_module": "gravity_sdk.agents.title_package"
+      },
+      {
+        "old_module": "gravity_sdk.agent_unavailable",
+        "new_module": "gravity_sdk.agents.unavailable"
+      },
+      {
+        "old_module": "gravity_sdk.agent_unavailable_analysis",
+        "new_module": "gravity_sdk.agents.unavailable_analysis"
+      },
+      {
+        "old_module": "gravity_sdk.agent_unavailable_promotion",
+        "new_module": "gravity_sdk.agents.unavailable_promotion"
+      },
+      {
+        "old_module": "gravity_sdk.agent_unavailable_report",
+        "new_module": "gravity_sdk.agents.unavailable_report"
+      },
+      {
+        "old_module": "gravity_sdk.agent_user_journey",
+        "new_module": "gravity_sdk.agents.user_journey"
+      },
+      {
+        "old_module": "gravity_sdk.agent_vocabulary",
+        "new_module": "gravity_sdk.agents.vocabulary"
+      },
+      {
+        "old_module": "gravity_sdk.relative_date_agent",
+        "new_module": "gravity_sdk.agents.relative_date"
+      }
+    ],
+    "consolidate_delete": {
+      "old_module": "gravity_sdk.agent_pagination",
+      "new_module": "gravity_sdk.pagination_completeness",
+      "symbol": "compact_pagination"
+    },
+    "retained_modules": [
+      "gravity_sdk.agent_runtime_contracts"
+    ]
+  },
+  "taxonomy": {
+    "rewrite_reference": "Replace the exact active source text with its one-to-one moved owner.",
+    "rewrite_selector_data": "Keep the dynamic import expression but rewrite all six exact lazy-owner selector values.",
+    "rewrite_consolidated_reference": "Replace agent_pagination with pagination_completeness before deleting the old module.",
+    "no_migration_effect": "Make no edit; the recorded basis proves the site is historical, a governance fact/evidence record, object-bound, deliberately retained, or outside the R17 selector domain.",
+    "runtime_verification_required": "Run the bounded verification before migration; failure becomes a blocker.",
+    "blocker": "Do not start R17 until the ownership or selector proposition is resolved."
+  },
+  "classification_method": {
+    "exact_reference": "Every scanner reference receives a coordinate-bound disposition. Exact moved owners rewrite, the retained owner remains, pagination consolidates, archive evidence remains frozen, and unknown mappings block.",
+    "bare_agent_string": "Classify each bounded Markdown record or JSON field: recognize consumer/current-path syntax before considering dated evidence, freeze only non-consumer dated decisions and explicit consolidated/deleted-module facts, rewrite active one-to-one paths, and block ambiguous deleted-module mentions.",
+    "agent_prefix_template": "Retain only the two characterization uses that classify legacy deep paths and validate old-module ledger shape; SCC membership is ledger-defined.",
+    "non_string_patch_expression": "Separate object APIs from dotted-string APIs and inspect every finite producer/call domain.",
+    "dynamic_import": "Trace each expression to finite inputs; rewrite the root lazy selector and reject unknown domains.",
+    "module_owner_receiver": "Trace every receiver binding and retain only owners outside the R17 move set."
+  },
+  "classification_basis": [
+    {
+      "basis": "The receiver is a locally enumerated error compatibility symbol whose owner is normalized to gravity_sdk.errors.",
+      "evidence_kind": "receiver_binding_census"
+    },
+    {
+      "basis": "The bounded governance record identifies agent_pagination as the module consolidated and deleted. Replacing it with the retained pagination_completeness owner would invert the recorded fact.",
+      "evidence_kind": "governance_record_semantics"
+    },
+    {
+      "basis": "The reviewed first argument 'prober_cli.runtime' is a bound object and the call supplies a separate attribute name.",
+      "evidence_kind": "binding_and_patch_api_semantics"
+    },
+    {
+      "basis": "The reviewed first argument 'online' is a bound object and the call supplies a separate attribute name.",
+      "evidence_kind": "binding_and_patch_api_semantics"
+    },
+    {
+      "basis": "The reviewed first argument 'nonempty_support' is a bound object and the call supplies a separate attribute name.",
+      "evidence_kind": "binding_and_patch_api_semantics"
+    },
+    {
+      "basis": "The reviewed first argument 'prober_batch' is a bound object and the call supplies a separate attribute name.",
+      "evidence_kind": "binding_and_patch_api_semantics"
+    },
+    {
+      "basis": "The reviewed first argument 'nonempty_runtime' is a bound object and the call supplies a separate attribute name.",
+      "evidence_kind": "binding_and_patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'self.client'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'SqlExplorerService'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'transport_module'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'client'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'self.subject'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'target'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'sys'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.sys'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.credentials.subprocess'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'SDK'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'socket.socket'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'registry.time'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'gravity_cli.credentials'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'sdk'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'tempfile._TemporaryFileWrapper'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'sql_client'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'crypto'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'GravityInsightClient'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'self.client._executor._transport'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'StaticFetcher'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'service'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'content_encoding'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'unified_cli'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'changed'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'SubprocessProviderTransport'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'registry.secrets'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'online'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'runtime'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'provenance'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'runtime_module.os'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'sdk'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'draft_probe'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'sqlite_adapter_module.sqlite3'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'transport_module.os'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'transport_module.subprocess'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "patch.object receives runtime object expression 'blob_module'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'receipt_retention.os'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "All _sdk_module call sites pass export_policy, registry, blob, export_models, or export_privacy; none is an agent module.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "stage ranges only over _project and _enforce_semantic_rules. The target is outside the R17 module set.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "module ranges only over order_trace_cli and order_directory_cli. The target is outside the R17 module set.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "__name__ is gravity_sdk.sql.credentials. The target is outside the R17 module set.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "patch_target ranges only over verify_all and credentials.pull. The target is outside the R17 module set.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "_atomic_update_env is owned by gravity_sdk.credentials. The target is outside the R17 module set.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "sdk.__name__ is gravity_sdk and the only appended suffix is '.errors'.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "The six expressions append fixed root-module suffixes outside R17.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "The local module tuple and separately imported directory module are all outside the R17 module set.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "The occurrence is in docs/archive, which AGENTS.md defines as non-normative history rather than a current interface or consumer.",
+      "evidence_kind": "repository_policy"
+    },
+    {
+      "basis": "The exact reference is in docs/archive, which is non-normative history and must preserve the recorded path.",
+      "evidence_kind": "repository_policy"
+    },
+    {
+      "basis": "Every call to this local setattr helper passes an imported module object; the string-target mock.patch branch has no agent-module input.",
+      "evidence_kind": "complete_local_call_census"
+    },
+    {
+      "basis": "The characterization helper uses the legacy prefix only to classify deep path references and validate ledger row shape. SCC membership comes from the exact 82 move rows plus pagination consolidation, not this prefix.",
+      "evidence_kind": "migration_characterization_contract"
+    },
+    {
+      "basis": "The concept-deletion gate intentionally names old and terminal owners to validate baseline, Phase 1, and Phase 2 states from one test.",
+      "evidence_kind": "three_state_gate_contract"
+    },
+    {
+      "basis": "_atomic_update_env is imported from gravity_sdk.credentials. That owner is outside the R17 move set.",
+      "evidence_kind": "receiver_binding_census"
+    },
+    {
+      "basis": "ExecutionVariantService is imported from gravity_sdk.execution_variant. That owner is outside the R17 move set.",
+      "evidence_kind": "receiver_binding_census"
+    },
+    {
+      "basis": "error_type is selected from gravity_sdk.errors. That owner is outside the R17 move set.",
+      "evidence_kind": "receiver_binding_census"
+    },
+    {
+      "basis": "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; this active governance reference names that unchanged terminal owner.",
+      "evidence_kind": "r17_scope_contract"
+    },
+    {
+      "basis": "R17 retains gravity_sdk.agent_runtime_contracts at the root, so this exact reference remains unchanged.",
+      "evidence_kind": "r17_scope_contract"
+    },
+    {
+      "basis": "All six finite _EXPORTS owner values already name their terminal gravity_sdk.agents owners.",
+      "evidence_kind": "finite_selector_dataflow"
+    },
+    {
+      "basis": "The loop input is the literal singleton ('gravity_sdk',), so it cannot select any deep agent module.",
+      "evidence_kind": "finite_input_dataflow"
+    }
+  ],
+  "summary": {
+    "tracked_site_count": 310,
+    "reference_site_count": 308,
+    "manual_review_site_count": 222,
+    "reference_manual_overlap_count": 220,
+    "manual_only_site_count": 2,
+    "unique_source_keys": 310,
+    "unclassified_sites": 0,
+    "blocker_count": 0,
+    "site_blocker_count": 0,
+    "actionable_site_count": 0,
+    "reference_categories": {
+      "documentation_spec": 90,
+      "dynamic_import": 11,
+      "manual_patch_expression": 118,
+      "module_qualname_dependency": 7,
+      "static_import": 77,
+      "string_reference": 5
+    },
+    "manual_review_categories": {
+      "agent_prefix_template": 2,
+      "bare_agent_string": 84,
+      "dynamic_import": 11,
+      "module_owner_receiver": 7,
+      "non_string_patch_expression": 118
+    },
+    "dispositions": {
+      "no_migration_effect": 310
+    },
+    "sites_sha256": "86e6dfdcb924ca4bdfcbe07295547e15c508085151072145c8ee084c31c2fae3"
+  },
+  "blockers": [],
+  "site_fields": [
+    "source_key",
+    "tracked_sources",
+    "audit_category",
+    "old_value",
+    "audit_proposed_value",
+    "reference_category",
+    "reference_certainty",
+    "disposition",
+    "reason_code",
+    "basis_id",
+    "migration_action"
+  ],
+  "sites": [
+    [
+      "docs/archive/decisions/2026-08/agent-eval-baseline.md:218:2:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_routing",
+      "intent_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/agent-eval-baseline.md:370:13:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_routing",
+      "intent_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:131:39:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_sources",
+      "sources",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:133:37:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_sources",
+      "sources",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:154:46:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_monetization_guard",
+      "monetization_guard",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:154:76:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_order_directory",
+      "order_directory",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:155:67:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "relative_date_agent",
+      "relative_date",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:399:40:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_sources",
+      "sources",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:406:110:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_report_routing",
+      "report_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:406:137:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_report_routing",
+      "report_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:54:19:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:70:4:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_text",
+      "intent_text",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:72:4:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:81:44:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_text",
+      "intent_text",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:86:22:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_report_routing",
+      "report_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:98:126:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:98:24:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:98:48:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_composite",
+      "composite",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/arch-review.md:98:69:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_handoff",
+      "handoff",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/catalog-routing-and-playbooks.md:38:20:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_app_catalog",
+      "app_catalog",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/coldstart-friction.md:39:96:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_catalog",
+      "catalog",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/coldstart-friction.md:40:100:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_catalog",
+      "catalog",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/consumer-affordances.md:19:97:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_discovery_support",
+      "discovery_support",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/goals-and-current-state.md:460:29:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_sources",
+      "sources",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/goals-and-current-state.md:463:39:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_handoff",
+      "handoff",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/governed-writes-and-analysis.md:211:2:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_segment",
+      "segment",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/governed-writes-and-analysis.md:272:54:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_caller_language",
+      "caller_language",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/lexicon.md:14:19:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_caller_language",
+      "caller_language",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/lexicon.md:18:31:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_lexical_retrieval",
+      "lexical_retrieval",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/next-pointers.md:52:5:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_selection",
+      "host_selection",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/prior-art.md:19:100:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_selection",
+      "host_selection",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/prior-art.md:19:126:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_discovery_support",
+      "discovery_support",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/prior-art.md:19:61:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_gap",
+      "gap",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/prior-art.md:19:76:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_catalog",
+      "host_catalog",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/prior-art.md:99:191:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_catalog",
+      "host_catalog",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:219:37:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:219:61:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_composite",
+      "composite",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:220:2:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_handoff",
+      "handoff",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:232:22:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_routing",
+      "intent_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/recognizer-recall.md:39:102:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_text",
+      "intent_text",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-arms-paired-holdout.md:72:18:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_selection",
+      "host_selection",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-arms-paired-holdout.md:72:2:text source path",
+      "r",
+      "exact_reference",
+      "src/gravity_sdk/agent_host_selection.py",
+      "src/gravity_sdk/agents/host_selection.py",
+      "documentation_spec",
+      "exact",
+      "no_migration_effect",
+      "frozen_historical_text",
+      54,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:17:185:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_export",
+      "export",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:197:61:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_batch",
+      "batch",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:230:140:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_selection",
+      "host_selection",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:230:174:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_routing",
+      "intent_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:23:35:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_selection",
+      "host_selection",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:29:5:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_selection",
+      "host_selection",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:45:51:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_host_selection",
+      "host_selection",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:77:28:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_input_resolution",
+      "input_resolution",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:78:37:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_input_resolution",
+      "input_resolution",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:81:50:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_batch",
+      "batch",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:82:34:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_batch",
+      "batch",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-callers.md:84:61:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_input_resolution",
+      "input_resolution",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/routing-provenance.md:28:90:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_batch_questions",
+      "batch_questions",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/semantics-errors-and-discovery.md:90:51:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_routing",
+      "intent_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/team-onboarding.md:53:101:text source path",
+      "r",
+      "exact_reference",
+      "src/gravity_sdk/agent_discovery_support.py",
+      "src/gravity_sdk/agents/discovery_support.py",
+      "documentation_spec",
+      "exact",
+      "no_migration_effect",
+      "frozen_historical_text",
+      54,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/team-onboarding.md:53:117:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_discovery_support",
+      "discovery_support",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/decisions/2026-08/writes-and-nl-routing.md:184:11:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_caller_language",
+      "caller_language",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/designs/dashboard-conditions.md:49:38:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/designs/dashboard-conditions.md:50:26:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_handoff",
+      "handoff",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/designs/dashboard-conditions.md:50:4:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_composite",
+      "composite",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/designs/material-performance.md:143:4:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_material_performance",
+      "material_performance",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/designs/order-directory.md:147:36:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_order_directory",
+      "order_directory",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/designs/order-split-trace.md:147:32:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_order_trace",
+      "order_trace",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/designs/promotion-performance.md:160:4:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_promotion_performance",
+      "promotion_performance",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/agent-usability-methods.md:102:195:text source path",
+      "r",
+      "exact_reference",
+      "src/gravity_sdk/agent_intent_routing.py",
+      "src/gravity_sdk/agents/intent_routing.py",
+      "documentation_spec",
+      "exact",
+      "no_migration_effect",
+      "frozen_historical_text",
+      54,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/agent-usability-methods.md:102:211:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_routing",
+      "intent_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/agent-usability-methods.md:114:214:text source path",
+      "r",
+      "exact_reference",
+      "src/gravity_sdk/agent_call_bound.py",
+      "src/gravity_sdk/agents/call_bound.py",
+      "documentation_spec",
+      "exact",
+      "no_migration_effect",
+      "frozen_historical_text",
+      54,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/agent-usability-methods.md:114:230:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_call_bound",
+      "call_bound",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/agent-usability-methods.md:197:257:text source path",
+      "r",
+      "exact_reference",
+      "src/gravity_sdk/agent_call_bound.py",
+      "src/gravity_sdk/agents/call_bound.py",
+      "documentation_spec",
+      "exact",
+      "no_migration_effect",
+      "frozen_historical_text",
+      54,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/agent-usability-methods.md:197:273:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_call_bound",
+      "call_bound",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/borrow-roadmap.md:299:52:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/borrow-roadmap.md:299:76:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_composite",
+      "composite",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/borrow-roadmap.md:299:99:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_handoff",
+      "handoff",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/mcp-feasibility.md:248:35:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/mcp-feasibility.md:248:59:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_composite",
+      "composite",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/mcp-feasibility.md:249:2:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_handoff",
+      "handoff",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/mcp-protocol-and-servers.md:316:163:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/mcp-protocol-and-servers.md:316:195:text source path",
+      "r",
+      "exact_reference",
+      "src/gravity_sdk/agent_capabilities.py",
+      "src/gravity_sdk/agents/capabilities.py",
+      "documentation_spec",
+      "exact",
+      "no_migration_effect",
+      "frozen_historical_text",
+      54,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/research/mcp-protocol-and-servers.md:316:211:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/snapshots/technical-debt-2026-08-19.md:161:19:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_intent_routing",
+      "intent_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/snapshots/technical-debt-2026-08-19.md:264:2:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_capabilities",
+      "capabilities",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/snapshots/technical-debt-2026-08-19.md:61:30:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_input_resolution",
+      "input_resolution",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/snapshots/technical-debt-2026-08-19.md:61:58:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_input_catalogs",
+      "input_catalogs",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "docs/archive/snapshots/technical-debt-2026-08-19.md:72:19:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_report_routing",
+      "report_routing",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "frozen_historical_exact_reference",
+      53,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "scripts/agent_usability_eval.py:708:29:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "socket.socket",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      17,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "scripts/agent_usability_host_arm_gap.py:56:29:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "socket.socket",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      17,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "scripts/generate_thinkingai_full_specifications.py:17:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "scripts/generate_thinkingai_full_specifications.py:34:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "scripts/generate_thinkingai_representatives.py:16:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "specs/agent-runtime/index.json:187:12:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_pagination",
+      "pagination_completeness",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "deleted_module_governance_fact",
+      1,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "specs/agent-runtime/index.json:190:12:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_runtime_contracts",
+      "agent_runtime_contracts",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "retained_exact_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "specs/agent-runtime/index.md:156:29:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_runtime_contracts",
+      "agent_runtime_contracts",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "retained_exact_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "specs/agent-runtime/index.md:156:2:bare text module string",
+      "rm",
+      "bare_agent_string",
+      "agent_pagination",
+      "pagination_completeness",
+      "documentation_spec",
+      "context review",
+      "no_migration_effect",
+      "deleted_module_governance_fact",
+      1,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/__init__.py:278:21:import_module",
+      "rm",
+      "dynamic_import",
+      "module_name",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "root_lazy_export_owner_map_migrated",
+      63,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/action_dashboard_connector.py:15:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/adaptive_governor_snapshot.py:15:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/analysis_artifact.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/analysis_artifact_delivery.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/analysis_artifact_markdown.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/analysis_result_contract.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/artifact_transfer.py:16:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/capability_contract.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/capability_trust.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/capability_validation.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/context_contract.py:14:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/core_skill_references.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/core_skill_runtime.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/data_quality.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/error_mapping.py:101:5:__module__",
+      "rm",
+      "module_owner_receiver",
+      "_compat_symbol.__module__",
+      "",
+      "module_qualname_dependency",
+      "requires ownership review",
+      "no_migration_effect",
+      "compatibility_owner_assignment",
+      0,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/error_models.py:315:5:__module__",
+      "rm",
+      "module_owner_receiver",
+      "_compat_symbol.__module__",
+      "",
+      "module_qualname_dependency",
+      "requires ownership review",
+      "no_migration_effect",
+      "compatibility_owner_assignment",
+      0,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/error_sql.py:31:5:__module__",
+      "rm",
+      "module_owner_receiver",
+      "_compat_symbol.__module__",
+      "",
+      "module_qualname_dependency",
+      "requires ownership review",
+      "no_migration_effect",
+      "compatibility_owner_assignment",
+      0,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/error_types.py:182:5:__module__",
+      "rm",
+      "module_owner_receiver",
+      "_compat_symbol.__module__",
+      "",
+      "module_qualname_dependency",
+      "requires ownership review",
+      "no_migration_effect",
+      "compatibility_owner_assignment",
+      0,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/execution_snapshot.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/execution_variant_characterization.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/execution_variant_contract.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/execution_variant_selection.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/experiment_handoff.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/external_context_binding.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/external_context_binding_contract.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/external_context_contract.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/governor_observation.py:16:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/journey_contract.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/journey_ledger.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/journey_service.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/resources.py:15:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/results.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/server.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/mcp/tool_catalog.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/model_contract.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/operator_contract.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/operator_model_receipt.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/outcome_evaluation_handoff.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/cli.py:328:14:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "sdk.__name__ + \".errors\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_suffix",
+      50,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/export_verify.py:60:12:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "f\"{base}.{name}\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_call_domain",
+      44,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/transport.py:196:19:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "base + \".models\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_suffix",
+      51,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/transport.py:197:21:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "base + \".registry\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_suffix",
+      51,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/transport.py:198:21:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "base + \".executor\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_suffix",
+      51,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/transport.py:199:22:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "base + \".transport\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_suffix",
+      51,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/transport.py:200:25:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "base + \".http_runtime\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_suffix",
+      51,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/prober/transport.py:201:24:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "base + \".credentials\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_suffix",
+      51,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/project_skill_overlay.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/receipt.py:455:5:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/receipt_facets.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/repo_context_index.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/runtime.py:34:20:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "name",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "root_package_only",
+      64,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/runtime_skill_resolver.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/semantic_contract.py:14:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/semantic_registry.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_contract.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_hub_archive.py:17:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_hub_contract.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_hub_locks.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_hub_source.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_hub_state.py:15:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_package.py:14:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/skill_render.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/sql/credentials.py:355:10:patch",
+      "rm",
+      "non_string_patch_expression",
+      "f\"{__name__}.restrict_local_secret\"",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_patch_path",
+      47,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/sql_explorer.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/sql_explorer_contract.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/sql_explorer_policy.py:14:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/thinkingai_full_eval.py:8:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/thinkingai_full_shared.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/thinkingai_full_specification.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/thinkingai_inventory_contract.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/thinkingai_inventory_diff.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/thinkingai_representative.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_sdk/trusted_pack_contract.py:8:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/agent_migration_characterization.py:20:28:python string literal",
+      "m",
+      "agent_prefix_template",
+      "gravity_sdk.agent_",
+      "",
+      null,
+      null,
+      "no_migration_effect",
+      "legacy_prefix_migration_sentinel",
+      56,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/agent_migration_characterization.py:21:30:python string literal",
+      "m",
+      "agent_prefix_template",
+      "gravity_sdk.agent_",
+      "",
+      null,
+      null,
+      "no_migration_effect",
+      "legacy_prefix_migration_sentinel",
+      56,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_action_dashboard_connector.py:19:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_concept_deletions.py:18:24:python string literal",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_pagination",
+      "gravity_sdk.pagination_completeness",
+      "string_reference",
+      "exact",
+      "no_migration_effect",
+      "phase_state_contract_sentinel",
+      57,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_concept_deletions.py:20:27:python string literal",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_sources",
+      "gravity_sdk.agents.sources",
+      "string_reference",
+      "exact",
+      "no_migration_effect",
+      "phase_state_contract_sentinel",
+      57,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_concept_deletions.py:22:22:python string literal",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_batch_sources",
+      "gravity_sdk.agents.batch_sources",
+      "string_reference",
+      "exact",
+      "no_migration_effect",
+      "phase_state_contract_sentinel",
+      57,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_concept_deletions.py:824:17:python string literal",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_batch_sources",
+      "gravity_sdk.agents.batch_sources",
+      "string_reference",
+      "exact",
+      "no_migration_effect",
+      "phase_state_contract_sentinel",
+      57,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_concept_deletions.py:856:17:python string literal",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_batch_sources",
+      "gravity_sdk.agents.batch_sources",
+      "string_reference",
+      "exact",
+      "no_migration_effect",
+      "phase_state_contract_sentinel",
+      57,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_host_selection.py:143:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client._executor._transport",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      25,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_usability_eval.py:233:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.subject",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      11,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_usability_eval.py:418:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.subject",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      11,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_agent_usability_eval.py:418:69:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.subject",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      11,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_analysis_artifact.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_analysis_artifact.py:307:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "tempfile._TemporaryFileWrapper",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      21,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_artifact_transfer.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_capability_trust.py:8:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_control_plane_tuf.py:132:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "crypto",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_core_external_context_binding.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_error_import_compatibility.py:94:56:__module__",
+      "rm",
+      "module_owner_receiver",
+      "error_type.__module__",
+      "",
+      "module_qualname_dependency",
+      "requires ownership review",
+      "no_migration_effect",
+      "receiver_owner_outside_r17",
+      60,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_execution_snapshot.py:7:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_execution_variant.py:115:48:__module__",
+      "rm",
+      "module_owner_receiver",
+      "ExecutionVariantService.__module__",
+      "",
+      "module_qualname_dependency",
+      "requires ownership review",
+      "no_migration_effect",
+      "receiver_owner_outside_r17",
+      59,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_execution_variant.py:390:21:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "service",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      27,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_execution_variant.py:393:21:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sdk",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      20,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_execution_variant.py:447:17:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sdk",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      20,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_experiment_handoff.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_census_pipeline.py:317:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "StaticFetcher",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      26,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_http_runtime.py:166:13:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime_module.os",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      36,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_surface.py:414:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      10,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_surface.py:466:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      34,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:166:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      34,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:198:17:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      34,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:199:17:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      34,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:204:17:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      34,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:287:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:290:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:353:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:354:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:674:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_agent_ux.py:736:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_blob.py:243:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "blob_module",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      42,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_cli.py:214:33:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      13,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_cli.py:276:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      34,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_cli.py:277:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      34,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_cli_catalog_hardening.py:246:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      10,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_cli_catalog_hardening.py:252:12:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      10,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_core.py:2745:18:patch",
+      "rm",
+      "non_string_patch_expression",
+      "f\"{_atomic_update_env.__module__}._restrict_secret_file\"",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_patch_path",
+      49,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_core.py:2745:27:__module__",
+      "rm",
+      "module_owner_receiver",
+      "_atomic_update_env.__module__",
+      "",
+      "module_qualname_dependency",
+      "requires ownership review",
+      "no_migration_effect",
+      "receiver_owner_outside_r17",
+      58,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_encoding.py:16:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "content_encoding",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      28,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_encoding.py:27:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "content_encoding",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      28,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_encoding.py:55:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "content_encoding",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      28,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_export_integration.py:397:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      10,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_export_integration.py:633:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "GravityInsightClient",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      24,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_golden.py:391:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "registry.time",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      18,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_golden.py:393:12:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "registry.secrets",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      32,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_nonempty.py:145:5:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "nonempty_support",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      4,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_nonempty.py:146:5:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "nonempty_runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      6,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_nonempty.py:149:5:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "nonempty_runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      6,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_nonempty.py:158:5:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "nonempty_runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      6,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_nonempty.py:159:5:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "nonempty_runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      6,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_nonempty.py:184:19:mock.patch",
+      "rm",
+      "non_string_patch_expression",
+      "target",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "helper_receives_only_objects",
+      55,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_nonempty.py:184:80:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "target",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      12,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:168:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:192:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:211:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:230:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:241:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:277:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:300:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:320:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:381:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:396:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      7,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:392:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:393:17:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:456:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:461:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:518:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:86:9:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:91:9:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_probe_semantics.py:92:9:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "draft_probe",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:265:19:mock.patch",
+      "rm",
+      "non_string_patch_expression",
+      "target",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "helper_receives_only_objects",
+      55,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:265:80:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "target",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      12,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:809:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "online",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      33,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:809:81:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "online",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      33,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:859:9:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "online",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      3,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:860:9:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "online",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      3,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:864:9:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "prober_batch",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      5,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:865:9:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "prober_batch",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      5,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_prober.py:869:9:monkeypatch.setattr",
+      "rm",
+      "non_string_patch_expression",
+      "prober_cli.runtime",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_monkeypatch",
+      2,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_material_performance.py:61:21:importlib.import_module",
+      "rm",
+      "dynamic_import",
+      "f\"gravity_sdk.{name}\"",
+      "",
+      "dynamic_import",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_test_domain",
+      52,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_material_performance_surface.py:186:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "SDK",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      16,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_material_performance_surface.py:195:45:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "SDK",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      16,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_monetization_guard_agent.py:88:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      10,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_monetization_guard_agent.py:89:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      10,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_monetization_guard_agent.py:90:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      10,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_onboarding.py:138:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "unified_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      29,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_onboarding.py:163:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "unified_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      29,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_onboarding.py:169:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "unified_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      29,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_order_trace_surface.py:80:49:patch",
+      "rm",
+      "non_string_patch_expression",
+      "f\"gravity_sdk.{module}.runtime.build_client\"",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_patch_path",
+      46,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_sql_client.py:471:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      22,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_http_receipt_durability.py:73:26:mock.patch",
+      "rm",
+      "non_string_patch_expression",
+      "f\"gravity_sdk.executor.{stage}\"",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_patch_path",
+      45,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_http_receipt_retention.py:105:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "receipt_retention.os",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      43,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_prepared_analysis_plan.py:535:18:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sdk",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      37,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_prepared_analysis_plan.py:546:18:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "changed",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      30,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_provider_subprocess.py:257:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "SubprocessProviderTransport",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      31,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_provider_subprocess.py:262:12:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "transport_module",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      9,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_provider_subprocess.py:357:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "transport_module.os",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      40,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_provider_subprocess.py:358:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "transport_module",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      9,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_provider_subprocess.py:363:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "transport_module.subprocess",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      41,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_receipt_facets.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_result_output.py:37:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "tempfile._TemporaryFileWrapper",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      21,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_runtime_skill_resolver.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_skill_hub_clients.py:232:9:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_skill_hub_contracts.py:11:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_explorer.py:26:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_explorer.py:358:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sqlite_adapter_module.sqlite3",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      39,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_explorer.py:544:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "SqlExplorerService",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      8,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:1007:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "provenance",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      35,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:1032:18:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.credentials",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      19,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:1032:84:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.credentials.subprocess",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      15,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:1042:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:239:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:267:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:276:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:309:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:335:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:359:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:380:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:415:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:431:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:473:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:495:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:531:22:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:531:72:mock.patch",
+      "rm",
+      "non_string_patch_expression",
+      "f\"gravity_sdk.sql.__main__.{patch_target}\"",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "fixed_non_agent_patch_path",
+      48,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:544:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:581:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:599:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:643:12:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_products.py:973:18:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "provenance",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      35,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_thinkingai_full_specification.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_thinkingai_inventory.py:10:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_thinkingai_representative.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_sdk.agent_runtime_contracts",
+      "gravity_sdk.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
+      {
+        "kind": "none"
+      }
+    ]
+  ]
+}

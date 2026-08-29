@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.semantic-source.v1",
+  "type": "object",
+  "required": ["artifact_kind", "schema_version", "source_id", "source_kind", "project_id", "owner", "definitions", "bindings"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "semantic_source"},
+    "schema_version": {"const": "gravity.semantic-source.v1"},
+    "source_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "source_kind": {"enum": ["runtime_builtin", "project_json", "project_toml", "provider"]},
+    "project_id": {"type": ["string", "null"], "maxLength": 128},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "definitions": {"type": "array", "maxItems": 256, "items": {"type": "object"}},
+    "bindings": {"type": "array", "maxItems": 256, "items": {"type": "object"}}
+  }
+}

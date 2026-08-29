@@ -1,0 +1,5 @@
+{
+  "schema_version": "gravity.control-plane-test-case.v1",
+  "scenario": "expired",
+  "expected_reason": "EXPIRED"
+}

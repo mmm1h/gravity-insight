@@ -53,3 +53,7 @@ class InstallDoctorTests(unittest.TestCase):
         self.assertIn("INSTALL_EDITABLE_ROOT_MISMATCH", result["mismatches"])
         self.assertIn("INSTALL_IMPORT_ROOT_MISMATCH", result["mismatches"])
         self.assertEqual(3, len(result["reinstall_commands"]))
+        self.assertEqual(
+            "python -m pip uninstall gravity-insight -y",
+            result["reinstall_commands"][0],
+        )

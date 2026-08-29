@@ -121,8 +121,8 @@ def _thaw(value: Any) -> Any:
 class RequestCaptureTransport:
     is_test_transport = True
 
-    def __init__(self, response: Mapping[str, Any]) -> None:
-        self.response = dict(response)
+    def __init__(self, response: Any) -> None:
+        self.response = dict(response) if isinstance(response, Mapping) else response
         self.calls: list[tuple[str, str, Mapping[str, Any]]] = []
         self.active = 0
         self.peak = 0
@@ -135,8 +135,13 @@ class RequestCaptureTransport:
             self.peak = max(self.peak, self.active)
         try:
             time.sleep(0.01)
+            response = (
+                self.response(method, path, kwargs)
+                if callable(self.response)
+                else deepcopy(self.response)
+            )
             return TransportResponse(
-                200, deepcopy(self.response), "2026-08-20T00:00:00Z"
+                200, response, "2026-08-20T00:00:00Z"
             )
         finally:
             with self.lock:
@@ -147,12 +152,18 @@ class RequestCaptureTransport:
         return [_thaw(call[2]["body"]) for call in self.calls]
 
 
-def _transport_sdk(response: Mapping[str, Any]) -> tuple[GravitySDK, RequestCaptureTransport]:
+def _transport_sdk(
+    response: Any,
+    *,
+    operation_id: str = "analysis.event.query",
+    disable_field_validation: bool = True,
+) -> tuple[GravitySDK, RequestCaptureTransport]:
     transport = RequestCaptureTransport(response)
     insight = GravityInsightClient._from_manifest_for_tests(
-        _repository_manifest("analysis.event.query"), transport=transport
+        _repository_manifest(operation_id), transport=transport
     )
-    insight._executor._field_validator = lambda *_args, **_kwargs: None
+    if disable_field_validation:
+        insight._executor._field_validator = lambda *_args, **_kwargs: None
     return GravitySDK(insight=insight, workspace="examples/workspace"), transport
 
 
@@ -169,6 +180,77 @@ def _issue_24_batch() -> dict[str, Any]:
             }
             for index in range(31)
         ],
+    }
+
+
+def _issue_24_property_batch() -> dict[str, Any]:
+    group_by = [{"field": "level_c", "source": "user", "bucket": "dispersed"}]
+
+    def spec(field: str, aggregation: str) -> dict[str, Any]:
+        return {
+            "property": {
+                "field": field,
+                "aggregation": aggregation,
+                "data_type": "INT",
+                "source": "user_property",
+            },
+            "group_by": deepcopy(group_by),
+        }
+
+    return {
+        "schema_version": MULTI_APP_BATCH_SCHEMA_VERSION,
+        "queries": [
+            {
+                "id": "property_a",
+                "kind": "property",
+                "apps": ["demo"],
+                "spec": spec("score_a", "ValueAvg"),
+                "limits": {"max_items": 200},
+            },
+            {
+                "id": "property_b",
+                "kind": "property",
+                "apps": ["demo"],
+                "spec": spec("score_b", "ValueAvg"),
+                "limits": {"max_items": 200},
+            },
+            {
+                "id": "property_users",
+                "kind": "property",
+                "apps": ["demo"],
+                "spec": spec("PresetUserCount", "PresetUserCount"),
+                "limits": {"max_items": 200},
+            },
+        ],
+    }
+
+
+def _property_batch_response(
+    _method: str, path: str, _kwargs: Mapping[str, Any]
+) -> dict[str, Any]:
+    if path.endswith("user_property_list/"):
+        rows = [
+            {"name": name, "cname": name, "data_type": "INT", "visible": True}
+            for name in ("score_a", "score_b", "level_c")
+        ]
+        return {
+            "code": 0,
+            "data": {
+                "list": rows,
+                "page_info": {
+                    "page": 1,
+                    "page_size": 2_000,
+                    "total_page": 1,
+                    "total_number": len(rows),
+                },
+            },
+        }
+    return {
+        "code": 0,
+        "data": {
+            "target": "fixture",
+            "list": [{"level_c": index, "value": index} for index in range(201)],
+        },
     }
 
 
@@ -334,6 +416,72 @@ class AnalysisQueryBatchTests(unittest.TestCase):
             self.assertIn("same-shape scalar request succeeded", error["next_action"])
             self.assertIn("--concurrency 1", error["next_action"])
         self.assertNotIn(upstream_text, repr(result))
+
+    def test_v2_property_batch_reports_shared_dispersed_group_item_limit(self) -> None:
+        payload = _issue_24_property_batch()
+        scalar_sdk, _scalar_transport = _transport_sdk(
+            _property_batch_response,
+            operation_id="analysis.property.query",
+            disable_field_validation=False,
+        )
+        scalar_statuses = [
+            scalar_sdk.analysis_query("property", query["spec"], app="demo")["status"]
+            for query in payload["queries"]
+        ]
+        dry_sdk, dry_transport = _transport_sdk(
+            _property_batch_response,
+            operation_id="analysis.property.query",
+            disable_field_validation=False,
+        )
+        dry_run = dry_sdk.analysis_queries(payload, max_workers=3, dry_run=True)
+        batch_sdk, batch_transport = _transport_sdk(
+            _property_batch_response,
+            operation_id="analysis.property.query",
+            disable_field_validation=False,
+        )
+
+        result = batch_sdk.analysis_queries(payload, max_workers=3)
+
+        self.assertEqual(["success", "success", "success"], scalar_statuses)
+        self.assertEqual(("validated", 0), (dry_run["status"], dry_run["exit_code"]))
+        self.assertEqual([], dry_transport.calls)
+        self.assertEqual(("error", 0, 3, 2), (
+            result["status"], result["success_count"], result["failure_count"],
+            result["exit_code"],
+        ))
+        self.assertEqual(
+            ["property_a", "property_b", "property_users"],
+            [item["query_id"] for item in result["results"]],
+        )
+        self.assertEqual(3, sum(
+            path.endswith("user/properties/")
+            for _method, path, _kwargs in batch_transport.calls
+        ))
+        self.assertEqual(1, sum(
+            path.endswith("user_property_list/")
+            for _method, path, _kwargs in batch_transport.calls
+        ))
+        for item in result["results"]:
+            error = item["error"]
+            self.assertEqual(
+                (
+                    "PAGINATION_LIMIT",
+                    "caller",
+                    "limits.max_items",
+                    False,
+                    "output_budget",
+                    "max_items_exceeded",
+                ),
+                (
+                    error["code"],
+                    error["category"],
+                    error["field"],
+                    error["retryable"],
+                    error["stage"],
+                    error["cause"],
+                ),
+            )
+            self.assertIsNone(item["result"])
 
     def test_all_five_specs_become_same_layer_plan_nodes_and_dry_run_delegates(self) -> None:
         sdk = FakeSDK()

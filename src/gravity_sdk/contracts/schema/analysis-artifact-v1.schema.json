@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.analysis-artifact.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "artifact_id", "status", "title",
+    "question", "source", "scope", "semantic_references", "metric_uris",
+    "dimension_uris", "filters", "visualization", "sections", "findings",
+    "excluded_factors", "hypotheses", "claims", "recommended_next_actions",
+    "limitations", "evidence", "can_run_status", "reason_codes", "limits",
+    "network_called", "artifact_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "analysis_artifact"},
+    "schema_version": {"const": "gravity.analysis-artifact.v1"},
+    "artifact_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "status": {"enum": ["success", "blocked", "invalid"]},
+    "title": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "question": {"type": ["string", "null"], "maxLength": 4096},
+    "source": {
+      "type": "object",
+      "required": [
+        "analysis_result_schema_version", "result_digest",
+        "execution_snapshot_digest", "journey", "skill_uri",
+        "receipt_references_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "analysis_result_schema_version": {"const": "gravity.analysis-result.v1"},
+        "result_digest": {"$ref": "#/$defs/digest"},
+        "execution_snapshot_digest": {"$ref": "#/$defs/digest"},
+        "journey": {"$ref": "#/$defs/journey"},
+        "skill_uri": {"type": ["string", "null"], "maxLength": 256},
+        "receipt_references_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "scope": {"type": ["object", "null"]},
+    "semantic_references": {
+      "type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/semantic"}
+    },
+    "metric_uris": {"$ref": "#/$defs/uri_array"},
+    "dimension_uris": {"$ref": "#/$defs/uri_array"},
+    "filters": {
+      "type": "object",
+      "required": ["source_path", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "source_path": {"const": "/scope"},
+        "values": {"type": ["object", "null"]}
+      }
+    },
+    "visualization": {
+      "type": "object",
+      "required": ["intent", "reason_code"],
+      "additionalProperties": false,
+      "properties": {
+        "intent": {"const": "unspecified"},
+        "reason_code": {"const": "SOURCE_VISUALIZATION_UNDECLARED"}
+      }
+    },
+    "sections": {
+      "type": "array", "minItems": 8, "maxItems": 8,
+      "items": {"$ref": "#/$defs/section"}
+    },
+    "findings": {
+      "type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/finding"}
+    },
+    "excluded_factors": {"type": "array", "maxItems": 1024, "items": {"type": "object"}},
+    "hypotheses": {"type": "array", "maxItems": 256, "items": {"type": "object"}},
+    "claims": {
+      "type": "object",
+      "required": ["allowed", "forbidden"],
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/claim"}},
+        "forbidden": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}}
+      }
+    },
+    "recommended_next_actions": {"type": "array", "maxItems": 256, "items": {"type": "object"}},
+    "limitations": {"$ref": "#/$defs/text_array"},
+    "evidence": {
+      "type": "object",
+      "required": [
+        "completeness", "data_quality", "evidence_level",
+        "context_references", "receipt_references", "source_network_called"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "completeness": {"enum": ["complete", "prefix", "unknown"]},
+        "data_quality": {"type": "object"},
+        "evidence_level": {"enum": ["L0", "L1", "L2", "L3", "L4", null]},
+        "context_references": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/context"}},
+        "receipt_references": {"type": "array", "maxItems": 2048, "items": {"$ref": "#/$defs/receipt"}},
+        "source_network_called": {"type": "boolean"}
+      }
+    },
+    "can_run_status": {"enum": ["verified", "unknown", "blocked", "invalid"]},
+    "reason_codes": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/reason"}},
+    "limits": {
+      "type": "object",
+      "required": ["max_source_bytes", "max_artifact_bytes", "max_rendered_bytes", "max_findings", "max_sections"],
+      "additionalProperties": false,
+      "properties": {
+        "max_source_bytes": {"const": 8388608},
+        "max_artifact_bytes": {"const": 8388608},
+        "max_rendered_bytes": {"const": 1048576},
+        "max_findings": {"const": 256},
+        "max_sections": {"const": 8}
+      }
+    },
+    "network_called": {"const": false},
+    "artifact_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_digest": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "reason": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"},
+    "journey": {
+      "type": "object", "required": ["journey_id", "version", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "journey_id": {"type": "string", "minLength": 3, "maxLength": 256},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "semantic": {
+      "type": "object",
+      "required": ["uri", "version", "definition_digest", "binding_digest", "source_digest", "registry_digest", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "version": {"type": ["integer", "null"], "minimum": 1},
+        "definition_digest": {"$ref": "#/$defs/nullable_digest"},
+        "binding_digest": {"$ref": "#/$defs/nullable_digest"},
+        "source_digest": {"$ref": "#/$defs/nullable_digest"},
+        "registry_digest": {"$ref": "#/$defs/nullable_digest"},
+        "status": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "uri_array": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 8, "maxLength": 256}},
+    "section": {
+      "type": "object", "required": ["section_id", "title", "kind", "source_paths"],
+      "additionalProperties": false,
+      "properties": {
+        "section_id": {"enum": ["overview", "semantics", "findings", "hypotheses", "claims", "recommendations", "limitations", "evidence"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 64},
+        "kind": {"enum": ["overview", "semantics", "findings", "hypotheses", "claims", "recommendations", "limitations", "evidence"]},
+        "source_paths": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"type": "string", "pattern": "^/[a-z_]+$"}}
+      }
+    },
+    "fact_reference": {
+      "type": "object", "required": ["step_id", "path"], "additionalProperties": false,
+      "properties": {"step_id": {"type": "string", "minLength": 1, "maxLength": 128}, "path": {"type": "string", "minLength": 1, "maxLength": 2048}}
+    },
+    "supporting_reference": {
+      "type": "object", "required": ["kind", "uri", "digest"], "additionalProperties": false,
+      "properties": {"kind": {"enum": ["capability", "semantic", "operator", "model", "context"]}, "uri": {"type": "string", "minLength": 1, "maxLength": 256}, "digest": {"$ref": "#/$defs/digest"}}
+    },
+    "finding": {
+      "type": "object",
+      "required": ["finding_type", "statement", "evidence_level", "fact_references", "supporting_references", "scope", "limitations"],
+      "additionalProperties": false,
+      "properties": {
+        "finding_type": {"enum": ["confirmed_fact", "contribution_factor", "supported_association", "excluded_factor", "hypothesis", "unknown"]},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "evidence_level": {"enum": ["L0", "L1", "L2", "L3", "L4"]},
+        "fact_references": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/fact_reference"}},
+        "supporting_references": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/supporting_reference"}},
+        "scope": {"type": "object"},
+        "limitations": {"$ref": "#/$defs/text_array"}
+      }
+    },
+    "claim": {
+      "type": "object", "required": ["claim_id", "statement", "scope"], "additionalProperties": false,
+      "properties": {"claim_id": {"type": "string", "minLength": 1, "maxLength": 128}, "statement": {"type": "string", "minLength": 1, "maxLength": 4096}, "scope": {"type": "object"}}
+    },
+    "context": {
+      "type": "object",
+      "required": ["requirement_uri", "requirement_digest", "provider_uri", "provider_digest", "source_revision", "pack_digest", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "requirement_uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "requirement_digest": {"$ref": "#/$defs/nullable_digest"},
+        "provider_uri": {"type": ["string", "null"], "maxLength": 256},
+        "provider_digest": {"$ref": "#/$defs/nullable_digest"},
+        "source_revision": {"type": ["string", "null"], "maxLength": 256},
+        "pack_digest": {"$ref": "#/$defs/nullable_digest"},
+        "status": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "receipt": {
+      "type": "object", "required": ["receipt_id", "storage_status"], "additionalProperties": false,
+      "properties": {"receipt_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"}, "storage_status": {"enum": ["stored", "write_failed"]}}
+    },
+    "text_array": {"type": "array", "maxItems": 256, "items": {"type": "string", "minLength": 1, "maxLength": 4096}}
+  }
+}

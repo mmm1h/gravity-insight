@@ -1,133 +1,115 @@
 # 技术债清单
-
-只登记当前源码或质量门禁能证明、且存在明确退出条件的结构债务。产品缺口、上游无数据、历史事故和一次性工作不放在这里。
-
-每轮只更新受影响条目：满足退出条件就删除正文，并在末尾历史行记一次；完整旧内容见归档快照。
+只登记当前源码或质量门禁能证明、且有明确退出条件的结构债务；产品缺口、上游无数据、历史事故和一次性工作不登记。
+每轮仅更新受影响条目：满足退出条件即删除正文并在末尾留一行历史，完整旧内容见归档快照。
 
 ## 当前条目
-
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
-
-### 1. Material/Promotion 重复实现多平台结果重建
-
-**状态（2026-08-20）**：聚合状态与聚合退出码已下沉；其余同名实现经逐项审计后确认已分叉，
-本条收窄到尚未满足无行为变化证明的 row copy 与 primary-error selection 共同骨架。
-
-- **Owner area**：Material Performance / Promotion Performance result contracts。
-- **已下沉**：`component_aggregate.py` 直接提供纯结构化的 `aggregate_status`、
-  `aggregate_exit_code` 与其单组件 category→exit 读取；Material/Promotion 两边保留自己的 operation、
-  字段与文案。`test_gravity_component_aggregate.py` 在提取前对两份旧实现锁定 empty/success/error/partial/
-  contract-changed、计数、三类 exit 优先级与 primary error，提取后继续通过。
-- **已证实的分叉**：Material page receipt 接受 `size=1..1000`，且非空 `total_pages/total_items`
-  可大于观察值；Promotion 固定 `size=10`，且非空 totals 必须等于观察值。`safe_component`/
-  `_safe_success` 还分别持有单 operation 对多 operation、Promotion App/window/metrics binding、允许的
-  data 字段和返回组件字段；`product_envelope` 的领域字段也不同。它们不再作为“完全等价重复”处理。
-- **剩余证据债**：Material 的 `_safe_rows` 只接受固定字段集与 scalar 并规范化 key；Promotion 的
-  `promotion_performance_rows.safe_promotion_rows` 合并平台字段与请求 metrics、显式拒绝非字符串 key，
-  还从编译合同派生 opaque JSON 字段，施加独立深度/元素/序列化大小边界并返回值无关的失败路径。
-  两边当前行为已进一步分叉，现有测试不能证明参数化提取对全部 Mapping 边界逐字段等价。
-  `_primary_error` 的选择/复制骨架相似，但缺失 error 时必须调用各自
-  `contract_component`，operation identity 与错误文案不同；现有测试也不足以证明进一步拆分不会改变
-  malformed 输入行为。因此两者暂留各自 owner，本条不关闭。
-- **触发条件**：任一产品再次修改标量 row copy 或 primary error selection；或出现第三个采用相同
-  组件聚合结构的多平台产品。page receipt 已确认是领域差异，修改一边不再单独触发本条。
-- **退出条件**：仅当 characterization 能覆盖两边全部 Mapping/key/scalar 或 malformed-error 边界时，
-  再把被证明等价的**一个**窄结构操作下沉；字段 allowlist、operation identity 与 fallback 文案必须继续
-  留在各自 owner。若不能在不引入 mode/callback 策略的前提下直接调用，则保留分叉实现。
-  **不做整文件统一，不造结果 DSL。**
-
 ### 2. legacy promotion snapshot 的兼容分支仍缺正式绑定
-
-**状态（2026-08-20）**：正式范围已经收口；非 primary 层级与四个异构平台的兼容读取仍保留本条。
-
-- **Owner area**：Promotion 兼容面（CLI/SDK legacy snapshot）。
-- **证据**：`promotion_snapshot_compat.py` 已按输入分流：`primary` 加正式 21 平台复用
-  `promotion performance` 的 workspace App、统一日期窗、平台/指标与结果绑定；其他已登记层级及
-  `bing/xiaohongshu/taptap/wechat_video` 仍从 stable inventory 精确匹配后透传逐 operation raw input，
-  返回 `gravity-insight.composite.promotion.v1`。兼容 envelope 以
-  `compatibility.formal_binding_validation=not_performed` 机器标记较低保证；零匹配仍为 unavailable，
-  多匹配显式列出候选并在执行前失败，不再选择排序首项。CLI 不适用 shortcut 仍显式失败。
-  `query_fields` 到达 operation 后仍经过公共 `FieldPolicy`，剩余差距不是绕过该公共校验，而是没有
-  正式产品统一的 App/日期/指标必填约束和返回结果绑定。
-- **为什么保留**：基线确实能通过这些 inventory 路径读取；没有消费者遥测能证明无人使用，删除会
-  造成能力退化。Agent/Plan 仍只暴露正式产品，不宣传兼容分支为自动化主路径。
-- **触发条件**：兼容平台/层级新增第二个同资源 stable read；或对应输入/结果绑定取得正式产品证据；
-  或取得可证明无消费者的证据。
-- **退出条件**：为所有仍保留的兼容平台/层级建立不损失读取能力的正式请求与结果绑定后移入正式
-  路径；或确证无消费者后删除兼容分支。不能用 raw `promotion query` 代替 snapshot 的聚合职责来关债。
+**状态（2026-08-28）**：未关闭。stable `(platform, resource, operation)` 唯一三元组实为 **57** 而非 58：正式并集 **25**
+（`21 primary ∪ 5`，`ubix/group` 同属两者不可相加），其余 **32** 为兼容；按调用参数路径计则为 26/56。集合冻结在
+[`promotion_snapshot_inventory.json`](../../tests/fixtures/promotion_snapshot_inventory.json)，由测试做集合相等校验（非计数）。
+- **正式绑定证据**：25 个正式 stable contract 均有必填 `date_list`、App 等值 `filters`、动态 `query_fields`、同构
+  `page_info` 和登记行投影；合同漂移 fail-closed。同一 canonical 输入经原 inventory 内核与正式入口产生完全相同的
+  operation payload 和原生行，正式结果使用 `gravity-insight.promotion-performance.v1`，不再携带 compatibility marker。
+- **primary 卡点**：`bing/advertiser`、`xiaohongshu/advertiser` 无日期/动态指标；`taptap/group`、
+  `wechat_video/report` 有 App/日期但无 `query_fields` 与动态指标结果绑定。
+- **其余层级卡点**：`bilibili/account` 无动态指标；`bytedance/advertiser_performance` 无 App/动态指标；
+  `tencent/tencent_adgroup_v2` 接收 `query_fields` 但结果未登记动态字段；其余 25 个 account/config/parent 层级均
+  无必填日期和动态指标（多项亦无 App）。逐条名单见上述冻结 fixture，不在本页重复维护。
+- **兼容边界**：上述 32 项仍从 stable inventory 精确匹配后透传 raw input，保持
+  `gravity-insight.composite.promotion.v1` 和 `formal_binding_validation=not_performed`；零匹配 unavailable，多匹配或
+  不适用 shortcut 执行前失败。`query_fields` 仍过 `FieldPolicy`。57 条均已有请求 schema、响应投影、隐私与分页合同；缺
+  日期/动态指标只说明套不进 `promotion-performance` 模型，不妨碍形式化——须等外部证据的只有**删除**分支。Agent/Plan 仍不宣传。
+- **触发条件**：兼容平台/层级出现第二个同资源 stable read，取得正式输入/结果绑定，或能证明无消费者。
+- **退出条件**：为所有保留兼容平台/层级建立不损失读取能力的正式请求/结果绑定并移入正式路径，或证实无消费者
+  后删除；不得以 raw `promotion query` 替代 snapshot 聚合职责。
 
 ### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
-
-- **Owner area**：Agent 输入解析（`agent_input_resolution.py`、`agent_input_catalogs.py`）。
-- **证据**：2026-08-15 的裁决把 9 条动线从 `1 / 3` 降到 `1 / 2`，做法是第一次调用同时交付
-  能力与完整目录、第二次重新在线解析后执行。该方案的正确性依赖两点：调用方按**稳定 ID** 选择，
-  以及第二次执行时重新解析。但**上游没有 revision/ETag**，无法证明它永不复用已删除对象的 ID。
-  实现方自己给出了这条反驳，并明确：一旦发现 ID 复用，必须撤销这 9 条的两次闭环判定。
-- **触发条件**：观察到任一目录对象的 ID 被复用；或上游开始提供 revision/ETag/版本号。
-- **退出条件**：上游提供可校验的版本标识后，把它纳入第二次解析的前置校验，ID 复用即 fail-closed；
-  在那之前**不扩大**该模式的适用面——不要把在线输入解析套用到新的动线上来降低调用次数。
-
+- **静态复核（2026-08-25）**：风险实际覆盖 5 个引用型 composite 的 6 个目录 operation。按版本词、结构化
+  `response_projection` 和 exact operation/evidence 三路复核，没有一个投影具备不复用或单调语义的标识，故不能代替
+  revision/ETag token（`analysis.segment.list` 的 `latest_version_calculation_status` 属计算状态，例外但不改结论）。Dashboard/Segment 又无 production/wire
+  item sketch，故只能证明“Runtime 当前没有可用版本标识”，不能证明实际上游响应绝对没有。
+- **未扩散**：`_REFERENCE_COMPOSITES` 自首次实现仍精确为原 5 个；唯一 `live_catalog_for_card` 调用链仍由
+  `resolve_capabilities` 降次。后来加入 call-bound 的 Segment members/Attribution detail 保持 3 次；测试锁住集合。
+- **设计逃逸复核（2026-08-25）**：携带目录解析身份只省去执行前重读，Dashboard detail、Segment detail/history/result、
+  Saved detail 仍按同一 ID 寻址，风险后移而非消除。目录全投影指纹能检测投影漂移，却不能证明同一 incarnation：
+  Saved 目录行不交付 `config`，Segment 的 `origin_query` 被明确排除在 v1 投影外，故相同投影不蕴含相同执行状态。
+  若所有执行相关状态完全相同，删除重建在语义上不可观测；但 Runtime 证不了这个前提。维持原退出条件。
+- **退出/取证**：对 6 个 exact method+path 采 body field sketch 及 ETag/Last-Modified；须取得覆盖目录变更的 revision
+  或删除重建必变的 item incarnation token（时间戳不算），再由获批测试对象生命周期或上游语义证明。首次目录交付
+  token、执行前重读并比较，漂移/复用 fail-closed 后才能关闭；此前不扩大该模式。
 
 ### 7. 稳定 operation 的分页形状仍有系统性证据债
+- **债务口径**：范围仅为**可采集的 85 条**，非全部 `237-25=212` 条 unknown；83 条 permanent unknown 是机器可验证的能力边界，不计入待关闭债务。
+- **证据**：当前 237 条编译 operation 为 `60 complete / 177 unknown`，228 条 stable 为 `60 / 168`，stable
+  `page_info` 子集为 `60 / 58`；证据为 `97 production / 9 wire / 131 template`。仅 `template_default` 的 49 条
+  live `page_info` 被 `reconcile_pagination_audit` 标为 `shape_unproven`。
+- **当前缓解**：合同分别声明 `completeness`/`pagination_evidence`，无证据为 `unknown`；原子读取、audit、Plan、
+  composite 均传播它，`all_pages` 遇未知/前缀返回 capability gap。已确认 A 的自动读取为 Multidim metadata、
+  Material Performance、Business Pulse；两个 report query 均按实测 B 不续页。缺 `total_page` 的 `read_all`
+  停第一页并标 `unknown`，满页续读须 `continue_without_total`；单次无 `page_info` 不能证明永不截断。
+- **静态复核与处置（2026-08-25 中间态，计数已被下文 85/83 取代，勿按本行取值）**：`reconcile_pagination_audit`
+  当时把 177 unknown 分为 86 条 `collect_production_or_wire`、82 条 `not_scheduled_without_new_signal`、9 条 non-stable。82 条均站得住、0 退回，
+  但 `analysis.dashboard.tree` 是 list，不是非集合；修正后为 46 条非集合（38 mutation + 8 detail/get）和 36 条
+  无可证伪信号（1 静态 tree + 34 条既存 exact production observation + 1 条 shape B）。
+- **设计逃逸复核（2026-08-25）**：随真实请求被动记录响应形状不属于被禁的“全量生产探测”，但**技术可行不等于该做**——
+  单次观测证不了字段跨租户/权限/灰度恒存，缓存学错后 `read_all` 会按错误 `total_page` 停止并把截断结果标为 complete，
+  而 agent 不会质疑，Plan/composite 继续传播；此静默错误比现有 capability gap 更危险，据此否决，未实现。
+  同轮把 `analysis.segment.evaluate_percent` 转为永久 unknown（响应严格为 `part/percent/total` 三个必需数值标量，
+  根本无集合语义；237 条中仅此 1 条通过该谓词），机器处置变为 `85 collect / 83 no-new-signal / 9 non-stable`，
+  永久 unknown 为 `47 非集合 + 36 无信号`。完整性总账仍是 `60 complete / 177 unknown`，不伪装成 complete。
+- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 精确列出这 85 条（分 59、26 两批，测试按集合相等锁定而非计数）；改 unknown 分页、
+  新产品依赖其全集或 exact method+path 取得新 production/wire 字段证据时触发。
+- **退出条件**：逐条以同 method+path production sketch/wire 字段把 58 条 stable `page_info` unknown 归入真实形状
+  并修正合同；另 27 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
+  短页、满页启发式提级或全量生产探测。
 
-- **Owner area**：operation pagination contracts / Evidence。
-- **证据**：`f798d39` 的 231 条 operation 中，119 条 `page_info` 拥有完全相同的字段集合，证明该字段集
-  来自模板而非逐条验证。2026-08-17 逐 route 对齐生产 response sketch、精确 wire consumer 与合同后，
-  审计当时的 119 条只有 `59 A / 1 B / 59 unknown`；证据等级为 `62 production / 8 wire / 49 template-only`。
-  2026-08-20 对当前 237 条编译 operation 静态重测：`60 complete / 177 unknown`，证据为
-  `97 production / 9 wire / 131 template`，kind 为 `119 page_info / 118 none`。其中 228 条 stable 为
-  `60 complete / 168 unknown`，证据为 `97 production / 7 wire / 124 template`；119 条 `page_info`
-  全量子集为 `60 complete / 59 unknown`；stable 子集实际为 `60 complete / 58 unknown`，其 unknown
-  证据为 `2 production / 7 wire / 49 template`。多出的 1 条是 non-executable
-  `candidate.material.kuaishou.list`。逐条表与判据见
-  `evidence/forensics/20260817_pagination_contract_audit.{json,md}`；当前 kind 由
-  `gravity_sdk.pagination_contract_audit.reconcile_pagination_audit` 对账。
-- **当前缓解**：operation schema 和 manifest 已把 `completeness` 与 `pagination_evidence` 分开；无证据
-  默认 `unknown`，`template` 不能声明 `complete`。原子读取结果、pagination audit、Plan 与 composite
-  均传播机器可读完整性；明确要求 `all_pages` 的 Plan 在未知或前缀结果上返回 capability gap，Agent card
-  不再允许全集计数声明。已把实测 B 形状的 `report.multidim.query` 改成单响应，不再重复续页；D28
-  `report.get.query` 也是实测 B（只有 `page_info.total`）并声明 `none`。缺 `total_page`
-  时 `read_all` 默认停在第一页并把完整性标 `unknown`，满页启发式必须 `continue_without_total`。自动完整
-  读取风险最高的 Multidim metadata、Material Performance、Business Pulse 三条已实测为 A。三条完整元数据
-  `none` 也补到生产观察无 page_info，但单次观察不能证明服务端永不截断。49 条仍声明 `page_info` 但只有
-  `template_default` 证据的条目在对账结果里机器可读为 `shape_unproven`。
-- **执行计划**：[分页生产证据采集计划](pagination-evidence-plan.md) 把 168 条 stable unknown 逐条分成
-  86 条可证伪采集目标和 82 条永久 unknown；可采部分按同一 App 父项复用的最大收益排成 60、26 两批。
-  82 条不采项包括 47 条非集合语义和 35 条已有 production 形状但无可用终止/总数信号的 operation。
-- **触发条件**：修改任一 unknown operation 的分页、让新的产品依赖其全集，或取得新的 production/wire
-  分页字段证据。
-- **退出条件**：逐条用同 method+path 的 production response sketch 或直接 wire 字段把 58 条 stable
-  `page_info` unknown 归入真实形状并修正合同；对计划中的另外 28 条 stable collection unknown 取得
-  可证伪的完整性信号或转入永久 unknown。
-  不得用现有合同声明、短页或满页启发式给自己提升证据等级，也不得全量生产探测。
-
-### 8. Title Package 的行校验会拒绝合同已声明的 opaque JSON 字段
-
-- **Owner area**：Title Package 产品结果投影（`title_package.py`）。
-- **证据**：`material.bytedance_asset_text_title_package.list` 与
-  `material.bytedance_std_asset_text_title_package.list` 的 `response_projection` 都声明
-  `opaque_json_item_keys: ["title_list"]`，且 `title_list` 在 `item_keys` 内会被投影出来。但
-  `title_package.py:210` 对行内**全部**字段执行 `_scalar` 校验，任一非标量值即整批 `return None`。
-  list/dict 不是标量，因此 `title_list` 一旦非空就会让整批行被丢弃。这与 issue #27 在
-  Promotion Performance 上的根因同型：合同声明了 opaque，产品层不认。
-- **与 #27 的差别**：#27 有消费者提交的生产复现（operation 单跑成功、产品层 `contract_changed`）；
-  本条**没有**。只能从代码确定「一旦 `title_list` 为 list/dict 就会被拒」，
-  **无法从代码确定生产响应里它是否实际非空**——若上游恒为 null 或字符串，缺陷永不触发。
-- **当前缓解**：无。#27 的修法（从编译合同派生 opaque 字段集 + 有界 JSON 投影 +
-  值无关失败路径诊断）已在 `promotion_performance_rows.py` 落地，可作为本条的实现范式，
-  但不要在没有触发证据时提前套用——那会给一条未证实的缺陷增加表面积。
-- **触发条件**：观察到任一 Title Package 生产响应的 `title_list` 为非空 list/dict；
-  或有调用方报告 Title Package 产品拒绝了单独调用成功的 operation。
-- **退出条件**：取得上述触发证据后，按 #27 的范式让行校验从合同的 `opaque_json_item_keys`
-  派生 opaque 边界并施加独立的深度/元素数/序列化大小上限，同时保持未登记字段、类型变化
-  与非 opaque 字段的标量规则继续失败关闭；不得放宽成「任意值都收」。
+### 14. 根包仍然扁平，跨执行核心的大环仍未解
+- **接续范围**：接续已关闭 #11 中未由 R17 处理的两部分：R17 只迁移了 `agent_*` 家族，没有解决
+  `src/gravity_sdk` 根包整体扁平化；跨 plan/analysis/metadata/kanban 执行核心的大环仍未拆。
+- **可测事实（2026-08-28）**：`src/gravity_sdk/*.py` 共 496 个；按文件名前缀计数，`plan*` 48、`analysis*` 29、
+  `export*` 16、`metadata*` 12、`segment*` 12、`kanban*` 11、`saved*` 8、`report*` 6。
+- **影响边界**：当前债务不改变公开导入或运行时行为，只增加模块定位、变更归属判断和跨域审查成本；后续治理也不得
+  以整理目录为由损失调用能力或改变执行 owner。
+- **已解前置（2026-08-27）**：[模块依赖图 v1](#14-机器图合同) 把节点、四类边、动态导出排除边界与 Tarjan
+  cyclic SCC 口径写成机器定义，可重建完整图，并由测试锁住定义摘要、图摘要与 SCC 成员及规模。
+- **第一有界单元（2026-08-28）**：`to_jsonable` 从 `runtime` 下沉至叶模块 `json_output` 并保持直接再导出；credential sanitizer 改依赖叶 owner。eager AST-only 仍为 `5`，AST-only `96`→`44`（完整序列 `44,41,3,3,3,2,2,2,2,2,2,1`），加 `_EXPORTS` 仍为 `422`。
+  canonical `521`→`522`：`json_output` 原本不在该 SCC 内，`runtime` 的 AST 边使其经 package-parent 并入；canonical 包含 lazy export/package-parent，因此上涨不表示拆环工作量回退，拆环仍按 AST-only `44`。
+- **第二有界单元（2026-08-28）**：Plan analysis 三个不可变合同常量下沉至零包内导入的叶模块 `plan_analysis_contract`；adapter 顶层再导出同一对象，`plan_schema()` 保持函数内延迟导入，仅改 owner。eager AST-only 仍为 `5`，AST-only `44`→`41`，原 44 环拆为 `11` 和 `8`（完整序列 `41,11,8,3,3,3,2,2,2,2,2,2,2,1`），加 `_EXPORTS` 仍为 `422`。
+  canonical `522`→`523`：新叶模块经 adapter/plan 的 AST 边与 package-parent 边并入既有 canonical SCC；canonical 包含 lazy export/package-parent，因此上涨不表示拆环工作量回退，真实拆环收益仍按 AST-only 的 `44` 拆为 `11` 和 `8` 判断。
+  R10 的八模块 MCP 协议叶包新增独立 canonical `8` 环；eager/AST-only 既有环规模不变，且未并入 `523` 大环。
+  仍无可靠门禁识别不带 `agent_` 前缀却被误放根目录的未来 Agent owner；明确不恢复 v4 职责契约判据：其成员集合由预选 `included_layers` 决定，回答不了未来模块是否属于该域。
+- **退出条件**：以该定义批准有界迁移单元，使上述家族迁入明确 owner 或留可机器验证的根级保留理由，消除大环，
+  建立非前缀 Agent owner 判据；全程保持公开导入、运行时行为、执行 owner 与调用能力不变，并以门禁锁住结果。
+- **委托决策**：`agent_under_standing_owner_delegation`；`owner_review: pending`。
 
 ## 已关闭
 
-2026-08-19 以前关闭项已压缩到 [清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)，不在当前清单重复展开。
+- 2026-08-27：#11 已关闭：R17 `fixed_dev`，82 项精确移动与 concept/owner/SCC/consumer/wheel 门禁已验收，根 `.py` 为 495、`agents/` 含 82 个实现模块；legacy/v4 脚手架退役，五条 facade 依赖按单一 owner 设计保留；`agent_under_standing_owner_delegation`，`owner_review: pending`。
+- 2026-08-26：#13 公开符号遮蔽债关闭：`gravity_sdk.__init__` 把模块 `__class__` 换装为
+  `_ExportAwareModule`，`__getattribute__` 对 8 个碰撞符号每次访问都重查 `_EXPORTS`，
+  子模块导入把包属性覆写为 module 时按 `_is_shadowing_module` fail-closed 重新解析而非
+  静默返回错误类型；`child-first`/`export-first`/`cross-order` 三种导入顺序均由隔离子进程
+  测试锁定，碰撞集合本身有新增探测，未靠改名或「不要导入同名子模块」的约定规避。
+- 2026-08-25：#8 Title Package 已从编译合同派生 opaque JSON 字段，复用有界深度、元素和大小投影；未登记和非 opaque 标量规则仍 fail-closed。
+2026-08-19 以前关闭项见[清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)。
+- 2026-08-20：Census POST 读词元债关闭，`uncovered_read` 仅保留安全方法/exact 静态确认，其余为
+  `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
+- 2026-08-20：Agent 有界无 spec 路由改用 `NO_SPEC_PRODUCTS`，`REPORT_PRODUCTS` 保留同对象兼容别名。
+- 2026-08-25：CT03 跨产物绑定、exact revision/index 与跨 Python archive 确定性缺口关闭。
+- 2026-08-25：Material/Promotion 行与 malformed-error 边界 characterization 补齐，仅下沉等价的有界 JSON scalar 谓词。
+- 2026-08-25：Windows Provider Job 绑定债关闭：挂起启动，绑定/恢复失败以 `PROVIDER_RPC_ISOLATION_FAILED` 在 RPC 前回收。
+- 2026-08-25：Repo Context ignore 债关闭：两份规则绑定存在性/SHA-256，无效或漂移均 stable fail-closed。
+- 2026-08-25：Provider 与 Adaptive Governor 全量门禁计时 oracle 债关闭；并发测试均改为同步握手与 30 秒死锁保险。
 
-2026-08-20：Census POST 读词元债已关闭；当前规则只保留安全方法或 exact 静态确认的
-`uncovered_read`，其余 POST/未知方法分别为 `unsafe_unknown` / `static_read_candidate`，默认 draft
-selector 不再消费它们。
-
-2026-08-20：Agent 有界无 spec 路由集合已改用 `NO_SPEC_PRODUCTS`；`REPORT_PRODUCTS` 作为同对象兼容别名保留。
+## #14 机器图合同
+<!-- MODULE_GRAPH_DEFINITION_V1_START -->
+```json
+{"canonical_profile":"canonical","definition_id":"gravity-sdk-runtime-possible-module-dependency-graph.v1","dynamic_exports":{"edge":"The package containing the table points to each statically resolved owner module.","modeled_protocol":"_EXPORTS","other_protocols":"__all__, ordinary assignments, __getattr__ bodies, and generic dynamic-import calls do not create string edges.","symbol_multiplicity":"Multiple exported symbols owned by one module produce one edge.","unresolved_values":"Non-literal owners produce no edge and are not guessed."},"edge_direction":"The source module points to the module it may depend on at runtime.","edge_kinds":{"all_or_assignment_reexport":{"included_in_canonical":false,"reason":"__all__ names symbols rather than owner modules, and an assignment does not add a module dependency beyond the expression that produced its value. Inferring owners from names would be guesswork.","rule":"Do not create an edge from __all__ strings or ordinary assignment-based re-exports. Their underlying AST import, when present, remains an edge."},"ast_delayed_import":{"included_in_canonical":true,"reason":"A delayed import does not create an eager import cycle, but calling the function can execute it. The graph measures possible runtime architecture dependencies, so excluding it would hide real coupling.","rule":"Collect the same Import and ImportFrom forms inside function or async-function bodies and mark them as delayed edges."},"ast_eager_import":{"included_in_canonical":true,"reason":"These statements declare direct, statically reproducible runtime dependencies.","resolution":"Import uses the exact imported module when it is a node. ImportFrom uses the resolved module operand; for from . import x, it also uses each named child module that is a node. Star imports point to the resolved module operand. Aliases do not change the target.","rule":"Collect Import and ImportFrom statements outside function and async-function bodies, including class bodies and both potentially executable conditional branches."},"generic_dynamic_import":{"included_in_canonical":false,"reason":"Targets can depend on runtime values. Partially evaluating selected call expressions would create an unstable, incomplete graph; a new governed dynamic table requires a new definition version.","rule":"Do not infer edges from importlib.import_module, __import__, loader APIs, computed strings, or plugin-like registries other than the explicit _EXPORTS rule."},"lazy_export_owner":{"included_in_canonical":true,"reason":"The table is an executable lazy import dispatch contract. Attribute access can import its owner even though no Import AST node names that owner.","rule":"In package __init__.py modules only, collect statically resolvable owner module strings from literal _EXPORTS dictionary values and _EXPORTS[...] assignments. Resolve relative owner strings against that package. Deduplicate symbols that share an owner."},"package_parent":{"included_in_canonical":true,"reason":"Python initializes a package before loading its child module. Keeping this as a separate edge kind makes its large SCC effect visible rather than silently folding it into AST resolution.","rule":"For every non-root module node, add an edge to its immediate dotted parent when that parent is also a node."},"type_checking_import":{"included_in_canonical":false,"reason":"TYPE_CHECKING is false in normal runtime execution, so these are type dependencies rather than possible runtime dependencies.","rule":"Exclude imports in branches proven unreachable at runtime from TYPE_CHECKING or typing.TYPE_CHECKING tests; include the runtime branch of a negated test. Unknown conditions retain both branches."}},"profiles":{"ast+lazy-exports":["ast_eager_import","ast_delayed_import","lazy_export_owner"],"ast-only":["ast_eager_import","ast_delayed_import"],"canonical":["ast_eager_import","ast_delayed_import","lazy_export_owner","package_parent"],"eager-ast-only":["ast_eager_import"]},"purpose":"Measure possible runtime module dependencies for architecture review; this is not an eager-import deadlock detector or a domain ownership classifier.","scc":{"algorithm":"Tarjan strongly connected components with nodes and outgoing targets visited in lexical order.","all_singletons":"A one-node component is an SCC in the algorithmic partition.","cycle":"A component is reported as cyclic when it has more than one node, or when its single node has an explicit self-edge.","ordering":"Reported cyclic components sort by descending size and then lexical member list. Members sort lexically.","self_loop":"A singleton with an explicit self-edge counts as a cyclic SCC.","singleton_without_self_loop":"A singleton without a self-edge does not count as a cycle or a non-trivial SCC."},"scope":{"excluded":"Non-Python files, directories without a .py file of their own, tests, scripts, generated cache files, and dependencies outside gravity_sdk are not nodes.","node":"Every .py file recursively below package_root is one module node.","ordinary_module":"Any other .py file maps to its dotted import name relative to package_root.","package_init":"A package __init__.py is the package module node itself; for example gravity_sdk/agents/__init__.py is gravity_sdk.agents.","package_root":"src/gravity_sdk"}}
+```
+<!-- MODULE_GRAPH_DEFINITION_V1_END -->
+<!-- MODULE_GRAPH_BASELINE_V1_START -->
+```json
+{"definition_id":"gravity-sdk-runtime-possible-module-dependency-graph.v1","definition_sha256":"8ed98cb1e136461612495d3b0187bae3756f4fbe09cde63a9905e838c8ded95f","edge_kind_counts":{"ast_delayed_import":468,"ast_eager_import":2489,"lazy_export_owner":63,"package_parent":661},"node_count":662,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"7d07b8d38abd147ddf22e64dcdb7e36e8fe401d0de497a36eeebb2304a7df7dc","cyclic_scc_sizes":[422,3,2],"edge_count":2998,"graph_sha256":"93fad9e587b6c951cd71615e8067fa7d4f282a859a126d41bc3c24929959927f","largest_cyclic_scc_size":422,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":14,"cyclic_scc_sha256":"bab8dfa24220d255caab25fe06c418dbb8892972ae922fd63c8120b6c0f8b5e2","cyclic_scc_sizes":[41,11,8,3,3,3,2,2,2,2,2,2,2,1],"edge_count":2935,"graph_sha256":"f11977a6560e82a00852dad7eeed312bdd15f06e910cca0c7e7a8db2889a452e","largest_cyclic_scc_size":41,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":6,"cyclic_scc_sha256":"091d79e4995b2e5c03713083e1c0bcf8d0e6a4d146276066927b346e8c1233c0","cyclic_scc_sizes":[523,15,8,3,2,2],"edge_count":3580,"graph_sha256":"c19d719a3f6537d884e51c8047f05294eb7db266680b753dd8de23e85800e9d6","largest_cyclic_scc_size":523,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"afc924028fae98ca426f1d1f6622233562e693d3ee04064bd90569aa4795ec88","cyclic_scc_sizes":[5],"edge_count":2489,"graph_sha256":"885f31fb9f6c1bc57e4a04961915cc7e8645c4acbb7c29a28eede942d0722d95","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
+```
+<!-- MODULE_GRAPH_BASELINE_V1_END -->

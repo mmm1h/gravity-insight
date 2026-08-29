@@ -9,45 +9,19 @@ from typing import Any, Iterable
 
 from gravity_sdk.prober.read_semantics import confirmation_keys
 
-from .io import read_json, write_json
+from .io import read_json, render_coverage_report as _render_report, write_json
 from .normalize import comparison_path, normalize_path
 from .semantics import (
+    PLATFORMS,
     classify_route_accounting,
     classify_route_semantics,
     classify_semantics,
+    identify_contract_families,
+    reconcile_stable_operations,
 )
 
 
 MODULES = ("分析", "推广平台", "资产", "素材", "报表", "App 与账号", "归因", "元数据", "其它")
-PLATFORMS = (
-    "bytedance",
-    "tencent",
-    "kuaishou",
-    "oppo",
-    "bilibili",
-    "baidu",
-    "vivo",
-    "iqiyi",
-    "weibo",
-    "apple",
-    "asa",
-    "uc",
-    "huawei_store",
-    "huawei",
-    "honor",
-    "ubix",
-    "xiaohongshu",
-    "xiaomi",
-    "qihu360",
-    "360",
-    "sigmob",
-    "youdao",
-    "huya",
-    "alipay",
-    "bing",
-    "wechat_video",
-    "taptap",
-)
 LEVEL_RULES = (
     ("账户", ("account", "advertiser", "developer")),
     ("项目", ("project",)),
@@ -235,170 +209,11 @@ def estimate_read_cost(route: dict[str, Any]) -> tuple[str, str, str]:
     return "低", "flat list/detail lookup with no evident parent dependency", "medium"
 
 
-def _replace_platform(path: str) -> str:
-    value = path.lower()
-    value = value.replace("/huawei/store/", "/{platform}/")
-    value = value.replace("/wechat/video/", "/{platform}/")
-    for platform in sorted(PLATFORMS, key=len, reverse=True):
-        value = re.sub(
-            rf"(?<=/){re.escape(platform)}(?=/)", "{platform}", value
-        )
-    return value
-
-
-def _replace_level(path: str) -> str:
-    return re.sub(
-        r"(?<=/)(?:advertiser|account|developer|project|campaign|ad_plan|plan|"
-        r"ad_group|adgroup|ad_unit|unit|group|creative|creativity|advertisement|ad|"
-        r"material|asset|report|stat|data)(?=/)",
-        "{level}",
-        path.lower(),
-    )
-
-
-def identify_contract_families(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    reads = [
-        row
-        for row in rows
-        if row["status"] == "uncovered_read" and row["business_module"] == "推广平台"
-    ]
-    candidates: list[dict[str, Any]] = []
-    for kind, signature_fn in (
-        ("same_level_cross_platform", lambda row: (row["method"], _replace_platform(row["path"]))),
-        (
-            "same_platform_cross_level",
-            lambda row: (row["method"], row["promotion_platform"], _replace_level(row["path"])),
-        ),
-    ):
-        groups: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
-        for row in reads:
-            groups[signature_fn(row)].append(row)
-        for signature, members in groups.items():
-            unique_members = sorted({(item["method"], item["path"]) for item in members})
-            if len(unique_members) < 2:
-                continue
-            candidates.append(
-                {
-                    "family_kind": kind,
-                    "signature": " | ".join(str(item) for item in signature),
-                    "members": [
-                        {"method": method, "path": path} for method, path in unique_members
-                    ],
-                    "member_count": len(unique_members),
-                }
-            )
-    candidates.sort(
-        key=lambda item: (item["family_kind"], item["signature"], item["member_count"])
-    )
-    for index, family in enumerate(candidates, 1):
-        family["family_id"] = f"promotion.family.{index:03d}"
-    memberships: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
-    for family in candidates:
-        for member in family["members"]:
-            memberships[(member["method"], member["path"])].append(family)
-    for row in rows:
-        families = memberships.get((row["method"], row["path"]), [])
-        if families:
-            primary = sorted(
-                families,
-                key=lambda item: (-item["member_count"], item["family_kind"], item["family_id"]),
-            )[0]
-            row["contract_family"] = {
-                "family_id": primary["family_id"],
-                "family_kind": primary["family_kind"],
-                "member_count": primary["member_count"],
-            }
-            row["contract_family_alternates"] = [
-                item["family_id"] for item in families if item is not primary
-            ]
-        else:
-            row["contract_family"] = None
-            row["contract_family_alternates"] = []
-    return candidates
-
-
-def reconcile_stable_operations(
+def _coverage_indexes(
     operations: list[dict[str, Any]],
-    routes: list[dict[str, Any]],
-    baseline_routes: list[dict[str, Any]] | None,
+    reservations: list[dict[str, Any]],
+    route_classifications: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    def api_tail(path: str) -> str:
-        parts = comparison_path(path).strip("/").split("/")
-        for index, part in enumerate(parts):
-            if re.fullmatch(r"v\d+(?:\.\d+)?", part):
-                return "/".join(parts[index + 1 :])
-        return "/".join(parts)
-
-    stable = [item for item in operations if item["stability"] == "stable"]
-    exact = {(item["method"], normalize_path(item["path"])) for item in routes}
-    normalized = {(item["method"], comparison_path(item["path"])) for item in routes}
-    baseline_normalized = {
-        (item["method"], comparison_path(item["path"])) for item in (baseline_routes or [])
-    }
-    rows: list[dict[str, Any]] = []
-    for operation in stable:
-        exact_key = (operation["method"], normalize_path(operation["path"]))
-        normalized_key = (operation["method"], comparison_path(operation["path"]))
-        baseline_match = normalized_key in baseline_normalized
-        if baseline_match:
-            category = "previously_covered"
-        elif exact_key in exact:
-            category = "newly_covered_from_previously_unfetched_chunk"
-        elif normalized_key in normalized:
-            category = "normalization_false_gap_fixed"
-        else:
-            category = "manifest_route_absent_from_frontend"
-        similar = sorted(
-            {
-                (route["method"], route["path"])
-                for route in routes
-                if api_tail(route["path"]) == api_tail(operation["path"])
-                and comparison_path(route["path"]) != comparison_path(operation["path"])
-            }
-        )
-        rows.append(
-            {
-                "operation_id": operation["operation_id"],
-                "method": operation["method"],
-                "path": operation["path"],
-                "manifest_file": operation["manifest_file"],
-                "category": category,
-                "similar_frontend_routes": [
-                    {"method": method, "path": path} for method, path in similar[:50]
-                ]
-                if category == "manifest_route_absent_from_frontend"
-                else [],
-            }
-        )
-    counts = Counter(item["category"] for item in rows)
-    return {
-        "baseline_supplied": baseline_routes is not None,
-        "stable_operations": len(stable),
-        "summary": dict(sorted(counts.items())),
-        "previously_missing_breakdown": {
-            "a_previously_unfetched_chunk": counts[
-                "newly_covered_from_previously_unfetched_chunk"
-            ],
-            "b_normalization_false_gap_fixed": counts["normalization_false_gap_fixed"],
-            "c_manifest_route_absent_from_frontend": counts[
-                "manifest_route_absent_from_frontend"
-            ],
-        },
-        "operations": sorted(rows, key=lambda item: item["operation_id"]),
-    }
-
-
-def build_coverage(
-    routes_document: dict[str, Any],
-    operations: list[dict[str, Any]],
-    baseline_routes_document: dict[str, Any] | None = None,
-    reservations: list[dict[str, Any]] | None = None,
-    route_classifications: list[dict[str, Any]] | None = None,
-    confirmed_read_routes: set[tuple[str, str]] | None = None,
-) -> dict[str, Any]:
-    reservations = reservations or []
-    route_classifications = route_classifications or []
-    confirmed_read_routes = confirmed_read_routes or set()
     stable_exact: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     stable_normalized: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     any_exact: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -413,156 +228,159 @@ def build_coverage(
     reservation_exact: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for reservation in reservations:
         reservation_exact[(reservation["method"], reservation["path"])].append(reservation)
-    classification_exact = {
-        (item["method"], item["path"]): item for item in route_classifications
+    return {
+        "stable_exact": stable_exact,
+        "stable_normalized": stable_normalized,
+        "any_exact": any_exact,
+        "path_only": path_only,
+        "reservation_exact": reservation_exact,
+        "classification_exact": {
+            (item["method"], item["path"]): item for item in route_classifications
+        },
     }
 
-    rows: list[dict[str, Any]] = []
-    for route in routes_document.get("routes", []):
-        method = str(route.get("method", "UNKNOWN")).upper()
-        path = normalize_path(str(route.get("path", "")))
-        exact = stable_exact.get((method, path), [])
-        normalized = stable_normalized.get((method, comparison_path(path)), []) if not exact else []
-        nonstable = [
-            item for item in any_exact.get((method, path), []) if item["stability"] != "stable"
-        ]
-        reserved = reservation_exact.get((method, path), [])
-        classification = classification_exact.get((method, path))
-        candidates = exact or normalized or nonstable or reserved
-        if exact or normalized:
-            status = "covered"
-            semantic_confidence = "certain"
-            semantic_evidence = ["stable_manifest_exact" if exact else "stable_manifest_normalized"]
-            match_kind = "exact_stable" if exact else "normalization_equivalent_stable"
+
+def _route_match(
+    route: dict[str, Any], indexes: dict[str, Any], confirmed_reads: set[tuple[str, str]]
+) -> dict[str, Any]:
+    method = str(route.get("method", "UNKNOWN")).upper()
+    path = normalize_path(str(route.get("path", "")))
+    key = (method, path)
+    exact = indexes["stable_exact"].get(key, [])
+    normalized = indexes["stable_normalized"].get((method, comparison_path(path)), []) if not exact else []
+    nonstable = [item for item in indexes["any_exact"].get(key, []) if item["stability"] != "stable"]
+    reserved = indexes["reservation_exact"].get(key, [])
+    classification = indexes["classification_exact"].get(key)
+    candidates = exact or normalized or nonstable or reserved
+    if exact or normalized:
+        status = "covered"
+        confidence = "certain"
+        evidence = ["stable_manifest_exact" if exact else "stable_manifest_normalized"]
+        match_kind = "exact_stable" if exact else "normalization_equivalent_stable"
+    else:
+        status, confidence, evidence = classify_route_semantics(
+            method, path, classification, confirmed_reads
+        )
+        if reserved:
+            match_kind = "exact_reservation"
+        elif nonstable:
+            match_kind = "exact_nonstable"
+        elif method == "UNKNOWN" and indexes["path_only"].get(comparison_path(path)):
+            candidates = indexes["path_only"][comparison_path(path)]
+            match_kind = "path_only_method_unresolved"
         else:
-            status, semantic_confidence, semantic_evidence = classify_route_semantics(
-                method, path, classification, confirmed_read_routes
-            )
-            if reserved:
-                match_kind = "exact_reservation"
-            elif nonstable:
-                match_kind = "exact_nonstable"
-            elif method == "UNKNOWN" and path_only.get(comparison_path(path)):
-                candidates = path_only[comparison_path(path)]
-                match_kind = "path_only_method_unresolved"
-            else:
-                match_kind = "none"
-        route_accounting, callability = classify_route_accounting(
-            covered=bool(exact or normalized),
-            reserved=bool(reserved),
-            nonstable_stability=str(nonstable[0]["stability"]) if nonstable else None,
-            registered=bool(classification),
-            status=status,
-        )
-        module = classify_module(path)
-        platform, level = promotion_dimensions(path) if module == "推广平台" else (None, None)
-        cost_tier, cost_reason, cost_confidence = estimate_read_cost(
-            {
-                "method": method,
-                "path": path,
-                "route_evidence_kinds": route.get("route_evidence_kinds", []),
-            }
-        )
-        rows.append(
-            {
-                "method": method,
-                "path": path,
-                "status": status,
-                "route_accounting": route_accounting,
-                "callability": callability,
-                "semantic_confidence": semantic_confidence,
-                "semantic_evidence": semantic_evidence,
-                "method_certainty": route.get("method_certainty", "low"),
-                "method_evidence": route.get("method_evidence", []),
-                "route_evidence_kinds": route.get("route_evidence_kinds", []),
-                "manifest_match_kind": match_kind,
-                "manifest_operations": [
-                    {
-                        "operation_id": item["operation_id"],
-                        "stability": item["stability"],
-                        "method": item["method"],
-                        "path": item["path"],
-                        "source_type": item.get("source_type", "manifest"),
-                    }
-                    for item in sorted(candidates, key=lambda item: item["operation_id"])
-                ],
-                "route_classification": copy.deepcopy(classification)
-                if classification
-                else None,
-                "business_module": module,
-                "promotion_platform": platform,
-                "promotion_level": level,
-                "occurrences": route.get("occurrences", 0),
-                "raw_paths": route.get("raw_paths", []),
-                "callers": route.get("callers", []),
-                "ui_texts": route.get("ui_texts", []),
-                "first_occurrence": route.get("first_occurrence", {}),
-                "estimated_implementation_cost": cost_tier
-                if status == "uncovered_read"
-                else None,
-                "cost_reason": cost_reason if status == "uncovered_read" else None,
-                "cost_confidence": cost_confidence if status == "uncovered_read" else None,
-            }
-        )
-    rows.sort(key=lambda item: (item["path"], item["method"]))
+            match_kind = "none"
+    return {
+        "method": method, "path": path, "exact": exact, "normalized": normalized,
+        "nonstable": nonstable, "reserved": reserved, "classification": classification,
+        "candidates": candidates, "status": status, "confidence": confidence,
+        "evidence": evidence, "match_kind": match_kind,
+    }
+
+
+def _manifest_matches(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "operation_id": item["operation_id"], "stability": item["stability"],
+            "method": item["method"], "path": item["path"],
+            "source_type": item.get("source_type", "manifest"),
+        }
+        for item in sorted(candidates, key=lambda item: item["operation_id"])
+    ]
+
+
+def _coverage_route(
+    route: dict[str, Any], indexes: dict[str, Any], confirmed_reads: set[tuple[str, str]]
+) -> dict[str, Any]:
+    match = _route_match(route, indexes, confirmed_reads)
+    status = match["status"]
+    accounting, callability = classify_route_accounting(
+        covered=bool(match["exact"] or match["normalized"]),
+        reserved=bool(match["reserved"]),
+        nonstable_stability=str(match["nonstable"][0]["stability"]) if match["nonstable"] else None,
+        registered=bool(match["classification"]),
+        status=status,
+    )
+    path = match["path"]
+    module = classify_module(path)
+    platform, level = promotion_dimensions(path) if module == "推广平台" else (None, None)
+    cost_tier, cost_reason, cost_confidence = estimate_read_cost(
+        {"method": match["method"], "path": path,
+         "route_evidence_kinds": route.get("route_evidence_kinds", [])}
+    )
+    return {
+        "method": match["method"], "path": path, "status": status,
+        "route_accounting": accounting, "callability": callability,
+        "semantic_confidence": match["confidence"], "semantic_evidence": match["evidence"],
+        "method_certainty": route.get("method_certainty", "low"),
+        "method_evidence": route.get("method_evidence", []),
+        "route_evidence_kinds": route.get("route_evidence_kinds", []),
+        "manifest_match_kind": match["match_kind"],
+        "manifest_operations": _manifest_matches(match["candidates"]),
+        "route_classification": copy.deepcopy(match["classification"]) if match["classification"] else None,
+        "business_module": module, "promotion_platform": platform, "promotion_level": level,
+        "occurrences": route.get("occurrences", 0), "raw_paths": route.get("raw_paths", []),
+        "callers": route.get("callers", []), "ui_texts": route.get("ui_texts", []),
+        "first_occurrence": route.get("first_occurrence", {}),
+        "estimated_implementation_cost": cost_tier if status == "uncovered_read" else None,
+        "cost_reason": cost_reason if status == "uncovered_read" else None,
+        "cost_confidence": cost_confidence if status == "uncovered_read" else None,
+    }
+
+
+def _module_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    result = []
+    for module in MODULES:
+        items = [item for item in rows if item["business_module"] == module]
+        statuses = Counter(item["status"] for item in items)
+        result.append({
+            "module": module, "covered": statuses["covered"],
+            "uncovered": len(items) - statuses["covered"],
+            "uncovered_read": statuses["uncovered_read"], "total": len(items),
+        })
+    return result
+
+
+def _promotion_matrix(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counter = Counter(
+        (item["promotion_platform"], item["promotion_level"], item["status"])
+        for item in rows if item["business_module"] == "推广平台"
+    )
+    statuses = (
+        "covered", "uncovered_read", "uncovered_write", "uncovered_export",
+        "uncovered_auth_or_proxy", "static_read_candidate", "unsafe_unknown", "unclassified",
+    )
+    result = []
+    for platform in sorted({key[0] for key in counter}):
+        levels = {}
+        for level in PROMOTION_LEVELS:
+            cell = {status: counter[(platform, level, status)] for status in statuses}
+            cell["total"] = sum(cell.values())
+            levels[level] = cell
+        result.append({"platform": platform, "levels": levels})
+    return result
+
+
+def _coverage_document(
+    routes_document: dict[str, Any],
+    operations: list[dict[str, Any]],
+    reservations: list[dict[str, Any]],
+    route_classifications: list[dict[str, Any]],
+    baseline_routes_document: dict[str, Any] | None,
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
     contract_families = identify_contract_families(rows)
     status_counts = Counter(item["status"] for item in rows)
     accounting_counts = Counter(item["route_accounting"] for item in rows)
     callability_counts = Counter(item["callability"] for item in rows)
     unaccounted = accounting_counts["unaccounted"]
-    accounted = len(rows) - unaccounted
-    module_summary = []
-    for module in MODULES:
-        items = [item for item in rows if item["business_module"] == module]
-        module_summary.append(
-            {
-                "module": module,
-                "covered": sum(item["status"] == "covered" for item in items),
-                "uncovered": sum(item["status"] != "covered" for item in items),
-                "uncovered_read": sum(item["status"] == "uncovered_read" for item in items),
-                "total": len(items),
-            }
-        )
-    promotion_counter = Counter(
-        (item["promotion_platform"], item["promotion_level"], item["status"])
-        for item in rows
-        if item["business_module"] == "推广平台"
+    read_costs = Counter(
+        item["estimated_implementation_cost"] for item in rows if item["status"] == "uncovered_read"
     )
-    promotion_matrix = []
-    for platform in sorted({key[0] for key in promotion_counter}):
-        levels = {}
-        for level in PROMOTION_LEVELS:
-            status_counts_for_cell = {
-                status: promotion_counter[(platform, level, status)]
-                for status in (
-                    "covered",
-                    "uncovered_read",
-                    "uncovered_write",
-                    "uncovered_export",
-                    "uncovered_auth_or_proxy",
-                    "static_read_candidate",
-                    "unsafe_unknown",
-                    "unclassified",
-                )
-            }
-            status_counts_for_cell["total"] = sum(status_counts_for_cell.values())
-            levels[level] = status_counts_for_cell
-        promotion_matrix.append({"platform": platform, "levels": levels})
-    read_cost_summary = Counter(
-        item["estimated_implementation_cost"]
-        for item in rows
-        if item["status"] == "uncovered_read"
+    family_covered = sum(
+        item["status"] == "uncovered_read" and item["contract_family"] is not None for item in rows
     )
-    family_covered_routes = sum(
-        item["status"] == "uncovered_read" and item["contract_family"] is not None
-        for item in rows
-    )
-    uncovered_read_total = status_counts["uncovered_read"]
-    manifest_reconciliation = reconcile_stable_operations(
-        operations,
-        rows,
-        baseline_routes_document.get("routes", []) if baseline_routes_document else None,
-    )
+    uncovered_reads = status_counts["uncovered_read"]
     return {
         "schema_version": 1,
         "source": routes_document.get("source", {}),
@@ -580,13 +398,11 @@ def build_coverage(
                 "stable manifest match -> covered",
                 "exact blocked_write reservation -> accounted, contract-only",
                 "exact unsupported route registry decision -> accounted, unsupported",
-                "auth/proxy path token",
-                "export/download path token",
+                "auth/proxy path token", "export/download path token",
                 "PUT/PATCH/DELETE or explicit write action token",
                 "GET/HEAD/OPTIONS, or exact reviewed POST read confirmation",
                 "unknown method plus a read signal -> static read candidate",
-                "unconfirmed POST plus a read signal -> unsafe unknown",
-                "otherwise unclassified",
+                "unconfirmed POST plus a read signal -> unsafe unknown", "otherwise unclassified",
             ],
             "warning": "Accounting and callability are independent. Reservations and unsupported decisions never increase callable coverage.",
         },
@@ -597,205 +413,61 @@ def build_coverage(
         },
         "summary": {
             "total_routes": len(rows),
-            "covered": status_counts["covered"],
-            "uncovered_read": status_counts["uncovered_read"],
-            "uncovered_write": status_counts["uncovered_write"],
-            "uncovered_export": status_counts["uncovered_export"],
-            "uncovered_auth_or_proxy": status_counts["uncovered_auth_or_proxy"],
-            "static_read_candidate": status_counts["static_read_candidate"],
-            "unsafe_unknown": status_counts["unsafe_unknown"],
-            "unclassified": status_counts["unclassified"],
-            "unsupported_non_api": status_counts["unsupported_non_api"],
-            "accounted": accounted,
+            **{status: status_counts[status] for status in (
+                "covered", "uncovered_read", "uncovered_write", "uncovered_export",
+                "uncovered_auth_or_proxy", "static_read_candidate", "unsafe_unknown",
+                "unclassified", "unsupported_non_api",
+            )},
+            "accounted": len(rows) - unaccounted,
             "callable_covered": callability_counts["executable"],
-            "unaccounted": unaccounted,
-            "accounting_complete": unaccounted == 0,
+            "unaccounted": unaccounted, "accounting_complete": unaccounted == 0,
         },
         "accounting_summary": dict(sorted(accounting_counts.items())),
         "callability_summary": dict(sorted(callability_counts.items())),
-        "module_summary": module_summary,
-        "promotion_gap_matrix": promotion_matrix,
-        "manifest_reconciliation": manifest_reconciliation,
+        "module_summary": _module_summary(rows),
+        "promotion_gap_matrix": _promotion_matrix(rows),
+        "manifest_reconciliation": reconcile_stable_operations(
+            operations, rows,
+            baseline_routes_document.get("routes", []) if baseline_routes_document else None,
+            normalize_path=normalize_path, comparison_path=comparison_path,
+        ),
         "contract_families": contract_families,
         "family_summary": {
             "families": len(contract_families),
-            "uncovered_read_routes_with_family": family_covered_routes,
-            "uncovered_read_routes": uncovered_read_total,
-            "coverage_ratio": round(family_covered_routes / uncovered_read_total, 6)
-            if uncovered_read_total
-            else 0.0,
+            "uncovered_read_routes_with_family": family_covered,
+            "uncovered_read_routes": uncovered_reads,
+            "coverage_ratio": round(family_covered / uncovered_reads, 6) if uncovered_reads else 0.0,
         },
-        "read_cost_summary": {
-            tier: read_cost_summary[tier] for tier in ("低", "中", "高")
-        },
+        "read_cost_summary": {tier: read_costs[tier] for tier in ("低", "中", "高")},
         "routes": rows,
     }
 
 
-def render_report(document: dict[str, Any]) -> str:
-    summary = document["summary"]
-    reconciliation = document["manifest_reconciliation"]
-    breakdown = reconciliation["previously_missing_breakdown"]
-    lines = [
-        "# Gravity frontend route coverage",
-        "",
-        "> Generated by `python -m gravity_sdk.census coverage`. Do not edit by hand.",
-        "",
-        "## Scope and certainty",
-        "",
-        f"- Bundle complete: `{str(document.get('source', {}).get('bundle_complete', False)).lower()}`",
-        f"- Routes classified: **{summary['total_routes']}**",
-        f"- Public-entry static graph boundary: {document['scope_boundary']['proven']}.",
-        f"- Not proven: {document['scope_boundary']['not_proven']}.",
-        "- `covered` requires a stable manifest method+path match. Read/write/export/auth labels carry per-route evidence.",
-        "- Unconfirmed POST read signals are `unsafe_unknown`; exact reviewed confirmations may be `uncovered_read`.",
-        "",
-        "## Coverage summary",
-        "",
-        "| status | routes |",
-        "| --- | ---: |",
+def build_coverage(
+    routes_document: dict[str, Any],
+    operations: list[dict[str, Any]],
+    baseline_routes_document: dict[str, Any] | None = None,
+    reservations: list[dict[str, Any]] | None = None,
+    route_classifications: list[dict[str, Any]] | None = None,
+    confirmed_read_routes: set[tuple[str, str]] | None = None,
+) -> dict[str, Any]:
+    reservations = reservations or []
+    route_classifications = route_classifications or []
+    confirmed_read_routes = confirmed_read_routes or set()
+    indexes = _coverage_indexes(operations, reservations, route_classifications)
+    rows = [
+        _coverage_route(route, indexes, confirmed_read_routes)
+        for route in routes_document.get("routes", [])
     ]
-    for key in (
-        "covered",
-        "uncovered_read",
-        "uncovered_write",
-        "uncovered_export", "uncovered_auth_or_proxy",
-        "static_read_candidate", "unsafe_unknown",
-        "unsupported_non_api",
-        "unclassified",
-    ):
-        lines.append(f"| `{key}` | {summary[key]} |")
-    lines.extend(
-        [
-            "",
-            "## Route accounting vs callability",
-            "",
-            f"- Accounted routes: **{summary['accounted']}**",
-            f"- Callable covered routes: **{summary['callable_covered']}**",
-            f"- Unaccounted routes: **{summary['unaccounted']}**",
-            "",
-            "| accounting state | routes |",
-            "| --- | ---: |",
-        ]
+    rows.sort(key=lambda item: (item["path"], item["method"]))
+    return _coverage_document(
+        routes_document, operations, reservations, route_classifications,
+        baseline_routes_document, rows,
     )
-    for key, value in document["accounting_summary"].items():
-        lines.append(f"| `{key}` | {value} |")
-    lines.extend(["", "| callability | routes |", "| --- | ---: |"])
-    for key, value in document["callability_summary"].items():
-        lines.append(f"| `{key}` | {value} |")
-    lines.extend(
-        [
-            "",
-            "## Stable manifest reconciliation",
-            "",
-            "| category | stable operations |",
-            "| --- | ---: |",
-            f"| Previously covered | {reconciliation['summary'].get('previously_covered', 0)} |",
-            f"| (a) Found in previously unfetched chunks | {breakdown['a_previously_unfetched_chunk']} |",
-            f"| (b) Normalization false gap fixed | {breakdown['b_normalization_false_gap_fixed']} |",
-            f"| (c) Manifest route absent from frontend | {breakdown['c_manifest_route_absent_from_frontend']} |",
-            "",
-            "### Manifest routes absent from frontend",
-            "",
-            "| operation | method | manifest path | similar frontend routes |",
-            "| --- | --- | --- | --- |",
-        ]
-    )
-    for item in reconciliation["operations"]:
-        if item["category"] != "manifest_route_absent_from_frontend":
-            continue
-        similar = "; ".join(
-            f"{candidate['method']} {candidate['path']}"
-            for candidate in item["similar_frontend_routes"]
-        ) or "None"
-        lines.append(
-            f"| `{item['operation_id']}` | `{item['method']}` | `{item['path']}` | `{similar}` |"
-        )
-    lines.extend(
-        [
-            "",
-            "## Business module read gaps",
-            "",
-            "| module | covered | uncovered read | all uncovered | total |",
-            "| --- | ---: | ---: | ---: | ---: |",
-        ]
-    )
-    for item in document["module_summary"]:
-        lines.append(
-            f"| {item['module']} | {item['covered']} | {item['uncovered_read']} | {item['uncovered']} | {item['total']} |"
-        )
-    lines.extend(
-        [
-            "",
-            "## Promotion platform x level uncovered reads",
-            "",
-            "| platform | 账户 | 项目 | 计划 | 广告组 | 广告/创意 | 素材 | 报表 | 其它 | total |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
-        ]
-    )
-    for item in document["promotion_gap_matrix"]:
-        values = [item["levels"][level]["uncovered_read"] for level in PROMOTION_LEVELS]
-        lines.append(
-            f"| {item['platform']} | " + " | ".join(str(value) for value in values) + f" | {sum(values)} |"
-        )
-    family_summary = document["family_summary"]
-    lines.extend(
-        [
-            "",
-            "## Contract families",
-            "",
-            f"- Families: **{family_summary['families']}**",
-            f"- Uncovered reads assigned to a family: **{family_summary['uncovered_read_routes_with_family']} / {family_summary['uncovered_read_routes']} ({family_summary['coverage_ratio']:.1%})**",
-            "",
-            "| family | kind | members | signature |",
-            "| --- | --- | ---: | --- |",
-        ]
-    )
-    for family in document["contract_families"]:
-        signature = family["signature"].replace("|", "\\|")
-        lines.append(
-            f"| `{family['family_id']}` | `{family['family_kind']}` | {family['member_count']} | `{signature}` |"
-        )
-    costs = document["read_cost_summary"]
-    lines.extend(
-        [
-            "",
-            "## Estimated implementation cost",
-            "",
-            "| tier | uncovered reads | rule |",
-            "| --- | ---: | --- |",
-            f"| 低 | {costs['低']} | Flat list/detail with no evident parent dependency |",
-            f"| 中 | {costs['中']} | Parent-resource dependency or structured selector |",
-            f"| 高 | {costs['高']} | Complex query/report body, proxy envelope, or dynamic path |",
-            "",
-            "Cost is a scheduling heuristic, not an observed implementation duration.",
-        ]
-    )
-    by_module: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for item in document["routes"]:
-        if item["status"] == "uncovered_read":
-            by_module[item["business_module"]].append(item)
-    lines.extend(["", "## Complete uncovered read route list", ""])
-    for module in MODULES:
-        items = by_module[module]
-        lines.extend([f"### {module} ({len(items)})", ""])
-        if not items:
-            lines.extend(["None.", ""])
-            continue
-        lines.extend(
-            [
-                "| confidence | method | path | family | cost |",
-                "| --- | --- | --- | --- | --- |",
-            ]
-        )
-        for item in items:
-            escaped = item["path"].replace("|", "\\|")
-            family = item["contract_family"]["family_id"] if item["contract_family"] else "singleton"
-            lines.append(
-                f"| `{item['semantic_confidence']}` | `{item['method']}` | `{escaped}` | `{family}` | `{item['estimated_implementation_cost']}` |"
-            )
-        lines.append("")
-    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_report(document: dict[str, Any]) -> str:
+    return _render_report(document, MODULES, PROMOTION_LEVELS)
 
 
 def coverage_files(

@@ -84,10 +84,14 @@ suite is authored.
 The target registry deliberately contains no status field. Its exact ledger
 titles make the Markdown table machine-readable; missing or duplicate rows,
 unregistered case identities, and a status without its frozen target shape all
-fail before scoring. Its `candidate_selectors` map records only public selectors
-needed to interpret ambiguity candidates; gap-only journeys remain target
-identities even when no executable selector exists. Evaluation receipts fingerprint the parser, target
-registry, and ledger and record their hashes and status counts.
+fail before scoring. Its `candidate_selectors` map is the manually curated
+subset of public product selectors needed to interpret ambiguity candidates;
+it is not inferred from product presence. When an ambiguity includes a gap-only
+journey, the scorer derives its public host-catalog identity as
+`gap:<gap_code>` from that journey's frozen gap target. Every declared journey
+must therefore have one exact candidate identity before the case is scored.
+Evaluation receipts fingerprint the parser, target registry, and ledger and
+record their hashes and status counts.
 
 This applies after any development, holdout, or final payload is loaded. The
 protected payloads are not rebuilt: their sealed `journey_id` remains the target
@@ -266,9 +270,11 @@ and quality tests.
 evaluator. For each of the suite's four trials, the evaluator starts the Python
 file once and writes one `gravity.agent-external-selector-request.v1` JSON
 object to stdin. The request contains every question (`id` and `query`) plus a
-frozen, value-free projection of `gravity agent-catalog`: category summaries
-and each capability's selector, source, name, description, stability, and
-executable flag. The plugin returns exactly one
+frozen, value-free projection of the runtime `gravity agent-catalog host`:
+category summaries and each governed product or registered gap's selector,
+source, name, description, stability, and executable flag. Raw operations are
+not selectable because the runtime host-selection contract rejects direct
+operation controls. The plugin returns exactly one
 `gravity.agent-external-selector-response.v1` object on stdout:
 
 ```json
@@ -296,24 +302,329 @@ the four trials, one harness-measured plugin SHA-256 must report one stable
 conflict with an earlier receipt for the same SHA. This consistency binding
 does not verify that provider/model/prompt claims inside the version string are
 true.
-Zero selectors become an actionable `EXTERNAL_SELECTOR_ABSTAINED` gap; multiple
-selectors go through the same `MULTIPLE_INTENTS` fail-closed response as product
-routing; one selector is described from the supplied catalog and scored by the
-same six layers. The plugin's `network_called` **reports** selection-stage
+The evaluator binds the returned refs to the supplied catalog hash and question,
+builds one complete `gravity.host-product-selection.v1`, and passes it through
+the SDK's `host_routing_discovery` dispatcher. The real runtime therefore owns
+the selected card, canonical gap, routing fields, and selection receipt that the
+six layers score. Zero selectors become `HOST_PRODUCT_SELECTION_EMPTY`, multiple
+selectors become the runtime's `MULTIPLE_INTENTS` gap, and one selector is
+described by the repository-owned resolver. The plugin's `network_called`
+**reports** selection-stage
 network activity; the evaluator validates only that it is boolean. Per-result
 and top-level `selection_network_measured=false` plus
 `selection_network_measurement_reason` make this boundary machine-readable;
 the same marker accompanies the query-ledger selector receipt. The legacy
-`offline`, `network_called`, `selection_network_called`, and
-`external_selector_network_trials` fields remain additive-compatible reported
-values, not harness measurements. `execution_network_called` is derived from
-the blocked Gravity transport attempt counter, but
+`selection_network_called` and `external_selector_network_trials` fields remain
+plugin-reported values, not harness measurements. The dispatcher-owned
+`offline=true` and `network_called=false` describe local SDK selection
+resolution, not the plugin subprocess. `execution_network_called` is derived
+from the blocked Gravity transport attempt counter, but
 `terminal_offline_measured=false` because this selection-only protocol never
 executes a capability. The offline terminal layer still fails a missing or
 non-actionable target gap or any execution-stage network attempt. The evaluator
 repeats the plugin four times: `pass^4` still uses correctness, while
 `unstable_tasks`, `unstable_case_ids`, and `unstable_selections` compare and
 expose the exact selected selector sets regardless of correctness.
+
+The `default-dispatch` mode of
+`scripts/agent_usability_host_arm_gap.py` measures two observable public call
+shapes without editing the checked-in default. For each trial fixed by
+`suite.json`, it obtains one blinded external selection batch. The recognizer
+arm sends each query through the public `gravity agent` parser and runner with
+both routing and host selection omitted; the host arm sends the same query and
+selection with routing omitted. Each result records parsed routing, selection
+presence, and resolved routing mode. The run fails closed unless the two shapes
+remain stable and resolve respectively to `recognizer` and `host_catalog`. The
+script is development-only and deliberately has no split argument:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\agent_usability_host_arm_gap.py default-dispatch `
+  --selector-plugin scripts\agent_usability_host_selector.py `
+  --selector-timeout 300 `
+  --output tmp\agent-usability-default-dispatch.json
+```
+
+Its dispatch observations and routing-mode counts prove which call shape and
+arm every case used. The trial count comes from `suite.json`, the same source used by the evaluator's
+`repeat_reliability`: `pass^1` counts first-trial correctness, `pass^N` counts
+cases correct in every trial, and `unstable_case_ids` compares exact runtime
+selection identities regardless of correctness. `scores_differ` must be true
+for the measurement to demonstrate a `pass^N` score effect.
+
+`DEFAULT_DISPATCH_EVIDENCE_STATUS: INVALIDATED_REQUIRES_REMEASUREMENT at 9c9c78d3`
+
+The JSON block below is retained as historical evidence only. Its recognizer
+298 / host 334 figures were produced by the pre-`9c9c78d3` source-default
+counterfactual method. After that product change, a supplied host selection
+itself resolves omitted routing to `host_catalog`, so rewriting only
+`DEFAULT_ROUTING_MODE` no longer separated the arms. These figures require a
+fresh run with the observable two-call-shape method above; they are not current
+post-change measurements and are not a protected-split result.
+
+<!-- DEFAULT_DISPATCH_PREDICTION_EVIDENCE_START -->
+```json
+{
+  "blind_order_seed_sha256": "ef463aec89f8ef2b5f6d0aaf818d852b12da623df6e8c076e77b06fcb596f3f6",
+  "case_count": 336,
+  "checked_in_default": "recognizer",
+  "counterfactual_default": "host_catalog",
+  "evidence_scope": {
+    "checked_in_default_changed": false,
+    "classification": "development_counterfactual_prediction",
+    "is_holdout_result": false,
+    "is_post_flip_measurement": false,
+    "limitations": [
+      "This development result does not establish protected-split generalization.",
+      "Protected legacy ambiguous prompts do not carry development's explicit multi-journey expectations.",
+      "The selector subprocess reports its own network activity; the parent cannot independently instrument it."
+    ]
+  },
+  "reliability_protocol": {
+    "N": 4,
+    "instability_definition": "case IDs whose exact runtime selection identity differs across trials",
+    "pass^1_definition": "cases correct on the first trial",
+    "pass^N_definition": "cases correct on every one of N trials",
+    "trials_source": "evals/agent_usability/suite.json#trials"
+  },
+  "protected_split_comparability": {
+    "development_explicit_multi_intent_case_count": 12,
+    "development_gap_identity_case_ids": [
+      "J32.dev.v3.multiple",
+      "J47.dev.v3.multiple"
+    ],
+    "development_gap_identity_score_effect_bound": {
+      "max_cases_per_trial": 2,
+      "max_percentage_points": 0.595238,
+      "observed_cases_helped": null
+    },
+    "protected_ambiguous_case_count": null,
+    "protected_legacy_behavior": "cases without an explicit multiple-intent declaration retain single-journey scoring",
+    "protected_score_impact": null,
+    "same_multi_intent_scoring_contract": false,
+    "unquantified_reason": "Determining protected ambiguous cases or score impact would require opening a protected payload; this measurement did not."
+  },
+  "schema_version": "gravity.agent-usability-default-dispatch.v2",
+  "score_differences": {
+    "counterfactual_minus_checked_in_pass^1": 36,
+    "counterfactual_minus_checked_in_pass^N": 36
+  },
+  "scores": {
+    "checked_in": {
+      "failure_classes": {
+        "correct": 992,
+        "correct_multiple_intents": 36,
+        "environment_gap": 28,
+        "no_candidate": 124,
+        "target_gap": 136,
+        "wrong_intent_candidates": 12,
+        "wrong_product": 16
+      },
+      "pass^1": {
+        "passed": 298,
+        "rate": 0.886905,
+        "total": 336
+      },
+      "pass^N": {
+        "N": 4,
+        "passed": 298,
+        "rate": 0.886905,
+        "total": 336
+      },
+      "per_trial_scores": [
+        {
+          "failure_classes": {
+            "correct": 248,
+            "correct_multiple_intents": 9,
+            "environment_gap": 7,
+            "no_candidate": 31,
+            "target_gap": 34,
+            "wrong_intent_candidates": 3,
+            "wrong_product": 4
+          },
+          "passed": 298,
+          "rate": 0.886905,
+          "routing_mode_counts": {
+            "recognizer": 336
+          },
+          "total": 336,
+          "trial": 1
+        },
+        {
+          "failure_classes": {
+            "correct": 248,
+            "correct_multiple_intents": 9,
+            "environment_gap": 7,
+            "no_candidate": 31,
+            "target_gap": 34,
+            "wrong_intent_candidates": 3,
+            "wrong_product": 4
+          },
+          "passed": 298,
+          "rate": 0.886905,
+          "routing_mode_counts": {
+            "recognizer": 336
+          },
+          "total": 336,
+          "trial": 2
+        },
+        {
+          "failure_classes": {
+            "correct": 248,
+            "correct_multiple_intents": 9,
+            "environment_gap": 7,
+            "no_candidate": 31,
+            "target_gap": 34,
+            "wrong_intent_candidates": 3,
+            "wrong_product": 4
+          },
+          "passed": 298,
+          "rate": 0.886905,
+          "routing_mode_counts": {
+            "recognizer": 336
+          },
+          "total": 336,
+          "trial": 3
+        },
+        {
+          "failure_classes": {
+            "correct": 248,
+            "correct_multiple_intents": 9,
+            "environment_gap": 7,
+            "no_candidate": 31,
+            "target_gap": 34,
+            "wrong_intent_candidates": 3,
+            "wrong_product": 4
+          },
+          "passed": 298,
+          "rate": 0.886905,
+          "routing_mode_counts": {
+            "recognizer": 336
+          },
+          "total": 336,
+          "trial": 4
+        }
+      ],
+      "routing_mode_counts": {
+        "recognizer": 1344
+      },
+      "unstable_case_ids": [],
+      "unstable_selections": {},
+      "unstable_tasks": 0
+    },
+    "counterfactual": {
+      "failure_classes": {
+        "correct": 1128,
+        "correct_multiple_intents": 44,
+        "environment_gap": 28,
+        "target_gap": 136,
+        "wrong_intent_candidates": 4,
+        "wrong_product": 4
+      },
+      "pass^1": {
+        "passed": 334,
+        "rate": 0.994048,
+        "total": 336
+      },
+      "pass^N": {
+        "N": 4,
+        "passed": 334,
+        "rate": 0.994048,
+        "total": 336
+      },
+      "per_trial_scores": [
+        {
+          "failure_classes": {
+            "correct": 282,
+            "correct_multiple_intents": 11,
+            "environment_gap": 7,
+            "target_gap": 34,
+            "wrong_intent_candidates": 1,
+            "wrong_product": 1
+          },
+          "passed": 334,
+          "rate": 0.994048,
+          "routing_mode_counts": {
+            "host_catalog": 336
+          },
+          "total": 336,
+          "trial": 1
+        },
+        {
+          "failure_classes": {
+            "correct": 282,
+            "correct_multiple_intents": 11,
+            "environment_gap": 7,
+            "target_gap": 34,
+            "wrong_intent_candidates": 1,
+            "wrong_product": 1
+          },
+          "passed": 334,
+          "rate": 0.994048,
+          "routing_mode_counts": {
+            "host_catalog": 336
+          },
+          "total": 336,
+          "trial": 2
+        },
+        {
+          "failure_classes": {
+            "correct": 282,
+            "correct_multiple_intents": 11,
+            "environment_gap": 7,
+            "target_gap": 34,
+            "wrong_intent_candidates": 1,
+            "wrong_product": 1
+          },
+          "passed": 334,
+          "rate": 0.994048,
+          "routing_mode_counts": {
+            "host_catalog": 336
+          },
+          "total": 336,
+          "trial": 3
+        },
+        {
+          "failure_classes": {
+            "correct": 282,
+            "correct_multiple_intents": 11,
+            "environment_gap": 7,
+            "target_gap": 34,
+            "wrong_intent_candidates": 1,
+            "wrong_product": 1
+          },
+          "passed": 334,
+          "rate": 0.994048,
+          "routing_mode_counts": {
+            "host_catalog": 336
+          },
+          "total": 336,
+          "trial": 4
+        }
+      ],
+      "routing_mode_counts": {
+        "host_catalog": 1344
+      },
+      "unstable_case_ids": [],
+      "unstable_selections": {},
+      "unstable_tasks": 0
+    }
+  },
+  "scores_differ": true,
+  "selector_network_reported_trials": 4,
+  "selector_plugin_sha256": "49cff6f2e6337c52a119d6e3f3a1e5485b0ec62ff0b8f479563e5d59b464c665",
+  "selector_request_sha256": "c4d534553c04b3944f742c539b38ec751bb1ab6b8ad653e8bab498039541b08c",
+  "selector_request_sha256_by_trial": [
+    "c4d534553c04b3944f742c539b38ec751bb1ab6b8ad653e8bab498039541b08c",
+    "c4d534553c04b3944f742c539b38ec751bb1ab6b8ad653e8bab498039541b08c",
+    "c4d534553c04b3944f742c539b38ec751bb1ab6b8ad653e8bab498039541b08c",
+    "c4d534553c04b3944f742c539b38ec751bb1ab6b8ad653e8bab498039541b08c"
+  ],
+  "split": "development",
+  "suite_version": "gravity-agent-usability-2026-08-16.v4",
+  "trials": 4
+}
+```
+<!-- DEFAULT_DISPATCH_PREDICTION_EVIDENCE_END -->
 
 The committed `scripts/agent_usability_selector_stub.py` is only a reproducible
 wiring fixture. It selects a composite when every token in the catalog name is

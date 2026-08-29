@@ -19,7 +19,7 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 
 优先选择 `identity_kind=product`。Raw operation 是已知 wire 的专家入口；`capability_gap` 只能报告，不能执行。
 
-调用方能可靠选择产品时，读取 `agent-catalog host`，提交严格的 `gravity.host-product-selection.v1`。没有 selection 时使用默认 recognizer；它是离线保底，不会替调用方猜业务输入。
+调用方能可靠选择产品时，读取 `agent-catalog host`，提交严格的 `gravity.host-product-selection.v1`；省略 routing 即进入宿主臂。没有 selection 时使用默认 recognizer；它是离线保底，不会替调用方猜业务输入。
 
 ## 2. 补参并执行
 
@@ -27,9 +27,17 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 - 未知任务：第一次发现并选择，第二次执行；不要逐条启动多个进程。
 - 多个独立读取：放入一个 Plan 或 batch，复用全局有界并发预算。
 - Analysis spec：先读产品卡的 `schema_argv`，不要从 Web wire 或邻近 operation 猜形状。
-- 业务词、公式和 App alias：由调用项目的 workspace 声明，SDK 不推断。
+- Runtime Semantic Registry 提供可复用含义；Operator Registry 只运行静态安装且通过 input/output/assumption/claim/golden 门禁的方法；Model 还须命中 startup trusted digest、已验证/批准/未过期且在安全 horizon 内。项目值仍来自显式 Source，任何缺失都不猜测。
 
 产品级步骤见[任务指南](agent-skills/index.md)，通用编排见[Agent 工作流](agent-workflow.md)。
+
+```powershell
+gravity skills list
+gravity skills show <skill_uri>
+```
+
+已知 Skill 可用上面命令离线读版本和缺口。Skill 不替代选路、Journey、权限或执行合同；
+`blocked` 必须停止，`validated` 不代表当前可执行。
 
 ## 3. 识别发现终态
 
@@ -70,7 +78,7 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 ```text
 1. 认证有效；不记录凭据。
 2. 从 catalog 选择已登记产品，不猜 selector。
-3. 补齐 App、日期和物理字段；业务语义来自 workspace。
+3. 补齐 App、日期和物理字段；通用 Semantic 来自 Runtime，项目实例绑定来自 workspace。
 4. 只执行 success + executable 的交接。
 5. 检查 envelope 状态、窗口、warning、diagnostic 和 interpretation。
 6. 重要数字做一次独立对账。

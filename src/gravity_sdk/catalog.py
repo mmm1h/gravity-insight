@@ -37,23 +37,16 @@ from .operation_search import (
 from .actionable_error_values import actual_value
 
 
-APP_LIST_OPERATION_ID = "app.list"
-_PARENT_INPUT_PLACEHOLDERS: Mapping[str, tuple[str, ...]] = {
-    APP_LIST_OPERATION_ID: ("$first_app_id",),
-    "analysis.event.list": ("$first_event_name",),
-    "analysis.event.info": ("$first_event_property_name",),
-    "analysis.user_property.list": ("$first_user_property_name",),
-    "analysis.segment.list": ("$first_segment_id",),
-    "analysis.report_config.list": ("$first_report_config_id",),
-    "analysis.dashboard.tree": ("$first_dashboard_id", "$first_dashboard_space_id"),
-    "analysis.dashboard.detail": ("$first_dashboard_id", "$first_dashboard_space_id"),
-    "analysis.order_detail.list": ("$first_order_*",),
-    "analysis.user_detail.list": ("$first_client_id",),
-    "report.multidim.template.preset.list": (
-        "$first_preset_template_id",
-        "$first_preset_template_category",
-    ),
-}
+_RUNTIME_BINDINGS_PATH = (
+    Path(__file__).resolve().parent / "contracts" / "runtime-operation-bindings.json"
+)
+
+
+_RUNTIME_BINDINGS = json.loads(_RUNTIME_BINDINGS_PATH.read_text(encoding="utf-8"))
+_CATALOG_BINDINGS = _RUNTIME_BINDINGS["catalog"]
+APP_LIST_OPERATION_ID = _CATALOG_BINDINGS["roles"]["app_list"]
+_PARENT_INPUT_PLACEHOLDERS = _CATALOG_BINDINGS["parent_input_placeholders"]
+_PARENT_TARGET_INPUTS = _CATALOG_BINDINGS["parent_target_inputs"]
 
 
 def _utc_now() -> datetime:
@@ -150,6 +143,36 @@ def _draft_next_action(operation_id: str, blocker_codes: Iterable[str]) -> str:
             f"verified request/response evidence (blockers: {rendered}). An SDK caller cannot unlock it. "
             f"Contact the Gravity Insight SDK maintainers with operation_id `{operation_id}` and these blocker codes; "
             "ask them to verify it on an authorized account that satisfies the listed data or credential requirements and publish it as executable. Until then, search for a stable executable alternative.")
+
+
+def _description_context(
+    metadata: Mapping[str, Any], schema: Mapping[str, Any]
+) -> tuple:
+    def mapping(value: Any) -> Mapping[str, Any]:
+        return value if isinstance(value, Mapping) else {}
+
+    source_operation = mapping(metadata.get("operation", metadata))
+    request = mapping(source_operation.get("request"))
+    privacy = mapping(source_operation.get("privacy_policy"))
+    pagination = source_operation.get("pagination")
+    if not isinstance(pagination, Mapping):
+        pagination = mapping(schema.get("pagination"))
+    examples = source_operation.get("examples", [])
+    examples = examples if isinstance(examples, list) else []
+    provenance = mapping(source_operation.get("provenance"))
+    parent_values = source_operation.get("required_parent")
+    parents = [
+        {
+            "operation_id": parent.get("operation_id"),
+            "output_path": parent.get("output_path"),
+            "selection": parent.get("selection"),
+            "target_input": parent.get("input_field")
+            or _infer_target_input(source_operation, parent),
+        }
+        for parent in (parent_values if isinstance(parent_values, list) else ())
+        if isinstance(parent, Mapping)
+    ]
+    return source_operation, request, privacy, pagination, examples, provenance, parents
 
 
 class OperationCatalog:
@@ -275,56 +298,23 @@ class OperationCatalog:
         operation_summary = self._operations[operation_id]
         schema = operation.schema()
         metadata = self._contract_metadata.get(operation_id, {})
-        source_operation = metadata.get("operation", metadata)
-        if not isinstance(source_operation, Mapping):
-            source_operation = {}
-        request = source_operation.get("request")
-        if not isinstance(request, Mapping):
-            request = {}
-        privacy = source_operation.get("privacy_policy")
-        if not isinstance(privacy, Mapping):
-            privacy = {}
+        context = _description_context(metadata, schema)
+        source_operation, request, privacy, pagination, examples, provenance, parents = context
         sensitive_names = {str(name).casefold() for name in privacy.get("redact_fields", ())}
-        parent_values = source_operation.get("required_parent")
-        if not isinstance(parent_values, list):
-            parent_values = []
-        parents = []
-        for parent in parent_values:
-            if not isinstance(parent, Mapping):
-                continue
-            parents.append(
-                {
-                    "operation_id": parent.get("operation_id"),
-                    "output_path": parent.get("output_path"),
-                    "selection": parent.get("selection"),
-                    "target_input": parent.get("input_field")
-                    or _infer_target_input(source_operation, parent),
-                }
-            )
-        pagination = source_operation.get("pagination")
-        if not isinstance(pagination, Mapping):
-            pagination = schema.get("pagination", {})
-        examples = source_operation.get("examples", [])
-        if not isinstance(examples, list):
-            examples = []
+        stable_without_examples = not examples and operation_summary.get("stability") == "stable"
         probe = self._probes.get(operation_id, OperationProbe())
-        provenance = source_operation.get("provenance")
-        if not isinstance(provenance, Mapping):
-            provenance = {}
         result = {
             "schema_version": "gravity-insight.operation-description.v1",
-            "ok": True,
-            "status": "success",
-            "operation_id": operation_id,
-            "domain": operation_summary.get("domain"),
-            "resource": operation_summary.get("resource"),
-            "action": operation_summary.get("action"),
-            "platform": operation_summary.get("platform"),
+            "ok": True, "status": "success", "operation_id": operation_id,
+            **{
+                name: operation_summary.get(name)
+                for name in (
+                    "domain", "resource", "action", "platform",
+                    "contract_version", "stability", "block_reason",
+                )
+            },
             "description": operation_summary.get("description", ""),
-            "contract_version": operation_summary.get("contract_version"),
-            "stability": operation_summary.get("stability"),
             "executable": operation_summary.get("executable", True),
-            "block_reason": operation_summary.get("block_reason"),
             "catalog_status": self._catalog_statuses.get(operation_id, "registered"),
             "currently_callable": bool(operation_summary.get("executable", True)),
             "effect": source_operation.get("effect", "read"),
@@ -332,41 +322,22 @@ class OperationCatalog:
             "wire": {
                 "method": getattr(operation, "upstream_method", None),
                 "path_template": getattr(operation, "path_template", None),
-                "query": {
-                    "input_fields": list(request.get("query_fields", ())),
-                    "fixed": _safe_fixed_values(
-                        request.get("fixed_query"), sensitive_names
-                    ),
-                },
-                "body": {
-                    "input_fields": list(request.get("body_fields", ())),
-                    "fixed": _safe_fixed_values(request.get("fixed_body"), sensitive_names),
+                **{
+                    location: {
+                        "input_fields": list(request.get(f"{location}_fields", ())),
+                        "fixed": _safe_fixed_values(request.get(f"fixed_{location}"), sensitive_names),
+                    }
+                    for location in ("query", "body")
                 },
             },
-            "response_projection": schema.get("response_projection", {}),
-            "pagination": dict(pagination),
+            "response_projection": schema.get("response_projection", {}), "pagination": dict(pagination),
             "privacy": {
-                "classification": privacy.get(
-                    "classification",
-                    schema.get("privacy", {}).get("classification")
-                    if isinstance(schema.get("privacy"), Mapping)
-                    else None,
-                ),
+                "classification": privacy.get("classification", schema.get("privacy", {}).get("classification")),
                 "redact_fields": sorted(str(name) for name in privacy.get("redact_fields", ())),
             },
             "examples": examples,
-            "examples_status": (
-                "complete"
-                if examples
-                else "unknown"
-                if operation_summary.get("stability") == "stable"
-                else "not_provided"
-            ),
-            "examples_unknown_reason": (
-                None
-                if examples or operation_summary.get("stability") != "stable"
-                else "minimum input depends on account or live metadata values"
-            ),
+            "examples_status": "complete" if examples else "unknown" if stable_without_examples else "not_provided",
+            "examples_unknown_reason": "minimum input depends on account or live metadata values" if stable_without_examples else None,
             "required_parent": parents,
             "health": {
                 "status": operation_health(operation_summary, probe.status, self._health_overlay, operation_id),
@@ -483,12 +454,9 @@ class OperationCatalog:
         stability: str | None = "stable",
     ) -> dict[str, Any]:
         operations = list(self._operations.values())
-        if domain is not None:
-            operations = [item for item in operations if item.get("domain") == domain]
-        if platform is not None:
-            operations = [item for item in operations if item.get("platform") == platform]
-        if stability is not None:
-            operations = [item for item in operations if item.get("stability") == stability]
+        for field, value in (("domain", domain), ("platform", platform), ("stability", stability)):
+            if value is not None:
+                operations = [item for item in operations if item.get(field) == value]
         with self._lock:
             probes = {str(item["operation_id"]): self._probes[str(item["operation_id"])] for item in operations}
         status_counts = Counter(probe.status for probe in probes.values())
@@ -666,6 +634,13 @@ def _infer_target_input(
     source_operation: Mapping[str, Any], parent: Mapping[str, Any]
 ) -> str | None:
     operation_id = str(parent.get("operation_id", ""))
+    target_input = _PARENT_TARGET_INPUTS.get(operation_id)
+    if target_input is not None:
+        return (
+            target_input
+            if target_input in source_operation.get("input_fields", {})
+            else None
+        )
     placeholders = _PARENT_INPUT_PLACEHOLDERS.get(operation_id)
     if placeholders is None and operation_id.startswith(
         "promotion."
@@ -674,8 +649,6 @@ def _infer_target_input(
     ):
         platform = operation_id.split(".", 2)[1]
         placeholders = (f"$first_{platform}_advertiser_id",)
-    elif placeholders is None and operation_id == "report.multidim.query":
-        return "data_list" if "data_list" in source_operation.get("input_fields", {}) else None
     elif placeholders is None:
         return None
     probe = source_operation.get("live_probe")

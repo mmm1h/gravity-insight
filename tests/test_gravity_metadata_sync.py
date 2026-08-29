@@ -30,7 +30,7 @@ from gravity_sdk.metadata_sync import (
 )
 from gravity_sdk.metadata_onboarding import sync_app
 from gravity_sdk.metadata_status import metadata_status
-from gravity_sdk.agent_catalog_refresh import refresh_complete_catalog
+from gravity_sdk.agents.catalog_refresh import refresh_complete_catalog
 
 
 class FakeSyncClient:

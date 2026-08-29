@@ -329,6 +329,33 @@ def safe_target(value: Mapping[str, Any] | None) -> dict[str, Any] | None:
     }
 
 
+def segment_preimage_digest(value: Mapping[str, Any]) -> str:
+    """Bind the exact controlled Segment fields used by mutation ownership."""
+
+    return digest(
+        {
+            key: copy.deepcopy(value[key])
+            for key in (
+                "id",
+                "segment_id",
+                "app_id",
+                "segment_name",
+                "segment_remark",
+                "analysis_scene",
+                "update_type",
+                "operation_status",
+                "create_time",
+                "modify_time",
+                "create_user_id",
+                "create_user_name",
+                "update_user_id",
+                "update_user_name",
+            )
+            if key in value
+        }
+    )
+
+
 def marked_remark(marker: str, remark: Any) -> str:
     if not re.fullmatch(
         r"(?:GSDK-[0-9a-f]{12}|gravity_sdk_v1_[0-9a-f]{16})", marker
