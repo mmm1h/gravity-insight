@@ -47,10 +47,34 @@ def _run(command: list[str], *, cwd: Path, timeout: int = 300) -> None:
     )
 
 
+def _require_build_backend() -> None:
+    """Fail when the declared PEP 517 backend is not importable locally.
+
+    The wheel is built with ``--no-build-isolation --no-index`` so this test
+    exercises the real ``setuptools.build_meta`` backend named in
+    ``[build-system]`` without reaching PyPI. Leaving build isolation on made
+    the result depend on network reachability and on pip's HTTP cache, so the
+    same commit could pass or fail for reasons unrelated to the wheel.
+
+    Skipping here would be worse than failing: this is the only test that
+    builds the distribution through the real packaging toolchain rather than
+    through ``scripts/build_offline_wheel.py``, so a skip would let the
+    main-promotion gate go green without ever checking it.
+    """
+    try:
+        import setuptools.build_meta  # noqa: F401
+    except ImportError as exc:
+        raise AssertionError(
+            "the declared build backend is unavailable; install the build "
+            'requirements with `pip install -e ".[dev]"`'
+        ) from exc
+
+
 class InstalledWheelTests(unittest.TestCase):
     def test_built_wheel_contains_and_imports_every_source_module_and_resource(
         self,
     ) -> None:
+        _require_build_backend()
         with tempfile.TemporaryDirectory(prefix="gravity-sdk-wheel-") as raw:
             temporary = Path(raw).resolve()
             self.assertNotEqual(ROOT, temporary)
@@ -67,7 +91,7 @@ class InstalledWheelTests(unittest.TestCase):
             wheelhouse.mkdir()
             pip = [sys.executable, "-m", "pip", "--disable-pip-version-check"]
             wheel_command = [
-                "wheel", "--no-deps",
+                "wheel", "--no-deps", "--no-build-isolation", "--no-index",
                 "--wheel-dir", str(wheelhouse), str(project),
             ]
             _run(pip + wheel_command, cwd=temporary)

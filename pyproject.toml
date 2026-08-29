@@ -35,6 +35,8 @@ control-plane = ["PyNaCl==1.6.0"]
 dev = [
   "PyNaCl==1.6.0",
   "pytest>=9,<10",
+  "setuptools>=68",
+  "wheel",
 ]
 
 [project.scripts]
