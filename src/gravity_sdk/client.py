@@ -51,6 +51,26 @@ from .validation_result import validation_error as _validation_error
 
 
 _LOGGER = logging.getLogger("gravity_sdk")
+
+
+def _probe_operations(
+    operations: Sequence[OperationSpec], *, domain: str | None, platform: str | None
+) -> list[OperationSpec]:
+    return [
+        operation
+        for operation in operations
+        if operation.stability == "stable"
+        and operation.live_probe.enabled
+        and (domain is None or operation.domain == domain)
+        and (platform is None or operation.platform == platform)
+    ]
+
+
+def _probe_status(results: Sequence[Mapping[str, Any]]) -> str:
+    return ("empty" if not results else "success" if all(
+        item.get("status") in {"success", "empty"} for item in results) else "partial")
+
+
 class GravityInsightClient(
     ProbeFirstMixin, MutationClientMixin, CatalogInventoryMixin, ExportClientMixin
 ):
@@ -321,32 +341,43 @@ class GravityInsightClient(
         platform: str | None = None,
         max_workers: int = DEFAULT_CONCURRENCY,
     ) -> dict[str, Any]:
-        operations = [
-            operation
-            for operation in self._registry.all()
-            if operation.stability == "stable"
-            and operation.live_probe.enabled
-            and (domain is None or operation.domain == domain)
-            and (platform is None or operation.platform == platform)
+        operations = _probe_operations(
+            self._registry.all(), domain=domain, platform=platform
+        )
+        requests, resolution_failures = self._probe_requests(operations)
+        completed = self.batch(requests, max_workers=max_workers) if requests else []
+        completed_by_id = {str(item.get("operation_id")): item for item in completed}
+        results = [
+            resolution_failures.get(operation.operation_id)
+            or completed_by_id[operation.operation_id]
+            for operation in operations
         ]
+        return {
+            "schema_version": "gravity-insight.probe.v1",
+            "status": _probe_status(results),
+            "probed": len(results),
+            "coverage": self.operation_coverage(
+                domain=domain, platform=platform, stability="stable"
+            ),
+            "results": results,
+        }
+
+    def _probe_requests(self, operations: Sequence[OperationSpec]) -> tuple[
+        list[dict[str, Any]], dict[str, dict[str, Any]]
+    ]:
         requests: list[dict[str, Any]] = []
         resolution_failures: dict[str, dict[str, Any]] = {}
         for operation in operations:
             try:
                 inputs = self._resolve_probe_inputs(
-                    operation.live_probe.inputs,
-                    operation_id=operation.operation_id,
+                    operation.live_probe.inputs, operation_id=operation.operation_id,
                 )
             except GravityInsightError as exc:
                 envelope = self._error_envelope(operation.operation_id, exc)
                 self._operation_catalog.record_envelope(operation.operation_id, envelope)
                 resolution_failures[operation.operation_id] = BatchResult(
-                    operation.operation_id,
-                    False,
-                    str(envelope["status"]),
-                    envelope,
-                    operation.operation_id,
-                    envelope["error"],
+                    operation.operation_id, False, str(envelope["status"]), envelope,
+                    operation.operation_id, envelope["error"],
                 ).to_dict()
                 continue
             requests.append(
@@ -356,31 +387,7 @@ class GravityInsightClient(
                     "inputs": inputs,
                 }
             )
-        completed = self.batch(requests, max_workers=max_workers) if requests else []
-        completed_by_id = {
-            str(item.get("operation_id")): item for item in completed
-        }
-        results = [
-            resolution_failures.get(operation.operation_id)
-            or completed_by_id[operation.operation_id]
-            for operation in operations
-        ]
-        return {
-            "schema_version": "gravity-insight.probe.v1",
-            "status": (
-                "success"
-                if results
-                and all(item.get("status") in {"success", "empty"} for item in results)
-                else "empty"
-                if not results
-                else "partial"
-            ),
-            "probed": len(results),
-            "coverage": self.operation_coverage(
-                domain=domain, platform=platform, stability="stable"
-            ),
-            "results": results,
-        }
+        return requests, resolution_failures
 
     def _resolve_probe_inputs(
         self, value: Any, *, operation_id: str | None = None

@@ -454,12 +454,9 @@ class OperationCatalog:
         stability: str | None = "stable",
     ) -> dict[str, Any]:
         operations = list(self._operations.values())
-        if domain is not None:
-            operations = [item for item in operations if item.get("domain") == domain]
-        if platform is not None:
-            operations = [item for item in operations if item.get("platform") == platform]
-        if stability is not None:
-            operations = [item for item in operations if item.get("stability") == stability]
+        for field, value in (("domain", domain), ("platform", platform), ("stability", stability)):
+            if value is not None:
+                operations = [item for item in operations if item.get(field) == value]
         with self._lock:
             probes = {str(item["operation_id"]): self._probes[str(item["operation_id"])] for item in operations}
         status_counts = Counter(probe.status for probe in probes.values())

@@ -2,18 +2,12 @@
   "baseline_version": 3,
   "debt": {
     "cyclomatic_complexity": {
-      "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
-      "src/gravity_sdk/cli.py::_analysis": 19,
-      "src/gravity_sdk/cli.py::run": 21,
-      "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
-      "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 20,
       "src/gravity_sdk/quality.py::compare_baselines": 25,
       "src/gravity_sdk/quality.py::debt_snapshot": 24,
       "src/gravity_sdk/quality.py::evaluate_ratchet": 22,
-      "src/gravity_sdk/quality.py::main": 17,
-      "src/gravity_sdk/registry.py::_request_parts": 17
+      "src/gravity_sdk/quality.py::main": 17
     },
     "function_sloc": {
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 81,
@@ -134,10 +128,10 @@
   ],
   "legacy_files": {
     "src/gravity_sdk/catalog.py": {
-      "ast_hard_limit": 5277,
-      "ast_nodes": 5277,
+      "ast_hard_limit": 5248,
+      "ast_nodes": 5248,
       "migration_sloc": 664,
-      "sloc_hard_limit": 636
+      "sloc_hard_limit": 633
     },
     "src/gravity_sdk/census/params.py": {
       "ast_hard_limit": 9763,
@@ -146,14 +140,14 @@
       "sloc_hard_limit": 1281
     },
     "src/gravity_sdk/cli.py": {
-      "ast_hard_limit": 3811,
-      "ast_nodes": 3811,
+      "ast_hard_limit": 3965,
+      "ast_nodes": 3965,
       "migration_sloc": 715,
-      "sloc_hard_limit": 670
+      "sloc_hard_limit": 668
     },
     "src/gravity_sdk/client.py": {
-      "ast_hard_limit": 4148,
-      "ast_nodes": 4148,
+      "ast_hard_limit": 4277,
+      "ast_nodes": 4277,
       "migration_sloc": 1087,
       "sloc_hard_limit": 730
     },
@@ -170,8 +164,8 @@
       "sloc_hard_limit": 720
     },
     "src/gravity_sdk/http_runtime.py": {
-      "ast_hard_limit": 2901,
-      "ast_nodes": 2901,
+      "ast_hard_limit": 3021,
+      "ast_nodes": 3021,
       "migration_sloc": 675,
       "sloc_hard_limit": 572
     },
@@ -200,8 +194,8 @@
       "sloc_hard_limit": 1022
     },
     "src/gravity_sdk/registry.py": {
-      "ast_hard_limit": 4724,
-      "ast_nodes": 4724,
+      "ast_hard_limit": 4833,
+      "ast_nodes": 4833,
       "migration_sloc": 746,
       "sloc_hard_limit": 741
     },

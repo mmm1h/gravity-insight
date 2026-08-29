@@ -351,40 +351,60 @@ def _domain_read(
     )
 
 
-def _analysis(args: argparse.Namespace) -> Any:
+def _special_analysis_command(args: argparse.Namespace) -> tuple[bool, Any]:
     if args.analysis_command == "metadata":
-        return run_analysis_metadata(args, _client, _object_input)
+        return True, run_analysis_metadata(args, _client, _object_input)
     if args.analysis_command == _ANALYSIS_QUERY_COMMAND:
-        return run_analysis_query_command(args, runtime.build_client, _object_input, _merge_query_shortcuts, runtime.call_read)
+        return True, run_analysis_query_command(
+            args, runtime.build_client, _object_input, _merge_query_shortcuts,
+            runtime.call_read,
+        )
     if args.analysis_command == "segment":
-        return run_segment_command(
+        return True, run_segment_command(
             args, runtime.build_client, _object_input, runtime.call_read
         )
+    return False, None
+
+
+def _analysis_operation_id(args: argparse.Namespace, supplied: dict[str, Any]) -> str:
+    if args.analysis_command == "segments": return DOMAIN_OPERATIONS["analysis.segments"][0]
+    if args.analysis_command == "report-config": return ANALYSIS_REPORT_CONFIG_OPERATIONS[args.kind]
+    if args.analysis_command == "values": return ANALYSIS_VALUE_OPERATIONS[args.kind]
+    if args.analysis_command == "users": return ANALYSIS_DIRECTORY_OPERATIONS["users"]
+    if args.analysis_command == "templates": return ANALYSIS_TEMPLATE_OPERATIONS[args.kind]
+    if args.analysis_command == "auxiliary": return ANALYSIS_AUXILIARY_OPERATIONS[args.kind]
+
+    operation_id = ANALYSIS_DETAIL_OPERATIONS[args.kind]
+    selected_fields = _split_values(args.fields)
+    if selected_fields is not None:
+        supplied["fields"] = selected_fields
+    if args.kind == "user-event" and bool(getattr(args, "all_pages", False)):
+        raise ValueError(
+            "analysis user-event has no upstream page_info contract; "
+            "read one page at a time with explicit page/page_size until "
+            "event_timeline[*].list is empty"
+        )
+    return operation_id
+
+
+def _analysis_client(args: argparse.Namespace, operation_id: str) -> Any:
+    client = runtime.build_client()
+    schema = client.schema(operation_id)
+    stability = schema.get("stability", "stable") if isinstance(schema, Mapping) else "stable"
+    if stability == "stable":
+        return client
+    if not bool(getattr(args, "experimental", False)):
+        raise ValueError("experimental analysis reads require explicit --experimental")
+    return runtime.build_client(allow_experimental=True)
+
+
+def _analysis(args: argparse.Namespace) -> Any:
+    handled, result = _special_analysis_command(args)
+    if handled:
+        return result
 
     supplied = _object_input(args.input)
-    if args.analysis_command == "segments":
-        operation_id = DOMAIN_OPERATIONS["analysis.segments"][0]
-    elif args.analysis_command == "report-config":
-        operation_id = ANALYSIS_REPORT_CONFIG_OPERATIONS[args.kind]
-    elif args.analysis_command == "values":
-        operation_id = ANALYSIS_VALUE_OPERATIONS[args.kind]
-    elif args.analysis_command == "users":
-        operation_id = ANALYSIS_DIRECTORY_OPERATIONS["users"]
-    elif args.analysis_command == "templates":
-        operation_id = ANALYSIS_TEMPLATE_OPERATIONS[args.kind]
-    elif args.analysis_command == "auxiliary":
-        operation_id = ANALYSIS_AUXILIARY_OPERATIONS[args.kind]
-    else:
-        operation_id = ANALYSIS_DETAIL_OPERATIONS[args.kind]
-        selected_fields = _split_values(args.fields)
-        if selected_fields is not None:
-            supplied["fields"] = selected_fields
-        if args.kind == "user-event" and bool(getattr(args, "all_pages", False)):
-            raise ValueError(
-                "analysis user-event has no upstream page_info contract; "
-                "read one page at a time with explicit page/page_size until "
-                "event_timeline[*].list is empty"
-            )
+    operation_id = _analysis_operation_id(args, supplied)
 
     read_all = bool(getattr(args, "all_pages", False))
     if read_all and operation_id not in ANALYSIS_PAGINATED_OPERATIONS:
@@ -392,17 +412,7 @@ def _analysis(args: argparse.Namespace) -> Any:
             f"--all-pages is not supported for non-paginated operation {operation_id}"
         )
 
-    client = runtime.build_client()
-    schema = client.schema(operation_id)
-    stability = (
-        schema.get("stability", "stable") if isinstance(schema, Mapping) else "stable"
-    )
-    if stability != "stable":
-        if not bool(getattr(args, "experimental", False)):
-            raise ValueError(
-                "experimental analysis reads require explicit --experimental"
-            )
-        client = runtime.build_client(allow_experimental=True)
+    client = _analysis_client(args, operation_id)
 
     if args.analysis_command == "segments":
         supplied["app_id"] = str(args.app_id)
@@ -456,27 +466,58 @@ def _run_discovery(args: argparse.Namespace) -> Any:
     return run_operation_command(args, _client(args), filter_operations)
 
 
+def _run_dry_validation(args: argparse.Namespace) -> dict[str, Any]:
+    if args.command:
+        raise ValueError("--dry-run cannot be combined with a command")
+    checks = runtime.validate_manifest_json()
+    client = _client(args)
+    operations = client.operations(stability=None)
+    operation_ids = runtime.operation_ids(operations)
+    if not operation_ids:
+        raise ValueError("core registry returned no operations")
+    for operation_id in sorted(operation_ids):
+        client.schema(operation_id)
+    return {
+        "status": "pass", "offline": True, "network_called": False,
+        "core_registry_validated": True,
+        "registered_operations": len(operation_ids),
+        **checks,
+    }
+
+
+def _run_batch(args: argparse.Namespace) -> Mapping[str, Any]:
+    result = run_batch_command(
+        args, _client, _load_json_input, runtime.call_batch,
+        DOMAIN_OPERATIONS["apps.list"][0],
+    )
+    batch_command = args.batch_command
+    expected_schema = batch_schema_version(args)
+    if not isinstance(result, Mapping):
+        raise RuntimeError("batch command returned a non-object envelope")
+    if result.get("schema_version") != expected_schema:
+        raise RuntimeError("batch command returned the wrong public schema")
+    if batch_command in {"read", "run"} and "exit_code" not in result:
+        raise RuntimeError("batch execution omitted its aggregate exit code")
+    return result
+
+
+def _run_domain_command(args: argparse.Namespace) -> Any:
+    if args.command in {"auth", "parents"}: return _auth_or_parents(args)
+    if args.command == "doctor": return run_doctor(args)
+    if args.command in {"apps", "metadata", "find"}: return _apps_or_metadata(args)
+    if args.command == "analysis": return _analysis(args)
+    if args.command == "promotion": return dispatch_promotion_command(args, _object_input)
+    if args.command == "business-report": return _domain_read(args, "business_report.query")
+    if args.command == "objects": return _domain_read(args, "objects.list")
+    if args.command == "materials": return dispatch_material_command(args, _object_input)
+    if args.command == "attribution": return _attribution(args)
+    return dispatch_root_command(args)
+
+
 def run(args: argparse.Namespace) -> Any:
     _enforce_output_policy(args)
     if args.dry_run:
-        if args.command:
-            raise ValueError("--dry-run cannot be combined with a command")
-        checks = runtime.validate_manifest_json()
-        client = _client(args)
-        operations = client.operations(stability=None)
-        operation_ids = runtime.operation_ids(operations)
-        if not operation_ids:
-            raise ValueError("core registry returned no operations")
-        for operation_id in sorted(operation_ids):
-            client.schema(operation_id)
-        return {
-            "status": "pass",
-            "offline": True,
-            "network_called": False,
-            "core_registry_validated": True,
-            "registered_operations": len(operation_ids),
-            **checks,
-        }
+        return _run_dry_validation(args)
     if args.command in {"operations", "agent"}:
         return _run_discovery(args)
     if args.command == "validate":
@@ -486,38 +527,8 @@ def run(args: argparse.Namespace) -> Any:
             render_wire=args.render_wire,
         )
     if args.command == "batch":
-        result = run_batch_command(
-            args, _client, _load_json_input, runtime.call_batch,
-            DOMAIN_OPERATIONS["apps.list"][0],
-        )
-        batch_command = args.batch_command
-        expected_schema = batch_schema_version(args)
-        if not isinstance(result, Mapping):
-            raise RuntimeError("batch command returned a non-object envelope")
-        if result.get("schema_version") != expected_schema:
-            raise RuntimeError("batch command returned the wrong public schema")
-        if batch_command in {"read", "run"} and "exit_code" not in result:
-            raise RuntimeError("batch execution omitted its aggregate exit code")
-        return result
-    if args.command in {"auth", "parents"}:
-        return _auth_or_parents(args)
-    if args.command == "doctor":
-        return run_doctor(args)
-    if args.command in {"apps", "metadata", "find"}:
-        return _apps_or_metadata(args)
-    if args.command == "analysis":
-        return _analysis(args)
-    if args.command == "promotion":
-        return dispatch_promotion_command(args, _object_input)
-    if args.command == "business-report":
-        return _domain_read(args, "business_report.query")
-    if args.command == "objects":
-        return _domain_read(args, "objects.list")
-    if args.command == "materials":
-        return dispatch_material_command(args, _object_input)
-    if args.command == "attribution":
-        return _attribution(args)
-    return dispatch_root_command(args)
+        return _run_batch(args)
+    return _run_domain_command(args)
 
 
 def _summary_reference(operation_id: str | None, path: str, value: Any) -> dict[str, Any]:
