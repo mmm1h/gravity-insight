@@ -45,7 +45,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
     return (
         GateSpec(
             "unittest_collector",
-            (py, "-m", "unittest", "discover", "-s", "tests"),
+            (py, "scripts/run_unittest_shards.py", "--expected-total", "2094"),
             1800,
         ),
         GateSpec(
