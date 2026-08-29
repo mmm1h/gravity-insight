@@ -1,6 +1,10 @@
 # Gravity Agent Runtime：产品方向、产品形态、目标架构与 Codex 开发总纲
 
 
+## v9.4 修订摘要
+
+本版记录计划完成后的治理迁移：原 `dev` 集成层已履行全计划完成装置的职责；`main` 成为唯一受保护长期主干，日常变更经短命分支、必需状态检查和 PR 合入。`fixed_dev` 退役为冻结交付证据 token，当前主干状态使用 `merged_main`，发布终态仍为 `released`。
+
 ## v9.3 修订摘要
 
 four physical path corrections; no architectural semantic change
@@ -28,16 +32,16 @@ four physical path corrections; no architectural semantic change
 13. **细化高风险交付与上下文对齐**。R12/R14 使用强制里程碑逐阶段交付；Stage A 增加与 Skill 内容分离的 Team Trusted Pack；Context 按实体、有效时间、观察时间和来源权威对齐。
 
 > 仓库：`mmm1h/gravity-sdk`
-> 本版审阅基线：`main@b9c029db7f41fa90d04b4e019a892cba25eb9230`（实施前必须重新读取当前 HEAD）
-> Directive ID / Version：`gravity-agent-runtime / v9.3`
-> 批准状态：用户已于 2026-08-21 明确批准总纲定稿与需求拆分；具体功能施工仍按派生需求的 `ready` 状态启动
+> 本版审阅基线：`main@6d72d26dace534ec9b56c316746578cdd76c812c`
+> Directive ID / Version：`gravity-agent-runtime / v9.4`
+> 批准状态：用户已于 2026-08-21 批准总纲与需求拆分，并于 2026-08-30 在计划完成和整体发布后批准迁移到受保护 `main` 主干
 > Canonical repository path：`specs/agent-runtime/architecture-source.md`
 > 文档性质：仓库内唯一产品总纲 + 目标架构 + 演进路线 + Codex 开发约束
 > 目标宿主：Codex、Claude Code，以及其他支持 CLI / MCP / Python 工具调用的通用 Agent
 >
 > **单一架构源规则**：后续产品方向与目标架构只维护仓库内 `specs/agent-runtime/architecture-source.md`，不再派发第二份并行总纲。本机下载文件是已导入来源，不是运行时权威。允许从总纲派生多个有界需求规格；它们只细化单一交付单元，不得重新定义产品方向或共享架构。每轮真正落仓时，最终裁决仍分别写回 `roadmap.md`、`architecture.md`、`agent-workflow.md`、`analysis-journeys.md` 和技术债。
 >
-> **程序集成规则**：本计划所有功能开发默认只进入 `dev`，不进入 `main`。只有 Requirement Index 中全部计划节点完成、整体验收通过，并取得用户新的明确批准后，才讨论向 `main` 推广；单个需求完成、单轮全绿或局部可用都不构成提前推广理由。
+> **程序集成规则**：本计划已在全部节点完成、整体验收通过并取得用户明确批准后整体推广到 `main`；原 `dev` 层是现已完成职责的计划完成装置。此后 `main` 是唯一受保护长期主干，变更只能从短命分支经必需状态检查和 PR 合入，不得直接推送或削弱保护。
 >
 > **动态事实规则**：Operation、Product、Gap、Skill 和 ThinkingAI 源目录数量不得在长期规范中写死，始终从当前 compiler、`agent-catalog`、Skill Hub inventory 和 source snapshot 派生。
 
@@ -243,30 +247,30 @@ Codex 必须按以下顺序读取：
 总纲只冻结跨需求共享的产品目标、职责、术语、架构不变量和依赖顺序。具体实现必须拆成有界需求规格：
 
 ```text
-唯一架构总纲 v9.3（repository canonical source）
+唯一架构总纲 v9.4（repository canonical source）
 → specs/agent-runtime/directive.json 绑定批准版本与 digest
 → specs/agent-runtime/index.json / index.md 定义依赖图和状态
 → R00-R17 family leaves / CT01-CT03 细化单一交付单元
 → Issue / codex/<unit> worktree / implementation / validation
-→ dev 集成
-→ 全计划完成后才允许另行评估 main promotion
+→ short-lived branch / validation / PR
+→ protected main integration / release
 ```
 
 每份需求必须声明 parent directive、目标/非目标、依赖、当前事实、机器合同、迁移、安全边界、验收、回滚和最终文档 owner。需求可以细化总纲未规定的实现选择，但不能改变共享架构；发现冲突时必须先暂停该需求并修订总纲及 directive digest。
 
-顶层 Requirement 默认就是叶子交付单元。只有总纲明确声明为 `delivery_mode=staged_epic` 的 R12、R14 可以包含强制顺序子阶段；每个子阶段仍必须拥有独立 Issue、分支、提交和验收，父 Requirement 只有全部子阶段达到 `fixed_dev` 后才能达到 `fixed_dev`。
+顶层 Requirement 默认就是叶子交付单元。只有总纲明确声明为 `delivery_mode=staged_epic` 的 R12、R14 可以包含强制顺序子阶段；每个子阶段仍必须拥有独立 Issue、分支、提交和验收，父 Requirement 只有全部子阶段达到 `merged_main` 后才能达到 `merged_main`。
 
 需求状态固定为：
 
 ```text
-draft → specified → reviewed → ready → in_progress → fixed_dev → released
+draft → specified → reviewed → ready → in_progress → merged_main → released
                                       ↘ blocked
 ```
 
 - `ready` 必须由用户或计划 owner 明确批准，不能由需求正文自行宣布；
-- `fixed_dev` 只表示已在 `dev` 验收，不表示已进入 `main`；
-- 本计划完成前所有功能需求最多到达 `fixed_dev`；
-- `released` 仅在未来整体推广到 `main` 后使用；
+- `merged_main` 表示已通过 PR 进入受保护 `main`，但不自动表示已发布；
+- `fixed_dev` 是本计划完成前使用的历史 checkpoint，只能保留在冻结交付证据中；
+- `released` 仅在已满足需求自身 release gate 并随正式版本发布后使用；
 - `superseded` 是旁路终态，必须引用替代需求和裁决。
 
 并行只允许发生在依赖已满足且写入范围不重叠的需求之间。领域 core 可并行，`plan_adapters.py`、`agents/capabilities.py`、`agents/composite.py`、`agents/handoff.py`、`cli.py` 和 `__main__.py` 等共享 spine 的最终接线由单一 integrator 串行完成。
@@ -2658,7 +2662,7 @@ Parallel Project Track P1  具体游戏 Skill Overlay
 
 核心原则：**长期架构与扩展协议一次设计完整，实施用一条真实纵向链先证伪关键合同，再抽取通用平台；基础设施分阶段建设，但不得因首条切片未覆盖就从目标架构中删除已确认的长期能力。**
 
-程序集成边界：每个需求单元从 `dev` 创建独立 `codex/<unit>` 分支和 worktree，验收后可合回 `dev`；共享 spine 由单一 integrator 串行接线。完整计划结束前不向 `main` 合入任何本计划功能，`fixed_dev` 不等于 released。
+程序集成边界（计划完成态）：计划期内每个单元先进入 `dev`、完整计划结束前不进入 `main` 的边界已经履行，并在整体验收与用户批准后完成整体推广；这不是对原设计的推翻。后续单元从 `main` 创建短命 `codex/<unit>` 分支和 worktree，共享 spine 仍由单一 integrator 串行接线，并只经必需状态检查和 PR 合回受保护 `main`；`merged_main` 不等于 `released`。
 
 ## Phase -1：产品宪法与冲突台账迁移
 
@@ -2952,7 +2956,7 @@ ThinkingAI 内容 Track 不阻塞 Phase -1、Phase 0 和参考纵向切片。
 - R12-A 单独交付 Action Plan + Reference Connector：Preview、授权、Execute、Readback，对外只暴露安全 plan ID/summary；
 - R12-B 在 A 之后单独交付 Receipt v1 additive facets 和旧 consumer characterization；
 - R12-C 在 B 之后单独交付 Experiment Proposal / Outcome Handoff；
-- 每阶段独立 Issue/分支/提交/回滚，前一阶段未 `fixed_dev` 不启动后一阶段；
+- 每阶段独立 Issue/分支/提交/回滚，前一阶段未 `merged_main` 不启动后一阶段；
 - 全程 0 自然语言自动写入。
 
 ## R13A / R13B / R13C：Artifact 与 Analysis Delivery
@@ -2971,7 +2975,7 @@ ThinkingAI 内容 Track 不阻塞 Phase -1、Phase 0 和参考纵向切片。
 - R14-A Observation Mode 只采集值无关基线，不改变请求调度；
 - R14-B 在 A 证据后激活 429/5xx/延迟/AIMD/Circuit/Backpressure/Single-flight/公平性，只治理 Runtime-owned I/O；
 - R14-C 独立完成 Variant 等价性、固定、解释和回滚 Characterization；
-- R14-D 只有 B/C 均 `fixed_dev` 后才启用自动选择；
+- R14-D 只有 B/C 均 `merged_main` 后才启用自动选择；
 - 每阶段独立 Issue/分支/提交/回滚，Provider 始终只进入 RPC budget。
 
 ## WP-11：Isolated SQL Explorer
@@ -3345,11 +3349,11 @@ R13A 二进制结果独立进入 Artifact Transfer Contract；R13B 从 R09A Anal
 2. 一个叶子需求只解决一个独立问题；`staged_epic` 的每个 milestone 仍需独立 Issue、分支、提交、验收和回滚。
 3. 先锁定现有 request、budget、completeness、error、privacy 和 envelope，再增加新面。
 4. 修改机器调用面时增加 schema、snapshot、parity、tamper、offline 和 compatibility gate。
-5. 遵守当前 dev/worktree/issue 流程；按 AGENTS.md 提交并在每轮结束 push dev。不得直接 push main；PR、tag、release、main promotion 和 merge 仍是所有者/发布动作。
+5. 遵守当前 protected-main/worktree/issue 流程；从 `main` 创建短命分支，用独立 `.venv` 验证，并经必需状态检查和 PR 合入。不得直接 commit/push `main` 或削弱分支保护；tag、release 和 merge 仍是所有者/发布动作。
 6. 外部调研只支持设计选择，不覆盖当前仓库事实。
 7. 旧测试证明当前行为，不自动证明目标架构必须保持旧实现；预期迁移必须更新产品宪法、消费者和测试，但不得掩盖未授权能力损失。
 8. 不得通过永久 Wrapper、影子 Registry 或无退出条件双轨来逃避迁移；所有兼容层必须有 owner、退出条件和回滚策略。
-9. 本计划需求在独立 `codex/<unit>` 开发并只合入 `dev`；全部计划完成、整体验收通过和用户重新批准前，不合入 `main`。
+9. 本计划原有 `dev` 集成边界已在全计划完成后履行退出条件；后续需求在独立 `codex/<unit>` 开发，只经绿色 PR 合入受保护 `main`。
 
 # Validation
 

@@ -132,9 +132,9 @@ class IntegratedValidationTests(unittest.TestCase):
         self.assertEqual(contract["included_gates"], names)
         self.assertEqual(len(names), len(set(names)))
 
-    def test_green_requires_clean_dev_same_head_complete_zero_exit_set(self) -> None:
+    def test_green_requires_clean_main_same_head_complete_zero_exit_set(self) -> None:
         before = {
-            "branch_is_dev": True,
+            "branch_is_main": True,
             "clean": True,
             "independent_venv": True,
             "head": "a" * 40,
@@ -145,7 +145,7 @@ class IntegratedValidationTests(unittest.TestCase):
             integrated_green(before, after, gates, complete_gate_set=True)
         )
         for changed in (
-            {"before": {**before, "branch_is_dev": False}},
+            {"before": {**before, "branch_is_main": False}},
             {"before": {**before, "clean": False}},
             {"before": {**before, "independent_venv": False}},
             {"after": {**after, "clean": False}},

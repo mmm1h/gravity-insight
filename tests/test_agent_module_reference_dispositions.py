@@ -54,7 +54,9 @@ from scripts.validate_r17_canonical_source_errata import (
     build_expected_source,
     derive_source_replacements,
     load_git_baseline,
+    load_post_program_baseline_directive,
     validate_bound_ledger,
+    validate_current_state,
     validate_final_state,
     validate_phase1_reviewed_state,
 )
@@ -966,7 +968,7 @@ def validate_index_and_specification_state(
     requirement = next(
         item for item in index["requirements"] if item.get("id") == "R17"
     )
-    _require(requirement["status"] == "fixed_dev", "R17 delivery status changed")
+    _require(requirement["status"] == "released", "R17 current status changed")
     delivery = requirement["delivery_acceptance"]
     accepted_delivery = {
         "accepted_by": "agent_under_standing_owner_delegation",
@@ -1044,7 +1046,7 @@ def validate_index_and_specification_state(
     )
     expected_projection = {
         **accepted_delivery,
-        "status": requirement["status"],
+        "status": "fixed_dev",
         "dynamic_import_audit_classification.satisfied": str(
             dynamic["satisfied"]
         ).lower(),
@@ -1842,9 +1844,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertLess(not_reached, regression)
 
     def test_canonical_errata_final_assertion_is_full_text_and_one_shot(self) -> None:
-        baseline = load_git_baseline(self.directive)
-        expected = build_expected_source(self.directive, self.document, baseline)
-        final_directive = copy.deepcopy(self.directive)
+        r17_directive = load_post_program_baseline_directive()
+        baseline = load_git_baseline(r17_directive)
+        expected = build_expected_source(r17_directive, self.document, baseline)
+        final_directive = copy.deepcopy(r17_directive)
         transition = final_directive["canonical_source_errata"]["transition"]
         final_directive["version"] = transition["to_version"]
         final_directive["supersedes"] = {
@@ -1894,7 +1897,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             "directive-bound ledger object",
         ):
             build_expected_source(
-                self.directive, ledger_drift, baseline
+                r17_directive, ledger_drift, baseline
             )
 
         reused = copy.deepcopy(final_directive)
@@ -1914,11 +1917,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             )
 
     def test_terminal_directive_accepts_exact_r17_consumption_changes(self) -> None:
-        baseline = load_git_baseline(self.directive)
+        r17_directive = load_post_program_baseline_directive()
+        baseline = load_git_baseline(r17_directive)
         expected_source = build_expected_source(
-            self.directive, self.document, baseline
+            r17_directive, self.document, baseline
         )
-        terminal = copy.deepcopy(self.directive)
+        terminal = copy.deepcopy(r17_directive)
         transition = terminal["canonical_source_errata"]["transition"]
         terminal["version"] = "v9.3"
         terminal["supersedes"] = {
@@ -1940,11 +1944,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertEqual("v9.2->v9.3", result["transition"])
 
     def test_terminal_directive_rejects_approval_scope_drift_with_path(self) -> None:
-        baseline = load_git_baseline(self.directive)
+        r17_directive = load_post_program_baseline_directive()
+        baseline = load_git_baseline(r17_directive)
         expected_source = build_expected_source(
-            self.directive, self.document, baseline
+            r17_directive, self.document, baseline
         )
-        terminal = copy.deepcopy(self.directive)
+        terminal = copy.deepcopy(r17_directive)
         transition = terminal["canonical_source_errata"]["transition"]
         terminal["version"] = transition["to_version"]
         terminal["supersedes"] = {
@@ -1971,11 +1976,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             )
 
     def test_terminal_directive_rejects_main_unfreeze_with_path(self) -> None:
-        baseline = load_git_baseline(self.directive)
+        r17_directive = load_post_program_baseline_directive()
+        baseline = load_git_baseline(r17_directive)
         expected_source = build_expected_source(
-            self.directive, self.document, baseline
+            r17_directive, self.document, baseline
         )
-        terminal = copy.deepcopy(self.directive)
+        terminal = copy.deepcopy(r17_directive)
         transition = terminal["canonical_source_errata"]["transition"]
         terminal["version"] = transition["to_version"]
         terminal["supersedes"] = {
@@ -2079,9 +2085,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 self.assertEqual(0, checkpoint_generator.main([]))
                 self.assertEqual(0, checkpoint_generator.main(["--check"]))
 
-        baseline = load_git_baseline(self.directive)
-        expected = build_expected_source(self.directive, self.document, baseline)
-        final_directive = copy.deepcopy(self.directive)
+        r17_directive = load_post_program_baseline_directive()
+        baseline = load_git_baseline(r17_directive)
+        expected = build_expected_source(r17_directive, self.document, baseline)
+        final_directive = copy.deepcopy(r17_directive)
         transition = final_directive["canonical_source_errata"]["transition"]
         final_directive["version"] = transition["to_version"]
         final_directive["supersedes"] = {
@@ -2138,22 +2145,21 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         ):
             build_expected_source(forged_directive, forged, baseline)
 
-    def test_current_canonical_source_matches_terminal_v93_binding(self) -> None:
+    def test_current_canonical_source_matches_exact_v94_amendment(self) -> None:
         source = CANONICAL_SOURCE.read_bytes()
-        baseline = load_git_baseline(self.directive)
-        self.assertNotEqual(baseline, source)
-        self.assertEqual("v9.3", self.directive["version"])
+        self.assertEqual("v9.4", self.directive["version"])
         self.assertEqual(
             self.directive["canonical_source"]["sha256"],
             hashlib.sha256(source).hexdigest(),
         )
-        result = validate_final_state(
+        result = validate_current_state(
             self.directive,
             self.document,
             source,
-            baseline,
         )
-        self.assertEqual("v9.2->v9.3", result["transition"])
+        self.assertEqual("v9.2->v9.3", result["prior_transition"])
+        self.assertEqual("v9.3->v9.4", result["transition"])
+        self.assertEqual(15, result["source_replacements"])
 
     def test_governance_exclusion_is_narrow_and_explicit(self) -> None:
         for path in GENERATED_GOVERNANCE_FILES:

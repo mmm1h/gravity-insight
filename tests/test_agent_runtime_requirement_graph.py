@@ -27,6 +27,9 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
 
     def test_current_requirement_graph_and_markdown_projection_are_valid(self) -> None:
         summary = validate_repository(INDEX, INDEX_MARKDOWN)
+        self.assertIn("merged_main", self.document["status_model"])
+        self.assertNotIn("fixed_dev", self.document["status_model"])
+        self.assertIn("fixed_dev", self.document["historical_status_tokens"])
         self.assertEqual(
             summary["requirement_count"], summary["markdown_requirement_count"]
         )
@@ -63,7 +66,7 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
     def test_duplicate_requirement_or_milestone_id_is_rejected(self) -> None:
         changed = copy.deepcopy(self.document)
         changed["requirements"][0]["milestones"] = [
-            {"id": "R01", "status": "fixed_dev", "dependencies": []}
+            {"id": "R01", "status": "released", "dependencies": []}
         ]
         with self.assertRaisesRegex(RequirementGraphError, "duplicate requirement ID"):
             validate_requirement_graph(changed, index_path=INDEX)
@@ -77,7 +80,7 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
 
     def test_markdown_requirement_status_drift_is_rejected(self) -> None:
         changed = self.markdown.replace(
-            "| [R00](R00-product-constitution.md) | Product constitution and directive governance | - | `fixed_dev` |",
+            "| [R00](R00-product-constitution.md) | Product constitution and directive governance | - | `released` |",
             "| [R00](R00-product-constitution.md) | Product constitution and directive governance | - | `specified` |",
             1,
         )
@@ -86,7 +89,7 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
 
     def test_markdown_milestone_status_drift_is_rejected(self) -> None:
         changed = self.markdown.replace(
-            "| R12-B | R12 | R12-A | `fixed_dev` |",
+            "| R12-B | R12 | R12-A | `released` |",
             "| R12-B | R12 | R12-A | `in_progress` |",
             1,
         )
@@ -97,7 +100,9 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
         changed = copy.deepcopy(self.document)
         r15 = next(item for item in changed["requirements"] if item["id"] == "R15")
         r15["status"] = "in_progress"
-        with self.assertRaisesRegex(RequirementGraphError, "R15 spec status differs"):
+        with self.assertRaisesRegex(
+            RequirementGraphError, "R15 spec delivery status differs"
+        ):
             validate_spec_status_projection(changed, index_path=INDEX)
 
 

@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "3058f9e2b9a0fbace3f47df1b688bd72139e22c01f80cf497892eb0564105135",
-    "manual_review_sha256": "2102eb7e018f167b318f7e60d4ed2b4c890f773f366cc3b8468ba3b376d99026",
+    "reference_evidence_sha256": "c0450ea6b50b92adb2ca24266989090b50bd83f10ab592bf1844eb43214bf1c8",
+    "manual_review_sha256": "ce7f50b8f7152108bf8962b54aeab232d52020d37da160910dd910a58910d8fc",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3193,
     "scanned_file_count": 3185,
@@ -683,7 +683,7 @@
     "dispositions": {
       "no_migration_effect": 310
     },
-    "sites_sha256": "86e6dfdcb924ca4bdfcbe07295547e15c508085151072145c8ee084c31c2fae3"
+    "sites_sha256": "38603f0f2efa382180d2ab45f95a91fbe8ea99e12f347049c5cd3e5f7d0628b2"
   },
   "blockers": [],
   "site_fields": [
@@ -2066,7 +2066,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:187:12:bare text module string",
+      "specs/agent-runtime/index.json:203:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2081,7 +2081,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:190:12:bare text module string",
+      "specs/agent-runtime/index.json:206:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",

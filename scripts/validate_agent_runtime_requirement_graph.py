@@ -40,6 +40,13 @@ def validate_requirement_graph(
 ) -> dict[str, int]:
     requirements = document.get("requirements")
     _require(isinstance(requirements, list), "requirements must be an array")
+    status_model = document.get("status_model")
+    _require(
+        isinstance(status_model, list)
+        and all(isinstance(status, str) and status for status in status_model)
+        and len(status_model) == len(set(status_model)),
+        "status_model must contain unique non-empty tokens",
+    )
 
     nodes: dict[str, dict[str, Any]] = {}
     edges: dict[str, list[str]] = {}
@@ -56,6 +63,10 @@ def validate_requirement_graph(
         _require(requirement_id not in nodes, f"duplicate requirement ID: {requirement_id}")
         nodes[requirement_id] = requirement
         requirement_ids.append(requirement_id)
+        _require(
+            requirement.get("status") in status_model,
+            f"{requirement_id}.status is outside status_model: {requirement.get('status')}",
+        )
 
         path_value = requirement.get("path")
         _require(
@@ -83,6 +94,10 @@ def validate_requirement_graph(
             )
             _require(milestone_id not in nodes, f"duplicate requirement ID: {milestone_id}")
             nodes[milestone_id] = milestone
+            _require(
+                milestone.get("status") in status_model,
+                f"{milestone_id}.status is outside status_model: {milestone.get('status')}",
+            )
 
     for requirement in requirements:
         requirement_id = requirement["id"]
@@ -280,6 +295,8 @@ def validate_spec_status_projection(
 ) -> dict[str, int]:
     requirements = document.get("requirements")
     _require(isinstance(requirements, list), "requirements must be an array")
+    historical = document.get("historical_status_tokens", {})
+    historical_delivery = "fixed_dev" if "fixed_dev" in historical else None
     index_root = index_path.resolve().parent
     for requirement in requirements:
         requirement_id = requirement["id"]
@@ -287,10 +304,17 @@ def validate_spec_status_projection(
         spec_status = parse_spec_status(
             spec_path.read_text(encoding="utf-8"), requirement_id
         )
+        current_status = requirement["status"]
+        expected_spec_status = (
+            historical_delivery
+            if current_status in {"merged_main", "released"}
+            else current_status
+        )
         _require(
-            spec_status == requirement["status"],
-            f"{requirement_id} spec status differs: "
-            f"json={requirement['status']} spec={spec_status}",
+            spec_status == expected_spec_status,
+            f"{requirement_id} spec delivery status differs: "
+            f"current={current_status} expected_historical={expected_spec_status} "
+            f"spec={spec_status}",
         )
     return {"spec_status_count": len(requirements)}
 

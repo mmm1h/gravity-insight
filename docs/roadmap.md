@@ -19,15 +19,9 @@
 
 当前程序状态：
 
-1. **R00 产品宪法与需求拆分（fixed-dev）**：v9.1 canonical 总纲、directive 和细化后的无环需求图已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
-2. **R01 参考纵向切片（fixed-dev）**：`analysis.merge2.ap-cost-anomaly-localization` 已在 `dev@08b42971` 完成；真实路径因底层完整性仍为 `unknown` 而零请求阻断，交付账本和 R02-R08 extraction ledger 位于 R01 Requirement。
-3. **R02 Journey / Trust / DQ 泛化（fixed-dev）**：五个显式 Journey 已绑定严格 ledger projection；Operation/Product/Composite 使用同层 Trust、principal-scoped Validation、TTL、Data Quality 和 transitive impact。R01 仍因完整性不足以 exit 4 零请求阻断；旧私有 Trust owner 已删除，未扩建第二执行器或路由器。
-4. **R03 Built-in Skill Package / R04 Team Skill Hub Stage A（fixed-dev）**：Built-in 与团队无代码 Skill 共用 Manifest/Render Model；显式 Git/static HTTPS Source、exact lock、独立 CAS/offline materialize 已闭合，Trusted Pack 只生成外部 Installer Plan 并做 exact startup verification，未接入 Runtime 执行。
-5. **R05 Business Semantic Registry（fixed-dev）**：versioned Definition/Binding/Source、formula/unit/additivity/time/effective-range/conflict 门禁与离线 `SemanticRegistry`/复数 CLI 已集成；Runtime 只含通用 App Entity，Merge2 指标与 App/physical binding 已迁移到 work-dashboard 独立 Source。R01 仍因完整性 unknown 而零请求阻断。
-6. **R06 Operator / Model Contracts（fixed-dev）**：唯一 R01 deterministic Operator 已迁移到闭合 Registry 与 input/output/assumption/claim/golden/资源门禁；Model Registry 不内置模型，且要求 trusted digest + lineage/evaluation/approval/expiry/horizon 后才允许生产 claims，LTV gap 未提升；R04 trusted-pack descriptor 已冻结。
-7. **R07-R09、R11-R15、CT01-CT03（fixed-dev）；R10（in-progress bounded stdio pilot）；R16（conditional, trigger 已触发但实现暂缓）**：R10 只增加可移除的 `gravity-mcp` 叶子入口，不改共享 spine，不新增 operation，也不构成正式第五交付面；是否毕业由冻结/盲测 Host 准确率和第二采用方共同裁决。R16 处置见其规格 Disposition 一节。
-8. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
-9. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
+1. **计划已完成并整体发布**：原 `dev` 集成层按总纲在全部节点完成、整体验收通过和用户明确批准后推广到 `main`；除 R10 外，Requirement 与 milestone 均随 v0.3.2 达到 `released`。
+2. **R10（merged-main bounded stdio pilot）**：代码已进入 `main`，但盲测、真实 Host 和第二独立采用方仍是 `released`/永久第五产品面的门禁，不因整体发布而取消。
+3. **受保护 main 主干**：`main` 是唯一长期分支；日常开发从短命分支经必需的 `test` 状态检查和 PR 合入，不直接 commit/push，也不削弱保护。
 
 ## 已定决策
 
@@ -46,7 +40,7 @@
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
-- R17（`fixed_dev`）已移除 83 个旧 deep module path（82 迁移 + pagination 删除）且无 shim；人工审阅 compact Agent interaction manifest，固定 consumer census、M0/回归/wheel 已证明 root facade、CLI/SDK/Plan/Agent 读取能力、147 lazy owner/148 `__all__` 与请求行为无损；legacy/v4 脚手架退役后 #11 关闭，不声称完整 Agent domain 或自动独立证明。
+- R17（`released`；历史验收为 `fixed_dev`）已移除 83 个旧 deep module path（82 迁移 + pagination 删除）且无 shim；人工审阅 compact Agent interaction manifest，固定 consumer census、M0/回归/wheel 已证明 root facade、CLI/SDK/Plan/Agent 读取能力、147 lazy owner/148 `__all__` 与请求行为无损；legacy/v4 脚手架退役后 #11 关闭，不声称完整 Agent domain 或自动独立证明。
   五条依赖有意保留：`agents.batch`、`agents.input_resolution` → `agent.discover_capabilities`；`agents.batch_questions` → `agent.DEFAULT_LIMIT`；`agents.host_selection`、`agents.output` → `agent.SCHEMA_VERSION`。只有真实职责变化、第二 owner 或 eager cycle 才触发另行批准的拆分；零反向边不再作为 #11 退出目标。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、
   聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。

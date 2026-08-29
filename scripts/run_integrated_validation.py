@@ -16,7 +16,7 @@ from typing import Any, Mapping, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFINITION = (
-    "Every included gate exits 0 on one clean dev commit using this worktree's "
+    "Every included gate exits 0 on one clean main commit using this worktree's "
     "independent .venv, and one JSON receipt binds the result to that exact HEAD."
 )
 POST_RELEASE_GATES = (
@@ -25,8 +25,8 @@ POST_RELEASE_GATES = (
         "classification": "post_release",
         "included": False,
         "reason": (
-            "PyPI provenance exists only after publication and cannot gate a "
-            "pre-main merge; integrated validation runs the offline fixture instead."
+            "Live PyPI provenance requires external network and publication state; "
+            "deterministic integrated validation runs the offline fixture instead."
         ),
     },
 )
@@ -45,7 +45,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
     return (
         GateSpec(
             "unittest_collector",
-            (py, "scripts/run_unittest_shards.py", "--expected-total", "2098"),
+            (py, "scripts/run_unittest_shards.py", "--expected-total", "2099"),
             1800,
         ),
         GateSpec(
@@ -215,7 +215,7 @@ def preconditions() -> dict[str, Any]:
     return {
         "head": head,
         "branch": branch,
-        "branch_is_dev": branch == "dev",
+        "branch_is_main": branch == "main",
         "clean": not dirty_paths,
         "dirty_paths": dirty_paths,
         "expected_venv": str(expected_venv),
@@ -292,8 +292,8 @@ def _summary(output: str) -> dict[str, Any]:
         if isinstance(value, Mapping):
             for key in (
                 "passed",
-                "ready",
-                "all_index_requirements_fixed_dev",
+                "promotion_complete",
+                "all_index_requirements_main_integrated",
                 "case_count",
                 "surface_count",
                 "network_calls",
@@ -361,7 +361,7 @@ def integrated_green(
 ) -> bool:
     return bool(
         complete_gate_set
-        and before.get("branch_is_dev") is True
+        and before.get("branch_is_main") is True
         and before.get("clean") is True
         and before.get("independent_venv") is True
         and after.get("clean") is True
@@ -384,7 +384,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--trial",
         action="store_true",
-        help="Run on a non-dev branch, but never report integrated green.",
+        help="Run on a non-main branch, but never report integrated green.",
     )
     parser.add_argument(
         "--only",
@@ -423,12 +423,12 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 2
-    if not before["branch_is_dev"] and not args.trial:
+    if not before["branch_is_main"] and not args.trial:
         print(
             json.dumps(
                 {
                     "refused": True,
-                    "reason": "dev_branch_required_use_trial_for_diagnostics",
+                    "reason": "main_branch_required_use_trial_for_diagnostics",
                     "preconditions": before,
                 },
                 ensure_ascii=False,
