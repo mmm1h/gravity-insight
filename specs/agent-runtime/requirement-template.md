@@ -14,7 +14,7 @@
 
 State the user-visible or machine-visible outcome. One requirement must own one end-to-end deliverable, not one implementation phase.
 
-For a `staged_epic`, enumerate mandatory child milestones and require a separate Issue, branch, commit, acceptance and rollback for each. The parent cannot become `fixed_dev` until all milestones do.
+For a `staged_epic`, enumerate mandatory child milestones and require a separate Issue, branch, commit, acceptance and rollback for each. The parent cannot become `merged_main` until all milestones do.
 
 ## Current Baseline
 
@@ -51,11 +51,11 @@ Specify identity, privacy, network, request/concurrency, production probe, write
 
 ## Verification
 
-List focused tests, compiler/quality gates, real wheel checks, consumer checks and the full repository validation required before `fixed_dev`.
+List focused tests, compiler/quality gates, real wheel checks, consumer checks and the full repository validation required before `merged_main`.
 
 ## Rollback And Exit
 
-State activation, rollback, blocker and supersession behavior. `fixed_dev` never implies `main` promotion.
+State activation, rollback, blocker and supersession behavior. `merged_main` never implies release.
 
 ## Canonical Owners
 

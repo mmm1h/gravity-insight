@@ -1,8 +1,9 @@
-"""Validate the one-shot R17 canonical-source errata from its disposition ledger."""
+"""Validate the R17 errata and later exact canonical-source amendments."""
 
 from __future__ import annotations
 
 import difflib
+import copy
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -21,6 +22,11 @@ CANONICAL_FROM_GIT_REVISION = "24f16c667d80107e4149cf76742eab4ada564197"
 CANONICAL_FROM_SHA256 = "54b5759bde4addbceab0e63853c7e228b1d6643d5d369321c92d0468fb1b6b2c"
 REVIEWED_LEDGER_GIT_BLOB = "0fcfa6c85e07c7cc901530ed8c2fe7516203e986"
 REVIEWED_LEDGER_SHA256 = "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20"
+POST_PROGRAM_FROM_GIT_REVISION = "6d72d26dace534ec9b56c316746578cdd76c812c"
+POST_PROGRAM_FROM_SHA256 = "0ba1cd5069d397bc067d88d21dea76b196f5c33404adba7a6f2322e926abd2ec"
+POST_PROGRAM_REPLACEMENTS_SHA256 = (
+    "044ec663d6ae674525d56442acea97a69e1e48076548af5e7435663683312dce"
+)
 
 EXPECTED_ERRATA_KEYS = {
     "rule",
@@ -81,6 +87,41 @@ EXPECTED_VERSION_METADATA_CHANGES = [
         "count": 1,
     },
 ]
+EXPECTED_AMENDMENT_KEYS = {
+    "rule",
+    "authorized_by",
+    "authorized_at",
+    "scope",
+    "transition",
+    "allowed_source_replacements",
+    "requires",
+    "does_not_authorize",
+}
+EXPECTED_AMENDMENT_REQUIRES = [
+    "v9_3_bytes_from_git_baseline",
+    "exact_source_allowlist_only",
+    "directive_and_source_digest_updated_atomically",
+]
+EXPECTED_AMENDMENT_FORBIDDEN = [
+    "rewrite_historical_requirement_evidence",
+    "weaken_main_branch_protection",
+    "allow_non_main_integrated_validation_green",
+]
+EXPECTED_MAIN_INTEGRATION = {
+    "status": "completed",
+    "development_target": "main",
+    "change_path": "short_lived_branch_pull_request_to_protected_main",
+    "completed_promotion_requires": [
+        "all_index_requirements_fixed_dev",
+        "integrated_validation_green",
+        "explicit_new_user_approval",
+    ],
+    "ongoing_merge_requires": [
+        "required_test_status_check",
+        "pull_request",
+        "protected_main",
+    ],
+}
 
 
 class ErrataValidationError(AssertionError):
@@ -106,6 +147,67 @@ def load_json(path: Path) -> dict[str, Any]:
     document = json.loads(path.read_text(encoding="utf-8"))
     _require(isinstance(document, dict), f"JSON document must be an object: {path}")
     return document
+
+
+def _canonical_json_sha256(value: Any) -> str:
+    rendered = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(rendered).hexdigest()
+
+
+def _post_program_amendment(directive: dict[str, Any]) -> dict[str, Any]:
+    amendment = directive.get("canonical_source_amendment")
+    _require(isinstance(amendment, dict), "canonical_source_amendment must be an object")
+    _require(
+        set(amendment) == EXPECTED_AMENDMENT_KEYS,
+        "canonical source amendment has missing or additional authority fields",
+    )
+    _require(
+        amendment.get("rule") == "post_program_v9_3_to_v9_4_exact_allowlist",
+        "canonical source amendment rule changed",
+    )
+    _require(amendment.get("authorized_by") == "user", "amendment authority changed")
+    _require(
+        amendment.get("authorized_at") == "2026-08-30",
+        "amendment authorization date changed",
+    )
+    _require(
+        amendment.get("scope")
+        == "completed_program_trunk_on_main_governance_migration",
+        "amendment scope changed",
+    )
+    transition = amendment.get("transition")
+    _require(
+        transition
+        == {
+            "from_version": "v9.3",
+            "from_sha256": POST_PROGRAM_FROM_SHA256,
+            "from_git_revision": POST_PROGRAM_FROM_GIT_REVISION,
+            "to_version": "v9.4",
+        },
+        "post-program transition must remain the reviewed v9.3 to v9.4 baseline",
+    )
+    replacements = amendment.get("allowed_source_replacements")
+    _require(
+        isinstance(replacements, list)
+        and len(replacements) == 15
+        and _canonical_json_sha256(replacements)
+        == POST_PROGRAM_REPLACEMENTS_SHA256,
+        "post-program source allowlist changed from the exact reviewed operations",
+    )
+    _require(
+        amendment.get("requires") == EXPECTED_AMENDMENT_REQUIRES,
+        "post-program amendment requirements changed",
+    )
+    _require(
+        amendment.get("does_not_authorize") == EXPECTED_AMENDMENT_FORBIDDEN,
+        "post-program amendment forbidden-action list changed",
+    )
+    return amendment
 
 
 def _errata(directive: dict[str, Any]) -> dict[str, Any]:
@@ -535,11 +637,7 @@ def apply_coordinate_replacements(
     return expected
 
 
-def apply_version_metadata_changes(source: str, changes: Any) -> str:
-    _require(
-        changes == EXPECTED_VERSION_METADATA_CHANGES,
-        "R17 version metadata allowlist changed from the exact three literals",
-    )
+def _apply_exact_text_changes(source: str, changes: Any) -> str:
     expected = source
     for index, change in enumerate(changes):
         _require(isinstance(change, dict), f"metadata change {index} must be an object")
@@ -585,6 +683,14 @@ def apply_version_metadata_changes(source: str, changes: Any) -> str:
         )
         expected = expected.replace(old, new, count)
     return expected
+
+
+def apply_version_metadata_changes(source: str, changes: Any) -> str:
+    _require(
+        changes == EXPECTED_VERSION_METADATA_CHANGES,
+        "R17 version metadata allowlist changed from the exact three literals",
+    )
+    return _apply_exact_text_changes(source, changes)
 
 
 def load_git_baseline(directive: dict[str, Any]) -> bytes:
@@ -818,6 +924,107 @@ def validate_final_state(
     }
 
 
+def load_post_program_baseline_directive() -> dict[str, Any]:
+    relative = DIRECTIVE_PATH.relative_to(ROOT).as_posix()
+    baseline = json.loads(
+        _git_file_bytes(POST_PROGRAM_FROM_GIT_REVISION, relative).decode("utf-8")
+    )
+    _require(isinstance(baseline, dict), "v9.3 baseline directive must be an object")
+    expected = _expected_final_directive(POST_PROGRAM_FROM_SHA256)
+    mismatch_paths = _directive_mismatch_paths(baseline, expected)
+    _require(
+        not mismatch_paths,
+        "post-program directive baseline is not the terminal R17 v9.3 state at: "
+        + ", ".join(mismatch_paths),
+    )
+    return baseline
+
+
+def build_post_program_source(directive: dict[str, Any]) -> bytes:
+    amendment = _post_program_amendment(directive)
+    source_file = _canonical_source_file(directive)
+    baseline = _git_file_bytes(POST_PROGRAM_FROM_GIT_REVISION, source_file)
+    _require(
+        hashlib.sha256(baseline).hexdigest() == POST_PROGRAM_FROM_SHA256,
+        "Git-bound v9.3 source SHA differs from the post-program transition",
+    )
+    expected = _apply_exact_text_changes(
+        baseline.decode("utf-8"), amendment["allowed_source_replacements"]
+    )
+    return expected.encode("utf-8")
+
+
+def _expected_post_program_directive(
+    directive: dict[str, Any], expected_source_sha256: str
+) -> dict[str, Any]:
+    amendment = _post_program_amendment(directive)
+    expected = copy.deepcopy(load_post_program_baseline_directive())
+    transition = amendment["transition"]
+    expected["version"] = transition["to_version"]
+    expected["supersedes"] = {
+        "version": transition["from_version"],
+        "sha256": transition["from_sha256"],
+    }
+    expected["canonical_source"]["sha256"] = expected_source_sha256
+    expected["canonical_source_amendment"] = copy.deepcopy(amendment)
+    expected["review_baseline"] = {
+        "branch": "main",
+        "sha": POST_PROGRAM_FROM_GIT_REVISION,
+    }
+    expected["main_integration"] = copy.deepcopy(EXPECTED_MAIN_INTEGRATION)
+    return expected
+
+
+def validate_current_state(
+    directive: dict[str, Any], ledger: dict[str, Any], source_bytes: bytes
+) -> dict[str, Any]:
+    """Prove the immutable R17 transition before applying the owner amendment."""
+
+    baseline_directive = load_post_program_baseline_directive()
+    source_file = _canonical_source_file(baseline_directive)
+    v93_source = _git_file_bytes(POST_PROGRAM_FROM_GIT_REVISION, source_file)
+    r17_baseline = load_git_baseline(baseline_directive)
+    prior = validate_final_state(
+        baseline_directive,
+        ledger,
+        v93_source,
+        r17_baseline,
+    )
+    expected_source = build_post_program_source(directive)
+    expected_sha = hashlib.sha256(expected_source).hexdigest()
+    expected_directive = _expected_post_program_directive(directive, expected_sha)
+    mismatch_paths = _directive_mismatch_paths(directive, expected_directive)
+    _require(
+        not mismatch_paths,
+        "current directive exceeds the post-program amendment at field path(s): "
+        + ", ".join(mismatch_paths),
+    )
+    if source_bytes != expected_source:
+        delta = "".join(
+            difflib.unified_diff(
+                expected_source.decode("utf-8").splitlines(True),
+                source_bytes.decode("utf-8").splitlines(True),
+                fromfile="allowlist-derived-v9.4",
+                tofile="actual-v9.4",
+                n=2,
+            )
+        )
+        raise ErrataValidationError(
+            "canonical v9.3 to v9.4 diff exceeds the exact amendment:\n"
+            + delta[:8000]
+        )
+    actual_sha = hashlib.sha256(source_bytes).hexdigest()
+    _require(actual_sha == expected_sha, "current canonical source SHA mismatch")
+    return {
+        "transition": "v9.3->v9.4",
+        "prior_transition": prior["transition"],
+        "source_replacements": len(
+            directive["canonical_source_amendment"]["allowed_source_replacements"]
+        ),
+        "sha256": actual_sha,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = sys.argv[1:] if argv is None else argv
     try:
@@ -843,9 +1050,8 @@ def main(argv: list[str] | None = None) -> int:
                 ledger,
                 ledger_bytes=LEDGER_PATH.read_bytes(),
             )
-            source_bytes = canonical_source_path(reviewed_directive).read_bytes()
-            baseline_bytes = load_git_baseline(reviewed_directive)
-            result = validate_final_state(directive, ledger, source_bytes, baseline_bytes)
+            source_bytes = canonical_source_path(directive).read_bytes()
+            result = validate_current_state(directive, ledger, source_bytes)
     except (
         ErrataValidationError,
         json.JSONDecodeError,

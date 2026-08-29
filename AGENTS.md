@@ -72,8 +72,8 @@ reporting language, and campaign decisions remain in the calling project.
 
 ## Parallel development
 
-Independent units develop on separate `codex/<unit>` branches and merge back to
-`dev` once green. Do not split one unit across branches by phase; core, surface,
+Independent units develop from `main` on separate short-lived `codex/<unit>`
+branches and merge through a green PR. Do not split one unit across branches by phase; core, surface,
 and agent handoff have ordering dependencies. For a directive-approved
 `staged_epic`, each indexed milestone is an independent unit and branch, and
 must still deliver its own complete core/surface/handoff slice rather than
@@ -172,32 +172,24 @@ isolated.
 
 ## Branch workflow
 
-- `main` is the stable integration branch consumed by other projects. Do not
-  develop, test, or fix bugs directly on `main`.
-- Keep the canonical consumer checkout on `main`. Check out `dev` in a sibling
-  worktree (for example `../gravity-sdk-dev`); never switch the consumer
-  checkout itself to `dev`.
-- Use `dev` for normal development, tests, refactors, and bug fixes. Give each
-  development worktree its own ignored `.venv` and editable install, then run
-  validation with that environment's Python. A shared editable interpreter may
-  still resolve imports from the `main` checkout and produce false test results.
-- Promote validated changes from `dev` to `main` only as an explicit release
-  action after the required checks pass.
-- For the Gravity Agent Runtime program, every executable node and staged-epic
-  milestone in `specs/agent-runtime/index.json` remains on `codex/*` branches
-  and `dev` until the whole program is complete, integrated validation is green,
-  and the user gives a new explicit approval. A single requirement reaching
-  `fixed_dev` is never a reason to merge it to `main`.
-- Push `dev` to GitHub at the end of every round. Remove a merged worktree and
-  run `git worktree prune` as part of closing that unit, not as a later cleanup.
+- `main` is the only long-lived development and integration branch. It is
+  protected: never commit or push directly to it, force-push it, or weaken its
+  required `test` status check.
+- Create each development worktree on a short-lived branch based on current
+  `main`. Give it an ignored `.venv` and editable install, then validate with
+  that environment's Python; shared editable interpreters can resolve imports
+  from another checkout and produce false results.
+- Merge only through a green PR to `main`. `merged_main` means code is on the
+  protected trunk but not necessarily released; the retired `fixed_dev` token
+  remains only in frozen Agent Runtime delivery evidence.
+- Remove a merged worktree and run `git worktree prune` while closing its unit.
 
 ## Issue workflow
 
 - Read `docs/maintainers/issues.md` before taking a GitHub issue.
 - Only start implementation from `status:ready`; first change it to
-  `status:in-progress` and record the `dev` worktree and intended scope.
+  `status:in-progress` and record the short-lived branch/worktree and intended scope.
 - Use exactly one `status:*` and one `priority:*` label. Do not close an issue
-  at `status:fixed-dev`; close it only after the fix reaches `main`, then use
-  `status:released`.
+  before the fix reaches `main`; then close it with `status:released`.
 - If evidence is insufficient, use `status:needs-evidence` and state the exact
   missing safe evidence instead of guessing or broadening a contract.

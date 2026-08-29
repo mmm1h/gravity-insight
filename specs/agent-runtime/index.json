@@ -2,17 +2,32 @@
   "schema_version": "gravity.agent-runtime-requirements.v1",
   "directive_ref": "directive.json",
   "architecture_source": "architecture-source.md",
-  "status_model": ["draft","specified","reviewed","ready","in_progress","fixed_dev","blocked","released","superseded"],
+  "status_model": ["draft","specified","reviewed","ready","in_progress","merged_main","blocked","released","superseded"],
+  "historical_status_tokens": {
+    "fixed_dev": "Program-era acceptance checkpoint retained only in frozen Requirement delivery evidence."
+  },
   "main_integration": {
-    "policy": "frozen_until_program_complete",
-    "development_target": "dev",
-    "promotion_requires": ["all_index_requirements_fixed_dev","integrated_validation_green","explicit_new_user_approval"]
+    "policy": "protected_main_trunk",
+    "development_target": "main",
+    "change_path": "short_lived_branch_pull_request_to_main",
+    "promotion_requires": {
+      "status": "satisfied_historical_record",
+      "conditions": ["all_index_requirements_fixed_dev","integrated_validation_green","explicit_new_user_approval"]
+    },
+    "ongoing_merge_requires": ["protected_main","required_test_status_check","pull_request"],
+    "release_exceptions": [
+      {
+        "id": "R10",
+        "status": "merged_main",
+        "release_requires": ["blind_20_question_holdout","second_independent_host_or_consumer_adoption"]
+      }
+    ]
   },
   "integrated_validation": {
     "schema_version": "gravity.integrated-validation-contract.v1",
-    "definition": "Every included gate exits 0 on one clean dev commit using that worktree's independent .venv, and one JSON receipt binds the result to that exact HEAD.",
+    "definition": "Every included gate exits 0 on one clean main commit using that worktree's independent .venv, and one JSON receipt binds the result to that exact HEAD.",
     "command": ".venv/Scripts/python.exe scripts/run_integrated_validation.py",
-    "preconditions": ["branch_is_dev","worktree_clean_before_and_after","head_unchanged","python_is_worktree_dot_venv"],
+    "preconditions": ["branch_is_main","worktree_clean_before_and_after","head_unchanged","python_is_worktree_dot_venv"],
     "receipt_path_template": "tmp/integrated-validation/{commit_sha}/receipt.json",
     "receipt_policy": "ignored_run_artifact_not_canonical_source; dirty worktrees are refused before receipt generation",
     "included_gates": [
@@ -47,7 +62,7 @@
       {
         "name": "release_provenance_live_pypi",
         "classification": "post_release",
-        "reason": "PyPI provenance exists only after publication and cannot gate a pre-main merge; the offline fixture remains included."
+        "reason": "Live PyPI provenance requires external network and publication state; deterministic integrated validation keeps the offline fixture included."
       }
     ],
     "network_policy": "No real network; live PyPI provenance is post-release only."
@@ -61,22 +76,22 @@
     "src/gravity_sdk/__main__.py"
   ],
   "requirements": [
-    {"id":"R00","path":"R00-product-constitution.md","status":"fixed_dev","dependencies":[],"parallel_group":"bootstrap","shared_spine":false},
-    {"id":"R01","path":"R01-reference-vertical-slice.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"reference","shared_spine":true},
-    {"id":"R02","path":"R02-journey-trust-data-quality.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"platform-core","shared_spine":true},
-    {"id":"R03","path":"R03-built-in-skill-package.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
-    {"id":"R04","path":"R04-team-skill-hub-stage-a.md","status":"fixed_dev","dependencies":["R03","R06"],"parallel_group":"foundation-b","shared_spine":true},
-    {"id":"R05","path":"R05-business-semantic-registry.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
-    {"id":"R06","path":"R06-operator-model-contracts.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
-    {"id":"R07","path":"R07-context-pack-repo-provider.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
-    {"id":"R08","path":"R08-external-provider-rpc-guard.md","status":"fixed_dev","dependencies":["R07"],"parallel_group":"foundation-b","shared_spine":false},
-    {"id":"R09A","path":"R09A-core-skill-runtime.md","status":"fixed_dev","dependencies":["R02","R03","R05","R06","R07"],"parallel_group":"core-runtime","shared_spine":true},
-    {"id":"R09B","path":"R09B-team-hub-binding.md","status":"fixed_dev","dependencies":["R04","R09A"],"parallel_group":"optional-binding","shared_spine":true},
-    {"id":"R09C","path":"R09C-external-context-binding.md","status":"fixed_dev","dependencies":["R08","R09A"],"parallel_group":"optional-binding","shared_spine":true},
+    {"id":"R00","path":"R00-product-constitution.md","status":"released","dependencies":[],"parallel_group":"bootstrap","shared_spine":false},
+    {"id":"R01","path":"R01-reference-vertical-slice.md","status":"released","dependencies":["R00"],"parallel_group":"reference","shared_spine":true},
+    {"id":"R02","path":"R02-journey-trust-data-quality.md","status":"released","dependencies":["R01"],"parallel_group":"platform-core","shared_spine":true},
+    {"id":"R03","path":"R03-built-in-skill-package.md","status":"released","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
+    {"id":"R04","path":"R04-team-skill-hub-stage-a.md","status":"released","dependencies":["R03","R06"],"parallel_group":"foundation-b","shared_spine":true},
+    {"id":"R05","path":"R05-business-semantic-registry.md","status":"released","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
+    {"id":"R06","path":"R06-operator-model-contracts.md","status":"released","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
+    {"id":"R07","path":"R07-context-pack-repo-provider.md","status":"released","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
+    {"id":"R08","path":"R08-external-provider-rpc-guard.md","status":"released","dependencies":["R07"],"parallel_group":"foundation-b","shared_spine":false},
+    {"id":"R09A","path":"R09A-core-skill-runtime.md","status":"released","dependencies":["R02","R03","R05","R06","R07"],"parallel_group":"core-runtime","shared_spine":true},
+    {"id":"R09B","path":"R09B-team-hub-binding.md","status":"released","dependencies":["R04","R09A"],"parallel_group":"optional-binding","shared_spine":true},
+    {"id":"R09C","path":"R09C-external-context-binding.md","status":"released","dependencies":["R08","R09A"],"parallel_group":"optional-binding","shared_spine":true},
     {
       "id": "R10",
       "path": "R10-mcp-thin-surface.md",
-      "status": "fixed_dev",
+      "status": "merged_main",
       "dependencies": ["R09A"],
       "parallel_group": "optional-surface",
       "shared_spine": false,
@@ -101,8 +116,9 @@
       "lifecycle_transition": {
         "specified_to_reviewed_to_ready": "agent_under_standing_owner_delegation",
         "owner_review": "pending",
-        "current": "fixed_dev",
-        "dev_integration": "pending"
+        "historical_delivery": "fixed_dev",
+        "current": "merged_main",
+        "main_integration": "completed"
       },
       "pilot_exit": {
         "development_first_choice_minimum": "18/20",
@@ -151,18 +167,18 @@
         "status_decision": "fixed_dev_development_thresholds_met_release_gates_unchanged"
       }
     },
-    {"id":"R11","path":"R11-pap-pilot.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
-    {"id":"R12","path":"R12-action-experiment-receipt.md","status":"fixed_dev","dependencies":["R09A"],"parallel_group":"governed-action","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R12-A","status":"fixed_dev","dependencies":[]},{"id":"R12-B","status":"fixed_dev","dependencies":["R12-A"]},{"id":"R12-C","status":"fixed_dev","dependencies":["R12-B"]}]},
-    {"id":"R13A","path":"R13A-artifact-transfer.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"artifact-transfer","shared_spine":true},
-    {"id":"R13B","path":"R13B-analysis-artifact-renderer.md","status":"fixed_dev","dependencies":["R09A"],"parallel_group":"analysis-delivery","shared_spine":false},
-    {"id":"R13C","path":"R13C-dashboard-connector.md","status":"fixed_dev","dependencies":["R13B"],"milestone_dependencies":["R12-A"],"parallel_group":"dashboard-delivery","shared_spine":true},
-    {"id":"R14","path":"R14-adaptive-governor-variants.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"runtime-infrastructure","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R14-A","status":"fixed_dev","dependencies":[]},{"id":"R14-B","status":"fixed_dev","dependencies":["R14-A"]},{"id":"R14-C","status":"fixed_dev","dependencies":[]},{"id":"R14-D","status":"fixed_dev","dependencies":["R14-B","R14-C"]}]},
-    {"id":"R15","path":"R15-isolated-sql-explorer.md","status":"fixed_dev","dependencies":["R02","R05"],"parallel_group":"isolated-product","shared_spine":true},
-    {"id":"R16","path":"R16-control-plane-stage-b.md","status":"fixed_dev","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
+    {"id":"R11","path":"R11-pap-pilot.md","status":"released","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
+    {"id":"R12","path":"R12-action-experiment-receipt.md","status":"released","dependencies":["R09A"],"parallel_group":"governed-action","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R12-A","status":"released","dependencies":[]},{"id":"R12-B","status":"released","dependencies":["R12-A"]},{"id":"R12-C","status":"released","dependencies":["R12-B"]}]},
+    {"id":"R13A","path":"R13A-artifact-transfer.md","status":"released","dependencies":["R02"],"parallel_group":"artifact-transfer","shared_spine":true},
+    {"id":"R13B","path":"R13B-analysis-artifact-renderer.md","status":"released","dependencies":["R09A"],"parallel_group":"analysis-delivery","shared_spine":false},
+    {"id":"R13C","path":"R13C-dashboard-connector.md","status":"released","dependencies":["R13B"],"milestone_dependencies":["R12-A"],"parallel_group":"dashboard-delivery","shared_spine":true},
+    {"id":"R14","path":"R14-adaptive-governor-variants.md","status":"released","dependencies":["R02"],"parallel_group":"runtime-infrastructure","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R14-A","status":"released","dependencies":[]},{"id":"R14-B","status":"released","dependencies":["R14-A"]},{"id":"R14-C","status":"released","dependencies":[]},{"id":"R14-D","status":"released","dependencies":["R14-B","R14-C"]}]},
+    {"id":"R15","path":"R15-isolated-sql-explorer.md","status":"released","dependencies":["R02","R05"],"parallel_group":"isolated-product","shared_spine":true},
+    {"id":"R16","path":"R16-control-plane-stage-b.md","status":"released","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
     {
       "id": "R17",
       "path": "R17-agent-module-package-migration.md",
-      "status": "fixed_dev",
+      "status": "released",
       "dependencies": [],
       "parallel_group": "structural-migration",
       "shared_spine": true,
@@ -243,7 +259,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "9243bf1c719790a18eb4c8d3bdaf1046880fa331d4cb2363743a1c6b23d19065",
+          "live_checkpoint_sha256": "f32a98be7f41aaf01ae725988de44683969d506f9ebc8761624c7bc0b487b999",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 310,
           "live_checkpoint_unclassified_sites": 0,
@@ -271,8 +287,8 @@
         "maintenance_baseline": "125bb84cbb98a575a2ef3c4a577f174027bc908d"
       }
     },
-    {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
-    {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"fixed_dev","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
-    {"id":"CT03","path":"CT03-thinkingai-full-specification.md","status":"fixed_dev","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}
+    {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"released","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
+    {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"released","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
+    {"id":"CT03","path":"CT03-thinkingai-full-specification.md","status":"released","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}
   ]
 }
