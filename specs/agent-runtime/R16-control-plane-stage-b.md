@@ -69,6 +69,49 @@ R04 Skill/Trusted Pack lock fields and digest semantics are unchanged. R16 stays
 `specified` until both segments are integrated and the plan owner records the
 final lifecycle transition.
 
+### Asymmetric Trust-Root Correction (2026-08-29)
+
+The local verification segment now replaces its historical symmetric
+`hmac-sha256` profile with Ed25519 public-key verification through PyNaCl. The
+earlier record remains above as implementation history, but HMAC is no longer
+accepted by the machine contract: a verifier must not receive the ability to
+forge publicly distributed metadata or artifacts.
+
+The selection compared `cryptography`, PyNaCl, a vendored pure-Python Ed25519
+verifier, external OpenSSL/OS crypto, and a full TUF/Sigstore client stack.
+`cryptography` was security-suitable but broader than this one-primitive
+boundary; pure Python would make this repository the owner of hand-written
+cryptographic arithmetic; external executables are not a portable Runtime
+contract; and the full protocol stacks would rewrite an already bounded local
+verification core. PyNaCl was selected as the narrowest established,
+native-backed Ed25519 implementation, accepting its CFFI/libsodium binary-wheel
+distribution cost because R16 is the public supply-chain trust root rather than
+a local leaf feature. Because this control-plane capability is optional for the
+SDK's analysis-first consumers, PyNaCl is pinned in the `control-plane` extra
+rather than the base install; the `dev` extra includes the same pin for tests.
+
+Production code imports only `VerifyKey` and verifies 32-byte public keys plus
+64-byte signatures. It has no private-key loader or signature-generation path.
+Deterministic private seeds and `SigningKey` exist only in
+`tests/test_control_plane_fixtures.py` and are explicitly test-only,
+non-production material. The verifier accepts exactly the `ed25519` algorithm;
+unknown or mismatched algorithms fail closed. Dedicated fixtures also prove
+that replacing an explicit root public key invalidates the old signature and
+that an algorithm claim inconsistent with the trust root is rejected. The six
+pre-existing attack fixtures retain their stable reason codes.
+
+Production module import records a missing PyNaCl backend without failing the
+package import. Every Ed25519 verification attempt then fails closed with
+`CRYPTO_BACKEND_UNAVAILABLE` and directs the caller to install
+`gravity-insight[control-plane]`; no successful, skipped, or fallback-algorithm
+path exists when that backend is unavailable.
+
+PyNaCl adds a binary distribution surface. Version 1.6.0 publishes a
+`cp38-abi3` Windows x86-64 wheel; CPython's stable ABI lets that wheel cover
+CPython 3.8 and later, including the local 3.14 environment, without rebuilding
+for each Python minor release. Its `cffi>=2.0.0` dependency has a native
+`cp314` Windows x86-64 wheel in the local environment.
+
 ## Outcome
 
 An External Control Plane builds, publishes, verifies, stages, canaries and rolls back Runtime/Skill/Provider/Operator artifacts while preserving Stage A Skill-content and Trusted-Pack artifact kinds, digests and lock semantics. Runtime never replaces its own loaded wheel.

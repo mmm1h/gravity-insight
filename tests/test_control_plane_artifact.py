@@ -36,10 +36,10 @@ class ControlPlaneArtifactTests(unittest.TestCase):
             OciDescriptor.from_dict(invalid_descriptor)
         self.assertEqual("OCI_DESCRIPTOR_INVALID", media_error.exception.reason_code)
 
-    def test_signature_contract_rejects_noncanonical_encoding(self) -> None:
+    def test_signature_contract_rejects_invalid_encoding(self) -> None:
         with self.assertRaises(ControlPlaneVerificationError) as raised:
             Signature.from_dict(
-                {"key_id": "artifact", "algorithm": "hmac-sha256", "value": "A" * 64}
+                {"key_id": "artifact", "algorithm": "ed25519", "value": "not-base64!"}
             )
         self.assertEqual("SIGNATURE_INVALID", raised.exception.reason_code)
 
@@ -57,7 +57,7 @@ class ControlPlaneArtifactTests(unittest.TestCase):
     def test_invalid_artifact_signature_is_rejected(self) -> None:
         fixture = build_fixture("valid")
         bundle = copy.deepcopy(fixture.bundle)
-        bundle["artifacts"][0]["signatures"][0]["value"] = "0" * 64
+        bundle["artifacts"][0]["signatures"][0]["value"] = "A" * 86 + "=="
         self._assert_rejected(fixture, "SIGNATURE_THRESHOLD_UNMET", bundle=bundle)
 
     def test_provenance_policy_is_enforced(self) -> None:

@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
-import hmac
 import json
 from typing import Any
 
 from .errors import ControlPlaneVerificationError
 
+try:
+    from nacl.exceptions import BadSignatureError as _BadSignatureError
+    from nacl.signing import VerifyKey as _VerifyKey
+except ImportError as exc:
+    _BadSignatureError = None
+    _VerifyKey = None
+    _NACL_IMPORT_ERROR: ImportError | None = exc
+else:
+    _NACL_IMPORT_ERROR = None
 
-HMAC_SHA256 = "hmac-sha256"
+
+ED25519 = "ed25519"
 
 
 def canonical_json_bytes(value: Any) -> bytes:
@@ -33,18 +44,32 @@ def sha256_digest(content: bytes) -> str:
     return f"sha256:{hashlib.sha256(content).hexdigest()}"
 
 
-def hmac_sha256(key: bytes, payload: bytes) -> str:
-    return hmac.new(key, payload, hashlib.sha256).hexdigest()
-
-
-def verify_hmac_sha256(key: bytes, payload: bytes, signature: str) -> bool:
-    if len(key) < 16 or not _hex_digest(signature):
+def verify_ed25519(public_key: bytes, payload: bytes, signature: str) -> bool:
+    verify_key, bad_signature_error = _ed25519_backend()
+    if len(public_key) != 32:
         return False
-    expected = hmac_sha256(key, payload)
-    return hmac.compare_digest(expected, signature)
-
-
-def _hex_digest(value: str) -> bool:
-    if len(value) != 64:
+    try:
+        encoded = base64.b64decode(signature, validate=True)
+    except (binascii.Error, ValueError):
         return False
-    return all(character in "0123456789abcdef" for character in value)
+    if len(encoded) != 64 or base64.b64encode(encoded).decode("ascii") != signature:
+        return False
+    try:
+        verify_key(public_key).verify(payload, encoded)
+    except (bad_signature_error, ValueError):
+        return False
+    return True
+
+
+def _ed25519_backend() -> tuple[Any, type[Exception]]:
+    if (
+        _NACL_IMPORT_ERROR is not None
+        or _VerifyKey is None
+        or _BadSignatureError is None
+    ):
+        raise ControlPlaneVerificationError(
+            "CRYPTO_BACKEND_UNAVAILABLE",
+            "Ed25519 verification requires the optional control-plane dependency; "
+            'install it with `pip install "gravity-insight[control-plane]"`',
+        ) from _NACL_IMPORT_ERROR
+    return _VerifyKey, _BadSignatureError
