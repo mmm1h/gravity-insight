@@ -21,14 +21,16 @@ from unittest.mock import patch
 import scripts.generate_agent_module_reference_dispositions as checkpoint_generator
 import scripts.validate_r17_canonical_source_errata as errata_validator
 from scripts.audit_agent_module_references import (
+    AuditResult,
     GENERATED_GOVERNANCE_FILES,
     GOVERNANCE_EXCLUSION_RULE,
     Finding,
     ReferenceScanner,
     is_generated_governance_artifact,
     make_module_map,
-    scan_repository,
+    scan_repository as _scan_repository,
     source_key,
+    version_controlled_files,
     _frozen_module_scope,
 )
 from scripts.generate_agent_module_reference_dispositions import (
@@ -38,7 +40,7 @@ from scripts.generate_agent_module_reference_dispositions import (
     DATED_DECISION_RECORD,
     DELETED_MODULE_RECORD,
     RUNTIME_CONSUMER,
-    build_document,
+    build_document as _build_document,
     checkpoint_sites,
     classify_active_bare_context as generator_classify_active_bare_context,
     _classify_reference as generator_classify_reference,
@@ -100,6 +102,71 @@ FROZEN_BASELINE_EXCLUSION_RULE = (
     "tests/agent_migration_characterization.py; or any other src, docs, specs, "
     "or tests path."
 )
+
+
+_RepositoryInputKey = tuple[Path, tuple[tuple[str, str], ...]]
+_REPOSITORY_PRODUCTS_CACHE: dict[
+    _RepositoryInputKey, tuple[AuditResult, dict[str, Any]]
+] = {}
+
+
+def _repository_input_key(root: Path) -> _RepositoryInputKey:
+    resolved = root.resolve()
+    files, _excluded = version_controlled_files(resolved)
+    inputs: list[tuple[str, str]] = []
+    for path in files:
+        inputs.append(
+            (
+                path.relative_to(resolved).as_posix(),
+                hashlib.sha256(path.read_bytes()).hexdigest(),
+            )
+        )
+    return resolved, tuple(inputs)
+
+
+def _repository_products(
+    root: Path = ROOT, *, fresh: bool = False
+) -> tuple[AuditResult, dict[str, Any]]:
+    resolved = root.resolve()
+    if fresh or resolved != ROOT.resolve():
+        audit = _scan_repository(resolved)
+        return audit, _build_document(root=resolved, audit=audit)
+    key = _repository_input_key(resolved)
+    cached = _REPOSITORY_PRODUCTS_CACHE.get(key)
+    if cached is None:
+        audit = _scan_repository(resolved)
+        cached = (audit, _build_document(root=resolved, audit=audit))
+        _REPOSITORY_PRODUCTS_CACHE[key] = cached
+    return cached
+
+
+def scan_repository(root: Path = ROOT, *, fresh: bool = False) -> AuditResult:
+    return _repository_products(root, fresh=fresh)[0]
+
+
+def build_document(
+    *,
+    root: Path = ROOT,
+    audit: Any | None = None,
+    public_exports: dict[str, Any] | None = None,
+    fresh: bool = False,
+) -> dict[str, Any]:
+    resolved = root.resolve()
+    if fresh:
+        if audit is None:
+            audit = _scan_repository(resolved)
+        return _build_document(
+            root=resolved,
+            audit=audit,
+            public_exports=public_exports,
+        )
+    if audit is not None or public_exports is not None or resolved != ROOT.resolve():
+        return _build_document(
+            root=resolved,
+            audit=audit,
+            public_exports=public_exports,
+        )
+    return copy.deepcopy(_repository_products(resolved)[1])
 
 
 def _require(condition: bool, message: str) -> None:
@@ -953,7 +1020,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 'alias = acquire("gravity_sdk.agent_sources")\n',
                 encoding="utf-8",
             )
-            generated = build_document()
+            generated = build_document(fresh=True)
             relative = attack.relative_to(ROOT).as_posix()
             sites = [
                 site
@@ -976,7 +1043,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 "owner = import_module(runtime_module_name)\n",
                 encoding="utf-8",
             )
-            generated = build_document()
+            generated = build_document(fresh=True)
             relative = attack.relative_to(ROOT).as_posix()
             blockers = [
                 site
