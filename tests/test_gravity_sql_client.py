@@ -447,22 +447,12 @@ class GravitySqlClientTests(unittest.TestCase):
         self.assertEqual([True, False, True, True], [item["ok"] for item in local_results])
 
     def test_direct_calls_delegate_concurrency_to_the_runtime_owner(self):
-        lock = threading.Lock()
-        active = 0
-        max_active = 0
+        rendezvous = threading.Barrier(6, timeout=5)
 
         class ConcurrentRuntime(_FakeRuntime):
             def request(self, *args, **kwargs):
-                nonlocal active, max_active
-                with lock:
-                    active += 1
-                    max_active = max(max_active, active)
-                try:
-                    time.sleep(0.02)
-                    return super().request(*args, **kwargs)
-                finally:
-                    with lock:
-                        active -= 1
+                rendezvous.wait()
+                return super().request(*args, **kwargs)
 
         runtime = ConcurrentRuntime()
         clients = (GravityClient(runtime), GravityClient(runtime))
@@ -475,7 +465,6 @@ class GravitySqlClientTests(unittest.TestCase):
             )
 
         self.assertEqual(6, len(rows))
-        self.assertEqual(6, max_active)
 
     def test_build_sql_client_reuses_one_long_lived_instance(self):
         runtime = _FakeRuntime()

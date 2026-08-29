@@ -35,6 +35,7 @@ control-plane = ["PyNaCl==1.6.0"]
 dev = [
   "PyNaCl==1.6.0",
   "pytest>=9,<10",
+  "pytest-xdist>=3.8,<4",
   "setuptools>=68",
   "wheel",
 ]
@@ -154,6 +155,7 @@ members = [
 select = ["F"]
 
 [tool.pytest.ini_options]
+addopts = "-n auto --dist load"
 # Transient codex worktrees live at the repository root and duplicate every
 # tests/ basename, which breaks pytest collection with import file mismatch.
 norecursedirs = ["_wt_*", ".venv", "build", "dist", "tmp"]

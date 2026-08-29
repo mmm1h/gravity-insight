@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "b0c44c00fc662433dd59108eb18db8acce4ae53061506dd24aa3a01d4eb999e7",
-    "manual_review_sha256": "ccb5618b28bae361cbc983a2530ab431fc2a96278f65cdb981c1ea19958f3b07",
+    "reference_evidence_sha256": "8d6f3f8447511171b0be9d9ccb118cf933584e1a17ca40f7aa0aa834988c428b",
+    "manual_review_sha256": "37900ab85b50f99d0467c3384a6c4c29e10bdab198483f2a2bf70d1440eb0b51",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3188,
     "scanned_file_count": 3180,
@@ -683,7 +683,7 @@
     "dispositions": {
       "no_migration_effect": 310
     },
-    "sites_sha256": "93b869239088b31d8d18877fe281996297b696943b457111a28ae015740b5339"
+    "sites_sha256": "51c846a6358df73ab428b0a7d04f9385023cbb5a1c6c50e7be98602c05953d55"
   },
   "blockers": [],
   "site_fields": [
@@ -4706,7 +4706,7 @@
       }
     ],
     [
-      "tests/test_gravity_sql_client.py:482:14:mock.patch.object",
+      "tests/test_gravity_sql_client.py:471:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_client",
