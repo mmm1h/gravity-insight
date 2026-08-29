@@ -37,7 +37,7 @@ class PromotionReadinessTests(unittest.TestCase):
             for item in result["requirements"]
             if "requirement_not_fixed_dev" in item["blockers"]
         }
-        self.assertEqual({"R10", "R16"}, unfinished)
+        self.assertEqual({"R16"}, unfinished)
         self.assertFalse(result["all_index_requirements_fixed_dev"])
         self.assertTrue(result["status_parity"])
         self.assertFalse(result["ready"])
