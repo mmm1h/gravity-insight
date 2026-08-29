@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -27,19 +28,21 @@ from .transport import RecordingSession, RequestDiscipline, build_runtime, sdk_p
 
 
 BATCH_ROOT = REPO_ROOT / "tmp" / "codex" / "gi-batch-probe"
+_PROBER_BINDINGS = json.loads(
+    (Path(__file__).resolve().parents[1] / "contracts" / "runtime-operation-bindings.json").read_text(encoding="utf-8")
+)["prober"]
 
 _TIER_ONE_IDS = frozenset(
     {
         "material.file_params.get",
         "material.media_material_label.list",
-        "material.tag_category.tree",
         "promotion.batch_config.list",
         "promotion.media_directional_package.list",
         "report.confmetric_permission.list",
-        "report.metric.list",
         "report.report_confmetric_permission.list",
         "report.shared_to_me.list",
     }
+    | set(_PROBER_BINDINGS["batch"]["tier_one_operation_ids"])
 )
 
 _TIER_TWO_IDS = frozenset(

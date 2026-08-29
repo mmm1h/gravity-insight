@@ -14,6 +14,7 @@ import pytest
 from gravity_sdk.errors import PolicyViolation, exit_code_for_error
 from gravity_sdk.prober import batch as prober_batch
 from gravity_sdk.prober import cli as prober_cli
+from gravity_sdk.prober import export_verify, parameters
 from gravity_sdk.prober import online, probe_support, transport as prober_transport
 from gravity_sdk.prober.batch import finalize_batch_report
 from gravity_sdk.prober.drafts import _resource_action
@@ -72,6 +73,136 @@ def _route(
 def _write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+
+
+def _operation_binding_matrix(fixture: dict[str, object]) -> dict[str, object]:
+    batch_cases = fixture["batch_cases"]
+    assert isinstance(batch_cases, list)
+    batch = [
+        prober_batch.availability_tier(
+            {"operation": {"operation_id": row["operation_id"], "domain": row["domain"]}}
+        )
+        for row in batch_cases
+    ]
+    export = fixture["export"]
+    assert isinstance(export, dict)
+    item = {
+        "request": {"client_id": "$first_segment_client_id"},
+        "resolve_client_id": {
+            "app_id": export["app_id"], "segment_id": export["segment_id"],
+        },
+    }
+
+    class NormalClient:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, dict[str, str]]] = []
+
+        def read(self, operation_id: str, inputs: dict[str, str]) -> dict[str, object]:
+            self.calls.append((operation_id, inputs))
+            return {"data": {"list": [{"ClientID": export["normal_client_id"]}]}}
+
+    normal_client = NormalClient()
+    normal = export_verify.ExportVerificationRunner(
+        normal_client, object(), output_root=Path(tempfile.gettempdir())
+    )._resolved_request(item)
+
+    class InputValidationError(Exception):
+        pass
+
+    class FallbackOperation:
+        def validate_inputs(self, inputs: dict[str, str]) -> dict[str, str]:
+            return inputs
+
+    class FallbackPolicy:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, object]] = []
+
+        def authorize_operation(self, operation_id: str) -> FallbackOperation:
+            self.calls.append(("authorize_operation", operation_id))
+            return FallbackOperation()
+
+        def _prepare_request(
+            self, operation_id: str, inputs: dict[str, str]
+        ) -> SimpleNamespace:
+            self.calls.append(("prepare_request", operation_id))
+            return SimpleNamespace(method="GET", path="/fixture/", query={}, body={})
+
+    class FallbackTransport:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def request(self, _method: str, _path: str, **kwargs: object) -> SimpleNamespace:
+            self.calls.append(kwargs)
+            return SimpleNamespace(
+                payload={"code": 0, "data": {"list": [{"ClientID": export["fallback_client_id"]}]}}
+            )
+
+    policy = FallbackPolicy()
+    transport = FallbackTransport()
+
+    class FallbackClient:
+        _executor = SimpleNamespace(_policy=policy, _transport=transport)
+
+        @staticmethod
+        def read(_operation_id: str, _inputs: dict[str, str]) -> None:
+            raise InputValidationError("required live field metadata is unavailable")
+
+    fallback = export_verify.ExportVerificationRunner(
+        FallbackClient(), object(), output_root=Path(tempfile.gettempdir())
+    )._resolved_request(item)
+
+    candidates = fixture["parent_candidates"]
+    assert isinstance(candidates, list)
+    parent_results: list[dict[str, object]] = []
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        root = Path(temporary_directory)
+        draft_root = root / "drafts"
+        operation_root = root / "operations"
+        for index, row in enumerate(candidates):
+            operation_id = f"promotion.{row['platform']}.fixture_{index}.list"
+            source = build_draft(
+                _route(f"/turbo_engine/api/v1/{row['platform']}/fixture/{index}/"),
+                set(),
+            )
+            source["operation"].update(
+                {
+                    "operation_id": operation_id,
+                    "platform": row["platform"],
+                    "input_fields": {row["field_name"]: {"type": row["field_type"]}},
+                    "required_parent": [],
+                }
+            )
+            source["operation"]["live_probe"]["inputs"] = {}
+            source["operation"]["provenance"]["applied_overrides"] = []
+            source["draft"]["route_evidence"] = {}
+            _write_json(
+                draft_root / f"{operation_id}.json",
+                source,
+            )
+            _write_json(
+                operation_root / f"{row['expected_operation_id']}.json",
+                {"operation": {"operation_id": row["expected_operation_id"], "stability": "stable"}},
+            )
+            parameters.bind_stable_parent_candidates(
+                draft_root=draft_root,
+                operation_root=operation_root,
+                operation_ids=[operation_id],
+            )
+            persisted = json.loads(
+                (draft_root / f"{operation_id}.json").read_text(encoding="utf-8")
+            )
+            parent_results.extend(persisted["operation"]["required_parent"])
+    return {
+        "batch": batch,
+        "export": {
+            "normal_request": normal,
+            "normal_calls": [list(call) for call in normal_client.calls],
+            "fallback_request": fallback,
+            "fallback_policy_calls": [list(call) for call in policy.calls],
+            "fallback_transport_calls": len(transport.calls),
+        },
+        "parent_candidates": parent_results,
+    }
 
 
 
@@ -134,6 +265,23 @@ class GravityInsightProberTests(unittest.TestCase):
         patcher = mock.patch(target, new=name) if isinstance(target, str) else mock.patch.object(target, name, new=value)
         self.addCleanup(patcher.stop)
         patcher.start()
+
+    def test_operation_binding_matrix_matches_offline_fixture(self) -> None:
+        fixture = json.loads(
+            Path("tests/fixtures/prober_operation_binding_matrix.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        matrix = _operation_binding_matrix(fixture)
+        rendered = json.dumps(
+            matrix, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+
+        self.assertEqual(fixture["expected_matrix"], matrix)
+        self.assertEqual(
+            fixture["expected_sha256"],
+            __import__("hashlib").sha256(rendered.encode("utf-8")).hexdigest(),
+        )
 
     def test_evidence_display_path_accepts_scoped_root_outside_default(self):
         default_root = self.tmp_path / "default"
