@@ -28,7 +28,6 @@ class TestDurationBudgetTests(unittest.TestCase):
         self.assertEqual(240.0, TEST_DURATION_LIMIT_SECONDS)
         self.assertAlmostEqual(0.20, MAX_SINGLE_TEST_JOB_SHARE)
         self.assertLess(CALIBRATED_CI_ENVELOPE_SECONDS, TEST_DURATION_LIMIT_SECONDS)
-        self.assertEqual(("-q", "-n", "auto", "--dist", "loadscope"), PYTEST_ARGUMENTS)
 
     def test_recorder_sums_phases_and_orders_slowest_first(self) -> None:
         recorder = DurationRecorder()
@@ -64,6 +63,7 @@ class TestDurationBudgetTests(unittest.TestCase):
         self.assertIn("duration=240.001s limit=240.000s", errors[0])
 
     def test_gate_uses_parallel_collector_and_fails_closed_on_pytest_error(self) -> None:
+        self.assertEqual(("-q", "-n", "auto", "--dist", "load"), PYTEST_ARGUMENTS)
         captured: list[str] = []
 
         def failed_runner(arguments: list[str], *, plugins: list[object]) -> int:
