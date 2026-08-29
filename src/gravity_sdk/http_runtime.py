@@ -261,49 +261,50 @@ class _GravityRequester:
             "Origin": profile.origin, "Referer": profile.referer,
         }
         for attempt in range(request_attempts):
-            retry_after_ms = None
             rate_delay = self.limiter.acquire(GRAVITY_HOST, self.sleeper)
             attempt_receipt = request_attempt_context(receipt_context, attempt)
-            try:
-                response = perform_runtime_attempt(
-                    self, profile, normalized_method, path, request_headers,
-                    params, json_body, request_timeout, request_attempts,
-                    attempt_receipt, rate_delay,
-                )
-            except Exception as exc:
-                if attempt + 1 < request_attempts and _is_retryable_exception(exc):
-                    self.sleeper(self._backoff(attempt))
-                    continue
-                raise_request_failure(exc)
-            status = int(getattr(response, "status_code", 0))
-            if status == 429:
-                delay = _retry_delay(
-                    response,
-                    attempt,
-                    wall_clock=self.wall_clock,
-                    random_source=self.random_source,
-                )
-                self.limiter.defer(GRAVITY_HOST, delay)
-                retry_after_ms = int(delay * 1_000)
-            if status in _RETRYABLE_STATUS and attempt + 1 < request_attempts:
-                if status != 429:
-                    self.sleeper(self._backoff(attempt))
-                continue
-            payload = _response_payload(response)
-            fetched_at = (
-                self.wall_clock()
-                .astimezone(timezone.utc)
-                .isoformat(timespec="seconds")
-                .replace("+00:00", "Z")
+            result = self._request_attempt(
+                profile, normalized_method, path, request_headers, params, json_body,
+                request_timeout, request_attempts, attempt, attempt_receipt, rate_delay,
             )
-            raw_headers = getattr(response, "headers", {})
-            response_headers = (
-                {str(key): str(value) for key, value in raw_headers.items()}
-                if isinstance(raw_headers, Mapping)
-                else {}
-            )
-            return RuntimeResponse(status, payload, fetched_at, response_headers, retry_after_ms)
+            if result is not None:
+                return result
         raise TransportError("Gravity request failed after bounded retries")
+
+    def _request_attempt(
+        self, profile: RequestProfile, normalized_method: str, path: str,
+        request_headers: Mapping[str, str], params: Mapping[str, Any] | None,
+        json_body: Mapping[str, Any] | None, request_timeout: float, request_attempts: int,
+        attempt: int, attempt_receipt: Mapping[str, Any], rate_delay: float,
+    ) -> RuntimeResponse | None:
+        retry_after_ms = None
+        try:
+            response = perform_runtime_attempt(
+                self, profile, normalized_method, path, request_headers,
+                params, json_body, request_timeout, request_attempts, attempt_receipt, rate_delay,
+            )
+        except Exception as exc:
+            if attempt + 1 < request_attempts and _is_retryable_exception(exc):
+                self.sleeper(self._backoff(attempt))
+                return None
+            raise_request_failure(exc)
+        status = int(getattr(response, "status_code", 0))
+        if status == 429:
+            delay = _retry_delay(
+                response, attempt, wall_clock=self.wall_clock, random_source=self.random_source,
+            )
+            self.limiter.defer(GRAVITY_HOST, delay)
+            retry_after_ms = int(delay * 1_000)
+        if status in _RETRYABLE_STATUS and attempt + 1 < request_attempts:
+            if status != 429:
+                self.sleeper(self._backoff(attempt))
+            return None
+        payload = _response_payload(response)
+        fetched_at = self.wall_clock().astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        raw_headers = getattr(response, "headers", {})
+        response_headers = ({str(key): str(value) for key, value in raw_headers.items()}
+                            if isinstance(raw_headers, Mapping) else {})
+        return RuntimeResponse(status, payload, fetched_at, response_headers, retry_after_ms)
 
     def login(self, body: Mapping[str, Any], timeout: float) -> Mapping[str, Any]:
         response = self.request(

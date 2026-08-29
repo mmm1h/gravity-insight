@@ -376,48 +376,53 @@ class PolicyEngine(MutationPolicyMixin, ExportPolicyMixin):
             raise PolicyViolation("operation path terminates in a blocked mutation action")
 
 
-def _request_parts(
-    operation: OperationSpec, values: Mapping[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Build the wire payload exclusively from the manifest request codec."""
-
-    builder = segment_mutation_request_builder(
-        operation.operation_id
-    )
+def _request_builder(operation: OperationSpec) -> Any:
+    builder = segment_mutation_request_builder(operation.operation_id)
     builder_name = _REQUEST_BUILDER_NAMES.get(operation.operation_id)
     if builder is None and builder_name is not None:
         builder = globals().get(builder_name)
         if not callable(builder):
             raise ManifestError("runtime operation binding names an unavailable builder")
-    if builder:
-        return builder(values)
-    if operation.operation_id in MULTIDIM_OPERATIONS:
-        return _isolated_wire({}, build_request_body(operation.operation_id, values))
+    return builder
 
-    path_fields = set(operation.path_fields)
-    query: dict[str, Any] = {}
-    body: dict[str, Any] = {}
+
+def _manifest_request_parts(operation: OperationSpec, values: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any], set[str]]:
+    path_fields, query, body = set(operation.path_fields), {}, {}
     if operation.request.query_fields or operation.request.body_fields:
-        for name in operation.request.query_fields:
-            if name in values:
-                query[name] = values[name]
-        for name in operation.request.body_fields:
-            if name in values:
-                body[name] = values[name]
+        query.update({name: values[name] for name in operation.request.query_fields
+                      if name in values})
+        body.update({name: values[name] for name in operation.request.body_fields
+                     if name in values})
     else:
         target = body if operation.request.location == "body" else query
         target.update({key: value for key, value in values.items() if key not in path_fields})
     # Fixed values are applied last and can never be caller-controlled.
-    query.update(operation.request.fixed_query)
-    body.update(operation.request.fixed_body)
+    query.update(operation.request.fixed_query); body.update(operation.request.fixed_body)
+    return query, body, path_fields
+
+
+def _validate_request_bindings(
+    operation: OperationSpec, values: Mapping[str, Any], path_fields: set[str]) -> None:
     declared = set(operation.request.query_fields) | set(operation.request.body_fields) | path_fields
     if declared:
         unused = set(values) - declared - set(operation.request.defaults)
         unused |= set(operation.request.defaults) - declared
         if unused:
-            raise PolicyViolation(
-                "operation contract contains validated inputs not bound to the request codec"
-            )
+            raise PolicyViolation("operation contract contains validated inputs not bound to the request codec")
+
+
+def _request_parts(operation: OperationSpec, values: Mapping[str, Any]) -> tuple[
+    dict[str, Any], dict[str, Any]
+]:
+    """Build the wire payload exclusively from the manifest request codec."""
+
+    builder = _request_builder(operation)
+    if builder:
+        return builder(values)
+    if operation.operation_id in MULTIDIM_OPERATIONS:
+        return _isolated_wire({}, build_request_body(operation.operation_id, values))
+    query, body, path_fields = _manifest_request_parts(operation, values)
+    _validate_request_bindings(operation, values, path_fields)
     isolated = json.loads(_canonical_wire_snapshot(query, body))
     return isolated["query"], isolated["body"]
 
