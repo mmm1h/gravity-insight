@@ -251,6 +251,38 @@ def is_newer(available_version: str, current_version: str) -> bool:
     return available is not None and current is not None and available > current
 
 
+def resolve_target_python(
+    value: str | os.PathLike[str] | None, current_executable: str
+) -> tuple[Path | None, str | None]:
+    """Resolve an explicit interpreter without permitting Runtime self-mutation."""
+
+    if value is None:
+        return None, "target interpreter is not configured"
+    raw = os.fspath(value)
+    if not isinstance(raw, str) or not raw.strip():
+        return None, "target interpreter is not configured"
+    target = Path(raw.strip()).expanduser()
+    if not target.is_absolute():
+        return None, "target interpreter must be an absolute path"
+    try:
+        target = target.resolve(strict=True)
+        current = Path(current_executable).resolve(strict=True)
+    except OSError:
+        return None, "target interpreter is unavailable"
+    if not target.is_file():
+        return None, "target interpreter is unavailable"
+    try:
+        targets_current_runtime = os.path.samefile(target, current)
+    except OSError:
+        targets_current_runtime = target == current
+    target_parent, current_parent = target.parent, current.parent
+    target_root = target_parent.parent if target_parent.name.casefold() in {"bin", "scripts"} else target_parent
+    current_root = current_parent.parent if current_parent.name.casefold() in {"bin", "scripts"} else current_parent
+    if targets_current_runtime or target_root == current_root:
+        return None, "target interpreter belongs to the running environment"
+    return target, None
+
+
 def _validated_state(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError("update-check state fields are invalid")
@@ -514,6 +546,7 @@ __all__ = [
     "read_upgrade_attempt",
     "read_update_state",
     "record_upgrade_attempt",
+    "resolve_target_python",
     "runtime_scope_id",
     "success_is_recent",
     "utc",
