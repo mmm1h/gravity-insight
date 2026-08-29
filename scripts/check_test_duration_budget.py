@@ -34,7 +34,7 @@ TEST_DURATION_LIMIT_SECONDS = 4 * 60.0
 MAX_SINGLE_TEST_JOB_SHARE = TEST_DURATION_LIMIT_SECONDS / CI_JOB_TIMEOUT_SECONDS
 # Match direct developer runs and integrated validation. Repository tree readers
 # and writers still coordinate through the shared cross-process test gate.
-PYTEST_ARGUMENTS = ("-q", "-n", "auto", "--dist", "loadscope")
+PYTEST_ARGUMENTS = ("-q", "-n", "auto", "--dist", "load")
 
 
 @dataclass(frozen=True)
