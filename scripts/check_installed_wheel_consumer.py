@@ -19,7 +19,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONSUMER = ROOT.parent / "work-dashboard"
-DEFAULT_REVISION = "d1915a18278fca8823782a7d13e691a6d5702ad2"
+DEFAULT_REVISION = "64c08582690ac4bb2b04d3c3cd22a5716b1dc0f0"
 CONSUMER_TESTS = (
     "tests.test_gravity_sdk_adoption",
     "tests.test_r01_reference_journey_consumer",
