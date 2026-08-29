@@ -18,6 +18,7 @@
     "included_gates": [
       "unittest_collector",
       "pytest_collector",
+      "test_duration_budget",
       "compiler_check",
       "quality_check",
       "agent_usability_development",
@@ -242,7 +243,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "ba5e0cd3179721fcd91de304e691d43a540d0b2f555b66e7e3d109218dc4a459",
+          "live_checkpoint_sha256": "5867ef223a3a2f13f01ec9364c444055e77e29181f5706db30b43d817fa06b21",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 310,
           "live_checkpoint_unclassified_sites": 0,
