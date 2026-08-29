@@ -137,3 +137,31 @@ be promoted to a permanent fifth surface.
 ## Canonical Owners
 
 MCP server metadata/adapter, protocol reference, plugin/host setup docs and consumer parity corpus.
+
+## Status Adjudication (2026-08-29)
+
+- The frozen development 20-question set is the `fixed_dev` gate. R10 lines
+  122-126 explicitly say "For development" and set the `18/20` first-choice and
+  `12/20` legal-answer floors. Architecture source lines 267-268 define
+  `fixed_dev` as dev acceptance and cap all program features at that state
+  before program completion.
+- The blind holdout and second independent Host/consumer bind final graduation,
+  `released`, and permanent-surface retention. R10 lines 126-129 add the blind
+  holdout with "Final graduation also" and require the second adopter;
+  architecture source line 269 reserves `released` for later main promotion,
+  while R10 line 135 protects the permanent fifth-surface decision.
+- The blind holdout and second-adopter requirements are not cancelled or
+  weakened. Under this adjudication, the broad failure language at R10 lines
+  132-135 applies those final-graduation failures to the `released`/permanent
+  surface side; the development thresholds continue to govern `fixed_dev`.
+- The newly frozen development suite is
+  `tests/fixtures/mcp_host_development_questions.json`, with evidence in
+  `tests/fixtures/mcp_host_development_evidence.json`. The offline surrogate
+  scored `15/20` first-choice and `15/20` legal answers across `120` MCP RPCs,
+  with `0` internal and production HTTP requests. No real Host versions are
+  declared or locally available, so this is not Claude Desktop or Cursor
+  evidence. Because first-choice is below `18/20`, R10 remains `in_progress`.
+
+`recorded_by: agent_under_standing_owner_delegation`
+
+`owner_review: pending`

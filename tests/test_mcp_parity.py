@@ -16,6 +16,40 @@ from tests.test_mcp_protocol import request_params
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/fixtures/mcp_parity_corpus.json"
+LOCKED_CORPUS = ROOT / "tests/fixtures/mcp_locked_execution_corpus.json"
+
+
+class OfflineRegistryDiscovery:
+    def __init__(self, state: str) -> None:
+        self.state = state
+        self.attempts = 0
+
+    def discover(self) -> dict:
+        self.attempts += 1
+        if self.state == "outage":
+            raise ConnectionError("synthetic offline registry outage")
+        return {"status": "available", "network_called": False}
+
+
+class LockedJourneyService:
+    def __init__(self, registry: OfflineRegistryDiscovery, lock_digest: str) -> None:
+        self.registry = registry
+        self.lock_digest = lock_digest
+
+    def run(self, journey_id: str, inputs: dict) -> dict:
+        return {
+            "schema_version": "gravity.analysis-result.v1",
+            "ok": True,
+            "status": "success",
+            "exit_code": 0,
+            "journey": {
+                "journey_id": journey_id,
+                "version": 1,
+                "lock_digest": self.lock_digest,
+            },
+            "scope": dict(inputs),
+            "network_called": False,
+        }
 
 
 class MCPParityTests(unittest.TestCase):
@@ -57,6 +91,47 @@ class MCPParityTests(unittest.TestCase):
                     {field: sdk[field] for field in fields},
                     {field: mcp[field] for field in fields},
                 )
+        self.assertEqual(0, self.network_calls)
+
+    def test_locked_execution_succeeds_with_registry_discovery_outage(self) -> None:
+        corpus = json.loads(LOCKED_CORPUS.read_text(encoding="utf-8"))
+        self.assertEqual(
+            "gravity.mcp-locked-execution-corpus.v1", corpus["schema_version"]
+        )
+        self.assertEqual(2, len(corpus["cases"]))
+
+        for case in corpus["cases"]:
+            registry = OfflineRegistryDiscovery(case["discovery_state"])
+            service = LockedJourneyService(registry, case["lock_digest"])
+            if case["discovery_state"] == "outage":
+                with self.assertRaisesRegex(ConnectionError, "registry outage"):
+                    registry.discover()
+            else:
+                self.assertEqual("available", registry.discover()["status"])
+            discovery_attempts = registry.attempts
+            self.sdk._journey_service = service
+
+            response = MCPServer(self.sdk).handle(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 9,
+                    "method": "tools/call",
+                    "params": request_params(
+                        name="gravity.execute",
+                        arguments={
+                            "journey_id": case["journey_id"],
+                            "inputs": case["inputs"],
+                        },
+                    ),
+                }
+            )
+            result = response["result"]
+            domain = result["structuredContent"]["result"]
+            self.assertFalse(result["isError"])
+            self.assertEqual("success", domain["status"])
+            self.assertEqual(case["lock_digest"], domain["journey"]["lock_digest"])
+            self.assertEqual(discovery_attempts, registry.attempts)
+            self.assertFalse(domain["network_called"])
         self.assertEqual(0, self.network_calls)
 
     def _cli(self, case: dict) -> dict:

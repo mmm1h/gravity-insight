@@ -1,0 +1,19 @@
+{
+  "schema_version": "gravity.mcp-locked-execution-corpus.v1",
+  "cases": [
+    {
+      "case_id": "locked-execution-success",
+      "discovery_state": "available",
+      "journey_id": "analysis.locked-example",
+      "inputs": {"app": "demo"},
+      "lock_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "case_id": "locked-execution-discovery-outage",
+      "discovery_state": "outage",
+      "journey_id": "analysis.locked-example",
+      "inputs": {"app": "demo"},
+      "lock_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}

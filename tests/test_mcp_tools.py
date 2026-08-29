@@ -8,6 +8,7 @@ import unittest
 from gravity_sdk import GravitySDK
 from gravity_sdk.mcp.results import call_tool_result
 from gravity_sdk.mcp.server import MCPServer
+from gravity_sdk.mcp.tool_catalog import tool_catalog
 from tests.test_mcp_protocol import request_params
 from tests.test_analysis_result_contract import success_result
 from tests.test_repo_context_provider import (
@@ -141,6 +142,82 @@ class MCPToolTests(unittest.TestCase):
                     result["structuredContent"]["result"]["error"]["code"],
                 )
         self.assertFalse(destination.exists())
+        self.assertEqual(0, self.network_calls)
+
+    def test_effect_annotations_are_frozen_and_never_authorize_execution(self) -> None:
+        catalog = tool_catalog()
+        annotations = {
+            item["name"]: item["annotations"] for item in catalog["tools"]
+        }
+        self.assertEqual(
+            {
+                "gravity.inspect": {
+                    "readOnlyHint": True,
+                    "destructiveHint": False,
+                    "idempotentHint": True,
+                    "openWorldHint": False,
+                },
+                "gravity.journey_can_run": {
+                    "readOnlyHint": True,
+                    "destructiveHint": False,
+                    "idempotentHint": True,
+                    "openWorldHint": False,
+                },
+                "gravity.capability_describe": {
+                    "readOnlyHint": True,
+                    "destructiveHint": False,
+                    "idempotentHint": True,
+                    "openWorldHint": False,
+                },
+                "gravity.execute": {
+                    "readOnlyHint": True,
+                    "destructiveHint": False,
+                    "idempotentHint": False,
+                    "openWorldHint": False,
+                },
+                "gravity.export": {
+                    "readOnlyHint": False,
+                    "destructiveHint": False,
+                    "idempotentHint": False,
+                    "openWorldHint": False,
+                },
+                "gravity.context_pack": {
+                    "readOnlyHint": True,
+                    "destructiveHint": False,
+                    "idempotentHint": True,
+                    "openWorldHint": False,
+                },
+            },
+            annotations,
+        )
+
+        annotations["gravity.export"].update(
+            readOnlyHint=True, destructiveHint=False, idempotentHint=True
+        )
+        destination = Path(self.temporary.name) / "annotation-bypass.json"
+        result = tool_call(
+            self.server,
+            "gravity.export",
+            {
+                "analysis_result": success_result(),
+                "format": "json",
+                "destination": str(destination),
+            },
+        )
+
+        self.assertTrue(result["isError"])
+        self.assertEqual(
+            "MCP_INPUT_INVALID",
+            result["structuredContent"]["result"]["error"]["code"],
+        )
+        self.assertFalse(destination.exists())
+        self.assertFalse(
+            next(
+                item
+                for item in tool_catalog()["tools"]
+                if item["name"] == "gravity.export"
+            )["annotations"]["readOnlyHint"]
+        )
         self.assertEqual(0, self.network_calls)
 
     def test_context_pack_delegates_public_repo_provider_offline(self) -> None:

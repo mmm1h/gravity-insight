@@ -67,6 +67,36 @@
         "second_adopter_required": true,
         "judge": "plan_owner",
         "failure_action": "block_and_remove_server_retain_schema_only"
+      },
+      "status_adjudication_2026_08_29": {
+        "recorded_by": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "fixed_dev_gate": {
+          "requirement": "frozen_development_20_question_set",
+          "basis": ["R10:122-126", "architecture-source:267-268"]
+        },
+        "released_permanent_surface_gate": {
+          "requirements": [
+            "blind_20_question_holdout",
+            "second_independent_host_or_consumer_adoption"
+          ],
+          "basis": ["R10:126-135", "architecture-source:269"]
+        },
+        "requirements_cancelled": [],
+        "development_evidence": {
+          "questions": "tests/fixtures/mcp_host_development_questions.json",
+          "evidence": "tests/fixtures/mcp_host_development_evidence.json",
+          "suite_sha256": "6cfdaeb0b9df0db16dae991794f1eaf9f5446884ca267d547dff198d8adf3a08",
+          "evaluator": "gravity.schema-aware-lexical-selector.v1",
+          "real_host": false,
+          "declared_real_host_versions": [],
+          "first_choice": "15/20",
+          "legal_answers": "15/20",
+          "mcp_rpcs": 120,
+          "internal_http_requests": 0,
+          "production_http_requests": 0
+        },
+        "status_decision": "retain_in_progress_first_choice_below_fixed_dev_floor"
       }
     },
     {"id":"R11","path":"R11-pap-pilot.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
@@ -161,7 +191,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "4be1c3d3f98dca02cea986d05e47e772b6d47aa2534a20d6faadd3d96dd65ded",
+          "live_checkpoint_sha256": "99a8fde57cddda55c5a57445acb7f056b7d23b82df9891cd4a04e8c75e8cc4e1",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 309,
           "live_checkpoint_unclassified_sites": 0,
