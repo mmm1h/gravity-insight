@@ -1,0 +1,49 @@
+{
+  "batch_cases": [
+    {"operation_id": "metadata.property.list", "domain": "metadata", "expected_tier": 1},
+    {"operation_id": "material.tag_category.tree", "domain": "material", "expected_tier": 1},
+    {"operation_id": "report.metric.list", "domain": "report", "expected_tier": 1},
+    {"operation_id": "app.list", "domain": "app", "expected_tier": 2},
+    {"operation_id": "promotion.company.list", "domain": "promotion", "expected_tier": 2},
+    {"operation_id": "report.unknown.list", "domain": "report", "expected_tier": 3},
+    {"operation_id": "material.unknown.list", "domain": "material", "expected_tier": 4},
+    {"operation_id": "unknown.unknown.list", "domain": "unknown", "expected_tier": 5}
+  ],
+  "export": {
+    "app_id": "fixture-app",
+    "segment_id": "fixture-segment",
+    "normal_client_id": "fixture-normal-client",
+    "fallback_client_id": "fixture-fallback-client"
+  },
+  "parent_candidates": [
+    {"field_name": "promotion_id", "platform": "bytedance", "field_type": "string", "expected_operation_id": "promotion.bytedance.promotion_filter.list", "expected_output_path": "data.list[].promotion_id"},
+    {"field_name": "project_id", "platform": "bytedance", "field_type": "string", "expected_operation_id": "promotion.bytedance.project_filter.list", "expected_output_path": "data.list[].project_id"},
+    {"field_name": "adgroup_id", "platform": "tencent", "field_type": "string", "expected_operation_id": "promotion.tencent.adgroup_filter.list", "expected_output_path": "data.list[].adgroup_id"},
+    {"field_name": "advertiser_id", "platform": "bytedance", "field_type": "string", "expected_operation_id": "promotion.bytedance.project_filter.list", "expected_output_path": "data.list[].advertiser_id"},
+    {"field_name": "advertiser_ids", "platform": "bytedance", "field_type": "array", "expected_operation_id": "promotion.bytedance.project_filter.list", "expected_output_path": "data.list[].advertiser_id"},
+    {"field_name": "advertiser_id", "platform": "tencent", "field_type": "string", "expected_operation_id": "promotion.tencent.adgroup_filter.list", "expected_output_path": "data.list[].advertiser_id"},
+    {"field_name": "advertiser_ids", "platform": "tencent", "field_type": "array", "expected_operation_id": "promotion.tencent.adgroup_filter.list", "expected_output_path": "data.list[].advertiser_id"},
+    {"field_name": "campaign_id", "platform": "honor", "field_type": "string", "expected_operation_id": "promotion.honor.campaign.list", "expected_output_path": "data.list[].campaign_id"}
+  ],
+  "expected_matrix": {
+    "batch": [1, 1, 1, 2, 2, 3, 4, 5],
+    "export": {
+      "normal_request": {"client_id": "fixture-normal-client"},
+      "normal_calls": [["analysis.segment.user_detail.list", {"app_id": "fixture-app", "segment_id": "fixture-segment"}]],
+      "fallback_request": {"client_id": "fixture-fallback-client"},
+      "fallback_policy_calls": [["authorize_operation", "analysis.segment.user_detail.list"], ["prepare_request", "analysis.segment.user_detail.list"]],
+      "fallback_transport_calls": 1
+    },
+    "parent_candidates": [
+      {"input_field": "promotion_id", "operation_id": "promotion.bytedance.promotion_filter.list", "output_path": "data.list[].promotion_id", "selection": "caller_select"},
+      {"input_field": "project_id", "operation_id": "promotion.bytedance.project_filter.list", "output_path": "data.list[].project_id", "selection": "caller_select"},
+      {"input_field": "adgroup_id", "operation_id": "promotion.tencent.adgroup_filter.list", "output_path": "data.list[].adgroup_id", "selection": "caller_select"},
+      {"input_field": "advertiser_id", "operation_id": "promotion.bytedance.project_filter.list", "output_path": "data.list[].advertiser_id", "selection": "caller_select"},
+      {"input_field": "advertiser_ids", "operation_id": "promotion.bytedance.project_filter.list", "output_path": "data.list[].advertiser_id", "selection": "all"},
+      {"input_field": "advertiser_id", "operation_id": "promotion.tencent.adgroup_filter.list", "output_path": "data.list[].advertiser_id", "selection": "caller_select"},
+      {"input_field": "advertiser_ids", "operation_id": "promotion.tencent.adgroup_filter.list", "output_path": "data.list[].advertiser_id", "selection": "all"},
+      {"input_field": "campaign_id", "operation_id": "promotion.honor.campaign.list", "output_path": "data.list[].campaign_id", "selection": "caller_select"}
+    ]
+  },
+  "expected_sha256": "336f2046ef04b19ba25b4d4fb6d493af56c3135ebaaad9a1b7ff4c87d7798d5f"
+}

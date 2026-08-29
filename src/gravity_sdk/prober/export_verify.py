@@ -34,6 +34,10 @@ from .transport import (
 
 
 EXPORT_CONTRACT_PATH = CONTRACT_ROOT / "exports" / "routes-v1.json"
+_PROBER_BINDINGS = json.loads(
+    (CONTRACT_ROOT / "runtime-operation-bindings.json").read_text(encoding="utf-8")
+)["prober"]["export_verify"]
+_SEGMENT_MEMBER_OPERATION_ID = _PROBER_BINDINGS["segment_member_operation_id"]
 DEFAULT_OUTPUT_ROOT = TMP_ROOT / "codex" / "gi-export-verify"
 MAX_CREATION_REQUESTS = 12
 MIN_POLL_INTERVAL_SECONDS = 2.0
@@ -220,7 +224,7 @@ class ExportVerificationRunner:
             "semantic_code": response["semantic_code"],
             "response_shape": response["response_shape"],
             "task_id_path": job_id_path,
-            "task_id_fingerprint": _fingerprint(job_id) if job_id is not None else None,
+            "task_id_fingerprint": hashlib.sha256(str(job_id).encode("utf-8")).hexdigest() if job_id is not None else None,
         }
         if job_id is None:
             result["elapsed_seconds"] = round(self.clock() - started, 3)
@@ -319,7 +323,7 @@ class ExportVerificationRunner:
         inputs = {"app_id": app_id, "segment_id": segment_id}
         try:
             result = tool_runtime.to_jsonable(
-                self.client.read("analysis.segment.user_detail.list", inputs)
+                self.client.read(_SEGMENT_MEMBER_OPERATION_ID, inputs)
             )
         except Exception as exc:
             if (
@@ -344,7 +348,7 @@ class ExportVerificationRunner:
         """Use the stable read contract when optional field metadata is unavailable."""
 
         executor = self.client._executor
-        operation_id = "analysis.segment.user_detail.list"
+        operation_id = _SEGMENT_MEMBER_OPERATION_ID
         operation = executor._policy.authorize_operation(operation_id)
         values = operation.validate_inputs(inputs)
         authorization = executor._policy._prepare_request(operation_id, values)
@@ -557,10 +561,9 @@ def _first_path(value: Any, paths: Sequence[str]) -> Any:
     for path in paths:
         current = value
         for part in path.split("."):
-            if not isinstance(current, Mapping) or part not in current:
-                current = None
+            current = current.get(part) if isinstance(current, Mapping) else None
+            if current is None:
                 break
-            current = current[part]
         if current is not None:
             return current
     return None
@@ -577,19 +580,13 @@ def _first_list_value(value: Any, path: str, key: str) -> Any:
 
 
 def _nested_strings(value: Any) -> set[str]:
-    if isinstance(value, str):
-        return {value}
     if isinstance(value, Mapping):
-        result: set[str] = set()
-        for item in value.values():
-            result.update(_nested_strings(item))
-        return result
-    if isinstance(value, list):
-        result = set()
-        for item in value:
-            result.update(_nested_strings(item))
-        return result
-    return set()
+        children = value.values()
+    elif isinstance(value, list):
+        children = value
+    else:
+        return {value} if isinstance(value, str) else set()
+    return set().union(*map(_nested_strings, children))
 
 
 def _replace_nested_string(value: Any, target: str, replacement: str) -> Any:
@@ -603,10 +600,6 @@ def _replace_nested_string(value: Any, target: str, replacement: str) -> Any:
     if isinstance(value, list):
         return [_replace_nested_string(item, target, replacement) for item in value]
     return value
-
-
-def _fingerprint(value: str | int) -> str:
-    return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
 def _write_json(path: Path, value: Mapping[str, Any]) -> None:

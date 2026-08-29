@@ -4,11 +4,12 @@ Static census input is package data; generated probe output uses workspace state
 from __future__ import annotations
 
 import copy
+import json
 import re
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from gravity_sdk.paths import CENSUS_DATA_ROOT
+from gravity_sdk.paths import CENSUS_DATA_ROOT, CONTRACT_ROOT
 
 from .core import DRAFT_ROOT, OPERATION_ROOT, canonical_fingerprint, read_json
 from .parameter_types import MISSING as _MISSING
@@ -25,6 +26,9 @@ from .promotion import save_draft
 
 
 ROUTE_PARAMETERS_PATH = CENSUS_DATA_ROOT / "route-params.json"
+_PROBER_BINDINGS = json.loads(
+    (CONTRACT_ROOT / "runtime-operation-bindings.json").read_text(encoding="utf-8")
+)["prober"]
 _EXACT_PARENT_CANDIDATES: Mapping[str, tuple[tuple[str, ...], str]] = {
     "ai_id": (("promotion", "ai_trusteeship", "list"), "data.list[].id"),
     "app_id": (("app", "list"), "data.list[].id"),
@@ -37,33 +41,11 @@ _EXACT_PARENT_CANDIDATES: Mapping[str, tuple[tuple[str, ...], str]] = {
     "material_ids": (("material", "local", "list"), "data.list[].material_id"),
     "album_id": (("material", "album", "tree"), "data.tree..id"),
 }
-_BYTEDANCE_PROJECT_OPERATION = "promotion.bytedance.project_filter.list"
-_TENCENT_ADGROUP_OPERATION = "promotion.tencent.adgroup_filter.list"
 _PLATFORM_PARENT_CANDIDATES = {
-    ("promotion_id", "bytedance"): (
-        "promotion.bytedance.promotion_filter.list", "data.list[].promotion_id",
-    ),
-    ("project_id", "bytedance"): (
-        _BYTEDANCE_PROJECT_OPERATION, "data.list[].project_id",
-    ),
-    ("adgroup_id", "tencent"): (
-        _TENCENT_ADGROUP_OPERATION, "data.list[].adgroup_id",
-    ),
-    ("advertiser_id", "bytedance"): (
-        _BYTEDANCE_PROJECT_OPERATION, "data.list[].advertiser_id",
-    ),
-    ("advertiser_ids", "bytedance"): (
-        _BYTEDANCE_PROJECT_OPERATION, "data.list[].advertiser_id",
-    ),
-    ("advertiser_id", "tencent"): (
-        _TENCENT_ADGROUP_OPERATION, "data.list[].advertiser_id",
-    ),
-    ("advertiser_ids", "tencent"): (
-        _TENCENT_ADGROUP_OPERATION, "data.list[].advertiser_id",
-    ),
-    ("campaign_id", "honor"): (
-        "promotion.honor.campaign.list", "data.list[].campaign_id",
-    ),
+    (str(item["field_name"]), str(item["platform"])): (
+        str(item["operation_id"]), str(item["output_path"]),
+    )
+    for item in _PROBER_BINDINGS["parent_candidates"]
 }
 
 _VALID_PARAMETER_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")

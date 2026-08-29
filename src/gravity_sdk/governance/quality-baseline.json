@@ -17,21 +17,7 @@
       "src/gravity_sdk/quality.py::evaluate_ratchet": 93,
       "src/gravity_sdk/quality.py::render_markdown": 81
     },
-    "operation_literals": {
-      "src/gravity_sdk/prober/batch.py": {
-        "material.tag_category.tree": 1,
-        "report.metric.list": 1
-      },
-      "src/gravity_sdk/prober/export_verify.py": {
-        "analysis.segment.user_detail.list": 2
-      },
-      "src/gravity_sdk/prober/parameters.py": {
-        "promotion.bytedance.project_filter.list": 1,
-        "promotion.bytedance.promotion_filter.list": 1,
-        "promotion.honor.campaign.list": 1,
-        "promotion.tencent.adgroup_filter.list": 1
-      }
-    }
+    "operation_literals": {}
   },
   "growth_ledger": [
     {
@@ -181,10 +167,10 @@
       "sloc_hard_limit": 1642
     },
     "src/gravity_sdk/prober/export_verify.py": {
-      "ast_hard_limit": 4391,
-      "ast_nodes": 4391,
+      "ast_hard_limit": 4371,
+      "ast_nodes": 4371,
       "migration_sloc": 655,
-      "sloc_hard_limit": 618
+      "sloc_hard_limit": 613
     },
     "src/gravity_sdk/quality.py": {
       "ast_hard_limit": 8462,
