@@ -10,6 +10,7 @@ from scripts.validate_agent_runtime_requirement_graph import (
     validate_markdown_projection,
     validate_requirement_graph,
     validate_repository,
+    validate_spec_status_projection,
 )
 
 
@@ -29,6 +30,8 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
         self.assertEqual(
             summary["requirement_count"], summary["markdown_requirement_count"]
         )
+        self.assertEqual(summary["requirement_count"], summary["spec_status_count"])
+        self.assertEqual(7, summary["markdown_milestone_count"])
         self.assertGreaterEqual(summary["graph_node_count"], summary["requirement_count"])
 
     def test_missing_requirement_file_is_rejected(self) -> None:
@@ -80,6 +83,22 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(RequirementGraphError, "R00 status differs"):
             validate_markdown_projection(self.document, changed)
+
+    def test_markdown_milestone_status_drift_is_rejected(self) -> None:
+        changed = self.markdown.replace(
+            "| R12-B | R12 | R12-A | `fixed_dev` |",
+            "| R12-B | R12 | R12-A | `in_progress` |",
+            1,
+        )
+        with self.assertRaisesRegex(RequirementGraphError, "R12-B milestone projection"):
+            validate_markdown_projection(self.document, changed)
+
+    def test_spec_status_drift_is_rejected(self) -> None:
+        changed = copy.deepcopy(self.document)
+        r15 = next(item for item in changed["requirements"] if item["id"] == "R15")
+        r15["status"] = "in_progress"
+        with self.assertRaisesRegex(RequirementGraphError, "R15 spec status differs"):
+            validate_spec_status_projection(changed, index_path=INDEX)
 
 
 class R17DeliveryBaselineEvidenceTests(unittest.TestCase):

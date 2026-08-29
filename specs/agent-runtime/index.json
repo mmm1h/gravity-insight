@@ -8,6 +8,49 @@
     "development_target": "dev",
     "promotion_requires": ["all_index_requirements_fixed_dev","integrated_validation_green","explicit_new_user_approval"]
   },
+  "integrated_validation": {
+    "schema_version": "gravity.integrated-validation-contract.v1",
+    "definition": "Every included gate exits 0 on one clean dev commit using that worktree's independent .venv, and one JSON receipt binds the result to that exact HEAD.",
+    "command": ".venv/Scripts/python.exe scripts/run_integrated_validation.py",
+    "preconditions": ["branch_is_dev","worktree_clean_before_and_after","head_unchanged","python_is_worktree_dot_venv"],
+    "receipt_path_template": "tmp/integrated-validation/{commit_sha}/receipt.json",
+    "receipt_policy": "ignored_run_artifact_not_canonical_source; dirty worktrees are refused before receipt generation",
+    "included_gates": [
+      "unittest_collector",
+      "pytest_collector",
+      "compiler_check",
+      "quality_check",
+      "agent_usability_development",
+      "cli_help",
+      "cli_sql_offline_smoke",
+      "cli_census_offline_smoke",
+      "cli_insight_offline_smoke",
+      "git_diff_check",
+      "r00_requirement_graph",
+      "generator_agent_guides",
+      "generator_skill_packages",
+      "generator_journey_ledger",
+      "generator_ct01",
+      "generator_ct02",
+      "generator_ct03",
+      "generator_execution_variant",
+      "r12_three_stage_rollback",
+      "r17_live_checkpoint",
+      "release_provenance_offline_fixture",
+      "installed_wheel_surface_matrix",
+      "installed_wheel_canonical_consumer",
+      "promotion_readiness",
+      "cumulative_capability"
+    ],
+    "excluded_post_release_gates": [
+      {
+        "name": "release_provenance_live_pypi",
+        "classification": "post_release",
+        "reason": "PyPI provenance exists only after publication and cannot gate a pre-main merge; the offline fixture remains included."
+      }
+    ],
+    "network_policy": "No real network; live PyPI provenance is post-release only."
+  },
   "shared_spine": [
     "src/gravity_sdk/plan_adapters.py",
     "src/gravity_sdk/agents/capabilities.py",
@@ -199,7 +242,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "2c56940660b98fa5bf4d3abf3c6ee5e476ba0ffe56250842b67ade5f27660952",
+          "live_checkpoint_sha256": "d0a1523ce65bb24b795cb0d031f3cd4e884d59a0312c0b8d44bbcfbcb57a62f2",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 314,
           "live_checkpoint_unclassified_sites": 0,
