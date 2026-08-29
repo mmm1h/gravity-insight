@@ -32,7 +32,7 @@
     {
       "id": "R10",
       "path": "R10-mcp-thin-surface.md",
-      "status": "in_progress",
+      "status": "fixed_dev",
       "dependencies": ["R09A"],
       "parallel_group": "optional-surface",
       "shared_spine": false,
@@ -57,7 +57,7 @@
       "lifecycle_transition": {
         "specified_to_reviewed_to_ready": "agent_under_standing_owner_delegation",
         "owner_review": "pending",
-        "current": "in_progress",
+        "current": "fixed_dev",
         "dev_integration": "pending"
       },
       "pilot_exit": {
@@ -87,16 +87,24 @@
           "questions": "tests/fixtures/mcp_host_development_questions.json",
           "evidence": "tests/fixtures/mcp_host_development_evidence.json",
           "suite_sha256": "6cfdaeb0b9df0db16dae991794f1eaf9f5446884ca267d547dff198d8adf3a08",
-          "evaluator": "gravity.schema-aware-lexical-selector.v1",
+          "evaluator": "gravity.schema-aware-lexical-selector.v2",
           "real_host": false,
           "declared_real_host_versions": [],
-          "first_choice": "15/20",
-          "legal_answers": "15/20",
+          "stage_a_first_choice": "18/20",
+          "stage_a_legal_answers": "18/20",
+          "first_choice": "18/20",
+          "legal_answers": "18/20",
           "mcp_rpcs": 120,
           "internal_http_requests": 0,
           "production_http_requests": 0
         },
-        "status_decision": "retain_in_progress_first_choice_below_fixed_dev_floor"
+        "instrument_fairness": "explicit_supported_format_or_enum_term_binds_matching_schema_variant_within_each_tool_without_case_rules_or_weight_changes",
+        "stage_b_surface_scope": "description_only_skill_vs_journey_and_product_vs_operation_or_composite_boundaries",
+        "remaining_frozen_misses": [
+          "tool_inspect_expected_over_server_metadata_resource",
+          "materialized_saved_analysis_uri_expected_over_uri_template"
+        ],
+        "status_decision": "fixed_dev_development_thresholds_met_release_gates_unchanged"
       }
     },
     {"id":"R11","path":"R11-pap-pilot.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
@@ -191,7 +199,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "99a8fde57cddda55c5a57445acb7f056b7d23b82df9891cd4a04e8c75e8cc4e1",
+          "live_checkpoint_sha256": "27a435326608011e8318430b0d0f24f0f29eadd51bd48e779b77aa30551f0010",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 309,
           "live_checkpoint_unclassified_sites": 0,

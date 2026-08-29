@@ -2,9 +2,9 @@
   "schema_version": "gravity.mcp-host-development-evidence.v1",
   "suite_id": "r10-mcp-host-development-2026-08-29",
   "suite_sha256": "6cfdaeb0b9df0db16dae991794f1eaf9f5446884ca267d547dff198d8adf3a08",
-  "evaluated_at": "2026-08-28T23:35:59.716564+00:00",
+  "evaluated_at": "2026-08-29T00:16:51.068029+00:00",
   "evaluator": {
-    "selector_id": "gravity.schema-aware-lexical-selector.v1",
+    "selector_id": "gravity.schema-aware-lexical-selector.v2",
     "kind": "offline_schema_aware_lexical_surrogate",
     "real_host": false,
     "host_specific_prompt": false,
@@ -13,10 +13,10 @@
   },
   "summary": {
     "case_count": 20,
-    "first_choice_correct": 15,
+    "first_choice_correct": 18,
     "first_choice_minimum": 18,
-    "first_choice_pass": false,
-    "legal_answers": 15,
+    "first_choice_pass": true,
+    "legal_answers": 18,
     "legal_answer_minimum": 12,
     "legal_answer_pass": true,
     "mcp_rpcs": 120,
@@ -30,7 +30,7 @@
       "expected_first_choice": "tool:gravity.inspect:server",
       "observed_first_choice": "resource:gravity://server/metadata",
       "first_choice_correct": false,
-      "selection_score": 0.301128,
+      "selection_score": 0.313827,
       "matched_terms": [
         "mcp",
         "metadata",
@@ -45,16 +45,18 @@
       "case_id": "tool-inspect-skills",
       "question": "Inspect the installed Skill metadata before choosing a workflow.",
       "expected_first_choice": "tool:gravity.inspect:skill",
-      "observed_first_choice": "tool:gravity.inspect:journey",
-      "first_choice_correct": false,
-      "selection_score": 0.394106,
+      "observed_first_choice": "tool:gravity.inspect:skill",
+      "first_choice_correct": true,
+      "selection_score": 0.750268,
       "matched_terms": [
         "inspect",
+        "installed",
         "metadata",
-        "skill"
+        "skill",
+        "workflow"
       ],
-      "legal_answer": false,
-      "terminal": "first_choice_incorrect",
+      "legal_answer": true,
+      "terminal": "success",
       "mcp_rpcs": 6,
       "internal_http_requests": 0
     },
@@ -64,7 +66,7 @@
       "expected_first_choice": "tool:gravity.journey_can_run:default",
       "observed_first_choice": "tool:gravity.journey_can_run:default",
       "first_choice_correct": true,
-      "selection_score": 0.424456,
+      "selection_score": 0.409798,
       "matched_terms": [
         "exact",
         "inputs",
@@ -82,7 +84,7 @@
       "expected_first_choice": "tool:gravity.journey_can_run:default",
       "observed_first_choice": "tool:gravity.journey_can_run:default",
       "first_choice_correct": true,
-      "selection_score": 0.315715,
+      "selection_score": 0.281452,
       "matched_terms": [
         "journey",
         "readiness",
@@ -97,8 +99,8 @@
       "case_id": "tool-capability-product",
       "question": "Describe current same-layer Trust for the product selector analysis.query.spec:event.",
       "expected_first_choice": "tool:gravity.capability_describe:product",
-      "observed_first_choice": "tool:gravity.capability_describe:composite",
-      "first_choice_correct": false,
+      "observed_first_choice": "tool:gravity.capability_describe:product",
+      "first_choice_correct": true,
       "selection_score": 0.540492,
       "matched_terms": [
         "describe",
@@ -108,8 +110,8 @@
         "selector",
         "trust"
       ],
-      "legal_answer": false,
-      "terminal": "first_choice_incorrect",
+      "legal_answer": true,
+      "terminal": "success",
       "mcp_rpcs": 6,
       "internal_http_requests": 0
     },
@@ -119,11 +121,10 @@
       "expected_first_choice": "tool:gravity.capability_describe:composite",
       "observed_first_choice": "tool:gravity.capability_describe:composite",
       "first_choice_correct": true,
-      "selection_score": 0.641,
+      "selection_score": 0.539271,
       "matched_terms": [
         "composite",
         "read",
-        "result",
         "selector",
         "trust"
       ],
@@ -138,7 +139,7 @@
       "expected_first_choice": "tool:gravity.execute:default",
       "observed_first_choice": "tool:gravity.execute:default",
       "first_choice_correct": true,
-      "selection_score": 0.675343,
+      "selection_score": 0.671051,
       "matched_terms": [
         "exact",
         "execute",
@@ -159,7 +160,7 @@
       "expected_first_choice": "tool:gravity.export:json",
       "observed_first_choice": "tool:gravity.export:json",
       "first_choice_correct": true,
-      "selection_score": 0.816329,
+      "selection_score": 0.817411,
       "matched_terms": [
         "analysis",
         "destination",
@@ -178,9 +179,9 @@
       "case_id": "tool-export-markdown-unconfirmed",
       "question": "Prepare a local Markdown export, but do not write anything before explicit confirmation.",
       "expected_first_choice": "tool:gravity.export:markdown",
-      "observed_first_choice": "tool:gravity.export:json",
-      "first_choice_correct": false,
-      "selection_score": 0.431759,
+      "observed_first_choice": "tool:gravity.export:markdown",
+      "first_choice_correct": true,
+      "selection_score": 0.466786,
       "matched_terms": [
         "confirmation",
         "explicit",
@@ -188,8 +189,8 @@
         "local",
         "markdown"
       ],
-      "legal_answer": false,
-      "terminal": "first_choice_incorrect",
+      "legal_answer": true,
+      "terminal": "MCP_INPUT_INVALID",
       "mcp_rpcs": 6,
       "internal_http_requests": 0
     },
@@ -199,7 +200,7 @@
       "expected_first_choice": "tool:gravity.context_pack:default",
       "observed_first_choice": "tool:gravity.context_pack:default",
       "first_choice_correct": true,
-      "selection_score": 0.614512,
+      "selection_score": 0.601475,
       "matched_terms": [
         "assemble",
         "bounded",
@@ -218,7 +219,7 @@
       "expected_first_choice": "resource:gravity://server/metadata",
       "observed_first_choice": "resource:gravity://server/metadata",
       "first_choice_correct": true,
-      "selection_score": 0.579323,
+      "selection_score": 0.647489,
       "matched_terms": [
         "mcp",
         "metadata",
@@ -295,7 +296,7 @@
       "expected_first_choice": "resource:gravity://workspace/apps",
       "observed_first_choice": "resource:gravity://workspace/apps",
       "first_choice_correct": true,
-      "selection_score": 0.579351,
+      "selection_score": 0.602328,
       "matched_terms": [
         "aliases",
         "app",
@@ -314,7 +315,7 @@
       "expected_first_choice": "resource:gravity://catalog/sql-products",
       "observed_first_choice": "resource:gravity://catalog/sql-products",
       "first_choice_correct": true,
-      "selection_score": 0.753936,
+      "selection_score": 0.746857,
       "matched_terms": [
         "catalog",
         "product",
@@ -354,7 +355,7 @@
       "expected_first_choice": "resource:gravity://apps/demo/saved-analyses",
       "observed_first_choice": "resource:gravity://apps/{app}/saved-analyses",
       "first_choice_correct": false,
-      "selection_score": 0.615567,
+      "selection_score": 0.649654,
       "matched_terms": [
         "analyses",
         "app",

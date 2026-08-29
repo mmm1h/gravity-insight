@@ -17,8 +17,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "d7e6cf32765ab8b4287fdc5a7acc17f04096342dc05d1d02eaf353fdc5c57168",
-    "manual_review_sha256": "0be3346ae5668308d2d74d006c0b185fb17df4d93ea51855bda22d772db58e1c",
+    "reference_evidence_sha256": "a4deba74cceb7f7fb5da57676b7e09c656f608b6320d31386051177b0eaba5fa",
+    "manual_review_sha256": "d7dc9d48aff2209bb19d608fcd1f863c320cc2b1143bbc6e4d89ab152d235673",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3152,
     "scanned_file_count": 3144,
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 309
     },
-    "sites_sha256": "3d95acbf0af0086788df4358da139d018db8a30e7838a4d9d3afdf2fc41c280e"
+    "sites_sha256": "20d1a5dd3b866165c22dc6432e5668c892a4d357afa8a429e4b546758ec15665"
   },
   "blockers": [],
   "site_fields": [
@@ -2062,7 +2062,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:135:12:bare text module string",
+      "specs/agent-runtime/index.json:143:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2077,7 +2077,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:138:12:bare text module string",
+      "specs/agent-runtime/index.json:146:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2092,7 +2092,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:128:29:bare text module string",
+      "specs/agent-runtime/index.md:130:29:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2107,7 +2107,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:128:2:bare text module string",
+      "specs/agent-runtime/index.md:130:2:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",

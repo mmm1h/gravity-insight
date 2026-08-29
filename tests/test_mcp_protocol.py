@@ -97,6 +97,24 @@ class MCPProtocolTests(unittest.TestCase):
             ],
             names,
         )
+        tools = {item["name"]: item for item in listed["result"]["tools"]}
+        inspect_branches = tools["gravity.inspect"]["inputSchema"]["oneOf"]
+        inspect_kinds = {
+            branch["properties"]["kind"]["const"]: branch for branch in inspect_branches
+        }
+        self.assertIn(
+            "installed versioned workflow",
+            inspect_kinds["skill"]["properties"]["kind"]["description"],
+        )
+        self.assertIn(
+            "registered business task",
+            inspect_kinds["journey"]["properties"]["kind"]["description"],
+        )
+        identity_description = tools["gravity.capability_describe"]["inputSchema"][
+            "properties"
+        ]["identity_kind"]["description"]
+        for concept in ("atomic wire contract", "question-level", "multi-component"):
+            self.assertIn(concept, identity_description)
         for tool in listed["result"]["tools"]:
             self.assertEqual(
                 "https://json-schema.org/draft/2020-12/schema",

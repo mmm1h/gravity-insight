@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_QUESTIONS = ROOT / "tests/fixtures/mcp_host_development_questions.json"
 DEFAULT_OUTPUT = ROOT / "tests/fixtures/mcp_host_development_evidence.json"
 EVIDENCE_SCHEMA_VERSION = "gravity.mcp-host-development-evidence.v1"
-SELECTOR_ID = "gravity.schema-aware-lexical-selector.v1"
+SELECTOR_ID = "gravity.schema-aware-lexical-selector.v2"
 _WORD = re.compile(r"[a-z0-9]+", re.IGNORECASE)
 _STOP_WORDS = frozenset(
     {
@@ -499,8 +499,14 @@ def select_first_choice(
     }
     unseen = math.log(len(documents) + 1) + 1.0
     denominator = sum(idf.get(term, unseen) * count for term, count in query.items())
+    variant_bindings = _explicit_variant_bindings(query, candidates)
     scored = []
     for candidate, document in zip(candidates, documents, strict=True):
+        tool_name = str(candidate.get("name", ""))
+        if tool_name in variant_bindings and str(candidate.get("variant")) not in (
+            variant_bindings[tool_name]
+        ):
+            continue
         matched = tuple(sorted(set(query) & set(document)))
         numerator = sum(
             idf[term] * min(query[term], document[term]) for term in matched
@@ -515,6 +521,22 @@ def select_first_choice(
         "score": round(score, 6),
         "matched_terms": list(matched),
     }
+
+
+def _explicit_variant_bindings(
+    query: Mapping[str, int], candidates: Sequence[Mapping[str, Any]]
+) -> dict[str, frozenset[str]]:
+    query_terms = set(query)
+    bindings: dict[str, set[str]] = {}
+    for candidate in candidates:
+        if candidate.get("method") != "tools/call":
+            continue
+        variant = str(candidate.get("variant", "default"))
+        variant_terms = set(_tokens(variant))
+        if variant == "default" or not variant_terms or not variant_terms <= query_terms:
+            continue
+        bindings.setdefault(str(candidate["name"]), set()).add(variant)
+    return {name: frozenset(values) for name, values in bindings.items()}
 
 
 def _execute_choice(

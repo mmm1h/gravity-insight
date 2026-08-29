@@ -24,6 +24,29 @@ def _load_evaluator():
 
 
 class MCPHostDevelopmentEvalTests(unittest.TestCase):
+    def test_explicit_schema_variant_terms_bind_the_candidate(self) -> None:
+        evaluator = _load_evaluator()
+        candidates = [
+            {
+                "identity": "tool:example:alpha",
+                "method": "tools/call",
+                "name": "example",
+                "variant": "alpha",
+                "visible_text": "example enum alpha beta variant alpha",
+            },
+            {
+                "identity": "tool:example:beta",
+                "method": "tools/call",
+                "name": "example",
+                "variant": "beta",
+                "visible_text": "example enum alpha beta variant beta",
+            },
+        ]
+
+        selected = evaluator.select_first_choice("Use the beta format.", candidates)
+
+        self.assertEqual("tool:example:beta", selected["identity"])
+
     def test_frozen_suite_and_offline_evidence_are_reproducible(self) -> None:
         questions = json.loads(QUESTIONS.read_text(encoding="utf-8"))
         evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
@@ -51,9 +74,9 @@ class MCPHostDevelopmentEvalTests(unittest.TestCase):
         self.assertEqual(evidence["evaluator"], rerun["evaluator"])
         self.assertEqual(evidence["summary"], rerun["summary"])
         self.assertEqual(evidence["cases"], rerun["cases"])
-        self.assertEqual(15, rerun["summary"]["first_choice_correct"])
-        self.assertEqual(15, rerun["summary"]["legal_answers"])
-        self.assertFalse(rerun["summary"]["first_choice_pass"])
+        self.assertEqual(18, rerun["summary"]["first_choice_correct"])
+        self.assertEqual(18, rerun["summary"]["legal_answers"])
+        self.assertTrue(rerun["summary"]["first_choice_pass"])
         self.assertTrue(rerun["summary"]["legal_answer_pass"])
         self.assertEqual(120, rerun["summary"]["mcp_rpcs"])
         self.assertEqual(0, rerun["summary"]["internal_http_requests"])

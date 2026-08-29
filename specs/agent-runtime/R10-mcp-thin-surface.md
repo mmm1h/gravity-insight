@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; bounded local pilot; `owner_review: pending` |
+| Status | `fixed_dev`; bounded local pilot; `owner_review: pending`; release gates remain open |
 | Track | Host protocol surface |
 | Dependencies | R09A plus trigger |
 | Parallel group | `optional-surface` |
@@ -156,11 +156,26 @@ MCP server metadata/adapter, protocol reference, plugin/host setup docs and cons
   surface side; the development thresholds continue to govern `fixed_dev`.
 - The newly frozen development suite is
   `tests/fixtures/mcp_host_development_questions.json`, with evidence in
-  `tests/fixtures/mcp_host_development_evidence.json`. The offline surrogate
-  scored `15/20` first-choice and `15/20` legal answers across `120` MCP RPCs,
-  with `0` internal and production HTTP requests. No real Host versions are
-  declared or locally available, so this is not Claude Desktop or Cursor
-  evidence. Because first-choice is below `18/20`, R10 remains `in_progress`.
+  `tests/fixtures/mcp_host_development_evidence.json`; its SHA-256 remains
+  `6cfdaeb0b9df0db16dae991794f1eaf9f5446884ca267d547dff198d8adf3a08`.
+  The evaluator fairness rule is corpus-wide: an explicit supported format or
+  enum term binds the matching schema variant within that Tool, while all
+  Tools and Resources retain the original lexical scoring formula. It contains
+  case-specific rules or changed weights.
+- Stage A changed only that rule (`gravity.schema-aware-lexical-selector.v2`)
+  and scored `18/20` first-choice and `18/20` legal answers. Stage B then added
+  only Tool/input-schema descriptions distinguishing Skill from Journey and
+  Product from Operation/Composite; it retained exactly the same `18/20` and
+  `18/20` result. Both runs used `120` MCP RPCs and `0` internal or production
+  HTTP requests. The two remaining misses continued to use the frozen expected
+  answers: Tool inspect rather than the server-metadata Resource, and the
+  materialized saved-analysis URI rather than its URI template.
+- No real Host versions are declared or locally available, so neither stage is
+  Claude Desktop, Cursor, or other real-Host evidence. The offline development
+  first-choice and legal-answer floors are nevertheless met, so R10 reaches
+  `fixed_dev` under the 2026-08-29 adjudication. Blind holdout, real-host and
+  second-adopter evidence remain mandatory for `released` and permanent-surface
+  retention; none is claimed or waived here.
 
 `recorded_by: agent_under_standing_owner_delegation`
 

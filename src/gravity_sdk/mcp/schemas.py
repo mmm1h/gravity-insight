@@ -45,15 +45,31 @@ INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
             _object_schema({"kind": {"const": "server"}}, required=("kind",)),
             _object_schema(
                 {
-                    "kind": {"const": "journey"},
-                    "identifier": {"type": "string", "minLength": 1, "maxLength": 256},
+                    "kind": {
+                        "const": "journey",
+                        "description": "Select Journey for a registered business task and its acceptance contract, not an installed Skill workflow package.",
+                    },
+                    "identifier": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256,
+                        "description": "Exact registered Journey ID; omit only to list Journey metadata.",
+                    },
                 },
                 required=("kind",),
             ),
             _object_schema(
                 {
-                    "kind": {"const": "skill"},
-                    "identifier": {"type": "string", "minLength": 1, "maxLength": 512},
+                    "kind": {
+                        "const": "skill",
+                        "description": "Select Skill for an installed versioned workflow or method package, not a Journey task/readiness contract.",
+                    },
+                    "identifier": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 512,
+                        "description": "Exact installed Skill URI or ID; omit only to list Skill metadata.",
+                    },
                 },
                 required=("kind",),
             ),
@@ -72,8 +88,14 @@ INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
             "identity_kind": {
                 "type": "string",
                 "enum": ["operation", "product", "composite"],
+                "description": "Exact same-layer identity: operation is one atomic wire contract; product is one governed question-level capability; composite is one bounded multi-component capability. Do not substitute or infer across layers.",
             },
-            "selector": {"type": "string", "minLength": 1, "maxLength": 512},
+            "selector": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512,
+                "description": "Exact selector owned by the identity_kind layer; it is not a Journey ID or Skill ID.",
+            },
             "max_output_bytes": _OUTPUT_BUDGET,
         },
         required=("identity_kind", "selector"),

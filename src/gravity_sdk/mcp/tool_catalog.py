@@ -41,7 +41,7 @@ _DEFINITIONS = (
     ToolDefinition(
         "gravity.inspect",
         "Inspect Gravity Runtime",
-        "Inspect versioned server, Journey, or Skill metadata without target network access.",
+        "Inspect one selected metadata object without target network access. A Skill is an installed versioned workflow package; a Journey is a registered task and acceptance contract. Choose the kind explicitly.",
         True,
         True,
     ),
@@ -55,7 +55,7 @@ _DEFINITIONS = (
     ToolDefinition(
         "gravity.capability_describe",
         "Describe Capability Trust",
-        "Read the current same-layer Trust result for one exact Capability selector.",
+        "Read current Trust only for the exact identity layer named by identity_kind: operation is an atomic wire contract, product is one governed question-level capability, and composite is a bounded multi-component capability. Layers are not interchangeable.",
         True,
         True,
     ),
