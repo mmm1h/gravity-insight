@@ -20,15 +20,10 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 ## Publishing
 
-- The install channel is an immutable `v<version>` tag. Tags are cut from `dev`
-  now and from `main` after the future dev-to-main promotion; the channel itself
-  is not bound to either branch.
-- `v0.3.2` — decided 2026-08-28: **not cut yet**, deliberately. A tag from `dev` is
-  allowed, but a PyPI version is burned permanently even if yanked, `R10` landed the
-  same day as an experimental pilot with unmet graduation criteria, and auto-upgrade
-  has never run against a real release — a defect there would upgrade `0.3.1`
-  consumers into it. Cut once `R10` graduates or is removed and auto-upgrade is
-  exercised against a test index. `recorded_by: agent_under_standing_owner_delegation`.
+- The install channel is an immutable `v<version>` tag cut from protected `main`.
+- `v0.3.2` was cut from the promoted `main` tree on 2026-08-29. R10 remains a
+  bounded pilot; publishing the release did not satisfy its separate graduation
+  criteria. The package source has since advanced beyond that tag.
 - `pyproject.toml` now uses the confirmed repository and issue URLs under
   `https://github.com/mmm1h/gravity-sdk`.
 - `authors`/`maintainers` use `mmm1h`; owner confirmed 2026-08-28 that this is an
@@ -40,10 +35,8 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 ## Repository controls
 
-- Configure branch protection: prohibit direct pushes, require pull requests,
-  require selected CI checks, and restrict force pushes.
-- Select required checks. Today the only candidate is the existing Windows test
-  job.
+- `main` is protected: no direct pushes or force pushes; changes merge through PRs.
+- The required status check is the existing Windows `test` job. Do not weaken it.
 - Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
   ownership.
 
