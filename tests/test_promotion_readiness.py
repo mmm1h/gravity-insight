@@ -37,10 +37,10 @@ class PromotionReadinessTests(unittest.TestCase):
             for item in result["requirements"]
             if "requirement_not_fixed_dev" in item["blockers"]
         }
-        self.assertEqual({"R16"}, unfinished)
-        self.assertFalse(result["all_index_requirements_fixed_dev"])
+        self.assertEqual(set(), unfinished)
+        self.assertTrue(result["all_index_requirements_fixed_dev"])
         self.assertTrue(result["status_parity"])
-        self.assertFalse(result["ready"])
+        self.assertTrue(result["ready"])
 
     def test_all_fixed_and_matching_is_ready(self) -> None:
         document = copy.deepcopy(self.document)

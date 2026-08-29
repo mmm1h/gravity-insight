@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified`; conditional |
+| Status | `fixed_dev`; accepted under `agent_under_standing_owner_delegation`; `owner_review: pending`; not released |
 | Track | Supply chain and updates |
 | Dependencies | R04 plus trigger |
 | Parallel group | `conditional-control` |
@@ -111,6 +111,32 @@ PyNaCl adds a binary distribution surface. Version 1.6.0 publishes a
 CPython 3.8 and later, including the local 3.14 environment, without rebuilding
 for each Python minor release. Its `cffi>=2.0.0` dependency has a native
 `cp314` Windows x86-64 wheel in the local environment.
+
+## Lifecycle Completion Record (2026-08-29)
+
+The second segment adds immutable execution snapshots and a verified Update
+Plan that freezes exact artifacts, digests, signer/provenance policy, Journey
+gates, the external Installer boundary, and the prior complete rollback target.
+Only the delivered offline verification core can turn local bundle material
+into that plan. Pure activation decisions reject stale evidence, incomplete
+download/verify/stage sets, failed offline gates, and failed canaries without
+changing the active snapshot; rollback also requires the complete prior set.
+An in-flight Journey retains its starting immutable snapshot binding.
+
+The opt-in `gravity-insight` startup release check is now plan-only. It can
+write its isolated successful-check cache and emit an external plan request,
+but contains no pip/subprocess/install probe, environment write, process
+replacement, project-lock write, activation, or rollback path. Unreachable
+release metadata remains fail-closed; current, newer, downgrade, and external
+installer-failure scenarios retain explicit tests and observability.
+
+The R04 Skill Hub package/lock suites remain unchanged and green. Lifecycle,
+partial-set, canary, rollback, Journey snapshot, environment/lock immutability,
+and the full repository gates form the acceptance evidence. R16 is therefore
+`fixed_dev` under `agent_under_standing_owner_delegation` with
+`owner_review: pending`. This satisfies only `all_index_requirements_fixed_dev`;
+integrated validation and explicit new user approval remain separate unmet
+`main`-promotion gates, so this record does not authorize promotion or release.
 
 ## Outcome
 

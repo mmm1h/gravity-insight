@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-import base64
-import hashlib
 import io
 import json
 import os
-import subprocess
 import sys
 import tempfile
 import unittest
-import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
@@ -27,7 +23,7 @@ from gravity_sdk.auto_upgrade import (
     TARGET_PYTHON_ENV,
     TERMINAL_UPGRADE_STATUSES,
     UPDATE_CHECK_INTERVAL,
-    UPGRADE_RESTART_EXIT_CODE,
+    UPDATE_POLICY_EXIT_CODE,
     check_latest_version,
     maybe_auto_upgrade,
     startup_update_enabled,
@@ -98,107 +94,10 @@ def legacy_state(
     }
 
 
-def completed(returncode: int, *, stdout: str = "") -> subprocess.CompletedProcess[str]:
-    return subprocess.CompletedProcess([], returncode, stdout=stdout, stderr="")
-
-
-def verified(version: str, *, code_verified: bool = True) -> str:
-    return json.dumps(
-        {
-            "distribution_version": version,
-            "code_verified": code_verified,
-            "package_file_count": 200,
-        }
-    )
-
-
 def fake_target_python(root: Path) -> Path:
     target = root / "target-python.exe"
     target.touch()
     return target.resolve()
-
-
-def create_target_venv(root: Path) -> Path:
-    target_root = root / "target-venv"
-    created = subprocess.run(
-        [sys.executable, "-m", "venv", str(target_root)],
-        text=True,
-        capture_output=True,
-        check=False,
-        timeout=120,
-    )
-    if created.returncode != 0:
-        raise AssertionError(f"temporary venv creation failed: {created.stderr}")
-    name = "python.exe" if os.name == "nt" else "python"
-    scripts = "Scripts" if os.name == "nt" else "bin"
-    return (target_root / scripts / name).resolve()
-
-
-def build_simple_index(
-    root: Path, versions: tuple[str, ...], *, corrupt: frozenset[str] = frozenset()
-) -> Path:
-    project = root / "simple" / "gravity-insight"
-    project.mkdir(parents=True)
-    links: list[str] = []
-    for version in versions:
-        filename = f"gravity_insight-{version}-py3-none-any.whl"
-        wheel = project / filename
-        if version in corrupt:
-            wheel.write_bytes(b"not-a-wheel\n")
-        else:
-            write_fixture_wheel(wheel, version)
-        links.append(f'<a href="{filename}">{filename}</a>')
-    project.joinpath("index.html").write_bytes(
-        ("<!doctype html>\n" + "\n".join(links) + "\n").encode("utf-8")
-    )
-    return root / "simple"
-
-
-def write_fixture_wheel(path: Path, version: str) -> None:
-    dist_info = f"gravity_insight-{version}.dist-info"
-    files = {
-        "gravity_sdk/__init__.py": f'__version__ = "{version}"\n'.encode(),
-        "gravity_sdk/__main__.py": (
-            "from gravity_sdk import __version__\n"
-            "print(f'fixture Gravity SDK {__version__}')\n"
-        ).encode(),
-        f"{dist_info}/METADATA": (
-            f"Metadata-Version: 2.1\nName: gravity-insight\nVersion: {version}\n"
-        ).encode(),
-        f"{dist_info}/WHEEL": (
-            "Wheel-Version: 1.0\nGenerator: gravity-test\n"
-            "Root-Is-Purelib: true\nTag: py3-none-any\n"
-        ).encode(),
-    }
-    record: list[str] = []
-    for name, content in files.items():
-        digest = base64.urlsafe_b64encode(hashlib.sha256(content).digest())
-        record.append(f"{name},sha256={digest.rstrip(b'=').decode()},{len(content)}")
-    record_name = f"{dist_info}/RECORD"
-    files[record_name] = ("\n".join([*record, f"{record_name},,"]) + "\n").encode()
-    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for name, content in files.items():
-            archive.writestr(name, content)
-
-
-def target_distribution_version(target: Path) -> str | None:
-    probed = subprocess.run(
-        [
-            str(target),
-            "-c",
-            "from importlib.metadata import PackageNotFoundError, version; "
-            "\ntry: print(version('gravity-insight'))"
-            "\nexcept PackageNotFoundError: print('missing')",
-        ],
-        text=True,
-        capture_output=True,
-        check=False,
-        timeout=30,
-    )
-    if probed.returncode != 0:
-        raise AssertionError(f"target version probe failed: {probed.stderr}")
-    value = probed.stdout.strip()
-    return None if value == "missing" else value
 
 
 class UpdateStateTests(unittest.TestCase):
@@ -376,7 +275,7 @@ class UpdateStateTests(unittest.TestCase):
                 )
             self.assertEqual("failed", result.status)
 
-    def test_corrupt_or_unwritable_state_fails_open_without_http(self) -> None:
+    def test_corrupt_or_unwritable_state_fails_closed_without_http(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             corrupt = root / "corrupt.json"
@@ -506,211 +405,114 @@ class UpdateStateTests(unittest.TestCase):
         self.assertEqual([], leftovers)
 
 
-class StartupUpgradeTests(unittest.TestCase):
-    def test_doctor_pin_off_switch_and_reexec_paths_disable_the_check(self) -> None:
+class StartupPlanOnlyTests(unittest.TestCase):
+    def test_doctor_pin_and_off_switch_paths_disable_the_check(self) -> None:
         enabled = {AUTO_UPGRADE_ENV: "1"}
         self.assertFalse(startup_update_enabled(["agent"], environ={}))
         self.assertFalse(startup_update_enabled(["doctor"], environ=enabled))
         self.assertFalse(startup_update_enabled(["insight", "doctor"], environ=enabled))
-        self.assertFalse(
-            startup_update_enabled(
-                ["agent"], environ={**enabled, PINNED_VERSION_ENV: __version__}
-            )
-        )
+        self.assertFalse(startup_update_enabled(
+            ["agent"], environ={**enabled, PINNED_VERSION_ENV: __version__}
+        ))
         self.assertFalse(startup_update_enabled(["agent"], environ={AUTO_UPGRADE_ENV: "0"}))
-        self.assertFalse(
-            startup_update_enabled(
-                ["agent"],
-                environ={**enabled, "GRAVITY_SDK_UPGRADE_REEXEC": "1"},
-            )
-        )
         self.assertTrue(startup_update_enabled(["agent"], environ=enabled))
 
-    def test_invalid_or_mismatched_pin_does_not_act_as_a_boolean_off_switch(self) -> None:
+    def test_invalid_or_mismatched_pin_does_not_disable_the_check(self) -> None:
         for pinned in ("not-a-version", "99.0.0"):
             with self.subTest(pinned=pinned):
-                self.assertTrue(
-                    startup_update_enabled(
-                        ["agent"],
-                        environ={
-                            AUTO_UPGRADE_ENV: "1",
-                            PINNED_VERSION_ENV: pinned,
-                        },
-                    )
-                )
+                self.assertTrue(startup_update_enabled(
+                    ["agent"],
+                    environ={AUTO_UPGRADE_ENV: "1", PINNED_VERSION_ENV: pinned},
+                ))
 
-    def test_pip_failure_is_terminal_and_blocks_the_next_startup(self) -> None:
-        stderr = io.StringIO()
-        runner = Mock(return_value=completed(7))
-        replacement = Mock(side_effect=AssertionError("failed pip must not restart"))
+    def test_new_version_produces_a_plan_request_without_installer_calls(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
-            path = root / "update-check.json"
-            target = fake_target_python(root)
-            first = maybe_auto_upgrade(
+            installer = Mock(side_effect=AssertionError("Runtime must not invoke installer"))
+            result = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
                 environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=path,
+                state_path=root / "update-check.json",
                 now=NOW,
                 request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
-                run=runner,
-                execv=replacement,
+                stderr=io.StringIO(),
+                target_python=fake_target_python(root),
+            )
+        self.assertEqual("plan_ready", result.status)
+        self.assertIsNotNone(result.plan)
+        installer.assert_not_called()
+
+    def test_missing_target_environment_fails_closed_but_reports_version(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as raw:
+            result = maybe_auto_upgrade(
+                ["agent"],
+                environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=Path(raw) / "update-check.json",
+                now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
                 stderr=stderr,
+            )
+        self.assertEqual(("target_unconfigured", "99.0.0"), (
+            result.status, result.latest_version
+        ))
+        self.assertIn("cannot plan update", stderr.getvalue())
+
+    def test_running_environment_cannot_be_named_as_external_target(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            result = maybe_auto_upgrade(
+                ["agent"],
+                environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=Path(raw) / "update-check.json",
+                now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
+                stderr=io.StringIO(),
+                target_python=sys.executable,
+            )
+        self.assertEqual("target_rejected", result.status)
+        self.assertIn("running environment", result.detail or "")
+
+    def test_plan_request_freezes_external_owner_gates_and_target(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = fake_target_python(root)
+            result = maybe_auto_upgrade(
+                ["agent"],
+                environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=root / "update-check.json",
+                now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
+                stderr=io.StringIO(),
                 target_python=target,
             )
+            rendered = result.plan.to_dict() if result.plan is not None else {}
+        self.assertEqual("external-installer", rendered["activation_owner"])
+        self.assertEqual("gravity-insight==99.0.0", rendered["artifact"])
+        self.assertEqual(str(target), rendered["target_environment"])
+        self.assertIn("artifact-digest", rendered["required_verification"])
+        self.assertIn("provenance", rendered["required_verification"])
+        self.assertIn("signature", rendered["required_verification"])
+
+    def test_successful_check_cache_reuses_the_same_plan_request(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = fake_target_python(root)
+            first = maybe_auto_upgrade(
+                ["agent"], environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=root / "update-check.json", now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
+                stderr=io.StringIO(), target_python=target,
+            )
             second = maybe_auto_upgrade(
-                ["agent-catalog", "categories"],
-                environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=path,
-                now=NOW + timedelta(seconds=1),
+                ["agent"], environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=root / "update-check.json", now=NOW + timedelta(seconds=1),
                 request=Mock(side_effect=AssertionError("successful check must be cached")),
-                run=runner,
-                execv=replacement,
-                stderr=stderr,
-                target_python=target,
+                stderr=io.StringIO(), target_python=target,
             )
-            stored = json.loads(
-                update_attempt_state_path(path).read_text(encoding="utf-8")
-            )
-        self.assertEqual(
-            ("upgrade_failed", "upgrade_incomplete"),
-            (first.status, second.status),
-        )
-        self.assertEqual(1, runner.call_count)
-        command = runner.call_args.args[0]
-        self.assertEqual(str(target), command[0])
-        self.assertIn("gravity-insight==99.0.0", command)
-        self.assertIn("https://pypi.org/simple", command)
-        self.assertNotIn("github.com", " ".join(command))
-        self.assertEqual(
-            ("99.0.0", timestamp(NOW), "failed"),
-            (stored["attempted_version"], stored["attempted_at"], stored["status"]),
-        )
-        self.assertNotIn("continuing with version", stderr.getvalue())
-        self.assertIn("this command was not run", stderr.getvalue())
-        replacement.assert_not_called()
+        self.assertEqual(first.plan, second.plan)
+        self.assertEqual("plan_ready", second.status)
 
-    def test_release_and_attempt_state_are_both_isolated_by_runtime(self) -> None:
-        first_request = Mock(return_value=FakeResponse(200, pypi("99.0.0")))
-        second_request = Mock(return_value=FakeResponse(200, pypi("99.0.0")))
-        runner = Mock(return_value=completed(7))
-        with tempfile.TemporaryDirectory() as raw:
-            root = Path(raw)
-            first_scope = upgrade_state.runtime_scope_id(
-                str(root / "python-a"), root / "package-a"
-            )
-            second_scope = upgrade_state.runtime_scope_id(
-                str(root / "python-b"), root / "package-b"
-            )
-            target = fake_target_python(root)
-            first_path = root / f"update-check-{first_scope}.json"
-            second_path = root / f"update-check-{second_scope}.json"
-            first = maybe_auto_upgrade(
-                ["agent-catalog", "categories"],
-                environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=first_path,
-                now=NOW,
-                request=first_request,
-                run=runner,
-                stderr=io.StringIO(),
-                target_python=target,
-            )
-            first_attempt = update_attempt_state_path(first_path)
-            second = maybe_auto_upgrade(
-                ["agent-catalog", "categories"],
-                environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=second_path,
-                now=NOW + timedelta(seconds=1),
-                request=second_request,
-                run=runner,
-                stderr=io.StringIO(),
-                target_python=target,
-            )
-            second_attempt = update_attempt_state_path(second_path)
-            attempt_files_exist = (first_attempt.exists(), second_attempt.exists())
-        self.assertEqual(("upgrade_failed", "upgrade_failed"), (first.status, second.status))
-        self.assertEqual((1, 1), (first_request.call_count, second_request.call_count))
-        self.assertEqual(2, runner.call_count)
-        self.assertNotEqual(first_path, second_path)
-        self.assertNotEqual(first_attempt, second_attempt)
-        self.assertEqual((True, True), attempt_files_exist)
-
-    def test_pip_success_but_version_mismatch_is_terminal_before_exec(self) -> None:
-        stderr = io.StringIO()
-        runner = Mock(side_effect=[completed(0), completed(0, stdout=verified("98.0.0"))])
-        replacement = Mock(side_effect=AssertionError("unverified install must not restart"))
-        with tempfile.TemporaryDirectory() as raw:
-            root = Path(raw)
-            result = maybe_auto_upgrade(
-                ["agent-catalog", "categories"],
-                environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=root / "update-check.json",
-                now=NOW,
-                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
-                run=runner,
-                execv=replacement,
-                stderr=stderr,
-                target_python=fake_target_python(root),
-            )
-        self.assertEqual("verification_failed", result.status)
-        self.assertIn("installed version could not be verified", stderr.getvalue())
-        self.assertIn("This command was not run; rerun it once", stderr.getvalue())
-        replacement.assert_not_called()
-
-    def test_matching_metadata_with_shadowed_imported_code_is_terminal(self) -> None:
-        stderr = io.StringIO()
-        runner = Mock(
-            side_effect=[
-                completed(0),
-                completed(0, stdout=verified("99.0.0", code_verified=False)),
-            ]
-        )
-        replacement = Mock(side_effect=AssertionError("shadowed code must not restart"))
-        with tempfile.TemporaryDirectory() as raw:
-            root = Path(raw)
-            result = maybe_auto_upgrade(
-                ["agent-catalog", "categories"],
-                environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=root / "update-check.json",
-                now=NOW,
-                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
-                run=runner,
-                execv=replacement,
-                stderr=stderr,
-                target_python=fake_target_python(root),
-            )
-        self.assertEqual("verification_failed", result.status)
-        self.assertIn("does not match the installed distribution files", result.detail or "")
-        self.assertIn("This command was not run; rerun it once", stderr.getvalue())
-        replacement.assert_not_called()
-
-    def test_exec_return_is_failure_and_never_claimed_as_restarted(self) -> None:
-        stderr = io.StringIO()
-        runner = Mock(side_effect=[completed(0), completed(0, stdout=verified("99.0.0"))])
-        replacement = Mock(return_value=None)
-        with tempfile.TemporaryDirectory() as raw:
-            root = Path(raw)
-            result = maybe_auto_upgrade(
-                ["agent-catalog", "categories"],
-                environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=root / "update-check.json",
-                now=NOW,
-                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
-                run=runner,
-                execv=replacement,
-                stderr=stderr,
-                target_python=fake_target_python(root),
-            )
-        self.assertEqual("restart_failed", result.status)
-        self.assertIn("returned unexpectedly", result.detail or "")
-        self.assertIn("This command was not run; rerun it once", stderr.getvalue())
-
-    def test_entry_terminates_after_pip_success_and_exec_failure_before_command(self) -> None:
-        def runner(command, **_kwargs):
-            if command[1:4] == ["-m", "pip", "install"]:
-                return completed(0)
-            return completed(0, stdout=verified("99.0.0"))
-
+    def test_entry_continues_the_command_after_plan_generation(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             target = fake_target_python(Path(raw))
             environment = {
@@ -719,325 +521,175 @@ class StartupUpgradeTests(unittest.TestCase):
                 "LOCALAPPDATA": raw,
                 "XDG_CACHE_HOME": raw,
             }
-            command_guard = Mock(
-                side_effect=AssertionError("user command must not execute in old process")
-            )
-            stderr = io.StringIO()
-            original_guard = entry.ensure_first_run_credentials
-            entry.ensure_first_run_credentials = command_guard
-            try:
-                with patch.dict(os.environ, environment), patch(
-                    "gravity_sdk.auto_upgrade._distribution_get",
-                    return_value=FakeResponse(200, pypi("99.0.0")),
-                ), patch(
-                    "gravity_sdk.auto_upgrade.subprocess.run", side_effect=runner
-                ) as subprocess_run, patch(
-                    "gravity_sdk.auto_upgrade.os.execv", side_effect=OSError("blocked")
-                ) as replacement, redirect_stderr(stderr):
-                    exit_code = entry.main(["agent-catalog", "categories"])
-            finally:
-                entry.ensure_first_run_credentials = original_guard
-        self.assertEqual(UPGRADE_RESTART_EXIT_CODE, exit_code)
-        self.assertEqual(2, subprocess_run.call_count)
-        replacement.assert_called_once_with(
-            str(target),
-            [str(target), "-m", "gravity_sdk", "agent-catalog", "categories"],
-        )
-        command_guard.assert_not_called()
-        self.assertIn("was upgraded to 99.0.0", stderr.getvalue())
-        self.assertIn("This command was not run; rerun it once", stderr.getvalue())
-
-    def test_entry_terminates_after_pip_nonzero_or_timeout_before_command(self) -> None:
-        def nonzero(_command, **_kwargs):
-            return completed(7)
-
-        def timeout(command, **_kwargs):
-            raise subprocess.TimeoutExpired(command, 300)
-
-        for label, runner in (("nonzero", nonzero), ("timeout", timeout)):
-            with self.subTest(label=label), tempfile.TemporaryDirectory() as raw:
-                target = fake_target_python(Path(raw))
-                environment = {
-                    AUTO_UPGRADE_ENV: "1",
-                    TARGET_PYTHON_ENV: str(target),
-                    "LOCALAPPDATA": raw,
-                    "XDG_CACHE_HOME": raw,
-                }
-                command_guard = Mock(
-                    side_effect=AssertionError("user command must not execute after pip")
-                )
-                stderr = io.StringIO()
-                original_guard = entry.ensure_first_run_credentials
-                entry.ensure_first_run_credentials = command_guard
-                try:
-                    with patch.dict(os.environ, environment), patch(
-                        "gravity_sdk.auto_upgrade._distribution_get",
-                        return_value=FakeResponse(200, pypi("99.0.0")),
-                    ), patch(
-                        "gravity_sdk.auto_upgrade.subprocess.run", side_effect=runner
-                    ) as subprocess_run, redirect_stderr(stderr):
-                        exit_code = entry.main(["agent-catalog", "categories"])
-                finally:
-                    entry.ensure_first_run_credentials = original_guard
-            self.assertEqual(UPGRADE_RESTART_EXIT_CODE, exit_code)
-            self.assertEqual(1, subprocess_run.call_count)
-            command_guard.assert_not_called()
-            self.assertIn("pip may have modified the target environment", stderr.getvalue())
-            self.assertIn("this command was not run", stderr.getvalue())
-
-    def test_offline_help_and_real_command_fail_closed_before_command(self) -> None:
-        commands = (["--help"], ["agent-catalog", "categories"])
-        for command in commands:
-            with self.subTest(command=command), tempfile.TemporaryDirectory() as raw:
-                environment = {
-                    AUTO_UPGRADE_ENV: "1",
-                    "LOCALAPPDATA": raw,
-                    "XDG_CACHE_HOME": raw,
-                }
-                stdout, stderr = io.StringIO(), io.StringIO()
-                with patch.dict(os.environ, environment), patch(
-                    "gravity_sdk.auto_upgrade._distribution_get",
-                    side_effect=OSError("offline"),
-                ), redirect_stdout(stdout), redirect_stderr(stderr):
-                    exit_code = entry.main(command)
-            self.assertEqual(UPGRADE_RESTART_EXIT_CODE, exit_code, stderr.getvalue())
-            self.assertIn("update check failed", stderr.getvalue())
-            self.assertIn("This command was not run", stderr.getvalue())
-            self.assertEqual("", stdout.getvalue())
-
-    def test_doctor_neither_checks_nor_touches_state_and_remains_offline(self) -> None:
-        with tempfile.TemporaryDirectory() as raw:
             stdout, stderr = io.StringIO(), io.StringIO()
-            network = Mock(side_effect=AssertionError("doctor must not check updates"))
-            with patch.dict(
-                os.environ,
-                {AUTO_UPGRADE_ENV: "1", "LOCALAPPDATA": raw, "XDG_CACHE_HOME": raw},
-            ), patch("gravity_sdk.auto_upgrade._distribution_get", network), redirect_stdout(
+            with patch.dict(os.environ, environment), patch(
+                "gravity_sdk.auto_upgrade._distribution_get",
+                return_value=FakeResponse(200, pypi("99.0.0")),
+            ), redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = entry.main(["--help"])
+        self.assertEqual(0, exit_code, stderr.getvalue())
+        self.assertIn("Gravity SDK", stdout.getvalue())
+        self.assertIn("continuing this command", stderr.getvalue())
+
+    def test_runtime_does_not_mutate_environment_target_or_project_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = fake_target_python(root)
+            project_lock = root / "gravity.skills.lock.json"
+            project_lock.write_text('{"locked":true}\n', encoding="utf-8")
+            before_lock = project_lock.read_bytes()
+            before_target = target.stat()
+            environment = {AUTO_UPGRADE_ENV: "1", "UNCHANGED_SENTINEL": "yes"}
+            with patch.dict(os.environ, environment, clear=True):
+                before_environment = dict(os.environ)
+                with patch("subprocess.run", side_effect=AssertionError("no subprocess")) as run, patch(
+                    "os.execv", side_effect=AssertionError("no process replacement")
+                ) as execv:
+                    result = maybe_auto_upgrade(
+                        ["agent"], environ=os.environ,
+                        state_path=root / "cache" / "update-check.json", now=NOW,
+                        request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
+                        stderr=io.StringIO(), target_python=target,
+                    )
+                after_environment = dict(os.environ)
+            self.assertEqual(before_lock, project_lock.read_bytes())
+            self.assertEqual((before_target.st_size, before_target.st_mtime_ns), (
+                target.stat().st_size, target.stat().st_mtime_ns
+            ))
+        self.assertEqual("plan_ready", result.status)
+        self.assertEqual(before_environment, after_environment)
+        run.assert_not_called()
+        execv.assert_not_called()
+        source = Path(upgrade.__file__).read_text(encoding="utf-8")
+        self.assertNotIn("subprocess", source)
+        self.assertNotIn('"-m", "pip"', source)
+        self.assertNotIn("execv", source)
+
+    def test_unreachable_release_source_blocks_opted_in_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            environment = {
+                AUTO_UPGRADE_ENV: "1", "LOCALAPPDATA": raw, "XDG_CACHE_HOME": raw
+            }
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with patch.dict(os.environ, environment), patch(
+                "gravity_sdk.auto_upgrade._distribution_get", side_effect=OSError("offline")
+            ), redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = entry.main(["--help"])
+        self.assertEqual(UPDATE_POLICY_EXIT_CODE, exit_code)
+        self.assertEqual("", stdout.getvalue())
+        self.assertIn("This command was not run", stderr.getvalue())
+
+    def test_doctor_neither_checks_nor_touches_state(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            network = Mock(side_effect=AssertionError("doctor must stay offline"))
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with patch.dict(os.environ, {
+                AUTO_UPGRADE_ENV: "1", "LOCALAPPDATA": raw, "XDG_CACHE_HOME": raw
+            }), patch("gravity_sdk.auto_upgrade._distribution_get", network), redirect_stdout(
                 stdout
             ), redirect_stderr(stderr):
                 exit_code = entry.main(["doctor"])
-            state_exists = bool(
-                list(Path(raw, "GravityInsight").glob("update-check*.json"))
-            )
-        result = json.loads(stdout.getvalue())
+            state_exists = bool(list(Path(raw, "GravityInsight").glob("update-check*.json")))
         self.assertEqual(0, exit_code, stderr.getvalue())
-        self.assertFalse(result["network_called"])
         self.assertFalse(state_exists)
         network.assert_not_called()
 
-    def test_pinned_version_keeps_real_entry_offline_and_does_not_touch_state(self) -> None:
+    def test_pinned_version_keeps_real_entry_offline(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
-            network = Mock(side_effect=AssertionError("pin must keep startup offline"))
+            network = Mock(side_effect=AssertionError("pin must stay offline"))
             stdout, stderr = io.StringIO(), io.StringIO()
-            with patch.dict(
-                os.environ,
-                {
-                    AUTO_UPGRADE_ENV: "1",
-                    PINNED_VERSION_ENV: __version__,
-                    "LOCALAPPDATA": raw,
-                    "XDG_CACHE_HOME": raw,
-                },
-            ), patch("gravity_sdk.auto_upgrade._distribution_get", network), redirect_stdout(
+            with patch.dict(os.environ, {
+                AUTO_UPGRADE_ENV: "1", PINNED_VERSION_ENV: __version__,
+                "LOCALAPPDATA": raw, "XDG_CACHE_HOME": raw,
+            }), patch("gravity_sdk.auto_upgrade._distribution_get", network), redirect_stdout(
                 stdout
             ), redirect_stderr(stderr):
                 exit_code = entry.main(["--help"])
-            state_exists = bool(
-                list(Path(raw, "GravityInsight").glob("update-check*.json"))
-            )
         self.assertEqual(0, exit_code, stderr.getvalue())
         self.assertTrue(stdout.getvalue().strip())
-        self.assertFalse(state_exists)
         network.assert_not_called()
 
-    def test_test_and_evaluation_entrypoints_explicitly_set_the_off_switch(self) -> None:
+    def test_test_and_evaluation_entrypoints_set_the_off_switch(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        self.assertIn(
-            '"GRAVITY_SDK_AUTO_UPGRADE": "0"',
-            (root / "tests" / "__init__.py").read_text(encoding="utf-8"),
-        )
-        self.assertIn(
-            'os.environ["GRAVITY_SDK_AUTO_UPGRADE"] = "0"',
-            (root / "scripts" / "agent_usability_eval.py").read_text(encoding="utf-8"),
-        )
+        self.assertIn('"GRAVITY_SDK_AUTO_UPGRADE": "0"', (
+            root / "tests" / "__init__.py"
+        ).read_text(encoding="utf-8"))
+        self.assertIn('os.environ["GRAVITY_SDK_AUTO_UPGRADE"] = "0"', (
+            root / "scripts" / "agent_usability_eval.py"
+        ).read_text(encoding="utf-8"))
 
 
-class AutoUpgradeEndToEndTests(unittest.TestCase):
-    def test_e2e_new_version_installs_only_into_explicit_temporary_venv(self) -> None:
+class AutoUpgradePlanEndToEndTests(unittest.TestCase):
+    def test_e2e_new_version_returns_external_plan_request_and_no_environment(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
-            target = create_target_venv(root)
-            simulated_scripts = root / "same-environment" / "Scripts"
-            simulated_scripts.mkdir(parents=True)
-            simulated_current = simulated_scripts / "python.exe"
-            simulated_alias = simulated_scripts / "pythonw.exe"
-            simulated_current.touch()
-            simulated_alias.touch()
-            alias_target, alias_failure = upgrade_state.resolve_target_python(
-                simulated_alias, str(simulated_current)
+            target = fake_target_python(root)
+            installer = Mock(side_effect=AssertionError("installer belongs outside Runtime"))
+            result = maybe_auto_upgrade(
+                ["agent-catalog", "categories"], environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=root / "update-check.json", now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
+                stderr=io.StringIO(), target_python=target,
             )
-            simple = build_simple_index(root, ("99.0.0",))
-            state_path = root / "update-check.json"
-            request = Mock(return_value=FakeResponse(200, pypi("99.0.0")))
-            replacement = Mock(side_effect=OSError("test blocks process replacement"))
-            stderr = io.StringIO()
-            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
-                unconfigured = maybe_auto_upgrade(
-                    ["agent-catalog", "categories"],
-                    environ={AUTO_UPGRADE_ENV: "1"},
-                    state_path=state_path,
-                    now=NOW,
-                    request=request,
-                    stderr=stderr,
-                )
-                self_target = maybe_auto_upgrade(
-                    ["agent-catalog", "categories"],
-                    environ={AUTO_UPGRADE_ENV: "1"},
-                    state_path=state_path,
-                    now=NOW + timedelta(seconds=1),
-                    request=Mock(side_effect=AssertionError("check must be cached")),
-                    stderr=stderr,
-                    target_python=sys.executable,
-                )
-                installed = maybe_auto_upgrade(
-                    ["agent-catalog", "categories"],
-                    environ={AUTO_UPGRADE_ENV: "1"},
-                    state_path=state_path,
-                    now=NOW + timedelta(seconds=2),
-                    request=Mock(side_effect=AssertionError("check must be cached")),
-                    execv=replacement,
-                    stderr=stderr,
-                    target_python=target,
-                )
-            target_version = target_distribution_version(target)
-            attempt = json.loads(
-                update_attempt_state_path(state_path).read_text(encoding="utf-8")
-            )
-        self.assertEqual(
-            ("target_unconfigured", "target_rejected", "restart_failed"),
-            (unconfigured.status, self_target.status, installed.status),
-        )
-        self.assertEqual("99.0.0", target_version)
-        self.assertIsNone(alias_target)
-        self.assertIn("running environment", alias_failure or "")
-        self.assertEqual(("99.0.0", "verified"), (attempt["attempted_version"], attempt["status"]))
-        self.assertEqual(__version__, upgrade.__version__)
-        request.assert_called_once()
-        replacement.assert_called_once_with(
-            str(target),
-            [str(target), "-m", "gravity_sdk", "agent-catalog", "categories"],
-        )
-        self.assertIn("upgraded from", stderr.getvalue())
+            rendered = result.plan.to_dict() if result.plan is not None else {}
+        self.assertEqual("plan_ready", result.status)
+        self.assertEqual("gravity-insight==99.0.0", rendered["artifact"])
+        self.assertEqual("forbidden", rendered["runtime_environment_mutation"])
+        installer.assert_not_called()
 
-    def test_e2e_current_version_from_local_index_performs_no_install(self) -> None:
+    def test_e2e_current_version_has_no_plan_and_no_install(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
-            target = create_target_venv(root)
-            simple = build_simple_index(root, (__version__,))
-            state_path = root / "update-check.json"
-            replacement = Mock(side_effect=AssertionError("current version must not restart"))
-            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
-                result = maybe_auto_upgrade(
-                    ["agent-catalog", "categories"],
-                    environ={AUTO_UPGRADE_ENV: "1"},
-                    state_path=state_path,
-                    now=NOW,
-                    request=lambda _headers: FakeResponse(200, pypi(__version__)),
-                    execv=replacement,
-                    stderr=io.StringIO(),
-                    target_python=target,
-                )
-            target_version = target_distribution_version(target)
-            attempt_exists = update_attempt_state_path(state_path).exists()
+            installer = Mock(side_effect=AssertionError("current version must not install"))
+            result = maybe_auto_upgrade(
+                ["agent"], environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=root / "update-check.json", now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi(__version__)),
+                stderr=io.StringIO(), target_python=fake_target_python(root),
+            )
         self.assertEqual(("checked", __version__), (result.status, result.latest_version))
-        self.assertIsNone(target_version)
-        self.assertFalse(attempt_exists)
-        replacement.assert_not_called()
+        self.assertIsNone(result.plan)
+        installer.assert_not_called()
 
-    def test_e2e_unreachable_local_release_source_fails_closed(self) -> None:
+    def test_e2e_unreachable_index_is_terminal_and_has_no_plan(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
-            root = Path(raw)
-            target = create_target_venv(root)
-            simple = build_simple_index(root, ())
-            state_path = root / "update-check.json"
-            stderr = io.StringIO()
-
-            def unavailable(_headers):
-                return (root / "missing-release.json").read_bytes()
-
-            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
-                result = maybe_auto_upgrade(
-                    ["agent-catalog", "categories"],
-                    environ={AUTO_UPGRADE_ENV: "1"},
-                    state_path=state_path,
-                    now=NOW,
-                    request=unavailable,
-                    stderr=stderr,
-                    target_python=target,
-                )
-            target_version = target_distribution_version(target)
+            result = maybe_auto_upgrade(
+                ["agent"], environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=Path(raw) / "update-check.json", now=NOW,
+                request=Mock(side_effect=OSError("offline")), stderr=io.StringIO(),
+                target_python=fake_target_python(Path(raw)),
+            )
         self.assertEqual("failed", result.status)
         self.assertIn(result.status, TERMINAL_UPGRADE_STATUSES)
-        self.assertIsNone(target_version)
-        self.assertFalse(state_path.exists())
-        self.assertIn("This command was not run", stderr.getvalue())
+        self.assertIsNone(result.plan)
 
-    def test_e2e_lower_version_from_local_index_is_explicitly_rejected(self) -> None:
+    def test_e2e_downgrade_is_rejected_without_a_plan_or_install(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
-            target = create_target_venv(root)
-            simple = build_simple_index(root, ("0.3.1",))
-            state_path = root / "update-check.json"
-            stderr = io.StringIO()
-            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
-                result = maybe_auto_upgrade(
-                    ["agent-catalog", "categories"],
-                    environ={AUTO_UPGRADE_ENV: "1"},
-                    state_path=state_path,
-                    now=NOW,
-                    request=lambda _headers: FakeResponse(200, pypi("0.3.1")),
-                    stderr=stderr,
-                    target_python=target,
-                )
-            target_version = target_distribution_version(target)
-            attempt_exists = update_attempt_state_path(state_path).exists()
-        self.assertEqual(("downgrade_rejected", "0.3.1"), (result.status, result.latest_version))
-        self.assertIn(result.status, TERMINAL_UPGRADE_STATUSES)
-        self.assertIsNone(target_version)
-        self.assertFalse(attempt_exists)
-        self.assertIn("rejected downgrade", stderr.getvalue())
+            result = maybe_auto_upgrade(
+                ["agent"], environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=root / "update-check.json", now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("0.3.1")),
+                stderr=io.StringIO(), target_python=fake_target_python(root),
+            )
+        self.assertEqual("downgrade_rejected", result.status)
+        self.assertIsNone(result.plan)
 
-    def test_e2e_corrupt_wheel_failure_is_durable_and_never_reports_success(self) -> None:
+    def test_e2e_external_install_failure_remains_outside_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
-            target = create_target_venv(root)
-            simple = build_simple_index(
-                root, ("98.0.0",), corrupt=frozenset({"98.0.0"})
+            failed_installer = Mock(side_effect=RuntimeError("mid-install failure"))
+            result = maybe_auto_upgrade(
+                ["agent"], environ={AUTO_UPGRADE_ENV: "1"},
+                state_path=root / "update-check.json", now=NOW,
+                request=lambda _headers: FakeResponse(200, pypi("98.0.0")),
+                stderr=io.StringIO(), target_python=fake_target_python(root),
             )
-            state_path = root / "update-check.json"
-            stderr = io.StringIO()
-            replacement = Mock(side_effect=AssertionError("failed install must not restart"))
-            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
-                result = maybe_auto_upgrade(
-                    ["agent-catalog", "categories"],
-                    environ={AUTO_UPGRADE_ENV: "1"},
-                    state_path=state_path,
-                    now=NOW,
-                    request=lambda _headers: FakeResponse(200, pypi("98.0.0")),
-                    execv=replacement,
-                    stderr=stderr,
-                    target_python=target,
-                )
-            target_version = target_distribution_version(target)
-            attempt = json.loads(
-                update_attempt_state_path(state_path).read_text(encoding="utf-8")
-            )
-        self.assertEqual("upgrade_failed", result.status)
-        self.assertIn(result.status, TERMINAL_UPGRADE_STATUSES)
-        self.assertIsNone(target_version)
-        self.assertEqual(("98.0.0", "failed"), (attempt["attempted_version"], attempt["status"]))
-        self.assertNotIn("Gravity SDK upgraded from", stderr.getvalue())
-        self.assertIn("this command was not run", stderr.getvalue())
-        replacement.assert_not_called()
+            rendered = result.plan.to_dict() if result.plan is not None else {}
+        self.assertEqual("plan_ready", result.status)
+        self.assertEqual("external-installer", rendered["activation_owner"])
+        self.assertEqual("rollback", rendered["lifecycle"][-1])
+        failed_installer.assert_not_called()
 
 
 if __name__ == "__main__":

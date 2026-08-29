@@ -157,7 +157,7 @@
     {"id":"R13C","path":"R13C-dashboard-connector.md","status":"fixed_dev","dependencies":["R13B"],"milestone_dependencies":["R12-A"],"parallel_group":"dashboard-delivery","shared_spine":true},
     {"id":"R14","path":"R14-adaptive-governor-variants.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"runtime-infrastructure","shared_spine":true,"delivery_mode":"staged_epic","milestones":[{"id":"R14-A","status":"fixed_dev","dependencies":[]},{"id":"R14-B","status":"fixed_dev","dependencies":["R14-A"]},{"id":"R14-C","status":"fixed_dev","dependencies":[]},{"id":"R14-D","status":"fixed_dev","dependencies":["R14-B","R14-C"]}]},
     {"id":"R15","path":"R15-isolated-sql-explorer.md","status":"fixed_dev","dependencies":["R02","R05"],"parallel_group":"isolated-product","shared_spine":true},
-    {"id":"R16","path":"R16-control-plane-stage-b.md","status":"specified","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
+    {"id":"R16","path":"R16-control-plane-stage-b.md","status":"fixed_dev","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
     {
       "id": "R17",
       "path": "R17-agent-module-package-migration.md",
@@ -242,9 +242,9 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "70d03e1c77260050a518553d8023956fe27304680a63e06ee7714387e00c1f85",
+          "live_checkpoint_sha256": "a955d68e665e611bebd9ec071f63607e1970fccf77d94f6b606efa0185332fde",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
-          "live_checkpoint_tracked_sites": 315,
+          "live_checkpoint_tracked_sites": 310,
           "live_checkpoint_unclassified_sites": 0,
           "live_checkpoint_blocking_sites": 0,
           "requires": [
