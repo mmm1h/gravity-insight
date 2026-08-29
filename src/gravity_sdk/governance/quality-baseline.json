@@ -7,16 +7,9 @@
       "src/gravity_sdk/cli.py::run": 21,
       "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 20,
-      "src/gravity_sdk/quality.py::compare_baselines": 25,
-      "src/gravity_sdk/quality.py::debt_snapshot": 24,
-      "src/gravity_sdk/quality.py::evaluate_ratchet": 22,
-      "src/gravity_sdk/quality.py::main": 17,
       "src/gravity_sdk/registry.py::_request_parts": 17
     },
-    "function_sloc": {
-      "src/gravity_sdk/quality.py::evaluate_ratchet": 93,
-      "src/gravity_sdk/quality.py::render_markdown": 81
-    },
+    "function_sloc": {},
     "operation_literals": {
       "src/gravity_sdk/prober/batch.py": {
         "material.tag_category.tree": 1,
@@ -187,10 +180,10 @@
       "sloc_hard_limit": 618
     },
     "src/gravity_sdk/quality.py": {
-      "ast_hard_limit": 8462,
-      "ast_nodes": 8462,
+      "ast_hard_limit": 8459,
+      "ast_nodes": 8459,
       "migration_sloc": 1022,
-      "sloc_hard_limit": 1022
+      "sloc_hard_limit": 1008
     },
     "src/gravity_sdk/registry.py": {
       "ast_hard_limit": 4724,
