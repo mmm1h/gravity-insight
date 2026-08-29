@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import io
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
@@ -20,6 +24,8 @@ from gravity_sdk import auto_upgrade as upgrade
 from gravity_sdk.auto_upgrade import (
     AUTO_UPGRADE_ENV,
     PINNED_VERSION_ENV,
+    TARGET_PYTHON_ENV,
+    TERMINAL_UPGRADE_STATUSES,
     UPDATE_CHECK_INTERVAL,
     UPGRADE_RESTART_EXIT_CODE,
     check_latest_version,
@@ -104,6 +110,95 @@ def verified(version: str, *, code_verified: bool = True) -> str:
             "package_file_count": 200,
         }
     )
+
+
+def fake_target_python(root: Path) -> Path:
+    target = root / "target-python.exe"
+    target.touch()
+    return target.resolve()
+
+
+def create_target_venv(root: Path) -> Path:
+    target_root = root / "target-venv"
+    created = subprocess.run(
+        [sys.executable, "-m", "venv", str(target_root)],
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=120,
+    )
+    if created.returncode != 0:
+        raise AssertionError(f"temporary venv creation failed: {created.stderr}")
+    name = "python.exe" if os.name == "nt" else "python"
+    scripts = "Scripts" if os.name == "nt" else "bin"
+    return (target_root / scripts / name).resolve()
+
+
+def build_simple_index(
+    root: Path, versions: tuple[str, ...], *, corrupt: frozenset[str] = frozenset()
+) -> Path:
+    project = root / "simple" / "gravity-insight"
+    project.mkdir(parents=True)
+    links: list[str] = []
+    for version in versions:
+        filename = f"gravity_insight-{version}-py3-none-any.whl"
+        wheel = project / filename
+        if version in corrupt:
+            wheel.write_bytes(b"not-a-wheel\n")
+        else:
+            write_fixture_wheel(wheel, version)
+        links.append(f'<a href="{filename}">{filename}</a>')
+    project.joinpath("index.html").write_bytes(
+        ("<!doctype html>\n" + "\n".join(links) + "\n").encode("utf-8")
+    )
+    return root / "simple"
+
+
+def write_fixture_wheel(path: Path, version: str) -> None:
+    dist_info = f"gravity_insight-{version}.dist-info"
+    files = {
+        "gravity_sdk/__init__.py": f'__version__ = "{version}"\n'.encode(),
+        "gravity_sdk/__main__.py": (
+            "from gravity_sdk import __version__\n"
+            "print(f'fixture Gravity SDK {__version__}')\n"
+        ).encode(),
+        f"{dist_info}/METADATA": (
+            f"Metadata-Version: 2.1\nName: gravity-insight\nVersion: {version}\n"
+        ).encode(),
+        f"{dist_info}/WHEEL": (
+            "Wheel-Version: 1.0\nGenerator: gravity-test\n"
+            "Root-Is-Purelib: true\nTag: py3-none-any\n"
+        ).encode(),
+    }
+    record: list[str] = []
+    for name, content in files.items():
+        digest = base64.urlsafe_b64encode(hashlib.sha256(content).digest())
+        record.append(f"{name},sha256={digest.rstrip(b'=').decode()},{len(content)}")
+    record_name = f"{dist_info}/RECORD"
+    files[record_name] = ("\n".join([*record, f"{record_name},,"]) + "\n").encode()
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
+
+
+def target_distribution_version(target: Path) -> str | None:
+    probed = subprocess.run(
+        [
+            str(target),
+            "-c",
+            "from importlib.metadata import PackageNotFoundError, version; "
+            "\ntry: print(version('gravity-insight'))"
+            "\nexcept PackageNotFoundError: print('missing')",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    if probed.returncode != 0:
+        raise AssertionError(f"target version probe failed: {probed.stderr}")
+    value = probed.stdout.strip()
+    return None if value == "missing" else value
 
 
 class UpdateStateTests(unittest.TestCase):
@@ -414,6 +509,7 @@ class UpdateStateTests(unittest.TestCase):
 class StartupUpgradeTests(unittest.TestCase):
     def test_doctor_pin_off_switch_and_reexec_paths_disable_the_check(self) -> None:
         enabled = {AUTO_UPGRADE_ENV: "1"}
+        self.assertFalse(startup_update_enabled(["agent"], environ={}))
         self.assertFalse(startup_update_enabled(["doctor"], environ=enabled))
         self.assertFalse(startup_update_enabled(["insight", "doctor"], environ=enabled))
         self.assertFalse(
@@ -448,7 +544,9 @@ class StartupUpgradeTests(unittest.TestCase):
         runner = Mock(return_value=completed(7))
         replacement = Mock(side_effect=AssertionError("failed pip must not restart"))
         with tempfile.TemporaryDirectory() as raw:
-            path = Path(raw) / "update-check.json"
+            root = Path(raw)
+            path = root / "update-check.json"
+            target = fake_target_python(root)
             first = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
                 environ={AUTO_UPGRADE_ENV: "1"},
@@ -458,6 +556,7 @@ class StartupUpgradeTests(unittest.TestCase):
                 run=runner,
                 execv=replacement,
                 stderr=stderr,
+                target_python=target,
             )
             second = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
@@ -468,6 +567,7 @@ class StartupUpgradeTests(unittest.TestCase):
                 run=runner,
                 execv=replacement,
                 stderr=stderr,
+                target_python=target,
             )
             stored = json.loads(
                 update_attempt_state_path(path).read_text(encoding="utf-8")
@@ -478,6 +578,7 @@ class StartupUpgradeTests(unittest.TestCase):
         )
         self.assertEqual(1, runner.call_count)
         command = runner.call_args.args[0]
+        self.assertEqual(str(target), command[0])
         self.assertIn("gravity-insight==99.0.0", command)
         self.assertIn("https://pypi.org/simple", command)
         self.assertNotIn("github.com", " ".join(command))
@@ -501,6 +602,7 @@ class StartupUpgradeTests(unittest.TestCase):
             second_scope = upgrade_state.runtime_scope_id(
                 str(root / "python-b"), root / "package-b"
             )
+            target = fake_target_python(root)
             first_path = root / f"update-check-{first_scope}.json"
             second_path = root / f"update-check-{second_scope}.json"
             first = maybe_auto_upgrade(
@@ -511,6 +613,7 @@ class StartupUpgradeTests(unittest.TestCase):
                 request=first_request,
                 run=runner,
                 stderr=io.StringIO(),
+                target_python=target,
             )
             first_attempt = update_attempt_state_path(first_path)
             second = maybe_auto_upgrade(
@@ -521,6 +624,7 @@ class StartupUpgradeTests(unittest.TestCase):
                 request=second_request,
                 run=runner,
                 stderr=io.StringIO(),
+                target_python=target,
             )
             second_attempt = update_attempt_state_path(second_path)
             attempt_files_exist = (first_attempt.exists(), second_attempt.exists())
@@ -536,15 +640,17 @@ class StartupUpgradeTests(unittest.TestCase):
         runner = Mock(side_effect=[completed(0), completed(0, stdout=verified("98.0.0"))])
         replacement = Mock(side_effect=AssertionError("unverified install must not restart"))
         with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
             result = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
                 environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=Path(raw) / "update-check.json",
+                state_path=root / "update-check.json",
                 now=NOW,
                 request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
                 run=runner,
                 execv=replacement,
                 stderr=stderr,
+                target_python=fake_target_python(root),
             )
         self.assertEqual("verification_failed", result.status)
         self.assertIn("installed version could not be verified", stderr.getvalue())
@@ -561,15 +667,17 @@ class StartupUpgradeTests(unittest.TestCase):
         )
         replacement = Mock(side_effect=AssertionError("shadowed code must not restart"))
         with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
             result = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
                 environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=Path(raw) / "update-check.json",
+                state_path=root / "update-check.json",
                 now=NOW,
                 request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
                 run=runner,
                 execv=replacement,
                 stderr=stderr,
+                target_python=fake_target_python(root),
             )
         self.assertEqual("verification_failed", result.status)
         self.assertIn("does not match the installed distribution files", result.detail or "")
@@ -581,15 +689,17 @@ class StartupUpgradeTests(unittest.TestCase):
         runner = Mock(side_effect=[completed(0), completed(0, stdout=verified("99.0.0"))])
         replacement = Mock(return_value=None)
         with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
             result = maybe_auto_upgrade(
                 ["agent-catalog", "categories"],
                 environ={AUTO_UPGRADE_ENV: "1"},
-                state_path=Path(raw) / "update-check.json",
+                state_path=root / "update-check.json",
                 now=NOW,
                 request=lambda _headers: FakeResponse(200, pypi("99.0.0")),
                 run=runner,
                 execv=replacement,
                 stderr=stderr,
+                target_python=fake_target_python(root),
             )
         self.assertEqual("restart_failed", result.status)
         self.assertIn("returned unexpectedly", result.detail or "")
@@ -602,8 +712,10 @@ class StartupUpgradeTests(unittest.TestCase):
             return completed(0, stdout=verified("99.0.0"))
 
         with tempfile.TemporaryDirectory() as raw:
+            target = fake_target_python(Path(raw))
             environment = {
                 AUTO_UPGRADE_ENV: "1",
+                TARGET_PYTHON_ENV: str(target),
                 "LOCALAPPDATA": raw,
                 "XDG_CACHE_HOME": raw,
             }
@@ -627,7 +739,10 @@ class StartupUpgradeTests(unittest.TestCase):
                 entry.ensure_first_run_credentials = original_guard
         self.assertEqual(UPGRADE_RESTART_EXIT_CODE, exit_code)
         self.assertEqual(2, subprocess_run.call_count)
-        replacement.assert_called_once()
+        replacement.assert_called_once_with(
+            str(target),
+            [str(target), "-m", "gravity_sdk", "agent-catalog", "categories"],
+        )
         command_guard.assert_not_called()
         self.assertIn("was upgraded to 99.0.0", stderr.getvalue())
         self.assertIn("This command was not run; rerun it once", stderr.getvalue())
@@ -641,8 +756,10 @@ class StartupUpgradeTests(unittest.TestCase):
 
         for label, runner in (("nonzero", nonzero), ("timeout", timeout)):
             with self.subTest(label=label), tempfile.TemporaryDirectory() as raw:
+                target = fake_target_python(Path(raw))
                 environment = {
                     AUTO_UPGRADE_ENV: "1",
+                    TARGET_PYTHON_ENV: str(target),
                     "LOCALAPPDATA": raw,
                     "XDG_CACHE_HOME": raw,
                 }
@@ -665,10 +782,10 @@ class StartupUpgradeTests(unittest.TestCase):
             self.assertEqual(UPGRADE_RESTART_EXIT_CODE, exit_code)
             self.assertEqual(1, subprocess_run.call_count)
             command_guard.assert_not_called()
-            self.assertIn("pip may have modified this environment", stderr.getvalue())
+            self.assertIn("pip may have modified the target environment", stderr.getvalue())
             self.assertIn("this command was not run", stderr.getvalue())
 
-    def test_offline_help_and_real_command_exit_zero_with_visible_warning(self) -> None:
+    def test_offline_help_and_real_command_fail_closed_before_command(self) -> None:
         commands = (["--help"], ["agent-catalog", "categories"])
         for command in commands:
             with self.subTest(command=command), tempfile.TemporaryDirectory() as raw:
@@ -683,9 +800,10 @@ class StartupUpgradeTests(unittest.TestCase):
                     side_effect=OSError("offline"),
                 ), redirect_stdout(stdout), redirect_stderr(stderr):
                     exit_code = entry.main(command)
-            self.assertEqual(0, exit_code, stderr.getvalue())
+            self.assertEqual(UPGRADE_RESTART_EXIT_CODE, exit_code, stderr.getvalue())
             self.assertIn("update check failed", stderr.getvalue())
-            self.assertTrue(stdout.getvalue().strip())
+            self.assertIn("This command was not run", stderr.getvalue())
+            self.assertEqual("", stdout.getvalue())
 
     def test_doctor_neither_checks_nor_touches_state_and_remains_offline(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -741,6 +859,185 @@ class StartupUpgradeTests(unittest.TestCase):
             'os.environ["GRAVITY_SDK_AUTO_UPGRADE"] = "0"',
             (root / "scripts" / "agent_usability_eval.py").read_text(encoding="utf-8"),
         )
+
+
+class AutoUpgradeEndToEndTests(unittest.TestCase):
+    def test_e2e_new_version_installs_only_into_explicit_temporary_venv(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = create_target_venv(root)
+            simulated_scripts = root / "same-environment" / "Scripts"
+            simulated_scripts.mkdir(parents=True)
+            simulated_current = simulated_scripts / "python.exe"
+            simulated_alias = simulated_scripts / "pythonw.exe"
+            simulated_current.touch()
+            simulated_alias.touch()
+            alias_target, alias_failure = upgrade_state.resolve_target_python(
+                simulated_alias, str(simulated_current)
+            )
+            simple = build_simple_index(root, ("99.0.0",))
+            state_path = root / "update-check.json"
+            request = Mock(return_value=FakeResponse(200, pypi("99.0.0")))
+            replacement = Mock(side_effect=OSError("test blocks process replacement"))
+            stderr = io.StringIO()
+            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
+                unconfigured = maybe_auto_upgrade(
+                    ["agent-catalog", "categories"],
+                    environ={AUTO_UPGRADE_ENV: "1"},
+                    state_path=state_path,
+                    now=NOW,
+                    request=request,
+                    stderr=stderr,
+                )
+                self_target = maybe_auto_upgrade(
+                    ["agent-catalog", "categories"],
+                    environ={AUTO_UPGRADE_ENV: "1"},
+                    state_path=state_path,
+                    now=NOW + timedelta(seconds=1),
+                    request=Mock(side_effect=AssertionError("check must be cached")),
+                    stderr=stderr,
+                    target_python=sys.executable,
+                )
+                installed = maybe_auto_upgrade(
+                    ["agent-catalog", "categories"],
+                    environ={AUTO_UPGRADE_ENV: "1"},
+                    state_path=state_path,
+                    now=NOW + timedelta(seconds=2),
+                    request=Mock(side_effect=AssertionError("check must be cached")),
+                    execv=replacement,
+                    stderr=stderr,
+                    target_python=target,
+                )
+            target_version = target_distribution_version(target)
+            attempt = json.loads(
+                update_attempt_state_path(state_path).read_text(encoding="utf-8")
+            )
+        self.assertEqual(
+            ("target_unconfigured", "target_rejected", "restart_failed"),
+            (unconfigured.status, self_target.status, installed.status),
+        )
+        self.assertEqual("99.0.0", target_version)
+        self.assertIsNone(alias_target)
+        self.assertIn("running environment", alias_failure or "")
+        self.assertEqual(("99.0.0", "verified"), (attempt["attempted_version"], attempt["status"]))
+        self.assertEqual(__version__, upgrade.__version__)
+        request.assert_called_once()
+        replacement.assert_called_once_with(
+            str(target),
+            [str(target), "-m", "gravity_sdk", "agent-catalog", "categories"],
+        )
+        self.assertIn("upgraded from", stderr.getvalue())
+
+    def test_e2e_current_version_from_local_index_performs_no_install(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = create_target_venv(root)
+            simple = build_simple_index(root, (__version__,))
+            state_path = root / "update-check.json"
+            replacement = Mock(side_effect=AssertionError("current version must not restart"))
+            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
+                result = maybe_auto_upgrade(
+                    ["agent-catalog", "categories"],
+                    environ={AUTO_UPGRADE_ENV: "1"},
+                    state_path=state_path,
+                    now=NOW,
+                    request=lambda _headers: FakeResponse(200, pypi(__version__)),
+                    execv=replacement,
+                    stderr=io.StringIO(),
+                    target_python=target,
+                )
+            target_version = target_distribution_version(target)
+            attempt_exists = update_attempt_state_path(state_path).exists()
+        self.assertEqual(("checked", __version__), (result.status, result.latest_version))
+        self.assertIsNone(target_version)
+        self.assertFalse(attempt_exists)
+        replacement.assert_not_called()
+
+    def test_e2e_unreachable_local_release_source_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = create_target_venv(root)
+            simple = build_simple_index(root, ())
+            state_path = root / "update-check.json"
+            stderr = io.StringIO()
+
+            def unavailable(_headers):
+                return (root / "missing-release.json").read_bytes()
+
+            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
+                result = maybe_auto_upgrade(
+                    ["agent-catalog", "categories"],
+                    environ={AUTO_UPGRADE_ENV: "1"},
+                    state_path=state_path,
+                    now=NOW,
+                    request=unavailable,
+                    stderr=stderr,
+                    target_python=target,
+                )
+            target_version = target_distribution_version(target)
+        self.assertEqual("failed", result.status)
+        self.assertIn(result.status, TERMINAL_UPGRADE_STATUSES)
+        self.assertIsNone(target_version)
+        self.assertFalse(state_path.exists())
+        self.assertIn("This command was not run", stderr.getvalue())
+
+    def test_e2e_lower_version_from_local_index_is_explicitly_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = create_target_venv(root)
+            simple = build_simple_index(root, ("0.3.1",))
+            state_path = root / "update-check.json"
+            stderr = io.StringIO()
+            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
+                result = maybe_auto_upgrade(
+                    ["agent-catalog", "categories"],
+                    environ={AUTO_UPGRADE_ENV: "1"},
+                    state_path=state_path,
+                    now=NOW,
+                    request=lambda _headers: FakeResponse(200, pypi("0.3.1")),
+                    stderr=stderr,
+                    target_python=target,
+                )
+            target_version = target_distribution_version(target)
+            attempt_exists = update_attempt_state_path(state_path).exists()
+        self.assertEqual(("downgrade_rejected", "0.3.1"), (result.status, result.latest_version))
+        self.assertIn(result.status, TERMINAL_UPGRADE_STATUSES)
+        self.assertIsNone(target_version)
+        self.assertFalse(attempt_exists)
+        self.assertIn("rejected downgrade", stderr.getvalue())
+
+    def test_e2e_corrupt_wheel_failure_is_durable_and_never_reports_success(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            target = create_target_venv(root)
+            simple = build_simple_index(
+                root, ("98.0.0",), corrupt=frozenset({"98.0.0"})
+            )
+            state_path = root / "update-check.json"
+            stderr = io.StringIO()
+            replacement = Mock(side_effect=AssertionError("failed install must not restart"))
+            with patch.object(upgrade, "_PYPI_INDEX_URL", simple.as_uri()):
+                result = maybe_auto_upgrade(
+                    ["agent-catalog", "categories"],
+                    environ={AUTO_UPGRADE_ENV: "1"},
+                    state_path=state_path,
+                    now=NOW,
+                    request=lambda _headers: FakeResponse(200, pypi("98.0.0")),
+                    execv=replacement,
+                    stderr=stderr,
+                    target_python=target,
+                )
+            target_version = target_distribution_version(target)
+            attempt = json.loads(
+                update_attempt_state_path(state_path).read_text(encoding="utf-8")
+            )
+        self.assertEqual("upgrade_failed", result.status)
+        self.assertIn(result.status, TERMINAL_UPGRADE_STATUSES)
+        self.assertIsNone(target_version)
+        self.assertEqual(("98.0.0", "failed"), (attempt["attempted_version"], attempt["status"]))
+        self.assertNotIn("Gravity SDK upgraded from", stderr.getvalue())
+        self.assertIn("this command was not run", stderr.getvalue())
+        replacement.assert_not_called()
 
 
 if __name__ == "__main__":

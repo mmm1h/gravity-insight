@@ -16,21 +16,10 @@ import requests
 
 from . import __version__
 from ._auto_upgrade_state import (
-    UpdateStateBusy,
-    UpdateStateError,
-    build_update_state,
-    hold_update_lease,
-    is_newer,
-    mark_upgrade_attempt,
-    optional_text,
-    recent_incomplete_upgrade,
-    read_update_state,
-    record_upgrade_attempt,
-    runtime_scope_id,
-    success_is_recent,
-    utc,
-    valid_etag,
-    version_tuple,
+    UpdateStateBusy, UpdateStateError, build_update_state, hold_update_lease,
+    is_newer, mark_upgrade_attempt, optional_text, recent_incomplete_upgrade,
+    read_update_state, record_upgrade_attempt, resolve_target_python,
+    runtime_scope_id, success_is_recent, utc, valid_etag, version_tuple,
     write_update_state,
 )
 from .receipt import DISTRIBUTION_HTTP_KIND, perform_http_request
@@ -39,17 +28,15 @@ from .runtime_scope import gravity_insight_cache_root
 
 AUTO_UPGRADE_ENV = "GRAVITY_SDK_AUTO_UPGRADE"
 PINNED_VERSION_ENV = "GRAVITY_SDK_PINNED_VERSION"
+TARGET_PYTHON_ENV = "GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON"
 UPDATE_CHECK_INTERVAL = timedelta(hours=24)
 UPDATE_STATE_FILENAME = "update-check.json"
 UPGRADE_RESTART_EXIT_CODE = 75
 TERMINAL_UPGRADE_STATUSES = frozenset(
     {
-        "attempt_busy",
-        "attempt_suppressed",
-        "upgrade_failed",
-        "upgrade_incomplete",
-        "verification_failed",
-        "restart_failed",
+        "attempt_busy", "attempt_suppressed", "downgrade_rejected", "failed",
+        "upgrade_failed", "upgrade_incomplete", "verification_failed",
+        "restart_failed", "target_rejected", "target_unconfigured",
     }
 )
 
@@ -97,12 +84,7 @@ def startup_update_enabled(
         return False
     if env.get(_REEXEC_ENV) == "1":
         return False
-    return str(env.get(AUTO_UPGRADE_ENV, "1")).strip().casefold() not in {
-        "0",
-        "false",
-        "no",
-        "off",
-    }
+    return str(env.get(AUTO_UPGRADE_ENV, "")).strip().casefold() in {"1", "true", "yes", "on"}
 
 
 def maybe_auto_upgrade(
@@ -115,8 +97,9 @@ def maybe_auto_upgrade(
     run: Callable[..., subprocess.CompletedProcess[str]] | None = None,
     execv: Callable[[str, list[str]], Any] | None = None,
     stderr: TextIO | None = None,
+    target_python: str | os.PathLike[str] | None = None,
 ) -> UpdateCheck:
-    """Check, upgrade with pip, and replace this process before command work."""
+    """Check and upgrade an explicit external interpreter before command work."""
 
     env = os.environ if environ is None else environ
     if not startup_update_enabled(argv, environ=env):
@@ -132,12 +115,44 @@ def maybe_auto_upgrade(
     if checked.status == "failed":
         _warn_check_failure(checked, output)
         return checked
+    return _apply_checked_upgrade(
+        checked,
+        argv=argv,
+        state_path=path,
+        now=selected_now,
+        run=run,
+        execv=execv,
+        output=output,
+        target_python=target_python,
+    )
+
+
+def _apply_checked_upgrade(
+    checked: UpdateCheck,
+    *,
+    argv: Sequence[str],
+    state_path: Path,
+    now: datetime,
+    run: Callable[..., subprocess.CompletedProcess[str]] | None,
+    execv: Callable[[str, list[str]], Any] | None,
+    output: TextIO,
+    target_python: str | os.PathLike[str] | None,
+) -> UpdateCheck:
     version = checked.latest_version
+    if _downgrade_is_offered(checked):
+        assert version is not None
+        detail = f"release source offered {version} below running version {__version__}"
+        return _reject("downgrade_rejected", version, detail, f"Gravity SDK rejected downgrade from {__version__} to {version}.", output)
     if not _upgrade_is_due(checked):
         return checked
     assert version is not None
 
-    attempted = _safe_record_attempt(path, version, selected_now)
+    target, target_failure = resolve_target_python(target_python, sys.executable)
+    if target is None:
+        status = "target_rejected" if target_python is not None else "target_unconfigured"
+        return _reject(status, version, target_failure, f"Gravity SDK cannot upgrade to {version} ({target_failure}).", output)
+
+    attempted = _safe_record_attempt(state_path, version, now)
     if attempted.status == "failed":
         _warn_check_failure(attempted, output)
         return attempted
@@ -146,20 +161,21 @@ def maybe_auto_upgrade(
             _warn_incomplete_attempt(attempted, output)
         return attempted
 
-    failure = _pip_upgrade(version, run)
+    failure = _pip_upgrade(version, target, run)
     if failure is not None:
-        _safe_mark_attempt(path, version, selected_now, "failed")
+        mark_failure = _safe_mark_attempt(state_path, version, now, "failed")
+        detail = failure if mark_failure is None else f"{failure}; {mark_failure}"
         print(
-            f"error: Gravity SDK auto-upgrade to {version} failed ({failure}). "
-            "pip may have modified this environment, so this command was not run. "
+            f"error: Gravity SDK auto-upgrade to {version} failed ({detail}). "
+            "pip may have modified the target environment, so this command was not run. "
             "Repair or retry the installation before running it again.",
             file=output,
         )
-        return UpdateCheck("upgrade_failed", latest_version=version, detail=failure)
+        return UpdateCheck("upgrade_failed", latest_version=version, detail=detail)
 
-    verification_failure = _verify_installed_version(version, run)
+    verification_failure = _verify_installed_version(version, target, run)
     if verification_failure is not None:
-        _safe_mark_attempt(path, version, selected_now, "failed")
+        _safe_mark_attempt(state_path, version, now, "failed")
         print(
             f"error: pip reported a successful Gravity SDK upgrade to {version}, but "
             f"the installed version could not be verified ({verification_failure}). "
@@ -171,7 +187,7 @@ def maybe_auto_upgrade(
             latest_version=version,
             detail=verification_failure,
         )
-    attempt_mark_failure = _safe_mark_attempt(path, version, selected_now, "verified")
+    attempt_mark_failure = _safe_mark_attempt(state_path, version, now, "verified")
     if attempt_mark_failure is not None:
         print(
             f"error: Gravity SDK was verified at {version}, but its upgrade state "
@@ -184,7 +200,16 @@ def maybe_auto_upgrade(
             latest_version=version,
             detail=attempt_mark_failure,
         )
-    return _restart(argv, version, execv=execv, output=output)
+    return _restart(
+        argv, version, target_python=target, execv=execv, output=output
+    )
+
+
+def _reject(
+    status: str, version: str, detail: str | None, message: str, output: TextIO
+) -> UpdateCheck:
+    print(f"error: {message} This command was not run.", file=output)
+    return UpdateCheck(status, latest_version=version, detail=detail)
 
 
 def _safe_check(
@@ -237,8 +262,8 @@ def _safe_mark_attempt(
 
 def _warn_check_failure(checked: UpdateCheck, output: TextIO) -> None:
     print(
-        "warning: Gravity SDK update check failed; continuing with "
-        f"version {__version__} ({checked.detail}).",
+        f"error: Gravity SDK update check failed ({checked.detail}). "
+        "This command was not run.",
         file=output,
     )
 
@@ -254,21 +279,13 @@ def _warn_incomplete_attempt(checked: UpdateCheck, output: TextIO) -> None:
 
 def _pip_upgrade(
     version: str,
+    target_python: Path,
     run: Callable[..., subprocess.CompletedProcess[str]] | None,
 ) -> str | None:
     command = [
-        sys.executable,
-        "-m",
-        "pip",
-        "install",
-        "--isolated",
-        "--disable-pip-version-check",
-        "--no-input",
-        "--no-cache-dir",
-        "--upgrade",
-        "--only-binary=:all:",
-        "--index-url",
-        _PYPI_INDEX_URL,
+        str(target_python), "-m", "pip", "install", "--isolated",
+        "--disable-pip-version-check", "--no-input", "--no-cache-dir", "--no-compile", "--upgrade",
+        "--only-binary=:all:", "--index-url", _PYPI_INDEX_URL,
         f"{_DISTRIBUTION_NAME}=={version}",
     ]
     installed = _run_subprocess(command, run, timeout=300)
@@ -283,6 +300,7 @@ def _pip_upgrade(
 
 def _verify_installed_version(
     expected: str,
+    target_python: Path,
     run: Callable[..., subprocess.CompletedProcess[str]] | None,
 ) -> str | None:
     probe = f"""
@@ -318,7 +336,7 @@ print(json.dumps({{"distribution_version": selected.version,
     "code_verified": owned_import and hashes_match,
     "package_file_count": len(package_files)}}, sort_keys=True))
 """.strip()
-    checked = _run_subprocess([sys.executable, "-c", probe], run, timeout=30)
+    checked = _run_subprocess([str(target_python), "-c", probe], run, timeout=30)
     if checked is None or checked.returncode != 0:
         return (
             "the fresh interpreter could not be started"
@@ -364,6 +382,7 @@ def _restart(
     argv: Sequence[str],
     version: str,
     *,
+    target_python: Path,
     execv: Callable[[str, list[str]], Any] | None,
     output: TextIO,
 ) -> UpdateCheck:
@@ -371,12 +390,13 @@ def _restart(
         f"Gravity SDK upgraded from {__version__} to {version}; restarting this command.",
         file=output,
     )
-    replacement = [sys.executable, "-m", "gravity_sdk", *argv]
+    executable = str(target_python)
+    replacement = [executable, "-m", "gravity_sdk", *argv]
     replace = os.execv if execv is None else execv
     previous = os.environ.get(_REEXEC_ENV)
     os.environ[_REEXEC_ENV] = "1"
     try:
-        replace(sys.executable, replacement)
+        replace(executable, replacement)
     except OSError as exc:
         detail = f"process replacement failed: {exc}"
     else:
@@ -448,10 +468,7 @@ def _check_under_lease(
 
 
 def _distribution_headers(state: Mapping[str, Any]) -> dict[str, str]:
-    headers = {
-        "Accept": "application/json",
-        "User-Agent": f"gravity-sdk/{__version__}",
-    }
+    headers = {"Accept": "application/json", "User-Agent": f"gravity-sdk/{__version__}"}
     etag = state.get("etag")
     if isinstance(etag, str) and etag:
         headers["If-None-Match"] = etag
@@ -545,22 +562,13 @@ def _latest_pypi_version(value: bytes) -> str:
 
 
 def _upgrade_is_due(checked: UpdateCheck) -> bool:
-    return checked.status in {"cached", "checked", "not_modified"} and bool(
-        checked.latest_version and is_newer(checked.latest_version, __version__)
-    )
+    eligible = checked.status in {"cached", "checked", "not_modified"}
+    return eligible and bool(checked.latest_version and is_newer(checked.latest_version, __version__))
 
 
-__all__ = [
-    "AUTO_UPGRADE_ENV",
-    "DISTRIBUTION_HTTP_KIND",
-    "PINNED_VERSION_ENV",
-    "TERMINAL_UPGRADE_STATUSES",
-    "UPDATE_CHECK_INTERVAL",
-    "UPGRADE_RESTART_EXIT_CODE",
-    "UpdateCheck",
-    "check_latest_version",
-    "maybe_auto_upgrade",
-    "startup_update_enabled",
-    "update_attempt_state_path",
-    "update_state_path",
-]
+def _downgrade_is_offered(checked: UpdateCheck) -> bool:
+    eligible = checked.status in {"cached", "checked", "not_modified"}
+    return eligible and bool(checked.latest_version and is_newer(__version__, checked.latest_version))
+
+
+__all__ = ["AUTO_UPGRADE_ENV", "DISTRIBUTION_HTTP_KIND", "PINNED_VERSION_ENV", "TARGET_PYTHON_ENV", "TERMINAL_UPGRADE_STATUSES", "UPDATE_CHECK_INTERVAL", "UPGRADE_RESTART_EXIT_CODE", "UpdateCheck", "check_latest_version", "maybe_auto_upgrade", "startup_update_enabled", "update_attempt_state_path", "update_state_path"]
