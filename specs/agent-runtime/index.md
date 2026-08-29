@@ -59,7 +59,7 @@ R17 方括号是交付验收记录，不是新增 Requirement 或 milestone；R1
 | [R09A](R09A-core-skill-runtime.md) | Core Skill Runtime and Project Overlay | R02, R03, R05-R07 | `fixed_dev` | Leaf |
 | [R09B](R09B-team-hub-binding.md) | Team Hub Skill binding | R04, R09A | `fixed_dev` | Leaf |
 | [R09C](R09C-external-context-binding.md) | External Context binding | R08, R09A | `fixed_dev` | Leaf |
-| [R10](R10-mcp-thin-surface.md) | MCP thin Resources/Tools surface | R09A + explicit bounded-pilot trigger | `in_progress` | Conditional leaf; local stdio only |
+| [R10](R10-mcp-thin-surface.md) | MCP thin Resources/Tools surface | R09A + explicit bounded-pilot trigger | `fixed_dev` | Conditional leaf; local stdio only |
 | [R11](R11-pap-pilot.md) | Prepared Analysis Plan pilot | R02 | `fixed_dev` | Leaf |
 | [R12](R12-action-experiment-receipt.md) | Action, Receipt, Experiment and Outcome | R09A | `fixed_dev` (A/B/C) | Staged epic A→B→C |
 | [R13A](R13A-artifact-transfer.md) | Governed binary Artifact Transfer | R02 | `fixed_dev` | Leaf |
@@ -100,13 +100,21 @@ Requirement branches implement domain cores and focused tests first. A named int
 
 R10 的第二条 trigger 分支由 2026-08-28 owner task directive 满足：只批准
 可移除的本地 stdio pilot，并绑定未达 Host 准确率或缺少第二采用方即退回
-schema-only 的退出条件。当前状态是 `in_progress`，不是 `fixed_dev`；基线为
+schema-only 的退出条件。当前状态是 `fixed_dev`；基线为
 `824f92524f5703d7cb7ba0b2d6a671befb51a45f`，分支/Worktree 为
 `codex/r10-mcp-stdio-pilot` / `D:/git-pjt/gravity-sdk-r10mcp`。GitHub 搜索未找到
 对应 R10/MCP Issue，机器索引如实记录 `github_issue=null`，不伪造 Issue。
 `specified → reviewed → ready` 的记录者为
 `agent_under_standing_owner_delegation`，`owner_review: pending`；合入 `dev` 与
-整项 Host/采用验收前不得提升到 `fixed_dev`。
+开发 20 题验收前不得提升到 `fixed_dev`。2026-08-29 状态裁决把开发集绑定
+`fixed_dev`，把盲测 holdout 与第二独立采用方保留并绑定 `released`/永久产品面；
+二者均未取消。通用显式 enum/格式绑定规则修复后，阶段 A（只改 evaluator）
+与阶段 B（再澄清 Skill/Journey、Product/Operation/Composite 描述）均为首选
+`18/20`、合法答案 `18/20`、MCP RPC `120`、内部/生产 HTTP `0`；两项冻结争议
+答案仍判错。没有声明或接入真实 Host 版本，不得冒充 Claude Desktop/Cursor
+证据。开发门槛已过，因此状态为 `fixed_dev`；盲测、真实 Host 和第二采用方仍
+绑定 `released`。裁决记录者为 `agent_under_standing_owner_delegation`，
+`owner_review: pending`。
 
 R17 已按外部计划 owner 裁决达到 `fixed_dev`：Phase 1
 `4926362f42f9ea68a11e42559a802cb7ba67f6ee`、Phase 2
@@ -143,7 +151,7 @@ manifest、公开 owner、现有 eager SCC、concept/errata/wheel 和 consumer g
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=13fcef60de7d77343394730577ac948f689742690a5661426c43ded263daacf4`；
+`live_checkpoint_sha256=2f14b30899fe9239f84525fd7f88ba7302045aba1ff8556179bd674a98ebcf7c`；
 `live_checkpoint_tracked_sites=309`。
 
 The user approved the R01 binding and designated the Requirement document as

@@ -32,7 +32,7 @@
     {
       "id": "R10",
       "path": "R10-mcp-thin-surface.md",
-      "status": "in_progress",
+      "status": "fixed_dev",
       "dependencies": ["R09A"],
       "parallel_group": "optional-surface",
       "shared_spine": false,
@@ -57,7 +57,7 @@
       "lifecycle_transition": {
         "specified_to_reviewed_to_ready": "agent_under_standing_owner_delegation",
         "owner_review": "pending",
-        "current": "in_progress",
+        "current": "fixed_dev",
         "dev_integration": "pending"
       },
       "pilot_exit": {
@@ -67,6 +67,44 @@
         "second_adopter_required": true,
         "judge": "plan_owner",
         "failure_action": "block_and_remove_server_retain_schema_only"
+      },
+      "status_adjudication_2026_08_29": {
+        "recorded_by": "agent_under_standing_owner_delegation",
+        "owner_review": "pending",
+        "fixed_dev_gate": {
+          "requirement": "frozen_development_20_question_set",
+          "basis": ["R10:122-126", "architecture-source:267-268"]
+        },
+        "released_permanent_surface_gate": {
+          "requirements": [
+            "blind_20_question_holdout",
+            "second_independent_host_or_consumer_adoption"
+          ],
+          "basis": ["R10:126-135", "architecture-source:269"]
+        },
+        "requirements_cancelled": [],
+        "development_evidence": {
+          "questions": "tests/fixtures/mcp_host_development_questions.json",
+          "evidence": "tests/fixtures/mcp_host_development_evidence.json",
+          "suite_sha256": "6cfdaeb0b9df0db16dae991794f1eaf9f5446884ca267d547dff198d8adf3a08",
+          "evaluator": "gravity.schema-aware-lexical-selector.v2",
+          "real_host": false,
+          "declared_real_host_versions": [],
+          "stage_a_first_choice": "18/20",
+          "stage_a_legal_answers": "18/20",
+          "first_choice": "18/20",
+          "legal_answers": "18/20",
+          "mcp_rpcs": 120,
+          "internal_http_requests": 0,
+          "production_http_requests": 0
+        },
+        "instrument_fairness": "explicit_supported_format_or_enum_term_binds_matching_schema_variant_within_each_tool_without_case_rules_or_weight_changes",
+        "stage_b_surface_scope": "description_only_skill_vs_journey_and_product_vs_operation_or_composite_boundaries",
+        "remaining_frozen_misses": [
+          "tool_inspect_expected_over_server_metadata_resource",
+          "materialized_saved_analysis_uri_expected_over_uri_template"
+        ],
+        "status_decision": "fixed_dev_development_thresholds_met_release_gates_unchanged"
       }
     },
     {"id":"R11","path":"R11-pap-pilot.md","status":"fixed_dev","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
@@ -161,7 +199,7 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "13fcef60de7d77343394730577ac948f689742690a5661426c43ded263daacf4",
+          "live_checkpoint_sha256": "2f14b30899fe9239f84525fd7f88ba7302045aba1ff8556179bd674a98ebcf7c",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
           "live_checkpoint_tracked_sites": 309,
           "live_checkpoint_unclassified_sites": 0,

@@ -17,11 +17,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "6d26bc9605693e1e002cd4431bedd1af0b035e8291865e81c77bc002f654a390",
-    "manual_review_sha256": "3ff76adfb8bfbd3ca3fff5f48dde73653ea6825d62d5470ea250040954121be7",
+    "reference_evidence_sha256": "11f94943aaefdd40fbeb87d3c256fa0649dde07a8d41e65ee77dbb24ce592d57",
+    "manual_review_sha256": "1583b0b02afeb6cc7d89b08ec539525dcc9e9797388c92f530aabbc7b3e9fed3",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3166,
-    "scanned_file_count": 3158,
+    "version_controlled_file_count": 3171,
+    "scanned_file_count": 3163,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -679,7 +679,7 @@
     "dispositions": {
       "no_migration_effect": 309
     },
-    "sites_sha256": "54e501f0d379280f3e3f88c38228821efd214c0a00060ed43be70966651d6824"
+    "sites_sha256": "cab9cf78fd8f788547ba35d43841d8d8c5809c0027e6e60e020cffee1ad5130a"
   },
   "blockers": [],
   "site_fields": [
@@ -2062,7 +2062,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:105:12:bare text module string",
+      "specs/agent-runtime/index.json:143:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",
@@ -2077,7 +2077,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.json:108:12:bare text module string",
+      "specs/agent-runtime/index.json:146:12:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2092,7 +2092,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:122:29:bare text module string",
+      "specs/agent-runtime/index.md:130:29:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2107,7 +2107,7 @@
       }
     ],
     [
-      "specs/agent-runtime/index.md:122:2:bare text module string",
+      "specs/agent-runtime/index.md:130:2:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_pagination",

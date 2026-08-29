@@ -1,0 +1,162 @@
+{
+  "schema_version": "gravity.mcp-host-development-questions.v1",
+  "suite_id": "r10-mcp-host-development-2026-08-29",
+  "frozen_at": "2026-08-29",
+  "authorship": {
+    "basis": "R10 public Tool and Resource responsibilities",
+    "implementation_used_for_question_tuning": false,
+    "blind": false,
+    "language": "en"
+  },
+  "host_matrix": {
+    "declared_real_host_versions": [],
+    "offline_surrogate": "gravity.schema-aware-lexical-selector.v1",
+    "limitation": "This suite does not represent Claude Desktop, Cursor, or another real MCP Host run."
+  },
+  "thresholds": {
+    "first_choice_minimum": 18,
+    "legal_answer_minimum": 12
+  },
+  "cases": [
+    {
+      "case_id": "tool-inspect-server",
+      "question": "Inspect the MCP server version, supported protocol, and rollback metadata.",
+      "expected_first_choice": "tool:gravity.inspect:server",
+      "request": {"method": "tools/call", "name": "gravity.inspect", "arguments": {"kind": "server"}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
+    },
+    {
+      "case_id": "tool-inspect-skills",
+      "question": "Inspect the installed Skill metadata before choosing a workflow.",
+      "expected_first_choice": "tool:gravity.inspect:skill",
+      "request": {"method": "tools/call", "name": "gravity.inspect", "arguments": {"kind": "skill"}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
+    },
+    {
+      "case_id": "tool-can-run-event-trend",
+      "question": "Can the exact analysis.event-trend Journey run with the current locked inputs?",
+      "expected_first_choice": "tool:gravity.journey_can_run:default",
+      "request": {"method": "tools/call", "name": "gravity.journey_can_run", "arguments": {"journey_id": "analysis.event-trend", "inputs": {}}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
+    },
+    {
+      "case_id": "tool-can-run-example",
+      "question": "Check readiness for the registered analysis.example Journey without executing it.",
+      "expected_first_choice": "tool:gravity.journey_can_run:default",
+      "request": {"method": "tools/call", "name": "gravity.journey_can_run", "arguments": {"journey_id": "analysis.example", "inputs": {"app": "demo"}}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
+    },
+    {
+      "case_id": "tool-capability-product",
+      "question": "Describe current same-layer Trust for the product selector analysis.query.spec:event.",
+      "expected_first_choice": "tool:gravity.capability_describe:product",
+      "request": {"method": "tools/call", "name": "gravity.capability_describe", "arguments": {"identity_kind": "product", "selector": "analysis.query.spec:event"}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
+    },
+    {
+      "case_id": "tool-capability-composite",
+      "question": "Read the Trust result for the composite selector composite:business_pulse.",
+      "expected_first_choice": "tool:gravity.capability_describe:composite",
+      "request": {"method": "tools/call", "name": "gravity.capability_describe", "arguments": {"identity_kind": "composite", "selector": "composite:business_pulse"}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
+    },
+    {
+      "case_id": "tool-execute-locked-journey",
+      "question": "Execute the exact registered analysis.example Journey through its governed Runtime owner.",
+      "expected_first_choice": "tool:gravity.execute:default",
+      "request": {"method": "tools/call", "name": "gravity.execute", "arguments": {"journey_id": "analysis.example", "inputs": {"app": "demo"}}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
+    },
+    {
+      "case_id": "tool-export-json",
+      "question": "Export this governed Analysis Result as JSON to a confirmed local destination.",
+      "expected_first_choice": "tool:gravity.export:json",
+      "request": {"method": "tools/call", "name": "gravity.export", "arguments": {"analysis_result": {"$fixture": "synthetic_success"}, "format": "json", "destination": {"$fixture": "temporary_output"}, "confirm": true}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "written"}
+    },
+    {
+      "case_id": "tool-export-markdown-unconfirmed",
+      "question": "Prepare a local Markdown export, but do not write anything before explicit confirmation.",
+      "expected_first_choice": "tool:gravity.export:markdown",
+      "request": {"method": "tools/call", "name": "gravity.export", "arguments": {"analysis_result": {"$fixture": "synthetic_success"}, "format": "markdown", "destination": {"$fixture": "temporary_output"}}},
+      "legal_answer": {"kind": "tool_error", "code": "MCP_INPUT_INVALID", "local_write": false}
+    },
+    {
+      "case_id": "tool-context-pack",
+      "question": "Assemble a bounded project repository Context Pack for the current analysis window.",
+      "expected_first_choice": "tool:gravity.context_pack:default",
+      "request": {"method": "tools/call", "name": "gravity.context_pack", "arguments": {"$fixture": "repo_context_pack"}},
+      "legal_answer": {"kind": "tool_result", "is_error": false, "status": "available"}
+    },
+    {
+      "case_id": "resource-server-metadata",
+      "question": "Open the read-only MCP server metadata Resource.",
+      "expected_first_choice": "resource:gravity://server/metadata",
+      "request": {"method": "resources/read", "uri": "gravity://server/metadata"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-capability-catalog",
+      "question": "Read the governed Capability catalog Resource.",
+      "expected_first_choice": "resource:gravity://catalog/capabilities",
+      "request": {"method": "resources/read", "uri": "gravity://catalog/capabilities"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-journey-catalog",
+      "question": "Read the catalog of registered Journeys as a Resource.",
+      "expected_first_choice": "resource:gravity://catalog/journeys",
+      "request": {"method": "resources/read", "uri": "gravity://catalog/journeys"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-skill-catalog",
+      "question": "Read the catalog Resource for installed Built-in Skills.",
+      "expected_first_choice": "resource:gravity://catalog/skills",
+      "request": {"method": "resources/read", "uri": "gravity://catalog/skills"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-workspace-apps",
+      "question": "Which configured workspace App aliases are available in the Resource catalog?",
+      "expected_first_choice": "resource:gravity://workspace/apps",
+      "request": {"method": "resources/read", "uri": "gravity://workspace/apps"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-sql-products",
+      "question": "Open the registered SQL product catalog Resource.",
+      "expected_first_choice": "resource:gravity://catalog/sql-products",
+      "request": {"method": "resources/read", "uri": "gravity://catalog/sql-products"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-receipts",
+      "question": "Read my principal-scoped Runtime receipt page as a Resource.",
+      "expected_first_choice": "resource:gravity://receipts",
+      "request": {"method": "resources/read", "uri": "gravity://receipts"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-saved-analyses",
+      "question": "List saved analyses for the authorized demo App from its Resource directory.",
+      "expected_first_choice": "resource:gravity://apps/demo/saved-analyses",
+      "request": {"method": "resources/read", "uri": "gravity://apps/demo/saved-analyses"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-table-lineage",
+      "question": "Search the offline table-lineage Resource for publish.",
+      "expected_first_choice": "resource:gravity://metadata/table-lineage/{query}",
+      "request": {"method": "resources/read", "uri": "gravity://metadata/table-lineage/publish"},
+      "legal_answer": {"kind": "resource_content"}
+    },
+    {
+      "case_id": "resource-analysis-vocabulary",
+      "question": "Search the workspace analysis-vocabulary Resource for event.",
+      "expected_first_choice": "resource:gravity://workspace/analysis-vocabulary/{query}",
+      "request": {"method": "resources/read", "uri": "gravity://workspace/analysis-vocabulary/event"},
+      "legal_answer": {"kind": "resource_content"}
+    }
+  ]
+}
