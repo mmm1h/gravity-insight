@@ -1,16 +1,8 @@
 {
   "baseline_version": 3,
   "debt": {
-    "cyclomatic_complexity": {
-      "src/gravity_sdk/quality.py::compare_baselines": 25,
-      "src/gravity_sdk/quality.py::debt_snapshot": 24,
-      "src/gravity_sdk/quality.py::evaluate_ratchet": 22,
-      "src/gravity_sdk/quality.py::main": 17
-    },
-    "function_sloc": {
-      "src/gravity_sdk/quality.py::evaluate_ratchet": 93,
-      "src/gravity_sdk/quality.py::render_markdown": 81
-    },
+    "cyclomatic_complexity": {},
+    "function_sloc": {},
     "operation_literals": {}
   },
   "growth_ledger": [
@@ -167,10 +159,10 @@
       "sloc_hard_limit": 613
     },
     "src/gravity_sdk/quality.py": {
-      "ast_hard_limit": 8462,
-      "ast_nodes": 8462,
+      "ast_hard_limit": 8459,
+      "ast_nodes": 8459,
       "migration_sloc": 1022,
-      "sloc_hard_limit": 1022
+      "sloc_hard_limit": 1008
     },
     "src/gravity_sdk/registry.py": {
       "ast_hard_limit": 4833,
