@@ -8,8 +8,8 @@
   "lifecycle": "reviewed",
   "readiness": "blocked",
   "validation": "validated",
-  "summary": "Assess whether a revenue forecast has a governed and validated model dependency.",
-  "description": "Use the current business-pulse observation only as bounded input evidence and stop unless an exact approved forecast model, lineage, evaluation, expiry, and safe horizon are available.",
+  "summary": "评估收入预测是否具备受治理且经过验证的模型依赖。",
+  "description": "仅将当前 business-pulse 观测结果作为有界输入证据；除非具备确切获批的预测模型、血缘、评估、有效期和安全预测周期，否则停止。",
   "runtime_requires": ">=0.3,<0.4",
   "covers_journeys": ["analysis.thinkingai.revenue-forecast-readiness"],
   "capability_dependencies": [
@@ -53,14 +53,14 @@
     "license_review": "approved_internal"
   },
   "guide": {
-    "title": "Revenue forecast readiness",
-    "applicability": "Use to determine whether current observations and an exact validated model are sufficient for a bounded forecast; without that model the result is a gap only.",
+    "title": "收入预测就绪性",
+    "applicability": "用于判断当前观测结果和确切且经过验证的模型是否足以支持有界预测；没有该模型时，结果只能是缺口。",
     "steps": [
-      "Verify the business-pulse capability and preserve its completeness and data-quality limits.",
-      "Resolve the exact model URI and verify trusted distribution, lineage, evaluation, approval, expiry, and safe horizon.",
-      "Stop with a model gap when any model requirement is absent; do not estimate a replacement with prompt reasoning.",
-      "When a future approved model exists, distinguish observed inputs, scenario assumptions, estimates, and validation limits."
+      "验证 business-pulse 能力，并保留其完整性和数据质量限制。",
+      "解析确切的模型 URI，并验证可信分发、血缘、评估、审批、有效期和安全预测周期。",
+      "缺少任何模型要求时，以模型缺口停止；不要用提示词推理估算替代结果。",
+      "未来存在获批模型时，区分观测输入、情景假设、估算和验证限制。"
     ],
-    "context_boundary": "Narrative plans and vendor examples are not model artifacts, validation evidence, forecast inputs, or authorization to publish a prediction."
+    "context_boundary": "叙述性计划和供应商示例不属于模型产物、验证证据、预测输入，也不构成发布预测的授权。"
   }
 }

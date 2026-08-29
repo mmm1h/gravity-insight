@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Require project-owned conversion, channel, window, refund and currency semantics before comparing attributed value.",
+  "description": "比较归因价值前，必须具备项目自有的转化、渠道、时间窗、退款和币种语义。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for a bounded payment window when the project has a reviewed attribution definition.",
-    "context_boundary": "Returned dimension labels cannot define attribution, and descriptive allocation does not prove channel causality.",
+    "applicability": "当项目已有经过评审的归因定义时，用于有界的支付时间窗。",
+    "context_boundary": "返回的维度标签不能定义归因，描述性分配也不能证明渠道因果关系。",
     "steps": [
-      "Resolve payment, refund, channel, attribution-window, currency and identity semantics.",
-      "Use the registered anomaly product on matched returned dimensions with preserved coverage state.",
-      "Report attributed observations and unresolved allocation assumptions without incrementality claims."
+      "解析支付、退款、渠道、归因时间窗、币种和身份语义。",
+      "对相匹配的返回维度使用已注册的异常分析产品，并保留覆盖状态。",
+      "报告归因观测结果和尚未解决的分配假设，不作增量效果断言。"
     ],
-    "title": "Payment attribution contract review"
+    "title": "支付归因契约评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   ],
   "skill_id": "payment-attribution-analysis",
   "specification": "specified",
-  "summary": "Analyze returned payment dimensions only under one declared attribution contract.",
+  "summary": "仅依据一个已声明的归因契约分析返回的支付维度。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

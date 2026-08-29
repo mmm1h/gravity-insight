@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Assess channel slices only after acquisition cost, downstream value and attribution windows share compatible units and scope.",
+  "description": "仅在获客成本、下游价值和归因时间窗的单位与范围相互兼容后，评估渠道切片。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when a project has reviewed channel identity, cost and downstream-value semantics for the same cohort window.",
-    "context_boundary": "Channel labels and attribution windows cannot be inferred from result fields, and descriptive differences do not establish channel causality.",
+    "applicability": "当项目已评审同一队列时间窗内的渠道身份、成本和下游价值语义时使用。",
+    "context_boundary": "不能从结果字段推断渠道标签和归因时间窗，描述性差异也不能确立渠道因果关系。",
     "steps": [
-      "Resolve channel identity, acquisition-cost and downstream-value definitions for one cohort scope.",
-      "Compare matched returned channel rows while preserving missing, partial and unknown completeness states.",
-      "Report observable quality signals, excluded channels and the evidence still required for an allocation decision."
+      "解析一个队列范围内的渠道身份、获客成本和下游价值定义。",
+      "比较相匹配的返回渠道行，同时保留缺失、部分和未知的完整性状态。",
+      "报告可观测的质量信号、已排除渠道，以及作出分配决策仍需的证据。"
     ],
-    "title": "Channel evidence quality review"
+    "title": "渠道证据质量评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -76,7 +76,7 @@
   ],
   "skill_id": "channel-quality-analysis",
   "specification": "specified",
-  "summary": "Compare returned channel observations under one explicit value and cost contract.",
+  "summary": "在一个明确的价值与成本契约下比较返回的渠道观测结果。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

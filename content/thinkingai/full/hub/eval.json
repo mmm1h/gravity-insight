@@ -261,7 +261,7 @@
       "source_id": "analysis-metric-definition-alignment"
     }
   ],
-  "eval_sha256": "d4b97ed1f536c7a5ffbeac6e5564ba41ad658942c6fd3738effb12ec2d20934c",
+  "eval_sha256": "c7021cfe9fb2a9d8cd5472a8f8817bf22ee9197b1e6c2d390820efa34ccb8da3",
   "network_called": false,
   "reason_codes_covered": [
     "ACTION_CONNECTOR_UNAVAILABLE",
@@ -276,8 +276,8 @@
     "SEMANTIC_DEFINITION_MISSING",
     "THINKINGAI_VENDOR_SPECIFIC_OPERATION"
   ],
-  "representative_eval_sha256": "e28ab3eb612681ccfd08a8d1713764b2f6564f0c8e447a9b2a43c30baad9892f",
+  "representative_eval_sha256": "4603040395e7cb091970491cf803cc59bc9dbc3db75edf37bf1ec9387960f493",
   "schema_version": "gravity.thinkingai-full-eval.v1",
-  "specification_sha256": "b447d2f7c927d3cc68d4bbc32cfc26fe11c216ef180a5f041b6048d063ff9716",
+  "specification_sha256": "a448d2a7fc6c646aca92dbc75dc6999151b7e941ec33c3fe6d0b4b4e815b366d",
   "suite_id": "thinkingai-full-specification-regression-v1"
 }

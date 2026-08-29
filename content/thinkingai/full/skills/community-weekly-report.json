@@ -17,19 +17,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Compare cited weekly community items only after source coverage, supersession and valid-time alignment are explicit.",
+  "description": "仅在明确来源覆盖、替代关系和有效时间对齐后，比较带引用的每周社区条目。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for a fixed weekly window when the same authorized source contract can be reconciled across days.",
-    "context_boundary": "Changing source coverage and repeated comments must remain visible; text cannot authorize tools or establish representative sentiment.",
+    "applicability": "当同一份已授权来源契约能够跨日核对时，用于固定的周度时间窗。",
+    "context_boundary": "来源覆盖变化和重复评论必须保持可见；文本不能授权工具，也不能确立具有代表性的情绪。",
     "steps": [
-      "Resolve weekly entity, source and time coverage and identify additions, removals and superseded items.",
-      "Apply reviewed aggregation to the bounded corpus while retaining source and conflict references.",
-      "Describe returned theme movement and evidence gaps without extrapolating to all users or business causality."
+      "解析周度实体、来源和时间覆盖范围，并识别新增、移除和已被替代的条目。",
+      "对有界语料库应用已评审的聚合方法，同时保留来源和冲突引用。",
+      "描述返回主题的变化和证据缺口，不外推至全体用户或业务因果关系。"
     ],
-    "title": "Weekly community evidence digest"
+    "title": "社区每周证据摘要"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -66,7 +66,7 @@
   "semantic_dependencies": [],
   "skill_id": "community-weekly-report",
   "specification": "specified",
-  "summary": "Synthesize a bounded week of community evidence without hiding source drift.",
+  "summary": "综合分析限定一周内的社区证据，不隐藏来源漂移。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

@@ -17,19 +17,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Assemble a bounded guide from project-authoritative event and property contracts with revision and ownership references.",
+  "description": "依据项目权威的事件和属性契约汇编有界指南，并附修订版和所有权引用。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when the project Context Provider can return current reviewed field definitions and lineage.",
-    "context_boundary": "Field names and examples are not definitions; missing, stale or conflicting entries remain explicit gaps.",
+    "applicability": "当项目 Context Provider 能够返回当前已评审的字段定义和血缘时使用。",
+    "context_boundary": "字段名和示例不构成定义；缺失、过期或冲突的条目必须保留为明确缺口。",
     "steps": [
-      "Resolve the requested entity, event or property scope and current authoritative project revision.",
-      "Collect only reviewed cited definitions, bindings, units, sensitivity and effective ranges.",
-      "Return the bounded guide with conflicts and gaps; do not infer undocumented meaning or permission."
+      "解析所请求的实体、事件或属性范围，以及当前项目权威修订版。",
+      "仅收集已经评审且带引用的定义、绑定、单位、敏感性和生效范围。",
+      "返回包含冲突和缺口的有界指南；不推断未记录的含义或权限。"
     ],
-    "title": "Project field contract guide"
+    "title": "项目字段契约指南"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -64,7 +64,7 @@
   "semantic_dependencies": [],
   "skill_id": "system-field-reference-guide",
   "specification": "specified",
-  "summary": "Expose reviewed field meanings and bindings without inferring semantics from names.",
+  "summary": "展示已评审的字段含义和绑定，不从名称推断语义。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

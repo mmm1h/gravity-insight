@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Evaluate ordered progression observations only after level identity, entry, completion and churn windows are explicit.",
+  "description": "仅在关卡身份、进入、完成和流失时间窗均已明确后，评估有序的进度观测结果。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for a bounded progression range with reviewed event and cohort semantics.",
-    "context_boundary": "A level with fewer returned completions is not automatically difficult or causal; missing exposure and eligibility stop that claim.",
+    "applicability": "用于事件和队列语义已经评审的有界进度范围。",
+    "context_boundary": "返回完成数较少的关卡不一定更难，也不自动构成因果关系；缺少曝光和资格数据时不得作出这类断言。",
     "steps": [
-      "Resolve level identity, exposure, entry, completion, retry and churn-window semantics.",
-      "Apply a reviewed funnel-diagnosis Operator to governed returned progression steps.",
-      "Report returned loss points, excluded cohorts and hypotheses without attributing player intent or design causality."
+      "解析关卡身份、曝光、进入、完成、重试和流失时间窗语义。",
+      "对受治理的返回进度步骤应用已评审的漏斗诊断 Operator。",
+      "报告返回的流失点、已排除队列和假设，不归因于玩家意图或设计因果关系。"
     ],
-    "title": "Level progression loss diagnosis"
+    "title": "关卡进度流失诊断"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -77,7 +77,7 @@
   ],
   "skill_id": "level-churn-diagnosis",
   "specification": "specified",
-  "summary": "Locate returned progression loss under a project-defined level and churn contract.",
+  "summary": "依据项目定义的关卡与流失契约，定位返回进度中的流失。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

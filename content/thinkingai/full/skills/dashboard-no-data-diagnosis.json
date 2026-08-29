@@ -26,19 +26,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Diagnose a no-data presentation by reconciling the registered query result with the exact dashboard definition and time scope.",
+  "description": "通过核对已注册查询结果与确切的仪表盘定义和时间范围，诊断无数据显示。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when the project can supply a versioned dashboard definition and the underlying governed analysis identity.",
-    "context_boundary": "Layout and UI state are not Runtime facts; absent dashboard configuration stops any claim about why the page is empty.",
+    "applicability": "当项目能够提供版本化的仪表盘定义及其底层受治理分析身份时使用。",
+    "context_boundary": "布局和 UI 状态不是 Runtime 事实；缺少仪表盘配置时，不得断言页面为何为空。",
     "steps": [
-      "Resolve the dashboard definition, source analysis, filters, timezone and expected data window.",
-      "Compare governed source status, completeness and quality with the configured filter and binding expectations.",
-      "Classify supported empty, stale, permission, binding or contract gaps and leave UI-only causes unverified."
+      "解析仪表盘定义、来源分析、筛选条件、时区和预期数据时间窗。",
+      "将受治理来源的状态、完整性和质量与已配置的筛选及绑定预期进行比较。",
+      "对有证据支持的空数据、数据过期、权限、绑定或契约缺口进行分类；仅涉及 UI 的原因仍标为未验证。"
     ],
-    "title": "Dashboard evidence-gap diagnosis"
+    "title": "仪表盘证据缺口诊断"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   "semantic_dependencies": [],
   "skill_id": "dashboard-no-data-diagnosis",
   "specification": "specified",
-  "summary": "Separate empty, filtered, stale and contract-drift dashboard causes using governed evidence.",
+  "summary": "依据受治理证据，区分仪表盘空数据、筛选、数据过期和契约漂移等原因。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

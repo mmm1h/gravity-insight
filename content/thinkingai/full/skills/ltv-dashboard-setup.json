@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Define sections, metrics, windows and claim limits only after project LTV semantics and model provenance are exact.",
+  "description": "仅在项目 LTV 语义和模型溯源信息准确后，定义版块、指标、时间窗和断言限制。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use to prepare a target-neutral dashboard proposal for reviewed value observations and estimates.",
-    "context_boundary": "The specification cannot create a dashboard, invent model outputs or authorize a target-system write.",
+    "applicability": "用于为已评审的价值观测结果和估算准备与目标系统无关的仪表盘提案。",
+    "context_boundary": "该规格不能创建仪表盘、臆造模型输出，也不能授权写入目标系统。",
     "steps": [
-      "Resolve project LTV, cohort, currency, horizon and model-version semantics.",
-      "Define a target-neutral Analysis Artifact with sources, filters, limitations and allowed claims.",
-      "Require a separate governed dashboard preview, user authorization and readback before any target change."
+      "解析项目 LTV、队列、币种、预测周期和模型版本语义。",
+      "定义与目标系统无关的 Analysis Artifact，包含来源、筛选条件、限制和允许的断言。",
+      "更改任何目标前，必须另行获得受治理的仪表盘预览、用户授权并完成回读。"
     ],
-    "title": "LTV dashboard artifact proposal"
+    "title": "LTV 仪表盘产物提案"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [
@@ -77,7 +77,7 @@
   ],
   "skill_id": "ltv-dashboard-setup",
   "specification": "specified",
-  "summary": "Specify a governed value dashboard artifact without writing target configuration.",
+  "summary": "定义受治理的价值仪表盘产物，不写入目标配置。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

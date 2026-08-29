@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Compare governed delivery observations only after project spend, outcome, platform and attribution definitions are explicit.",
+  "description": "仅在项目支出、结果、平台和归因定义均已明确后，比较受治理的投放观测结果。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for a bounded channel or campaign window when the project owns the acquisition metric bindings.",
-    "context_boundary": "Campaign names, budgets and attribution rules are project data; absent bindings stop the review and no returned association proves incrementality.",
+    "applicability": "当项目拥有获客指标绑定时，用于分析限定渠道或营销活动时间窗。",
+    "context_boundary": "营销活动名称、预算和归因规则属于项目数据；绑定缺失时停止评审，任何返回的关联都不能证明增量效果。",
     "steps": [
-      "Resolve project spend and acquisition-outcome semantics for the selected window and platform.",
-      "Use the registered anomaly product to compare only matched returned dimensions with preserved completeness and quality.",
-      "Separate observed delivery movement from attribution assumptions, excluded channels and causal hypotheses."
+      "解析所选时间窗和平台对应的项目支出与获客结果语义。",
+      "使用已注册的异常分析产品，仅比较相匹配的返回维度，并保留完整性和质量状态。",
+      "将观测到的投放变化与归因假设、已排除渠道和因果假设区分开。"
     ],
-    "title": "Bounded acquisition delivery review"
+    "title": "有界获客投放评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -76,7 +76,7 @@
   ],
   "skill_id": "ad-delivery-analysis",
   "specification": "specified",
-  "summary": "Review returned acquisition delivery changes without inventing campaign efficiency.",
+  "summary": "评审返回的获客投放变化，不臆造营销活动效率。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

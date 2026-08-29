@@ -26,19 +26,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Require project price, quantity, net-value, currency, offer and assignment semantics before elasticity analysis.",
+  "description": "分析弹性前，必须具备项目价格、数量、净价值、币种、优惠和分配语义。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when comparable offer exposures and outcomes can be defined for a reviewed experiment scope.",
-    "context_boundary": "Catalog text and prior observations cannot authorize price changes or establish elasticity without a validated method.",
+    "applicability": "当能够为已评审的实验范围定义可比的优惠曝光和结果时使用。",
+    "context_boundary": "商品目录文本和既往观测结果不能授权价格变更；没有经过验证的方法时，也不能确立弹性。",
     "steps": [
-      "Resolve price, offer, exposure, quantity, net-value, currency and assignment semantics.",
-      "Align catalog Context and apply a reviewed price-elasticity Operator only when assumptions hold.",
-      "Return sensitivity evidence and an experiment proposal; require governed preview for any price mutation."
+      "解析价格、优惠、曝光、数量、净价值、币种和分配语义。",
+      "对齐商品目录 Context，并且仅在假设成立时应用已评审的价格弹性 Operator。",
+      "返回敏感性证据和实验提案；任何价格变更都必须获得受治理的预览。"
     ],
-    "title": "Price experiment readiness review"
+    "title": "价格实验就绪性评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -79,7 +79,7 @@
   ],
   "skill_id": "product-pricing-optimization",
   "specification": "specified",
-  "summary": "Assess whether price evidence supports a bounded experiment proposal.",
+  "summary": "评估价格证据能否支持有界的实验提案。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

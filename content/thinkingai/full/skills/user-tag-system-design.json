@@ -17,19 +17,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Define purpose, owner, population, fields, refresh, privacy and conflict rules before proposing implementation.",
+  "description": "提出实施方案前，定义目的、负责人、总体、字段、刷新、隐私和冲突规则。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when the project can supply authoritative taxonomy, identity and governance requirements.",
-    "context_boundary": "Documentation cannot authorize identity joins, membership mutation or sensitive trait derivation.",
+    "applicability": "当项目能够提供权威的分类体系、身份和治理要求时使用。",
+    "context_boundary": "文档不能授权身份关联、成员关系变更或敏感特征推导。",
     "steps": [
-      "Resolve tag purpose, owner, subject identity, eligible population, inputs, refresh and retention policy.",
-      "Check semantic conflicts, sensitivity, versioning and measurement requirements against project Context.",
-      "Return a value-free contract proposal; require separate governed computation and Action preview for membership changes."
+      "解析标签目的、负责人、主体身份、合格人群、输入、刷新和数据保留策略。",
+      "依据项目 Context 检查语义冲突、敏感性、版本控制和衡量要求。",
+      "返回不含具体取值的契约提案；变更成员关系时，必须另行执行受治理的计算并获得 Action 预览。"
     ],
-    "title": "User tag contract proposal"
+    "title": "用户标签契约提案"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -66,7 +66,7 @@
   ],
   "skill_id": "user-tag-system-design",
   "specification": "specified",
-  "summary": "Design a project tag contract without computing or writing tag membership.",
+  "summary": "设计项目标签契约，不计算或写入标签成员关系。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

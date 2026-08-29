@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Construct a bounded segment only after the project defines churn eligibility, observation windows and approved profile dimensions.",
+  "description": "仅在项目定义流失资格、观测时间窗和获批画像维度后，构建有界分群。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for descriptive segment work when churn and cohort semantics are reviewed and user-level handling is authorized.",
-    "context_boundary": "A profile describes returned members; it cannot reveal unreturned users, sensitive traits or reasons for churn without stronger evidence.",
+    "applicability": "当流失和队列语义已经评审、用户级处理已经授权时，用于描述性分群工作。",
+    "context_boundary": "画像描述的是返回的成员；没有更强证据时，无法揭示未返回的用户、敏感特征或流失原因。",
     "steps": [
-      "Resolve the churn event, eligibility window, cohort and allowed profile dimensions.",
-      "Apply a reviewed segment-profile Operator to governed returned rows with privacy and minimum-sample checks.",
-      "Separate descriptive traits from hypotheses and suppress unsupported sensitive or causal interpretations."
+      "解析流失事件、资格时间窗、队列和允许使用的画像维度。",
+      "对受治理的返回行应用已评审的分群画像 Operator，并执行隐私和最小样本检查。",
+      "将描述性特征与假设区分开，并禁止无依据的敏感或因果解读。"
     ],
-    "title": "Governed churn-segment profile"
+    "title": "受治理的流失分群画像"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -78,7 +78,7 @@
   ],
   "skill_id": "churn-user-identification-persona",
   "specification": "specified",
-  "summary": "Define and profile a churn segment without guessing identity or behavioral causes.",
+  "summary": "定义流失分群并生成画像，不猜测身份或行为原因。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

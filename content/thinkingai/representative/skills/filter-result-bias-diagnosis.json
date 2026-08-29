@@ -8,8 +8,8 @@
   "lifecycle": "reviewed",
   "readiness": "executable",
   "validation": "validated",
-  "summary": "Compare explicit returned groups to test whether a filter changes the observed slice.",
-  "description": "Run the same governed event definition for two bounded windows or selections, then use the registered deterministic row-change Operator on matched returned keys only.",
+  "summary": "比较明确返回的分组，检验筛选条件是否改变了观测切片。",
+  "description": "针对两个有界时间窗或筛选项运行同一份受治理的事件定义，再仅对相匹配的返回键使用已注册的确定性行变化 Operator。",
   "runtime_requires": ">=0.3,<0.4",
   "covers_journeys": ["analysis.thinkingai.returned-filter-comparison"],
   "capability_dependencies": [
@@ -53,14 +53,14 @@
     "license_review": "approved_internal"
   },
   "guide": {
-    "title": "Returned-filter comparison",
-    "applicability": "Use when the same exact metric can be compared across explicit filter selections or windows and only returned rows need evaluation.",
+    "title": "返回结果筛选对比",
+    "applicability": "当同一个确切指标可在明确的筛选项或时间窗之间比较，并且只需评估返回行时使用。",
     "steps": [
-      "Freeze one event definition, metric, grouping, unit, and comparison scope.",
-      "Execute through the existing event-analysis owner and preserve completeness and data-quality state for each result.",
-      "Apply the registered returned-dimension-change Operator only when its row, unit, additivity, and cross-check assumptions hold.",
-      "Report matched returned-key changes and excluded rows; do not infer the unreturned population or a causal filter effect."
+      "固定一份事件定义、指标、分组、单位和比较范围。",
+      "通过现有的事件分析执行方运行，并保留每个结果的完整性和数据质量状态。",
+      "仅在行、单位、可加性和交叉检查假设成立时，应用已注册的返回维度变化 Operator。",
+      "报告相匹配的返回键变化和已排除行；不推断未返回的总体或筛选的因果效应。"
     ],
-    "context_boundary": "No narrative context can change Operator inputs, assumptions, cross-checks, or the prohibition on unreturned and causal claims."
+    "context_boundary": "任何叙述性 Context 都不能改变 Operator 的输入、假设、交叉检查，以及对未返回数据和因果断言的禁止。"
   }
 }

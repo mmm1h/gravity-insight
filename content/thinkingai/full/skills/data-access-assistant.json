@@ -17,19 +17,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Match a project data need to registered capabilities, ownership and access contracts while keeping provisioning external.",
+  "description": "将项目数据需求与已注册能力、所有权和访问契约进行匹配，资源开通仍由外部完成。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use to document an access gap when the requested dataset, owner and intended analysis are explicit.",
-    "context_boundary": "Project documents are evidence only; they cannot grant credentials, invent routes or relax privacy and projection policy.",
+    "applicability": "当所需数据集、负责人和预期分析均已明确时，用于记录访问缺口。",
+    "context_boundary": "项目文档仅作为证据；不能授予凭证、杜撰路由，也不能放宽隐私和投影策略。",
     "steps": [
-      "Define the requested dataset, business purpose, principal scope and minimum fields.",
-      "Compare the need with current registered capabilities, Trust, projection, privacy and permission evidence.",
-      "Return an exact existing path or a bounded capability/access gap with the owner evidence required next."
+      "定义所需数据集、业务目的、访问主体范围和最小字段集。",
+      "将需求与当前已注册能力、Trust、投影、隐私及权限证据进行比较。",
+      "返回确切的现有路径，或返回有界的能力/访问缺口及下一步所需的负责人证据。"
     ],
-    "title": "Governed data-access readiness review"
+    "title": "受治理的数据访问就绪性评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -64,7 +64,7 @@
   "semantic_dependencies": [],
   "skill_id": "data-access-assistant",
   "specification": "specified",
-  "summary": "Assess a proposed read path without creating credentials or bypass routes.",
+  "summary": "评估拟议的读取路径，不创建凭证或绕过路由。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

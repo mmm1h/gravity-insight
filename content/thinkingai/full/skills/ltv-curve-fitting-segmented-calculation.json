@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Fit no curve until segment definitions, net-value semantics, observation horizons and Model evaluation are exact.",
+  "description": "在分群定义、净价值语义、观测周期和 Model 评估均准确之前，不拟合任何曲线。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use to assess whether comparable project cohorts can support a bounded segmented value model.",
-    "context_boundary": "Segment labels, sparse tails and vendor examples cannot supply missing cohort coverage or validated parameters.",
+    "applicability": "用于评估可比的项目队列能否支持有界的分群价值模型。",
+    "context_boundary": "分群标签、稀疏尾部和供应商示例无法补足缺失的队列覆盖或提供经过验证的参数。",
     "steps": [
-      "Resolve segment, cohort, net-value, currency, censoring and observation-horizon semantics.",
-      "Verify sample and coverage assumptions plus the exact approved curve Model and calibration evidence.",
-      "Stop on incompatible units or unsupported horizons; otherwise report estimates with segment-specific limitations."
+      "解析分群、队列、净价值、币种、删失和观测周期语义。",
+      "验证样本与覆盖假设，以及确切获批的曲线 Model 和校准证据。",
+      "单位不兼容或预测周期不受支持时停止；否则报告估算及各分群特有的限制。"
     ],
-    "title": "Segmented value-curve fit readiness"
+    "title": "分群价值曲线拟合就绪性"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [
@@ -77,7 +77,7 @@
   ],
   "skill_id": "ltv-curve-fitting-segmented-calculation",
   "specification": "specified",
-  "summary": "Gate segmented value-curve fitting on compatible cohorts, units and a validated Model.",
+  "summary": "仅允许对兼容的队列与单位使用经过验证的 Model 拟合分群价值曲线。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

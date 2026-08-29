@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Require match eligibility, outcome, mode, participant and bracket definitions before comparing win observations.",
+  "description": "比较胜负观测结果前，必须具备对局资格、结果、模式、参与者和分组档位定义。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for a bounded mode, version and participant scope with reviewed competitive semantics.",
-    "context_boundary": "Returned win rate does not establish balance, matchmaking fairness or player skill without further methods and coverage.",
+    "applicability": "用于竞技语义已经评审的有界模式、版本和参与者范围。",
+    "context_boundary": "没有进一步的方法和覆盖数据时，返回的胜率不能证明平衡性、匹配公平性或玩家水平。",
     "steps": [
-      "Resolve eligible match, outcome, mode, participant, bracket and version semantics.",
-      "Query the governed event metric for explicit returned groups and preserve completeness and sample limits.",
-      "Report observed outcome differences and exclusions without balance, fairness or causal claims."
+      "解析合格对局、结果、模式、参与者、分组档位和版本语义。",
+      "针对明确返回的分组查询受治理的事件指标，并保留完整性和样本限制。",
+      "报告观测到的结果差异和排除项，不作平衡性、公平性或因果断言。"
     ],
-    "title": "Competitive outcome observation"
+    "title": "竞技结果观测"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   ],
   "skill_id": "pvp-win-rate-analysis",
   "specification": "specified",
-  "summary": "Review returned competitive outcomes under explicit match and participant semantics.",
+  "summary": "依据明确的对局和参与者语义，评审返回的竞技结果。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

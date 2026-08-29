@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Analyze the first qualifying purchase only after order identity, refund handling, currency and cohort windows are explicit.",
+  "description": "仅在订单身份、退款处理、币种和队列时间窗均已明确后，分析首次符合条件的购买。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for a bounded cohort when the project has a reviewed first-purchase semantic binding.",
-    "context_boundary": "A returned order is not automatically a qualifying first purchase, and missing history prevents lifetime-first claims.",
+    "applicability": "当项目已有经过评审的首购语义绑定时，用于有界队列。",
+    "context_boundary": "返回的订单不会自动成为符合条件的首次购买；历史数据缺失时，不得声称是全生命周期首次购买。",
     "steps": [
-      "Resolve qualifying order, refund, currency, user identity and cohort-window semantics.",
-      "Query the exact returned event metric and group only by approved cohort dimensions.",
-      "Report returned cohort observations and history gaps without claiming complete lifetime-first coverage."
+      "解析合格订单、退款、币种、用户身份和队列时间窗语义。",
+      "查询确切返回的事件指标，并且仅按获批的队列维度分组。",
+      "报告返回的队列观测结果和历史数据缺口，不声称完整覆盖全生命周期首购。"
     ],
-    "title": "First-purchase cohort observation"
+    "title": "首购队列观测"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   ],
   "skill_id": "first-purchase-analysis",
   "specification": "specified",
-  "summary": "Describe returned first-purchase cohorts under one project-owned definition.",
+  "summary": "依据一个项目自有定义，描述返回的首购队列。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

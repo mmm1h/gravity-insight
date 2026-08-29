@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Require qualifying order, refund, user identity and repeat-window semantics before classifying repurchase.",
+  "description": "对复购分类前，必须具备合格订单、退款、用户身份和复购时间窗语义。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for a bounded cohort with reviewed purchase history and repeat-window definitions.",
-    "context_boundary": "Incomplete history cannot establish first or repeat purchase status, and returned differences do not prove motivation.",
+    "applicability": "用于购买历史和复购时间窗定义已经评审的有界队列。",
+    "context_boundary": "不完整的历史数据无法确定首购或复购状态，返回的差异也不能证明动机。",
     "steps": [
-      "Resolve qualifying order, refund, currency, user identity, cohort and repeat-window semantics.",
-      "Query governed returned purchase events and group only by approved cohort dimensions.",
-      "Report observed repeat behavior and history gaps without complete-lifetime or causal claims."
+      "解析合格订单、退款、币种、用户身份、队列和复购时间窗语义。",
+      "查询受治理的返回购买事件，并且仅按获批的队列维度分组。",
+      "报告观测到的复购行为和历史数据缺口，不作全生命周期或因果断言。"
     ],
-    "title": "Repeat-purchase cohort observation"
+    "title": "复购队列观测"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   ],
   "skill_id": "repurchase-analysis",
   "specification": "specified",
-  "summary": "Describe returned repeat-purchase behavior under one project-owned window contract.",
+  "summary": "依据一个项目自有的时间窗契约，描述返回的复购行为。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

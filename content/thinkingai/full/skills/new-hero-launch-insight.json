@@ -26,19 +26,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Align content identity, release timing and approved behavior metrics before comparing bounded observations.",
+  "description": "比较有界观测结果前，对齐内容身份、上线时间和获批的行为指标。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for one project content launch with exact entity, release and observation-window definitions.",
-    "context_boundary": "Release notes establish timing and scope only; they do not prove that the launch caused behavior changes.",
+    "applicability": "用于实体、上线和观测时间窗定义确切的单次项目内容上线。",
+    "context_boundary": "发布说明只能确定时间和范围；不能证明上线导致了行为变化。",
     "steps": [
-      "Resolve content identity, eligible population, release window and approved engagement/value metrics.",
-      "Align release Context with governed returned observations and preserve completeness and quality limits.",
-      "Report temporal associations, excluded concurrent changes and hypotheses without causal attribution."
+      "解析内容身份、合格人群、上线时间窗和获批的参与度/价值指标。",
+      "将上线 Context 与受治理的返回观测结果对齐，并保留完整性和质量限制。",
+      "报告时间关联、已排除的同期变化和假设，不作因果归因。"
     ],
-    "title": "New content launch evidence review"
+    "title": "新内容上线证据评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -77,7 +77,7 @@
   ],
   "skill_id": "new-hero-launch-insight",
   "specification": "specified",
-  "summary": "Relate returned behavior to a project launch without claiming launch causality.",
+  "summary": "关联返回行为与项目上线活动，不声称上线活动具有因果作用。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

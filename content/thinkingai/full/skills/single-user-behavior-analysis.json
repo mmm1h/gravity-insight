@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Require exact project identity binding, purpose and minimum fields before accessing a bounded event window.",
+  "description": "访问有界事件时间窗前，必须具备确切的项目身份绑定、目的和最小字段集。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use only for an explicitly authorized subject and date scope under the project's identity policy.",
-    "context_boundary": "Identifiers, missing events and free-text fields cannot be joined or interpreted beyond the reviewed identity and privacy contract.",
+    "applicability": "仅用于项目身份策略下已明确授权的主体和日期范围。",
+    "context_boundary": "不得超出已评审的身份与隐私契约，对标识符、缺失事件和自由文本字段进行关联或解读。",
     "steps": [
-      "Resolve the authorized subject identity, purpose, date window and minimum allowed event fields.",
-      "Query only the exact governed returned event scope and preserve projection, privacy and completeness limits.",
-      "Describe the returned sequence and gaps without identity expansion, intent inference or population claims."
+      "解析已授权的主体身份、目的、日期时间窗和最小允许事件字段。",
+      "仅查询确切、受治理的返回事件范围，并保留投影、隐私和完整性限制。",
+      "描述返回的序列和缺口，不扩展身份、不推断意图，也不作总体断言。"
     ],
-    "title": "Authorized single-subject event review"
+    "title": "已授权单一主体事件评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   ],
   "skill_id": "single-user-behavior-analysis",
   "specification": "specified",
-  "summary": "Review one authorized subject's returned events without inferring hidden identity or intent.",
+  "summary": "评审一个已授权主体的返回事件，不推断隐藏身份或意图。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

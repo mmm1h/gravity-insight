@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Require cohort entry, return activity, observation horizon, timezone and late-data semantics before validation.",
+  "description": "验证前，必须具备队列进入、回访活动、观测周期、时区和延迟数据语义。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when a project supplies reviewed cohort and return-event definitions for a bounded horizon.",
-    "context_boundary": "A returned retention-like field cannot define denominator, censoring or late-arrival behavior.",
+    "applicability": "当项目为有界周期提供已经评审的队列和回访事件定义时使用。",
+    "context_boundary": "返回的类似留存字段无法定义分母、删失或延迟到达行为。",
     "steps": [
-      "Resolve cohort entry, return activity, identity, timezone, observation horizon and late-data rules.",
-      "Apply a reviewed retention-curve Operator to governed observations with continuity and sample checks.",
-      "Report verified windows, missing dates, censoring limits and unsupported interpretations."
+      "解析队列进入、回访活动、身份、时区、观测周期和延迟数据规则。",
+      "对受治理的观测结果应用已评审的留存曲线 Operator，并执行连续性和样本检查。",
+      "报告已验证的时间窗、缺失日期、删失限制和不受支持的解读。"
     ],
-    "title": "Retention contract and data check"
+    "title": "留存契约与数据检查"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -77,7 +77,7 @@
   ],
   "skill_id": "retention-analysis-data-verification",
   "specification": "specified",
-  "summary": "Verify cohort and activity evidence before interpreting retention curves.",
+  "summary": "解读留存曲线前，验证队列和活动证据。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }
