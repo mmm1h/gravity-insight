@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Any, Mapping
 
 try:
-    from scripts.build_offline_wheel import build_offline_wheel
+    from scripts.build_offline_wheel import build_or_reuse_offline_wheel
 except ModuleNotFoundError:
-    from build_offline_wheel import build_offline_wheel
+    from build_offline_wheel import build_or_reuse_offline_wheel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -303,7 +303,7 @@ def run_surface_matrix() -> dict[str, Any]:
         site = temporary / "site"
         wheelhouse.mkdir()
         site.mkdir()
-        wheel = build_offline_wheel(ROOT, wheelhouse)
+        wheel = build_or_reuse_offline_wheel(ROOT, wheelhouse)
         _run(
             [
                 sys.executable,

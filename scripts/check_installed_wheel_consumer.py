@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from scripts.build_offline_wheel import build_offline_wheel
+    from scripts.build_offline_wheel import build_or_reuse_offline_wheel
 except ModuleNotFoundError:
-    from build_offline_wheel import build_offline_wheel
+    from build_offline_wheel import build_or_reuse_offline_wheel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -152,7 +152,7 @@ def check_installed_wheel_consumer(
         wheelhouse.mkdir()
         site.mkdir(parents=True)
         consumer.mkdir()
-        wheel = build_offline_wheel(ROOT, wheelhouse)
+        wheel = build_or_reuse_offline_wheel(ROOT, wheelhouse)
         installed = _run(
             [
                 sys.executable,
