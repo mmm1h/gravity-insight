@@ -6,7 +6,7 @@ from datetime import datetime
 from types import MappingProxyType
 from typing import Any, Mapping
 
-from .crypto import canonical_json_bytes, sha256_digest, verify_hmac_sha256
+from .crypto import canonical_json_bytes, sha256_digest, verify_ed25519
 from .errors import ControlPlaneVerificationError
 from .models import (
     ArtifactEnvelope,
@@ -147,7 +147,7 @@ def _verify_artifact_signatures(
         key = policy.keys.get(signature.key_id)
         if key is None or signature.key_id in seen:
             continue
-        if signature.algorithm != key.algorithm or not verify_hmac_sha256(
+        if signature.algorithm != key.algorithm or not verify_ed25519(
             key.key, payload, signature.value
         ):
             continue

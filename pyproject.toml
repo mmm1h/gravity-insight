@@ -31,7 +31,11 @@ Repository = "https://github.com/mmm1h/gravity-sdk"
 Issues = "https://github.com/mmm1h/gravity-sdk/issues"
 
 [project.optional-dependencies]
-dev = ["pytest>=9,<10"]
+control-plane = ["PyNaCl==1.6.0"]
+dev = [
+  "PyNaCl==1.6.0",
+  "pytest>=9,<10",
+]
 
 [project.scripts]
 gravity = "gravity_sdk.__main__:main"

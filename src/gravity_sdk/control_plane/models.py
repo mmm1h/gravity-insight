@@ -10,7 +10,7 @@ import re
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
-from .crypto import HMAC_SHA256
+from .crypto import ED25519
 from .errors import ControlPlaneVerificationError
 
 
@@ -112,7 +112,8 @@ class Signature:
         key_id = _text(selected["key_id"], "SIGNATURE_INVALID", "key id")
         algorithm = _text(selected["algorithm"], "SIGNATURE_INVALID", "algorithm")
         signature = _text(selected["value"], "SIGNATURE_INVALID", "signature")
-        if algorithm != HMAC_SHA256 or not _lower_hex(signature, length=64):
+        encoded = _canonical_base64(signature, "SIGNATURE_INVALID", "signature")
+        if algorithm != ED25519 or len(encoded) != 64:
             _invalid("SIGNATURE_INVALID", "signature algorithm or encoding is invalid")
         return cls(key_id, algorithm, signature)
 
@@ -130,8 +131,8 @@ class VerificationKey:
     def __post_init__(self) -> None:
         if (
             not self.key_id
-            or self.algorithm != HMAC_SHA256
-            or len(self.key) < 16
+            or self.algorithm != ED25519
+            or len(self.key) != 32
             or (self.identity is not None and not self.identity)
         ):
             _invalid("TRUST_ROOT_INVALID", "verification key is invalid")
@@ -145,11 +146,13 @@ class VerificationKey:
         required = allowed if identity_required else {"algorithm", "key"}
         _fields(selected, required, "TRUST_ROOT_INVALID", "verification key", allowed)
         algorithm = _text(selected["algorithm"], "TRUST_ROOT_INVALID", "algorithm")
-        if algorithm != HMAC_SHA256:
+        if algorithm != ED25519:
             _invalid("TRUST_ROOT_INVALID", "unsupported verification algorithm")
-        raw = _base64(selected["key"], "TRUST_ROOT_INVALID", "verification key")
-        if len(raw) < 16:
-            _invalid("TRUST_ROOT_INVALID", "verification key is too short")
+        raw = _canonical_base64(
+            selected["key"], "TRUST_ROOT_INVALID", "verification key"
+        )
+        if len(raw) != 32:
+            _invalid("TRUST_ROOT_INVALID", "verification key must be 32 bytes")
         identity_value = selected.get("identity")
         identity = None
         if identity_value is not None:
@@ -388,6 +391,13 @@ def _base64(value: Any, reason: str, label: str) -> bytes:
         return base64.b64decode(value, validate=True)
     except (binascii.Error, ValueError) as exc:
         raise ControlPlaneVerificationError(reason, f"{label} is not valid base64") from exc
+
+
+def _canonical_base64(value: Any, reason: str, label: str) -> bytes:
+    raw = _base64(value, reason, label)
+    if base64.b64encode(raw).decode("ascii") != value:
+        _invalid(reason, f"{label} is not canonical base64")
+    return raw
 
 
 def _repository(value: Any) -> str:

@@ -6,9 +6,12 @@ import base64
 import copy
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
+
+from nacl.signing import SigningKey
 
 from gravity_sdk.control_plane.models import (
     ArtifactTrustPolicy,
@@ -16,7 +19,7 @@ from gravity_sdk.control_plane.models import (
     TrustedVersions,
     VerificationKey,
 )
-from gravity_sdk.control_plane.crypto import canonical_json_bytes, hmac_sha256, sha256_digest
+from gravity_sdk.control_plane.crypto import canonical_json_bytes, sha256_digest
 from gravity_sdk.control_plane.tuf import metadata_digest
 
 
@@ -30,14 +33,18 @@ BUILDER = "https://ci.example/builders/gravity-release"
 SOURCE = "https://github.com/mmm1h/gravity-sdk"
 IDENTITY = "release@gravity.example"
 LICENSE = "Apache-2.0"
-KEYS = {
-    "root-old": b"fixture-root-old-key-0001",
-    "root-new": b"fixture-root-new-key-0002",
-    "targets": b"fixture-targets-key-0003",
-    "snapshot": b"fixture-snapshot-key-0004",
-    "timestamp": b"fixture-timestamp-key-0005",
-    "artifact": b"fixture-artifact-key-0006",
-    "other-root": b"fixture-other-root-key-0007",
+TEST_ONLY_PRIVATE_SEEDS = {
+    key_id: hashlib.sha256(f"gravity-r16-test-only:{key_id}".encode("ascii")).digest()
+    for key_id in (
+        "root-old",
+        "root-new",
+        "targets",
+        "snapshot",
+        "timestamp",
+        "artifact",
+        "other-root",
+        "attacker",
+    )
 }
 
 
@@ -55,6 +62,10 @@ def build_fixture(name: str) -> Fixture:
     scenario = case["scenario"]
     artifact, envelope = _artifact()
     explicit_root = _root(version=1, root_key="root-old")
+    if scenario == "public-key-substitution":
+        explicit_root["signed"]["keys"]["root-old"]["key"] = _b64(
+            _public_key("attacker")
+        )
     root_chain: list[dict[str, Any]] = []
     if scenario == "root-rotation":
         rotated = _root(version=2, root_key="root-new", signers=("root-old", "root-new"))
@@ -70,6 +81,8 @@ def build_fixture(name: str) -> Fixture:
         "timestamp": timestamp,
         "artifacts": [envelope],
     }
+    if scenario == "algorithm-confusion":
+        bundle["timestamp"]["signatures"][0]["algorithm"] = "hmac-sha256"
     if scenario == "tampered":
         bundle["artifacts"][0]["content"] = _b64(b"tampered-content")
     trust_root = explicit_root
@@ -85,8 +98,8 @@ def artifact_policy(**overrides: Any) -> ArtifactTrustPolicy:
             "artifact": VerificationKey.from_dict(
                 "artifact",
                 {
-                    "algorithm": "hmac-sha256",
-                    "key": _b64(KEYS["artifact"]),
+                    "algorithm": "ed25519",
+                    "key": _b64(_public_key("artifact")),
                     "identity": IDENTITY,
                 },
                 identity_required=True,
@@ -134,7 +147,7 @@ def _root(
         "version": version,
         "expires": VALID_EXPIRY,
         "keys": {
-            key_id: {"algorithm": "hmac-sha256", "key": _b64(KEYS[key_id])}
+            key_id: {"algorithm": "ed25519", "key": _b64(_public_key(key_id))}
             for key_id in key_ids
         },
         "roles": {
@@ -223,11 +236,18 @@ def _timestamp(snapshot: Mapping[str, Any], scenario: str) -> dict[str, Any]:
 
 
 def _signature(payload: Mapping[str, Any], key_id: str) -> dict[str, str]:
+    signature = SigningKey(TEST_ONLY_PRIVATE_SEEDS[key_id]).sign(
+        canonical_json_bytes(payload)
+    ).signature
     return {
         "key_id": key_id,
-        "algorithm": "hmac-sha256",
-        "value": hmac_sha256(KEYS[key_id], canonical_json_bytes(payload)),
+        "algorithm": "ed25519",
+        "value": _b64(signature),
     }
+
+
+def _public_key(key_id: str) -> bytes:
+    return bytes(SigningKey(TEST_ONLY_PRIVATE_SEEDS[key_id]).verify_key)
 
 
 def _b64(value: bytes) -> str:

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Mapping, Sequence
 
-from .crypto import canonical_json_bytes, sha256_digest, verify_hmac_sha256
+from .crypto import canonical_json_bytes, sha256_digest, verify_ed25519
 from .errors import ControlPlaneVerificationError
 from .models import Digest, SignedMetadata, TrustedVersions, VerificationKey
 
@@ -180,7 +180,7 @@ def _verify_threshold(
         if signature.key_id not in role.key_ids or signature.key_id in valid:
             continue
         key = keys[signature.key_id]
-        if signature.algorithm == key.algorithm and verify_hmac_sha256(
+        if signature.algorithm == key.algorithm and verify_ed25519(
             key.key, payload, signature.value
         ):
             valid.add(signature.key_id)

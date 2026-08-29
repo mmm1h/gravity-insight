@@ -25,6 +25,28 @@ class ControlPlaneTufTests(unittest.TestCase):
     def test_explicit_trust_root_mismatch_is_rejected(self) -> None:
         self._assert_fixture_rejected("trust-root-mismatch")
 
+    def test_public_key_substitution_fixture_is_rejected(self) -> None:
+        valid = build_fixture("valid")
+        attack = build_fixture("public-key-substitution")
+        self.assertNotEqual(
+            valid.trust_root["signed"]["keys"]["root-old"]["key"],
+            attack.trust_root["signed"]["keys"]["root-old"]["key"],
+        )
+        self.assertEqual(
+            valid.trust_root["signatures"], attack.trust_root["signatures"]
+        )
+        self._assert_rejected(attack, attack.case["expected_reason"], attack.bundle)
+
+    def test_algorithm_confusion_fixture_is_rejected(self) -> None:
+        valid = build_fixture("valid")
+        attack = build_fixture("algorithm-confusion")
+        valid_signature = valid.bundle["timestamp"]["signatures"][0]
+        attack_signature = attack.bundle["timestamp"]["signatures"][0]
+        self.assertEqual(valid_signature["value"], attack_signature["value"])
+        self.assertEqual("ed25519", valid_signature["algorithm"])
+        self.assertEqual("hmac-sha256", attack_signature["algorithm"])
+        self._assert_rejected(attack, attack.case["expected_reason"], attack.bundle)
+
     def test_consecutive_dual_threshold_root_rotation_verifies(self) -> None:
         fixture = build_fixture("root-rotation")
         result = self._verify(fixture)
@@ -99,3 +121,19 @@ class ControlPlaneTufTests(unittest.TestCase):
                 now=NOW,
             )
         self.assertEqual(reason, raised.exception.reason_code)
+
+    def test_missing_pynacl_fails_closed_without_successful_verification(self) -> None:
+        from unittest import mock
+
+        from gravity_sdk.control_plane import crypto
+
+        fixture = build_fixture("valid")
+        result = None
+        with mock.patch.object(
+            crypto, "_NACL_IMPORT_ERROR", ImportError("simulated missing PyNaCl")
+        ):
+            with self.assertRaises(ControlPlaneVerificationError) as raised:
+                result = self._verify(fixture)
+        self.assertEqual("CRYPTO_BACKEND_UNAVAILABLE", raised.exception.reason_code)
+        self.assertIn("gravity-insight[control-plane]", str(raised.exception))
+        self.assertIsNone(result)
