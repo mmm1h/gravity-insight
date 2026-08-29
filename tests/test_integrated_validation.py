@@ -13,6 +13,7 @@ from scripts.check_installed_wheel_consumer import (
 )
 from scripts.run_integrated_validation import (
     POST_RELEASE_GATES,
+    _display_path,
     _summary,
     gate_specs,
     integrated_green,
@@ -123,6 +124,23 @@ class InstalledWheelConsumerGuardTests(unittest.TestCase):
 
 
 class IntegratedValidationTests(unittest.TestCase):
+    def test_relative_custom_receipt_path_is_reported_from_root(self) -> None:
+        self.assertEqual(
+            "tmp/custom-receipt.json",
+            _display_path(Path("tmp/custom-receipt.json")),
+        )
+
+    def test_absolute_custom_receipt_path_inside_root_is_reported_from_root(self) -> None:
+        receipt_path = (ROOT / "tmp/custom-receipt.json").resolve()
+
+        self.assertEqual("tmp/custom-receipt.json", _display_path(receipt_path))
+
+    def test_custom_receipt_path_outside_root_is_reported_as_absolute(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            receipt_path = (Path(raw) / "receipt.json").resolve()
+
+            self.assertEqual(receipt_path.as_posix(), _display_path(receipt_path))
+
     def test_gate_inventory_matches_canonical_governance(self) -> None:
         contract = json.loads(INDEX.read_text(encoding="utf-8"))[
             "integrated_validation"

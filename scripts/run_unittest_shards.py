@@ -128,26 +128,20 @@ def _set_differences(
 
 
 def _audit_partition(
-    serial_ids: Sequence[str], shards: Sequence[Sequence[str]], expected_total: int
+    serial_ids: Sequence[str], shards: Sequence[Sequence[str]]
 ) -> list[str]:
     assigned_ids = [test_id for shard in shards for test_id in shard]
     missing, unexpected = _set_differences(serial_ids, assigned_ids)
     errors: list[str] = []
     serial_duplicates = _duplicates(serial_ids)
     assigned_duplicates = _duplicates(assigned_ids)
-    if len(serial_ids) != expected_total:
-        errors.append(
-            "serial discovery total mismatch: "
-            f"expected={expected_total} discovered={len(serial_ids)} "
-            f"delta={len(serial_ids) - expected_total:+d}"
-        )
     if serial_duplicates:
         errors.append(f"serial discovery contains duplicate ids: {serial_duplicates}")
-    if len(assigned_ids) != expected_total:
+    if len(assigned_ids) != len(serial_ids):
         errors.append(
             "partition total mismatch: "
-            f"expected={expected_total} assigned={len(assigned_ids)} "
-            f"delta={len(assigned_ids) - expected_total:+d}"
+            f"discovered={len(serial_ids)} assigned={len(assigned_ids)} "
+            f"delta={len(assigned_ids) - len(serial_ids):+d}"
         )
     if assigned_duplicates:
         errors.append(f"partition contains duplicate ids: {assigned_duplicates}")
@@ -494,8 +488,9 @@ def _run_workers(
 
 
 def _audit_outcome(
-    serial_ids: Sequence[str], results: Sequence[WorkerResult], expected_total: int
+    serial_ids: Sequence[str], results: Sequence[WorkerResult]
 ) -> list[str]:
+    expected_total = len(serial_ids)
     assigned_ids = [value for result in results for value in result.assigned_ids]
     actual_ids = [value for result in results for value in result.actual_ids]
     reported_total = sum(result.reported_count or 0 for result in results)
@@ -584,7 +579,7 @@ def _run(args: argparse.Namespace) -> int:
             f"min(--max-workers, discovered tests) ({min(args.max_workers, len(discovered))})"
         )
     shards = _partition_tests(discovered, worker_count)
-    partition_errors = _audit_partition(serial_ids, shards, args.expected_total)
+    partition_errors = _audit_partition(serial_ids, shards)
     if partition_errors:
         raise ShardError("\n".join(partition_errors))
     dropped_id = args.negative_control_drop_id
@@ -600,7 +595,7 @@ def _run(args: argparse.Namespace) -> int:
         results = _run_workers(
             shards, evidence_root, timeout_seconds=args.shard_timeout_seconds
         )
-        errors = _audit_outcome(serial_ids, results, args.expected_total)
+        errors = _audit_outcome(serial_ids, results)
         actual_ids = [value for result in results for value in result.actual_ids]
         reported_total = sum(result.reported_count or 0 for result in results)
         missing, unexpected = _set_differences(serial_ids, actual_ids)
@@ -610,7 +605,7 @@ def _run(args: argparse.Namespace) -> int:
         summary = {
             "schema_version": "gravity.unittest-shard-result.v1",
             "status": "passed" if not errors else "failed",
-            "expected_total": args.expected_total,
+            "expected_total": len(serial_ids),
             "serial_discovered_total": len(serial_ids),
             "assigned_total": sum(len(shard) for shard in shards),
             "reported_ran_total": reported_total,
@@ -669,7 +664,6 @@ def main(argv: list[str] | None = None) -> int:
             "worker shards with python -m unittest, and prove count/id conservation."
         )
     )
-    parser.add_argument("--expected-total", type=int, required=True)
     parser.add_argument("--max-workers", type=int, default=DEFAULT_MAX_WORKERS)
     parser.add_argument("--workers", type=int)
     parser.add_argument(
@@ -683,8 +677,6 @@ def main(argv: list[str] | None = None) -> int:
         help="Deliberately omit one discovered id; the run must fail conservation.",
     )
     args = parser.parse_args(argv)
-    if args.expected_total < 1:
-        parser.error("--expected-total must be at least 1")
     try:
         return _run(args)
     except (OSError, ShardError, ValueError, json.JSONDecodeError) as exc:

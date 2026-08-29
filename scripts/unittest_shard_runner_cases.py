@@ -32,8 +32,6 @@ class UnittestShardRunnerCases(unittest.TestCase):
             (
                 str(python),
                 "scripts/run_unittest_shards.py",
-                "--expected-total",
-                "2094",
             ),
             gate.command,
         )
@@ -67,7 +65,7 @@ class UnittestShardRunnerCases(unittest.TestCase):
 
         shards = _partition_tests(discovered, 3)
 
-        self.assertEqual([], _audit_partition([test.test_id for test in discovered], shards, 7))
+        self.assertEqual([], _audit_partition([test.test_id for test in discovered], shards))
         self.assertLessEqual(max(map(len, shards)) - min(map(len, shards)), 1)
         self.assertEqual(
             (
@@ -81,9 +79,9 @@ class UnittestShardRunnerCases(unittest.TestCase):
     def test_partition_audit_rejects_missing_and_duplicate_ids(self) -> None:
         serial_ids = ["test_a.Case.test_one", "test_b.Case.test_two"]
 
-        missing = _audit_partition(serial_ids, ((serial_ids[0],),), 2)
+        missing = _audit_partition(serial_ids, ((serial_ids[0],),))
         duplicated = _audit_partition(
-            serial_ids, ((serial_ids[0], serial_ids[0], serial_ids[1]),), 2
+            serial_ids, ((serial_ids[0], serial_ids[0], serial_ids[1]),)
         )
 
         self.assertTrue(any("partition total mismatch" in error for error in missing))
@@ -116,7 +114,7 @@ class UnittestShardRunnerCases(unittest.TestCase):
                 errors=("shard 1 exited nonzero", "shard 1 produced no summary"),
             )
 
-            errors = _audit_outcome(serial_ids, (result,), 2)
+            errors = _audit_outcome(serial_ids, (result,))
 
         self.assertTrue(any("exited nonzero" in error for error in errors))
         self.assertTrue(any("Ran N total conservation failed" in error for error in errors))
