@@ -47,6 +47,28 @@ recorded_by: `agent_under_standing_owner_delegation`; the owner delegated this
 call on 2026-08-28 with the instruction to decide from product direction and the
 architecture source.
 
+## Validation Core Implementation Record (2026-08-29)
+
+The premise behind the historical deferral changed: `main` promotion now needs
+every indexed Requirement at `fixed_dev`, so leaving R16 at `specified` is no
+longer neutral. Under `agent_under_standing_owner_delegation` with
+`owner_review: pending`, implementation therefore started without rewriting the
+Disposition above.
+
+This first segment implements only local verification: immutable digest-bound
+OCI descriptors, signer identity/provenance/license policy, TUF-style four-role
+threshold metadata, consecutive dual-threshold root rotation, revocation,
+rollback/freeze/mix-and-match/expiry protection, and offline bundle validation
+from an explicit trust root. Its deterministic `hmac-sha256` profile uses only
+the standard library and is a bounded local verification profile, not a claim
+of production Sigstore/Cosign equivalence. Tests make zero network requests.
+
+Resolve, download, stage, offline gate, canary, activation planning, rollback
+lifecycle, and external Installer integration remain for the second segment.
+R04 Skill/Trusted Pack lock fields and digest semantics are unchanged. R16 stays
+`specified` until both segments are integrated and the plan owner records the
+final lifecycle transition.
+
 ## Outcome
 
 An External Control Plane builds, publishes, verifies, stages, canaries and rolls back Runtime/Skill/Provider/Operator artifacts while preserving Stage A Skill-content and Trusted-Pack artifact kinds, digests and lock semantics. Runtime never replaces its own loaded wheel.

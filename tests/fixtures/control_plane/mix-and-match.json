@@ -1,0 +1,5 @@
+{
+  "schema_version": "gravity.control-plane-test-case.v1",
+  "scenario": "mix-and-match",
+  "expected_reason": "MIX_AND_MATCH"
+}
