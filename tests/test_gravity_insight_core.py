@@ -2854,6 +2854,96 @@ class CredentialDecisionTests(unittest.TestCase):
         self.assertEqual(NOW + timedelta(days=3), malformed.expires_at)
         self.assertEqual(self.expired, expired.expires_at)
 
+    def test_configured_malformed_expiry_cannot_become_unbounded(self):
+        from gravity_sdk.errors import CredentialError
+
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name) / ".env.gravity.local"
+        with self.assertRaisesRegex(CredentialError, "credential expiry is invalid"):
+            CredentialProvider(
+                path,
+                environ={
+                    "GRAVITY_AUTH_TOKEN": "opaque-token",
+                    "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI": "not-a-datetime",
+                },
+                clock=lambda: NOW,
+                persist=False,
+            ).get()
+
+        exp = int(self.future.timestamp())
+        jwt_body = (
+            base64.urlsafe_b64encode(json.dumps({"exp": exp}).encode())
+            .decode()
+            .rstrip("=")
+        )
+        credential = CredentialProvider(
+            path,
+            environ={
+                "GRAVITY_AUTH_TOKEN": f"header.{jwt_body}.signature",
+                "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI": "not-a-datetime",
+            },
+            clock=lambda: NOW,
+            persist=False,
+        ).get()
+        self.assertEqual(datetime.fromtimestamp(exp, timezone.utc), credential.expires_at)
+
+    def test_login_malformed_day_gets_conservative_one_day_expiry(self):
+        provider = self.provider(
+            login=lambda *_: {
+                "code": 0,
+                "data": {"day": "not-a-day", "user": {"Authorization": "token"}},
+            }
+        )
+        self.assertEqual(NOW + timedelta(days=1), provider.get().expires_at)
+
+        provider = self.provider(
+            login=lambda *_: {
+                "code": 0,
+                "data": {
+                    "day": "not-a-day",
+                    "expires_at": self.future.isoformat(),
+                    "user": {"Authorization": "token"},
+                },
+            }
+        )
+        self.assertEqual(self.future, provider.get().expires_at)
+
+    def test_malformed_jwt_exp_requires_an_independent_expiry(self):
+        from gravity_sdk.errors import CredentialError, TransportError
+
+        jwt_body = base64.urlsafe_b64encode(
+            json.dumps({"exp": "not-a-number"}).encode()
+        ).decode().rstrip("=")
+        token = f"header.{jwt_body}.signature"
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        with self.assertRaisesRegex(CredentialError, "credential expiry is invalid"):
+            CredentialProvider(
+                Path(directory.name) / ".env.gravity.local",
+                environ={"GRAVITY_AUTH_TOKEN": token},
+                clock=lambda: NOW,
+                persist=False,
+            ).get()
+
+        provider = self.provider(
+            login=lambda *_: self.payload(Authorization=token)
+        )
+        with self.assertRaisesRegex(TransportError, "credential expiry is invalid"):
+            provider.get()
+
+        provider = self.provider(
+            login=lambda *_: {
+                "code": 0,
+                "data": {
+                    "day": 3,
+                    "expires_at": self.future.isoformat(),
+                    "user": {"Authorization": token},
+                },
+            }
+        )
+        self.assertEqual(self.future, provider.get().expires_at)
+
     def test_get_uses_only_usable_cached_credentials(self):
         login_calls = []
 

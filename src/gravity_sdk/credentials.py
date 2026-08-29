@@ -54,25 +54,14 @@ def _now() -> datetime:
 def _parse_datetime(value: str | None) -> datetime | None:
     if not value:
         return None
-    text = value.strip()
     try:
-        if re_is_number(text):
-            parsed = datetime.fromtimestamp(float(text), timezone.utc)
-        else:
-            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        parsed = datetime.fromtimestamp(float(value.strip()), timezone.utc)
     except (OverflowError, ValueError):
-        return None
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=SHANGHAI)
-    return parsed.astimezone(timezone.utc)
-
-
-def re_is_number(value: str) -> bool:
-    try:
-        float(value)
-    except ValueError:
-        return False
-    return True
+        try:
+            parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+        except (OverflowError, ValueError):
+            return None
+    return (parsed if parsed.tzinfo else parsed.replace(tzinfo=SHANGHAI)).astimezone(timezone.utc)
 
 
 @dataclass(frozen=True)
@@ -103,11 +92,14 @@ class CredentialConfig:
             file_values, environment_values, session_values, ambient=environ is None
         )
         configured_expiry = _parse_datetime(token_values.get(EXPIRY_KEY))
+        credential_expiry = _jwt_expiry(token or "", configured_expiry, CredentialError)
+        if token and token_values.get(EXPIRY_KEY) and configured_expiry is None and credential_expiry is None:
+            raise CredentialError("Gravity credential expiry is invalid")
         return cls(
             username=values.get("GRAVITY_USERNAME", "").strip() or None,
             password=values.get("GRAVITY_PASSWORD", "").strip() or None,
             token=token,
-            expires_at=(_jwt_expiry(token) or configured_expiry) if token else configured_expiry,
+            expires_at=credential_expiry if token else configured_expiry,
             updated_at=_parse_datetime(token_values.get(UPDATED_KEY)),
             token_source=token_source,
             gravity_id=token_values.get(PRINCIPAL_ID_KEY, "").strip() or None,
@@ -475,13 +467,14 @@ class CredentialProvider:
         if not isinstance(token, str) or not token.strip():
             raise TransportError("Gravity login did not return an authorization token")
         now = self._clock()
-        explicit_expiry = _jwt_expiry(token) or _parse_datetime(
+        configured_expiry = _parse_datetime(
             str(user.get("expires_at") or data.get("expires_at") or "") or None
         )
+        explicit_expiry = _jwt_expiry(token, configured_expiry, TransportError)
         try:
             days = int(data.get("day", self._free_login_day))
         except (TypeError, ValueError):
-            days = self._free_login_day
+            days = 1
         expiry = explicit_expiry or now + timedelta(days=max(1, min(days, 7)))
         return data, user, token, expiry, now
 
@@ -549,18 +542,23 @@ def validated_login_payload(
     return payload
 
 
-def _jwt_expiry(token: str) -> datetime | None:
+def _jwt_expiry(token: str, fallback: datetime | None = None,
+                error: type[CredentialError] | None = None) -> datetime | None:
     """Read a JWT exp claim without trusting any other unsigned token content."""
 
     parts = token.split(".")
     if len(parts) != 3:
-        return None
+        return fallback
     try:
         payload = parts[1] + "=" * (-len(parts[1]) % 4)
         decoded = json.loads(base64.urlsafe_b64decode(payload.encode("ascii")))
-        exp = decoded.get("exp") if isinstance(decoded, Mapping) else None
+        exp = decoded.get("exp") if isinstance(decoded, Mapping) else False
+        if exp is None:
+            return fallback
         if isinstance(exp, bool) or not isinstance(exp, (int, float)):
-            return None
+            raise ValueError("invalid JWT expiry")
         return datetime.fromtimestamp(exp, timezone.utc)
-    except (UnicodeError, ValueError, OSError, json.JSONDecodeError):
-        return None
+    except (UnicodeError, ValueError, OSError, json.JSONDecodeError) as exc:
+        if fallback is not None or error is None:
+            return fallback
+        raise error("Gravity credential expiry is invalid") from exc
