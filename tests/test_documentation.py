@@ -5,6 +5,8 @@ import unittest
 from collections import deque
 from pathlib import Path
 
+from tests.repository_tree_gate import repository_tree_read
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -189,21 +191,25 @@ class DocumentationArchitectureTests(unittest.TestCase):
         # A botched conflict resolution once shipped `<<<<<<<` markers into the
         # journey ledger on dev, main and origin: the duplicate rows were caught
         # by the ledger parser, the leftover markers were caught by nothing.
-        sources = [
-            ROOT / "README.md",
-            *DOCS.rglob("*.md"),
-            *(ROOT / "src").rglob("*.py"),
-            *(ROOT / "src").rglob("*.json"),
-            *(ROOT / "tests").rglob("*.py"),
-            *(ROOT / "scripts").rglob("*.py"),
-        ]
-        offenders: list[str] = []
-        for source in sources:
-            for number, line in enumerate(
-                source.read_text(encoding="utf-8").splitlines(), start=1
-            ):
-                if line.startswith(("<<<<<<< ", ">>>>>>> ")) or line == "=======":
-                    offenders.append(f"{source.relative_to(ROOT)}:{number}")
+        with repository_tree_read(
+            root=ROOT,
+            purpose="merge-conflict marker repository scan",
+        ):
+            sources = [
+                ROOT / "README.md",
+                *DOCS.rglob("*.md"),
+                *(ROOT / "src").rglob("*.py"),
+                *(ROOT / "src").rglob("*.json"),
+                *(ROOT / "tests").rglob("*.py"),
+                *(ROOT / "scripts").rglob("*.py"),
+            ]
+            offenders: list[str] = []
+            for source in sources:
+                for number, line in enumerate(
+                    source.read_text(encoding="utf-8").splitlines(), start=1
+                ):
+                    if line.startswith(("<<<<<<< ", ">>>>>>> ")) or line == "=======":
+                        offenders.append(f"{source.relative_to(ROOT)}:{number}")
         self.assertEqual([], offenders)
 
     def test_business_contracts_are_not_in_the_documentation_tree(self) -> None:

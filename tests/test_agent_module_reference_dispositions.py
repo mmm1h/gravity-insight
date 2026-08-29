@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 from collections import Counter
+from contextlib import contextmanager
 import copy
 from dataclasses import replace
 import hashlib
@@ -13,6 +14,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import tomllib
 from typing import Any
 import unittest
@@ -54,6 +57,11 @@ from scripts.validate_r17_canonical_source_errata import (
     validate_bound_ledger,
     validate_final_state,
     validate_phase1_reviewed_state,
+)
+from tests.repository_tree_gate import (
+    RepositoryTreeGateTimeout,
+    repository_tree_read,
+    repository_tree_write,
 )
 
 
@@ -110,6 +118,42 @@ _REPOSITORY_PRODUCTS_CACHE: dict[
 ] = {}
 
 
+_DETERMINISTIC_WRITER = r"""
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+from tests.repository_tree_gate import repository_tree_write
+
+root = Path(sys.argv[1])
+state = Path(sys.argv[2])
+with repository_tree_write(
+    root=root,
+    purpose="deterministic R17 repository writer",
+    timeout_seconds=30,
+):
+    with tempfile.TemporaryDirectory(
+        dir=root / "tests", prefix="r17-deterministic-"
+    ) as temp:
+        attack = Path(temp) / "attack.py"
+        attack.write_text(
+            "from importlib import import_module\n"
+            "owner = import_module(runtime_module_name)\n",
+            encoding="utf-8",
+        )
+        (state / "attack.txt").write_text(
+            attack.relative_to(root).as_posix(), encoding="utf-8"
+        )
+        (state / "ready").write_text("ready", encoding="ascii")
+        deadline = time.monotonic() + 60
+        while not (state / "release").exists():
+            if time.monotonic() >= deadline:
+                raise TimeoutError("writer timed out waiting for deterministic release")
+            time.sleep(0.01)
+"""
+
+
 def _repository_input_key(root: Path) -> _RepositoryInputKey:
     resolved = root.resolve()
     files, _excluded = version_controlled_files(resolved)
@@ -128,16 +172,20 @@ def _repository_products(
     root: Path = ROOT, *, fresh: bool = False
 ) -> tuple[AuditResult, dict[str, Any]]:
     resolved = root.resolve()
-    if fresh or resolved != ROOT.resolve():
-        audit = _scan_repository(resolved)
-        return audit, _build_document(root=resolved, audit=audit)
-    key = _repository_input_key(resolved)
-    cached = _REPOSITORY_PRODUCTS_CACHE.get(key)
-    if cached is None:
-        audit = _scan_repository(resolved)
-        cached = (audit, _build_document(root=resolved, audit=audit))
-        _REPOSITORY_PRODUCTS_CACHE[key] = cached
-    return cached
+    with repository_tree_read(
+        root=resolved,
+        purpose="R17 repository input inventory and reference scan",
+    ):
+        if fresh or resolved != ROOT.resolve():
+            audit = _scan_repository(resolved)
+            return audit, _build_document(root=resolved, audit=audit)
+        key = _repository_input_key(resolved)
+        cached = _REPOSITORY_PRODUCTS_CACHE.get(key)
+        if cached is None:
+            audit = _scan_repository(resolved)
+            cached = (audit, _build_document(root=resolved, audit=audit))
+            _REPOSITORY_PRODUCTS_CACHE[key] = cached
+        return cached
 
 
 def scan_repository(root: Path = ROOT, *, fresh: bool = False) -> AuditResult:
@@ -153,13 +201,17 @@ def build_document(
 ) -> dict[str, Any]:
     resolved = root.resolve()
     if fresh:
-        if audit is None:
-            audit = _scan_repository(resolved)
-        return _build_document(
+        with repository_tree_read(
             root=resolved,
-            audit=audit,
-            public_exports=public_exports,
-        )
+            purpose="fresh R17 checkpoint repository scan",
+        ):
+            if audit is None:
+                audit = _scan_repository(resolved)
+            return _build_document(
+                root=resolved,
+                audit=audit,
+                public_exports=public_exports,
+            )
     if audit is not None or public_exports is not None or resolved != ROOT.resolve():
         return _build_document(
             root=resolved,
@@ -167,6 +219,100 @@ def build_document(
             public_exports=public_exports,
         )
     return copy.deepcopy(_repository_products(resolved)[1])
+
+
+def _assert_repository_tree_gate_orders_writer_and_scan(
+    test_case: unittest.TestCase,
+) -> None:
+    with tempfile.TemporaryDirectory(prefix="repository-tree-gate-test-") as state_raw:
+        state = Path(state_raw)
+        process = subprocess.Popen(
+            [sys.executable, "-c", _DETERMINISTIC_WRITER, str(ROOT), str(state)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        scan_result: list[AuditResult] = []
+        scan_errors: list[BaseException] = []
+        acquisition_attempted = threading.Event()
+        release = state / "release"
+        scanner: threading.Thread | None = None
+        try:
+            deadline = time.monotonic() + 35
+            while not (state / "ready").exists():
+                if process.poll() is not None:
+                    stdout, stderr = process.communicate()
+                    raise AssertionError(
+                        "deterministic writer exited before ready: "
+                        f"exit={process.returncode} stdout={stdout!r} stderr={stderr!r}"
+                    )
+                if time.monotonic() >= deadline:
+                    raise AssertionError("timed out waiting for deterministic writer")
+                time.sleep(0.01)
+            relative = (state / "attack.txt").read_text(encoding="utf-8")
+
+            with test_case.assertRaises(RepositoryTreeGateTimeout) as timeout:
+                with repository_tree_read(
+                    root=ROOT,
+                    purpose="deterministic timeout negative control",
+                    timeout_seconds=0.05,
+                ):
+                    pass
+            test_case.assertIn("shared repository tree gate", str(timeout.exception))
+            test_case.assertIn("deterministic timeout negative control", str(timeout.exception))
+
+            real_repository_tree_read = repository_tree_read
+
+            @contextmanager
+            def observed_repository_tree_read(**kwargs: Any):
+                acquisition_attempted.set()
+                with real_repository_tree_read(**kwargs):
+                    yield
+
+            def scan() -> None:
+                try:
+                    scan_result.append(scan_repository(fresh=True))
+                except BaseException as exc:
+                    scan_errors.append(exc)
+
+            with patch(
+                f"{__name__}.repository_tree_read", observed_repository_tree_read
+            ):
+                scanner = threading.Thread(target=scan)
+                scanner.start()
+                test_case.assertTrue(
+                    acquisition_attempted.wait(10),
+                    "repository scan did not attempt the shared gate",
+                )
+                test_case.assertTrue(scanner.is_alive())
+                release.write_text("release", encoding="ascii")
+                scanner.join(timeout=30)
+            test_case.assertFalse(scanner.is_alive(), "guarded repository scan timed out")
+            test_case.assertEqual([], scan_errors)
+            test_case.assertEqual(1, len(scan_result))
+            observed = {
+                key
+                for key in (
+                    source_key(item)
+                    for item in (
+                        *scan_result[0].references,
+                        *scan_result[0].manual_review,
+                    )
+                )
+                if key.startswith(relative + ":")
+            }
+            test_case.assertEqual(set(), observed)
+        finally:
+            release.write_text("release", encoding="ascii")
+            if scanner is not None:
+                scanner.join(timeout=35)
+            stdout, stderr = process.communicate(timeout=65)
+            test_case.assertEqual(
+                0,
+                process.returncode,
+                f"deterministic writer failed: stdout={stdout!r} stderr={stderr!r}",
+            )
 
 
 def _require(condition: bool, message: str) -> None:
@@ -1010,23 +1156,30 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 len(reference_keys & manual_keys),
                 len(reference_keys | manual_keys),
             ))
+        _assert_repository_tree_gate_orders_writer_and_scan(self)
 
     def test_new_exact_dynamic_and_alias_loader_sites_cannot_escape_disposition(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "tests", prefix="r17-tracked-") as temp:
-            attack = Path(temp) / "attack.py"
-            attack.write_text(
-                "import importlib\n"
-                'dynamic = importlib.import_module("gravity_sdk.agent_sources")\n'
-                'alias = acquire("gravity_sdk.agent_sources")\n',
-                encoding="utf-8",
-            )
-            generated = build_document(fresh=True)
-            relative = attack.relative_to(ROOT).as_posix()
-            sites = [
-                site
-                for site in checkpoint_sites(generated)
-                if site["source"]["file"] == relative
-            ]
+        with repository_tree_write(
+            root=ROOT,
+            purpose="R17 tracked dynamic-import attack fixture",
+        ):
+            with tempfile.TemporaryDirectory(
+                dir=ROOT / "tests", prefix="r17-tracked-"
+            ) as temp:
+                attack = Path(temp) / "attack.py"
+                attack.write_text(
+                    "import importlib\n"
+                    'dynamic = importlib.import_module("gravity_sdk.agent_sources")\n'
+                    'alias = acquire("gravity_sdk.agent_sources")\n',
+                    encoding="utf-8",
+                )
+                generated = build_document(fresh=True)
+                relative = attack.relative_to(ROOT).as_posix()
+                sites = [
+                    site
+                    for site in checkpoint_sites(generated)
+                    if site["source"]["file"] == relative
+                ]
         self.assertEqual(3, len(sites))
         self.assertEqual(
             {"dynamic_import", "string_reference"},
@@ -1036,21 +1189,27 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertTrue(all(site["tracked_sources"] == ["reference"] for site in sites))
 
     def test_unknown_dynamic_domain_remains_a_blocker_after_regeneration(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "tests", prefix="r17-blocker-") as temp:
-            attack = Path(temp) / "attack.py"
-            attack.write_text(
-                "from importlib import import_module\n"
-                "owner = import_module(runtime_module_name)\n",
-                encoding="utf-8",
-            )
-            generated = build_document(fresh=True)
-            relative = attack.relative_to(ROOT).as_posix()
-            blockers = [
-                site
-                for site in checkpoint_sites(generated)
-                if site["source"]["file"] == relative
-                and site["disposition"] == "blocker"
-            ]
+        with repository_tree_write(
+            root=ROOT,
+            purpose="R17 unknown dynamic-import blocker fixture",
+        ):
+            with tempfile.TemporaryDirectory(
+                dir=ROOT / "tests", prefix="r17-blocker-"
+            ) as temp:
+                attack = Path(temp) / "attack.py"
+                attack.write_text(
+                    "from importlib import import_module\n"
+                    "owner = import_module(runtime_module_name)\n",
+                    encoding="utf-8",
+                )
+                generated = build_document(fresh=True)
+                relative = attack.relative_to(ROOT).as_posix()
+                blockers = [
+                    site
+                    for site in checkpoint_sites(generated)
+                    if site["source"]["file"] == relative
+                    and site["disposition"] == "blocker"
+                ]
         self.assertEqual(1, len(blockers))
         self.assertEqual("unreviewed_dynamic_import_domain", blockers[0]["reason_code"])
         with tempfile.TemporaryDirectory() as temp:
