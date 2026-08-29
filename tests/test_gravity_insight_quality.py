@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 from contextlib import redirect_stdout
 from dataclasses import replace
+import hashlib
 import io
 import json
 import tempfile
@@ -25,11 +26,11 @@ from gravity_sdk.quality import (
     evaluate_ratchet,
     evaluate_slope,
     hardcoded_exit_code_errors,
-    inspect_repository,
+    inspect_repository as _inspect_repository,
     main as quality_main,
     migration_source_errors,
     render_markdown,
-    validate,
+    validate as _validate,
 )
 from gravity_sdk.governance.privacy_consistency import (
     exposed_field_names,
@@ -38,6 +39,48 @@ from gravity_sdk.governance.privacy_consistency import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+_RepositoryInputKey = tuple[Path, tuple[tuple[str, str], ...]]
+_REPOSITORY_PROFILE_CACHE: dict[_RepositoryInputKey, QualityProfile] = {}
+
+
+def _repository_input_key(root: Path) -> _RepositoryInputKey:
+    resolved = root.resolve()
+    inputs: list[tuple[str, str]] = []
+    for path in sorted((resolved / "src").rglob("*")):
+        if not path.is_file() or "__pycache__" in path.parts:
+            continue
+        inputs.append(
+            (
+                path.relative_to(resolved).as_posix(),
+                hashlib.sha256(path.read_bytes()).hexdigest(),
+            )
+        )
+    return resolved, tuple(inputs)
+
+
+def _repository_profile(root: Path = ROOT, *, fresh: bool = False) -> QualityProfile:
+    resolved = root.resolve()
+    if fresh or resolved != ROOT.resolve():
+        return _inspect_repository(resolved)
+    key = _repository_input_key(resolved)
+    profile = _REPOSITORY_PROFILE_CACHE.get(key)
+    if profile is None:
+        profile = _inspect_repository(resolved)
+        _REPOSITORY_PROFILE_CACHE[key] = profile
+    return profile
+
+
+def _validate_repository(
+    root: Path, *, base_ref: str | None = None
+) -> list[str]:
+    resolved = root.resolve()
+    if resolved != ROOT.resolve():
+        return _validate(resolved, base_ref=base_ref)
+    profile = _repository_profile(resolved)
+    with mock.patch("gravity_sdk.quality.inspect_repository", return_value=profile):
+        return _validate(resolved, base_ref=base_ref)
 
 
 def _profile(
@@ -493,7 +536,7 @@ def sample(value):
         ast.parse(source, filename="quality.py", feature_version=(3, 11))
 
     def test_repository_profile_uses_exact_contract_ids(self) -> None:
-        profile = inspect_repository(ROOT)
+        profile = _repository_profile(ROOT)
         provenance = json.loads(
             (ROOT / "src/gravity_sdk/contracts/generated/provenance.json").read_text(
                 encoding="utf-8"
@@ -523,7 +566,7 @@ def sample(value):
         self.assertFalse(any(item.value == "gravity_sdk" for item in profile.operation_literals))
 
     def test_repository_profile_metrics_and_markdown_match_baseline(self) -> None:
-        profile = inspect_repository(ROOT)
+        profile = _repository_profile(ROOT)
         identities = {(item.path, item.qualname, item.line) for item in profile.functions}
         baseline = json.loads((ROOT / "src/gravity_sdk/governance/quality-baseline.json").read_text())
         function_excess = sum(max(0, item.sloc - FUNCTION_SLOC_LIMIT) for item in profile.functions)
@@ -537,7 +580,7 @@ def sample(value):
         )
 
     def test_repository_gate_passes_checked_in_baseline(self) -> None:
-        errors = validate(ROOT, base_ref=None)
+        errors = _validate_repository(ROOT, base_ref=None)
         self.assertEqual([], errors)
 
 
