@@ -53,6 +53,11 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             (py, "-m", "pytest", "-q", "-n", "auto", "--dist", "load"),
             1800,
         ),
+        GateSpec(
+            "test_duration_budget",
+            (py, "scripts/check_test_duration_budget.py"),
+            1800,
+        ),
         GateSpec("compiler_check", (py, "-m", "gravity_sdk.compiler", "check")),
         GateSpec("quality_check", (py, "-m", "gravity_sdk.quality", "check")),
         GateSpec(
