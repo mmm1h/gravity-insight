@@ -97,7 +97,7 @@ def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
     from .auto_upgrade import (
         TERMINAL_UPGRADE_STATUSES,
         TARGET_PYTHON_ENV,
-        UPGRADE_RESTART_EXIT_CODE,
+        UPDATE_POLICY_EXIT_CODE,
         maybe_auto_upgrade,
         startup_update_enabled,
     )
@@ -107,7 +107,7 @@ def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
     result = maybe_auto_upgrade(
         args, target_python=os.environ.get(TARGET_PYTHON_ENV)
     )
-    return UPGRADE_RESTART_EXIT_CODE if result.status in TERMINAL_UPGRADE_STATUSES else None
+    return UPDATE_POLICY_EXIT_CODE if result.status in TERMINAL_UPGRADE_STATUSES else None
 
 
 def main(argv: Sequence[str] | None = None) -> int:
