@@ -50,7 +50,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
         ),
         GateSpec(
             "pytest_collector",
-            (py, "-m", "pytest", "-q", "-n", "auto", "--dist", "loadscope"),
+            (py, "-m", "pytest", "-q", "-n", "auto", "--dist", "load"),
             1800,
         ),
         GateSpec(

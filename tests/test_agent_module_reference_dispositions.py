@@ -59,6 +59,7 @@ from scripts.validate_r17_canonical_source_errata import (
     validate_phase1_reviewed_state,
 )
 from tests.repository_tree_gate import (
+    DEFAULT_TIMEOUT_SECONDS,
     RepositoryTreeGateTimeout,
     repository_tree_read,
     repository_tree_write,
@@ -124,14 +125,14 @@ import tempfile
 import time
 from pathlib import Path
 
-from tests.repository_tree_gate import repository_tree_write
+from tests.repository_tree_gate import DEFAULT_TIMEOUT_SECONDS, repository_tree_write
 
 root = Path(sys.argv[1])
 state = Path(sys.argv[2])
 with repository_tree_write(
     root=root,
     purpose="deterministic R17 repository writer",
-    timeout_seconds=30,
+    timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
 ):
     with tempfile.TemporaryDirectory(
         dir=root / "tests", prefix="r17-deterministic-"
@@ -236,10 +237,11 @@ def _assert_repository_tree_gate_orders_writer_and_scan(
         scan_result: list[AuditResult] = []
         scan_errors: list[BaseException] = []
         acquisition_attempted = threading.Event()
+        acquisition_completed = threading.Event()
         release = state / "release"
         scanner: threading.Thread | None = None
         try:
-            deadline = time.monotonic() + 35
+            deadline = time.monotonic() + DEFAULT_TIMEOUT_SECONDS + 5
             while not (state / "ready").exists():
                 if process.poll() is not None:
                     stdout, stderr = process.communicate()
@@ -268,6 +270,7 @@ def _assert_repository_tree_gate_orders_writer_and_scan(
             def observed_repository_tree_read(**kwargs: Any):
                 acquisition_attempted.set()
                 with real_repository_tree_read(**kwargs):
+                    acquisition_completed.set()
                     yield
 
             def scan() -> None:
@@ -287,8 +290,15 @@ def _assert_repository_tree_gate_orders_writer_and_scan(
                 )
                 test_case.assertTrue(scanner.is_alive())
                 release.write_text("release", encoding="ascii")
-                scanner.join(timeout=30)
-            test_case.assertFalse(scanner.is_alive(), "guarded repository scan timed out")
+                test_case.assertTrue(
+                    acquisition_completed.wait(DEFAULT_TIMEOUT_SECONDS),
+                    "guarded repository scan did not acquire the shared gate",
+                )
+                scanner.join(timeout=DEFAULT_TIMEOUT_SECONDS)
+            test_case.assertFalse(
+                scanner.is_alive(),
+                "guarded repository scan did not finish after acquiring the shared gate",
+            )
             test_case.assertEqual([], scan_errors)
             test_case.assertEqual(1, len(scan_result))
             observed = {
@@ -306,8 +316,10 @@ def _assert_repository_tree_gate_orders_writer_and_scan(
         finally:
             release.write_text("release", encoding="ascii")
             if scanner is not None:
-                scanner.join(timeout=35)
-            stdout, stderr = process.communicate(timeout=65)
+                scanner.join(timeout=DEFAULT_TIMEOUT_SECONDS)
+            stdout, stderr = process.communicate(
+                timeout=DEFAULT_TIMEOUT_SECONDS + 5
+            )
             test_case.assertEqual(
                 0,
                 process.returncode,
