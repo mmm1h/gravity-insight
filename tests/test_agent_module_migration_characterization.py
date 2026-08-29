@@ -26,6 +26,7 @@ from tests.agent_migration_characterization import (
     root_export_module_collisions,
     unexpected_root_export_module_collisions,
 )
+from tests.repository_tree_gate import repository_tree_read
 
 
 _LAZY_PROBE = r"""
@@ -225,7 +226,11 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
         self.assertEqual(["future_collision"], observed)
 
     def test_agent_deep_paths_are_explicitly_public_or_internal(self) -> None:
-        references = agent_path_references((ROOT / "src", ROOT / "tests"))
+        with repository_tree_read(
+            root=ROOT,
+            purpose="agent deep-path src/tests repository scan",
+        ):
+            references = agent_path_references((ROOT / "src", ROOT / "tests"))
         unclassified = [
             f"{path.relative_to(ROOT)}:{line}: {reference}"
             for path, line, reference in references

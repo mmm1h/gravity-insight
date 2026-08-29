@@ -25,20 +25,9 @@ DEFAULT_MAX_WORKERS = 8
 DEFAULT_SHARD_TIMEOUT_SECONDS = 600
 MANIFEST_ENV = "GRAVITY_UNITTEST_SHARD_MANIFEST"
 CAPTURE_ENV = "GRAVITY_UNITTEST_SHARD_CAPTURE"
-LOCK_ENV = "GRAVITY_UNITTEST_REPOSITORY_LOCK"
 MANIFEST_SCHEMA = "gravity.unittest-shard-manifest.v1"
 SUMMARY_PATTERN = re.compile(r"(?m)^Ran (\d+) tests? in ([0-9.]+)s$")
 OK_PATTERN = re.compile(r"(?m)^OK(?: \(skipped=\d+\))?$")
-REPOSITORY_WRITER_TEST_IDS = frozenset(
-    {
-        "test_agent_module_reference_dispositions."
-        "AgentModuleReferenceDispositionTests."
-        "test_new_exact_dynamic_and_alias_loader_sites_cannot_escape_disposition",
-        "test_agent_module_reference_dispositions."
-        "AgentModuleReferenceDispositionTests."
-        "test_unknown_dynamic_domain_remains_a_blocker_after_regeneration",
-    }
-)
 
 
 class ShardError(RuntimeError):
@@ -247,90 +236,24 @@ def _install_actual_id_capture(capture_path: Path) -> Callable[[str, str], None]
     return record
 
 
-def _lock_range(stream: BinaryIO, offset: int, length: int) -> None:
-    if os.name == "nt":
-        import msvcrt
-
-        while True:
-            stream.seek(offset)
-            try:
-                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, length)
-                return
-            except OSError:
-                time.sleep(0.01)
-    else:
-        import fcntl
-
-        fcntl.lockf(stream.fileno(), fcntl.LOCK_EX, length, offset, os.SEEK_SET)
-
-
-def _unlock_range(stream: BinaryIO, offset: int, length: int) -> None:
-    if os.name == "nt":
-        import msvcrt
-
-        stream.seek(offset)
-        msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, length)
-    else:
-        import fcntl
-
-        fcntl.lockf(stream.fileno(), fcntl.LOCK_UN, length, offset, os.SEEK_SET)
-
-
-@contextmanager
-def _repository_access(
-    lock_path: Path, *, shard_index: int, shard_count: int, write: bool
-) -> Iterator[None]:
-    """Keep repository-mutating fixtures exclusive without changing shards."""
-    with lock_path.open("r+b", buffering=0) as stream:
-        turnstile_locked = False
-        access_locked = False
-        offset = 1 if write else shard_index
-        length = shard_count if write else 1
-        try:
-            _lock_range(stream, 0, 1)
-            turnstile_locked = True
-            _lock_range(stream, offset, length)
-            access_locked = True
-            if not write:
-                _unlock_range(stream, 0, 1)
-                turnstile_locked = False
-            yield
-        finally:
-            if access_locked:
-                _unlock_range(stream, offset, length)
-            if turnstile_locked:
-                _unlock_range(stream, 0, 1)
-
-
-def _guard_repository_access(
+def _record_scheduled_tests(
     tests: Sequence[unittest.TestCase],
     *,
-    lock_path: Path,
-    shard_index: int,
-    shard_count: int,
     record_progress: Callable[[str, str], None],
 ) -> None:
     for test in tests:
         original_run = test.run
-        write = test.id() in REPOSITORY_WRITER_TEST_IDS
 
-        def guarded_run(
+        def scheduled_run(
             result: unittest.TestResult | None = None,
             *,
             run: object = original_run,
-            writer: bool = write,
             test_id: str = test.id(),
         ) -> unittest.TestResult:
             record_progress("scheduled", test_id)
-            with _repository_access(
-                lock_path,
-                shard_index=shard_index,
-                shard_count=shard_count,
-                write=writer,
-            ):
-                return run(result)  # type: ignore[operator]
+            return run(result)  # type: ignore[operator]
 
-        test.run = guarded_run  # type: ignore[method-assign]
+        test.run = scheduled_run  # type: ignore[method-assign]
 
 
 def load_tests(
@@ -342,11 +265,8 @@ def load_tests(
     del standard_tests, pattern
     manifest_raw = os.environ.get(MANIFEST_ENV)
     capture_raw = os.environ.get(CAPTURE_ENV)
-    lock_raw = os.environ.get(LOCK_ENV)
-    if not manifest_raw or not capture_raw or not lock_raw:
-        raise ShardError(
-            f"worker requires {MANIFEST_ENV}, {CAPTURE_ENV}, and {LOCK_ENV}"
-        )
+    if not manifest_raw or not capture_raw:
+        raise ShardError(f"worker requires {MANIFEST_ENV} and {CAPTURE_ENV}")
     manifest = json.loads(Path(manifest_raw).read_text(encoding="utf-8"))
     if manifest.get("schema_version") != MANIFEST_SCHEMA:
         raise ShardError("worker manifest schema is invalid")
@@ -371,19 +291,14 @@ def load_tests(
     del test_package
     record_progress = _install_actual_id_capture(Path(capture_raw))
     tests = list(_flatten_suite(loader.loadTestsFromNames(test_ids)))
-    _guard_repository_access(
+    _record_scheduled_tests(
         tests,
-        lock_path=Path(lock_raw),
-        shard_index=shard_index,
-        shard_count=shard_count,
         record_progress=record_progress,
     )
     return unittest.TestSuite(tests)
 
 
-def _worker_environment(
-    manifest: Path, capture: Path, repository_lock: Path
-) -> dict[str, str]:
+def _worker_environment(manifest: Path, capture: Path) -> dict[str, str]:
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     environment.update(
@@ -398,7 +313,6 @@ def _worker_environment(
             "NO_PROXY": "127.0.0.1,localhost",
             MANIFEST_ENV: str(manifest),
             CAPTURE_ENV: str(capture),
-            LOCK_ENV: str(repository_lock),
         }
     )
     return environment
@@ -516,8 +430,6 @@ def _run_workers(
     if timeout_seconds < 1:
         raise ShardError("--shard-timeout-seconds must be at least 1")
     launched: list[_WorkerHandle] = []
-    repository_lock = root / "repository-access.lock"
-    repository_lock.write_bytes(b"\0" * (len(shards) + 1))
     for index, assigned_ids in enumerate(shards, 1):
         manifest = root / f"shard-{index:02d}.manifest.json"
         capture = root / f"shard-{index:02d}.ids.jsonl"
@@ -536,7 +448,7 @@ def _run_workers(
             process = subprocess.Popen(
                 [sys.executable, "-m", "unittest", "-v", "scripts.run_unittest_shards"],
                 cwd=ROOT,
-                env=_worker_environment(manifest, capture, repository_lock),
+                env=_worker_environment(manifest, capture),
                 stdout=stream,
                 stderr=subprocess.STDOUT,
             )

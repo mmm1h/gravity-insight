@@ -36,6 +36,7 @@ from gravity_sdk.governance.privacy_consistency import (
     exposed_field_names,
     inspect_privacy_classification_consistency,
 )
+from tests.repository_tree_gate import repository_tree_read
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,14 +63,18 @@ def _repository_input_key(root: Path) -> _RepositoryInputKey:
 
 def _repository_profile(root: Path = ROOT, *, fresh: bool = False) -> QualityProfile:
     resolved = root.resolve()
-    if fresh or resolved != ROOT.resolve():
-        return _inspect_repository(resolved)
-    key = _repository_input_key(resolved)
-    profile = _REPOSITORY_PROFILE_CACHE.get(key)
-    if profile is None:
-        profile = _inspect_repository(resolved)
-        _REPOSITORY_PROFILE_CACHE[key] = profile
-    return profile
+    with repository_tree_read(
+        root=resolved,
+        purpose="quality repository profile scan",
+    ):
+        if fresh or resolved != ROOT.resolve():
+            return _inspect_repository(resolved)
+        key = _repository_input_key(resolved)
+        profile = _REPOSITORY_PROFILE_CACHE.get(key)
+        if profile is None:
+            profile = _inspect_repository(resolved)
+            _REPOSITORY_PROFILE_CACHE[key] = profile
+        return profile
 
 
 def _validate_repository(

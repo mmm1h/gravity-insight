@@ -44,6 +44,7 @@ from gravity_sdk.domains import (
     CatalogOperation,
     derive_legacy_domain_maps,
 )
+from tests.repository_tree_gate import repository_tree_read
 
 try:
     from gravity_sdk import GravityInsightClient
@@ -2037,11 +2038,15 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertIn("team", derived.multidim_template_scopes)
 
     def test_domain_and_cli_modules_have_no_compiled_operation_literals(self):
-        profile = runtime.to_jsonable(
-            __import__(
-                "gravity_sdk.quality", fromlist=["inspect_repository"]
-            ).inspect_repository(ROOT)
-        )
+        with repository_tree_read(
+            root=ROOT,
+            purpose="CLI operation-literal repository scan",
+        ):
+            profile = runtime.to_jsonable(
+                __import__(
+                    "gravity_sdk.quality", fromlist=["inspect_repository"]
+                ).inspect_repository(ROOT)
+            )
         occurrences = profile["operation_literals"]
         target_paths = {
             "src/gravity_sdk/domains.py",
