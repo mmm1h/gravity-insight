@@ -161,7 +161,8 @@ MCP server metadata/adapter, protocol reference, plugin/host setup docs and cons
   The evaluator fairness rule is corpus-wide: an explicit supported format or
   enum term binds the matching schema variant within that Tool, while all
   Tools and Resources retain the original lexical scoring formula. It contains
-  case-specific rules or changed weights.
+  no case-specific rules and no changed weights, and it never consults the
+  expected answer.
 - Stage A changed only that rule (`gravity.schema-aware-lexical-selector.v2`)
   and scored `18/20` first-choice and `18/20` legal answers. Stage B then added
   only Tool/input-schema descriptions distinguishing Skill from Journey and
@@ -170,6 +171,20 @@ MCP server metadata/adapter, protocol reference, plugin/host setup docs and cons
   HTTP requests. The two remaining misses continued to use the frozen expected
   answers: Tool inspect rather than the server-metadata Resource, and the
   materialized saved-analysis URI rather than its URI template.
+- The whole `15/20` to `18/20` gain therefore came from the evaluator fairness
+  fix; the surface descriptions moved the score by zero. Read the result
+  accordingly: it establishes that Tool names, variants and Resource URIs are
+  lexically unambiguous for questions that name their target. It does not
+  establish that the prose descriptions are good, because a lexical surrogate
+  cannot measure that, and it is not a claim about real-Host behaviour.
+- Two frozen expected answers are contested and were deliberately left
+  unchanged and scored as misses. `tool-inspect-server` asks for server version
+  and protocol metadata, which this specification publishes as a Resource, so
+  the Resource may be a legitimate answer. `resource-saved-analyses` was scored
+  against the materialized URI although selecting the template and binding
+  `app=demo` is ordinary agent behaviour. A future non-frozen suite should
+  either accept both forms or state which one the question demands; changing a
+  frozen expected answer after seeing the score is not permitted.
 - No real Host versions are declared or locally available, so neither stage is
   Claude Desktop, Cursor, or other real-Host evidence. The offline development
   first-choice and legal-answer floors are nevertheless met, so R10 reaches
