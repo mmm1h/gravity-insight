@@ -60,6 +60,74 @@ def parse_unittest_summary(output: str) -> dict[str, int | bool | None]:
     }
 
 
+def _containing_branches(consumer_repository: Path, commit: str) -> str:
+    result = _run(
+        [
+            "git",
+            "for-each-ref",
+            "--sort=refname",
+            "--format=%(refname:short)",
+            f"--contains={commit}",
+            "refs/heads",
+            "refs/remotes",
+        ],
+        cwd=consumer_repository,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.strip() or f"git exited {result.returncode}"
+        return f"<unavailable: {detail}>"
+    return ", ".join(result.stdout.splitlines()) or "<none>"
+
+
+def _require_revision_on_main(consumer_repository: Path, commit: str) -> str:
+    main = _run(
+        ["git", "rev-parse", "--verify", "refs/heads/main^{commit}"],
+        cwd=consumer_repository,
+    )
+    if main.returncode != 0:
+        detail = main.stderr.strip() or f"git exited {main.returncode}"
+        raise ConsumerCheckError(
+            "canonical consumer main branch is unavailable: "
+            f"pinned_revision={commit}; "
+            f"containing_branches={_containing_branches(consumer_repository, commit)}; "
+            f"main_tip=<unavailable>; git_error={detail}"
+        )
+    main_tip = main.stdout.strip()
+    ancestor = _run(
+        ["git", "merge-base", "--is-ancestor", commit, main_tip],
+        cwd=consumer_repository,
+    )
+    if ancestor.returncode == 0:
+        return main_tip
+    branches = _containing_branches(consumer_repository, commit)
+    if ancestor.returncode == 1:
+        raise ConsumerCheckError(
+            "canonical consumer revision is not on main: "
+            f"pinned_revision={commit}; containing_branches={branches}; "
+            f"main_tip={main_tip}"
+        )
+    detail = ancestor.stderr.strip() or f"git exited {ancestor.returncode}"
+    raise ConsumerCheckError(
+        "canonical consumer main ancestry check failed: "
+        f"pinned_revision={commit}; containing_branches={branches}; "
+        f"main_tip={main_tip}; git_error={detail}"
+    )
+
+
+def _require_consumer_tests(consumer: Path, commit: str) -> None:
+    missing = [
+        (module, Path(*module.split(".")).with_suffix(".py"))
+        for module in CONSUMER_TESTS
+        if not (consumer / Path(*module.split(".")).with_suffix(".py")).is_file()
+    ]
+    if missing:
+        detail = ", ".join(f"{module} ({path.as_posix()})" for module, path in missing)
+        raise ConsumerCheckError(
+            "canonical consumer test module(s) missing at pinned revision "
+            f"{commit}: {detail}"
+        )
+
+
 def check_installed_wheel_consumer(
     consumer_repository: Path = DEFAULT_CONSUMER,
     revision: str = DEFAULT_REVISION,
@@ -74,6 +142,7 @@ def check_installed_wheel_consumer(
             f"canonical consumer revision is unavailable: {resolved.stderr.strip()}"
         )
     commit = resolved.stdout.strip()
+    _require_revision_on_main(consumer_repository, commit)
     with tempfile.TemporaryDirectory(prefix="gravity-canonical-consumer-") as raw:
         temporary = Path(raw).resolve()
         wheelhouse = temporary / "wheelhouse"
@@ -133,6 +202,7 @@ def check_installed_wheel_consumer(
             raise ConsumerCheckError(
                 f"canonical consumer checkout failed: {checked_out.stderr.strip()}"
             )
+        _require_consumer_tests(consumer, commit)
         environment = os.environ.copy()
         environment.pop("PYTHONPATH", None)
         environment["PYTHONNOUSERSITE"] = "1"
