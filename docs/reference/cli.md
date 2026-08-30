@@ -264,10 +264,18 @@ Bootstrap 校验显式 App、时间窗和物理事件，必要时刷新有界 me
 gravity analysis query --kind event --spec-schema
 gravity analysis query --kind event --app main --spec event.json
 gravity analysis query batch --input queries.json --dry-run
+gravity analysis query batch --input d0-cohorts.json --concurrency 4
 ```
 
 Analysis Spec 是紧凑、显式输入，不接受自然语言补业务字段。编译预览会脱敏条件值；event、funnel、
 retention、property、scatter 的精确 schema 由 `--spec-schema` 返回。
+
+`batch` 保留每个 spec 的独立时间窗和筛选语义，适合把每个注册日写成一个 D0 cohort event spec。
+实际执行从 `--concurrency` 开始；组件若返回 `category=upstream` 且 `retryable=true`，只重试这些组件，
+worker 逐轮减半直至 1，并在重试前做 1s 起、最多 30s 的指数退避（更长的 `retry_after_ms` 在该上限内
+优先）。成功、empty、partial 和确定性失败不重放。结果的 `adaptive_execution` 给出每轮 worker、退避、
+组件数、待重试数、最终 worker 和组件调用总数；worker=1 仍拒绝时以
+`terminal_reason=serial_retryable_failure` 结束本次调用，错误本身仍可在更长冷却后重试。
 
 ### Single-user journey
 

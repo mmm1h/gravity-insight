@@ -107,7 +107,7 @@ Machine state shared by this Requirement and `index.md`: `status=fixed_dev`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=64d8220a00e43f63fe623c97aa7a81c3720f0520f31c77baa01ef78f42c4965e`;
+`live_checkpoint_sha256=1355d3ce00c11d46feeb4ef6b15f3cefc82c625496e10e298d2383576d773300`;
 `live_checkpoint_tracked_sites=310`.
 
 The required cross-file state gate is

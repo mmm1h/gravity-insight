@@ -81,6 +81,10 @@ methods = sorted(
 | Plan recipe / DAG | `expand_plan_recipe()`、`validate_plan_recipe()`、`execute_plan_recipe()`、`validate_plan()`、`execute_plan()` |
 | 构造 | `from_env()` |
 
+`analysis_queries(payload, max_workers=N)` 对独立 spec 使用一个 Plan worker 预算。可重试的 upstream 组件
+拒绝会触发 `N -> floor(N/2) -> ... -> 1` 的有界自适应重试；已成功或确定性失败的组件不会重放。
+live 结果的 `adaptive_execution` 是值无关执行轨迹，可据此读取最终并发、重试轮数、退避和总组件调用数。
+
 非 callable 子服务保持独立职责：`gravity.insight`、`gravity.sql`、`gravity.sql_explorer`、
 `gravity.actions`、`gravity.experiments`、`gravity.journeys`、`gravity.capability_trust`、
 `gravity.analysis_artifacts`、`gravity.governor`、`gravity.execution_variants`、`gravity.prepared_plans`。
