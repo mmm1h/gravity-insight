@@ -50,6 +50,24 @@ def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
                 "confirmed-read samples."
             ),
         )
+    if _platform_asset_binary(selected, words):
+        return unavailable_gap(
+            query,
+            code="PLATFORM_ASSET_BINARY_CONTRACT_MISSING",
+            journey="platform_asset_binary",
+            reason=(
+                "The v2 material transfer can safely commit one fresh response-bound "
+                "file or thumbnail, but the complete exact-platform image and video "
+                "journey lacks private URL binding and deterministic not-found, expired, "
+                "not-cached, permission, and upstream-deleted evidence."
+            ),
+            next_action=(
+                "Obtain value-free real-environment response shapes for one fixed Gravity "
+                "route, private URL and state bindings, all five unavailable states, "
+                "redirect targets, expiry, and retention; do not pass a URL or infer a "
+                "business state from generic HTTP 403, 404, or 410."
+            ),
+        )
     return None
 
 
@@ -82,6 +100,25 @@ def _platform_specific_creatives(selected: str, words: frozenset[str]) -> bool:
         and any(term in selected for term in ("专属", "独有"))
         and any(term in selected for term in ("素材", "创意"))
         and any(term in selected for term in ("字段", "深查", "详情", "创意"))
+    )
+    return english or chinese
+
+
+def _platform_asset_binary(selected: str, words: frozenset[str]) -> bool:
+    english = (
+        "platform" in words
+        and bool(words & {"asset", "creative", "material"})
+        and bool(words & {"exact", "reference"})
+        and "image" in words
+        and "video" in words
+        and bool(words & {"download", "preview"})
+    )
+    chinese = (
+        any(term in selected for term in ("平台素材", "平台创意"))
+        and any(term in selected for term in ("精确引用", "精确素材", "素材 id", "素材id"))
+        and "图片" in selected
+        and "视频" in selected
+        and any(term in selected for term in ("预览", "下载"))
     )
     return english or chinese
 

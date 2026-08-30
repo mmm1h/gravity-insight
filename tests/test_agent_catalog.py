@@ -73,16 +73,30 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])
         self.assertEqual("discover_and_describe", result["mode"])
 
-    def test_registered_gap_inventory_has_seven_unique_machine_codes(self) -> None:
-        """Went 6 -> 7 for issue #25's post-contract Multidim cohort horizon.
+    def test_registered_gap_inventory_has_eight_unique_machine_codes(self) -> None:
+        """Issue #19 adds a fail-closed gap for its unproved five-state contract.
 
-        The added gap keeps upstream-unavailable cohort semantics out of caller
-        input blame and explicitly forbids generic event-retention substitution.
+        The existing single-role transfer stays callable, while the complete
+        image-and-video journey cannot be mistaken for a closed capability.
         """
 
         gaps = registered_unavailable_gaps()
-        self.assertEqual(7, len(gaps))
-        self.assertEqual(7, len({gap["code"] for gap in gaps}))
+        self.assertEqual(8, len(gaps))
+        self.assertEqual(8, len({gap["code"] for gap in gaps}))
+
+    def test_exact_platform_image_and_video_journey_returns_evidence_gap(self) -> None:
+        gap = unavailable_journey_gap(
+            "I have the exact reference to a platform creative; preview or download "
+            "its image and video."
+        )
+
+        self.assertIsNotNone(gap)
+        self.assertEqual("PLATFORM_ASSET_BINARY_CONTRACT_MISSING", gap["code"])
+        self.assertEqual("platform_asset_binary", gap["journey"])
+        self.assertFalse(gap["network_called"])
+        self.assertNotIn("next", gap)
+        self.assertNotIn("url", {key.casefold() for key in gap})
+        self.assertIn("do not pass a URL", gap["next_action"])
 
     def test_post_contract_multidim_discovery_returns_the_registered_gap(self) -> None:
         contract = multidim_multi_key_contract()

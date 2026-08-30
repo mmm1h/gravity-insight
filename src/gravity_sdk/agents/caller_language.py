@@ -159,6 +159,9 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "gap:PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING": (
         "深查各平台专属素材与创意",
     ),
+    "gap:PLATFORM_ASSET_BINARY_CONTRACT_MISSING": (
+        "按精确平台素材引用预览或下载图片/视频",
+    ),
     "gap:ANALYSIS_EXPORT_FILE_CONTRACT_MISSING": (
         "导出事件、分群、用户、付费或变现分析结果",
     ),
