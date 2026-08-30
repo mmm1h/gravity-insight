@@ -33,6 +33,35 @@ fetch bundles
   → map impact to operation IDs
 ```
 
+## 抓取失败诊断与定时告警
+
+需要机器判定失败原因时，为 `fetch --require-complete` 传入
+`--failure-output <path>`。该文件与 stderr 使用稳定字段：
+
+- `code`、`category`、`retryable`、`failure_class` 和 `next_action`；
+- 熔断时的 `lane.host`、不可逆 `host_key`、`operation_class`、`profile`；
+- `failures[]` 中按发生顺序记录的 `failure_index`、HTTP `attempt`、
+  `status_class`、可用时的 `http_status`，以及仅 transport failure 才有的
+  `exception_type`；
+- `cooldown_remaining_ms`。
+
+诊断只保留规范化 host，不保留 URL path、userinfo、query/fragment、header、凭据、
+异常 message 或响应值。`failure_class=upstream_capacity` 仅在所有致因都是
+`transport_error`、`rate_limited` 或 `server_error` 时成立；混合失败、请求预算耗尽、
+入口抓取期间变化和其他 completeness failure 都不是容量降级。
+
+每小时 workflow 在入口变化后最多跑三轮 crawl，每轮对单个资源只尝试一次，并复用同一 raw
+目录中已成功下载的 bundle；因此外层退避不会再叠加默认的三次资源内重试。容量失败按报告的
+30 秒冷却退避，单次等待最多 60 秒。三轮仍为容量失败时，workflow 上传
+`fetch-failure.json`，发出 GitHub warning 并明确“不作 route-drift 结论”，但不制造 hard
+failure。任何非容量型不完整仍 fail-closed，并要求维护者检查 snapshot 和失败报告后重跑。
+
+Governor 的阈值 3 和冷却 30 秒按实际 HTTP attempt、同一 scope/host/operation/profile lane
+计算。对批量 crawl，这个阈值用于在一个资源耗尽既有三次尝试或多个并发资源连续失败后停止继续
+打压同一 host；已经在途的请求不会被取消。阈值本身不按 bundle 数放大，因为数百个资源不是
+数百个独立上游容量域。CLI 遇到熔断会终止本轮 crawl，所以冷却由定时 workflow 的有界退避承接。
+若未来需要在单进程内续跑，应先实现显式 checkpoint/resume 和全局请求预算，不能单纯抬高阈值。
+
 ## 解释 coverage
 
 ### 强制覆盖边界

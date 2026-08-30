@@ -6,7 +6,7 @@ import contextvars
 import hashlib
 import os
 import threading
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, NoReturn
@@ -43,6 +43,16 @@ class GovernorRequestError(TransportError):
     category = ErrorCategory.UPSTREAM
     retryable = True
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        diagnostics: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(message, **kwargs)
+        self.diagnostics = dict(diagnostics or {})
+
 
 def raise_request_failure(error: Exception) -> NoReturn:
     """Preserve Governor denials while scrubbing raw transport failures."""
@@ -67,6 +77,8 @@ class GovernorRequest:
     coalesce_safe: bool
     timeout_seconds: float
     cancellation: threading.Event | None = None
+    target_host: str = "unknown"
+    attempt: int = 1
 
     @property
     def lane_key(self) -> tuple[str, str, str, str]:
