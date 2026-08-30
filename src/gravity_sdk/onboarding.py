@@ -67,7 +67,8 @@ def _offline_flag_selected(args: Any) -> bool:
         for name in (
             "dry_run", "query_spec_dry_run", "segment_spec_dry_run",
             "segment_mutation_dry_run", "analysis_query_batch_dry_run", "multidim_dry_run",
-            "metadata_sync_dry_run",
+            "metadata_sync_dry_run", "user_detail_aggregate_dry_run",
+            "user_detail_aggregate_input_schema",
         )
     )
 

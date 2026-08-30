@@ -64,7 +64,7 @@ methods = sorted(
 | Saved Analysis | `saved_analyses()`、`get_saved_analysis()`、`prepare_saved_analysis()`、`run_saved_analysis()`、`create_saved_analysis()`、`update_saved_analysis()`、`delete_saved_analysis()` |
 | Segment | `prepare_segment_evaluation()`、`segment_evaluate()`、`segment_snapshot()`、`segment_members()`、`segment_create_from_analysis()`、`segment_create_from_rule()`、`segment_create_from_history()`、`segment_create_from_tmp()`、`segment_update()`、`segment_update_rule()`、`segment_refresh()`、`segment_delete()` |
 | Dashboard / Kanban | `dashboard_snapshot()`、`prepare_dashboard_analysis()`、`run_dashboard_analysis()`、`kanban_mutation_schema()`、`kanban_mutation()` |
-| 用户、订单与变现 | `user_journey()`、`order_directory()`、`order_split_trace()`、`monetization_detail()` |
+| 用户、订单与变现 | `user_journey()`、`user_detail_aggregate_input_schema()`、`prepare_user_detail_aggregate()`、`user_detail_aggregate()`、`order_directory()`、`order_split_trace()`、`monetization_detail()` |
 | App 与归因 | `app_snapshot()`、`account_permission_profile()`、`attribution_snapshot()`、`attribution_performance()`、`attribution_user_detail()` |
 | 经营与投放 | `business_pulse()`、`company_usage()`、`advertiser_profile()`、`bilibili_account_performance()`、`custom_audiences()` |
 | 素材 | `material_performance()`、`fetch_material_asset()`、`title_packages()` |
@@ -204,6 +204,25 @@ fingerprint，不保存请求值、响应体或凭据。使用 `list_http_receip
 进程内 metadata cache 按 principal 和 credential generation 隔离，只缓存允许的 metadata snapshot。
 需要最新值时调用 `clear_metadata_cache()`，或临时 `bypass_metadata_cache(True)`；mutation 成功会失效
 相关缓存。CLI 每次新进程，不能假设命中同一内存 cache。
+
+<a id="user-detail-aggregate"></a>
+## User Detail Aggregate
+
+```python
+request = {
+    "source": {"app_id": "101", "date": "2026-08-29"},
+    "filters": [],
+    "group_by": ["Version"],
+    "measures": [{"name": "users", "op": "count"}],
+    "bounds": {"max_pages": 100, "max_items": 10000, "max_cells": 20},
+}
+preview = gravity.prepare_user_detail_aggregate(request)  # zero network
+result = gravity.user_detail_aggregate(request, max_workers=4)
+```
+
+`user_detail_aggregate_input_schema()` 返回闭合 machine schema。执行时动态字段先经 live metadata
+白名单验证，分页和 receipts 由公共 Insight client 负责；返回信封没有用户行或用户标识。当前源合同
+不能证明完整 collection，调用方必须检查 `pagination.completeness` 和 `claims.forbidden`。
 
 ## Insight 专用 facade
 
