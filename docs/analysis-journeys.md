@@ -4,7 +4,7 @@
 
 闭环要求：已知输入一次、未知输入最多两次；CLI、SDK、Plan、Agent 四面可达；结果能区分成功、空、部分失败和能力缺口；未知请求字段与破坏性响应漂移 fail closed。汇总由评测脚本从下表派生，不在正文手算。
 
-事件分析批量的当前判据（2026-08-20，#24）：31 组件 fake transport 证明 batch 与标量除各次执行独立生成的 `query_id` 外，上游 body 逐字段相同；固定同一 `query_id` 后 diff 为 0。batch 恰发 31 次、全局峰值受 `--concurrency 4` 限制，无 adapter 内层 worker。未登记 `extra.error` 继续 fail-closed，但不再归为 caller `INPUT_INVALID`，而是 retryable upstream，并提示先降到并发 1 或使用等量标量请求。报告未提供上游原文，因此 reviewed 表没有猜测登记任何限流文本。
+事件分析批量的当前判据（2026-08-30，#24）：每个注册日仍编译为独立 `analysis.event.query`，因此 D0 event 时间窗与注册队列时间窗不合并。31 组件 fake transport 继续证明 batch 与标量除独立 `query_id` 外 body 逐字段相同，首轮请求恰为 31 次且峰值受 `--concurrency 4` 限制；现在遇到 `status=error/category=upstream/retryable=true` 时只重放失败组件，按 `4 -> 2 -> 1` 和 `1s -> 2s` 退避。完整拒绝两轮后串行成功的场景为 93 次组件调用、最终 31/31 success；串行仍拒绝则同样在第 93 次停止并标 `terminal_reason=serial_retryable_failure`。另有 1 个首轮成功、30 个拒绝的场景证明成功组件不重放（31+30=61）。`adaptive_execution` 逐轮公开 worker、退避、组件/重试/终止计数与总组件调用数。该策略覆盖未知并发/短窗容量拒绝，不据此断言真实上游根因；未登记 `extra.error` 原文仍不传播。
 
 ## 当前动线
 

@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "3a46d9699427af68386f42718053c32fb6695ebadd45b8638f535e19ffae59f8",
+  "snapshot_digest": "094adc10cf88705f9a0df277d278a69f8b77c26b684040e04e00c3890b71a55c",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "c56618a33033d2b2cbf538498c87bd59375f88d31d93ab8e748d79df1087af8f"
+  "source_sha256": "cfeda833e7bcf98fe87add2b41835b2b5c3f8bc41a0fc9f184627023beb8a6bf"
 }

@@ -79,7 +79,10 @@ def add_analysis_query_batch_command(
         "--concurrency",
         type=concurrency_type,
         default=6,
-        help="Plan outer worker budget (default: 6, maximum: 24).",
+        help=(
+            "Initial Plan worker budget; retryable upstream component failures "
+            "reduce it toward 1 (default: 6, maximum: 24)."
+        ),
     )
     parser.add_argument(
         "--dry-run",

@@ -1,9 +1,9 @@
 """Compact multi-query product backed entirely by the public Plan v1 engine.
 
-This module owns only the small input contract that turns independent Analysis
-Query Spec v1 documents into sibling ``analysis_query`` composite nodes.  Plan
-v1 remains the sole owner of adapter preflight, concurrency, budgets, failure
-isolation, ordering, and caller-safe result envelopes.
+This module owns the small input contract that turns independent Analysis Query
+Spec v1 documents into sibling ``analysis_query`` composite nodes and delegates
+each bounded adaptive attempt to Plan v1. Plan remains the sole owner of adapter
+preflight, concurrency, budgets, failure isolation, and safe result envelopes.
 """
 
 from __future__ import annotations
@@ -57,6 +57,7 @@ _PLAN_RESULT_FIELDS = frozenset(
         "exit_code",
         "max_workers",
         "results",
+        "adaptive_execution",
     }
 )
 
@@ -120,7 +121,10 @@ def execute_analysis_query_batch(
         workspace=workspace,
         max_workers=max_workers,
     )
-    result = sdk.execute_plan(
+    from .analysis_query_batch_retry import execute_adaptive_analysis_batch
+
+    result = execute_adaptive_analysis_batch(
+        sdk,
         plan,
         workspace=selected_workspace,
         max_workers=max_workers,
