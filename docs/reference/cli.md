@@ -230,13 +230,52 @@ gravity materials performance --app main --start 2026-08-01 --end 2026-08-07 `
 
 ### Material Asset Fetch
 
-```powershell
-gravity materials fetch --source local --input material-result.json `
-  --ref-field gravity_material_id --ref <id> --role thumbnail --output thumbnail.jpg
+`--input` 是 source operation 的请求，不是上一条命令的结果文件。下面的 ID 是脱敏示例值；调用时替换
+为同一已授权项目的 `advertiser_id`、`project_id` 和已知 `material_id`：
+
+`bytedance-project-input.json`：
+
+```json
+{"advertiser_id": 1800000000000001, "project_id": 1800000000000002}
 ```
 
-下载只接受刚读取的受管结果中的精确引用，不接受任意 URL。redirect、类型、大小和 digest 任一不符
-都失败关闭；失败不留下 partial 文件。
+```powershell
+gravity materials fetch --source bytedance_project `
+  --input bytedance-project-input.json `
+  --ref-field material_id --ref 1800000000000003 `
+  --role file --output artifacts/creative.mp4
+```
+
+一次调用会 fresh 重读 `material.bytedance.project_material.list`、在私有上下文中唯一匹配引用、验证
+固定 host/path 与同 host redirect，再校验 MP4 MIME、1 GiB 上限、magic bytes 和 SHA-256，最后原子
+no-clobber 落盘。成功 JSON 的关键输出为：
+
+```json
+{
+  "schema_version": "gravity.material-asset.v2",
+  "status": "success",
+  "effect": "material_file_download",
+  "artifact": {
+    "status": "complete",
+    "local_ref": "creative.mp4",
+    "media_type": "video/mp4",
+    "extension": ".mp4",
+    "size_bytes": 18374201,
+    "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
+}
+```
+
+`size_bytes` 和 `sha256` 随真实文件变化；`artifacts/creative.mp4` 是最终文件，成功前不可见，已存在时
+拒绝覆盖。缩略图把 `--role` 改为 `thumbnail`、输出改为 `.jpg` 或 `.jpeg`，合同为 JPEG/16 MiB。
+
+边界是 fresh-response 子集，不是任意历史 ID 恢复：`local` 仅支持已观察的
+`tos-accelerate.gravity-engine.com` 租户 video/thumbnail 路径；`bytedance_project` 仅支持已观察的
+`v26-cc.oceanengine.com` MP4 和 `p26-sign.douyinpic.com` JPEG 路径。普通
+`material.local.list` / `material.bytedance.project_material.list` JSON 已不再投影 URL。fresh scope 中
+没有唯一引用、目标 role 缺失或非重试 4xx 无法区分缺失/过期/未缓存/删除/权限时，固定返回
+`MATERIAL_ASSET_BINARY_UNAVAILABLE`；host/path 越界返回 `MATERIAL_ASSET_SOURCE_UNSUPPORTED`。
+两者均不留下 partial 文件，也不回显 URL。
 
 ### Promotion Performance
 

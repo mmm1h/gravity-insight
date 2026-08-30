@@ -17,16 +17,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1345 -> 1347 for Retention's two fail-closed cohort gates.
+        """The material binary boundary removes two caller-error sites.
 
-        Both new sites expose only a structural count/non-empty actual, point to
-        executable Funnel/Segment alternatives, and preserve the prior B total.
+        A missing fresh row or role is now an indistinguishable upstream state,
+        covered by stable material error-code tests rather than this caller-only
+        inventory.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1347
-        assert counts["A"] == 1180
+        assert len(rows) == 1345
+        assert counts["A"] == 1178
         assert counts["B"] == 167
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

@@ -62,6 +62,10 @@ gravity agent-catalog describe <selector>
 
 读取节点可由 Plan 执行。Mutation 只有在对应产品明确支持 Plan effect 时才能进入 Plan；其余写产品交付同参数两步 CLI：preview/dry-run → 人工确认 → execute。
 
+素材文件是 direct file effect，不进入 Plan。Agent 选择 `material.asset.fetch` 后必须按卡片的
+`source_inputs`、`reference_fields` 和 `coverage` 补参；`MATERIAL_ASSET_BINARY_UNAVAILABLE` 只表示
+当前 fresh scope 中二进制不可得且原因不可区分，不能改写成删除、过期或无权限。
+
 执行必须验证目标所有权或 marker、容量、cascade 和 preimage。写成功后读回；响应不确定、布局丢失或对象漂移时抛结构化错误，不自动重试。
 
 ## 6. 解释结果

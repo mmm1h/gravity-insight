@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 3,
-    "description": "列出指定巨量项目可使用的素材；当前稳定投影开放已观察的视频素材标识、文件名、类型及文件/缩略图 URL，并保留已观察为空的试玩素材容器。",
+    "contract_version": 4,
+    "description": "列出指定巨量项目可使用的素材；普通 JSON 只开放视频素材标识、文件名和类型，文件/缩略图 URL 仅供 material.asset.fetch 的私有传输上下文使用。",
     "domain": "material",
     "effect": "read",
     "examples": [],
@@ -95,9 +95,7 @@
         "trial_play_material_list": [],
         "video_material_list": [
           "file_name",
-          "file_url",
           "material_id",
-          "thumbnail_url",
           "type"
         ]
       },
@@ -108,6 +106,12 @@
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "video_material_list": [
+          "file_url",
+          "thumbnail_url"
+        ]
+      },
       "required_data_keys": []
     },
     "semantic_error_rules": [

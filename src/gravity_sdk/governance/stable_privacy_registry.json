@@ -1754,9 +1754,7 @@
       "data.trial_play_material_list",
       "data.video_material_list",
       "data.video_material_list[].file_name",
-      "data.video_material_list[].file_url",
       "data.video_material_list[].material_id",
-      "data.video_material_list[].thumbnail_url",
       "data.video_material_list[].type"
     ],
     "material.bytedance.promotion_material.list": [
@@ -1958,7 +1956,6 @@
       "data.list[].file_size",
       "data.list[].file_size_str",
       "data.list[].file_type",
-      "data.list[].file_url",
       "data.list[].format",
       "data.list[].gravity_material_id",
       "data.list[].height",
@@ -2003,7 +2000,6 @@
       "data.list[].status",
       "data.list[].tag_list",
       "data.list[].tags",
-      "data.list[].thumbnail_url",
       "data.list[].thumbnail_url_size",
       "data.list[].transcribe_user_id",
       "data.list[].update_time",

@@ -81,6 +81,30 @@ methods = sorted(
 | Plan recipe / DAG | `expand_plan_recipe()`、`validate_plan_recipe()`、`execute_plan_recipe()`、`validate_plan()`、`execute_plan()` |
 | 构造 | `from_env()` |
 
+### Material Asset Fetch
+
+```python
+from pathlib import Path
+from gravity_sdk import GravitySDK
+
+gravity = GravitySDK.from_env()
+result = gravity.fetch_material_asset(
+    "bytedance_project",
+    {"advertiser_id": 1800000000000001, "project_id": 1800000000000002},
+    "material_id",
+    1800000000000003,
+    "file",
+    Path("artifacts/creative.mp4"),
+)
+assert result["artifact"]["status"] == "complete"
+assert Path("artifacts/creative.mp4").is_file()
+```
+
+三个 ID 是脱敏示例值，必须替换为同一已授权项目的真实引用。方法只覆盖 fresh source 中唯一命中、
+且 private URL 命中固定 host/path allowlist 的 JPEG 缩略图或 MP4；不接受 URL，也不把 URL 放入普通
+source JSON、结果、错误或 receipt。无法区分的缺失/过期/未缓存/删除/权限统一抛
+`MaterialAssetUnavailableError`（`code=MATERIAL_ASSET_BINARY_UNAVAILABLE`）；未登记 host/path 抛
+`MaterialAssetSourceUnsupportedError`。完整边界和 CLI 输出见 [Material Asset Fetch](cli.md#material-asset-fetch)。
 `analysis_queries(payload, max_workers=N)` 对独立 spec 使用一个 Plan worker 预算。可重试的 upstream 组件
 拒绝会触发 `N -> floor(N/2) -> ... -> 1` 的有界自适应重试；已成功或确定性失败的组件不会重放。
 live 结果的 `adaptive_execution` 是值无关执行轨迹，可据此读取最终并发、重试轮数、退避和总组件调用数。

@@ -13196,8 +13196,8 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "3",
-      "description": "本地素材库列表；返回全部已观察的文件、URL、尺寸、人员、审计、标签、使用和消耗字段。空数组容器已登记，未来出现未登记子键时继续 fail-closed。",
+      "contract_version": "4",
+      "description": "本地素材库列表；普通 JSON 返回已观察的文件元数据、尺寸、人员、审计、标签、使用和消耗字段，文件/缩略图 URL 仅供 material.asset.fetch 的私有传输上下文使用。",
       "domain": "material",
       "executable": true,
       "input_fields": [
@@ -13406,7 +13406,6 @@
           "file_size",
           "file_size_str",
           "file_type",
-          "file_url",
           "format",
           "gravity_material_id",
           "height",
@@ -13443,7 +13442,6 @@
           "status",
           "tag_list",
           "tags",
-          "thumbnail_url",
           "thumbnail_url_size",
           "transcribe_user_id",
           "update_time",
@@ -13457,7 +13455,10 @@
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [],
+        "known_omitted_item_keys": [
+          "file_url",
+          "thumbnail_url"
+        ],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {
           "material_consumed": [

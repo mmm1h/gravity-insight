@@ -11,6 +11,24 @@ from .paths import CONTRACT_ROOT
 
 
 SCHEMA_VERSION = "gravity.material-asset-contract.v2"
+_ALLOWED_SOURCES = {
+    ("local", "file"): [{
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_pattern": r"^/[^/]+/video/[^/]+\.mp4$",
+    }],
+    ("local", "thumbnail"): [{
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_pattern": r"^/[^/]+/image/video_thumbnail_url_[^/]+\.jpg$",
+    }],
+    ("bytedance_project", "file"): [{
+        "host": "v26-cc.oceanengine.com",
+        "path_pattern": r"^/[^/]+/[^/]+/video/tos/cn/tos-cn-ve-51/[^/]+$",
+    }],
+    ("bytedance_project", "thumbnail"): [{
+        "host": "p26-sign.douyinpic.com",
+        "path_pattern": r"^/tos-cn-v-[0-9]+/[^/]+~tplv-noop\.image$",
+    }],
+}
 
 
 def actual_value(
@@ -42,7 +60,8 @@ def material_asset_contract() -> Mapping[str, Any]:
         not isinstance(value, Mapping)
         or value.get("schema_version") != SCHEMA_VERSION
         or value.get("accepts_caller_url") is not False
-        or value.get("initial_host_policy") != "fresh_response_exact_host"
+        or value.get("public_source_projection") != "url_fields_omitted"
+        or value.get("initial_host_policy") != "contract_allowlist"
         or value.get("redirect_policy") != "same_host_only"
         or value.get("output_policy") != "root_bound_relative_atomic_no_clobber"
         or value.get("receipt_policy") != "value_free_http_references"
@@ -56,11 +75,11 @@ def material_asset_contract() -> Mapping[str, Any]:
 def _validate_sources(sources: Mapping[str, Any]) -> None:
     if set(sources) != {"local", "bytedance_project"}:
         raise ContractChangedError("material asset source set changed")
-    for source in sources.values():
+    for source_name, source in sources.items():
         if not _valid_source(source):
             raise ContractChangedError("material asset source contract changed")
-        for role in source["roles"].values():
-            if not _valid_role(role):
+        for role_name, role in source["roles"].items():
+            if not _valid_role(source_name, role_name, role):
                 raise ContractChangedError("material asset role contract changed")
 
 
@@ -90,7 +109,7 @@ def _valid_reference_fields(value: Any) -> bool:
     )
 
 
-def _valid_role(role: Any) -> bool:
+def _valid_role(source_name: str, role_name: str, role: Any) -> bool:
     if not isinstance(role, Mapping):
         return False
     media_type = role.get("observed_content_type")
@@ -101,6 +120,9 @@ def _valid_role(role: Any) -> bool:
     return (
         expected is not None
         and isinstance(role.get("url_field"), str)
+        and role.get("allowed_sources") == _ALLOWED_SOURCES.get(
+            (source_name, role_name)
+        )
         and _valid_extensions(role.get("extensions"), expected[0])
         and _valid_role_limits(role, expected[2])
         and _valid_signatures(role.get("magic_signatures"), expected[1])

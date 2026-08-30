@@ -86,7 +86,10 @@ def _add_material_fetch_command(
 ) -> None:
     fetch = subcommands.add_parser(
         "fetch",
-        help="Fetch a file URL taken from a fresh registered material response.",
+        help=(
+            "Fetch one allowlisted file from a fresh registered material response; "
+            "source URLs remain private."
+        ),
     )
     fetch.add_argument(
         "--source", required=True, choices=("local", "bytedance_project")

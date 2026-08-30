@@ -55,6 +55,7 @@ class _ArtifactTypeContract:
     extensions: tuple[str, ...]
     magic_signatures: Mapping[str, tuple[MagicSignature, ...]]
     max_bytes: int
+    allowed_sources: Mapping[str, tuple[str, ...]]
     max_redirects: int = 3
     timeout_seconds: float = 120.0
 
@@ -152,9 +153,10 @@ class ArtifactTransferService:
         host, declared_path = _private_url_identity(source.url)
         policy = replace(
             prepared.policy,
-            allowed_hosts=frozenset({host}),
+            allowed_hosts=frozenset(prepared.type_contract.allowed_sources),
             allowed_redirect_hosts=frozenset({host}),
-            allowed_path_prefixes={host: ("/",)},
+            allowed_path_prefixes={},
+            allowed_path_patterns=prepared.type_contract.allowed_sources,
         )
         now = self._wall_clock()
         authorized = AuthorizedBlobSource(
@@ -340,6 +342,7 @@ def _validate_type_contract(contract: _ArtifactTypeContract) -> None:
         and 0 < contract.max_bytes <= 1024 * 1024 * 1024
         and 0 <= contract.max_redirects <= 3
         and 0 < contract.timeout_seconds <= 300
+        and _valid_allowed_sources(contract.allowed_sources)
     )
     if not valid:
         raise ArtifactTransferError(
@@ -350,6 +353,36 @@ def _validate_type_contract(contract: _ArtifactTypeContract) -> None:
             reason_category="contract",
             next_action="Stop automation and verify the installed Artifact Transfer contract.",
         )
+
+
+def _valid_path_pattern(value: str) -> bool:
+    try:
+        re.compile(value)
+    except re.error:
+        return False
+    return True
+
+
+def _valid_allowed_sources(value: Mapping[str, tuple[str, ...]]) -> bool:
+    if not value:
+        return False
+    for host, patterns in value.items():
+        if (
+            not isinstance(host, str)
+            or host != host.casefold()
+            or any(character in host for character in "/*:@[]\\\r\n")
+            or not patterns
+        ):
+            return False
+        if any(
+            not isinstance(pattern, str)
+            or not pattern
+            or len(pattern) > 512
+            or not _valid_path_pattern(pattern)
+            for pattern in patterns
+        ):
+            return False
+    return True
 
 
 def _validate_resolved_source(source: _ResolvedArtifactSource) -> None:

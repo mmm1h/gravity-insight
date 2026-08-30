@@ -58,7 +58,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         j48 = next(case for case in cases if case["journey_id"] == "J48")
         self.assertEqual("attribution_performance", j42["expected"]["route_key"])
         self.assertEqual(
-            ("platform_asset_binary_gap", "PLATFORM_ASSET_BINARY_CONTRACT_MISSING"),
+            ("material_asset", None),
             (j48["expected"]["route_key"], j48["expected"]["gap_code"]),
         )
         raw_new = next(

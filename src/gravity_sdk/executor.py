@@ -20,6 +20,7 @@ from .analysis_projection_contract import (
 from .drift import ProjectionDrift, projection_drift_status
 from .errors import ManifestError, PolicyViolation, error_for_status
 from .list_row_projection import _project_list_rows
+from .material_asset_source import _capture_private_material_asset_rows
 from .models import (
     OperationSpec,
     ReadResult,
@@ -36,6 +37,7 @@ from .response_projection import (
     _is_json_scalar,
     _project_data_containers,
 )
+from . import response_redaction_policy as _response_redaction
 from .semantic_status import (
     SEMANTIC_EXPLICIT_EMPTY,
     enforce_semantic_rules as _enforce_semantic_rules,
@@ -45,11 +47,6 @@ from .user_event_projection import project_analysis_user_event
 
 
 _ABSENT = object()
-_RESPONSE_CREDENTIALS = frozenset(
-    {"access_token", "authorization", "cookie", "password", "private_key",
-     "refresh_token", "secret", "session_token", "token"}
-)
-_RESPONSE_CREDENTIAL_SUFFIXES = tuple(f"_{key}" for key in _RESPONSE_CREDENTIALS)
 class ReadExecutor:
     def __init__(self, registry: Registry, policy: PolicyEngine, transport: Transport) -> None:
         self._registry = registry
@@ -91,6 +88,7 @@ class ReadExecutor:
             )
         payload = response.payload
         semantic_status = _enforce_semantic_rules(operation, payload, http_receipts, values)
+        _capture_private_material_asset_rows(operation_id, payload)
         projected, drift_warnings, projection_drift, response_drift = _project_response(
             operation, payload, values, semantic_status,
             getattr(response, "status_code", 200), http_receipts,
@@ -703,8 +701,8 @@ def _sensitive_key(
     normalized = key.casefold().replace("-", "_")
     if allow_contracted_identifiers:
         return (
-            normalized in _RESPONSE_CREDENTIALS
-            or normalized.endswith(_RESPONSE_CREDENTIAL_SUFFIXES)
+            normalized in _response_redaction.RESPONSE_CREDENTIALS
+            or normalized.endswith(_response_redaction.RESPONSE_CREDENTIAL_SUFFIXES)
         )
     if normalized in blocked or normalized in {
         "album_authority",

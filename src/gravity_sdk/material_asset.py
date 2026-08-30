@@ -6,8 +6,16 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from .errors import ContractChangedError, ErrorDetail, GravityInsightError
+from .artifact_transfer import ArtifactTransferError
+from .artifact_transfer_errors import ArtifactTransferHttpError
+from .errors import (
+    ContractChangedError,
+    ErrorCategory,
+    ErrorDetail,
+    GravityInsightError,
+)
 from .material_asset_contract import actual_value, source_contract
+from .material_asset_source import _read_bound_material_asset_source
 from .blob_models import BlobTransport
 from .material_asset_transfer import (
     _download_response_bound_asset,
@@ -16,12 +24,47 @@ from .material_asset_transfer import (
 from .result_audit import (
     add_result_audit,
     bind_error_receipts,
+    error_receipt_references,
     result_receipt_references,
 )
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity.material-asset.v2"
+
+
+class MaterialAssetUnavailableError(ArtifactTransferError):
+    """The fresh source cannot distinguish why the requested bytes are absent."""
+
+    def __init__(self, *, stage: str = "source_resolution") -> None:
+        super().__init__(
+            "material binary is unavailable; the upstream reason is indistinguishable",
+            code="MATERIAL_ASSET_BINARY_UNAVAILABLE",
+            category=ErrorCategory.UPSTREAM,
+            stage=stage,
+            reason_category="indistinguishable_binary_unavailable",
+            next_action=(
+                "Refresh the same registered source scope once; if the reference or role "
+                "is still absent, report the binary as unavailable without guessing why."
+            ),
+        )
+
+
+class MaterialAssetSourceUnsupportedError(ArtifactTransferError):
+    """The private response URL is outside the evidence-backed source subset."""
+
+    def __init__(self, *, stage: str) -> None:
+        super().__init__(
+            "material binary source is outside the installed contract allowlist",
+            code="MATERIAL_ASSET_SOURCE_UNSUPPORTED",
+            category=ErrorCategory.UPSTREAM,
+            stage=stage,
+            reason_category="source_contract",
+            next_action=(
+                "Do not fetch the URL directly; report this source as unsupported by the "
+                "installed material asset contract."
+            ),
+        )
 
 
 class _SourceOperationError(GravityInsightError):
@@ -91,6 +134,15 @@ def fetch_material_asset(
             role,
             contract,
         )
+    except ArtifactTransferError as exc:
+        translated = _translate_material_transfer_error(exc)
+        bind_error_receipts(
+            translated,
+            [*source_receipts, *error_receipt_references(exc)],
+        )
+        if translated is exc:
+            raise
+        raise translated from exc
     except BaseException as exc:
         bind_error_receipts(exc, source_receipts)
         raise
@@ -148,33 +200,32 @@ def _resolve_response_asset(
     role_contract: Mapping[str, Any],
 ) -> tuple[str, Mapping[str, Any], str, Mapping[str, Any]]:
     operation_id = str(contract["operation_id"])
-    result = client.read(operation_id, dict(source_input))
+    selected = _read_bound_material_asset_source(
+        client, operation_id, dict(source_input)
+    )
+    if (
+        not isinstance(selected, tuple)
+        or len(selected) != 2
+        or not isinstance(selected[0], Mapping)
+        or not isinstance(selected[1], (list, tuple))
+    ):
+        raise ContractChangedError("material asset private source result changed")
+    result, rows = selected
     receipts = result_receipt_references(result)
     try:
         _raise_source_failure(result, operation_id)
-        rows = _response_rows(result, contract)
-        matched = [item for item in rows if _same_reference(item.get(ref_field), ref)]
+        matched = [
+            item
+            for item in rows
+            if isinstance(item, Mapping)
+            and _same_reference(item.get(ref_field), ref)
+        ]
         if len(matched) != 1:
-            raise actual_value(
-                field="ref",
-                actual=ref,
-                allowed=("exactly one reference in the fresh source response",),
-                next_action=(
-                    f"Run `gravity run {operation_id}` with the same input, then copy one "
-                    "exact documented reference field and value."
-                ),
-            )
+            raise MaterialAssetUnavailableError()
         url_field = str(role_contract["url_field"])
         url = matched[0].get(url_field)
         if not isinstance(url, str) or not url.strip():
-            raise actual_value(
-                field="role",
-                actual=role,
-                allowed=("a role populated on the selected source row",),
-                next_action=(
-                    f"Refresh `{operation_id}` and select a row whose `{url_field}` is populated."
-                ),
-            )
+            raise MaterialAssetUnavailableError()
     except BaseException as exc:
         bind_error_receipts(exc, receipts)
         raise
@@ -194,17 +245,16 @@ def _raise_source_failure(result: Any, operation_id: str) -> None:
     raise ContractChangedError("material source operation returned an invalid envelope")
 
 
-def _response_rows(
-    result: Any, contract: Mapping[str, Any]
-) -> list[Mapping[str, Any]]:
-    if not isinstance(result, Mapping):
-        return []
-    value: Any = result
-    for part in contract.get("list_path", ()):
-        value = value.get(part) if isinstance(value, Mapping) else None
-    if not isinstance(value, list):
-        return []
-    return [item for item in value if isinstance(item, Mapping)]
+def _translate_material_transfer_error(
+    error: ArtifactTransferError,
+) -> ArtifactTransferError:
+    if error.code in {"ARTIFACT_SOURCE_DENIED", "ARTIFACT_REDIRECT_DENIED"}:
+        return MaterialAssetSourceUnsupportedError(stage=error.stage)
+    if isinstance(error, ArtifactTransferHttpError):
+        status = int(error.http_status or 0)
+        if 400 <= status < 500 and status not in {408, 425, 429}:
+            return MaterialAssetUnavailableError(stage="binary_response")
+    return error
 
 
 def _same_reference(observed: Any, selected: str | int) -> bool:
@@ -216,4 +266,9 @@ def _same_reference(observed: Any, selected: str | int) -> bool:
     )
 
 
-__all__ = ["SCHEMA_VERSION", "fetch_material_asset"]
+__all__ = [
+    "MaterialAssetSourceUnsupportedError",
+    "MaterialAssetUnavailableError",
+    "SCHEMA_VERSION",
+    "fetch_material_asset",
+]
