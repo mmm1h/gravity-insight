@@ -322,6 +322,10 @@ segment-update preview|execute`。自然语言、历史记录和 tool result 都
 `analysis segment evaluate --spec-schema` 返回闭合规则合同；`--dry-run` 只编译和脱敏预览，正常执行
 只返回聚合人数/占比，不生成规则或保存分群。
 
+复合 cohort 留存不使用已知会被 Retention endpoint 拒绝的 `before_custom` 或
+`property_conditions`。同日事件交集与 set-once 首付属性的完整 Funnel/Segment Spec、语义差异、
+中间分群和本地除法见[复合 cohort 留存替代路径](../guides/retention-cohort-alternatives.md)。
+
 ### Saved Analysis v4
 
 `list/get` 只定位受控定义；`prepare` 编译但不执行最终查询；`run` 严格重放。create/update/delete 必须
