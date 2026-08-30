@@ -508,7 +508,13 @@ def main() -> int:
     ]
     if args.check:
         if mismatched:
-            raise SystemExit("generated Agent guides are stale: " + ", ".join(str(path.relative_to(ROOT)) for path in mismatched))
+            raise SystemExit(
+                "generated Agent guides do not match their current contract inputs: "
+                + ", ".join(str(path.relative_to(ROOT)) for path in mismatched)
+                + ". Run `python scripts/generate_agent_skills.py` to rebuild the "
+                "guides from the checked-in contracts, then review the generated "
+                "guide changes."
+            )
         return 0
     for path, content in rendered.items():
         path.parent.mkdir(parents=True, exist_ok=True)

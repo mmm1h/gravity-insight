@@ -96,6 +96,90 @@ class PromotionReadinessTests(unittest.TestCase):
         self.assertIn("undeclared_release_exception", r15_result["blockers"])
         self.assertFalse(result["promotion_complete"])
 
+    def test_every_reason_code_has_specific_remediation(self) -> None:
+        expected_actions = {
+            "requirement_not_main_integrated": "Complete and merge the requirement",
+            "milestone_not_main_integrated": "Complete and merge the milestone",
+            "index_markdown_status_mismatch": "Status cell",
+            "historical_spec_delivery_status_mismatch": "historical delivery status",
+            "undeclared_release_exception": "main_integration.release_exceptions",
+            "release_exception_status_mismatch": "exception status exactly match",
+            "dependency_not_main_integrated": "every ID listed in dependencies",
+            "milestone_parent_mismatch": "Parent requirement cell",
+            "milestone_dependencies_mismatch": "Dependencies cell",
+        }
+
+        def base() -> tuple[dict[str, object], dict[str, dict[str, object]], dict[str, dict[str, object]], dict[str, str]]:
+            return (
+                {
+                    "requirements": [
+                        {
+                            "id": "R1",
+                            "status": "released",
+                            "dependencies": [],
+                            "milestones": [
+                                {"id": "M1", "status": "released", "dependencies": []}
+                            ],
+                        }
+                    ],
+                    "main_integration": {"release_exceptions": []},
+                },
+                {"R1": {"status": "released"}},
+                {"M1": {"status": "released", "parent_id": "R1", "dependencies": []}},
+                {"R1": "fixed_dev"},
+            )
+
+        cases = {}
+        document, rows, milestones, statuses = base()
+        document["requirements"][0]["status"] = "in_progress"
+        rows["R1"]["status"] = "in_progress"
+        cases["requirement_not_main_integrated"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        document["requirements"][0]["milestones"][0]["status"] = "in_progress"
+        milestones["M1"]["status"] = "in_progress"
+        cases["milestone_not_main_integrated"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        rows["R1"]["status"] = "merged_main"
+        cases["index_markdown_status_mismatch"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        statuses["R1"] = "in_progress"
+        cases["historical_spec_delivery_status_mismatch"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        document["requirements"][0]["status"] = "merged_main"
+        rows["R1"]["status"] = "merged_main"
+        cases["undeclared_release_exception"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        document["requirements"][0]["status"] = "merged_main"
+        rows["R1"]["status"] = "merged_main"
+        document["main_integration"]["release_exceptions"] = [{"id": "R1", "status": "released"}]
+        cases["release_exception_status_mismatch"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        document["requirements"].insert(0, {"id": "R0", "status": "in_progress", "dependencies": [], "milestones": []})
+        rows["R0"] = {"status": "in_progress"}
+        statuses["R0"] = "fixed_dev"
+        document["requirements"][1]["dependencies"] = ["R0"]
+        cases["dependency_not_main_integrated"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        milestones["M1"]["parent_id"] = "R0"
+        cases["milestone_parent_mismatch"] = (document, rows, milestones, statuses)
+
+        document, rows, milestones, statuses = base()
+        milestones["M1"]["dependencies"] = ["R0"]
+        cases["milestone_dependencies_mismatch"] = (document, rows, milestones, statuses)
+
+        for code, (document, rows, milestones, statuses) in cases.items():
+            with self.subTest(code=code):
+                result = build_promotion_readiness(document, rows, milestones, statuses)
+                blocker = next(item for item in result["blockers"] if item["code"] == code)
+                self.assertIn(expected_actions[code], blocker["remediation"])
+
 
 if __name__ == "__main__":
     unittest.main()

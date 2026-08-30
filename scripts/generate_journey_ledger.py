@@ -35,7 +35,12 @@ def main() -> int:
         except OSError:
             current = ""
         if current != rendered:
-            print("Journey ledger snapshot is stale")
+            print(
+                "Journey ledger snapshot does not match docs/analysis-journeys.md. "
+                "Run `python scripts/generate_journey_ledger.py` to rebuild "
+                "src/gravity_sdk/contracts/journeys/ledger-snapshot.v1.json from "
+                "that checked-in source, then review the generated snapshot."
+            )
             return 1
         print("Journey ledger snapshot is current")
         return 0
