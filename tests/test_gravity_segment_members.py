@@ -2,18 +2,18 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, cli
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk import plan_segment_members_adapter as plan_subject
-from gravity_sdk.segment_members import (
+from gravity_insight import GravitySDK, cli
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight import plan_segment_members_adapter as plan_subject
+from gravity_insight.segment_members import (
     ANALYSIS_SEGMENT_USER_DETAIL,
     SCHEMA_VERSION,
     segment_members,
 )
-from gravity_sdk.segment_spec_cli import run_segment_command
-from gravity_sdk.agents.segment_members import segment_members_query
-from gravity_sdk.agents.intent_routing import multiple_product_intents
+from gravity_insight.segment_spec_cli import run_segment_command
+from gravity_insight.agents.segment_members import segment_members_query
+from gravity_insight.agents.intent_routing import multiple_product_intents
 
 
 def _member_read(*, truncated=False, status="success"):
@@ -132,9 +132,9 @@ class SegmentMembersTests(unittest.TestCase):
         expected = {"schema_version": SCHEMA_VERSION, "ok": True}
         workspace = _Workspace()
         with (
-            patch("gravity_sdk.segment_spec_cli.load_workspace", return_value=workspace),
-            patch("gravity_sdk.segment_spec_cli.resolve_workspace_app", return_value=17),
-            patch("gravity_sdk.segment_spec_cli.segment_members", return_value=expected) as facade,
+            patch("gravity_insight.segment_spec_cli.load_workspace", return_value=workspace),
+            patch("gravity_insight.segment_spec_cli.resolve_workspace_app", return_value=17),
+            patch("gravity_insight.segment_spec_cli.segment_members", return_value=expected) as facade,
         ):
             self.assertIs(expected, run_segment_command(
                 parsed, lambda: object(), lambda _v: {}, lambda *_a, **_k: {}
@@ -143,7 +143,7 @@ class SegmentMembersTests(unittest.TestCase):
         self.assertEqual(("Name", "user$level"), facade.call_args.kwargs["fields"])
 
         sdk = GravitySDK(workspace=workspace, insight_factory=lambda: object())
-        with patch("gravity_sdk.segment_members.segment_members", return_value=expected) as core:
+        with patch("gravity_insight.segment_members.segment_members", return_value=expected) as core:
             self.assertIs(expected, sdk.segment_members("main", 8, fields=("Name",)))
         self.assertEqual((17, 8), core.call_args.args[1:])
 

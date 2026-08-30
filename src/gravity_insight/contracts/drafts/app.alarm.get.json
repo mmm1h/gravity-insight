@@ -1,0 +1,171 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "evidence": "evidence/probe/20260808T205501Z_app.alarm.get.yaml",
+        "status": "open"
+      },
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T205501Z_app.alarm.get.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T205501Z_app.alarm.get.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/9",
+      "method": "GET",
+      "path": "/account_center/api/v1/company/company_capacity/alarm/get/",
+      "route_index": 9,
+      "route_sha256": "5f2026cbeaf278d8f7e8af11cd81f2fd6b6c20685213d1776615208e4526af30"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205323Z_app.alarm.get.yaml",
+        "probed_at": "2026-08-08T20:53:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205501Z_app.alarm.get.yaml",
+        "probed_at": "2026-08-08T20:55:01Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "pagination_unverified",
+        "probe_inconclusive",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "App 与账号",
+      "callers": [
+        "tt"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 7552,
+        "file": "raw/web.gravity-engine.com/assets/UsageOverview-D76wkWy8.js",
+        "line": 1,
+        "offset": 7551,
+        "url": "https://web.gravity-engine.com/assets/UsageOverview-D76wkWy8.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "path": "/account_center/api/v1/company/company_capacity/alarm/get/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "不限量"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: pagination_unverified, probe_inconclusive, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /account_center/api/v1/company/company_capacity/alarm/get/; request binding, pagination, and response projection remain unverified.",
+    "domain": "app",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {},
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "app.alarm.get",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/account_center/api/v1/company/company_capacity/alarm/get/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/app.alarm.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "alarm",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

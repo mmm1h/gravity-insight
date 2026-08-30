@@ -1,6 +1,6 @@
 {
   "artifact_kind": "skills_lock",
-  "lock_digest": "ecc8b43bb71a89b9c767520c7f4cfe8d3b8af9131f67711cb16b5eea4fda8ac2",
+  "lock_digest": "60d3de1deb055cfe014a4bf5714924be8fe9f1240253033dcf7c4916c2273c42",
   "requested": [
     "skill://gravity.game/ad-delivery-analysis@1.0.0",
     "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
@@ -1252,7 +1252,7 @@
   ],
   "source": {
     "index_digest": "43ddcee67048c7725d7359e8bfb099f0b32cf4a09ed38258cacb83abb906b001",
-    "source_descriptor_digest": "24ee80a0813aa50fad5adf5e1c7695032c6add1c9b91b172fa77de8a24dcc73d",
+    "source_descriptor_digest": "96642df990855df8f6a248f0dc0bef9121724b380342d2f257b81a3c37e864ee",
     "source_id": "hub-source://gravity/thinkingai-full@1",
     "source_revision": "f8c92a5678f3ccc142d082fde28e678edc2ef81c",
     "transport": "git"

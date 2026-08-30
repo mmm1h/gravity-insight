@@ -1,11 +1,11 @@
 import unittest
 from types import SimpleNamespace
 
-from gravity_sdk import plan_dashboard_snapshot_adapter as subject
-from gravity_sdk.dashboard_snapshot import SCHEMA_VERSION
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_execution import detail_exit_code, safe_native_error
+from gravity_insight import plan_dashboard_snapshot_adapter as subject
+from gravity_insight.dashboard_snapshot import SCHEMA_VERSION
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_execution import detail_exit_code, safe_native_error
 
 
 class _Workspace:

@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk import GravityInsightClient, InputValidationError
-from gravity_sdk.prober.privacy import classify_candidate_field
-from gravity_sdk.transport import TransportResponse
+from gravity_insight import GravityInsightClient, InputValidationError
+from gravity_insight.prober.privacy import classify_candidate_field
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +19,7 @@ def manifest() -> dict[str, Any]:
     path = (
         ROOT
         / "src"
-        / "gravity_sdk"
+        / "gravity_insight"
         / "contracts"
         / "operations"
         / f"{OPERATION_ID}.json"

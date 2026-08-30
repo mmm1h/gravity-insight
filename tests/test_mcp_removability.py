@@ -5,30 +5,30 @@ import json
 from pathlib import Path
 import unittest
 
-from gravity_sdk.journey_contract import journey_artifacts
+from gravity_insight.journey_contract import journey_artifacts
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "src/gravity_sdk"
+PACKAGE = ROOT / "src/gravity_insight"
 FIXTURE = ROOT / "tests/fixtures/mcp_removability_surfaces.json"
 
 
 def _mcp_import(node: ast.AST) -> str | None:
     if isinstance(node, ast.Import):
         for alias in node.names:
-            if alias.name == "gravity_sdk.mcp" or alias.name.startswith(
-                "gravity_sdk.mcp."
+            if alias.name == "gravity_insight.mcp" or alias.name.startswith(
+                "gravity_insight.mcp."
             ):
                 return alias.name
         return None
     if not isinstance(node, ast.ImportFrom):
         return None
     module = node.module or ""
-    if module == "gravity_sdk.mcp" or module.startswith("gravity_sdk.mcp."):
+    if module == "gravity_insight.mcp" or module.startswith("gravity_insight.mcp."):
         return module
     if node.level and (module == "mcp" or module.startswith("mcp.")):
         return module
-    if module in {"", "gravity_sdk"} and any(
+    if module in {"", "gravity_insight"} and any(
         alias.name == "mcp" for alias in node.names
     ):
         return f"{module}.mcp" if module else "mcp"
@@ -65,9 +65,9 @@ class MCPRemovabilityTests(unittest.TestCase):
 
     def test_reverse_import_detector_covers_absolute_and_relative_forms(self) -> None:
         sources = (
-            "import gravity_sdk.mcp.server",
-            "from gravity_sdk.mcp import MCPServer",
-            "from gravity_sdk import mcp",
+            "import gravity_insight.mcp.server",
+            "from gravity_insight.mcp import MCPServer",
+            "from gravity_insight import mcp",
             "from . import mcp",
             "from .mcp import server",
         )

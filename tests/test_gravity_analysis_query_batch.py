@@ -9,28 +9,28 @@ from pathlib import Path
 from typing import Any, Mapping
 from unittest.mock import patch
 
-from gravity_sdk import GravityInsightClient
-from gravity_sdk.analysis_query_batch import (
+from gravity_insight import GravityInsightClient
+from gravity_insight.analysis_query_batch import (
     BATCH_SCHEMA_VERSION,
     MULTI_APP_BATCH_SCHEMA_VERSION,
     analysis_query_batch_schema,
     execute_analysis_query_batch,
     validate_analysis_query_batch,
 )
-from gravity_sdk.analysis_query_batch_cli import run_analysis_query_batch_command
-from gravity_sdk.analysis_query_multi_app import analysis_query_multi_app_schema
-from gravity_sdk.analysis_spec_cli import run_analysis_query_command
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.cli import build_parser
-from gravity_sdk.onboarding import command_requires_credentials
-from gravity_sdk.errors import PermissionUnavailableError
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.transport import TransportResponse
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.analysis_query_batch_cli import run_analysis_query_batch_command
+from gravity_insight.analysis_query_multi_app import analysis_query_multi_app_schema
+from gravity_insight.analysis_spec_cli import run_analysis_query_command
+from gravity_insight.errors import InputValidationError
+from gravity_insight.cli import build_parser
+from gravity_insight.onboarding import command_requires_credentials
+from gravity_insight.errors import PermissionUnavailableError
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.transport import TransportResponse
+from gravity_insight.workspace import load_workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_DIR = ROOT / "src" / "gravity_sdk" / "manifests"
+MANIFEST_DIR = ROOT / "src" / "gravity_insight" / "manifests"
 RENDEZVOUS_TIMEOUT_SECONDS = 20
 
 
@@ -527,7 +527,7 @@ class AnalysisQueryBatchTests(unittest.TestCase):
     def test_31_capacity_rejections_degrade_4_to_2_to_1_then_succeed(self) -> None:
         sdk, transport = _adaptive_transport_sdk(rejection_rounds=2)
 
-        with patch("gravity_sdk.analysis_query_batch_retry.time.sleep") as sleeper:
+        with patch("gravity_insight.analysis_query_batch_retry.time.sleep") as sleeper:
             result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
 
         self.assertEqual(("success", 31, 0, 0, 0), (
@@ -570,7 +570,7 @@ class AnalysisQueryBatchTests(unittest.TestCase):
     def test_31_capacity_rejections_stop_after_serial_attempt(self) -> None:
         sdk, transport = _adaptive_transport_sdk(rejection_rounds=3)
 
-        with patch("gravity_sdk.analysis_query_batch_retry.time.sleep") as sleeper:
+        with patch("gravity_insight.analysis_query_batch_retry.time.sleep") as sleeper:
             result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
 
         self.assertEqual(("error", 0, 31, 0, 3), (
@@ -610,7 +610,7 @@ class AnalysisQueryBatchTests(unittest.TestCase):
             first_round_successes=frozenset({first_day}),
         )
 
-        with patch("gravity_sdk.analysis_query_batch_retry.time.sleep") as sleeper:
+        with patch("gravity_insight.analysis_query_batch_retry.time.sleep") as sleeper:
             result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
 
         self.assertEqual("success", result["status"])
@@ -745,7 +745,7 @@ class AnalysisQueryBatchTests(unittest.TestCase):
         self.assertFalse(command_requires_credentials(arguments, build_parser))
         parsed.input = payload
         with patch(
-            "gravity_sdk.analysis_query_batch_cli.run_analysis_query_batch",
+            "gravity_insight.analysis_query_batch_cli.run_analysis_query_batch",
             return_value={"ok": True},
         ) as run:
             run_analysis_query_batch_command(
@@ -868,7 +868,7 @@ class AnalysisQueryBatchTests(unittest.TestCase):
             "--apps", "main,overseas", "--concurrency", "3",
         ])
         with patch(
-            "gravity_sdk.sdk.GravitySDK.analysis_queries",
+            "gravity_insight.sdk.GravitySDK.analysis_queries",
             return_value={"schema_version": "gravity.analysis-query-batch-result.v2"},
         ) as run:
             result = run_analysis_query_command(

@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 import unittest
 
-from gravity_sdk.skill_contract import skill_artifact
-from gravity_sdk.skill_render import (
+from gravity_insight.skill_contract import skill_artifact
+from gravity_insight.skill_render import (
     agent_skill_name,
     render_agent_export,
     render_docs_mirror,

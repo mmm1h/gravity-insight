@@ -7,38 +7,38 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agents.report_directory import (
+from gravity_insight import GravitySDK
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.agents.report_directory import (
     report_directory_query,
     report_subscriptions_query,
 )
-from gravity_sdk.cli import main
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_report_adapter import (
+from gravity_insight.cli import main
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_report_adapter import (
     execute_report_composite,
     validate_report_composite,
 )
-from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
-from gravity_sdk.report_contracts import (
+from gravity_insight.prober.read_semantics import assert_probe_read_semantics
+from gravity_insight.report_contracts import (
     REPORT_DETAIL,
     REPORT_LIST,
     REPORT_UPDATE,
     SUBSCRIBE_CREATE,
     SUBSCRIBE_LIST,
 )
-from gravity_sdk.report_mutation import (
+from gravity_insight.report_mutation import (
     create_report,
     create_subscription,
     delete_report,
     marker_in_report,
 )
-from gravity_sdk.report_products import report_directory, report_subscriptions
+from gravity_insight.report_products import report_directory, report_subscriptions
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+CONTRACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts" / "operations"
 
 
 def _list_envelope(rows):
@@ -128,7 +128,7 @@ class GravityReportDirectoryTests(unittest.TestCase):
         self.assertEqual("gravity-insight.report-directory.v1", GravitySDK(insight=CatalogClient()).report_directory()["schema_version"])
 
         stdout = io.StringIO()
-        with patch("gravity_sdk.report_cli.runtime.build_client", return_value=CatalogClient()), contextlib.redirect_stdout(stdout):
+        with patch("gravity_insight.report_cli.runtime.build_client", return_value=CatalogClient()), contextlib.redirect_stdout(stdout):
             self.assertEqual(0, main(["reports", "directory", "--max-items", "2"]))
         self.assertEqual("gravity-insight.report-directory.v1", json.loads(stdout.getvalue())["schema_version"])
 

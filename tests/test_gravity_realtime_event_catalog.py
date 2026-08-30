@@ -6,12 +6,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import GravityInsightClient, GravitySDK, cli
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk import plan_realtime_event_catalog_adapter as plan_subject
-from gravity_sdk.realtime_event_catalog import SCHEMA_VERSION, realtime_event_catalog
-from gravity_sdk.transport import TransportResponse
+from gravity_insight import GravityInsightClient, GravitySDK, cli
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.plan import AdapterContext
+from gravity_insight import plan_realtime_event_catalog_adapter as plan_subject
+from gravity_insight.realtime_event_catalog import SCHEMA_VERSION, realtime_event_catalog
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +19,7 @@ OPERATION_ID = "analysis.realtime_event.list"
 
 
 def _manifest():
-    root = ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+    root = ROOT / "src" / "gravity_insight" / "contracts" / "operations"
     operations = []
     for name in ("app.list", OPERATION_ID):
         operations.append(
@@ -107,10 +107,10 @@ class RealtimeEventCatalogTests(unittest.TestCase):
         expected = {"schema_version": SCHEMA_VERSION, "ok": True, "status": "success"}
         workspace = _Workspace()
         with (
-            patch("gravity_sdk.capability_cli.load_workspace", return_value=workspace),
-            patch("gravity_sdk.capability_cli.runtime.build_client", return_value=object()),
+            patch("gravity_insight.capability_cli.load_workspace", return_value=workspace),
+            patch("gravity_insight.capability_cli.runtime.build_client", return_value=object()),
             patch(
-                "gravity_sdk.capability_cli.realtime_event_catalog",
+                "gravity_insight.capability_cli.realtime_event_catalog",
                 return_value=expected,
             ) as facade,
         ):
@@ -119,7 +119,7 @@ class RealtimeEventCatalogTests(unittest.TestCase):
 
         sdk = GravitySDK(workspace=workspace, insight_factory=lambda: object())
         with patch(
-            "gravity_sdk.realtime_event_catalog.realtime_event_catalog",
+            "gravity_insight.realtime_event_catalog.realtime_event_catalog",
             return_value=expected,
         ) as core:
             self.assertIs(

@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-from gravity_sdk.external_context_contract import (
+from gravity_insight.external_context_contract import (
     ExternalContextContractError,
     build_rpc_request,
     compile_external_provider,

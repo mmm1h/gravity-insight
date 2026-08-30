@@ -5,10 +5,10 @@ import json
 import threading
 import unittest
 
-from gravity_sdk.external_context_contract import ExternalContextContractError
-from gravity_sdk.external_context_provider import ExternalContextProvider
-from gravity_sdk.provider_rpc_guard import ProviderRpcGuard
-from gravity_sdk.provider_rpc_transport import (
+from gravity_insight.external_context_contract import ExternalContextContractError
+from gravity_insight.external_context_provider import ExternalContextProvider
+from gravity_insight.provider_rpc_guard import ProviderRpcGuard
+from gravity_insight.provider_rpc_transport import (
     CallableProviderTransport,
     ProviderTransportError,
 )

@@ -11,10 +11,10 @@ from unittest import mock
 
 import requests
 
-from gravity_sdk.adaptive_governor import AdaptiveRequestGovernor, STATIC
+from gravity_insight.adaptive_governor import AdaptiveRequestGovernor, STATIC
 
 try:
-    from gravity_sdk import (
+    from gravity_insight import (
         AuthenticationError,
         Credential,
         CredentialProvider,
@@ -22,9 +22,9 @@ try:
         PolicyViolation,
         SqlValidationError,
     )
-    from gravity_sdk.credentials import GRAVITY_HOST
-    from gravity_sdk import http_runtime as runtime_module
-    from gravity_sdk.http_runtime import (
+    from gravity_insight.credentials import GRAVITY_HOST
+    from gravity_insight import http_runtime as runtime_module
+    from gravity_insight.http_runtime import (
         CONNECTION_POOL_SIZE,
         FALLBACK_CHROME_MAJOR,
         INSIGHT_PROFILE,
@@ -36,7 +36,7 @@ try:
         browser_headers,
     )
 except ModuleNotFoundError:  # source checkout without an editable install
-    from gravity_sdk import (
+    from gravity_insight import (
         AuthenticationError,
         Credential,
         CredentialProvider,
@@ -44,9 +44,9 @@ except ModuleNotFoundError:  # source checkout without an editable install
         PolicyViolation,
         SqlValidationError,
     )
-    from gravity_sdk.credentials import GRAVITY_HOST
-    from gravity_sdk import http_runtime as runtime_module
-    from gravity_sdk.http_runtime import (
+    from gravity_insight.credentials import GRAVITY_HOST
+    from gravity_insight import http_runtime as runtime_module
+    from gravity_insight.http_runtime import (
         CONNECTION_POOL_SIZE,
         FALLBACK_CHROME_MAJOR,
         INSIGHT_PROFILE,
@@ -58,8 +58,8 @@ except ModuleNotFoundError:  # source checkout without an editable install
         browser_headers,
     )
 
-from gravity_sdk.errors import RateLimitedError, TransportError
-from gravity_sdk.transport import _raise_for_status
+from gravity_insight.errors import RateLimitedError, TransportError
+from gravity_insight.transport import _raise_for_status
 
 
 NOW = datetime(2026, 8, 8, 8, 0, tzinfo=timezone.utc)

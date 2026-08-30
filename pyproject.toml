@@ -27,8 +27,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/mmm1h/gravity-sdk"
-Issues = "https://github.com/mmm1h/gravity-sdk/issues"
+Repository = "https://github.com/mmm1h/gravity-insight"
+Issues = "https://github.com/mmm1h/gravity-insight/issues"
 
 [project.optional-dependencies]
 control-plane = ["PyNaCl==1.6.0"]
@@ -41,10 +41,10 @@ dev = [
 ]
 
 [project.scripts]
-gravity = "gravity_sdk.__main__:main"
-gravity-insight = "gravity_sdk.cli_stdio:insight_main"
-gravity-sql = "gravity_sdk.cli_stdio:sql_main"
-gravity-mcp = "gravity_sdk.mcp.server:main"
+gravity = "gravity_insight.__main__:main"
+gravity-insight = "gravity_insight.cli_stdio:insight_main"
+gravity-sql = "gravity_insight.cli_stdio:sql_main"
+gravity-mcp = "gravity_insight.mcp.server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -52,10 +52,10 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["gravity_sdk*"]
+include = ["gravity_insight*"]
 
 [tool.setuptools.package-data]
-gravity_sdk = [
+gravity_insight = [
   "contracts/**/*.json",
   "skills/**/*.md",
   "skills/**/*.json",
@@ -64,7 +64,7 @@ gravity_sdk = [
   "governance/*.json",
 ]
 
-[tool.gravity_sdk.agent-package-membership]
+[tool.gravity_insight.agent-package-membership]
 schema-version = 1
 members = [
   "advertiser_profile.py",

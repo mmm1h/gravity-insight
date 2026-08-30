@@ -11,33 +11,33 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import (
+from gravity_insight import (
     ExecutionVariantService,
     GravitySDK,
     validate_execution_variant,
     validate_execution_variant_characterization,
     validate_execution_variant_selection,
 )
-from gravity_sdk.analysis_query_execution_variant import (
+from gravity_insight.analysis_query_execution_variant import (
     execute_fixed_analysis_query_event_variant,
 )
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.execution_variant import ExecutionVariantContractError
-from gravity_sdk.execution_variant_characterization import (
+from gravity_insight.errors import InputValidationError
+from gravity_insight.execution_variant import ExecutionVariantContractError
+from gravity_insight.execution_variant_characterization import (
     build_execution_variant_characterization,
     load_execution_variant_characterization,
 )
-from gravity_sdk.execution_variant_contract import (
+from gravity_insight.execution_variant_contract import (
     DIRECT_VARIANT_URI,
     PLAN_VARIANT_URI,
     PRODUCT_SELECTOR,
     REFERENCE_JOURNEY,
     execution_variant_descriptors,
 )
-from gravity_sdk.execution_variant_selection import selection_digest
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_analysis_adapter import execute_analysis_query_plan
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.execution_variant_selection import selection_digest
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_analysis_adapter import execute_analysis_query_plan
+from gravity_insight.workspace import load_workspace
 from scripts.generate_execution_variant_characterization import (
     PRIVATE_EVENT,
     PRIVATE_ROW,
@@ -396,7 +396,7 @@ class ExecutionVariantServiceTests(unittest.TestCase):
                         wraps=sdk._analysis_query_direct,
                     ) as direct_owner,
                     patch(
-                        "gravity_sdk.plan_analysis_adapter.execute_analysis_query_plan",
+                        "gravity_insight.plan_analysis_adapter.execute_analysis_query_plan",
                         wraps=execute_analysis_query_plan,
                     ) as plan_owner,
                 ):
@@ -450,7 +450,7 @@ class ExecutionVariantServiceTests(unittest.TestCase):
                     wraps=sdk._analysis_query_direct,
                 ) as direct_owner,
                 patch(
-                    "gravity_sdk.plan_analysis_adapter.execute_analysis_query_plan",
+                    "gravity_insight.plan_analysis_adapter.execute_analysis_query_plan",
                     wraps=execute_analysis_query_plan,
                 ) as plan_owner,
             ):
@@ -538,7 +538,7 @@ class ExecutionVariantServiceTests(unittest.TestCase):
             "EXECUTION_VARIANT_CHARACTERIZATION_STALE", "fixture is stale"
         )
         with patch(
-            "gravity_sdk.execution_variant.load_execution_variant_characterization",
+            "gravity_insight.execution_variant.load_execution_variant_characterization",
             side_effect=error,
         ), self.assertRaises(ExecutionVariantContractError) as raised:
             service.select(PRODUCT_SELECTOR)
@@ -632,19 +632,19 @@ class ExecutionVariantServiceTests(unittest.TestCase):
         self.assertEqual("EXECUTION_VARIANT_UNKNOWN", variant.exception.code)
 
     def test_root_exports_are_lazy_and_exact(self) -> None:
-        import gravity_sdk
+        import gravity_insight
 
-        self.assertIs(gravity_sdk.ExecutionVariantService, ExecutionVariantService)
+        self.assertIs(gravity_insight.ExecutionVariantService, ExecutionVariantService)
         self.assertIs(
-            gravity_sdk.validate_execution_variant,
+            gravity_insight.validate_execution_variant,
             validate_execution_variant,
         )
         self.assertIs(
-            gravity_sdk.validate_execution_variant_characterization,
+            gravity_insight.validate_execution_variant_characterization,
             validate_execution_variant_characterization,
         )
         self.assertIs(
-            gravity_sdk.validate_execution_variant_selection,
+            gravity_insight.validate_execution_variant_selection,
             validate_execution_variant_selection,
         )
 

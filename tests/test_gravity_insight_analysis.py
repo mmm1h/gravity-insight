@@ -8,17 +8,17 @@ from pathlib import Path
 from typing import Any, Mapping
 
 try:
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.errors import InputValidationError
-    from gravity_sdk.transport import TransportResponse
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.errors import InputValidationError
+    from gravity_insight.transport import TransportResponse
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.errors import InputValidationError
-    from gravity_sdk.transport import TransportResponse
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.errors import InputValidationError
+    from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_DIR = ROOT / "src" / "gravity_sdk" / "manifests"
+MANIFEST_DIR = ROOT / "src" / "gravity_insight" / "manifests"
 QUERY_ID = "1723000000000Abcdefghijk12345678"
 
 
@@ -646,7 +646,7 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             set(result["data"]),
         )
         self.assertEqual([], result["warnings"])
-        from gravity_sdk.cache import (
+        from gravity_insight.cache import (
             bypass_metadata_cache,
             clear_metadata_cache,
             metadata_cache_stats,
@@ -1718,7 +1718,7 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         )
 
     def test_domain_query_id_format_is_frontend_compatible(self) -> None:
-        from gravity_sdk.domains import new_analysis_query_id
+        from gravity_insight.domains import new_analysis_query_id
 
         self.assertRegex(
             new_analysis_query_id(), re.compile(r"^\d{13}[A-Za-z0-9]{19}$")

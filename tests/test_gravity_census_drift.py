@@ -8,21 +8,21 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.census.diffing import diff_routes
-from gravity_sdk.census.impact import assess_route_impacts
+from gravity_insight.census.diffing import diff_routes
+from gravity_insight.census.impact import assess_route_impacts
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTES_PATH = ROOT / "src" / "gravity_sdk" / "census" / "data" / "routes.json"
+ROUTES_PATH = ROOT / "src" / "gravity_insight" / "census" / "data" / "routes.json"
 PROVENANCE_PATH = (
     ROOT
     / "src"
-    / "gravity_sdk"
+    / "gravity_insight"
     / "contracts"
     / "generated"
     / "provenance.json"
 )
-CONTRACTS_ROOT = ROOT / "src" / "gravity_sdk" / "contracts"
+CONTRACTS_ROOT = ROOT / "src" / "gravity_insight" / "contracts"
 
 REMOVED_OPERATION = "analysis.event.list"
 REMOVED_ROUTE = "/turbo_engine/api/v2/event/event_list/"
@@ -119,7 +119,7 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
                 [
                     sys.executable,
                     "-m",
-                    "gravity_sdk.census",
+                    "gravity_insight.census",
                     "diff",
                     str(baseline_path),
                     str(current_path),
@@ -136,7 +136,7 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
                 [
                     sys.executable,
                     "-m",
-                    "gravity_sdk.census",
+                    "gravity_insight.census",
                     "impact",
                     str(diff_path),
                     "--output",

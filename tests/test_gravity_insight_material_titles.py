@@ -5,12 +5,12 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk import GravityInsightClient, InputValidationError
-from gravity_sdk.transport import TransportResponse
+from gravity_insight import GravityInsightClient, InputValidationError
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+CONTRACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts" / "operations"
 OPERATION_IDS = (
     "material.bytedance_asset_text_title.list",
     "material.bytedance_std_asset_text_title.list",

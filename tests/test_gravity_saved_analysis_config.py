@@ -4,12 +4,12 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk.analysis_spec import compile_query_spec
-from gravity_sdk.dashboard_artifact import compile_dashboard_chart
-from gravity_sdk.dashboard_artifact_contract import BODY_FIELDS, UI_FIELDS
-from gravity_sdk.errors import UnsupportedOperationError
-from gravity_sdk.saved_analysis_config import generate_saved_analysis_config
-from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+from gravity_insight.analysis_spec import compile_query_spec
+from gravity_insight.dashboard_artifact import compile_dashboard_chart
+from gravity_insight.dashboard_artifact_contract import BODY_FIELDS, UI_FIELDS
+from gravity_insight.errors import UnsupportedOperationError
+from gravity_insight.saved_analysis_config import generate_saved_analysis_config
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
 
 
 def _workspace() -> Workspace:

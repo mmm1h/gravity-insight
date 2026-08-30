@@ -48,6 +48,6 @@ gravity run <operation-id> --input <input.json> --all-pages --max-pages 20 --max
 
 分页审计快照 `evidence/forensics/20260817_pagination_contract_audit.json` 是审计当时的历史裁决，
 不是 HEAD 镜像。当前合同的 `pagination.kind` 由
-`gravity_sdk.pagination_contract_audit.reconcile_pagination_audit` 实时对账：一致则
+`gravity_insight.pagination_contract_audit.reconcile_pagination_audit` 实时对账：一致则
 `unchanged`，已声明修复/漂移则带 `declared_kind_disposition`，未声明的分叉为
 `unexpected`。`template_default` 且当前仍为 `page_info` 的条目机器可读为 `shape_unproven`。

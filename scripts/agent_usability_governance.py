@@ -362,13 +362,13 @@ def _upstream_mutation_ids(client: Any | None) -> frozenset[str]:
             for operation in all_operations()
             if getattr(operation, "effect", None) == "mutation"
         )
-    from gravity_sdk.census.coverage import load_write_reservations
+    from gravity_insight.census.coverage import load_write_reservations
 
     root = Path(__file__).resolve().parents[1]
     operation_ids.update(
         str(item["operation_id"])
         for item in load_write_reservations(
-            root / "src" / "gravity_sdk" / "contracts" / "reservations"
+            root / "src" / "gravity_insight" / "contracts" / "reservations"
         )
     )
     return frozenset(operation_ids)

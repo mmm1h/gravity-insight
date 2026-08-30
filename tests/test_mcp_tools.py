@@ -5,10 +5,10 @@ from types import SimpleNamespace
 import tempfile
 import unittest
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.mcp.results import call_tool_result
-from gravity_sdk.mcp.server import MCPServer
-from gravity_sdk.mcp.tool_catalog import tool_catalog
+from gravity_insight import GravitySDK
+from gravity_insight.mcp.results import call_tool_result
+from gravity_insight.mcp.server import MCPServer
+from gravity_insight.mcp.tool_catalog import tool_catalog
 from tests.test_mcp_protocol import request_params
 from tests.test_analysis_result_contract import success_result
 from tests.test_repo_context_provider import (

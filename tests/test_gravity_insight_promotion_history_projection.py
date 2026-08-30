@@ -3,8 +3,8 @@ from __future__ import annotations
 import unittest
 from typing import Any, Mapping
 
-from gravity_sdk import GravityInsightClient
-from gravity_sdk.transport import TransportResponse
+from gravity_insight import GravityInsightClient
+from gravity_insight.transport import TransportResponse
 
 
 CONDITIONS_PATH = "/turbo_engine/api/v1/task/ai_trusteeship/conditions_history_list/"

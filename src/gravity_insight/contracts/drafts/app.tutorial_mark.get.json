@@ -1,0 +1,258 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "evidence": "evidence/probe/20260808T205502Z_app.tutorial_mark.get.yaml",
+        "status": "open"
+      },
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T205502Z_app.tutorial_mark.get.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T205502Z_app.tutorial_mark.get.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.value.report",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/1",
+      "method": "GET",
+      "path": "/account_center/api/v1/baseconf/tutorial_mark/",
+      "route_index": 1,
+      "route_sha256": "67a77ecac90f38c3f22ffe356e419861ee71eefbbd4bc659142a66654204c153"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205323Z_app.tutorial_mark.get.yaml",
+        "probed_at": "2026-08-08T20:53:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205502Z_app.tutorial_mark.get.yaml",
+        "probed_at": "2026-08-08T20:55:02Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "pagination_unverified",
+        "probe_inconclusive",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "App 与账号",
+      "callers": [
+        "c",
+        "vf"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 353373,
+        "file": "raw/web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js",
+        "line": 1,
+        "offset": 353372,
+        "url": "https://web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 354625,
+            "column": 353373,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js",
+            "line": 1,
+            "route_offset": 353372
+          },
+          {
+            "call_offset": 366161,
+            "column": 365542,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js",
+            "line": 1,
+            "route_offset": 365541
+          },
+          {
+            "call_offset": 370329,
+            "column": 365542,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js",
+            "line": 1,
+            "route_offset": 365541
+          },
+          {
+            "call_offset": 371090,
+            "column": 365542,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js",
+            "line": 1,
+            "route_offset": 365541
+          }
+        ],
+        "contract_confidence": "high",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/account_center/api/v1/baseconf/tutorial_mark/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "query",
+            "name": "subject",
+            "path": "$.subject",
+            "presence": "observed_always",
+            "types": [
+              "string"
+            ]
+          }
+        ]
+      },
+      "path": "/account_center/api/v1/baseconf/tutorial_mark/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "分享给我的",
+        "我的报表",
+        "报表模板",
+        "提供多元的可视化组件，将抽象的数据转化为具体的图形，方便直观捕捉到数据中的关键信息，提高理解和分析的效率。"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: pagination_unverified, probe_inconclusive, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /account_center/api/v1/baseconf/tutorial_mark/; request binding, pagination, and response projection remain unverified.",
+    "domain": "app",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "subject": {
+        "default": "report_guide",
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "subject": "report_guide"
+      }
+    },
+    "operation_id": "app.tutorial_mark.get",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/account_center/api/v1/baseconf/tutorial_mark/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/app.tutorial_mark.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "subject": "report_guide"
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "subject"
+      ]
+    },
+    "required_parent": [],
+    "resource": "tutorial_mark",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

@@ -6,29 +6,29 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from gravity_sdk.agents.analysis import analysis_query_spec_cards
-from gravity_sdk.agents.saved_analysis_mutation import (
+from gravity_insight.agents.analysis import analysis_query_spec_cards
+from gravity_insight.agents.saved_analysis_mutation import (
     saved_analysis_mutation_capability_inventory,
     saved_analysis_mutation_cards,
 )
-from gravity_sdk.cache import is_metadata_operation
-from gravity_sdk.errors import (
+from gravity_insight.cache import is_metadata_operation
+from gravity_insight.errors import (
     ContractChangedError,
     InputValidationError,
     PermissionUnavailableError,
     UnsupportedOperationError,
     UpstreamError,
 )
-from gravity_sdk.mutation_ownership import single_creator_owner
-from gravity_sdk.saved_analysis_catalog import GET_OPERATION_ID, LIST_OPERATION_ID
-from gravity_sdk.saved_analysis_mutation import (
+from gravity_insight.mutation_ownership import single_creator_owner
+from gravity_insight.saved_analysis_catalog import GET_OPERATION_ID, LIST_OPERATION_ID
+from gravity_insight.saved_analysis_mutation import (
     CREATE_UNSUPPORTED_CODE,
     UPDATE_OPERATION_ID,
     create_saved_analysis,
     delete_saved_analysis,
     update_saved_analysis,
 )
-from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
 
 
 def _workspace() -> Workspace:

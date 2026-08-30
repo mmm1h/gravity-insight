@@ -1,0 +1,294 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "not_probed",
+        "detail": "No live probe evidence exists for this route.",
+        "status": "open"
+      },
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "request_binding_unverified",
+        "detail": "Query/body fields and fixed request values have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_insight/census/data/route-response-fields.json#/routes/141",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/141",
+      "method": "POST",
+      "path": "/report/api/v1/admin_report/user/report/",
+      "route_index": 141,
+      "route_sha256": "87e10126170155222f8a6e183578aeb6ca61d44fff7c99e6c858f9601ecedf37"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "not_probed",
+        "pagination_unverified",
+        "request_binding_unverified",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "报表",
+      "callers": [
+        "o"
+      ],
+      "contract_family": null,
+      "cost_reason": "dynamic path or complex query/report semantics",
+      "estimated_implementation_cost": "高",
+      "first_occurrence": {
+        "column": 9389,
+        "file": "raw/web.gravity-engine.com/assets/Administration-Di29JjvO.js",
+        "line": 1,
+        "offset": 9388,
+        "url": "https://web.gravity-engine.com/assets/Administration-Di29JjvO.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 10829,
+            "column": 9389,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Administration-Di29JjvO.js",
+            "line": 1,
+            "route_offset": 9388
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/report/api/v1/admin_report/user/report/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "date_list",
+            "path": "$.date_list",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "event",
+            "path": "$.event",
+            "presence": "observed_always",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "filtering",
+            "path": "$.filtering",
+            "presence": "observed_always",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "order_by",
+            "path": "$.order_by",
+            "presence": "observed_always",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          }
+        ]
+      },
+      "path": "/report/api/v1/admin_report/user/report/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "${t}-广告-${r.name}",
+        "${t}-账户"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: not_probed, pagination_unverified, request_binding_unverified, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /report/api/v1/admin_report/user/report/; request binding, pagination, and response projection remain unverified.",
+    "domain": "report",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "date_list": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "event": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "array"
+      },
+      "filtering": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "object"
+      },
+      "order_by": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "array"
+      },
+      "page": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "date_list": 0,
+        "event": [],
+        "filtering": {},
+        "order_by": [],
+        "page": 1,
+        "page_size": 20
+      }
+    },
+    "operation_id": "report.user.query",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v1/admin_report/user/report/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/report.user.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "date_list",
+        "event",
+        "filtering",
+        "order_by",
+        "page",
+        "page_size"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "user",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

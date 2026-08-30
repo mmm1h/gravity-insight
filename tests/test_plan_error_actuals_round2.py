@@ -4,8 +4,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
 
 
 class _Workspace:
@@ -72,21 +72,21 @@ def _caught(call):
 
 class PlanErrorActualRound2Tests(unittest.TestCase):
     def test_key_list_summaries_cover_request_shapes(self):
-        from gravity_sdk.plan_advertiser_profile_adapter import (
+        from gravity_insight.plan_advertiser_profile_adapter import (
             validate_advertiser_profile_plan,
         )
-        from gravity_sdk.plan_bilibili_account_performance_adapter import (
+        from gravity_insight.plan_bilibili_account_performance_adapter import (
             validate_bilibili_account_performance_plan,
         )
-        from gravity_sdk.plan_material_performance_adapter import (
+        from gravity_insight.plan_material_performance_adapter import (
             validate_material_performance_plan,
         )
-        from gravity_sdk.plan_promotion_performance_adapter import (
+        from gravity_insight.plan_promotion_performance_adapter import (
             validate_promotion_performance_plan,
         )
-        from gravity_sdk.plan_pulse_adapter import validate_business_pulse
-        from gravity_sdk.plan_receipt_adapter import validate_receipt_query
-        from gravity_sdk.plan_validation import validate_plan
+        from gravity_insight.plan_pulse_adapter import validate_business_pulse
+        from gravity_insight.plan_receipt_adapter import validate_receipt_query
+        from gravity_insight.plan_validation import validate_plan
 
         secret = "business-value-must-not-spread"
         cases = {
@@ -140,29 +140,29 @@ class PlanErrorActualRound2Tests(unittest.TestCase):
                 self.assertNotIn(secret, rendered)
 
     def test_name_and_enum_summaries_cover_adapter_families(self):
-        from gravity_sdk.plan_adapters import build_plan_adapters
-        from gravity_sdk.plan_analysis_adapter import validate_analysis_query_plan
-        from gravity_sdk.plan_bilibili_account_performance_adapter import (
+        from gravity_insight.plan_adapters import build_plan_adapters
+        from gravity_insight.plan_analysis_adapter import validate_analysis_query_plan
+        from gravity_insight.plan_bilibili_account_performance_adapter import (
             validate_bilibili_account_performance_plan,
         )
-        from gravity_sdk.plan_dashboard_analysis_adapter import (
+        from gravity_insight.plan_dashboard_analysis_adapter import (
             validate_dashboard_analysis_plan,
         )
-        from gravity_sdk.plan_dashboard_snapshot_adapter import (
+        from gravity_insight.plan_dashboard_snapshot_adapter import (
             validate_dashboard_snapshot_plan,
         )
-        from gravity_sdk.plan_material_performance_adapter import (
+        from gravity_insight.plan_material_performance_adapter import (
             validate_material_performance_plan,
         )
-        from gravity_sdk.plan_multidim_adapter import validate_multidim_plan
-        from gravity_sdk.plan_promotion_performance_adapter import (
+        from gravity_insight.plan_multidim_adapter import validate_multidim_plan
+        from gravity_insight.plan_promotion_performance_adapter import (
             validate_promotion_performance_plan,
         )
-        from gravity_sdk.plan_segment_adapter import validate_segment_evaluate_plan
-        from gravity_sdk.plan_segment_members_adapter import (
+        from gravity_insight.plan_segment_adapter import validate_segment_evaluate_plan
+        from gravity_insight.plan_segment_members_adapter import (
             validate_segment_members_plan,
         )
-        from gravity_sdk.plan_segment_snapshot_adapter import (
+        from gravity_insight.plan_segment_snapshot_adapter import (
             validate_segment_snapshot_plan,
         )
 
@@ -211,21 +211,21 @@ class PlanErrorActualRound2Tests(unittest.TestCase):
                 self.assertIn(f'actual value: "{wrong}"', _caught(call))
 
     def test_count_and_limit_summaries_are_value_free(self):
-        from gravity_sdk.plan_dashboard_analysis_adapter import (
+        from gravity_insight.plan_dashboard_analysis_adapter import (
             validate_dashboard_analysis_plan,
         )
-        from gravity_sdk.plan_dashboard_snapshot_adapter import (
+        from gravity_insight.plan_dashboard_snapshot_adapter import (
             validate_dashboard_snapshot_plan,
         )
-        from gravity_sdk.plan_material_performance_adapter import (
+        from gravity_insight.plan_material_performance_adapter import (
             validate_material_performance_plan,
         )
-        from gravity_sdk.plan_pulse_adapter import validate_business_pulse
-        from gravity_sdk.plan_receipt_adapter import validate_receipt_query
-        from gravity_sdk.plan_segment_snapshot_adapter import (
+        from gravity_insight.plan_pulse_adapter import validate_business_pulse
+        from gravity_insight.plan_receipt_adapter import validate_receipt_query
+        from gravity_insight.plan_segment_snapshot_adapter import (
             validate_segment_snapshot_plan,
         )
-        from gravity_sdk.plan_validation import MAX_DECLARED_NODES, validate_plan
+        from gravity_insight.plan_validation import MAX_DECLARED_NODES, validate_plan
 
         workspace = _Workspace()
         cases = {
@@ -292,8 +292,8 @@ class PlanErrorActualRound2Tests(unittest.TestCase):
                 self.assertIn(f"actual value: {expected}", _caught(call))
 
     def test_result_type_summaries_do_not_echo_payloads(self):
-        from gravity_sdk.plan_analysis_adapter import safe_analysis_envelope
-        from gravity_sdk.plan_segment_adapter import safe_segment_envelope
+        from gravity_insight.plan_analysis_adapter import safe_analysis_envelope
+        from gravity_insight.plan_segment_adapter import safe_segment_envelope
 
         secret = "raw-result-must-not-spread"
         for label, call in {
@@ -306,11 +306,11 @@ class PlanErrorActualRound2Tests(unittest.TestCase):
                 self.assertNotIn(secret, rendered)
 
     def test_run_sql_cli_and_shape_summaries_are_structural(self):
-        from gravity_sdk.plan_adapters import build_plan_adapters
-        from gravity_sdk.plan_multidim_adapter import _product_schema
-        from gravity_sdk.plan_promotion_performance_adapter import _literal_metrics
-        from gravity_sdk.plan_pulse_adapter import validate_business_pulse
-        from gravity_sdk.read_cli import dispatch
+        from gravity_insight.plan_adapters import build_plan_adapters
+        from gravity_insight.plan_multidim_adapter import _product_schema
+        from gravity_insight.plan_promotion_performance_adapter import _literal_metrics
+        from gravity_insight.plan_pulse_adapter import validate_business_pulse
+        from gravity_insight.read_cli import dispatch
 
         workspace, insight = _Workspace(), _Insight()
         sdk = SimpleNamespace(workspace=workspace, insight=insight)
@@ -430,7 +430,7 @@ class PlanErrorActualRound2Tests(unittest.TestCase):
                     self.assertNotIn(forbidden, rendered)
 
         with patch(
-            "gravity_sdk.multidim_product.multidim_input_schema",
+            "gravity_insight.multidim_product.multidim_input_schema",
             return_value={"properties": []},
         ):
             self.assertIn('actual value: "list"', _caught(_product_schema))

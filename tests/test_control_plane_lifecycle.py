@@ -3,14 +3,14 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk.control_plane.errors import ControlPlaneVerificationError
-from gravity_sdk.control_plane.lifecycle import (
+from gravity_insight.control_plane.errors import ControlPlaneVerificationError
+from gravity_insight.control_plane.lifecycle import (
     bind_journey_snapshot,
     decide_activation,
     decide_rollback,
     resolve_update_plan,
 )
-from gravity_sdk.control_plane.update_models import (
+from gravity_insight.control_plane.update_models import (
     ArtifactPin,
     ExecutionSnapshot,
     InstallerEvidence,
@@ -150,8 +150,8 @@ class ControlPlaneLifecycleTests(unittest.TestCase):
             trust_root=fixture.trust_root,
             artifact_policy=fixture.policy,
             current_snapshot=self._current_snapshot(),
-            artifact_versions={"runtime/gravity_sdk.whl": "99.0.0"},
-            artifact_kinds={"runtime/gravity_sdk.whl": "runtime-wheel"},
+            artifact_versions={"runtime/gravity_insight.whl": "99.0.0"},
+            artifact_kinds={"runtime/gravity_insight.whl": "runtime-wheel"},
             target_environment="C:/external/gravity/python.exe",
             trusted_versions=fixture.trusted_versions,
             now=NOW,
@@ -160,7 +160,7 @@ class ControlPlaneLifecycleTests(unittest.TestCase):
     def _current_snapshot(self):
         digest = "sha256:" + ("1" * 64)
         artifact = ArtifactPin(
-            name="runtime/gravity_sdk.whl",
+            name="runtime/gravity_insight.whl",
             artifact_kind="runtime-wheel",
             version="0.4.0",
             reference=f"registry.example/gravity/runtime@{digest}",

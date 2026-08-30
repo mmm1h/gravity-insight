@@ -1,0 +1,227 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260808T205451Z_metadata.gravity_metric.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T205451Z_metadata.gravity_metric.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/864",
+      "method": "GET",
+      "path": "/turbo_engine/api/v2/datamanageconfig/gravity_metric/list/",
+      "route_index": 864,
+      "route_sha256": "d94d5ea7b7fef7b7c5a5a265b39af522a3df02b287d96afd7dd981d3a6e65eba"
+    },
+    "generated_at": "2026-08-08T19:21:41Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "inconclusive_empty",
+        "pagination_verified": true,
+        "path": "evidence/probe/20260808T192154Z_metadata.gravity_metric.list.yaml",
+        "probed_at": "2026-08-08T19:21:54Z",
+        "projected_schema_fingerprint": "757ad303e9c1282250ad889420363a180f84dabe04e3245700b366a85d893fc0",
+        "raw_schema_fingerprint": "8ecf03d5b2fa043c8509a4b774a6fc217c5bf672dbaf6d31c997cf64ce965bf7",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205322Z_metadata.gravity_metric.list.yaml",
+        "probed_at": "2026-08-08T20:53:22Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "8ecf03d5b2fa043c8509a4b774a6fc217c5bf672dbaf6d31c997cf64ce965bf7",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205451Z_metadata.gravity_metric.list.yaml",
+        "probed_at": "2026-08-08T20:54:51Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "8ecf03d5b2fa043c8509a4b774a6fc217c5bf672dbaf6d31c997cf64ce965bf7",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "元数据",
+      "callers": [],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 78497,
+        "file": "raw/web.gravity-engine.com/assets/Role-BccHVQip.js",
+        "line": 1,
+        "offset": 78496,
+        "url": "https://web.gravity-engine.com/assets/Role-BccHVQip.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 85487,
+            "column": 78497,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Role-BccHVQip.js",
+            "line": 1,
+            "route_offset": 78496
+          }
+        ],
+        "contract_confidence": "high",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v2/datamanageconfig/gravity_metric/list/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "query",
+            "name": "show_all",
+            "path": "$.show_all",
+            "presence": "observed_always",
+            "types": [
+              "boolean"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v2/datamanageconfig/gravity_metric/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "AdMore广告聚合",
+        "请输入角色名称",
+        "请选择页面权限"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft inferred from census route GET /turbo_engine/api/v2/datamanageconfig/gravity_metric/list/; response remains hidden until probe classification.",
+    "domain": "metadata",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "show_all": {
+        "default": true,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "boolean"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "show_all": true
+      }
+    },
+    "operation_id": "metadata.gravity_metric.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/gravity_metric/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/metadata.gravity_metric.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "show_all": true
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "show_all"
+      ]
+    },
+    "required_parent": [],
+    "resource": "gravity_metric",
+    "response_projection": {
+      "data_keys": [],
+      "data_shape": "list",
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

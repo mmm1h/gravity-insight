@@ -7,9 +7,9 @@ import json
 import re
 from pathlib import Path
 
-from gravity_sdk.prober.model import build_draft, create_bulk_drafts
-from gravity_sdk.prober.drafts import validate_source
-from gravity_sdk.prober.batch import classify_drafts
+from gravity_insight.prober.model import build_draft, create_bulk_drafts
+from gravity_insight.prober.drafts import validate_source
+from gravity_insight.prober.batch import classify_drafts
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -176,7 +176,7 @@ class GravityInsightBulkDraftTests(unittest.TestCase):
 
 
     def test_repository_drafts_satisfy_bulk_quality_gate(self):
-        contract_root = ROOT / "src" / "gravity_sdk" / "contracts"
+        contract_root = ROOT / "src" / "gravity_insight" / "contracts"
         operation_routes = set()
         for path in (contract_root / "operations").glob("*.json"):
             operation = json.loads(path.read_text(encoding="utf-8"))["operation"]

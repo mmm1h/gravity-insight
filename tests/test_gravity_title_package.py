@@ -6,15 +6,15 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.cli import main
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_title_package_adapter import (
+from gravity_insight import GravitySDK
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.cli import main
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_title_package_adapter import (
     execute_title_package_plan,
     validate_title_package_plan,
 )
-from gravity_sdk.title_package import OPERATION_IDS, SCHEMA_VERSION, title_packages
+from gravity_insight.title_package import OPERATION_IDS, SCHEMA_VERSION, title_packages
 class Client:
     def __init__(self, mode="success"):
         self.mode = mode
@@ -196,9 +196,9 @@ class TitlePackageTests(unittest.TestCase):
             "standard", sdk.title_packages("game", "standard")["package_kind"]
         )
         stdout = io.StringIO()
-        with patch("gravity_sdk.material_cli.runtime.build_client",
+        with patch("gravity_insight.material_cli.runtime.build_client",
                    return_value=Client()), \
-                patch("gravity_sdk.material_cli.load_workspace",
+                patch("gravity_insight.material_cli.load_workspace",
                       return_value=Workspace()), \
                 contextlib.redirect_stdout(stdout):
             code = main([

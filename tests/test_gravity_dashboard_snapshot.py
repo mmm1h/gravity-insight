@@ -1,8 +1,8 @@
 import json
 import unittest
 
-from gravity_sdk.dashboard_snapshot import _positive_app_id, dashboard_snapshot
-from gravity_sdk.errors import (
+from gravity_insight.dashboard_snapshot import _positive_app_id, dashboard_snapshot
+from gravity_insight.errors import (
     ContractChangedError, GravityInsightError, InputValidationError, LocalIOError,
     PaginationError,
 )

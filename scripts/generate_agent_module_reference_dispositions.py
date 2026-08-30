@@ -14,17 +14,31 @@ from typing import Any
 
 try:
     from .audit_agent_module_references import (
+        CURRENT_PACKAGE_ROOT,
         GOVERNANCE_EXCLUSION_RULE,
+        HISTORICAL_PACKAGE_ROOT,
+        PACKAGE_ROOT_MIGRATION,
         Finding,
         canonical_sha256,
+        historical_module_root,
+        project_module_root,
+        projected_module_mapping,
+        reference_module_mapping,
         scan_repository,
         source_key,
     )
 except ImportError:
     from audit_agent_module_references import (  # type: ignore[no-redef]
+        CURRENT_PACKAGE_ROOT,
         GOVERNANCE_EXCLUSION_RULE,
+        HISTORICAL_PACKAGE_ROOT,
+        PACKAGE_ROOT_MIGRATION,
         Finding,
         canonical_sha256,
+        historical_module_root,
+        project_module_root,
+        projected_module_mapping,
+        reference_module_mapping,
         scan_repository,
         source_key,
     )
@@ -81,8 +95,9 @@ _DATED_DECISION_PATTERN = re.compile(
 def _has_current_path_semantics(old_module: str, context: str) -> bool:
     """Recognize executable/current-path syntax before historical evidence."""
 
-    short = re.escape(old_module.removeprefix("gravity_sdk."))
-    qualified = rf"(?:(?:gravity_sdk\.)?{short}|\.{short})"
+    package_root, _, module_suffix = old_module.partition(".")
+    short = re.escape(module_suffix)
+    qualified = rf"(?:(?:{re.escape(package_root)}\.)?{short}|\.{short})"
     patterns = (
         rf"\bfrom\s+{qualified}\s+import\b",
         rf"\bimport\s+{qualified}\b",
@@ -92,20 +107,21 @@ def _has_current_path_semantics(old_module: str, context: str) -> bool:
         rf"getattr)\s*\([^\n)]{{0,160}}{qualified}",
         rf"\b(?:consumer|caller|call|invoke|use|import|patch)\b"
         rf"[^\n]{{0,120}}{qualified}",
-        rf"(?:src/gravity_sdk/)?{short}\.py",
+        rf"(?:src/{re.escape(package_root)}/)?{short}\.py",
     )
     return any(re.search(pattern, context, re.IGNORECASE) for pattern in patterns)
+_PACKAGE_ROOT_PATTERN = rf"(?:{HISTORICAL_PACKAGE_ROOT}|{CURRENT_PACKAGE_ROOT})"
 _PAGINATION_CONSUMER_PATTERN = re.compile(
-    r"(?:\bfrom\s+(?:(?:gravity_sdk\.)?\.?agent_pagination\s+import\b"
-    r"|gravity_sdk\s+import\s+agent_pagination\b)"
-    r"|\bimport\s+(?:gravity_sdk\.)?agent_pagination\b"
-    r"|(?:gravity_sdk\.)?agent_pagination\s*\.(?!py\b)[A-Za-z_]"
+    rf"(?:\bfrom\s+(?:(?:{_PACKAGE_ROOT_PATTERN}\.)?\.?agent_pagination\s+import\b"
+    rf"|{_PACKAGE_ROOT_PATTERN}\s+import\s+agent_pagination\b)"
+    rf"|\bimport\s+(?:{_PACKAGE_ROOT_PATTERN}\.)?agent_pagination\b"
+    rf"|(?:{_PACKAGE_ROOT_PATTERN}\.)?agent_pagination\s*\.(?!py\b)[A-Za-z_]"
     r"|(?:import_module|__import__|patch(?:\.object)?|monkeypatch\.setattr)"
     r"\s*\([^\n)]*agent_pagination"
     r"|\b(?:consumer|caller|call|invoke|use|import|patch)\b"
     r"[^\n]{0,80}\bagent_pagination\b"
     r"|(?:\u8c03\u7528|\u5bfc\u5165)\s*`?"
-    r"(?:gravity_sdk\.)?agent_pagination(?![A-Za-z0-9_]))",
+    rf"(?:{_PACKAGE_ROOT_PATTERN}\.)?agent_pagination(?![A-Za-z0-9_]))",
     re.IGNORECASE,
 )
 _PAGINATION_DELETION_PATTERNS = (
@@ -161,7 +177,11 @@ def _audit_category(row: Finding) -> str:
     if (
         row.file == "tests/agent_migration_characterization.py"
         and row.form == "python string literal"
-        and row.old_value == "gravity_sdk.agent_"
+        and row.old_value
+        in {
+            f"{HISTORICAL_PACKAGE_ROOT}.agent_",
+            f"{CURRENT_PACKAGE_ROOT}.agent_",
+        }
     ):
         return "agent_prefix_template"
     raise ValueError(f"unrecognized audit row: {source_key(row)}")
@@ -232,7 +252,7 @@ def _selector_rewrites(
     owner_states: set[str] = set()
     reverse_mapping = {new: old for old, new in move_mapping.items()}
     for symbol, (owner, attribute) in exports.items():
-        current_module = f"gravity_sdk{owner}"
+        current_module = f"{CURRENT_PACKAGE_ROOT}{owner}"
         if current_module in move_mapping:
             old_module = current_module
             owner_states.add("legacy")
@@ -247,7 +267,7 @@ def _selector_rewrites(
                 "symbol": symbol,
                 "attribute": attribute,
                 "old_value": owner,
-                "new_value": new_module.removeprefix("gravity_sdk"),
+                "new_value": new_module.removeprefix(CURRENT_PACKAGE_ROOT),
                 "old_module": old_module,
                 "new_module": new_module,
             }
@@ -283,20 +303,25 @@ def _module_reference(old_module: str, move_mapping: dict[str, str]) -> dict[str
     result = {"old_module": old_module}
     if old_module in move_mapping:
         result["candidate_new_module"] = move_mapping[old_module]
-    elif old_module == PAGINATION_MODULE:
-        result["candidate_new_module"] = PAGINATION_TARGET
+    elif historical_module_root(old_module) == PAGINATION_MODULE:
+        result["candidate_new_module"] = (
+            project_module_root(PAGINATION_TARGET)
+            if old_module.startswith(CURRENT_PACKAGE_ROOT + ".")
+            else PAGINATION_TARGET
+        )
     return result
 
 
 def _replacement_texts(row: Finding, snippet: str, new_module: str) -> tuple[str, str]:
     old_short = row.old_value
     short = new_module.rsplit(".", 1)[1]
-    full_source = f"src/gravity_sdk/{old_short}.py"
+    package_root = new_module.split(".", 1)[0]
+    full_source = f"src/{package_root}/{old_short}.py"
     if full_source in snippet:
         return full_source, "src/" + new_module.replace(".", "/") + ".py"
     if f"{old_short}.py" in snippet:
         return f"{old_short}.py", f"agents/{short}.py"
-    return old_short, new_module.removeprefix("gravity_sdk.")
+    return old_short, new_module.removeprefix(package_root + ".")
 
 
 def _logical_source_context(row: Finding, root: Path = ROOT) -> str:
@@ -339,7 +364,7 @@ def _logical_source_context(row: Finding, root: Path = ROOT) -> str:
 def classify_active_bare_context(old_module: str, context: str) -> str:
     """Classify an active governance mention without relying on coordinates."""
 
-    if old_module == PAGINATION_MODULE:
+    if historical_module_root(old_module) == PAGINATION_MODULE:
         if _PAGINATION_CONSUMER_PATTERN.search(context):
             return RUNTIME_CONSUMER
         if any(pattern.search(context) for pattern in _PAGINATION_DELETION_PATTERNS):
@@ -358,7 +383,13 @@ def _classify_bare(
     context: str,
     move_mapping: dict[str, str],
 ) -> dict[str, Any]:
-    old_module = f"gravity_sdk.{row.old_value}"
+    package_root = (
+        HISTORICAL_PACKAGE_ROOT
+        if row.file.startswith("docs/archive/")
+        else CURRENT_PACKAGE_ROOT
+    )
+    old_module = f"{package_root}.{row.old_value}"
+    historical_old_module = historical_module_root(old_module)
     if row.file.startswith("docs/archive/"):
         item = _none(
             "frozen_historical_exact_reference",
@@ -375,17 +406,18 @@ def _classify_bare(
             "record set and has no safe migration interpretation.",
             "unresolved_source_context",
         )
-    if old_module == RETAINED_MODULE:
+    if historical_old_module == RETAINED_MODULE:
         item = _none(
             "retained_exact_reference",
-            "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; "
-            "this active governance reference names that unchanged terminal owner.",
+            "R17 retained the historical gravity_sdk.agent_runtime_contracts owner; "
+            "the package-root migration projects it to the current root without "
+            "changing the R17 disposition.",
             "r17_scope_contract",
         )
         item["module_reference"] = _module_reference(old_module, move_mapping)
         return item
     context_kind = classify_active_bare_context(old_module, context)
-    if old_module == PAGINATION_MODULE:
+    if historical_old_module == PAGINATION_MODULE:
         if context_kind == DELETED_MODULE_RECORD:
             item = _none(
                 "deleted_module_governance_fact",
@@ -406,7 +438,12 @@ def _classify_bare(
                 "syntax; R17 must stop for classification.",
                 "evidence_kind": "audited_source_context",
             }
-        old_text, new_text = _replacement_texts(row, snippet, PAGINATION_TARGET)
+        pagination_target = (
+            project_module_root(PAGINATION_TARGET)
+            if package_root == CURRENT_PACKAGE_ROOT
+            else PAGINATION_TARGET
+        )
+        old_text, new_text = _replacement_texts(row, snippet, pagination_target)
         return {
             "disposition": "rewrite_consolidated_reference",
             "reason_code": "pagination_consolidation_exact_reference",
@@ -414,8 +451,8 @@ def _classify_bare(
                 "kind": "replace_module",
                 "old_text": old_text,
                 "new_text": new_text,
-                "old_module": PAGINATION_MODULE,
-                "new_module": PAGINATION_TARGET,
+                "old_module": old_module,
+                "new_module": pagination_target,
             },
             "basis": "The active governance source names the module that R17 "
             "consolidates into pagination_completeness and deletes.",
@@ -458,12 +495,12 @@ def _classify_bare(
 def _classify_dynamic(
     row: Finding, selector_state: str, selector_rewrites: list[dict[str, str]]
 ) -> dict[str, Any]:
-    if row.file == "src/gravity_sdk/__init__.py":
+    if row.file == "src/gravity_insight/__init__.py":
         if selector_state == "migrated":
             return _none(
                 "root_lazy_export_owner_map_migrated",
                 "All six finite _EXPORTS owner values already name their terminal "
-                "gravity_sdk.agents owners.",
+                "gravity_insight.agents owners.",
                 "finite_selector_dataflow",
             )
         if selector_state != "legacy":
@@ -478,7 +515,7 @@ def _classify_dynamic(
             "reason_code": "root_lazy_export_owner_map",
             "migration_action": {
                 "kind": "replace_selector_values",
-                "selector": "gravity_sdk._EXPORTS",
+                "selector": "gravity_insight._EXPORTS",
                 "rewrites": selector_rewrites,
             },
             "basis": "__getattr__ imports only module_name values from _EXPORTS; "
@@ -486,21 +523,21 @@ def _classify_dynamic(
             "evidence_kind": "finite_selector_dataflow",
         }
     basis_by_file = {
-        "src/gravity_sdk/runtime.py": (
+        "src/gravity_insight/runtime.py": (
             "root_package_only",
-            "The loop input is the literal singleton ('gravity_sdk',), so it cannot "
+            "The loop input is the literal singleton ('gravity_insight',), so it cannot "
             "select any deep agent module.",
         ),
-        "src/gravity_sdk/prober/cli.py": (
+        "src/gravity_insight/prober/cli.py": (
             "fixed_non_agent_suffix",
-            "sdk.__name__ is gravity_sdk and the only appended suffix is '.errors'.",
+            "sdk.__name__ is gravity_insight and the only appended suffix is '.errors'.",
         ),
-        "src/gravity_sdk/prober/export_verify.py": (
+        "src/gravity_insight/prober/export_verify.py": (
             "fixed_non_agent_call_domain",
             "All _sdk_module call sites pass export_policy, registry, blob, "
             "export_models, or export_privacy; none is an agent module.",
         ),
-        "src/gravity_sdk/prober/transport.py": (
+        "src/gravity_insight/prober/transport.py": (
             "fixed_non_agent_suffix",
             "The six expressions append fixed root-module suffixes outside R17.",
         ),
@@ -549,24 +586,24 @@ def _classify_patch(row: Finding) -> dict[str, Any]:
         )
     fixed_non_agent = {
         (
-            "src/gravity_sdk/sql/credentials.py",
+            "src/gravity_insight/sql/credentials.py",
             'f"{__name__}.restrict_local_secret"',
-        ): "__name__ is gravity_sdk.sql.credentials.",
+        ): "__name__ is gravity_insight.sql.credentials.",
         (
             "tests/test_gravity_insight_core.py",
             'f"{_atomic_update_env.__module__}._restrict_secret_file"',
-        ): "_atomic_update_env is owned by gravity_sdk.credentials.",
+        ): "_atomic_update_env is owned by gravity_insight.credentials.",
         (
             "tests/test_gravity_order_trace_surface.py",
-            'f"gravity_sdk.{module}.runtime.build_client"',
+            'f"gravity_insight.{module}.runtime.build_client"',
         ): "module ranges only over order_trace_cli and order_directory_cli.",
         (
             "tests/test_http_receipt_durability.py",
-            'f"gravity_sdk.executor.{stage}"',
+            'f"gravity_insight.executor.{stage}"',
         ): "stage ranges only over _project and _enforce_semantic_rules.",
         (
             "tests/test_sql_products.py",
-            'f"gravity_sdk.sql.__main__.{patch_target}"',
+            'f"gravity_insight.sql.__main__.{patch_target}"',
         ): "patch_target ranges only over verify_all and credentials.pull.",
     }
     key = (row.file, row.old_value)
@@ -586,24 +623,24 @@ def _classify_patch(row: Finding) -> dict[str, Any]:
 
 def _classify_owner(row: Finding) -> dict[str, Any]:
     if row.file in {
-        "src/gravity_sdk/error_mapping.py",
-        "src/gravity_sdk/error_models.py",
-        "src/gravity_sdk/error_sql.py",
-        "src/gravity_sdk/error_types.py",
+        "src/gravity_insight/error_mapping.py",
+        "src/gravity_insight/error_models.py",
+        "src/gravity_insight/error_sql.py",
+        "src/gravity_insight/error_types.py",
     }:
         return _none(
             "compatibility_owner_assignment",
             "The receiver is a locally enumerated error compatibility symbol whose "
-            "owner is normalized to gravity_sdk.errors.",
+            "owner is normalized to gravity_insight.errors.",
             "receiver_binding_census",
         )
     basis_by_file = {
         "tests/test_error_import_compatibility.py":
-            "error_type is selected from gravity_sdk.errors.",
+            "error_type is selected from gravity_insight.errors.",
         "tests/test_execution_variant.py":
-            "ExecutionVariantService is imported from gravity_sdk.execution_variant.",
+            "ExecutionVariantService is imported from gravity_insight.execution_variant.",
         "tests/test_gravity_insight_core.py":
-            "_atomic_update_env is imported from gravity_sdk.credentials.",
+            "_atomic_update_env is imported from gravity_insight.credentials.",
     }
     if row.file not in basis_by_file:
         return _blocker(
@@ -665,6 +702,7 @@ def _classify_reference(
             "manual-review disposition.",
             "reference_denominator",
         )
+    historical_old_module = historical_module_root(old_module)
     if row.file.startswith("docs/archive/"):
         item = _none(
             "frozen_historical_text",
@@ -686,16 +724,16 @@ def _classify_reference(
         )
         item["module_reference"] = _module_reference(old_module, move_mapping)
         return item
-    if old_module == RETAINED_MODULE:
+    if historical_old_module == RETAINED_MODULE:
         item = _none(
             "retained_module_reference",
-            "R17 retains gravity_sdk.agent_runtime_contracts at the root, so this "
-            "exact reference remains unchanged.",
+            "R17 retains the historical gravity_sdk.agent_runtime_contracts owner; "
+            "the current package-root projection preserves that disposition.",
             "r17_scope_contract",
         )
         item["module_reference"] = _module_reference(old_module, move_mapping)
         return item
-    if old_module == PAGINATION_MODULE:
+    if historical_old_module == PAGINATION_MODULE:
         textual_categories = {
             "documentation_spec",
             "entrypoint_config",
@@ -729,6 +767,11 @@ def _classify_reference(
                     "syntax; R17 must stop for classification.",
                     "audited_source_context",
                 )
+        pagination_target = (
+            project_module_root(PAGINATION_TARGET)
+            if old_module.startswith(CURRENT_PACKAGE_ROOT + ".")
+            else PAGINATION_TARGET
+        )
         return {
             "disposition": "rewrite_consolidated_reference",
             "reason_code": "pagination_consolidation_reference",
@@ -736,8 +779,8 @@ def _classify_reference(
                 "kind": "replace_module",
                 "old_text": row.old_value,
                 "new_text": row.new_value,
-                "old_module": PAGINATION_MODULE,
-                "new_module": PAGINATION_TARGET,
+                "old_module": old_module,
+                "new_module": pagination_target,
             },
             "basis": "The exact reference names the owner R17 consolidates into "
             "pagination_completeness and deletes.",
@@ -920,11 +963,14 @@ def build_document(
         raise ValueError("reference source keys are not unique")
     if len(manual) != len(audit.manual_review):
         raise ValueError("manual-review source keys are not unique")
-    moves, move_mapping = _module_universe(audit.mappings)
-    complete_mapping = {row.old_module: row.new_module for row in audit.mappings}
+    moves, historical_move_mapping = _module_universe(audit.mappings)
+    move_mapping = reference_module_mapping(historical_move_mapping)
+    complete_mapping = reference_module_mapping(
+        {row.old_module: row.new_module for row in audit.mappings}
+    )
     snippets = _reference_snippets(audit.references)
     selector_state, selector_rewrites = _selector_rewrites(
-        move_mapping, public_exports
+        projected_module_mapping(historical_move_mapping), public_exports
     )
     sites: list[dict[str, Any]] = []
     for identity in sorted(set(references) | set(manual)):
@@ -1056,11 +1102,34 @@ def build_document(
         ).encode("utf-8")
     ).hexdigest()
     return {
-        "schema_version": "gravity.agent-module-reference-checkpoint.v1",
+        "schema_version": "gravity.agent-module-reference-checkpoint.v2",
         "receipt_role": (
             "live_checkpoint_scan_only; not authority for canonical errata replacements"
         ),
         "immutable_baseline_ledger": _immutable_baseline_binding(),
+        "package_root_migration": {
+            **PACKAGE_ROOT_MIGRATION,
+            "historical_evidence_role": (
+                "immutable_baseline_records_names_at_r17_delivery_time"
+            ),
+            "current_validation_role": (
+                "project_historical_r17_owners_before_filesystem_and_reference_checks"
+            ),
+            "compatibility_package_present": False,
+            "projected_scope_sha256": hashlib.sha256(
+                json.dumps(
+                    [
+                        {
+                            "old_module": project_module_root(row["old_module"]),
+                            "new_module": project_module_root(row["new_module"]),
+                        }
+                        for row in moves
+                    ],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest(),
+        },
         "source_audit": {
             "method": "direct repository scan",
             "command": (

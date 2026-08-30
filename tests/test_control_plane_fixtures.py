@@ -13,14 +13,14 @@ from typing import Any, Mapping
 
 from nacl.signing import SigningKey
 
-from gravity_sdk.control_plane.models import (
+from gravity_insight.control_plane.models import (
     ArtifactTrustPolicy,
     SignedMetadata,
     TrustedVersions,
     VerificationKey,
 )
-from gravity_sdk.control_plane.crypto import canonical_json_bytes, sha256_digest
-from gravity_sdk.control_plane.tuf import metadata_digest
+from gravity_insight.control_plane.crypto import canonical_json_bytes, sha256_digest
+from gravity_insight.control_plane.tuf import metadata_digest
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "control_plane"
@@ -180,7 +180,7 @@ def _artifact() -> tuple[dict[str, Any], dict[str, Any]]:
         "artifact": artifact,
         "license": LICENSE,
         "provenance": provenance,
-        "target_name": "runtime/gravity_sdk.whl",
+        "target_name": "runtime/gravity_insight.whl",
     }
     envelope = {
         **attestation,
@@ -196,7 +196,7 @@ def _targets(artifact: Mapping[str, Any], scenario: str) -> dict[str, Any]:
         "_type": "targets",
         "version": 2,
         "expires": EXPIRED if scenario == "expired" else VALID_EXPIRY,
-        "targets": {"runtime/gravity_sdk.whl": copy.deepcopy(dict(artifact))},
+        "targets": {"runtime/gravity_insight.whl": copy.deepcopy(dict(artifact))},
         "revoked_digests": [digest] if scenario == "revoked" else [],
     }
     return sign_metadata(payload, "targets")

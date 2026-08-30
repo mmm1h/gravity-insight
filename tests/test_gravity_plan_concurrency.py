@@ -5,16 +5,16 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
-from gravity_sdk.analysis_context import ANALYSIS_CONTEXT_SOURCES, analysis_context
-from gravity_sdk.adaptive_governor import AdaptiveRequestGovernor, STATIC
-from gravity_sdk.credentials import Credential
-from gravity_sdk.dashboard_analysis import run_dashboard_analysis
-from gravity_sdk.http_runtime import GravityHttpRuntime, HostRateLimiter, SQL_PROFILE
-from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan
-from gravity_sdk.plan_dashboard_analysis_adapter import execute_dashboard_analysis_plan
-from gravity_sdk.plan_fixed_composite_adapter import execute_fixed_composite
-from gravity_sdk.plan_promotion_performance_adapter import execute_promotion_performance_plan
-from gravity_sdk.promotion_performance import (
+from gravity_insight.analysis_context import ANALYSIS_CONTEXT_SOURCES, analysis_context
+from gravity_insight.adaptive_governor import AdaptiveRequestGovernor, STATIC
+from gravity_insight.credentials import Credential
+from gravity_insight.dashboard_analysis import run_dashboard_analysis
+from gravity_insight.http_runtime import GravityHttpRuntime, HostRateLimiter, SQL_PROFILE
+from gravity_insight.plan import PlanAdapter, PlanAdapters, execute_plan
+from gravity_insight.plan_dashboard_analysis_adapter import execute_dashboard_analysis_plan
+from gravity_insight.plan_fixed_composite_adapter import execute_fixed_composite
+from gravity_insight.plan_promotion_performance_adapter import execute_promotion_performance_plan
+from gravity_insight.promotion_performance import (
     PROMOTION_PLATFORM_OPERATIONS,
     SUPPORTED_PLATFORMS,
     promotion_performance,

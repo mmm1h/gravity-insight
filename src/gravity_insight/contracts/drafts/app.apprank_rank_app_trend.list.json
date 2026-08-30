@@ -1,0 +1,271 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "evidence": "evidence/probe/20260808T210340Z_app.apprank_rank_app_trend.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T210340Z_app.apprank_rank_app_trend.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T210340Z_app.apprank_rank_app_trend.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/50",
+      "method": "POST",
+      "path": "/apprank/api/v1/rank/app_trend/list/",
+      "route_index": 50,
+      "route_sha256": "337dca666b8b1f1d9da39abbda0d98004ac9d217dccd6b8694118f0cc6da6e1a"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T210340Z_app.apprank_rank_app_trend.list.yaml",
+        "probed_at": "2026-08-08T21:03:40Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "pagination_unverified",
+        "probe_inconclusive",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "其它",
+      "callers": [
+        "It",
+        "m"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 47996,
+        "file": "raw/web.gravity-engine.com/assets/RankingList-D5kRNE9L.js",
+        "line": 1,
+        "offset": 47995,
+        "url": "https://web.gravity-engine.com/assets/RankingList-D5kRNE9L.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 48463,
+            "column": 47996,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/RankingList-D5kRNE9L.js",
+            "line": 1,
+            "route_offset": 47995
+          },
+          {
+            "call_offset": 69793,
+            "column": 68121,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/RankingList-D5kRNE9L.js",
+            "line": 1,
+            "route_offset": 68120
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/apprank/api/v1/rank/app_trend/list/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "app_id",
+            "path": "$.app_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "date_list",
+            "path": "$.date_list",
+            "presence": "observed_always",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "rank_genre",
+            "path": "$.rank_genre",
+            "presence": "observed_always",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "rank_type_list",
+            "path": "$.rank_type_list",
+            "presence": "observed_always",
+            "types": [
+              "array"
+            ]
+          }
+        ]
+      },
+      "path": "/apprank/api/v1/rank/app_trend/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "180天",
+        "30天",
+        "60天",
+        "人气榜",
+        "畅玩榜",
+        "畅销榜"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: pagination_unverified, probe_inconclusive, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /apprank/api/v1/rank/app_trend/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "app",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "app_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "date_list": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "array"
+      },
+      "rank_genre": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "rank_type_list": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "string",
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "app_id": 0,
+        "date_list": [],
+        "rank_genre": "",
+        "rank_type_list": []
+      }
+    },
+    "operation_id": "app.apprank_rank_app_trend.list",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/apprank/api/v1/rank/app_trend/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/app.apprank_rank_app_trend.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "date_list",
+        "rank_genre",
+        "rank_type_list"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "apprank_rank_app_trend",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

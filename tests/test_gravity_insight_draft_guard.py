@@ -4,9 +4,9 @@ import unittest
 from types import SimpleNamespace
 
 try:
-    from gravity_sdk.catalog import OperationCatalog
-    from gravity_sdk.client import GravityInsightClient
-    from gravity_sdk.drift import (
+    from gravity_insight.catalog import OperationCatalog
+    from gravity_insight.client import GravityInsightClient
+    from gravity_insight.drift import (
         AUTH_ERROR,
         CONTRACT_CHANGED_ADDITIVE,
         DEGRADED,
@@ -16,19 +16,19 @@ try:
         DriftSignal,
         HealthOverlay,
     )
-    from gravity_sdk.errors import (
+    from gravity_insight.errors import (
         AuthenticationError,
         ContractChangedError,
         OperationNotImplementedError,
         error_envelope,
     )
-    from gravity_sdk.executor import ReadExecutor
-    from gravity_sdk.models import load_operation_manifest
-    from gravity_sdk.registry import PolicyEngine, Registry
+    from gravity_insight.executor import ReadExecutor
+    from gravity_insight.models import load_operation_manifest
+    from gravity_insight.registry import PolicyEngine, Registry
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk.catalog import OperationCatalog
-    from gravity_sdk.client import GravityInsightClient
-    from gravity_sdk.drift import (
+    from gravity_insight.catalog import OperationCatalog
+    from gravity_insight.client import GravityInsightClient
+    from gravity_insight.drift import (
         AUTH_ERROR,
         CONTRACT_CHANGED_ADDITIVE,
         DEGRADED,
@@ -38,15 +38,15 @@ except ModuleNotFoundError:  # source checkout before editable installation
         DriftSignal,
         HealthOverlay,
     )
-    from gravity_sdk.errors import (
+    from gravity_insight.errors import (
         AuthenticationError,
         ContractChangedError,
         OperationNotImplementedError,
         error_envelope,
     )
-    from gravity_sdk.executor import ReadExecutor
-    from gravity_sdk.models import load_operation_manifest
-    from gravity_sdk.registry import PolicyEngine, Registry
+    from gravity_insight.executor import ReadExecutor
+    from gravity_insight.models import load_operation_manifest
+    from gravity_insight.registry import PolicyEngine, Registry
 
 
 DRAFT_ID = "promotion.tencent.account.list"

@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 import unittest
 
-from gravity_sdk.dashboard_analysis import (
+from gravity_insight.dashboard_analysis import (
     prepare_dashboard_analysis,
     run_dashboard_analysis,
 )
-from gravity_sdk.errors import (
+from gravity_insight.errors import (
     ContractChangedError,
     InputValidationError,
     PaginationError,

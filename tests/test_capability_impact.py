@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.capability_impact import capability_impact
-from gravity_sdk.errors import InputValidationError
+from gravity_insight.capability_impact import capability_impact
+from gravity_insight.errors import InputValidationError
 
 
 def request(selector: str, *, identity_kind: str = "operation"):

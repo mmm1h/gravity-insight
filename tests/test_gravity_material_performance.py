@@ -1,12 +1,12 @@
 from __future__ import annotations
 import copy, importlib, unittest
 
-from gravity_sdk.errors import InputValidationError, LocalIOError, PaginationError
-from gravity_sdk.material_performance import (
+from gravity_insight.errors import InputValidationError, LocalIOError, PaginationError
+from gravity_insight.material_performance import (
     MATERIAL_REPORT_OPERATION,
     material_performance,
 )
-from gravity_sdk.material_performance_result import safe_component
+from gravity_insight.material_performance_result import safe_component
 
 def _read_envelope(rows, *, status="success", page=None):
     return {
@@ -58,10 +58,10 @@ class _BatchClient:
 class MaterialPerformanceTests(unittest.TestCase):
     def test_semantic_rejection_code_is_consistent_across_product_sanitizers(self):
         modules = ("advertiser_profile", "company_usage", "custom_audience", "material_performance_result", "order_trace_result", "promotion_performance_error", "title_package")
-        policies = [importlib.import_module(f"gravity_sdk.{name}")._FAILURE_CODES for name in modules]
+        policies = [importlib.import_module(f"gravity_insight.{name}")._FAILURE_CODES for name in modules]
         self.assertEqual([{"INPUT_INVALID"}] * 7,
                          [policy["semantic_error"] for policy in policies])
-        directory = importlib.import_module("gravity_sdk._order_directory_failure")
+        directory = importlib.import_module("gravity_insight._order_directory_failure")
         self.assertEqual(("INPUT_INVALID", {"INPUT_INVALID"}),
                          (directory._STATUS_CODES["semantic_error"], directory._SPECIAL_STATUS_CODES["semantic_error"]))
         semantic = _failure("semantic_error", "INPUT_INVALID", "caller")

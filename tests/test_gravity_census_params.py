@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.census.io import json_bytes, sha256_bytes, stable_bundle_id
-from gravity_sdk.census.params import build_route_params
-from gravity_sdk.census.parser import _tokenize, build_routes
+from gravity_insight.census.io import json_bytes, sha256_bytes, stable_bundle_id
+from gravity_insight.census.params import build_route_params
+from gravity_insight.census.parser import _tokenize, build_routes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

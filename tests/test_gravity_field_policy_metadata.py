@@ -4,9 +4,9 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk._field_policy_detail import validate_analysis_detail
-from gravity_sdk._field_policy_metadata import load_event_property_rows, load_view
-from gravity_sdk._field_policy_operations import (
+from gravity_insight._field_policy_detail import validate_analysis_detail
+from gravity_insight._field_policy_metadata import load_event_property_rows, load_view
+from gravity_insight._field_policy_operations import (
     ANALYSIS_EVENT,
     ANALYSIS_EVENT_INFO,
     ANALYSIS_EVENT_PROPERTY,
@@ -14,8 +14,8 @@ from gravity_sdk._field_policy_operations import (
     ANALYSIS_USER_EVENT,
     ANALYSIS_USER_PROPERTY,
 )
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.models import OperationSpec, load_operation_manifest
+from gravity_insight.errors import InputValidationError
+from gravity_insight.models import OperationSpec, load_operation_manifest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -70,7 +70,7 @@ def _event_info_contract_change(**overrides: Any) -> dict[str, Any]:
 
 def _operation(operation_id: str) -> OperationSpec:
     operations = load_operation_manifest(
-        ROOT / "src" / "gravity_sdk" / "manifests" / "analysis.json"
+        ROOT / "src" / "gravity_insight" / "manifests" / "analysis.json"
     )
     return next(item for item in operations if item.operation_id == operation_id)
 

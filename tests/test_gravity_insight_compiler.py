@@ -8,8 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.compiler import (
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.compiler import (
     ContractCompiler,
     ContractDriftError,
     ContractError,
@@ -19,8 +19,8 @@ from gravity_sdk.compiler import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts"
-MANIFEST_ROOT = ROOT / "src" / "gravity_sdk" / "manifests"
+CONTRACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts"
+MANIFEST_ROOT = ROOT / "src" / "gravity_insight" / "manifests"
 
 
 class GravityInsightCompilerTests(unittest.TestCase):

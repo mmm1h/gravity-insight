@@ -5,7 +5,7 @@
 `page_info` unknown 实际为 58 个，不是 59 个。机器复核将 unknown 分为 `85 collect / 83 no-new-signal`
 与 `9 non-stable`；83 条是 47 个非集合与 36 个当前无可证伪信号。输入来自
 `D:/git-pjt/tmp/arch-batch-2026-08-20/contract-audit.json`，并逐条与当前
-`src/gravity_sdk/contracts/operations/` 对账。
+`src/gravity_insight/contracts/operations/` 对账。
 
 ## 优先级与收益
 

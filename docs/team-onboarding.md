@@ -12,9 +12,9 @@
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m gravity_sdk agent-catalog categories
-python -m gravity_sdk agent-catalog category analysis --limit 20
-python -m gravity_sdk agent-catalog describe analysis.query.spec:event
+python -m gravity_insight agent-catalog categories
+python -m gravity_insight agent-catalog category analysis --limit 20
+python -m gravity_insight agent-catalog describe analysis.query.spec:event
 ```
 
 优先选择 `identity_kind=product`。Raw operation 是已知 wire 的专家入口；`capability_gap` 只能报告，不能执行。

@@ -9,23 +9,23 @@ from pathlib import Path
 from unittest.mock import patch
 
 try:
-    from gravity_sdk import (
+    from gravity_insight import (
         GravityInsightClient,
         PermissionUnavailableError,
     )
-    from gravity_sdk.cache import is_metadata_operation
-    from gravity_sdk.catalog import OperationCatalog
-    from gravity_sdk.composite import CompositeService
-    from gravity_sdk.errors import InputValidationError
+    from gravity_insight.cache import is_metadata_operation
+    from gravity_insight.catalog import OperationCatalog
+    from gravity_insight.composite import CompositeService
+    from gravity_insight.errors import InputValidationError
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import (
+    from gravity_insight import (
         GravityInsightClient,
         PermissionUnavailableError,
     )
-    from gravity_sdk.cache import is_metadata_operation
-    from gravity_sdk.catalog import OperationCatalog
-    from gravity_sdk.composite import CompositeService
-    from gravity_sdk.errors import InputValidationError
+    from gravity_insight.cache import is_metadata_operation
+    from gravity_insight.catalog import OperationCatalog
+    from gravity_insight.composite import CompositeService
+    from gravity_insight.errors import InputValidationError
 
 
 @dataclass(frozen=True)

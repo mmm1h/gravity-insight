@@ -16,7 +16,7 @@
   },
   "install": {
     "command": "python -m pip install --upgrade \"gravity-insight==<version>\"",
-    "working_directory": "outside_any_gravity_sdk_source_checkout",
+    "working_directory": "outside_any_gravity_insight_source_checkout",
     "requires_executable": ["python"]
   },
   "version_pin": {
@@ -36,7 +36,7 @@
       "expected_status": "pass",
       "expected_reason_code": "INSTALL_CONSISTENT",
       "network_called": false,
-      "working_directory": "outside_any_gravity_sdk_source_checkout"
+      "working_directory": "outside_any_gravity_insight_source_checkout"
     }
   ],
   "failure": {

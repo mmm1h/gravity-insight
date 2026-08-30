@@ -35,14 +35,14 @@ gravity run app.list --input '{"page":1,"page_size":20}'
 | 要确认的事实 | 机器入口 | 仓库来源 |
 | --- | --- | --- |
 | 当前 Agent 产品、缺口、必填输入 | `gravity agent-catalog describe <selector>` | 运行时产品卡与 gap registry |
-| operation 输入、默认值、分页、投影、隐私 | `gravity operations describe <operation-id>` | `src/gravity_sdk/contracts/operations/` |
+| operation 输入、默认值、分页、投影、隐私 | `gravity operations describe <operation-id>` | `src/gravity_insight/contracts/operations/` |
 | operation 离线输入校验 | `gravity validate <operation-id> --input <json>` | compiled manifest + validator |
 | CLI 参数和互斥关系 | `gravity <command> --help` | 当前 argparse parser |
 | Python 参数 | `inspect.signature(GravitySDK.<method>)` | 当前公开 facade |
-| Plan 节点、预算、失败规则 | `gravity plan schema` | `gravity_sdk.plan.plan_schema()` |
+| Plan 节点、预算、失败规则 | `gravity plan schema` | `gravity_insight.plan.plan_schema()` |
 | Workspace App、recipe、SQL product | `gravity recipe check <name>` / workspace loader | 调用项目的 `gravity.toml` |
 | SQL product 输入、投影和 Evidence | `gravity sql products` | SQL product 合同 + workspace |
-| 编译结果和 provenance | `python -m gravity_sdk.compiler check` | manifest + generated provenance |
+| 编译结果和 provenance | `python -m gravity_insight.compiler check` | manifest + generated provenance |
 
 已知 operation id 时按 describe → validate → run 执行，不从长文抄字段。重点读取
 `operation_id/contract_version`、`input_schema`、`pagination`、`response_projection`、

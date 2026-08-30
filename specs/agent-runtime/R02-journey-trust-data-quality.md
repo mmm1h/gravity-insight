@@ -152,7 +152,7 @@ Parser/format gates, fake-clock TTL tests, drift/quarantine tests, Product/Compo
   Development usability remains selection `296/336`, fillability `248/248`,
   offline terminal `53/53`, recovery `5/5`, security PASS and production HTTP
   requests `0`.
-- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Isolated real wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `8d368ac42df17a9a6a0e5dc4a8e44e1d9b4913a1f71e2e4379b91bcf3458d3a2`.
   It imported from isolated `site-packages`, loaded packaged Journey/Capability
   contracts, verified the registry, evaluated Trust, and preserved R01 exit 4

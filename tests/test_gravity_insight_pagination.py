@@ -5,11 +5,11 @@ from threading import Barrier
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravityInsightClient
-from gravity_sdk import runtime
-from gravity_sdk.models import ReadResult
-from gravity_sdk.pagination_audit import pagination_audit
-from gravity_sdk.pagination_policy import has_next_page
+from gravity_insight import GravityInsightClient
+from gravity_insight import runtime
+from gravity_insight.models import ReadResult
+from gravity_insight.pagination_audit import pagination_audit
+from gravity_insight.pagination_policy import has_next_page
 
 
 def _operation() -> dict:
@@ -177,7 +177,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual("complete", result["completeness"])
 
     def test_all_pages_audit_counts_worker_http_requests(self) -> None:
-        from gravity_sdk.receipt import (
+        from gravity_insight.receipt import (
             PRODUCTION_HTTP_KIND,
             count_http_requests,
             record_http_request,

@@ -4,10 +4,10 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import CoreSkillRuntime, GravitySDK
-from gravity_sdk import cli
-from gravity_sdk.journey_cli import dispatch
-from gravity_sdk.reference_journey_contract import JOURNEY_ID
+from gravity_insight import CoreSkillRuntime, GravitySDK
+from gravity_insight import cli
+from gravity_insight.journey_cli import dispatch
+from gravity_insight.reference_journey_contract import JOURNEY_ID
 
 
 class Service:
@@ -70,8 +70,8 @@ class ReferenceJourneySurfaceTests(unittest.TestCase):
             with self.subTest(argv=argv):
                 self.assertFalse(parser.parse_args(argv).network_required)
 
-    @patch("gravity_sdk.workspace.load_workspace", return_value=object())
-    @patch("gravity_sdk.sdk.GravitySDK", SDK)
+    @patch("gravity_insight.workspace.load_workspace", return_value=object())
+    @patch("gravity_insight.sdk.GravitySDK", SDK)
     def test_cli_dispatch_delegates_without_owning_execution(self, _workspace):
         listed = dispatch(
             SimpleNamespace(journey_command="list", workspace=None),

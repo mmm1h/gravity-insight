@@ -8,28 +8,28 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from gravity_sdk.sql import client as sql_client
-from gravity_sdk.sql.client import GravityClient, SqlBatchRequest
-from gravity_sdk.sql.failures import (
+from gravity_insight.sql import client as sql_client
+from gravity_insight.sql.client import GravityClient, SqlBatchRequest
+from gravity_insight.sql.failures import (
     classify_sql_failure,
     diagnostic_fields,
 )
 try:
-    from gravity_sdk.errors import (
+    from gravity_insight.errors import (
         SqlResponseError,
         SqlValidationError,
         TransportError,
     )
-    from gravity_sdk.credentials import CredentialProvider
-    from gravity_sdk.http_runtime import GravityHttpRuntime, SQL_PROFILE
+    from gravity_insight.credentials import CredentialProvider
+    from gravity_insight.http_runtime import GravityHttpRuntime, SQL_PROFILE
 except ModuleNotFoundError:  # pragma: no cover - source-tree test execution.
-    from gravity_sdk.errors import (
+    from gravity_insight.errors import (
         SqlResponseError,
         SqlValidationError,
         TransportError,
     )
-    from gravity_sdk.credentials import CredentialProvider
-    from gravity_sdk.http_runtime import GravityHttpRuntime, SQL_PROFILE
+    from gravity_insight.credentials import CredentialProvider
+    from gravity_insight.http_runtime import GravityHttpRuntime, SQL_PROFILE
 
 
 class _FakeRuntime:

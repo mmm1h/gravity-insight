@@ -21,7 +21,7 @@
 
 R17 delivered the human-reviewed compact Agent interaction manifest: discovery,
 selection, binding, cards and handoff. Its 82 exact one-to-one moves live under
-`gravity_sdk.agents`; `agent_pagination` was consolidated into the existing
+`gravity_insight.agents`; `agent_pagination` was consolidated into the existing
 `pagination_completeness.py` owner, and the unused `metadata_inventory()`
 wrapper was deleted. Runtime execution, the shared schema validator and the
 independent Find protocol retain their existing owners.
@@ -107,7 +107,7 @@ Machine state shared by this Requirement and `index.md`: `status=fixed_dev`;
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`;
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`;
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`.
-`live_checkpoint_sha256=3467731d2276db14b338dddd35e0b9b7baf10629335ada117a4fedff5138a36b`;
+`live_checkpoint_sha256=ce6e9c3fe8987b0e2f9fbf453ef8828a571147cb7df9c644a7e39e55b4afe918`;
 `live_checkpoint_tracked_sites=310`.
 
 The required cross-file state gate is
@@ -142,6 +142,16 @@ Every target removes exactly one adjacent redundant Agent boundary token:
 becomes `agents.relative_date`. Targets remain unique, including case-folded
 names, and cannot alias unrelated root modules. Relative-date remains internal
 to handoff and is not a root lazy export.
+
+## Post-delivery package-root projection
+
+The 2026-08-30 package rename does not rewrite the frozen ledger: its
+`gravity_sdk.*` rows are the module names that existed when R17 was delivered.
+The live checkpoint uses `gravity.agent-module-reference-checkpoint.v2` and
+declares the exact `gravity_sdk -> gravity_insight` package-root projection.
+Filesystem owner checks and current-reference checks apply that projection before
+validation, while the immutable ledger Git blob and SHA-256 remain unchanged. No
+`gravity_sdk` compatibility package is installed or accepted.
 
 ## Explicit Concept Deletions
 
@@ -185,7 +195,7 @@ another branch, Requirement node, or independently releasable unit.
 ### Phase 1: Peripheral 48 And Pagination Consolidation
 
 The first serial checkpoint starts from the reviewed R17 baseline on the single
-implementation branch. It creates a minimal `gravity_sdk/agents/__init__.py`,
+implementation branch. It creates a minimal `gravity_insight/agents/__init__.py`,
 migrates the following 48 modules, consolidates `agent_pagination`, and migrates
 every classified repository and canonical-consumer reference:
 
@@ -269,20 +279,20 @@ the final Phase 2 checkpoint on the single branch:
 $code = @'
 import ast, json
 from pathlib import Path
-package=Path('src/gravity_sdk/agents')
+package=Path('src/gravity_insight/agents')
 paths={path.stem:path for path in package.glob('*.py') if path.name!='__init__.py'}
 nodes=set(paths); edges=set()
 for source,path in paths.items():
     for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'),filename=str(path))):
         targets=[]
         if isinstance(node,ast.Import):
-            targets=[alias.name.split('.')[2] for alias in node.names if alias.name.startswith('gravity_sdk.agents.') and len(alias.name.split('.'))>2]
+            targets=[alias.name.split('.')[2] for alias in node.names if alias.name.startswith('gravity_insight.agents.') and len(alias.name.split('.'))>2]
         elif isinstance(node,ast.ImportFrom):
             if node.level==1 and node.module:
                 targets=[node.module.split('.')[0]]
             elif node.level==1:
                 targets=[alias.name for alias in node.names]
-            elif node.level==0 and node.module and node.module.startswith('gravity_sdk.agents.'):
+            elif node.level==0 and node.module and node.module.startswith('gravity_insight.agents.'):
                 targets=[node.module.split('.')[2]]
         edges.update((source,target) for target in targets if target in nodes and target!=source)
 core=set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
@@ -298,7 +308,7 @@ Final required output is `implementation_modules=82`, `core=34`,
 ### File And Public-Surface Counts
 
 ```powershell
-& ./.venv/Scripts/python.exe -c "import gravity_sdk,json; from pathlib import Path; r=Path('src/gravity_sdk'); a=r/'agents'; s=json.loads(Path('tests/fixtures/public_api_exports.json').read_text(encoding='utf-8')); print(json.dumps({'root_py':len(list(r.glob('*.py'))),'root_agent_py':len(list(r.glob('agent_*.py'))),'package_py':len(list(r.rglob('*.py'))),'agents_implementation_py':len([p for p in a.glob('*.py') if p.name!='__init__.py']) if a.exists() else 0,'lazy_snapshot':len(s),'runtime_exports':len(gravity_sdk._EXPORTS),'root_all':len(gravity_sdk.__all__)},sort_keys=True))"
+& ./.venv/Scripts/python.exe -c "import gravity_insight,json; from pathlib import Path; r=Path('src/gravity_insight'); a=r/'agents'; s=json.loads(Path('tests/fixtures/public_api_exports.json').read_text(encoding='utf-8')); print(json.dumps({'root_py':len(list(r.glob('*.py'))),'root_agent_py':len(list(r.glob('agent_*.py'))),'package_py':len(list(r.rglob('*.py'))),'agents_implementation_py':len([p for p in a.glob('*.py') if p.name!='__init__.py']) if a.exists() else 0,'lazy_snapshot':len(s),'runtime_exports':len(gravity_insight._EXPORTS),'root_all':len(gravity_insight.__all__)},sort_keys=True))"
 ```
 
 | Metric | Pre-migration baseline | Immutable delivery exit |
@@ -320,8 +330,8 @@ selection functions to `.agents.host_selection`, and `capabilities_many` to
 ### Concept-Deletion Census
 
 ```powershell
-rg -n "compact_pagination|agent_pagination" src/gravity_sdk tests scripts
-rg -n "metadata_inventory" src/gravity_sdk tests scripts
+rg -n "compact_pagination|agent_pagination" src/gravity_insight tests scripts
+rg -n "metadata_inventory" src/gravity_insight tests scripts
 ```
 
 The first command finds one definition/export and exactly one import plus one
@@ -335,7 +345,7 @@ of callers or of their absence.
 ### SCC And Dynamic Audit
 
 Reuse M0's checked-in eager-import visitor and Tarjan enumeration over the one
-complete 642-module `gravity_sdk` graph, including package-parent edges emitted
+complete 642-module `gravity_insight` graph, including package-parent edges emitted
 by the visitor. Compute every SCC first, then reject only a multi-node or
 self-loop component that intersects the R17 migration set. There are two
 pre-existing eager SCCs that do not intersect that set: the `prober` family has
@@ -358,7 +368,7 @@ Retirement changes only the two migration test files, R17/Index, #11/roadmap,
 AGENTS' stale collector wording and the generated live checkpoint.
 
 - Move exactly the 82 `move` rows to one-for-one
-  `src/gravity_sdk/agents/<responsibility-name>.py` targets under the single
+  `src/gravity_insight/agents/<responsibility-name>.py` targets under the single
   adjacent-boundary-token removal rule and add a
   minimal package initializer.
 - Consolidate `compact_pagination` into `pagination_completeness.py`, delete
@@ -378,7 +388,7 @@ AGENTS' stale collector wording and the generated live checkpoint.
   `specs/agent-runtime/index.json`, and five in `specs/agent-runtime/index.md`
   (three ledger-derived and two post-freeze policy-derived), plus the one
   source selector-data rewrite recorded for
-  `src/gravity_sdk/__init__.py`. `AGENTS.md` edits are in-place replacements and
+  `src/gravity_insight/__init__.py`. `AGENTS.md` edits are in-place replacements and
   must not grow the documentation budget.
 - **Rewriting `architecture-source.md` breaks its digest binding.** That file is
   bound by `directive.json.canonical_source.sha256`. At the core checkpoint,
@@ -433,8 +443,8 @@ AGENTS' stale collector wording and the generated live checkpoint.
 
 - The 82 `move` rows map one for one; `agent_pagination` is deleted after
   consolidation; `agent_runtime_contracts.py` remains at its root path;
-  `gravity_sdk.agent` remains the stable facade.
-- `gravity_sdk.agents.__init__` imports no business module and exposes no
+  `gravity_insight.agent` remains the stable facade.
+- `gravity_insight.agents.__init__` imports no business module and exposes no
   parallel facade. R17 introduces no facade back-edge. Five pre-migration
   edges remain: `agents.batch -> agent.discover_capabilities`,
   `agents.batch_questions -> agent.DEFAULT_LIMIT`,
@@ -450,7 +460,7 @@ AGENTS' stale collector wording and the generated live checkpoint.
 - No old path for a moved/deleted module, alias, import hook, or duplicate
   source remains. The retained contracts module is not mirrored under
   `agents/`.
-- `gravity_sdk.__all__` remains 148 names; the lazy fixture and runtime map
+- `gravity_insight.__all__` remains 148 names; the lazy fixture and runtime map
   remain 147 entries; only the six reviewed owner routes may change.
 - The installed package contains all 82 migrated modules, the canonical
   pagination helper, and retained contracts module. Tarjan over the complete
@@ -509,9 +519,9 @@ the 48 peripheral moves and pagination consolidation are physically complete.
 $code = @'
 import json
 from pathlib import Path
-import gravity_sdk
+import gravity_insight
 
-root = Path('src/gravity_sdk')
+root = Path('src/gravity_insight')
 agents = root / 'agents'
 ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
 moves = ledger['scope']['one_to_one_moves']
@@ -525,8 +535,8 @@ actual = {
     'package_py': len(list(root.rglob('*.py'))),
     'agents_implementation_py': len([p for p in agents.glob('*.py') if p.name != '__init__.py']),
     'lazy_snapshot': len(snapshot),
-    'runtime_exports': len(gravity_sdk._EXPORTS),
-    'root_all': len(gravity_sdk.__all__),
+    'runtime_exports': len(gravity_insight._EXPORTS),
+    'root_all': len(gravity_insight.__all__),
 }
 expected = {'root_py': 529, 'root_agent_py': 35, 'package_py': 642, 'agents_implementation_py': 48, 'lazy_snapshot': 147, 'runtime_exports': 147, 'root_all': 148}
 assert actual == expected, f'Phase 1 structural checkpoint not reached: expected={expected}, actual={actual}'
@@ -554,7 +564,7 @@ import json
 from pathlib import Path
 from tests.agent_migration_characterization import eager_import_sccs
 
-root = Path('src/gravity_sdk')
+root = Path('src/gravity_insight')
 ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
 moves = ledger['scope']['one_to_one_moves']
 core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
@@ -645,7 +655,7 @@ $code = @'
 import json
 from pathlib import Path
 
-root = Path('src/gravity_sdk')
+root = Path('src/gravity_insight')
 ledger = json.loads(Path('tests/fixtures/agent_module_reference_dispositions.json').read_text(encoding='utf-8'))
 core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
 def module_path(module):
@@ -821,9 +831,9 @@ Test-R17Phase2Rollback -Target baseline
 $code = @'
 import ast, json
 from pathlib import Path
-import gravity_sdk
+import gravity_insight
 
-root = Path('src/gravity_sdk')
+root = Path('src/gravity_insight')
 agents = root / 'agents'
 snapshot = json.loads(Path('tests/fixtures/public_api_exports.json').read_text(encoding='utf-8'))
 actual = {
@@ -832,8 +842,8 @@ actual = {
     'package_py': len(list(root.rglob('*.py'))),
     'agents_implementation_py': len([p for p in agents.glob('*.py') if p.name != '__init__.py']),
     'lazy_snapshot': len(snapshot),
-    'runtime_exports': len(gravity_sdk._EXPORTS),
-    'root_all': len(gravity_sdk.__all__),
+    'runtime_exports': len(gravity_insight._EXPORTS),
+    'root_all': len(gravity_insight.__all__),
 }
 expected = {'root_py': 495, 'root_agent_py': 1, 'package_py': 642, 'agents_implementation_py': 82, 'lazy_snapshot': 147, 'runtime_exports': 147, 'root_all': 148}
 assert actual == expected, f'structural/public counts mismatch: expected={expected}, actual={actual}'
@@ -849,13 +859,13 @@ for source, path in paths.items():
     for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'), filename=str(path))):
         targets = []
         if isinstance(node, ast.Import):
-            targets = [alias.name.split('.')[2] for alias in node.names if alias.name.startswith('gravity_sdk.agents.') and len(alias.name.split('.')) > 2]
+        targets = [alias.name.split('.')[2] for alias in node.names if alias.name.startswith('gravity_insight.agents.') and len(alias.name.split('.')) > 2]
         elif isinstance(node, ast.ImportFrom):
             if node.level == 1 and node.module:
                 targets = [node.module.split('.')[0]]
             elif node.level == 1:
                 targets = [alias.name for alias in node.names]
-            elif node.level == 0 and node.module and node.module.startswith('gravity_sdk.agents.'):
+        elif node.level == 0 and node.module and node.module.startswith('gravity_insight.agents.'):
                 targets = [node.module.split('.')[2]]
         edges.update((source, target) for target in targets if target in nodes and target != source)
 core = set('''analysis batch batch_questions batch_sources business_pulse capabilities catalog composite composite_inventory dashboard discovery_policy discovery_support export handoff host_catalog host_selection input_resolution intent_routing lexical_retrieval material_performance monetization_guard multidim operation_contract output product_inventory report_routing segment semantic_context semantic_derived sources sql_product_discovery table_lineage unavailable unavailable_analysis'''.split())
@@ -875,9 +885,9 @@ expected_owners = [
 ]
 assert sorted(owner_ledger, key=lambda row: row['symbol']) == expected_owners, f'owner migration ledger must contain exactly the six reviewed rows: {owner_ledger}'
 index = json.loads(Path('specs/agent-runtime/index.json').read_text(encoding='utf-8'))
-for path in ('src/gravity_sdk/agents/capabilities.py', 'src/gravity_sdk/agents/composite.py', 'src/gravity_sdk/agents/handoff.py'):
+for path in ('src/gravity_insight/agents/capabilities.py', 'src/gravity_insight/agents/composite.py', 'src/gravity_insight/agents/handoff.py'):
     assert path in index['shared_spine'], f'migrated shared-spine path missing: {path}'
-for path in ('src/gravity_sdk/agent_capabilities.py', 'src/gravity_sdk/agent_composite.py', 'src/gravity_sdk/agent_handoff.py'):
+for path in ('src/gravity_insight/agent_capabilities.py', 'src/gravity_insight/agent_composite.py', 'src/gravity_insight/agent_handoff.py'):
     assert path not in index['shared_spine'], f'old shared-spine path remains: {path}'
 print(json.dumps({'counts': actual, 'graph': graph_actual, 'owner_migrations': len(owner_ledger)}, sort_keys=True))
 '@
@@ -955,12 +965,12 @@ if ($LASTEXITCODE) { throw 'complete unittest collector failed' }
 ### Compiler And Quality
 
 ```powershell
-& ./.venv/Scripts/python.exe -m gravity_sdk.compiler check
+& ./.venv/Scripts/python.exe -m gravity_insight.compiler check
 if ($LASTEXITCODE) { throw 'compiler check failed' }
 ```
 
 ```powershell
-& ./.venv/Scripts/python.exe -m gravity_sdk.quality check
+& ./.venv/Scripts/python.exe -m gravity_insight.quality check
 if ($LASTEXITCODE) { throw 'quality check failed' }
 ```
 
@@ -994,7 +1004,7 @@ if ($LASTEXITCODE) { throw 'development security assertion failed' }
 ### CLI Help
 
 ```powershell
-& ./.venv/Scripts/python.exe -m gravity_sdk --help
+& ./.venv/Scripts/python.exe -m gravity_insight --help
 if ($LASTEXITCODE) { throw 'gravity CLI help failed' }
 ```
 
@@ -1030,7 +1040,7 @@ branch when:
 - `agent_pagination.py` and `metadata_inventory()` are absent;
   `compact_pagination` behavior is preserved in `pagination_completeness.py`;
   `metadata_inventory_state()` failure ordering is preserved;
-- `gravity_sdk.__all__ == 148`; fixture/runtime owners each equal 147; the
+- `gravity_insight.__all__ == 148`; fixture/runtime owners each equal 147; the
   reviewed owner ledger contains exactly six accepted changes;
 - no removed deep-path shim, alias, hook, duplicate, second facade, or package
   initialization side effect exists; R17 adds no facade back-edge, while the
@@ -1056,7 +1066,7 @@ the user gives new explicit approval.
 
 ## Canonical Owners
 
-Long-lived owners are the `gravity_sdk/agents/` boundary, stable facade and
+Long-lived owners are the `gravity_insight/agents/` boundary, stable facade and
 lazy map, `pagination_completeness.py`, retained Runtime contracts module,
 public API and owner fixtures, boundary and wheel gates, Requirement Index
 shared spine, canonical consumer evidence, and technical debt #11. This

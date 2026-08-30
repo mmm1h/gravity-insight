@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 try:
-    from gravity_sdk import (
+    from gravity_insight import (
         CredentialProvider,
         Credential,
         CompositeService,
@@ -26,19 +26,19 @@ try:
         PolicyViolation,
         UnknownOperationError,
     )
-    from gravity_sdk.credentials import CredentialConfig, _atomic_update_env, session_path
-    from gravity_sdk.errors import exit_code_for_status
-    from gravity_sdk.executor import _project as project_response
-    from gravity_sdk.models import load_operation_manifest
-    from gravity_sdk.http_runtime import GravityHttpRuntime
-    from gravity_sdk.registry import (
+    from gravity_insight.credentials import CredentialConfig, _atomic_update_env, session_path
+    from gravity_insight.errors import exit_code_for_status
+    from gravity_insight.executor import _project as project_response
+    from gravity_insight.models import load_operation_manifest
+    from gravity_insight.http_runtime import GravityHttpRuntime
+    from gravity_insight.registry import (
         PolicyEngine,
         Registry,
         _AuthorizedRequest,
     )
-    from gravity_sdk.transport import Transport, TransportResponse
+    from gravity_insight.transport import Transport, TransportResponse
 except ModuleNotFoundError:  # source checkout without an editable install
-    from gravity_sdk import (
+    from gravity_insight import (
         CredentialProvider,
         Credential,
         CompositeService,
@@ -51,17 +51,17 @@ except ModuleNotFoundError:  # source checkout without an editable install
         PolicyViolation,
         UnknownOperationError,
     )
-    from gravity_sdk.credentials import CredentialConfig, _atomic_update_env, session_path
-    from gravity_sdk.errors import exit_code_for_status
-    from gravity_sdk.executor import _project as project_response
-    from gravity_sdk.models import load_operation_manifest
-    from gravity_sdk.http_runtime import GravityHttpRuntime
-    from gravity_sdk.registry import (
+    from gravity_insight.credentials import CredentialConfig, _atomic_update_env, session_path
+    from gravity_insight.errors import exit_code_for_status
+    from gravity_insight.executor import _project as project_response
+    from gravity_insight.models import load_operation_manifest
+    from gravity_insight.http_runtime import GravityHttpRuntime
+    from gravity_insight.registry import (
         PolicyEngine,
         Registry,
         _AuthorizedRequest,
     )
-    from gravity_sdk.transport import Transport, TransportResponse
+    from gravity_insight.transport import Transport, TransportResponse
 
 
 NOW = datetime(2026, 8, 8, 6, 0, tzinfo=timezone.utc)
@@ -203,7 +203,7 @@ def client_for(
 def repository_manifest(*operation_ids: str):
     wanted = set(operation_ids)
     operations = []
-    root = Path(__file__).resolve().parents[1] / "src" / "gravity_sdk" / "manifests"
+    root = Path(__file__).resolve().parents[1] / "src" / "gravity_insight" / "manifests"
     for path in sorted(root.glob("*.json")):
         document = json.loads(path.read_text(encoding="utf-8"))
         operations.extend(
@@ -259,7 +259,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         )
 
     def test_repository_manifests_load_the_locked_contract(self):
-        root = Path(__file__).resolve().parents[1] / "src" / "gravity_sdk" / "manifests"
+        root = Path(__file__).resolve().parents[1] / "src" / "gravity_insight" / "manifests"
         operations = []
         for path in sorted(root.glob("*.json")):
             operations.extend(load_operation_manifest(path))
@@ -2628,9 +2628,9 @@ class GravityInsightCoreTests(unittest.TestCase):
 
     def test_package_public_surface_excludes_low_level_request_primitives(self):
         try:
-            import gravity_sdk as public_package
+            import gravity_insight as public_package
         except ModuleNotFoundError:
-            import gravity_sdk as public_package
+            import gravity_insight as public_package
 
         for name in (
             "Transport",
@@ -2804,7 +2804,7 @@ class CredentialDecisionTests(unittest.TestCase):
         return {"code": 0, "data": {"day": 3, "user": user}}
 
     def test_login_token_priority_stays_fail_closed(self):
-        from gravity_sdk.errors import TransportError
+        from gravity_insight.errors import TransportError
 
         provider = self.provider()
         for key, lower_key in (("Authorization", "authorization"), ("authorization", "token")):
@@ -2822,7 +2822,7 @@ class CredentialDecisionTests(unittest.TestCase):
                     )
 
     def test_login_envelope_failures_keep_their_error_classes(self):
-        from gravity_sdk.errors import AuthenticationError, TransportError
+        from gravity_insight.errors import AuthenticationError, TransportError
 
         provider = self.provider()
         cases = (
@@ -2855,7 +2855,7 @@ class CredentialDecisionTests(unittest.TestCase):
         self.assertEqual(self.expired, expired.expires_at)
 
     def test_configured_malformed_expiry_cannot_become_unbounded(self):
-        from gravity_sdk.errors import CredentialError
+        from gravity_insight.errors import CredentialError
 
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -2910,7 +2910,7 @@ class CredentialDecisionTests(unittest.TestCase):
         self.assertEqual(self.future, provider.get().expires_at)
 
     def test_malformed_jwt_exp_requires_an_independent_expiry(self):
-        from gravity_sdk.errors import CredentialError, TransportError
+        from gravity_insight.errors import CredentialError, TransportError
 
         jwt_body = base64.urlsafe_b64encode(
             json.dumps({"exp": "not-a-number"}).encode()
@@ -2966,7 +2966,7 @@ class CredentialDecisionTests(unittest.TestCase):
                 self.assertEqual(expected_logins, len(login_calls))
 
     def test_refresh_failure_never_falls_back_to_stale_credential(self):
-        from gravity_sdk.errors import AuthenticationError
+        from gravity_insight.errors import AuthenticationError
 
         def rejected(_username, _password):
             raise AuthenticationError("Gravity login was rejected")
@@ -2997,7 +2997,7 @@ class CredentialDecisionTests(unittest.TestCase):
         import io
         import logging
         from contextlib import redirect_stderr, redirect_stdout
-        from gravity_sdk.errors import CredentialError
+        from gravity_insight.errors import CredentialError
 
         class LogCapture(logging.Handler):
             def __init__(self):

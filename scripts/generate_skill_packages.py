@@ -5,12 +5,12 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from gravity_sdk.skill_contract import skill_artifacts
-from gravity_sdk.skill_render import render_package_files, skill_package_descriptor
+from gravity_insight.skill_contract import skill_artifacts
+from gravity_insight.skill_render import render_package_files, skill_package_descriptor
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_ROOT = ROOT / "src" / "gravity_sdk"
+PACKAGE_ROOT = ROOT / "src" / "gravity_insight"
 
 
 def render_outputs() -> dict[Path, bytes]:

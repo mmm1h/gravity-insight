@@ -10,20 +10,20 @@ from argparse import Namespace
 from pathlib import Path
 from unittest import mock
 
-from gravity_sdk import connect
-from gravity_sdk.cache import MetadataCache
-from gravity_sdk.client import GravityInsightClient
-from gravity_sdk.credential_storage import session_path
-from gravity_sdk.credentials import CredentialProvider
-from gravity_sdk.errors import CredentialError, InputValidationError
-from gravity_sdk.find_metadata import _default_catalog_path, search_metadata
-from gravity_sdk.shared_runtime import get_shared_runtime
-from gravity_sdk import shared_runtime as runtime_module
-from gravity_sdk.metadata_sync import default_catalog_path
-from gravity_sdk.metadata_status import metadata_status
-from gravity_sdk.receipt_cli import dispatch as receipt_dispatch
-from gravity_sdk.receipt import record_completed_http_response, request_receipt_context
-from gravity_sdk.runtime_scope import (
+from gravity_insight import connect
+from gravity_insight.cache import MetadataCache
+from gravity_insight.client import GravityInsightClient
+from gravity_insight.credential_storage import session_path
+from gravity_insight.credentials import CredentialProvider
+from gravity_insight.errors import CredentialError, InputValidationError
+from gravity_insight.find_metadata import _default_catalog_path, search_metadata
+from gravity_insight.shared_runtime import get_shared_runtime
+from gravity_insight import shared_runtime as runtime_module
+from gravity_insight.metadata_sync import default_catalog_path
+from gravity_insight.metadata_status import metadata_status
+from gravity_insight.receipt_cli import dispatch as receipt_dispatch
+from gravity_insight.receipt import record_completed_http_response, request_receipt_context
+from gravity_insight.runtime_scope import (
     env_isolation_key,
     field_policy_cache_dir,
     metadata_catalog_path,
@@ -31,7 +31,7 @@ from gravity_sdk.runtime_scope import (
     resolve_env_path,
     runtime_scope_key,
 )
-from gravity_sdk.paths import PROJECT_ROOT
+from gravity_insight.paths import PROJECT_ROOT
 
 
 def _reset_shared_runtimes() -> None:
@@ -104,7 +104,7 @@ class SharedRuntimeIsolationTests(unittest.TestCase):
 
     def test_default_env_account_change_scopes_runtime_and_disk_paths(self) -> None:
         with tempfile.TemporaryDirectory() as raw, mock.patch(
-            "gravity_sdk.runtime_scope.PROJECT_ROOT", Path(raw)
+            "gravity_insight.runtime_scope.PROJECT_ROOT", Path(raw)
         ):
             path = _write_account(Path(raw), ".env.gravity.local", "fixture-a")
             first = get_shared_runtime()
@@ -136,7 +136,7 @@ class SharedRuntimeIsolationTests(unittest.TestCase):
             scope = runtime_scope_key(path, workspace_root=root)
             receipt_root = root / "principals" / scope.fingerprint
             record_completed_http_response(type("Response", (), {"status_code": 200})(), request_receipt_context(operation_id="app.list", method="GET", path="/fixture/read"), receipt_root)
-            with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(path)}), mock.patch("gravity_sdk.paths.STATE_ROOT", root):
+            with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(path)}), mock.patch("gravity_insight.paths.STATE_ROOT", root):
                 public = [metadata_status(), receipt_dispatch(Namespace(receipt_command="list", limit=1, cursor=None, operation_id=None), lambda _: {})]
                 with self.assertRaises(InputValidationError) as raised:
                     search_metadata()
@@ -241,13 +241,13 @@ class ExplicitEnvIgnoresProcessTokenTests(unittest.TestCase):
 
 class MaxConcurrencySourceTests(unittest.TestCase):
     def test_process_concurrency_ceiling_is_defined_once(self) -> None:
-        root = Path(__file__).resolve().parents[1] / "src" / "gravity_sdk"
+        root = Path(__file__).resolve().parents[1] / "src" / "gravity_insight"
         assignments = []
         for path in root.rglob("*.py"):
             for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
                 if line.replace(" ", "") == "MAX_CONCURRENCY=24":
                     assignments.append(f"{path.relative_to(root.parent.parent)}:{line_number}")
         self.assertEqual(
-            ["src/gravity_sdk/process_limits.py"],
+            ["src/gravity_insight/process_limits.py"],
             [item.split(":")[0].replace("\\", "/") for item in assignments],
         )

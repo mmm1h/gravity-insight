@@ -1,0 +1,317 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260811T020200Z_material.creative_component.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260811T020200Z_material.creative_component.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page_size",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_number",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/357",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/bytedance/creative_component/list/",
+      "route_index": 357,
+      "route_sha256": "50d53f83bd4732514e81eef61f9f346e527b76d42a6a432bc8ec07e700beb65b"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205323Z_material.creative_component.list.yaml",
+        "probed_at": "2026-08-08T20:53:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205518Z_material.creative_component.list.yaml",
+        "probed_at": "2026-08-08T20:55:18Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260811T020200Z_material.creative_component.list.yaml",
+        "probed_at": "2026-08-11T02:02:00Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "素材",
+      "callers": [
+        "R"
+      ],
+      "contract_family": null,
+      "cost_reason": "广告/创意 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 3158,
+        "file": "raw/web.gravity-engine.com/assets/CreativeModule-BOQju-tU.js",
+        "line": 1,
+        "offset": 3157,
+        "url": "https://web.gravity-engine.com/assets/CreativeModule-BOQju-tU.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 3966,
+            "column": 3158,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/CreativeModule-BOQju-tU.js",
+            "line": 1,
+            "route_offset": 3157
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/bytedance/creative_component/list/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "query",
+            "name": "filters",
+            "path": "$.filters",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          }
+        ]
+      },
+      "parent_resolution": {
+        "basis": "child_semantic_success_without_parent",
+        "bindings": [],
+        "conclusion": "unblocked",
+        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
+        "evidence": "evidence/probe/20260809T145638Z_material.creative_component.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
+      "path": "/turbo_engine/api/v1/bytedance/creative_component/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "创意组件",
+        "组件名",
+        "请输入"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "分页列出巨量创意组件；当前契约固定为空筛选，与网页首次加载行为一致。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "page": 1,
+        "page_size": 20
+      }
+    },
+    "operation_id": "material.creative_component.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/creative_component/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "frontend_creative_module_request_binding"
+      ],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "drafts/material.creative_component.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {
+        "filters": "[]"
+      },
+      "path_fields": [],
+      "query_fields": [
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [],
+    "resource": "creative_component",
+    "response_projection": {
+      "data_keys": [
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

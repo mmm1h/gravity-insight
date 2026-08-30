@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-_temporary_cache = tempfile.TemporaryDirectory(prefix="gravity-sdk-tests-")
+_temporary_cache = tempfile.TemporaryDirectory(prefix="gravity-insight-tests-")
 _cache_root = Path(_temporary_cache.name).resolve()
 _cache_environment = patch.dict(
     os.environ,

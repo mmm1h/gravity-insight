@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk.data_quality import (
+from gravity_insight.data_quality import (
     DataQualityError,
     aggregate_data_quality,
     data_quality_result,

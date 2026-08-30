@@ -4,20 +4,20 @@ import json
 import unittest
 from typing import Any, Mapping
 
-from gravity_sdk.analysis_primitives import (
+from gravity_insight.analysis_primitives import (
     AnalysisCohort,
     AnalysisFilter,
     AnalysisMetric,
     AnalysisSpec,
     AnalysisStep,
 )
-from gravity_sdk.analysis_query_batch import (
+from gravity_insight.analysis_query_batch import (
     BATCH_SCHEMA_VERSION,
     validate_analysis_query_batch,
 )
-from gravity_sdk.analysis_spec import compile_query_spec
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.analysis_spec import compile_query_spec
+from gravity_insight.errors import InputValidationError
+from gravity_insight.workspace import load_workspace
 
 
 QUERY_ID = "1700000000000AAAAAAAAAAAAAAAAAAA"

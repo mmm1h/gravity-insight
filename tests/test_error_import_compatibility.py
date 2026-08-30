@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import unittest
 
-import gravity_sdk
-import gravity_sdk.errors as errors
+import gravity_insight
+import gravity_insight.errors as errors
 
 
-# Generated from `git show b7c15ed:src/gravity_sdk/errors.py`, not sampled.
+# Generated from `git show b7c15ed:src/gravity_insight/errors.py`, not sampled.
 BASELINE_IMPORT_NAMES = {
     "Any", "AuthMissingError", "AuthenticationError", "CALLER_ERROR_EXIT",
     "ConcurrentModificationError", "ContractChangedError", "CredentialError",
@@ -91,7 +91,7 @@ class ErrorImportCompatibilityTests(unittest.TestCase):
         for name, expected in BASELINE_ERROR_CONTRACTS.items():
             with self.subTest(name=name):
                 error_type = getattr(errors, name)
-                self.assertEqual("gravity_sdk.errors", error_type.__module__)
+                self.assertEqual("gravity_insight.errors", error_type.__module__)
                 detail = error_type("first\nsecond").to_error_detail(
                     operation_id="operation.test"
                 )
@@ -107,7 +107,7 @@ class ErrorImportCompatibilityTests(unittest.TestCase):
     def test_root_lazy_error_exports_still_resolve_to_facade_symbols(self) -> None:
         for name in ROOT_ERROR_EXPORTS:
             with self.subTest(name=name):
-                self.assertIs(getattr(errors, name), getattr(gravity_sdk, name))
+                self.assertIs(getattr(errors, name), getattr(gravity_insight, name))
 
 
 if __name__ == "__main__":

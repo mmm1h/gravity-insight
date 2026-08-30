@@ -8,7 +8,7 @@ Gravity Agent Runtime 的实现仓库，当前稳定内核是面向数据分析�
 
   ```powershell
   $env:PYTHONPATH='src'
-  python -m gravity_sdk agent-catalog categories
+  python -m gravity_insight agent-catalog categories
   ```
 
 - **修改本仓库**：先读 [AGENTS.md](AGENTS.md)，再从 [维护者入口](docs/maintainers/index.md) 选择当前任务。
@@ -37,7 +37,7 @@ gravity agent-catalog categories
 Python 最小入口：
 
 ```python
-from gravity_sdk import connect
+from gravity_insight import connect
 
 gravity = connect()
 result = gravity.read("app.list", {"page": 1, "page_size": 20})

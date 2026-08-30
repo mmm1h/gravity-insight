@@ -7,10 +7,10 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.capability_trust_cli import dispatch as capability_dispatch
-from gravity_sdk.journey_cli import dispatch as journey_dispatch
-from gravity_sdk.mcp.server import MCPServer
+from gravity_insight import GravitySDK
+from gravity_insight.capability_trust_cli import dispatch as capability_dispatch
+from gravity_insight.journey_cli import dispatch as journey_dispatch
+from gravity_insight.mcp.server import MCPServer
 from tests.test_mcp_protocol import request_params
 
 
@@ -140,8 +140,8 @@ class MCPParityTests(unittest.TestCase):
         factory.from_env.return_value = self.sdk
         arguments = case["arguments"]
         with (
-            patch("gravity_sdk.sdk.GravitySDK", factory),
-            patch("gravity_sdk.workspace.load_workspace", return_value=self.workspace),
+            patch("gravity_insight.sdk.GravitySDK", factory),
+            patch("gravity_insight.workspace.load_workspace", return_value=self.workspace),
         ):
             if case["case_id"] == "journey-list":
                 return journey_dispatch(

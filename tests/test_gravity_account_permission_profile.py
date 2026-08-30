@@ -6,15 +6,15 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.account_permission_profile import (
+from gravity_insight import GravitySDK
+from gravity_insight.account_permission_profile import (
     PERMISSION_EMPTY_NOTE,
     ROLE_DETAIL_OPERATION_ID,
     SCHEMA_VERSION,
     account_permission_profile,
 )
-from gravity_sdk.cli import main
-from gravity_sdk.errors import InputValidationError
+from gravity_insight.cli import main
+from gravity_insight.errors import InputValidationError
 
 
 class _Client:
@@ -63,7 +63,7 @@ class AccountPermissionProfileTests(unittest.TestCase):
             GravitySDK(insight=_Client()).account_permission_profile()["schema_version"],
         )
         stdout = io.StringIO()
-        with patch("gravity_sdk.capability_cli.runtime.build_client", return_value=_Client()), \
+        with patch("gravity_insight.capability_cli.runtime.build_client", return_value=_Client()), \
                 contextlib.redirect_stdout(stdout):
             self.assertEqual(0, main(["apps", "permission-profile"]))
         self.assertEqual(SCHEMA_VERSION, json.loads(stdout.getvalue())["schema_version"])

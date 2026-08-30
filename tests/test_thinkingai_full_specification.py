@@ -6,32 +6,32 @@ import tempfile
 import unittest
 import zipfile
 
-from gravity_sdk.agent_runtime_contracts import canonical_digest, load_json_object
-from gravity_sdk.journey_contract import journey_artifacts
-from gravity_sdk.skill_contract import compile_skill_manifest, skill_artifacts
-from gravity_sdk.skill_hub_archive import validate_skill_archive
-from gravity_sdk.skill_hub_cas import SkillHubCAS
-from gravity_sdk.skill_hub_contract import compile_hub_index, compile_hub_source
-from gravity_sdk.skill_hub_locks import compile_skills_lock
-from gravity_sdk.skill_hub_source import HubSourceSession
-from gravity_sdk.thinkingai_full_specification import (
+from gravity_insight.agent_runtime_contracts import canonical_digest, load_json_object
+from gravity_insight.journey_contract import journey_artifacts
+from gravity_insight.skill_contract import compile_skill_manifest, skill_artifacts
+from gravity_insight.skill_hub_archive import validate_skill_archive
+from gravity_insight.skill_hub_cas import SkillHubCAS
+from gravity_insight.skill_hub_contract import compile_hub_index, compile_hub_source
+from gravity_insight.skill_hub_locks import compile_skills_lock
+from gravity_insight.skill_hub_source import HubSourceSession
+from gravity_insight.thinkingai_full_specification import (
     ThinkingAIFullSpecificationError,
     compile_full_source,
     compile_full_specification,
     full_source_manifests,
     validate_full_specification,
 )
-from gravity_sdk.thinkingai_full_eval import (
+from gravity_insight.thinkingai_full_eval import (
     compile_full_eval,
     compile_source_impact,
     validate_full_eval,
 )
-from gravity_sdk.thinkingai_inventory import (
+from gravity_insight.thinkingai_inventory import (
     compile_inventory_diff,
     load_inventory_snapshot,
     validate_inventory_snapshot,
 )
-from gravity_sdk.thinkingai_representative import (
+from gravity_insight.thinkingai_representative import (
     validate_representative_eval,
     validate_representative_set,
 )
@@ -54,11 +54,11 @@ from scripts.generate_thinkingai_full_specifications import (
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = next(
     (
-        ROOT / "src" / "gravity_sdk" / "contracts" / "thinkingai" / "snapshots"
+        ROOT / "src" / "gravity_insight" / "contracts" / "thinkingai" / "snapshots"
     ).glob("*.json")
 )
 DIFF = next(
-    (ROOT / "src" / "gravity_sdk" / "contracts" / "thinkingai" / "diffs").glob(
+    (ROOT / "src" / "gravity_insight" / "contracts" / "thinkingai" / "diffs").glob(
         "*.json"
     )
 )

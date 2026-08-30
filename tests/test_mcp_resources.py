@@ -4,7 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
-from gravity_sdk.mcp.resources import (
+from gravity_insight.mcp.resources import (
     ResourceAccessPolicy,
     ResourceCatalog,
     ResourceError,

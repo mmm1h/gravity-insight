@@ -8,24 +8,24 @@ import subprocess
 import tempfile
 import unittest
 
-from gravity_sdk.agent_runtime_contracts import (
+from gravity_insight.agent_runtime_contracts import (
     AgentRuntimeContractError,
     validate_schema,
 )
-from gravity_sdk.context_contract import ContextContractError
-from gravity_sdk.data_quality import DataQualityError, data_quality_result
-from gravity_sdk.execution_snapshot import (
+from gravity_insight.context_contract import ContextContractError
+from gravity_insight.data_quality import DataQualityError, data_quality_result
+from gravity_insight.execution_snapshot import (
     ExecutionSnapshotError,
     build_execution_snapshot,
 )
-from gravity_sdk.operator_model_receipt import operator_model_receipt_facet
-from gravity_sdk.receipt import (
+from gravity_insight.operator_model_receipt import operator_model_receipt_facet
+from gravity_insight.receipt import (
     build_receipt,
     persist_receipt,
     validate_receipt,
 )
-from gravity_sdk.receipt_facets import compile_receipt_facets
-from gravity_sdk.repo_context_provider import RepoContextProvider
+from gravity_insight.receipt_facets import compile_receipt_facets
+from gravity_insight.repo_context_provider import RepoContextProvider
 
 
 DIGEST = "a" * 64
@@ -539,7 +539,7 @@ class ReceiptFacetTests(unittest.TestCase):
 
     def test_receipt_schema_is_packaged_and_has_only_local_references(self) -> None:
         schema_root = (
-            Path(__file__).resolve().parents[1] / "src/gravity_sdk/contracts/schema"
+            Path(__file__).resolve().parents[1] / "src/gravity_insight/contracts/schema"
         )
         path = schema_root / "receipt-v1.schema.json"
         schema = json.loads(path.read_text(encoding="utf-8"))

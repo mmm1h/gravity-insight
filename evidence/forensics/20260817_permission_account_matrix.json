@@ -23,7 +23,7 @@
     "production_requests_after_stop": 0
   },
   "classification_fix": {
-    "layer": "src/gravity_sdk/semantic_status.py",
+    "layer": "src/gravity_insight/semantic_status.py",
     "reason": "Every registered operation already shares classify_semantic_status / enforce_semantic_rules. Mapping code=2000 there is warehouse-wide and does not patch operations one by one.",
     "before": {
       "status": "semantic_error",

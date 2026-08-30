@@ -30,17 +30,17 @@ from unittest.mock import patch
 site = pathlib.Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(site))
 
-import gravity_sdk
-from gravity_sdk import GravitySDK
-from gravity_sdk.agents.handoff import attach_plan_node
-from gravity_sdk.journey_cli import dispatch as journey_dispatch
-from gravity_sdk.journey_contract import journey_artifact
-from gravity_sdk.mcp.server import MCPServer, PROTOCOL_VERSION
-from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan
+import gravity_insight
+from gravity_insight import GravitySDK
+from gravity_insight.agents.handoff import attach_plan_node
+from gravity_insight.journey_cli import dispatch as journey_dispatch
+from gravity_insight.journey_contract import journey_artifact
+from gravity_insight.mcp.server import MCPServer, PROTOCOL_VERSION
+from gravity_insight.plan import PlanAdapter, PlanAdapters, execute_plan
 
-package_path = pathlib.Path(gravity_sdk.__file__).resolve()
+package_path = pathlib.Path(gravity_insight.__file__).resolve()
 if not package_path.is_relative_to(site):
-    raise AssertionError(f"gravity_sdk escaped installed wheel: {package_path}")
+    raise AssertionError(f"gravity_insight escaped installed wheel: {package_path}")
 
 
 class CommonJourneyService:
@@ -102,8 +102,8 @@ def cli_run(case):
         workspace=None,
     )
     with (
-        patch("gravity_sdk.sdk.GravitySDK", SDKFactory),
-        patch("gravity_sdk.workspace.load_workspace", return_value=workspace),
+        patch("gravity_insight.sdk.GravitySDK", SDKFactory),
+        patch("gravity_insight.workspace.load_workspace", return_value=workspace),
     ):
         return journey_dispatch(args, lambda _value: copy.deepcopy(case["inputs"]))
 

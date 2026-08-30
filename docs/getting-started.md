@@ -23,7 +23,7 @@ python -m venv .venv
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m gravity_sdk --help
+python -m gravity_insight --help
 ```
 
 在源码检出目录中运行从 tag 非 editable 安装的 `gravity doctor` 会以 `INSTALL_METADATA_NOT_EDITABLE` 失败；这是正确的保护，不是安装故障。它阻止“当前目录源码是 A、实际执行的安装包是 B”。切换到源码检出目录之外再检查 tag 安装；在源码目录内开发则使用上面的 editable 安装。

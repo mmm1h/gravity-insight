@@ -236,7 +236,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             with patch.object(self.subject, "SUITE_ROOT", root):
                 cases = self.subject._final_cases(manifest, key_path)
             from agent_usability_external_selector import external_selector_trials
-            from gravity_sdk.client import GravityInsightClient
+            from gravity_insight.client import GravityInsightClient
             blocker = self.subject.BlockedTransport()
             states, _, _, receipt = external_selector_trials(
                 cases,
@@ -319,7 +319,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             states, "selection")["unstable_selections"]["J06.dev"]))
 
     def test_recovery_suite_uses_no_transport(self) -> None:
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.client import GravityInsightClient
 
         blocker = self.subject.BlockedTransport()
         with tempfile.TemporaryDirectory() as cache, patch.dict(os.environ, {
@@ -342,7 +342,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             self.subject.compare_results(before, after)
 
     def test_security_compliance_is_a_binary_gate(self) -> None:
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.client import GravityInsightClient
 
         client = GravityInsightClient.from_env(
             transport=self.subject.BlockedTransport()
@@ -452,8 +452,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_external_selector_stub_receives_catalog_and_is_scored(self) -> None:
         from agent_usability_external_selector import _invoke_plugin, external_selector_trials
-        from gravity_sdk.agents.host_selection import host_routing_discovery
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.agents.host_selection import host_routing_discovery
+        from gravity_insight.client import GravityInsightClient
 
         cases = [{
             "case_id": "stub-business-pulse",
@@ -468,7 +468,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             / "scripts" / "agent_usability_selector_stub.py"
         )
         with patch(
-            "gravity_sdk.agents.host_selection.host_routing_discovery",
+            "gravity_insight.agents.host_selection.host_routing_discovery",
             wraps=host_routing_discovery,
         ) as dispatcher:
             states, calls, observations, receipt = external_selector_trials(
@@ -491,7 +491,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         ))
         self.assertEqual("external_selector", receipt["mode"])
         self.assertEqual(
-            "gravity_sdk.agents.host_selection.host_routing_discovery",
+            "gravity_insight.agents.host_selection.host_routing_discovery",
             receipt["runtime_dispatcher"],
         )
         self.assertEqual("host_catalog", receipt["runtime_routing_mode"])
@@ -544,7 +544,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         from agent_usability_host_arm_gap import (
             _assert_distinct_default_dispatch_arms,
         )
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.client import GravityInsightClient
 
         client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
         _selector_catalog, runtime_catalog = _catalog(client)
@@ -596,7 +596,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         from agent_usability_host_arm_gap import (
             _assert_distinct_default_dispatch_arms,
         )
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.client import GravityInsightClient
 
         client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
         _selector_catalog, runtime_catalog = _catalog(client)
@@ -654,8 +654,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_external_selector_can_select_an_exact_registered_gap(self) -> None:
         from agent_usability_external_selector import _catalog, _selection_result
-        from gravity_sdk.agents.host_selection import EMPTY_SELECTION_GAP
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.agents.host_selection import EMPTY_SELECTION_GAP
+        from gravity_insight.client import GravityInsightClient
 
         client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
         catalog, runtime_catalog = _catalog(client)
@@ -697,7 +697,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_external_selector_derives_terminal_network_from_http_counter(self) -> None:
         from agent_usability_external_selector import _catalog, _selection_result
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.client import GravityInsightClient
 
         blocker = self.subject.BlockedTransport()
         client = GravityInsightClient.from_env(transport=blocker)
@@ -770,7 +770,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_one_plugin_sha_rejects_changing_selector_versions(self) -> None:
         from agent_usability_external_selector import external_selector_trials
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.client import GravityInsightClient
 
         plugin_source = """import hashlib, json, sys
 from pathlib import Path

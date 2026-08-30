@@ -4,7 +4,7 @@ import copy
 from pathlib import Path
 import unittest
 
-from gravity_sdk.journey_ledger import (
+from gravity_insight.journey_ledger import (
     JourneyLedgerError,
     load_packaged_journey_ledger,
     parse_journey_ledger,
@@ -76,7 +76,7 @@ class JourneyLedgerTests(unittest.TestCase):
         tampered = copy.deepcopy(snapshot)
         tampered["rows"][0]["blocker_note"] = "changed"
 
-        from gravity_sdk.journey_ledger import _validate_snapshot
+        from gravity_insight.journey_ledger import _validate_snapshot
 
         with self.assertRaises(JourneyLedgerError):
             _validate_snapshot(tampered)

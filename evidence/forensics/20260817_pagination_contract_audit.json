@@ -22,7 +22,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/account.department.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/account.department.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "account.department.list",
@@ -53,7 +53,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.ai.conversation.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.ai.conversation.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.ai.conversation.list",
@@ -68,7 +68,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.ai.message.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.ai.message.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.ai.message.list",
@@ -83,7 +83,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.dashboard.condition_favourite.default_to_me.get.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.dashboard.condition_favourite.default_to_me.get.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.dashboard.condition_favourite.default_to_me.get",
@@ -98,7 +98,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.dashboard.condition_favourite.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.dashboard.condition_favourite.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.dashboard.condition_favourite.list",
@@ -113,7 +113,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.dashboard.detail.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.dashboard.detail.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.dashboard.detail",
@@ -143,7 +143,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.dashboard.members.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.dashboard.members.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.dashboard.members.list",
@@ -158,7 +158,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.dashboard.space_members.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.dashboard.space_members.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.dashboard.space_members.list",
@@ -173,7 +173,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.dashboard.tree.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.dashboard.tree.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.dashboard.tree",
@@ -188,7 +188,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.dataanalysis.segment.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.dataanalysis.segment.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.dataanalysis.segment.update",
@@ -203,7 +203,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.copy.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.dashboard.copy.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.dashboard.copy",
@@ -218,7 +218,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.dashboard.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.dashboard.create",
@@ -233,7 +233,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.dc7858a7.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.dashboard.dc7858a7.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.dashboard.dc7858a7.update",
@@ -248,7 +248,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.dashboard.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.dashboard.delete",
@@ -263,7 +263,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.move.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.dashboard.move.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.dashboard.move",
@@ -278,7 +278,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.dashboard.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.dashboard.update",
@@ -293,7 +293,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.folder.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.folder.create",
@@ -308,7 +308,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.folder.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.folder.delete",
@@ -323,7 +323,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.move.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.folder.move.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.folder.move",
@@ -338,7 +338,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.folder.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.folder.update",
@@ -353,7 +353,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.note.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.note.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.note.update",
@@ -368,7 +368,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.space.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.space.create",
@@ -383,7 +383,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.space.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.space.delete",
@@ -398,7 +398,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.move.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.space.move.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.space.move",
@@ -413,7 +413,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.datamanageconfig.kanban.space.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.datamanageconfig.kanban.space.update",
@@ -446,7 +446,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.engine.datamanageconfig.kanban.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.engine.datamanageconfig.kanban.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.engine.datamanageconfig.kanban.delete",
@@ -491,7 +491,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.event.query.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.event.query.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.event.query",
@@ -506,7 +506,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.event_property.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.event_property.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.event_property.list",
@@ -521,7 +521,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.event_property_group.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.event_property_group.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.event_property_group.list",
@@ -536,7 +536,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.event_property_value.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.event_property_value.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.event_property_value.list",
@@ -551,7 +551,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.from.history.version.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.from.history.version.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.from.history.version.create",
@@ -566,7 +566,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.from.tmp.segment.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.from.tmp.segment.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.from.tmp.segment.create",
@@ -581,7 +581,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.funnel.query.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.funnel.query.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.funnel.query",
@@ -596,7 +596,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.kanban.dashboard.folder.move.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.kanban.dashboard.folder.move.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.kanban.dashboard.folder.move",
@@ -611,7 +611,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.kanban.dashboard.order.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.kanban.dashboard.order.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.kanban.dashboard.order.update",
@@ -626,7 +626,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=1000)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /report/api/v3/dataanalysis/monetization_detail/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /report/api/v3/dataanalysis/monetization_detail/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.monetization_detail.list",
@@ -641,7 +641,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.order_detail.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.order_detail.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.order_detail.list",
@@ -656,7 +656,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.order_split_detail.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.order_split_detail.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.order_split_detail.list",
@@ -671,7 +671,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.property.query.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.property.query.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.property.query",
@@ -686,7 +686,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.report.hidden_property.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.report.hidden_property.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.report.hidden_property.list",
@@ -701,7 +701,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.report_config.get.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.report_config.get.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.report_config.get",
@@ -731,7 +731,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.report_config.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.report_config.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.report_config.update",
@@ -761,7 +761,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.retention.query.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.retention.query.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.retention.query",
@@ -776,7 +776,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.scatter.query.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.scatter.query.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.scatter.query",
@@ -791,7 +791,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.by.manual.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.by.manual.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.segment.by.manual.update",
@@ -806,7 +806,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.detail.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.detail.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.segment.detail",
@@ -821,7 +821,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.evaluate_percent.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.evaluate_percent.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.segment.evaluate_percent",
@@ -836,7 +836,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.from.analysis.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.from.analysis.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.segment.from.analysis.create",
@@ -851,7 +851,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.from.rule.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.from.rule.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.segment.from.rule.create",
@@ -866,7 +866,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.from.rule.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.from.rule.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.segment.from.rule.update",
@@ -881,7 +881,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data', total_page_field='total_page', default_page_size=100, max_page_size=100)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.history_version.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.history_version.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.segment.history_version.list",
@@ -896,7 +896,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.segment.list",
@@ -911,7 +911,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.uid_result.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.uid_result.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.segment.uid_result.list",
@@ -926,7 +926,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.segment.user_detail.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.segment.user_detail.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.segment.user_detail.list",
@@ -941,7 +941,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=30)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.task.other_event.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.task.other_event.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.task.other_event.list",
@@ -956,7 +956,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=2000)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.task.pay_event.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.task.pay_event.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.task.pay_event.list",
@@ -971,7 +971,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=15, max_page_size=60)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template_internal/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template_internal/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.template.internal.list",
@@ -986,7 +986,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=15, max_page_size=60)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.template.own.list",
@@ -1001,7 +1001,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=15, max_page_size=60)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template/share/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template/share/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.template.share.list",
@@ -1016,7 +1016,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.template.subject.internal.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.template.subject.internal.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.template.subject.internal.list",
@@ -1031,7 +1031,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.template.subject.own.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.template.subject.own.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.template.subject.own.list",
@@ -1046,7 +1046,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.template.subject.share.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.template.subject.share.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.template.subject.share.list",
@@ -1061,7 +1061,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /report/api/v3/dataanalysis/user/detail/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /report/api/v3/dataanalysis/user/detail/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.user_detail.list",
@@ -1076,7 +1076,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.user_event.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.user_event.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.user_event.list",
@@ -1091,7 +1091,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.user_postback_log.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.user_postback_log.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.user_postback_log.list",
@@ -1106,7 +1106,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.user_property.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.user_property.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "analysis.user_property.list",
@@ -1121,7 +1121,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/analysis.user_property_value.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/analysis.user_property_value.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.user_property_value.list",
@@ -1182,7 +1182,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/app.detail.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/app.detail.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "app.detail",
@@ -1293,7 +1293,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=1000, max_page_size=1000)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/app.testing_tool.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/app.testing_tool.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "app.testing_tool.list",
@@ -1308,7 +1308,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/app.user.realtime.event.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/app.user.realtime.event.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "app.user.realtime.event.update",
@@ -1323,7 +1323,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.attr_backtrack.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.attr_backtrack.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "attribution.attr_backtrack.list",
@@ -1338,7 +1338,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.attr_click_interval.get.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.attr_click_interval.get.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "attribution.attr_click_interval.get",
@@ -1353,7 +1353,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.attr_impress_click.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.attr_impress_click.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "attribution.attr_impress_click.list",
@@ -1383,7 +1383,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.attribution_detail.query.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.attribution_detail.query.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "attribution.attribution_detail.query",
@@ -1398,7 +1398,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.post_backtrack.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.post_backtrack.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "attribution.post_backtrack.list",
@@ -1413,7 +1413,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.postback_map.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.postback_map.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "attribution.postback_map.list",
@@ -1428,7 +1428,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.postback_map_collect.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.postback_map_collect.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "attribution.postback_map_collect.list",
@@ -1443,7 +1443,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.postback_mode.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.postback_mode.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "attribution.postback_mode.list",
@@ -1458,7 +1458,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/attribution.reattribution.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/attribution.reattribution.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "attribution.reattribution.list",
@@ -1473,7 +1473,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/candidate.account.user_operation_log.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/candidate.account.user_operation_log.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "candidate.account.user_operation_log.list",
@@ -1488,7 +1488,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/kuaishou/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/kuaishou/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "candidate.material.kuaishou.list",
@@ -1503,7 +1503,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/candidate.material.platform.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/candidate.material.platform.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "candidate.material.platform.list",
@@ -1518,7 +1518,7 @@
       "declared_pagination": "none",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#GET /turbo_engine/api/v1/user/promoted_object/click_url/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#GET /turbo_engine/api/v1/user/promoted_object/click_url/list/"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "candidate.promotion_object.click_url.list",
@@ -1533,7 +1533,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/candidate.promotion_object.click_url_edit_log.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/candidate.promotion_object.click_url_edit_log.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "candidate.promotion_object.click_url_edit_log.list",
@@ -1548,7 +1548,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/candidate.promotion_object.extra_info.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/candidate.promotion_object.extra_info.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "candidate.promotion_object.extra_info.list",
@@ -1625,7 +1625,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/bytedance/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/bytedance/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "material.bytedance.list",
@@ -1753,7 +1753,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/material.examine.config.get.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/material.examine.config.get.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "material.examine.config.get",
@@ -1768,7 +1768,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=5000, max_page_size=5000)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/material.favorites.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/material.favorites.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "material.favorites.list",
@@ -1828,7 +1828,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/material.recycle.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/material.recycle.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "material.recycle.list",
@@ -1858,7 +1858,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/material.review.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/material.review.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "material.review.list",
@@ -1873,7 +1873,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/material.tag.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/material.tag.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "material.tag.list",
@@ -1888,7 +1888,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/material.tag_category.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/material.tag_category.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "material.tag_category.list",
@@ -1919,7 +1919,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "wire",
       "evidence_sources": [
-        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/tencent/list/"
+        "src/gravity_insight/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/tencent/list/"
       ],
       "observed_shape": "unknown",
       "operation_id": "material.tencent.list",
@@ -1949,7 +1949,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/metadata.event.property.template.079c8246.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/metadata.event.property.template.079c8246.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "metadata.event.property.template.079c8246.create",
@@ -1964,7 +1964,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/metadata.event.property.template.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/metadata.event.property.template.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "metadata.event.property.template.create",
@@ -2078,7 +2078,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/metadata.property.template.event.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/metadata.property.template.event.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "metadata.property.template.event.delete",
@@ -2093,7 +2093,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/metadata.property.template.property.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/metadata.property.template.property.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "metadata.property.template.property.delete",
@@ -2157,7 +2157,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.alipay.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.alipay.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.alipay.advertiser.list",
@@ -2189,7 +2189,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.baidu.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.baidu.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.baidu.advertiser.list",
@@ -2240,7 +2240,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.bing.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.bing.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.bing.advertiser.list",
@@ -2389,7 +2389,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.bytedance.project.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.bytedance.project.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.bytedance.project.list",
@@ -2513,7 +2513,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.honor.ad_group.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.honor.ad_group.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.honor.ad_group.list",
@@ -2544,7 +2544,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.honor.campaign.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.honor.campaign.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.honor.campaign.list",
@@ -2593,7 +2593,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.huya.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.huya.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.huya.account.list",
@@ -2608,7 +2608,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.huya.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.huya.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.huya.advertiser.list",
@@ -2674,7 +2674,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.kuaishou.ad_unit.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.kuaishou.ad_unit.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.kuaishou.ad_unit.list",
@@ -2751,7 +2751,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.oppo.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.oppo.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.oppo.account.list",
@@ -2782,7 +2782,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.qihu360.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.qihu360.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.qihu360.account.list",
@@ -2797,7 +2797,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.qihu360.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.qihu360.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.qihu360.advertiser.list",
@@ -2827,7 +2827,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.sigmob.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.sigmob.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.sigmob.account.list",
@@ -2842,7 +2842,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.sigmob.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.sigmob.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.sigmob.advertiser.list",
@@ -2857,7 +2857,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.taptap.group.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.taptap.group.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.taptap.group.list",
@@ -2962,7 +2962,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=2000, max_page_size=2000)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.ubix.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.ubix.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.ubix.account.list",
@@ -2977,7 +2977,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.ubix.group.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.ubix.group.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.ubix.group.list",
@@ -3009,7 +3009,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.vivo.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.vivo.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.vivo.account.list",
@@ -3041,7 +3041,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.wechat_video.report.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.wechat_video.report.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.wechat_video.report.list",
@@ -3056,7 +3056,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.weibo.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.weibo.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.weibo.account.list",
@@ -3088,7 +3088,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.xiaohongshu.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.xiaohongshu.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.xiaohongshu.advertiser.list",
@@ -3103,7 +3103,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.xiaohongshu.developer.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.xiaohongshu.developer.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.xiaohongshu.developer.list",
@@ -3118,7 +3118,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.xiaomi.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.xiaomi.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.xiaomi.account.list",
@@ -3133,7 +3133,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.xiaomi.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.xiaomi.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.xiaomi.advertiser.list",
@@ -3148,7 +3148,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.youdao.account.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.youdao.account.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.youdao.account.list",
@@ -3163,7 +3163,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/promotion.youdao.advertiser.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/promotion.youdao.advertiser.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "promotion.youdao.advertiser.list",
@@ -3178,7 +3178,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.business.metric.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.business.metric.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.business.metric.list",
@@ -3224,7 +3224,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.confmetric.custom.metric.8ef6d12d.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.confmetric.custom.metric.8ef6d12d.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.confmetric.custom.metric.8ef6d12d.delete",
@@ -3239,7 +3239,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.confmetric.custom.metric.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.confmetric.custom.metric.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.confmetric.custom.metric.update",
@@ -3315,7 +3315,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.calc_total.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.calc_total.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.multidim.calc_total",
@@ -3330,7 +3330,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.custom_metric.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.custom_metric.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "report.multidim.custom_metric.list",
@@ -3390,7 +3390,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.metric_tag.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.metric_tag.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "report.multidim.metric_tag.list",
@@ -3405,7 +3405,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.metric_tag_category.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.metric_tag_category.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "report.multidim.metric_tag_category.list",
@@ -3442,7 +3442,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.template.mine.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.template.mine.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "report.multidim.template.mine.list",
@@ -3457,7 +3457,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.template.preset.get.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.template.preset.get.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.multidim.template.preset.get",
@@ -3472,7 +3472,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.template.preset.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.template.preset.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "report.multidim.template.preset.list",
@@ -3487,7 +3487,7 @@
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.template.shared.list.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.template.shared.list.json#/operation/pagination"
       ],
       "observed_shape": "unknown",
       "operation_id": "report.multidim.template.shared.list",
@@ -3502,7 +3502,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.multidim.template.tree.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.multidim.template.tree.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.multidim.template.tree",
@@ -3582,7 +3582,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.report.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.report.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.report.update",
@@ -3597,7 +3597,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.subscribe.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.subscribe.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.subscribe.create",
@@ -3612,7 +3612,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.subscribe.delete.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.subscribe.delete.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.subscribe.delete",
@@ -3672,7 +3672,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.template.create.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.template.create.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.template.create",
@@ -3687,7 +3687,7 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
-        "src/gravity_sdk/contracts/operations/report.template.update.json#/operation/pagination"
+        "src/gravity_insight/contracts/operations/report.template.update.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "report.template.update",
@@ -3736,6 +3736,6 @@
   },
   "relationship": {
     "kind": "historical_verdict",
-    "note": "Records preserve the 2026-08-17 audit-time declared_kind. They are not a live HEAD mirror. Current pagination.kind is joined at check time by gravity_sdk.pagination_contract_audit."
+    "note": "Records preserve the 2026-08-17 audit-time declared_kind. They are not a live HEAD mirror. Current pagination.kind is joined at check time by gravity_insight.pagination_contract_audit."
   }
 }

@@ -5,8 +5,8 @@ from types import SimpleNamespace
 import tempfile
 import unittest
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.journey_service import JourneyService
+from gravity_insight.errors import InputValidationError
+from gravity_insight.journey_service import JourneyService
 
 
 class NoClientSDK:

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from gravity_sdk.thinkingai_inventory import (
+from gravity_insight.thinkingai_inventory import (
     build_source_observation,
     compile_inventory_diff,
     compile_inventory_snapshot,
@@ -16,7 +16,7 @@ from gravity_sdk.thinkingai_inventory import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts" / "thinkingai"
+CONTRACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts" / "thinkingai"
 CURRENT_OBSERVED_AT = "2026-08-24T10:21:12.565Z"
 _STEM = "thinkingai-cn-20260824T102112565Z.v1.json"
 OBSERVATION_TARGET = CONTRACT_ROOT / "observations" / _STEM

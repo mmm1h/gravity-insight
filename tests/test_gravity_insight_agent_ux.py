@@ -13,31 +13,31 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import cli, runtime
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agents.business_pulse import business_pulse_query
-from gravity_sdk.agents.capabilities import composite_capability_cards
-from gravity_sdk.agents.analysis_task import analysis_task_cards
-from gravity_sdk.agents.batch import capabilities_many, iter_ndjson_records
-from gravity_sdk.agents.batch_sources import AgentSourceSnapshot
-from gravity_sdk.agents.client import DeferredAgentClient
-from gravity_sdk.agents.handoff import apply_workspace_prefix
-from gravity_sdk.agents.sources import OperationDiscovery, discover_operation_cards
-from gravity_sdk.workspace import load_workspace
+from gravity_insight import cli, runtime
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.agents.business_pulse import business_pulse_query
+from gravity_insight.agents.capabilities import composite_capability_cards
+from gravity_insight.agents.analysis_task import analysis_task_cards
+from gravity_insight.agents.batch import capabilities_many, iter_ndjson_records
+from gravity_insight.agents.batch_sources import AgentSourceSnapshot
+from gravity_insight.agents.client import DeferredAgentClient
+from gravity_insight.agents.handoff import apply_workspace_prefix
+from gravity_insight.agents.sources import OperationDiscovery, discover_operation_cards
+from gravity_insight.workspace import load_workspace
 
 try:
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.credentials import CredentialConfig
-    from gravity_sdk.errors import (
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.credentials import CredentialConfig
+    from gravity_insight.errors import (
         InputValidationError,
         OperationNotImplementedError,
         UpstreamError,
         error_detail_from_exception,
     )
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.credentials import CredentialConfig
-    from gravity_sdk.errors import (
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.credentials import CredentialConfig
+    from gravity_insight.errors import (
         InputValidationError,
         OperationNotImplementedError,
         UpstreamError,
@@ -249,7 +249,7 @@ class ErrorAndHealthUxTests(unittest.TestCase):
                 stderr = io.StringIO()
                 with (
                     patch(
-                        "gravity_sdk.cli.dispatch_command",
+                        "gravity_insight.cli.dispatch_command",
                         side_effect=error,
                     ),
                     contextlib.redirect_stderr(stderr),
@@ -346,7 +346,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual("xlsx", card["columns"]["format"])
                 self.assertEqual(5, len(card["columns"]["file_schema"]["columns"]))
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_insight.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_agent_batch_snapshots_export_inventory_once(self, _metadata) -> None:
         workspace = SimpleNamespace(recipes={}, products={}, datasources={})
         with (
@@ -731,7 +731,7 @@ class DiscoveryUxTests(unittest.TestCase):
             second["candidates"][0]["input_schema"]["inputs"]["machine_schema"]["required"],
         )
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_insight.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_multidim_batch_reuses_one_local_snapshot(self, metadata) -> None:
         with patch.object(
             self.client, "operation_inventory", wraps=self.client.operation_inventory
@@ -773,7 +773,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual("metadata_search", card["plan_node"]["kind"])
                 self.assertFalse(result["network_called"])
 
-        with patch("gravity_sdk.agents.batch_sources.search_metadata") as metadata:
+        with patch("gravity_insight.agents.batch_sources.search_metadata") as metadata:
             metadata.return_value = {"results": []}
             batch = capabilities_many(
                 [
@@ -792,7 +792,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertNotIn("gravity.toml", json.dumps([card["plan_node"] for card in cards]))
 
     def test_agent_vocabulary_is_an_offline_typed_plan_handoff(self) -> None:
-        from gravity_sdk.find import metadata_capability_cards
+        from gravity_insight.find import metadata_capability_cards
 
         cases = (
             ("physical metric", "metric", "report_metrics", "Revenue", {"metrics_list": ["Revenue"]}),
@@ -810,7 +810,7 @@ class DiscoveryUxTests(unittest.TestCase):
                     "cname": name, "score": 100, "payload": {"name": name},
                 }
                 with patch(
-                    "gravity_sdk.find.search_metadata", return_value={"results": [row]}
+                    "gravity_insight.find.search_metadata", return_value={"results": [row]}
                 ) as search:
                     direct, warnings = metadata_capability_cards(query, limit=1)
                 self.assertEqual([], warnings)
@@ -835,7 +835,7 @@ class DiscoveryUxTests(unittest.TestCase):
                     self.assertTrue(card["catalog_only"])
                     self.assertFalse(card["replay_supported"])
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata")
+    @patch("gravity_insight.agents.batch_sources.search_metadata")
     def test_agent_batch_loads_vocabulary_once_and_namespaces_nodes(self, search) -> None:
         search.return_value = {"results": [
             {
@@ -1093,7 +1093,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 raise AssertionError("local Agent handoffs must not scan operations")
 
         with patch(
-            "gravity_sdk.agents.batch_sources.search_metadata",
+            "gravity_insight.agents.batch_sources.search_metadata",
             side_effect=OSError("catalog unavailable"),
         ):
             task = capabilities_many(
@@ -1118,7 +1118,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "match": {"confidence": "strong"},
         }
         with patch(
-            "gravity_sdk.agent.catalog_cards",
+            "gravity_insight.agent.catalog_cards",
             return_value=([metadata_card], 1, [], "0" * 64),
         ):
             available = discover_capabilities(
@@ -1139,7 +1139,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual({"name": "user_journey"}, card["plan_node"]["request"])
         self.assertNotIn("client_id", card["plan_node"]["request"])
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_insight.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_agent_batch_namespaces_analysis_spec_plan_nodes(self, _metadata) -> None:
         result = capabilities_many(
             [
@@ -1192,7 +1192,7 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         self.assertEqual("batch", handoff["command"][3])
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata")
+    @patch("gravity_insight.agents.batch_sources.search_metadata")
     def test_agent_batch_namespaces_plan_nodes_and_exposes_ndjson_rows(self, metadata) -> None:
         metadata.return_value = {"results": [{
             "kind": "metric", "scope": "workspace", "source": "report_metrics",
@@ -1267,7 +1267,7 @@ class DiscoveryUxTests(unittest.TestCase):
             / "workspace"
             / "gravity.toml"
         )
-        with patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace):
+        with patch("gravity_insight.agents.sources.load_workspace", return_value=workspace):
             result = cli.run_agent_command(
                 SimpleNamespace(
                     query="retention",
@@ -1284,7 +1284,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual("@demo-retention", result["candidates"][0]["selector"])
         self.assertEqual("gravity", result["candidates"][0]["next"]["argv"][0])
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata")
+    @patch("gravity_insight.agents.batch_sources.search_metadata")
     def test_agent_workspace_is_preserved_in_single_and_batch_handoffs(self, metadata) -> None:
         metadata.return_value = {"results": []}
         workspace = load_workspace(
@@ -1335,9 +1335,9 @@ class DiscoveryUxTests(unittest.TestCase):
             / "gravity.toml"
         )
         with (
-            patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace),
+            patch("gravity_insight.agents.sources.load_workspace", return_value=workspace),
             patch(
-                "gravity_sdk.agents.sources.metadata_capability_cards",
+                "gravity_insight.agents.sources.metadata_capability_cards",
                 return_value=([], []),
             ),
         ):
@@ -1363,9 +1363,9 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual("daily event summary", find_fallback["argv"][-1])
 
         with (
-            patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace),
+            patch("gravity_insight.agents.sources.load_workspace", return_value=workspace),
             patch(
-                "gravity_sdk.agents.sources.metadata_capability_cards",
+                "gravity_insight.agents.sources.metadata_capability_cards",
                 return_value=([], []),
             ),
         ):
@@ -1392,9 +1392,9 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         results = []
         with (
-            patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace),
+            patch("gravity_insight.agents.sources.load_workspace", return_value=workspace),
             patch(
-                "gravity_sdk.agents.sources.metadata_capability_cards",
+                "gravity_insight.agents.sources.metadata_capability_cards",
                 return_value=([], []),
             ),
         ):
@@ -1442,11 +1442,11 @@ class DiscoveryUxTests(unittest.TestCase):
         token = None
         with (
             patch(
-                "gravity_sdk.agent.catalog_cards",
+                "gravity_insight.agent.catalog_cards",
                 return_value=(catalog, len(catalog), [], "0" * 64),
             ),
             patch(
-                "gravity_sdk.agent.discover_operation_cards",
+                "gravity_insight.agent.discover_operation_cards",
                 return_value=operations,
             ),
         ):
@@ -1484,9 +1484,9 @@ class DiscoveryUxTests(unittest.TestCase):
     def test_agent_weak_only_result_has_zero_total_and_no_false_page(self) -> None:
         weak = {"operation_id": "analysis.event.list", "score": 1}
         with (
-            patch("gravity_sdk.agent.catalog_cards", return_value=([], 0, [], "0" * 64)),
+            patch("gravity_insight.agent.catalog_cards", return_value=([], 0, [], "0" * 64)),
             patch(
-                "gravity_sdk.agent.discover_operation_cards",
+                "gravity_insight.agent.discover_operation_cards",
                 return_value=OperationDiscovery(matches=[], weak=[weak]),
             ),
         ):
@@ -1508,7 +1508,7 @@ class DiscoveryUxTests(unittest.TestCase):
 
     def test_agent_does_not_promote_weak_partial_matches(self) -> None:
         with patch(
-            "gravity_sdk.agent.catalog_cards", return_value=([], 0, [], "0" * 64)
+            "gravity_insight.agent.catalog_cards", return_value=([], 0, [], "0" * 64)
         ):
             result = cli.run_agent_command(
                 SimpleNamespace(
@@ -1537,7 +1537,7 @@ class DiscoveryUxTests(unittest.TestCase):
     def test_agent_reports_exact_draft_blockers_without_execution_argv(self) -> None:
         operation_id = "promotion.alipay.campaign.list"
         with patch(
-            "gravity_sdk.agent.catalog_cards", return_value=([], 0, [], "0" * 64)
+            "gravity_insight.agent.catalog_cards", return_value=([], 0, [], "0" * 64)
         ):
             result = cli.run_agent_command(
                 SimpleNamespace(
@@ -1558,7 +1558,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertNotIn("next", gap)
 
     def test_agent_metadata_source_is_safe_and_warns_when_default_is_unavailable(self) -> None:
-        from gravity_sdk.find import metadata_capability_cards
+        from gravity_insight.find import metadata_capability_cards
 
         metadata_result = {
             "results": [
@@ -1574,7 +1574,7 @@ class DiscoveryUxTests(unittest.TestCase):
             ]
         }
         with patch(
-            "gravity_sdk.find.search_metadata", return_value=metadata_result
+            "gravity_insight.find.search_metadata", return_value=metadata_result
         ) as search:
             cards, warnings = metadata_capability_cards("purchase", limit=2)
 
@@ -1602,14 +1602,14 @@ class DiscoveryUxTests(unittest.TestCase):
             ],
         }
         with patch(
-            "gravity_sdk.find.search_metadata", return_value=broad_results
+            "gravity_insight.find.search_metadata", return_value=broad_results
         ) as broad_search:
             broad_cards, _ = metadata_capability_cards("event", limit=None)
         self.assertEqual(250, len(broad_cards))
         broad_search.assert_called_once_with("event", limit=None, offset=0)
 
         with patch(
-            "gravity_sdk.find.search_metadata",
+            "gravity_insight.find.search_metadata",
             side_effect=InputValidationError("missing", field="database"),
         ):
             cards, warnings = metadata_capability_cards("purchase", limit=2)
@@ -1624,7 +1624,7 @@ class DiscoveryUxTests(unittest.TestCase):
             / "workspace"
             / "gravity.toml"
         )
-        with patch("gravity_sdk.agents.sources.load_workspace", return_value=workspace):
+        with patch("gravity_insight.agents.sources.load_workspace", return_value=workspace):
             first = cli.run_agent_command(
                 SimpleNamespace(
                     query="analysis",
@@ -1738,14 +1738,14 @@ class DiscoveryUxTests(unittest.TestCase):
         empty_operations = OperationDiscovery(matches=[], weak=[])
         with (
             patch(
-                "gravity_sdk.agent.catalog_cards",
+                "gravity_insight.agent.catalog_cards",
                 side_effect=(
                     (first_catalog, 2, [], "0" * 64),
                     (changed_catalog, 2, [], "0" * 64),
                 ),
             ),
             patch(
-                "gravity_sdk.agent.discover_operation_cards",
+                "gravity_insight.agent.discover_operation_cards",
                 return_value=empty_operations,
             ),
         ):
@@ -1884,7 +1884,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 stdout = io.StringIO()
                 stderr = io.StringIO()
                 with (
-                    patch("gravity_sdk.cli.runtime.build_client", return_value=selected_client),
+                    patch("gravity_insight.cli.runtime.build_client", return_value=selected_client),
                     contextlib.redirect_stdout(stdout),
                     contextlib.redirect_stderr(stderr),
                 ):
@@ -1898,7 +1898,7 @@ class DiscoveryUxTests(unittest.TestCase):
     def test_agent_ndjson_emits_one_candidate_per_line_and_terminal_metadata(self) -> None:
         stdout = io.StringIO()
         with (
-            patch("gravity_sdk.cli.runtime.build_client", return_value=self.client),
+            patch("gravity_insight.cli.runtime.build_client", return_value=self.client),
             contextlib.redirect_stdout(stdout),
         ):
             exit_code = cli.main(

@@ -11,14 +11,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
-from gravity_sdk import cli, json_output
-from gravity_sdk._field_policy_detail import _validate_detail_dimension
-from gravity_sdk._field_policy_metadata import select_rows
-from gravity_sdk.census.io import json_bytes
-from gravity_sdk.credential_sanitization import sanitize_credentials
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.find import RecipeFindBackend
-from gravity_sdk.runtime import to_jsonable as runtime_to_jsonable
+from gravity_insight import cli, json_output
+from gravity_insight._field_policy_detail import _validate_detail_dimension
+from gravity_insight._field_policy_metadata import select_rows
+from gravity_insight.census.io import json_bytes
+from gravity_insight.credential_sanitization import sanitize_credentials
+from gravity_insight.errors import InputValidationError
+from gravity_insight.find import RecipeFindBackend
+from gravity_insight.runtime import to_jsonable as runtime_to_jsonable
 
 
 ROOT = Path(__file__).resolve().parents[1]

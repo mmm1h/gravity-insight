@@ -5,21 +5,21 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import gravity_sdk
-from gravity_sdk import cli
-from gravity_sdk._field_policy_detail import validate_analysis_detail
-from gravity_sdk.monetization_detail import (
+import gravity_insight
+from gravity_insight import cli
+from gravity_insight._field_policy_detail import validate_analysis_detail
+from gravity_insight.monetization_detail import (
     DEVICE_INFO_FIELDS,
     OPERATION_ID,
     SAFE_ROW_FIELDS,
     monetization_detail,
     sanitize_monetization_detail_result,
 )
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.onboarding import command_requires_credentials
-from gravity_sdk.plan import AdapterContext, execute_plan
-from gravity_sdk.plan_adapters import build_plan_adapters
-from gravity_sdk.sdk import GravitySDK
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.onboarding import command_requires_credentials
+from gravity_insight.plan import AdapterContext, execute_plan
+from gravity_insight.plan_adapters import build_plan_adapters
+from gravity_insight.sdk import GravitySDK
 DAY = "2026-08-08"
 SAFE = {
     "CreateTime": "2026-08-08 12:00:00",
@@ -158,7 +158,7 @@ class MonetizationDetailTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         operation = next(
             item for item in load_operation_manifest(
-                root / "src" / "gravity_sdk" / "manifests" / "analysis.json"
+                root / "src" / "gravity_insight" / "manifests" / "analysis.json"
             ) if item.operation_id == OPERATION_ID
         )
         calls = []
@@ -205,8 +205,8 @@ class MonetizationDetailTests(unittest.TestCase):
         ))
         invalid = [*base]
         invalid[6] = "bad"
-        with patch("gravity_sdk.monetization_detail_cli.load_workspace", return_value=Workspace()), \
-             patch("gravity_sdk.monetization_detail_cli.runtime.build_client") as factory:
+        with patch("gravity_insight.monetization_detail_cli.load_workspace", return_value=Workspace()), \
+             patch("gravity_insight.monetization_detail_cli.runtime.build_client") as factory:
             self.assertTrue(command_requires_credentials(base, cli.build_parser))
             self.assertFalse(command_requires_credentials(invalid, cli.build_parser))
             with self.assertRaises(ValueError):
@@ -214,9 +214,9 @@ class MonetizationDetailTests(unittest.TestCase):
                 args._gravity_handler(args, lambda _value: {})
         factory.assert_not_called()
         client = object()
-        with patch("gravity_sdk.monetization_detail_cli.load_workspace", return_value=Workspace()), \
-             patch("gravity_sdk.monetization_detail_cli.runtime.build_client", return_value=client), \
-             patch("gravity_sdk.monetization_detail.monetization_detail", return_value=_product_result()) as core:
+        with patch("gravity_insight.monetization_detail_cli.load_workspace", return_value=Workspace()), \
+             patch("gravity_insight.monetization_detail_cli.runtime.build_client", return_value=client), \
+             patch("gravity_insight.monetization_detail.monetization_detail", return_value=_product_result()) as core:
             selected._gravity_handler(selected, lambda _value: {})
         core.assert_called_once_with(
             client, "7", DAY, max_workers=6, max_pages=5, max_items=10
@@ -226,14 +226,14 @@ class MonetizationDetailTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             sdk.monetization_detail("main", "bad")
         lazy.assert_not_called()
-        with patch("gravity_sdk.monetization_detail.monetization_detail", return_value=_product_result()) as core:
+        with patch("gravity_insight.monetization_detail.monetization_detail", return_value=_product_result()) as core:
             sdk.monetization_detail("main", DAY, max_pages=5, max_items=10)
         core.assert_called_once_with(
             client, "7", DAY, max_workers=6, max_pages=5, max_items=10
         )
         self.assertLessEqual(
             {"monetization_detail", "validate_monetization_detail_request"},
-            set(gravity_sdk.__all__),
+            set(gravity_insight.__all__),
         )
     def test_plan_is_request_bound_serial_and_dry_run_safe(self):
         request = {"name": "monetization_detail", "app": "main", "date": DAY}

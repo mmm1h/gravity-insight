@@ -6,13 +6,13 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.cli import main
-from gravity_sdk.custom_audience import OPERATION_ID, custom_audiences
-from gravity_sdk.errors import ContractChangedError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_custom_audience_adapter import execute_custom_audience_plan, validate_custom_audience_plan
+from gravity_insight import GravitySDK
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.cli import main
+from gravity_insight.custom_audience import OPERATION_ID, custom_audiences
+from gravity_insight.errors import ContractChangedError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_custom_audience_adapter import execute_custom_audience_plan, validate_custom_audience_plan
 
 
 SAFE_ROW = {
@@ -81,7 +81,7 @@ class CustomAudienceTests(unittest.TestCase):
         sdk = GravitySDK(insight=Client())
         self.assertEqual("success", sdk.custom_audiences(max_items=2)["status"])
         stdout = io.StringIO()
-        with patch("gravity_sdk.promotion_cli.runtime.build_client", return_value=Client()), \
+        with patch("gravity_insight.promotion_cli.runtime.build_client", return_value=Client()), \
                 contextlib.redirect_stdout(stdout):
             code = main(["promotion", "custom-audiences", "--max-items", "2"])
         self.assertEqual(0, code)

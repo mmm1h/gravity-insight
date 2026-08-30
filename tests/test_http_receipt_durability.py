@@ -4,10 +4,10 @@ import json, os, subprocess, sys, tempfile, time, unittest
 from pathlib import Path
 from unittest import mock
 
-from gravity_sdk import Credential, GravityInsightClient
-from gravity_sdk.composite import CompositeService
-from gravity_sdk.http_runtime import GravityHttpRuntime, SQL_PROFILE
-from gravity_sdk.receipt_query import get_http_receipt
+from gravity_insight import Credential, GravityInsightClient
+from gravity_insight.composite import CompositeService
+from gravity_insight.http_runtime import GravityHttpRuntime, SQL_PROFILE
+from gravity_insight.receipt_query import get_http_receipt
 
 
 class Response:
@@ -70,7 +70,7 @@ class HttpReceiptDurabilityTests(unittest.TestCase):
             for stage in ("_project", "_enforce_semantic_rules"):
                 with self.subTest(stage=stage):
                     root = Path(folder, stage); client = client_for(root, [app_page(1)])
-                    with mock.patch(f"gravity_sdk.executor.{stage}", side_effect=RuntimeError(f"injected {stage} failure")):
+                    with mock.patch(f"gravity_insight.executor.{stage}", side_effect=RuntimeError(f"injected {stage} failure")):
                         with self.assertRaisesRegex(RuntimeError, f"injected {stage} failure"): client.read("app.list", {"page": 1, "page_size": 1})
                     [item] = receipts(root)
                     self.assertEqual(("app.list", "GET", 200, 1, False), (item["operation_id"], item["method"], item["http_status"], item["page_number"], item["retry"]))
@@ -80,9 +80,9 @@ class HttpReceiptDurabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder, "unavailable"); root.write_text("not a directory", encoding="ascii")
             client = client_for(root, [app_page(1), app_page(1)])
-            with self.assertLogs("gravity_sdk", "WARNING") as logs:
+            with self.assertLogs("gravity_insight", "WARNING") as logs:
                 result = client.read("app.list", {"page": 1, "page_size": 1})
-                with mock.patch("gravity_sdk.executor._project", side_effect=RuntimeError("original failure")):
+                with mock.patch("gravity_insight.executor._project", side_effect=RuntimeError("original failure")):
                     with self.assertRaisesRegex(RuntimeError, "original failure"): client.read("app.list", {"page": 1, "page_size": 1})
             self.assertIn("gravity_http_receipt_write_failed", "".join(logs.output))
             self.assertEqual("write_failed", result["result_audit"]["http_receipts"][0]["storage_status"])
@@ -111,9 +111,9 @@ class HttpReceiptDurabilityTests(unittest.TestCase):
     def test_terminate_process_after_response_keeps_fsynced_receipt(self):
         script = """import sys,time
 from pathlib import Path
-from gravity_sdk import Credential
-from gravity_sdk.http_runtime import GravityHttpRuntime,SQL_PROFILE
-from gravity_sdk.prober.transport import RecordingSession,RequestDiscipline
+from gravity_insight import Credential
+from gravity_insight.http_runtime import GravityHttpRuntime,SQL_PROFILE
+from gravity_insight.prober.transport import RecordingSession,RequestDiscipline
 class C:
  def get(self):return Credential('synthetic-token')
 class R:

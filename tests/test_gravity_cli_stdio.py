@@ -1,12 +1,12 @@
 import json, os, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
-from gravity_sdk.errors import error_detail_from_exception, exit_code_for_error
+from gravity_insight.errors import error_detail_from_exception, exit_code_for_error
 
 
 class CliStdioTests(unittest.TestCase):
     def test_gbk_process_emits_utf8_and_classifies_codec_failures_as_local(self):
-        script = "from unittest.mock import patch\nfrom gravity_sdk import __main__ as entry\np=patch('gravity_sdk.cli.dispatch_command',return_value={'data':{'list':['Łódź']}});p.start()\nraise SystemExit(entry.main(['--dry-run']))"
+        script = "from unittest.mock import patch\nfrom gravity_insight import __main__ as entry\np=patch('gravity_insight.cli.dispatch_command',return_value={'data':{'list':['Łódź']}});p.start()\nraise SystemExit(entry.main(['--dry-run']))"
         env = {**os.environ, "PYTHONIOENCODING": "gbk"}
         env.pop("PYTHONUTF8", None)
         run = subprocess.run([sys.executable, "-c", script], env=env, capture_output=True)
@@ -16,7 +16,7 @@ class CliStdioTests(unittest.TestCase):
         self.assertEqual(("LOCAL_IO_ERROR", "local", 4), (detail.code, detail.category, exit_code_for_error(error)))
 
     def test_public_cli_expands_tilde_output_in_a_subprocess(self):
-        script = "import sys\nfrom unittest.mock import patch\nfrom gravity_sdk import __main__ as entry\npatch('gravity_sdk.cli.dispatch_command',return_value={'字段':'值'}).start()\npatch('gravity_sdk.__main__.ensure_first_run_credentials',return_value=True).start()\nraise SystemExit(entry.main(['reports','pulse','--app','1','--start','2026-08-01','--end','2026-08-02','--output',sys.argv[1]]))"
+        script = "import sys\nfrom unittest.mock import patch\nfrom gravity_insight import __main__ as entry\npatch('gravity_insight.cli.dispatch_command',return_value={'字段':'值'}).start()\npatch('gravity_insight.__main__.ensure_first_run_credentials',return_value=True).start()\nraise SystemExit(entry.main(['reports','pulse','--app','1','--start','2026-08-01','--end','2026-08-02','--output',sys.argv[1]]))"
         with tempfile.TemporaryDirectory() as folder:
             home, cwd = Path(folder, "用户 目录"), Path(folder, "调用 目录"); home.mkdir(); cwd.mkdir()
             env = {**os.environ, "HOME": str(home), "USERPROFILE": str(home), "PYTHONIOENCODING": "gbk", "PYTHONUTF8": "0"}
@@ -27,7 +27,7 @@ class CliStdioTests(unittest.TestCase):
         script = r"""import sys,tempfile,time
 from pathlib import Path
 from unittest.mock import patch
-from gravity_sdk import __main__ as entry
+from gravity_insight import __main__ as entry
 
 output,gate,role,state=Path(sys.argv[1]),Path(sys.argv[2]),sys.argv[3],Path(sys.argv[4])
 
@@ -46,8 +46,8 @@ def hold_output_lock(handle,value):
 if role=='A':
     patch.object(tempfile._TemporaryFileWrapper,'write',hold_output_lock,create=True).start()
 wait_for(gate,'parent start gate')
-patch('gravity_sdk.cli.dispatch_command',return_value={'marker':role*100}).start()
-patch('gravity_sdk.__main__.ensure_first_run_credentials',return_value=True).start()
+patch('gravity_insight.cli.dispatch_command',return_value={'marker':role*100}).start()
+patch('gravity_insight.__main__.ensure_first_run_credentials',return_value=True).start()
 if role=='B':
     wait_for(state/'holder-in-write','holder to enter write while owning the output lock')
 code=entry.main(['reports','pulse','--app','1','--start','2026-08-01','--end','2026-08-02','--output',str(output)])
@@ -65,7 +65,7 @@ raise SystemExit(code)
     def test_missing_profile_roots_is_structured_local_error(self):
         env = {**os.environ, "PYTHONIOENCODING": "gbk", "PYTHONUTF8": "0", "LC_ALL": "C"}
         for name in ("HOME", "APPDATA", "LOCALAPPDATA", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "XDG_CACHE_HOME", "GRAVITY_CACHE_HOME"): env.pop(name, None)
-        commands = ([sys.executable, "-m", "gravity_sdk", "--dry-run"], [sys.executable, "-c", "from gravity_sdk.cli_stdio import insight_main;raise SystemExit(insight_main())"], [sys.executable, "-c", "from gravity_sdk.cli_stdio import sql_main;raise SystemExit(sql_main())"])
+        commands = ([sys.executable, "-m", "gravity_insight", "--dry-run"], [sys.executable, "-c", "from gravity_insight.cli_stdio import insight_main;raise SystemExit(insight_main())"], [sys.executable, "-c", "from gravity_insight.cli_stdio import sql_main;raise SystemExit(sql_main())"])
         for command in commands:
             run = subprocess.run(command, env=env, capture_output=True); payload = json.loads(run.stderr.decode("utf-8"))
             self.assertEqual((4, "LOCAL_IO_ERROR", "local"), (run.returncode, payload["error"]["code"], payload["error"]["category"])); self.assertIn("GRAVITY_CACHE_HOME", payload["error"]["next_action"])

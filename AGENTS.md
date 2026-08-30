@@ -2,7 +2,7 @@
 
 **先选路，再往下读。**
 
-- **要用这个 SDK 取数分析** → [团队上手包](docs/team-onboarding.md)。最短命令：`$env:PYTHONPATH='src'; python -m gravity_sdk agent-catalog categories`。不要通读本文。
+- **要用这个 SDK 取数分析** → [团队上手包](docs/team-onboarding.md)。最短命令：`$env:PYTHONPATH='src'; python -m gravity_insight agent-catalog categories`。不要通读本文。
 - **要修改这个仓库** → 继续读下面的开发约束。
 
 ## Product goal
@@ -152,10 +152,10 @@ Run before committing:
 ```powershell
 python -m unittest discover -s tests
 python -m pytest -q
-python -m gravity_sdk.compiler check
-python -m gravity_sdk.quality check
+python -m gravity_insight.compiler check
+python -m gravity_insight.quality check
 $env:PYTHONPATH='src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1; if ($LASTEXITCODE) { exit $LASTEXITCODE }
-python -m gravity_sdk --help
+python -m gravity_insight --help
 git diff --check
 ```
 

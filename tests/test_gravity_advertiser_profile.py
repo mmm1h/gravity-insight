@@ -6,17 +6,17 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.advertiser_profile import (
+from gravity_insight import GravitySDK
+from gravity_insight.advertiser_profile import (
     OPERATION_ID,
     SCHEMA_VERSION,
     advertiser_profile,
 )
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.cli import main
-from gravity_sdk.errors import ContractChangedError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_adapters import build_plan_adapters
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.cli import main
+from gravity_insight.errors import ContractChangedError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_adapters import build_plan_adapters
 
 
 class Client:
@@ -97,7 +97,7 @@ class AdvertiserProfileTests(unittest.TestCase):
             sdk.advertiser_profile("2026-08-11", "2026-08-11")["status"],
         )
         stdout = io.StringIO()
-        with patch("gravity_sdk.promotion_cli.runtime.build_client", return_value=Client()), \
+        with patch("gravity_insight.promotion_cli.runtime.build_client", return_value=Client()), \
                 contextlib.redirect_stdout(stdout):
             code = main([
                 "promotion", "advertiser-profile", "--start", "2026-08-11",

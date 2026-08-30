@@ -1,0 +1,302 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260808T205545Z_promotion.apple.app.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_insight/census/data/route-response-fields.json#/routes/215",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list[].id",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list[].name",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page_size",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_number",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/215",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/apple/app/list/",
+      "route_index": 215,
+      "route_sha256": "7252424ba6ba1ebd7782dfe312ee295685cee401726b4daa91afe6c214232447"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205545Z_promotion.apple.app.list.yaml",
+        "probed_at": "2026-08-08T20:55:45Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "Z",
+        "h"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 4127,
+        "file": "raw/web.gravity-engine.com/assets/AsaAccount-3NUHnHE-.js",
+        "line": 1,
+        "offset": 4126,
+        "url": "https://web.gravity-engine.com/assets/AsaAccount-3NUHnHE-.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 6123,
+            "column": 4127,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/AsaAccount-3NUHnHE-.js",
+            "line": 1,
+            "route_offset": 4126
+          },
+          {
+            "call_offset": 11376,
+            "column": 9885,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/AsaAccount-3NUHnHE-.js",
+            "line": 1,
+            "route_offset": 9884
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/apple/app/list/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "body",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "body",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/apple/app/list/",
+      "promotion_level": "其它",
+      "promotion_platform": "apple",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "创建时间",
+        "操作",
+        "日志",
+        "未知",
+        "编辑",
+        "账户备注(引力)"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/apple/app/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 500,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "page": 1,
+        "page_size": 500
+      }
+    },
+    "operation_id": "promotion.apple.app.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/apple/app/list/",
+    "platform": "apple",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": "apple",
+      "source_files": [
+        "drafts/promotion.apple.app.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 500
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "app",
+    "response_projection": {
+      "data_keys": [
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

@@ -11,17 +11,17 @@ from pathlib import Path
 import pytest
 
 
-from gravity_sdk.fingerprints import shape_fingerprint
-from gravity_sdk.metadata_sync import (
+from gravity_insight.fingerprints import shape_fingerprint
+from gravity_insight.metadata_sync import (
     _create_schema,
     _write_apps,
     _write_catalog_metadata,
     _write_rows,
 )
-from gravity_sdk.receipt import PRODUCTION_HTTP_KIND, record_http_request
-from gravity_sdk.recipe import check_recipe
-from gravity_sdk.resolver import resolve_and_run
-from gravity_sdk.workspace import Recipe, RecipeBindings, load_workspace
+from gravity_insight.receipt import PRODUCTION_HTTP_KIND, record_http_request
+from gravity_insight.recipe import check_recipe
+from gravity_insight.resolver import resolve_and_run
+from gravity_insight.workspace import Recipe, RecipeBindings, load_workspace
 
 
 def _recipe() -> Recipe:

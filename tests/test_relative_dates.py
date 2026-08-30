@@ -4,9 +4,9 @@ import argparse
 import unittest
 from datetime import datetime, timezone
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.agents.relative_date import fill_agent_relative_dates
-from gravity_sdk.relative_dates import (
+from gravity_insight.errors import InputValidationError
+from gravity_insight.agents.relative_date import fill_agent_relative_dates
+from gravity_insight.relative_dates import (
     DEFAULT_TIMEZONE,
     apply_relative_dates,
     attach_resolved_window,
@@ -90,7 +90,7 @@ class RelativeDateParserTests(unittest.TestCase):
         self.assertEqual("bad", leftover.start)
 
     def test_cli_parser_resolves_yesterday_and_rejects_recently(self) -> None:
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         parsed = cli.build_parser().parse_args([
             "attribution", "performance", "--app", "1",

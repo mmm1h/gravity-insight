@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 try:
-    from gravity_sdk.blob import (
+    from gravity_insight.blob import (
         AuthorizedBlobSource,
         BlobMetadata,
         BlobPolicy,
@@ -15,7 +15,7 @@ try:
         MagicSignature,
         SafeBlobTransfer,
     )
-    from gravity_sdk.export_runtime import (
+    from gravity_insight.export_runtime import (
         ExportCreationRequest,
         ExportJobSnapshot,
         ExportOrchestrator,
@@ -26,7 +26,7 @@ try:
         ExportState,
     )
 except ModuleNotFoundError:  # source checkout without an editable install
-    from gravity_sdk.blob import (
+    from gravity_insight.blob import (
         AuthorizedBlobSource,
         BlobMetadata,
         BlobPolicy,
@@ -34,7 +34,7 @@ except ModuleNotFoundError:  # source checkout without an editable install
         MagicSignature,
         SafeBlobTransfer,
     )
-    from gravity_sdk.export_runtime import (
+    from gravity_insight.export_runtime import (
         ExportCreationRequest,
         ExportJobSnapshot,
         ExportOrchestrator,

@@ -4,12 +4,12 @@ import copy
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.model_registry import ModelRegistry
-from gravity_sdk.operator_ids import RETURNED_DIMENSION_CHANGE_URI
-from gravity_sdk.operator_model_receipt import operator_model_receipt_facet
-from gravity_sdk.operator_registry import OperatorRegistry
-from gravity_sdk.receipt import build_receipt
-from gravity_sdk.trusted_pack_contract import (
+from gravity_insight.model_registry import ModelRegistry
+from gravity_insight.operator_ids import RETURNED_DIMENSION_CHANGE_URI
+from gravity_insight.operator_model_receipt import operator_model_receipt_facet
+from gravity_insight.operator_registry import OperatorRegistry
+from gravity_insight.receipt import build_receipt
+from gravity_insight.trusted_pack_contract import (
     TrustedPackContractError,
     compile_trusted_pack_descriptor,
 )

@@ -135,7 +135,7 @@ Compiler fixtures, identity/filter/date validation, preview/execute/readback, ow
   remains selection `296/336`, fillability `248/248`, offline terminal `53/53`,
   recovery `5/5`, security violations `0`, skipped production cases `283` and
   production HTTP requests `0`.
-- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Isolated real wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `89c5d6f048ac4991262562b112a558a911a14edf07344c72ed7a8895f1b23945`.
   From external `site-packages` it loaded the connector and Action alias, found
   the packaged request schema and parsed the new CLI resource. Canonical

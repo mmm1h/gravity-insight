@@ -15,12 +15,23 @@ from pathlib import Path
 from unittest import mock
 
 
-from gravity_sdk.sql import __main__ as sql_cli
-from gravity_sdk.sql.products import build_sql, day_window, product_names
-from gravity_sdk.workspace import WorkspaceError, find_workspace, load_workspace
+from gravity_insight.sql import __main__ as sql_cli
+from gravity_insight.sql.products import build_sql, day_window, product_names
+from gravity_insight.workspace import (
+    WorkspaceError,
+    find_workspace,
+    load_workspace,
+    user_cache_root,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_user_cache_root_uses_current_distribution_identity(tmp_path: Path) -> None:
+    assert user_cache_root({"XDG_CACHE_HOME": str(tmp_path)}) == (
+        tmp_path / "gravity-insight"
+    ).resolve()
 
 
 def _workspace_text(*, app_id: int = 101, product: str = "daily-summary") -> str:
@@ -183,7 +194,7 @@ app_input = "app_id"
         environment["GRAVITY_CACHE_HOME"] = str(cache)
         environment["PYTHONPATH"] = str(ROOT / "src")
         command = (
-            "import json; from gravity_sdk.paths import EVIDENCE_ROOT, TMP_ROOT; "
+            "import json; from gravity_insight.paths import EVIDENCE_ROOT, TMP_ROOT; "
             "print(json.dumps({'evidence': str(EVIDENCE_ROOT), 'tmp': str(TMP_ROOT)}))"
         )
 
@@ -271,7 +282,7 @@ app_input = "app_id"
 
     def test_sdk_contract_and_example_are_generic(self):
         catalog = json.loads((
-            ROOT / "src" / "gravity_sdk" / "contracts" / "sql-products" / "catalog.json"
+            ROOT / "src" / "gravity_insight" / "contracts" / "sql-products" / "catalog.json"
         ).read_text(encoding="utf-8"))
         example = tomllib.loads(
             (ROOT / "examples" / "workspace" / "gravity.toml").read_text(encoding="utf-8")
@@ -294,7 +305,7 @@ app_input = "app_id"
             [
                 sys.executable,
                 "-m",
-                "gravity_sdk",
+                "gravity_insight",
                 "--workspace",
                 str(workspace_path),
                 "sql",

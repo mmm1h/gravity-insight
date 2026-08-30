@@ -7,16 +7,16 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.bilibili_account_performance import (
+from gravity_insight import GravitySDK
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.bilibili_account_performance import (
     OPERATION_ID,
     bilibili_account_performance,
 )
-from gravity_sdk.cli import main
-from gravity_sdk.errors import PaginationError, UnknownOperationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_bilibili_account_performance_adapter import (
+from gravity_insight.cli import main
+from gravity_insight.errors import PaginationError, UnknownOperationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_bilibili_account_performance_adapter import (
     execute_bilibili_account_performance_plan,
     validate_bilibili_account_performance_plan,
 )
@@ -137,7 +137,7 @@ class BilibiliAccountPerformanceTests(unittest.TestCase):
         self.assertEqual("success", sdk_result["status"])
 
         stdout = io.StringIO()
-        with patch("gravity_sdk.promotion_cli.runtime.build_client", return_value=Client()), \
+        with patch("gravity_insight.promotion_cli.runtime.build_client", return_value=Client()), \
                 contextlib.redirect_stdout(stdout):
             exit_code = main([
                 "promotion", "bilibili-account-performance",

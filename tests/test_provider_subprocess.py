@@ -11,9 +11,9 @@ import time
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.external_context_provider import subprocess_context_provider
-from gravity_sdk import provider_rpc_transport as transport_module
-from gravity_sdk.provider_rpc_transport import SubprocessProviderTransport
+from gravity_insight.external_context_provider import subprocess_context_provider
+from gravity_insight import provider_rpc_transport as transport_module
+from gravity_insight.provider_rpc_transport import SubprocessProviderTransport
 from tests.test_external_context_contracts import provider_descriptor
 
 
@@ -408,24 +408,24 @@ class ProviderSubprocessTests(unittest.TestCase):
             return object()
 
         with (
-            patch("gravity_sdk.provider_rpc_transport.os.name", "nt"),
+            patch("gravity_insight.provider_rpc_transport.os.name", "nt"),
             patch(
-                "gravity_sdk.provider_rpc_transport.subprocess.Popen",
+                "gravity_insight.provider_rpc_transport.subprocess.Popen",
                 return_value=process,
             ) as launch,
             patch(
-                "gravity_sdk.provider_rpc_transport.subprocess.run",
+                "gravity_insight.provider_rpc_transport.subprocess.run",
                 side_effect=terminate,
             ),
             patch(
-                "gravity_sdk.provider_rpc_transport.attach_windows_job",
+                "gravity_insight.provider_rpc_transport.attach_windows_job",
                 return_value=False,
             ),
             patch(
-                "gravity_sdk.provider_rpc_transport.resume_windows_job_process"
+                "gravity_insight.provider_rpc_transport.resume_windows_job_process"
             ) as resume,
             patch(
-                "gravity_sdk.provider_rpc_transport.close_windows_job",
+                "gravity_insight.provider_rpc_transport.close_windows_job",
                 return_value=False,
             ),
         ):
@@ -456,17 +456,17 @@ class ProviderSubprocessTests(unittest.TestCase):
         events: list[str] = []
 
         with (
-            patch("gravity_sdk.provider_rpc_transport.os.name", "nt"),
+            patch("gravity_insight.provider_rpc_transport.os.name", "nt"),
             patch(
-                "gravity_sdk.provider_rpc_transport.subprocess.Popen",
+                "gravity_insight.provider_rpc_transport.subprocess.Popen",
                 return_value=process,
             ) as windows_launch,
             patch(
-                "gravity_sdk.provider_rpc_transport.attach_windows_job",
+                "gravity_insight.provider_rpc_transport.attach_windows_job",
                 side_effect=lambda _process: events.append("attach") or True,
             ),
             patch(
-                "gravity_sdk.provider_rpc_transport.resume_windows_job_process",
+                "gravity_insight.provider_rpc_transport.resume_windows_job_process",
                 side_effect=lambda _process: events.append("resume") or True,
             ),
         ):
@@ -477,16 +477,16 @@ class ProviderSubprocessTests(unittest.TestCase):
         )
 
         with (
-            patch("gravity_sdk.provider_rpc_transport.os.name", "posix"),
+            patch("gravity_insight.provider_rpc_transport.os.name", "posix"),
             patch(
-                "gravity_sdk.provider_rpc_transport.subprocess.Popen",
+                "gravity_insight.provider_rpc_transport.subprocess.Popen",
                 return_value=process,
             ) as posix_launch,
             patch(
-                "gravity_sdk.provider_rpc_transport.attach_windows_job"
+                "gravity_insight.provider_rpc_transport.attach_windows_job"
             ) as attach,
             patch(
-                "gravity_sdk.provider_rpc_transport.resume_windows_job_process"
+                "gravity_insight.provider_rpc_transport.resume_windows_job_process"
             ) as resume,
         ):
             self.assertIs(process, transport._launch(1000))

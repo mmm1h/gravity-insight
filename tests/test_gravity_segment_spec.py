@@ -4,13 +4,13 @@ import unittest
 from copy import deepcopy
 from typing import Any, Mapping
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.segment_spec import (
+from gravity_insight.errors import InputValidationError
+from gravity_insight.segment_spec import (
     compile_segment_spec,
     prepare_segment_spec,
     validate_segment_spec,
 )
-from gravity_sdk.segment_spec_schema import segment_rule_spec_schema
+from gravity_insight.segment_spec_schema import segment_rule_spec_schema
 
 
 def minimal_spec() -> dict[str, Any]:

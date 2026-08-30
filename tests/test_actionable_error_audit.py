@@ -6,9 +6,9 @@ from collections import Counter
 from pathlib import Path
 
 
-from gravity_sdk._field_policy_conditions import validate_analysis_conditions
-from gravity_sdk._field_policy_shared import new_analysis_references
-from gravity_sdk.errors import InputValidationError
+from gravity_insight._field_policy_conditions import validate_analysis_conditions
+from gravity_insight._field_policy_shared import new_analysis_references
+from gravity_insight.errors import InputValidationError
 from scripts.audit_actionable_errors import inventory
 
 
@@ -19,7 +19,7 @@ class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
         """The aggregate product adds bounded, actionable validation sites."""
 
-        rows = inventory(ROOT / "src" / "gravity_sdk")
+        rows = inventory(ROOT / "src" / "gravity_insight")
         counts = Counter(item["grade"] for item in rows)
         assert len(rows) == 1367
         assert counts["A"] == 1184
@@ -63,9 +63,9 @@ class ActionableErrorAuditTests(unittest.TestCase):
 
 
     def test_plan_and_batch_errors_include_sanitized_actual_values(self):
-        from gravity_sdk.analysis_query_batch import run_analysis_query_batch
-        from gravity_sdk.plan import PlanValidationError
-        from gravity_sdk.plan_validation import validate_plan
+        from gravity_insight.analysis_query_batch import run_analysis_query_batch
+        from gravity_insight.plan import PlanValidationError
+        from gravity_insight.plan_validation import validate_plan
 
         with self.assertRaises(PlanValidationError) as plan_error:
             validate_plan("token=credential-value")
@@ -81,8 +81,8 @@ class ActionableErrorAuditTests(unittest.TestCase):
         self.assertEqual(batch_error.exception.field, "dry_run")
 
     def test_plan_adapter_errors_describe_safe_actual_shape(self):
-        from gravity_sdk.plan import AdapterContext
-        from gravity_sdk.plan_custom_audience_adapter import validate_custom_audience_plan
+        from gravity_insight.plan import AdapterContext
+        from gravity_insight.plan_custom_audience_adapter import validate_custom_audience_plan
 
         context = AdapterContext(
             node_id="audiences", execution_id="audiences", kind="composite",
@@ -101,13 +101,13 @@ class ActionableErrorAuditTests(unittest.TestCase):
     def test_representative_sites_now_carry_path_and_remedy(self):
         from types import SimpleNamespace
 
-        from gravity_sdk.attribution import attribution_snapshot
-        from gravity_sdk.bilibili_account_performance import (
+        from gravity_insight.attribution import attribution_snapshot
+        from gravity_insight.bilibili_account_performance import (
             normalize_bilibili_account_window,
         )
-        from gravity_sdk.pagination_inputs import validate_page_inputs
-        from gravity_sdk.plan import PlanValidationError
-        from gravity_sdk.plan_validation import validate_plan
+        from gravity_insight.pagination_inputs import validate_page_inputs
+        from gravity_insight.plan import PlanValidationError
+        from gravity_insight.plan_validation import validate_plan
 
         with self.assertRaises(PlanValidationError) as kind_error:
             validate_plan(

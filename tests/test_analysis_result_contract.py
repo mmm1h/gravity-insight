@@ -3,13 +3,13 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk.analysis_result_contract import (
+from gravity_insight.analysis_result_contract import (
     AnalysisResultContractError,
     compile_analysis_result,
 )
-from gravity_sdk.data_quality import data_quality_result
-from gravity_sdk.execution_snapshot import build_execution_snapshot
-from gravity_sdk.context_contract import context_pack_digest
+from gravity_insight.data_quality import data_quality_result
+from gravity_insight.execution_snapshot import build_execution_snapshot
+from gravity_insight.context_contract import context_pack_digest
 
 
 def context_pack():

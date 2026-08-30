@@ -6,8 +6,8 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import RepoContextProvider
-from gravity_sdk.cli import build_parser, main
+from gravity_insight import RepoContextProvider
+from gravity_insight.cli import build_parser, main
 from tests.test_repo_context_provider import (
     ALIASES,
     WINDOWS,
@@ -34,7 +34,7 @@ class ContextCliTests(unittest.TestCase):
         common = ["--root", str(self.repo.root), "--project-id", "demo"]
         with (
             patch(
-                "gravity_sdk.runtime.build_client",
+                "gravity_insight.runtime.build_client",
                 side_effect=AssertionError("client constructed"),
             ),
             patch("socket.socket", side_effect=AssertionError("network attempted")),

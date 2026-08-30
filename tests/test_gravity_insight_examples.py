@@ -5,14 +5,14 @@ import unittest
 from pathlib import Path
 
 try:
-    from gravity_sdk import GravityInsightClient
+    from gravity_insight import GravityInsightClient
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import GravityInsightClient
+    from gravity_insight import GravityInsightClient
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OPERATION_ROOT = (
-    ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+    ROOT / "src" / "gravity_insight" / "contracts" / "operations"
 )
 
 

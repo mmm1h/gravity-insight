@@ -14,17 +14,17 @@ import unittest
 from unittest.mock import Mock, patch
 import zipfile
 
-from gravity_sdk.skill_hub_archive import (
+from gravity_insight.skill_hub_archive import (
     validate_skill_archive,
     validate_skill_directory,
     validate_trusted_wheel,
 )
-from gravity_sdk.skill_hub_cas import SkillHubCAS
-from gravity_sdk.skill_hub_contract import SkillHubContractError, compile_hub_index
-from gravity_sdk.skill_hub_locks import build_skills_lock
-from gravity_sdk.skill_hub_source import HubSourceSession, _https_get, sync_hub_source
-from gravity_sdk.skill_hub_state import atomic_write_json, read_json
-from gravity_sdk.skill_render import render_package_files
+from gravity_insight.skill_hub_cas import SkillHubCAS
+from gravity_insight.skill_hub_contract import SkillHubContractError, compile_hub_index
+from gravity_insight.skill_hub_locks import build_skills_lock
+from gravity_insight.skill_hub_source import HubSourceSession, _https_get, sync_hub_source
+from gravity_insight.skill_hub_state import atomic_write_json, read_json
+from gravity_insight.skill_render import render_package_files
 from tests.test_skill_hub_contracts import (
     git_source,
     hub_index,
@@ -84,7 +84,7 @@ def bound_entry(entry: dict, content: bytes) -> dict:
     selected["archive"]["size_bytes"] = len(content)
     if "descriptor" in selected:
         selected["descriptor"]["wheel_sha256"] = selected["archive"]["sha256"]
-        from gravity_sdk.trusted_pack_contract import compile_trusted_pack_descriptor
+        from gravity_insight.trusted_pack_contract import compile_trusted_pack_descriptor
 
         selected["descriptor_digest"] = compile_trusted_pack_descriptor(
             selected["descriptor"]

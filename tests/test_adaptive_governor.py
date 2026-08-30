@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest import mock
 
-from gravity_sdk.adaptive_governor import (
+from gravity_insight.adaptive_governor import (
     ADAPTIVE,
     STATIC,
     AdaptiveRequestGovernor,
@@ -21,19 +21,19 @@ from gravity_sdk.adaptive_governor import (
     governor_journey,
     validate_adaptive_governor_snapshot,
 )
-from gravity_sdk.adaptive_governor_contract import (
+from gravity_insight.adaptive_governor_contract import (
     PROCESS_SCOPE,
     private_host_key,
     private_journey_key,
     private_scope_key,
 )
-from gravity_sdk.adaptive_governor_http import build_governor_request
-from gravity_sdk.blob_models import RequestsBlobTransport
-from gravity_sdk.external_context_provider import ExternalContextProvider
-from gravity_sdk.http_runtime import GravityHttpRuntime, HostRateLimiter, SQL_PROFILE
-from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan
-from gravity_sdk.provider_rpc_transport import CallableProviderTransport
-from gravity_sdk.receipt import (
+from gravity_insight.adaptive_governor_http import build_governor_request
+from gravity_insight.blob_models import RequestsBlobTransport
+from gravity_insight.external_context_provider import ExternalContextProvider
+from gravity_insight.http_runtime import GravityHttpRuntime, HostRateLimiter, SQL_PROFILE
+from gravity_insight.plan import PlanAdapter, PlanAdapters, execute_plan
+from gravity_insight.provider_rpc_transport import CallableProviderTransport
+from gravity_insight.receipt import (
     PRODUCTION_HTTP_KIND,
     bind_request_counter,
     capture_http_receipt_references,
@@ -608,9 +608,9 @@ class AdaptiveGovernorPrivacyAndBoundaryTests(unittest.TestCase):
                         active -= 1
 
         with tempfile.TemporaryDirectory() as raw, mock.patch(
-            "gravity_sdk.adaptive_governor.get_process_governor",
+            "gravity_insight.adaptive_governor.get_process_governor",
             return_value=governor,
-        ), mock.patch("gravity_sdk.blob_models.STATE_ROOT", Path(raw)):
+        ), mock.patch("gravity_insight.blob_models.STATE_ROOT", Path(raw)):
             transport = RequestsBlobTransport(Session())
             with ThreadPoolExecutor(max_workers=2) as pool:
                 first = pool.submit(

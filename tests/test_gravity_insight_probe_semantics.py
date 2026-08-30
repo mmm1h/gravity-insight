@@ -10,13 +10,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import cli
-from gravity_sdk.catalog import OperationCatalog
-from gravity_sdk.executor import ReadExecutor
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.prober import draft_probe
-from gravity_sdk.prober.probe_support import conclusion, observation_summary
-from gravity_sdk.prober.model import (
+from gravity_insight import cli
+from gravity_insight.catalog import OperationCatalog
+from gravity_insight.executor import ReadExecutor
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.prober import draft_probe
+from gravity_insight.prober.probe_support import conclusion, observation_summary
+from gravity_insight.prober.model import (
     build_draft,
     build_projection,
     candidate_fields,
@@ -24,15 +24,15 @@ from gravity_sdk.prober.model import (
     reevaluate_drafts,
     response_schema_sketch,
 )
-from gravity_sdk.probe_inputs import resolve_probe_inputs
-from gravity_sdk.registry import PolicyEngine, Registry
+from gravity_insight.probe_inputs import resolve_probe_inputs
+from gravity_insight.registry import PolicyEngine, Registry
 
 try:
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.transport import TransportResponse
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.transport import TransportResponse
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.transport import TransportResponse
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.transport import TransportResponse
 
 
 SENSITIVE_KEY = "access_token"
@@ -217,7 +217,7 @@ def _surface_client() -> tuple[
         (
             root
             / "src"
-            / "gravity_sdk"
+            / "gravity_insight"
             / "contracts"
             # gi-final-unlock promoted this source after live pagination proof.
             / "operations"
@@ -564,7 +564,7 @@ class GravityInsightProbeSemanticsTests(unittest.TestCase):
 
     def test_public_probe_resolves_recursive_declared_parent_and_target_type(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        contract_root = root / "src" / "gravity_sdk" / "contracts" / "operations"
+        contract_root = root / "src" / "gravity_insight" / "contracts" / "operations"
         operation_ids = ("material.album.tree", "material.album.list")
         metadata = {
             operation_id: json.loads(
@@ -572,7 +572,7 @@ class GravityInsightProbeSemanticsTests(unittest.TestCase):
             )["operation"]
             for operation_id in operation_ids
         }
-        manifest_root = root / "src" / "gravity_sdk" / "manifests"
+        manifest_root = root / "src" / "gravity_insight" / "manifests"
         compiled = [
             item
             for path in manifest_root.glob("*.json")
@@ -686,7 +686,7 @@ class GravityInsightProbeSemanticsTests(unittest.TestCase):
 
         stdout = io.StringIO()
         with (
-            patch("gravity_sdk.read_cli.runtime.build_client", return_value=client),
+            patch("gravity_insight.read_cli.runtime.build_client", return_value=client),
             contextlib.redirect_stderr(stdout),
         ):
             assert cli.main(["read", "report.company_amount.query"]) == 3

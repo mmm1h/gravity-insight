@@ -125,7 +125,7 @@ Plan adapter, pagination owner or worker pool is added.
 - Development usability: selection `296/336`, parameter fillability `248/248`,
   offline terminal `53/53`, error recovery `5/5`, security hard gate PASS,
   production HTTP requests `0`.
-- Isolated real wheel: `gravity_sdk-0.3.0-py3-none-any.whl`, SHA-256
+- Isolated real wheel: `gravity_insight-0.3.0-py3-none-any.whl`, SHA-256
   `8860e4ff34ddec2c8a6c9456b4341b4f6d75c707bf9418d16e40078e2785807c`;
   imported from isolated `site-packages`, packaged resources loaded,
   `describe=0`, `can-run=4`, `run=4`, and no network call.

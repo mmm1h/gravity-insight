@@ -5,16 +5,16 @@ from decimal import Decimal
 import unittest
 from unittest.mock import patch
 
-import gravity_sdk.operator_registry as registry_module
-from gravity_sdk.operator_contract import (
+import gravity_insight.operator_registry as registry_module
+from gravity_insight.operator_contract import (
     OperatorContractError,
     compile_operator_contract,
 )
-from gravity_sdk.operator_ids import (
+from gravity_insight.operator_ids import (
     RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA,
     RETURNED_DIMENSION_CHANGE_URI,
 )
-from gravity_sdk.operator_registry import OperatorRegistry
+from gravity_insight.operator_registry import OperatorRegistry
 
 
 def operator_input(**overrides):

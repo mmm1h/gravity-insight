@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.reference_journey_contract import (
+from gravity_insight.reference_journey_contract import (
     CONTEXT_URI,
     JOURNEY_ID,
     OPERATOR_RESULT_SCHEMA_VERSION,

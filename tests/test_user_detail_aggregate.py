@@ -8,16 +8,16 @@ import unittest
 from collections.abc import Mapping
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, cli
-from gravity_sdk.errors import error_detail_from_exception, error_envelope
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_user_detail_aggregate_adapter import (
+from gravity_insight import GravitySDK, cli
+from gravity_insight.errors import error_detail_from_exception, error_envelope
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_user_detail_aggregate_adapter import (
     USER_DETAIL_AGGREGATE_NAME,
     execute_user_detail_aggregate_plan,
     project_user_detail_aggregate_result,
     validate_user_detail_aggregate_plan,
 )
-from gravity_sdk.user_detail_aggregate_contract import (
+from gravity_insight.user_detail_aggregate_contract import (
     BOUNDS_REQUIRED,
     CARDINALITY_LIMIT,
     FIELD_UNSUPPORTED,
@@ -28,7 +28,7 @@ from gravity_sdk.user_detail_aggregate_contract import (
     AggregateBoundsError,
     normalize_user_detail_aggregate_inputs,
 )
-from gravity_sdk.user_detail_aggregate_product import run_user_detail_aggregate
+from gravity_insight.user_detail_aggregate_product import run_user_detail_aggregate
 
 
 SENTINEL = "ISSUE39-USER-ROW-SENTINEL-7f3c"
@@ -393,7 +393,7 @@ class UserDetailAggregateTests(unittest.TestCase):
         )
         client = _Client(source)
         parser = cli.build_parser()
-        with patch("gravity_sdk.user_detail_aggregate_cli.runtime.build_client") as build:
+        with patch("gravity_insight.user_detail_aggregate_cli.runtime.build_client") as build:
             schema_args = parser.parse_args(
                 ["analysis", "user-detail-aggregate", "--input-schema"]
             )
@@ -423,7 +423,7 @@ class UserDetailAggregateTests(unittest.TestCase):
             ]
         )
         with patch(
-            "gravity_sdk.user_detail_aggregate_cli.runtime.build_client",
+            "gravity_insight.user_detail_aggregate_cli.runtime.build_client",
             return_value=client,
         ):
             cli_result = live_args._gravity_handler(live_args, cli._object_input)
@@ -476,7 +476,7 @@ class UserDetailAggregateTests(unittest.TestCase):
             insight = object()
 
         with patch(
-            "gravity_sdk.user_detail_aggregate_product.run_user_detail_aggregate",
+            "gravity_insight.user_detail_aggregate_product.run_user_detail_aggregate",
             return_value=native,
         ) as run:
             safe = execute_user_detail_aggregate_plan(SDK(), request, context)

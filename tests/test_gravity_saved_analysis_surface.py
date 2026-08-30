@@ -3,17 +3,17 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, cli
-from gravity_sdk import plan_saved_analysis_adapter as subject
-from gravity_sdk.errors import (
+from gravity_insight import GravitySDK, cli
+from gravity_insight import plan_saved_analysis_adapter as subject
+from gravity_insight.errors import (
     InputValidationError,
     PaginationError,
     UnsupportedOperationError,
 )
-from gravity_sdk.onboarding import command_requires_credentials
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.saved_analysis import REPLAY_SCHEMA_VERSION
-from gravity_sdk.saved_analysis_cli import dispatch_saved_analysis
+from gravity_insight.onboarding import command_requires_credentials
+from gravity_insight.plan import AdapterContext
+from gravity_insight.saved_analysis import REPLAY_SCHEMA_VERSION
+from gravity_insight.saved_analysis_cli import dispatch_saved_analysis
 
 
 class _Workspace:
@@ -36,9 +36,9 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
                 "--max-pages", "5", "--max-items", "200"]
         args, workspace, client = cli.build_parser().parse_args(argv), _Workspace(), object()
         expected = {"schema_version": REPLAY_SCHEMA_VERSION, "ok": True}
-        with (patch("gravity_sdk.saved_analysis_cli.load_workspace", return_value=workspace),
-              patch("gravity_sdk.saved_analysis_cli.runtime.build_client", return_value=client),
-              patch("gravity_sdk.saved_analysis_cli.execute_saved_analysis",
+        with (patch("gravity_insight.saved_analysis_cli.load_workspace", return_value=workspace),
+              patch("gravity_insight.saved_analysis_cli.runtime.build_client", return_value=client),
+              patch("gravity_insight.saved_analysis_cli.execute_saved_analysis",
                     return_value=expected) as run):
             self.assertIs(expected, dispatch_saved_analysis(args, lambda _value: {}))
         self.assertEqual((client,), run.call_args.args)
@@ -47,13 +47,13 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
 
         incomplete = cli.build_parser().parse_args(
             ["analysis", "saved", "run", "--app", "main", "--ref", ""])
-        with (patch("gravity_sdk.saved_analysis_cli.runtime.build_client",
+        with (patch("gravity_insight.saved_analysis_cli.runtime.build_client",
                     side_effect=AssertionError("must stay local")),
               self.assertRaises(InputValidationError)):
             dispatch_saved_analysis(incomplete, lambda _value: {})
         excessive = cli.build_parser().parse_args(
             ["analysis", "saved", "list", "--app", "main", "--max-pages", "1001"])
-        with (patch("gravity_sdk.saved_analysis_cli.runtime.build_client",
+        with (patch("gravity_insight.saved_analysis_cli.runtime.build_client",
                     side_effect=AssertionError("must stay local")),
               self.assertRaises(InputValidationError)):
             dispatch_saved_analysis(excessive, lambda _value: {})
@@ -79,7 +79,7 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
             invalid = cli.build_parser().parse_args(
                 ["analysis", "saved", "run", "--app", "main", "--definition",
                  invalid_definition])
-            with (patch("gravity_sdk.saved_analysis_cli.runtime.build_client",
+            with (patch("gravity_insight.saved_analysis_cli.runtime.build_client",
                         side_effect=AssertionError("must stay local")),
                   self.assertRaises((InputValidationError, UnsupportedOperationError))):
                 dispatch_saved_analysis(invalid, json.loads)
@@ -87,7 +87,7 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
         order = []
         sdk = GravitySDK(workspace=workspace,
                          insight_factory=lambda: (order.append("insight"), client)[1])
-        with patch("gravity_sdk.saved_analysis.execute_saved_analysis",
+        with patch("gravity_insight.saved_analysis.execute_saved_analysis",
                    return_value=expected) as facade:
             self.assertIs(expected, sdk.run_saved_analysis(
                 "main", "Daily", start="2026-08-01", end="2026-08-07",

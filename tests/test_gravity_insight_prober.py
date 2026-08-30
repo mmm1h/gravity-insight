@@ -11,14 +11,14 @@ from types import SimpleNamespace
 import pytest
 
 
-from gravity_sdk.errors import PolicyViolation, exit_code_for_error
-from gravity_sdk.prober import batch as prober_batch
-from gravity_sdk.prober import cli as prober_cli
-from gravity_sdk.prober import export_verify, parameters
-from gravity_sdk.prober import online, probe_support, transport as prober_transport
-from gravity_sdk.prober.batch import finalize_batch_report
-from gravity_sdk.prober.drafts import _resource_action
-from gravity_sdk.prober.model import (
+from gravity_insight.errors import PolicyViolation, exit_code_for_error
+from gravity_insight.prober import batch as prober_batch
+from gravity_insight.prober import cli as prober_cli
+from gravity_insight.prober import export_verify, parameters
+from gravity_insight.prober import online, probe_support, transport as prober_transport
+from gravity_insight.prober.batch import finalize_batch_report
+from gravity_insight.prober.drafts import _resource_action
+from gravity_insight.prober.model import (
     build_draft,
     build_projection,
     candidate_fields,
@@ -30,13 +30,13 @@ from gravity_sdk.prober.model import (
     response_schema_sketch,
     status_report,
 )
-from gravity_sdk.prober.online import RecordingSession, RequestDiscipline
-from gravity_sdk.prober.probe_support import (
+from gravity_insight.prober.online import RecordingSession, RequestDiscipline
+from gravity_insight.prober.probe_support import (
     assert_read_only_source,
     evidence_path,
     relative,
 )
-from gravity_sdk.prober.read_semantics import (
+from gravity_insight.prober.read_semantics import (
     PROBE_SEMANTIC_STATUSES,
     assert_probe_read_semantics,
     probe_semantic_status,
@@ -646,7 +646,7 @@ class GravityInsightProberTests(unittest.TestCase):
                 raise RuntimeError("prospective compilation failed")
 
         monkeypatch.setattr(
-            "gravity_sdk.prober.promotion_transaction.compile_contract_products",
+            "gravity_insight.prober.promotion_transaction.compile_contract_products",
             compile_products,
         )
 
@@ -772,7 +772,7 @@ class GravityInsightProberTests(unittest.TestCase):
             assert_read_only_source(source)
 
     def test_probe_policy_honors_confirmed_read_with_blocked_path_segment(self) -> None:
-        source = json.loads(Path("src/gravity_sdk/contracts/operations/report.subscribe.list.json").read_text(encoding="utf-8"))
+        source = json.loads(Path("src/gravity_insight/contracts/operations/report.subscribe.list.json").read_text(encoding="utf-8"))
         parts = prober_transport.sdk_parts()
         operation = parts["models"].load_operation_manifest({"operations": [prober_transport._source_to_runtime(source["operation"])]})[0]
         registry = parts["registry"].Registry([operation])
@@ -786,7 +786,7 @@ class GravityInsightProberTests(unittest.TestCase):
             assert_read_only_source(source)
 
     def test_stable_online_probe_never_dispatches_registered_mutations(self) -> None:
-        operation_root = Path("src/gravity_sdk/contracts/operations")
+        operation_root = Path("src/gravity_insight/contracts/operations")
         mutation_ids = sorted(
             source["operation"]["operation_id"]
             for path in operation_root.glob("*.json")
@@ -964,7 +964,7 @@ class GravityInsightProberTests(unittest.TestCase):
         statuses.append(probe_semantic_status(source))
         source["operation"]["effect"] = "export"
         statuses.append(probe_semantic_status(source))
-        mutation = json.loads(Path("src/gravity_sdk/contracts/operations/analysis.segment.by.manual.update.json").read_text(encoding="utf-8"))
+        mutation = json.loads(Path("src/gravity_insight/contracts/operations/analysis.segment.by.manual.update.json").read_text(encoding="utf-8"))
         statuses.append(probe_semantic_status(mutation))
         assert set(statuses) == set(PROBE_SEMANTIC_STATUSES)
 

@@ -1,0 +1,543 @@
+{
+  "confirmations": [
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In the hash-matched census bundle the reportSubscribe component calls this route to load its table rows and page_info.total_number. Creating, editing, deleting and exporting a subscription each go through their own separate routes, so listing carries no write side effect.",
+          "source": "docs/analysis-journeys.md"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.subscribe.list",
+      "path": "/turbo_engine/api/v3/subscribe/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The recovered frontend builder sends only an integer app_id and the fixed subject \"$lib_version\", carries no pagination, and the response is consumed as a read-only dictionary of string arrays. No mutation control flow reaches this route.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "A minimum single-page request returned HTTP 200 with a semantically successful empty envelope, with no confirmation step, no layout update and no success toast.",
+          "source": "docs/analysis-journeys.md"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.default_val.list",
+      "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The recovered frontend builder proves five top-level fields and seven filter subkeys, and the caller slices the returned list locally. Listing and slicing are read behaviour; no write control flow invokes this route.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "A minimum first-page request returned HTTP 200 with a semantically successful empty data.list envelope, with no confirmation step and no modification feedback.",
+          "source": "docs/analysis-journeys.md"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.realtime_event.list",
+      "path": "/turbo_engine/api/v2/event/realtime_event/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In the hash-matched appManageIndex bundle the Project component calls this route on mount, search, page change and page-size change to populate a project table from data.list and page_info.total_number. Project creation and confirmed deletion use the separate /user/project/create/ mutation route, so this list call has no write side effect.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "The extracted exact-route consumers read data.list, item id/name/app_list_info and page_info; the request body is limited to page, page_size and optional name filters.",
+          "source": "src/gravity_insight/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.project.list",
+      "path": "/turbo_engine/api/v1/user/project/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched MasterkeyAd-BgxTfClc.js, the Group component invokes this route on mount, search and page changes with date_list, filters, order_by, page and page_size; it assigns response list rows to the report table and page_info.total_number to the paginator. The route has no mutation feedback or write continuation.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.masterkey_report_group.list",
+      "path": "/turbo_engine/api/v1/masterkey/report/group/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched csj and tobid bundles open a RelationAppDrawer from a selected account-list row, pass rowData.account with a fixed monetization_platform value, and call this route to load the drawer's platform-app table. Sync, association and deletion use separate sync_app and app/edit mutation routes.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "The two extracted call sites bind account, the fixed csj/tobid platform value, page and page_size; the UI consumes platform app, app type, package name and Gravity-app association fields as table rows.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.monetization_app.list",
+      "path": "/turbo_engine/api/v1/monetization/app/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched ReportCommonHeader-Ck1C9MQA.js, opening the saved-report dialog loads this route, renders response list rows and page_info.total_number, and reloads it on page or filter changes. Deletion uses the separate /datamanageconfig/report/update/ route with is_delete=1.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.report.list",
+      "path": "/turbo_engine/api/v2/datamanageconfig/report/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, MetricsPanel loads this route alongside the normal and owned custom-metric lists, assigns its response list to the shared-metric collection, merges it into the displayed metric catalog, and paginates the merged rows locally. Delete and share mutations use separate routes.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.shared_to_me.list",
+      "path": "/turbo_engine/api/v3/confmetric/custom_metric/shared_to_me/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched GeneralImportAd-CKb38unY.js, the Ad component invokes this route on mount, search, sort and page changes, assigns response list rows to the table, and consumes page_info.total_number in the paginator. app_id comes from AppSelect and ad_platform from the frontend's finite media-platform options; blank selectors are converted to undefined. Upload and delete use separate routes.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.media_report.list",
+      "path": "/turbo_engine/api/v1/common/media_report/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Dashboard-DrzT0Orh.js, the Dashboard page calls this GET with app_id during initial load and App changes, reduces the returned space/folder/dashboard tree into selectable dashboard rows, selects an existing dashboard, and then invokes the separate dashboard-detail GET. Create, rename, move, share, transfer and delete actions use separate routes.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.dashboard.tree",
+      "path": "/turbo_engine/api/v2/datamanageconfig/kanban/tree/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, ReportDetail sends only the authenticated user's role IDs and a data_topic filter, then consumes data_dims_limit, metric_permission_type and metric_list to remove unavailable columns and metrics from the local report configuration. Role or permission changes use separate account-center controls; this call has no mutation continuation or success feedback.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.confmetric_permission.list",
+      "path": "/turbo_engine/api/v3/confmetric/permission/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/missing-journeys"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, ReportDetail invokes this route after loading or refreshing a monetization report, unwraps data.list/data.total (or data.extra_data.accumulate_data), and renders the rows, warning and local sort state. Report and template saves use separate create/edit routes; this call has no confirmation, persistence continuation or mutation feedback.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact call site contains nine top-level body fields and no query or page fields; the shared table paginates the returned full list locally and displays an empty state when the consumed row array has no items.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.get.query",
+      "path": "/report/api/v3/monetization_report/custom_get/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/d28-monetization"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Dashboard-DrzT0Orh.js, selecting a tree item calls this GET with app_id, dashboard id and space_id, consumes ui_config as JSON, and stores the returned dashboard detail for rendering. Layout saves and report-setting changes call separate POST routes and display their own success feedback.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.dashboard.detail",
+      "path": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/detial/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Dashboard-DrzT0Orh.js, opening the add-chart flow calls this GET with app_id, optional subject filters, page and page_size, consumes response list rows, and JSON-parses a selected row's config before adding it locally. Saving the dashboard or changing a report uses separate POST routes.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.report_config.list",
+      "path": "/turbo_engine/api/v2/datamanageconfig/report_config/list/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "Across eight hash-matched Analysis page bundles, opening an existing saved analysis calls this GET with app_id and id, requires the returned config, JSON-parses it, and restores the analysis form plus name/remark display state. Saving edits uses the separate report_config/update POST route.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.report_config.get",
+      "path": "/turbo_engine/api/v2/datamanageconfig/report_config/info/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, ReportDetail calls calc_total only after the main result has loaded and a client-side condition or pivot needs totals recomputed, or when local filtering/row expansion changes. It sends already loaded row groups and uses only data.list to replace local summary or pivot rows; no server resource is created, edited or deleted.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact call site contains eight top-level body fields, including data_list, and no query or page fields. The call is awaited sequentially rather than dispatched as an unconditional companion to the main report query.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.report_monetization_report_custom_get.calc_total",
+      "path": "/report/api/v3/monetization_report/custom_get/calc_total/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/d28-monetization"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched DataSheet call site sends only app_id_list, name_like, page and page_size, loads the result as the data-table page, and consumes page_info. Creating, editing and deleting tables use the separately reserved /create/, /edit/ and /delete/ routes.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        },
+        {
+          "detail": "The exact route is a list call and the same frontend scope exposes deletion through a distinct confirmed mutation reservation; no write field or write continuation reaches this route.",
+          "source": "src/gravity_insight/contracts/reservations/metadata.dim.data.table.delete.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "metadata.data_table.list",
+      "path": "/turbo_engine/api/v2/event_dim/data_table/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The exact DataSheet detail call sends only table_id and consumes column_list, ordered_column_list, related_prop and using_version_id as a table definition. Editing the table and switching the active version use separate reserved mutation routes.",
+          "source": "src/gravity_insight/census/data/route-response-fields.json"
+        },
+        {
+          "detail": "The same route family reserves /edit/ and /change_using_version/ as mutations, while this /detail/ call contains no replacement data or version-selection field.",
+          "source": "src/gravity_insight/contracts/reservations/metadata.table.using.version.state_change.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "metadata.data_table.detail",
+      "path": "/turbo_engine/api/v2/event_dim/data_table/detail/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The AppRank page sends only filters, page and page_size to populate its App catalog. Editing an App uses the separately reserved /apprank/api/v1/app/edit/ mutation.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_app.list",
+      "path": "/apprank/api/v1/app/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public AppRank page sends only filters and pagination to load its App selector; the caller has no edit continuation or write feedback.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.app_public.list",
+      "path": "/apprank/api/v1/app/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The AppRank publisher page sends only filters and pagination and consumes data.list[].id/name. Publisher changes use the separately reserved /publisher/manage/ mutation.",
+          "source": "src/gravity_insight/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_publisher.list",
+      "path": "/apprank/api/v1/publisher/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public publisher loader sends only page and page_size and consumes data.list; no mutation field or write continuation reaches the route.",
+          "source": "src/gravity_insight/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.publisher_public.list",
+      "path": "/apprank/api/v1/publisher/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The authenticated ranking page sends only extra_fields, filters and pagination, then renders rank rows and an explicit empty state; App edits use a separate route.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_rank.list",
+      "path": "/apprank/api/v1/rank/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public ranking page sends only extra_fields, filters and pagination, then renders rank rows and an explicit empty state; no write control flow invokes the route.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.rank_public.list",
+      "path": "/apprank/api/v1/rank/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The authenticated trend chart sends app_id, date_list, rank_genre and rank_type_list and renders popularity/play/revenue rank trends; it has no resource mutation controls.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_rank_app_trend.list",
+      "path": "/apprank/api/v1/rank/app_trend/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public trend chart sends app_id, date_list, rank_genre and rank_type_list and renders popularity/play/revenue rank trends; it has no resource mutation controls.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.app_trend_public.list",
+      "path": "/apprank/api/v1/rank/app_trend/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Device-TemCRn-D.js, the testing-device table sends only app_id plus the fixed page=1/page_size=1000 load shape, consumes data.list as its directory, and performs display pagination locally. Creating, editing and deleting test devices use separate routes; this list call has no write continuation or mutation feedback.",
+          "source": "docs/roadmap.md#d35--f40-归因结果合同2026-08-16"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.testing_tool.list",
+      "path": "/turbo_engine/api/v1/user/device_white/testing_tool/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/f40-attribution"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Device-TemCRn-D.js, selecting an existing testing-device row sends exactly app_id and Number(data.list[].id) to this detail route, then renders device_white, attribution_list, postback_list and pay_list without a save, confirmation or mutation continuation.",
+          "source": "docs/roadmap.md#d35--f40-归因结果合同2026-08-16"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "attribution.attribution_detail.query",
+      "path": "/turbo_engine/api/v1/user/device_white/testing_tool/attribution_detail/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/f40-attribution"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Measurement-BV1Ulzee.js, clicking Search invokes the attribution route four times with aggregate metric/dimension profiles, then consumes data.items and data.total to populate natural/promoted charts and conversion summary cards. Saved-report persistence uses separate ReportCommonHeader routes, and this call has no confirmation, write continuation or mutation feedback.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The recovered builder has fourteen always-emitted top-level keys, two conditional keys and a fixed eight-list filtering object. The direct-App natural/promoted activation call has no pagination or attribution-scheme parent and uses the catalog App id plus fixed frontend metric/dimension/caliber values.",
+          "source": "docs/roadmap.md#d35--f40-归因结果合同2026-08-16"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "attribution.attribution.query",
+      "path": "/report/api/v3/adreport/attribution/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/attribution"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched index-D9HAN43D.js (sha256 aa67659c360861d73309b2f9ca93ac15d95d6b39a092912a32cb72b9f1662d6b) the CreativeDrawer component binds POST /tencent/ad/list/ as load:n,data:r and calls n({body:{start_time,end_time,advertiser_id,adgroup_id,time_line,query_fields,api_version}}) on open, date change and metric change. The response is consumed as r.list for the paginated creative table and as r.list for client-side export. Opening, pausing and deleting selected creatives use the separate /tencent/ad/ads_update_configured_status/ and /tencent/batch_options/ routes, so this list call has no write continuation.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact-route consumer binds data.list as a reactive table source. The request body is limited to advertiser_id, adgroup_id, start_time, end_time, time_line, query_fields and optional api_version.",
+          "source": "src/gravity_insight/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "promotion.tencent.ad.list",
+      "path": "/turbo_engine/api/v1/tencent/ad/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched index-D9HAN43D.js (sha256 aa67659c360861d73309b2f9ca93ac15d95d6b39a092912a32cb72b9f1662d6b) the TencentAdReport Ad component binds POST /tencent/adgroup/list/v2/ as load:y,data:x and Ge() sends date_list, filtering, filters, page, page_size, query_fields, order_by, time_line and version=v3.0. The first response list is assigned to the report table (ce.value=(r?.list||[]).map(...)) and r.update_at is stored; a second call with real_data=1 is only a follow-up refresh of the same list, not a mutation. Enable, pause, delete, budget, bid and datetime writes go through a separate /tencent/batch_options/ drawer, so listing has no write side effect.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact-route consumer binds data.update_at. The request body is the report load shape (date_list, filtering, filters, order_by, page, page_size, query_fields, time_line, version) with optional real_data only on the follow-up refresh.",
+          "source": "src/gravity_insight/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "promotion.tencent.tencent_adgroup_v2.list",
+      "path": "/turbo_engine/api/v1/tencent/adgroup/list/v2/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Rules-ChMHnW7I.js (sha256 92f4ddab97f30f3b7af39c582f07c904354eb15486848fcc6bcc02fd60cf6119) the trusteeship rule drawer binds POST /tencent/medium/creative/list/ as load:rn,data:an and lr() calls rn({body:{page,page_size,advertiser_id,filtering}}) to populate the appointment picker. The response is consumed as (an.value?.list||[]).filter(...) on creative_set_approval_status; an.value is cleared when the target type changes. Creating the trusteeship rule uses the separate /task/ai_trusteeship/create/ mutation, so this list call only loads selectable creatives.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "material.tencent_medium_creative.list",
+      "path": "/turbo_engine/api/v1/tencent/medium/creative/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Gdt-zhrkAV97.js (sha256 00f350e87ff09de92ed3ea02739f9fb5cb3c66def45a14f3ed8742af1c935786) the Library component binds POST /tencent/asset/text/title/list/ as load:D,data:R and X() sends {page,page_size,filters,order_by,app_id?} to populate the copy table. The response is consumed as R.list for the table and R.page_info.total_number for pagination. Creating, deleting and batch-binding titles use the separate /tencent/asset/text/title/add/, /tencent/asset/text/title/delete/ and /tencent/asset/text/title/batch_bind_app/ routes, so this list call has no write continuation.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact-route consumer binds data.list as the table source. The request body is limited to page, page_size, optional filters, optional order_by and optional app_id; app_id is omitted when the product filter is empty.",
+          "source": "src/gravity_insight/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "material.tencent_asset_text_title.list",
+      "path": "/turbo_engine/api/v1/tencent/asset/text/title/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill-2"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched KuaishouAd-CEw_EhuL.js (sha256 06f414e5e7948662d8babd63ce4db67193c95181339872d0e5601e2dadfcc617) the Plan component binds POST /kuaishou/campaign/list/ as load:oe,data:se and sends date_list, filtering, filters, query_fields and order_by in the body with page/page_size as query. The first response list is assigned to the report table (W.value=r?.list||[]); a second call with real_data=1 is only a follow-up refresh of the same list, not a mutation. Pause, delete and budget writes go through a separate /kuaishou/batch_options/ drawer, so listing has no write side effect.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "promotion.kuaishou.campaign.list",
+      "path": "/turbo_engine/api/v1/kuaishou/campaign/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill-2"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched KuaishouAd-CEw_EhuL.js (sha256 06f414e5e7948662d8babd63ce4db67193c95181339872d0e5601e2dadfcc617) the Creative component binds POST /kuaishou/creative/list/ as load:w,data:E and sends date_list, filtering, filters, page, page_size, query_fields and order_by. The first response list is assigned to the creative table (we.value=r?.list||[]); a second call with real_data=1 is only a follow-up refresh of the same list, not a mutation. Writes go through a separate /kuaishou/batch_options/ route, so this list call has no write continuation.",
+          "source": "src/gravity_insight/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "material.kuaishou_creative.list",
+      "path": "/turbo_engine/api/v1/kuaishou/creative/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill-2"
+    }
+  ],
+  "schema_version": "gravity-insight.probe-read-confirmations.v1"
+}

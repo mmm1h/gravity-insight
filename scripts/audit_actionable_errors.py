@@ -120,7 +120,7 @@ def inventory(root: Path) -> list[dict[str, Any]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, default=Path("src/gravity_sdk"))
+    parser.add_argument("--root", type=Path, default=Path("src/gravity_insight"))
     parser.add_argument("--json", action="store_true", help="Print the complete inventory.")
     args = parser.parse_args()
     rows = inventory(args.root)

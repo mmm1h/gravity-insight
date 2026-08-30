@@ -36,12 +36,12 @@
 
 ### 1. 定义合同
 
-在 `src/gravity_sdk/contracts/operations/` 中登记稳定 operation ID、固定路由、输入、响应、分页、稳定性、隐私和 probe。不要手工编辑编译产物。
+在 `src/gravity_insight/contracts/operations/` 中登记稳定 operation ID、固定路由、输入、响应、分页、稳定性、隐私和 probe。不要手工编辑编译产物。
 
 ### 2. 编译并检查
 
 ```powershell
-python -m gravity_sdk.compiler check
+python -m gravity_insight.compiler check
 ```
 
 需要生成时使用 compiler 提供的正式命令，然后再次运行 `check`，确保结果确定且 provenance 完整。

@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, InputValidationError, PlanValidationError
+from gravity_insight import GravitySDK, InputValidationError, PlanValidationError
 
 
 class _Insight:
@@ -97,7 +97,7 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual("read_limited", sdk.read_limited("app.list")["kind"])
         self.assertIs(sdk.insight, sdk.insight)
         self.assertEqual({"insight": 1, "sql": 0}, built)
-        from gravity_sdk.cache import MetadataCache
+        from gravity_insight.cache import MetadataCache
 
         insight = sdk.insight
         insight._metadata_cache = MetadataCache(["analysis.event.list"])
@@ -121,7 +121,7 @@ class GravitySDKTests(unittest.TestCase):
         self.assertNotIn("database", result)
         self.assertIn("metadata sync --all-apps", result["error"]["next_action"])
 
-    @patch("gravity_sdk.find_metadata.search_metadata")
+    @patch("gravity_insight.find_metadata.search_metadata")
     def test_analysis_vocabulary_is_offline_safe_and_strips_database(self, search) -> None:
         search.return_value = {
             "ok": True, "status": "success", "offline": True, "kind": "metric",
@@ -146,7 +146,7 @@ class GravitySDKTests(unittest.TestCase):
         )
         self.assertNotIn("private", str(failure))
 
-    @patch("gravity_sdk.plan_metadata_adapter.search_metadata")
+    @patch("gravity_insight.plan_metadata_adapter.search_metadata")
     def test_metadata_only_plan_keeps_clients_lazy_and_enforces_vocabulary_scope(
         self, search
     ) -> None:
@@ -191,7 +191,7 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual(2, sql_batch[0]["options"]["max_workers"])
         self.assertFalse(hasattr(sdk, "execute_sql"))
 
-    @patch("gravity_sdk.dashboard_snapshot.dashboard_snapshot")
+    @patch("gravity_insight.dashboard_snapshot.dashboard_snapshot")
     def test_dashboard_snapshot_facade_resolves_one_bound_app(self, snapshot) -> None:
         workspace = type("Workspace", (), {"resolve_app": lambda _self, value: 17})()
         sdk = GravitySDK(insight=_Insight(), workspace=workspace)
@@ -217,7 +217,7 @@ class GravitySDKTests(unittest.TestCase):
             workspace=Workspace(),
         )
         with patch(
-            "gravity_sdk.dashboard_snapshot.dashboard_snapshot",
+            "gravity_insight.dashboard_snapshot.dashboard_snapshot",
             return_value={"ok": True},
         ):
             sdk.dashboard_snapshot("main", "Overview")
@@ -279,7 +279,7 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual("gravity.agent.v1", protocol["schema_version"])
         self.assertEqual({"insight": 0}, built)
 
-        with patch("gravity_sdk.find.search_metadata", return_value={
+        with patch("gravity_insight.find.search_metadata", return_value={
             "results": [{
                 "kind": "metric", "scope": "workspace", "source": "report_metrics",
                 "operation_id": "report.multidim.metric.list", "name": "Revenue",
@@ -290,7 +290,7 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual("metric", local["candidates"][0]["metadata_kind"])
         self.assertEqual({"insight": 0}, built)
 
-        with patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={
+        with patch("gravity_insight.agents.batch_sources.search_metadata", return_value={
             "results": [{
                 "kind": "metric", "scope": "workspace", "source": "report_metrics",
                 "operation_id": "report.multidim.metric.list", "name": "Revenue",
@@ -308,8 +308,8 @@ class GravitySDKTests(unittest.TestCase):
         resolved = {"schema_version": "gravity.resolve.v1", "ok": True}
         workspace = object()
         with (
-            patch("gravity_sdk.workspace.load_workspace", return_value=workspace) as load,
-            patch("gravity_sdk.resolver.resolve_and_run", return_value=resolved) as run,
+            patch("gravity_insight.workspace.load_workspace", return_value=workspace) as load,
+            patch("gravity_insight.resolver.resolve_and_run", return_value=resolved) as run,
         ):
             result = sdk.run(
                 "app.list",
@@ -329,7 +329,7 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual(10, call["max_items"])
         self.assertEqual(2, call["max_workers"])
 
-        with patch("gravity_sdk.resolver.resolve_and_run", return_value=resolved) as run:
+        with patch("gravity_insight.resolver.resolve_and_run", return_value=resolved) as run:
             sdk.run("app.list")
         self.assertEqual((None, None), (
             run.call_args.kwargs["max_pages"], run.call_args.kwargs["max_items"]
@@ -342,7 +342,7 @@ class GravitySDKTests(unittest.TestCase):
         requests = [{"selector": "app.list", "request_id": "apps"}]
         expected = {"schema_version": "gravity-insight.resolver-batch.v1"}
 
-        with patch("gravity_sdk.resolver_batch.run_many", return_value=expected) as run:
+        with patch("gravity_insight.resolver_batch.run_many", return_value=expected) as run:
             result = sdk.run_many(
                 requests,
                 max_workers=3,
@@ -377,11 +377,11 @@ class GravitySDKTests(unittest.TestCase):
         }
         with (
             patch(
-                "gravity_sdk.sql.describe_products",
+                "gravity_insight.sql.describe_products",
                 return_value=[{"name": "daily-summary"}],
             ) as describe,
             patch(
-                "gravity_sdk.sql.run_product_queries",
+                "gravity_insight.sql.run_product_queries",
                 return_value={"schema_version": "gravity-sql.query.v1"},
             ) as query,
         ):
@@ -406,15 +406,15 @@ class GravitySDKTests(unittest.TestCase):
         sql = object()
         with (
             patch(
-                "gravity_sdk.shared_runtime.get_shared_runtime",
+                "gravity_insight.shared_runtime.get_shared_runtime",
                 return_value=runtime,
             ) as get_runtime,
             patch(
-                "gravity_sdk.client.GravityInsightClient.from_env",
+                "gravity_insight.client.GravityInsightClient.from_env",
                 return_value=insight,
             ) as insight_factory,
             patch(
-                "gravity_sdk.sql.client.GravityClient",
+                "gravity_insight.sql.client.GravityClient",
                 return_value=sql,
             ) as sql_factory,
         ):

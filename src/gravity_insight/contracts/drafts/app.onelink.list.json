@@ -1,0 +1,401 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260812T044153Z_app.onelink.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260812T044153Z_app.onelink.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page_size",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_number",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/779",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/user/promoted/onelink/list/",
+      "route_index": 779,
+      "route_sha256": "76185b4d75e42f91163a70ce31b4a63ba4cd92547b44a3e2ef6516f6454cbb3f"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205323Z_app.onelink.list.yaml",
+        "probed_at": "2026-08-08T20:53:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205502Z_app.onelink.list.yaml",
+        "probed_at": "2026-08-08T20:55:02Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260809T010854Z_app.onelink.list.yaml",
+        "probed_at": "2026-08-09T01:08:54Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260809T011137Z_app.onelink.list.yaml",
+        "probed_at": "2026-08-09T01:11:37Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T215515Z_app.onelink.list.yaml",
+        "probed_at": "2026-08-10T21:55:15Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260812T044153Z_app.onelink.list.yaml",
+        "probed_at": "2026-08-12T04:41:53Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "App 与账号",
+      "callers": [
+        "Or",
+        "aa",
+        "s"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 28518,
+        "file": "raw/web.gravity-engine.com/assets/promote-BB57cAOs.js",
+        "line": 5,
+        "offset": 61633,
+        "url": "https://web.gravity-engine.com/assets/promote-BB57cAOs.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 61815,
+            "column": 28518,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/promote-BB57cAOs.js",
+            "line": 5,
+            "route_offset": 61633
+          },
+          {
+            "call_offset": 67968,
+            "column": 31112,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/promote-BB57cAOs.js",
+            "line": 5,
+            "route_offset": 64227
+          },
+          {
+            "call_offset": 124106,
+            "column": 13881,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/promote-BB57cAOs.js",
+            "line": 12,
+            "route_offset": 123044
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/user/promoted/onelink/list/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "query",
+            "name": "filters",
+            "path": "$.filters",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "query",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "query",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "number",
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 1,
+            "candidate_types": [
+              "str"
+            ],
+            "output_path": "data.list[].turbo_promoted_object_id",
+            "parent_operation_id": "promotion.object.list",
+            "selection": "first",
+            "status": "resolved",
+            "target_cardinality": "one",
+            "target_input": "turbo_promoted_object_id"
+          }
+        ],
+        "conclusion": "unblocked",
+        "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
+        "evidence": "evidence/probe/20260810T215459Z_app.onelink.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
+      "path": "/turbo_engine/api/v1/user/promoted/onelink/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "url不能超过4096个字符",
+        "不能超过100个字符",
+        "停投",
+        "创建人",
+        "创建时间",
+        "启用",
+        "备注",
+        "是否",
+        "请输入推广活动名称"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/user/promoted/onelink/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "app",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 10,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "turbo_promoted_object_id": {
+        "description": "Promoted-object ID encoded by the SDK into Gravity's private OneLink filter grammar.",
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "page": 1,
+        "page_size": 10,
+        "turbo_promoted_object_id": "$parent:turbo_promoted_object_id"
+      }
+    },
+    "operation_id": "app.onelink.list",
+    "pagination": {
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/user/promoted/onelink/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/app.onelink.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 10
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "page",
+        "page_size",
+        "turbo_promoted_object_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": "turbo_promoted_object_id",
+        "operation_id": "promotion.object.list",
+        "output_path": "data.list[].turbo_promoted_object_id",
+        "selection": "first"
+      }
+    ],
+    "resource": "onelink",
+    "response_projection": {
+      "data_keys": [
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

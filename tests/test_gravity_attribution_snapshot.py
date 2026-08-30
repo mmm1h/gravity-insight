@@ -4,9 +4,9 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk import GravityInsightClient, GravitySDK
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.attribution import (
+from gravity_insight import GravityInsightClient, GravitySDK
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.attribution import (
     PERFORMANCE_OPERATION_ID,
     PERFORMANCE_PROFILES,
     USER_DETAIL_OPERATION_ID,
@@ -14,14 +14,14 @@ from gravity_sdk.attribution import (
     attribution_snapshot,
     attribution_user_detail,
 )
-from gravity_sdk.domains import (
+from gravity_insight.domains import (
     ATTRIBUTION_PAGINATED_OPERATIONS,
     ATTRIBUTION_SNAPSHOT_OPERATIONS,
 )
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.transport import TransportResponse
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_attribution_adapter import (
+from gravity_insight.errors import InputValidationError
+from gravity_insight.transport import TransportResponse
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_attribution_adapter import (
     execute_attribution_performance_plan,
     execute_attribution_user_detail_plan,
     validate_attribution_performance_plan,
@@ -335,7 +335,7 @@ class AttributionSnapshotTests(unittest.TestCase):
                          (result["ok"], result["status"], result["data"]))
 
     def test_user_detail_stable_manifest_projects_the_observed_object_shape(self) -> None:
-        root = Path(__file__).resolve().parents[1] / "src/gravity_sdk/contracts/operations"
+        root = Path(__file__).resolve().parents[1] / "src/gravity_insight/contracts/operations"
         operation_ids = ("app.list", "app.testing_tool.list", USER_DETAIL_OPERATION_ID)
         manifest = {"manifest_version": 1, "operations": [
             json.loads((root / f"{name}.json").read_text(encoding="utf-8"))["operation"]

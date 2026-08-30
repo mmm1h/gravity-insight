@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk.reference_journey_quality import evaluate_playbook_data_quality
+from gravity_insight.reference_journey_quality import evaluate_playbook_data_quality
 
 
 def result():

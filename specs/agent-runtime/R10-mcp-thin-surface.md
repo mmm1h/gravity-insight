@@ -79,7 +79,7 @@ Dependency decision is `(b)`: the pilot owns a minimal JSON-RPC stdio adapter
 and adds no Runtime dependency. The official `mcp` v2 package was rejected for
 this removable leaf because its broad HTTP/auth/telemetry-oriented dependency
 surface is disproportionate to one local transport. This concentrates the
-explicit protocol-version maintenance cost in `src/gravity_sdk/mcp/server.py`.
+explicit protocol-version maintenance cost in `src/gravity_insight/mcp/server.py`.
 
 ## Migration And Compatibility
 

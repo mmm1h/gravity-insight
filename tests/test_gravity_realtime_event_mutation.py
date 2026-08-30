@@ -4,23 +4,23 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agents.realtime_event import (
+from gravity_insight.agents.realtime_event import (
     SELECTOR,
     realtime_event_mutation_capability_inventory,
     realtime_event_mutation_cards,
 )
-from gravity_sdk.cli import build_parser
-from gravity_sdk.errors import ContractChangedError, InputValidationError
-from gravity_sdk.realtime_event_contracts import REALTIME_EVENT_UPDATE
-from gravity_sdk.realtime_event_mutation import (
+from gravity_insight.cli import build_parser
+from gravity_insight.errors import ContractChangedError, InputValidationError
+from gravity_insight.realtime_event_contracts import REALTIME_EVENT_UPDATE
+from gravity_insight.realtime_event_mutation import (
     realtime_event_mutation_schema,
     run_realtime_event_mutation,
 )
-from gravity_sdk.sdk import GravitySDK
+from gravity_insight.sdk import GravitySDK
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACTS = ROOT / "src" / "gravity_sdk" / "contracts"
+CONTRACTS = ROOT / "src" / "gravity_insight" / "contracts"
 WINDOW = {
     "app_id": 29034827,
     "is_enabled": 1,

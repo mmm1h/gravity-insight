@@ -8,7 +8,7 @@ import tempfile
 from types import SimpleNamespace
 
 
-from gravity_sdk.prober.export_verify import (
+from gravity_insight.prober.export_verify import (
     ExportVerificationRunner,
     _task_id,
     _replace_nested_string,

@@ -9,10 +9,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gravity_sdk.receipt_query import get_http_receipt, list_http_receipts
-from gravity_sdk.cli import build_parser
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+from gravity_insight.receipt_query import get_http_receipt, list_http_receipts
+from gravity_insight.cli import build_parser
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -71,7 +71,7 @@ class HttpReceiptQueryTests(unittest.TestCase):
             script = r"""
 import sys,time
 from pathlib import Path
-from gravity_sdk.receipt import record_completed_http_response,request_receipt_context
+from gravity_insight.receipt import record_completed_http_response,request_receipt_context
 class Response: status_code=200
 root,ready,release=map(Path,sys.argv[1:])
 record_completed_http_response(Response(),request_receipt_context(operation_id='app.list',method='GET',path='/account_center/api/v1/app/list/'),root)
@@ -106,7 +106,7 @@ while not release.exists() and time.time()<deadline: time.sleep(.01)
             directory = root / "receipts" / "http"
             directory.mkdir(parents=True)
             with mock.patch(
-                "gravity_sdk.receipt_query.os.scandir", side_effect=PermissionError
+                "gravity_insight.receipt_query.os.scandir", side_effect=PermissionError
             ):
                 unreadable = list_http_receipts(root)
             _write(root, _receipt("2" * 32, "2026-01-16T00:00:00.000001Z"))
@@ -128,7 +128,7 @@ while not release.exists() and time.time()<deadline: time.sleep(.01)
             script = r"""
 import sys
 from pathlib import Path
-from gravity_sdk.receipt import record_completed_http_response,request_receipt_context
+from gravity_insight.receipt import record_completed_http_response,request_receipt_context
 class Response: status_code=200
 record_completed_http_response(Response(),request_receipt_context(operation_id='app.list',method='GET',path='/account_center/api/v1/app/list/'),Path(sys.argv[1]))
 """

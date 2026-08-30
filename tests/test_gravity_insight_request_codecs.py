@@ -5,11 +5,11 @@ import unittest
 from types import SimpleNamespace
 
 try:
-    from gravity_sdk.errors import PolicyViolation
-    from gravity_sdk.registry import _request_parts
+    from gravity_insight.errors import PolicyViolation
+    from gravity_insight.registry import _request_parts
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk.errors import PolicyViolation
-    from gravity_sdk.registry import _request_parts
+    from gravity_insight.errors import PolicyViolation
+    from gravity_insight.registry import _request_parts
 
 
 class RequestCodecTests(unittest.TestCase):

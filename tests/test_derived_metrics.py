@@ -5,13 +5,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.cli import build_parser, run
-from gravity_sdk.derived_metrics import SPEC_SCHEMA_VERSION, derive_metrics
-from gravity_sdk.plan_adapters import build_plan_adapters
-from gravity_sdk.plan import execute_plan
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.cli import build_parser, run
+from gravity_insight.derived_metrics import SPEC_SCHEMA_VERSION, derive_metrics
+from gravity_insight.plan_adapters import build_plan_adapters
+from gravity_insight.plan import execute_plan
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.workspace import load_workspace
 
 
 def source(rows, status="success"):

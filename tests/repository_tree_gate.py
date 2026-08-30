@@ -29,7 +29,7 @@ class RepositoryTreeGateTimeout(RepositoryTreeGateError, TimeoutError):
 def _lock_paths(root: Path) -> tuple[Path, Path]:
     identity = os.path.normcase(str(root.resolve())).encode("utf-8")
     digest = hashlib.sha256(identity).hexdigest()[:24]
-    directory = Path(tempfile.gettempdir()) / "gravity-sdk-repository-tree-gates"
+    directory = Path(tempfile.gettempdir()) / "gravity-insight-repository-tree-gates"
     directory.mkdir(parents=True, exist_ok=True)
     return (
         directory / f"{digest}.turnstile.lock",

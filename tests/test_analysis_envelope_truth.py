@@ -4,15 +4,15 @@ import unittest
 from copy import deepcopy
 from pathlib import Path
 
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_analysis_adapter import (
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_analysis_adapter import (
     execute_analysis_query_plan,
     safe_analysis_envelope,
 )
-from gravity_sdk.plan_execution import execute_plan
-from gravity_sdk.plan_adapters import build_plan_adapters
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.plan_execution import execute_plan
+from gravity_insight.plan_adapters import build_plan_adapters
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.workspace import load_workspace
 
 
 def _uv_step(name: str) -> dict[str, object]:

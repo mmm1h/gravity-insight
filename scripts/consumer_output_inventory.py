@@ -15,12 +15,12 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk.journey_ledger import parse_journey_ledger
+from gravity_insight.journey_ledger import parse_journey_ledger
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_ROOT = ROOT / "src" / "gravity_sdk" / "manifests"
-SOURCE_ROOT = ROOT / "src" / "gravity_sdk"
+MANIFEST_ROOT = ROOT / "src" / "gravity_insight" / "manifests"
+SOURCE_ROOT = ROOT / "src" / "gravity_insight"
 JOURNEYS = ROOT / "docs" / "analysis-journeys.md"
 SCHEMA_VERSION_RE = re.compile(r"^gravity(?:-insight|-sql|\.)[a-z0-9_.-]*\.v[0-9]+$")
 

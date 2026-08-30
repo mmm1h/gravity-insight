@@ -3,18 +3,18 @@ from __future__ import annotations
 import unittest
 from copy import deepcopy
 
-from gravity_sdk.analysis_period_compare import compare_analysis_periods
-from gravity_sdk.analysis_spec_cli import run_analysis_query_command
-from gravity_sdk.cli import build_parser
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_analysis_adapter import (
+from gravity_insight.analysis_period_compare import compare_analysis_periods
+from gravity_insight.analysis_spec_cli import run_analysis_query_command
+from gravity_insight.cli import build_parser
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_analysis_adapter import (
     execute_analysis_query_plan,
     validate_analysis_query_plan,
 )
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.workspace import load_workspace
-from gravity_sdk.agents.analysis import analysis_query_spec_cards
-from gravity_sdk.agents.handoff import attach_plan_node
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.workspace import load_workspace
+from gravity_insight.agents.analysis import analysis_query_spec_cards
+from gravity_insight.agents.handoff import attach_plan_node
 
 
 def spec():

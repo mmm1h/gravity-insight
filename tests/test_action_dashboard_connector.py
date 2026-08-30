@@ -10,22 +10,22 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from gravity_sdk import GravitySDK, host_source
-from gravity_sdk.action_dashboard_connector import (
+from gravity_insight import GravitySDK, host_source
+from gravity_insight.action_dashboard_connector import (
     ACTION_KIND,
     CONNECTOR_ID,
     REQUEST_SCHEMA_VERSION,
 )
-from gravity_sdk.agent_runtime_contracts import (
+from gravity_insight.agent_runtime_contracts import (
     AgentRuntimeContractError,
     canonical_digest,
     validate_schema,
 )
-from gravity_sdk.analysis_artifact import compile_analysis_artifact
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.find_input import object_input
-from gravity_sdk.kanban_mutation_contracts import DASHBOARD_UPDATE, DETAIL
-from gravity_sdk.result_audit import SCHEMA_VERSION as AUDIT_SCHEMA_VERSION
+from gravity_insight.analysis_artifact import compile_analysis_artifact
+from gravity_insight.errors import InputValidationError
+from gravity_insight.find_input import object_input
+from gravity_insight.kanban_mutation_contracts import DASHBOARD_UPDATE, DETAIL
+from gravity_insight.result_audit import SCHEMA_VERSION as AUDIT_SCHEMA_VERSION
 from tests.test_analysis_artifact import blocked_result, result_with_semantics
 
 
@@ -280,10 +280,10 @@ class DashboardActionHappyPathTests(unittest.TestCase):
             )
 
     def test_cli_requires_the_same_explicit_confirmation(self) -> None:
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         encoded = json.dumps(self.request)
-        with mock.patch("gravity_sdk.sdk.GravitySDK.from_env", return_value=self.sdk):
+        with mock.patch("gravity_insight.sdk.GravitySDK.from_env", return_value=self.sdk):
             parsed = cli.build_parser().parse_args(
                 ["action", "dashboard-delivery", "preview", "--input", encoded]
             )

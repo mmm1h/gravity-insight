@@ -5,11 +5,11 @@ from datetime import datetime, timezone
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk.capability_contract import capability_contract
-from gravity_sdk.capability_trust import CapabilityTrustService
-from gravity_sdk.capability_validation import CapabilityValidationStore
-from gravity_sdk.data_quality import data_quality_result
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.capability_contract import capability_contract
+from gravity_insight.capability_trust import CapabilityTrustService
+from gravity_insight.capability_validation import CapabilityValidationStore
+from gravity_insight.data_quality import data_quality_result
 
 
 NOW = datetime(2026, 8, 22, 12, 0, tzinfo=timezone.utc)
@@ -102,7 +102,7 @@ class CapabilityTrustTests(unittest.TestCase):
         self.assertIn("DATA_QUALITY_FAILED", failed_quality["reason_codes"])
 
     @patch(
-        "gravity_sdk.capability_contract._product_card_fingerprints",
+        "gravity_insight.capability_contract._product_card_fingerprints",
         return_value={"analysis.query.spec:event": "a" * 64},
     )
     def test_current_product_provider_drift_quarantines(self, _fingerprints):

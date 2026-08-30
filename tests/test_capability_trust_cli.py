@@ -4,8 +4,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import cli
-from gravity_sdk.capability_trust_cli import dispatch
+from gravity_insight import cli
+from gravity_insight.capability_trust_cli import dispatch
 
 
 class Service:
@@ -38,8 +38,8 @@ class CapabilityTrustCliTests(unittest.TestCase):
             with self.subTest(argv=argv):
                 self.assertFalse(parser.parse_args(argv).network_required)
 
-    @patch("gravity_sdk.workspace.load_workspace", return_value=object())
-    @patch("gravity_sdk.sdk.GravitySDK", SDK)
+    @patch("gravity_insight.workspace.load_workspace", return_value=object())
+    @patch("gravity_insight.sdk.GravitySDK", SDK)
     def test_dispatch_only_delegates_to_the_service(self, _workspace):
         trusted = dispatch(
             SimpleNamespace(

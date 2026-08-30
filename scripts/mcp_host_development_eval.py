@@ -17,7 +17,7 @@ import tempfile
 from types import SimpleNamespace
 from typing import Any
 
-from gravity_sdk.mcp.server import MCPServer, PROTOCOL_VERSION
+from gravity_insight.mcp.server import MCPServer, PROTOCOL_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]

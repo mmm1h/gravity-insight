@@ -127,7 +127,7 @@ or `main` promotion.
   remains selection `296/336`, fillability `248/248`, offline terminal `53/53`,
   recovery `5/5`, security violations `0`, skipped production cases `283` and
   production HTTP requests `0`.
-- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Final isolated wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `ac48e6323530dbd9f14801df29eabc50e44c680c8a1f44ef3a81dee827f9e970`.
   External `site-packages` loaded all three root exports, both packaged schemas
   and validated an offline bounded snapshot. Canonical
@@ -220,7 +220,7 @@ not authorize Variant selection, production probes, releases or `main`.
   terminal `53/53`, recovery `5/5`, security violations `0`, skipped production
   cases `283` and production HTTP requests `0`. Active human docs remain
   exactly `5500` lines.
-- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Final isolated wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `6cffe0bdc1acdb5a99a29390c6bd2b306fee03bfeb883d13ede4d69613489ee1`.
   External `site-packages` loaded the lazy root validator, packaged adaptive
   schema and an offline static snapshot. Canonical
@@ -314,7 +314,7 @@ release or `main`.
   terminal `53/53`, recovery `5/5`, security violations `0`, skipped production
   cases `283` and production HTTP requests `0`. Active human docs remain
   exactly `5500` lines.
-- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Final isolated wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `da31fe96cc9c5bc05b9ac62aec51fdd320670242fab6aebe8cac6a7e48715c46`.
   External `site-packages` loaded all three root exports, both schemas, the
   packaged Characterization and a blocked current Trust report with selection
@@ -405,7 +405,7 @@ probes, Variant execution, release or `main`.
   usability remains selection `296/336`, fillability `248/248`, offline terminal
   `53/53`, recovery `5/5`, security violations `0`, skipped production cases
   `283` and production HTTP requests `0`.
-- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Final isolated wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `d3c8ab9efc6d3743e67d67aa811ec9978643ce8d0cbe2a4e46f92ec0ad8eb869`.
   External `site-packages` loaded the root validator and packaged schema, then
   proved stable automatic Direct, stable pinned Plan and disabled Direct

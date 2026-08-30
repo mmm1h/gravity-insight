@@ -1,0 +1,249 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "not_probed",
+        "detail": "No live probe evidence exists for this route.",
+        "status": "open"
+      },
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "request_binding_unverified",
+        "detail": "Query/body fields and fixed request values have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/695",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/user/device_white/testing_tool/click_info/",
+      "route_index": 695,
+      "route_sha256": "3204bf567141cdd65286ba73ddcd76c47f95d7f1f7431d8a73c2ad8788f78048"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "not_probed",
+        "pagination_unverified",
+        "request_binding_unverified",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "App 与账号",
+      "callers": [
+        "F"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 2617,
+        "file": "raw/web.gravity-engine.com/assets/deviceTable-ApjDomcg.js",
+        "line": 1,
+        "offset": 2616,
+        "url": "https://web.gravity-engine.com/assets/deviceTable-ApjDomcg.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 3825,
+            "column": 2617,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/deviceTable-ApjDomcg.js",
+            "line": 1,
+            "route_offset": 2616
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/user/device_white/testing_tool/click_info/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "app_id",
+            "path": "$.app_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "client_id",
+            "path": "$.client_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "device_id",
+            "path": "$.device_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "history_id",
+            "path": "$.history_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/user/device_white/testing_tool/click_info/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "待联调",
+        "注册时间",
+        "联调中"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: not_probed, pagination_unverified, request_binding_unverified, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/user/device_white/testing_tool/click_info/; request binding, pagination, and response projection remain unverified.",
+    "domain": "app",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "app_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "client_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "device_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "history_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "app_id": 0,
+        "client_id": 0,
+        "device_id": 0,
+        "history_id": 0
+      }
+    },
+    "operation_id": "app.click_info.get",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/user/device_white/testing_tool/click_info/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/app.click_info.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "client_id",
+        "device_id",
+        "history_id"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "click_info",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

@@ -5,22 +5,22 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agents.kanban_mutation import (
+from gravity_insight.agents.kanban_mutation import (
     kanban_mutation_capability_inventory,
     kanban_mutation_cards,
 )
-from gravity_sdk.cli import build_parser
-from gravity_sdk.errors import InputValidationError, MutationReadbackError
-from gravity_sdk.kanban_folder_mutation import delete_folder, rename_folder
-from gravity_sdk.kanban_mutation_contracts import DASHBOARD_UPDATE, REPORT_UNLINK
-from gravity_sdk.kanban_space_mutation import delete_space, rename_space
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_kanban_mutation_adapter import validate_kanban_plan
-from gravity_sdk.sdk import GravitySDK
+from gravity_insight.cli import build_parser
+from gravity_insight.errors import InputValidationError, MutationReadbackError
+from gravity_insight.kanban_folder_mutation import delete_folder, rename_folder
+from gravity_insight.kanban_mutation_contracts import DASHBOARD_UPDATE, REPORT_UNLINK
+from gravity_insight.kanban_space_mutation import delete_space, rename_space
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_kanban_mutation_adapter import validate_kanban_plan
+from gravity_insight.sdk import GravitySDK
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACTS = ROOT / "src" / "gravity_sdk" / "contracts"
+CONTRACTS = ROOT / "src" / "gravity_insight" / "contracts"
 MARKER = "GSDK-0123456789ab"
 
 

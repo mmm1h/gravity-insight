@@ -4,7 +4,7 @@ import re
 import unittest
 from typing import Any, Callable
 
-from gravity_sdk.support.evidence import (
+from gravity_insight.support.evidence import (
     UNKNOWN_BEFORE_POLICY,
     EvidenceSnapshotError,
     validate_evidence_manifest,

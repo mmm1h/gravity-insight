@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.domains import ANALYSIS_QUERY_OPERATIONS
-from gravity_sdk.semantic_rejection import (
+from gravity_insight.domains import ANALYSIS_QUERY_OPERATIONS
+from gravity_insight.semantic_rejection import (
     classify_read_rejection,
     raise_read_rejection,
 )
-from gravity_sdk.errors import SemanticRejectedError, UpstreamContradictedRequestError
+from gravity_insight.errors import SemanticRejectedError, UpstreamContradictedRequestError
 
 
 class SemanticRejectionTests(unittest.TestCase):

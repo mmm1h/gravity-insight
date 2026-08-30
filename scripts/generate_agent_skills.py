@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs" / "agent-skills"
-PROVENANCE = ROOT / "src" / "gravity_sdk" / "contracts" / "generated" / "provenance.json"
+PROVENANCE = ROOT / "src" / "gravity_insight" / "contracts" / "generated" / "provenance.json"
 
 
 class _OfflineClient:
@@ -18,11 +18,11 @@ class _OfflineClient:
         return {"ok": True, "status": "needs_live_metadata", "live_metadata_dependencies": []}
 
     def operations(self, **kwargs: Any) -> list[dict[str, Any]]:
-        from gravity_sdk.models import load_operation_manifest
-        from gravity_sdk.registry import Registry
+        from gravity_insight.models import load_operation_manifest
+        from gravity_insight.registry import Registry
 
         operations = []
-        for path in sorted((ROOT / "src" / "gravity_sdk" / "manifests").glob("*.json")):
+        for path in sorted((ROOT / "src" / "gravity_insight" / "manifests").glob("*.json")):
             operations.extend(load_operation_manifest(path))
         return Registry(operations).operations(
             domain=kwargs.get("domain"),
@@ -39,10 +39,10 @@ class _OfflineClient:
 
     @staticmethod
     def _export_contracts() -> Any:
-        from gravity_sdk.export_contracts import ExportContractRegistry
+        from gravity_insight.export_contracts import ExportContractRegistry
 
         return ExportContractRegistry.from_file(
-            ROOT / "src" / "gravity_sdk" / "contracts" / "exports" / "routes-v1.json"
+            ROOT / "src" / "gravity_insight" / "contracts" / "exports" / "routes-v1.json"
         )
 
     def search_operations(self, *_args: Any, **_kwargs: Any) -> dict[str, Any]:
@@ -50,17 +50,17 @@ class _OfflineClient:
 
 
 def render_documents() -> dict[Path, str]:
-    from gravity_sdk.agent import _protocol, discover_capabilities
-    from gravity_sdk.agents.analysis import analysis_query_spec_cards
-    from gravity_sdk.agents.batch_sources import AgentSourceSnapshot
-    from gravity_sdk.agents.product_inventory import canonical_capability_cards
-    from gravity_sdk.agents.unavailable import registered_unavailable_gaps
-    from gravity_sdk.analysis_period_compare import compare_analysis_periods
-    from gravity_sdk.analysis_spec import prepare_query_spec
-    from gravity_sdk.analysis_spec_schema import analysis_query_spec_schema
-    from gravity_sdk.derived_metrics import SPEC_SCHEMA_VERSION as DERIVED_SPEC_VERSION
-    from gravity_sdk.workspace_semantic_context import SCHEMA_VERSION as SEMANTIC_VERSION
-    from gravity_sdk.reference_journey_contract import reference_artifacts
+    from gravity_insight.agent import _protocol, discover_capabilities
+    from gravity_insight.agents.analysis import analysis_query_spec_cards
+    from gravity_insight.agents.batch_sources import AgentSourceSnapshot
+    from gravity_insight.agents.product_inventory import canonical_capability_cards
+    from gravity_insight.agents.unavailable import registered_unavailable_gaps
+    from gravity_insight.analysis_period_compare import compare_analysis_periods
+    from gravity_insight.analysis_spec import prepare_query_spec
+    from gravity_insight.analysis_spec_schema import analysis_query_spec_schema
+    from gravity_insight.derived_metrics import SPEC_SCHEMA_VERSION as DERIVED_SPEC_VERSION
+    from gravity_insight.workspace_semantic_context import SCHEMA_VERSION as SEMANTIC_VERSION
+    from gravity_insight.reference_journey_contract import reference_artifacts
 
     protocol = _protocol()
     cards = {
@@ -159,7 +159,7 @@ def _index(catalog: dict[str, int]) -> str:
 
 
 def _reference_skill(artifact: dict[str, Any]) -> str:
-    from gravity_sdk.skill_render import render_docs_mirror
+    from gravity_insight.skill_render import render_docs_mirror
 
     return render_docs_mirror(artifact)
 

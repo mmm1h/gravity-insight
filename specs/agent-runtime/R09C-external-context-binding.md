@@ -80,7 +80,7 @@ promotion.
   `gravity.external-context.json` registry, strict external requirement and
   public Context Item reference schemas, and one public
   `ExternalContextBindingResolver`. Root public API now has `127` lazy exports
-  and `gravity_sdk.__all__` has `128` entries including `__version__`.
+  and `gravity_insight.__all__` has `128` entries including `__version__`.
 - Binding compilation normalizes exact R08 descriptors and Skill/Journey/
   resource requirements, rejects unsafe/duplicate/out-of-prefix resources and
   requires one tracked, clean Git snapshot. Runtime accepts only explicitly

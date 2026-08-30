@@ -1,8 +1,8 @@
 import json
 import unittest
 
-from gravity_sdk.errors import ContractChangedError, InputValidationError, PaginationError
-from gravity_sdk.segment_snapshot import SEGMENT_SOURCES, segment_snapshot
+from gravity_insight.errors import ContractChangedError, InputValidationError, PaginationError
+from gravity_insight.segment_snapshot import SEGMENT_SOURCES, segment_snapshot
 
 
 def _catalog(*rows, truncated=False):

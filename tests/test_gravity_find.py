@@ -8,14 +8,14 @@ import tempfile
 from contextlib import closing
 from pathlib import Path
 
-from gravity_sdk.find import run_find_command
-from gravity_sdk.metadata_sync import (
+from gravity_insight.find import run_find_command
+from gravity_insight.metadata_sync import (
     _create_schema,
     _write_apps,
     _write_catalog_metadata,
     _write_rows,
 )
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.workspace import load_workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]

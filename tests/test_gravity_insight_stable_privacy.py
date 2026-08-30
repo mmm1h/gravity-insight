@@ -6,7 +6,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from gravity_sdk.governance.stable_privacy import (
+from gravity_insight.governance.stable_privacy import (
     REGISTRY_PATH,
     inspect_stable_response_privacy,
     operation_exposure_paths,
@@ -43,7 +43,7 @@ def _operation(
 def _write_operation(root: Path, operation: dict[str, object]) -> Path:
     path = (
         root
-        / "src/gravity_sdk/contracts/operations"
+        / "src/gravity_insight/contracts/operations"
         / f"{operation['operation_id']}.json"
     )
     path.parent.mkdir(parents=True, exist_ok=True)

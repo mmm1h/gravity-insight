@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Any, Mapping
 from unittest.mock import patch
 
-from gravity_sdk import executor, models, registry
+from gravity_insight import executor, models, registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_ROOT = ROOT / "src" / "gravity_sdk" / "manifests"
+MANIFEST_ROOT = ROOT / "src" / "gravity_insight" / "manifests"
 FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "gravity_insight_golden"
 WIRE_OPERATION_IDS = {
     "analysis.segment.list",
@@ -413,7 +413,7 @@ class GravityInsightGoldenTests(unittest.TestCase):
         document = json.loads(
             (
                 ROOT
-                / "src/gravity_sdk/contracts/runtime-operation-bindings.json"
+                / "src/gravity_insight/contracts/runtime-operation-bindings.json"
             ).read_text(encoding="utf-8")
         )
         bindings = document["request_builders"]

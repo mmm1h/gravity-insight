@@ -4,10 +4,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.recipe import run_recipe_command
-from gravity_sdk.recipe_repin import apply_recipe_repin, assess_recipe_repin
-from gravity_sdk.workspace import Recipe, RecipeBindings, load_workspace
+from gravity_insight.errors import InputValidationError
+from gravity_insight.recipe import run_recipe_command
+from gravity_insight.recipe_repin import apply_recipe_repin, assess_recipe_repin
+from gravity_insight.workspace import Recipe, RecipeBindings, load_workspace
 
 
 def _recipe(**changes: object) -> Recipe:

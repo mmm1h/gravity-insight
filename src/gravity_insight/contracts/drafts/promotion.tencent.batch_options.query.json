@@ -1,0 +1,297 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260808T231059Z_promotion.tencent.batch_options.query.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_insight/census/data/route-response-fields.json#/routes/637",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.result_list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/637",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/tencent/batch_options/",
+      "route_index": 637,
+      "route_sha256": "abbd458940091b9a3fb9735ee14e2ef209e8effea66b8fcfd5a9a56205f1583a"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205612Z_promotion.tencent.batch_options.query.yaml",
+        "probed_at": "2026-08-08T20:56:12Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231059Z_promotion.tencent.batch_options.query.yaml",
+        "probed_at": "2026-08-08T23:10:59Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "request_parameters_required",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "cft",
+        "gft",
+        "v"
+      ],
+      "contract_family": {
+        "family_id": "promotion.family.006",
+        "family_kind": "same_level_cross_platform",
+        "member_count": 3
+      },
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 35537,
+        "file": "raw/web.gravity-engine.com/assets/index-D9HAN43D.js",
+        "line": 502,
+        "offset": 5475650,
+        "url": "https://web.gravity-engine.com/assets/index-D9HAN43D.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 5476662,
+            "column": 35537,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/index-D9HAN43D.js",
+            "line": 502,
+            "route_offset": 5475650
+          },
+          {
+            "call_offset": 5476932,
+            "column": 35537,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/index-D9HAN43D.js",
+            "line": 502,
+            "route_offset": 5475650
+          },
+          {
+            "call_offset": 5482876,
+            "column": 40916,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/index-D9HAN43D.js",
+            "line": 502,
+            "route_offset": 5481029
+          },
+          {
+            "call_offset": 5495824,
+            "column": 54637,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/index-D9HAN43D.js",
+            "line": 502,
+            "route_offset": 5494750
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/tencent/batch_options/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "body",
+            "name": "api_version",
+            "path": "$.api_version",
+            "presence": "observed_conditional",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "operator",
+            "path": "$.operator",
+            "presence": "observed_always",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "target",
+            "path": "$.target",
+            "presence": "observed_always",
+            "types": [
+              "array"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/tencent/batch_options/",
+      "promotion_level": "其它",
+      "promotion_platform": "tencent",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "创意",
+        "取消",
+        "媒体账户",
+        "暂无数据可分析",
+        "确定",
+        "腾讯广告3.0广告报表_${m.value[0]}-${m.value[1]}_${IC()}",
+        "跳转腾讯",
+        "错误信息"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/tencent/batch_options/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "api_version": {
+        "default": "v3.0",
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "operator": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "target": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "object",
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "api_version": "v3.0",
+        "operator": "",
+        "target": []
+      }
+    },
+    "operation_id": "promotion.tencent.batch_options.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/tencent/batch_options/",
+    "platform": "tencent",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": "promotion.family.006",
+      "platform": "tencent",
+      "source_files": [
+        "drafts/promotion.tencent.batch_options.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "api_version",
+        "operator",
+        "target"
+      ],
+      "defaults": {
+        "api_version": "v3.0"
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "batch_options",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}
