@@ -41,7 +41,7 @@
       }
     },
     {
-      "blocker_note": "2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。2026-08-19 #219：同类本地校验现带 `actual value`（类型/长度/传入值），条件值仍不回显。",
+      "blocker_note": "2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。2026-08-19 #219：同类本地校验现带 `actual value`（类型/长度/传入值），条件值仍不回显。2026-08-30：非空 `before_custom` 和 Retention `property_conditions` 已按生产拒绝证据改为编译期 fail-closed；同日注册∩支付走单日 Funnel→matched Segment→D1 Segment 规则，set-once 首付属性走两次聚合 Segment 规则，完整 spec 与代价见[替代路径](guides/retention-cohort-alternatives.md)。普通单起始事件 Retention 不变。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "看起始行为后的用户留存",
@@ -50,7 +50,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "ab3ce411542b93e339a96f290aa6bb19dbba6fd3a4fd4dbba899ebe872c82427",
+      "row_digest": "f9f8aa79751d50979c7bc7133c1001fb60945e15d0f0d4db8e5b16b81ab3c823",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "5bcecfe829e5c2360160616016c23aca7dea16a5d455ca9548000de6e7aa53cd",
+  "snapshot_digest": "3a46d9699427af68386f42718053c32fb6695ebadd45b8638f535e19ffae59f8",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "46b3d57a1b25226b33c5824853679d8d402bec41d51322f28a095a997590ddad"
+  "source_sha256": "c56618a33033d2b2cbf538498c87bd59375f88d31d93ab8e748d79df1087af8f"
 }

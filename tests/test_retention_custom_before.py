@@ -1,10 +1,10 @@
-"""Retention custom-before: the compact schema and the operation contract must agree.
+"""Retention custom-before raw-operation depth remains bounded and reproducible.
 
 Reported as issue #21 by a work-dashboard consumer. The compact schema lets a
-caller put a condition on one ``before_custom.list[]`` component, the compiler
-accepts it, and then the operation layer rejects the whole field for exceeding
-the nested object limits. Nothing in the caller's input is wrong; two layers of
-this repository disagree about how deep the same registered shape is allowed.
+caller put a condition on one ``before_custom.list[]`` component. The raw
+operation contract must retain the measured depth for evidence and saved
+artifact handling even though the compact Retention compiler now rejects this
+upstream-unsupported cohort before dispatch.
 """
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ def _validate(value: object) -> None:
 
 class RetentionCustomBeforeDepthTests(unittest.TestCase):
     def test_a_condition_on_one_custom_before_component_is_accepted(self) -> None:
-        """The compact schema registers this shape, so the contract must admit it."""
+        """The raw operation contract still admits the registered wire shape."""
 
         _validate(_before_after(condition_on_component=True))
 
