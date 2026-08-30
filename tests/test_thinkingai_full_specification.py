@@ -45,6 +45,7 @@ from scripts.generate_thinkingai_full_specifications import (
     SOURCE_INPUT,
     SOURCE_TARGET,
     SPECIFICATION_TARGET,
+    _selected_revision,
     _verify_source_revision as verify_full_source_revision,
     render_outputs,
 )
@@ -574,6 +575,33 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
         changed["skills"][0]["archive_sha256"] = "0" * 64
         with self.assertRaisesRegex(Exception, "DIGEST_MISMATCH"):
             compile_skills_lock(changed)
+
+    def test_default_generation_reuses_and_verifies_the_locked_revision(self) -> None:
+        revision = self.lock["source"]["source_revision"]
+
+        self.assertEqual(
+            revision,
+            _selected_revision(source_revision=None, packages_only=False),
+        )
+        self.assertIsNone(
+            _selected_revision(source_revision=None, packages_only=True)
+        )
+        self.assertEqual(
+            "a" * 40,
+            _selected_revision(source_revision="a" * 40, packages_only=False),
+        )
+
+    def test_source_change_failure_explains_the_two_stage_rebuild(self) -> None:
+        revision = self.lock["source"]["source_revision"]
+
+        with self.assertRaises(SystemExit) as caught:
+            verify_full_source_revision(revision, INDEX_TARGET.read_bytes() + b" ")
+
+        message = str(caught.exception)
+        self.assertIn(
+            "generate_thinkingai_full_specifications.py --packages-only", message
+        )
+        self.assertIn("--source-revision <40-char-commit-sha>", message)
 
 
 def _redigest(value: dict, field: str) -> None:

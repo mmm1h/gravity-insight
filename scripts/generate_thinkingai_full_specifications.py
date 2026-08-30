@@ -51,6 +51,7 @@ REPRESENTATIVE_EVAL = REPRESENTATIVE_ROOT / "eval.json"
 _INDEX_REPOSITORY_PATH = "content/thinkingai/full/hub/index.json"
 _ARCHIVE_ROOT = "content/thinkingai/full/hub/artifacts/skills"
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
+_SCRIPT = "scripts/generate_thinkingai_full_specifications.py"
 
 
 def render_outputs(source_revision: str | None) -> dict[Path, bytes]:
@@ -220,6 +221,16 @@ def _locked_revision() -> str:
     return str(lock["source"]["source_revision"])
 
 
+def _selected_revision(
+    *, source_revision: str | None, packages_only: bool
+) -> str | None:
+    if packages_only:
+        return None
+    if source_revision is not None:
+        return source_revision
+    return _locked_revision()
+
+
 def _verify_source_revision(revision: str, expected_index: bytes) -> None:
     completed = subprocess.run(
         ["git", "show", f"{revision}:{_INDEX_REPOSITORY_PATH}"],
@@ -228,19 +239,32 @@ def _verify_source_revision(revision: str, expected_index: bytes) -> None:
         capture_output=True,
     )
     if completed.returncode:
-        raise SystemExit("source revision does not contain the generated full Hub index")
+        raise SystemExit(
+            "source revision does not contain the generated full Hub index. "
+            f"Run `python {_SCRIPT} --packages-only`, review and commit the generated "
+            f"Hub index, then run `python {_SCRIPT} --source-revision "
+            "<40-char-commit-sha>`."
+        )
     if completed.stdout != expected_index:
-        raise SystemExit("source revision full Hub index does not match generated index")
+        raise SystemExit(
+            "source revision full Hub index does not match generated index. "
+            f"Run `python {_SCRIPT} --packages-only`, review and commit the generated "
+            f"Hub index, then run `python {_SCRIPT} --source-revision "
+            "<40-char-commit-sha>`."
+        )
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--check", action="store_true")
     group.add_argument("--source-revision")
     group.add_argument("--packages-only", action="store_true")
-    options = parser.parse_args()
-    revision = _locked_revision() if options.check else options.source_revision
+    options = parser.parse_args(argv)
+    revision = _selected_revision(
+        source_revision=options.source_revision,
+        packages_only=options.packages_only,
+    )
     outputs = render_outputs(revision)
     if revision is not None:
         _verify_source_revision(revision, outputs[INDEX_TARGET])
@@ -254,6 +278,10 @@ def main() -> int:
             raise SystemExit(
                 "generated CT03 full specification artifacts are stale: "
                 + ", ".join(str(path.relative_to(ROOT)) for path in mismatched)
+                + f". If only the Runtime version changed, run `python {_SCRIPT}`. "
+                f"If the generated Hub index changed, run `python {_SCRIPT} "
+                "--packages-only`, review and commit it, then run `python "
+                f"{_SCRIPT} --source-revision <40-char-commit-sha>`."
             )
         print("CT03 full specification artifacts are current")
         return 0

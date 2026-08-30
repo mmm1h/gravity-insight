@@ -41,6 +41,7 @@ from scripts.generate_thinkingai_representatives import (
     LOCK_TARGET,
     SET_TARGET,
     SOURCE_TARGET,
+    _selected_revision,
     _verify_source_revision as verify_representative_source_revision,
     render_outputs,
 )
@@ -358,6 +359,35 @@ class ThinkingAIRepresentativeTests(unittest.TestCase):
             verify_representative_source_revision(
                 revision, INDEX_TARGET.read_bytes() + b" "
             )
+
+    def test_default_generation_reuses_and_verifies_the_locked_revision(self) -> None:
+        revision = self.lock["source"]["source_revision"]
+
+        self.assertEqual(
+            revision,
+            _selected_revision(source_revision=None, packages_only=False),
+        )
+        self.assertIsNone(
+            _selected_revision(source_revision=None, packages_only=True)
+        )
+        self.assertEqual(
+            "a" * 40,
+            _selected_revision(source_revision="a" * 40, packages_only=False),
+        )
+
+    def test_source_change_failure_explains_the_two_stage_rebuild(self) -> None:
+        revision = self.lock["source"]["source_revision"]
+
+        with self.assertRaises(SystemExit) as caught:
+            verify_representative_source_revision(
+                revision, INDEX_TARGET.read_bytes() + b" "
+            )
+
+        message = str(caught.exception)
+        self.assertIn(
+            "generate_thinkingai_representatives.py --packages-only", message
+        )
+        self.assertIn("--source-revision <40-char-commit-sha>", message)
 
     def test_two_projects_install_identical_locks_and_resolve_dependency_shapes(self) -> None:
         revision = self.lock["source"]["source_revision"]
