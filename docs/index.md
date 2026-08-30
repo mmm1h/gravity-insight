@@ -12,6 +12,7 @@
 | 在 Python 中长期集成 | [SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
 | 在本地 Host 试用 MCP stdio | [MCP stdio 试点](reference/mcp.md) | [团队上手包](team-onboarding.md) |
 | 生成或执行显式 DAG / playbook | [Plan 参考](reference/plan.md) | [Agent 工作流](agent-workflow.md) |
+| 定位 operation 字段、错误码或 fail-closed 行为 | [机器契约索引](reference/cli.md#machine-contract-index) | 运行时 `describe` / `schema` 输出 |
 | 配置 App、recipe、SQL 产品或调用方语义 | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md) |
 | 导出文件或把结果交给 LLM | [导出指南](guides/export.md) | [结果与 LLM 安全](guides/llm-output-safety.md) |
 | 修改 SDK、合同、探针或 Evidence | [维护者入口](maintainers/index.md) | [扩展地图](maintainers/extending.md) |

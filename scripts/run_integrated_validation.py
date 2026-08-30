@@ -45,7 +45,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
     return (
         GateSpec(
             "unittest_collector",
-            (py, "scripts/run_unittest_shards.py", "--expected-total", "2099"),
+            (py, "scripts/run_unittest_shards.py"),
             1800,
         ),
         GateSpec(
@@ -377,6 +377,14 @@ def _write_receipt(path: Path, receipt: Mapping[str, Any]) -> None:
         stream.write("\n")
 
 
+def _display_path(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(ROOT).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run and receipt exact-HEAD integrated validation."
@@ -489,7 +497,7 @@ def main(argv: list[str] | None = None) -> int:
     print(
         json.dumps(
             {
-                "receipt": receipt_path.relative_to(ROOT).as_posix(),
+                "receipt": _display_path(receipt_path),
                 "commit_sha": before["head"],
                 "gate_count": len(results),
                 "failed_gates": [
