@@ -64,6 +64,18 @@ _CONTRADICTED_GROUP_CLAIM = (
     "succeeded on other runs (issue #23). Retry the unchanged request; if it keeps "
     "failing on one specific day, report that day to the SDK maintainer"
 )
+_RETENTION_PROPERTY_CONDITION_UNRESOLVED = (
+    "actual value: group_by_list already contains create_time/day and the "
+    "rejection appears only when property_condition is present; allowed next "
+    "action: do NOT re-add the group, retry the same request unchanged, or "
+    "blindly switch between type=user and type=user_property -- both types were "
+    "rejected in issues #21/#29 while the no-condition control succeeded. "
+    "Report sanitized extra.error and HTTP status together with the property's "
+    "metadata data_type and the condition operator/value representation type "
+    "and count (not the values). An upstream-accepted Retention "
+    "property_condition request or a paired current-main probe is required "
+    "before the SDK can choose or reject a wire encoding"
+)
 
 _FALLBACK_MESSAGE = "Gravity rejected the read operation"
 _RETENTION_QUERY = ANALYSIS_QUERY_OPERATIONS["retention"]
@@ -91,11 +103,13 @@ def classify_read_rejection(
     if reviewed is not None:
         field, next_action = reviewed
         if field == "group_by_list" and _create_time_already_grouped(request_inputs):
-            next_action = (
-                _CUSTOM_BEFORE_UNRESOLVED
-                if _carries_custom_before(request_inputs)
-                else _CONTRADICTED_GROUP_CLAIM
-            )
+            if _carries_custom_before(request_inputs):
+                next_action = _CUSTOM_BEFORE_UNRESOLVED
+            elif _carries_property_condition(request_inputs):
+                field = "property_condition"
+                next_action = _RETENTION_PROPERTY_CONDITION_UNRESOLVED
+            else:
+                next_action = _CONTRADICTED_GROUP_CLAIM
         return (
             field,
             f"Gravity rejected the read operation; classified extra.error={field}",
@@ -129,7 +143,11 @@ def raise_read_rejection(
             next_action=next_action,
             http_receipts=http_receipts,
         )
-    if next_action in {_CONTRADICTED_GROUP_CLAIM, _CUSTOM_BEFORE_UNRESOLVED}:
+    if next_action in {
+        _CONTRADICTED_GROUP_CLAIM,
+        _CUSTOM_BEFORE_UNRESOLVED,
+        _RETENTION_PROPERTY_CONDITION_UNRESOLVED,
+    }:
         raise UpstreamContradictedRequestError(
             f"actual value: {actual_value(field)}; {message}",
             field=field,
@@ -184,6 +202,15 @@ def _carries_custom_before(request_inputs: Mapping[str, Any] | None) -> bool:
     return isinstance(custom, Mapping) and bool(custom)
 
 
+def _carries_property_condition(
+    request_inputs: Mapping[str, Any] | None,
+) -> bool:
+    if not request_inputs:
+        return False
+    conditions = request_inputs.get("property_condition")
+    return isinstance(conditions, (list, tuple)) and bool(conditions)
+
+
 def _extra_error_text(payload: Mapping[str, Any]) -> str:
     extra = payload.get("extra")
     value = extra.get("error") if isinstance(extra, Mapping) else None
@@ -197,6 +224,8 @@ def _inferred_field(
 ) -> str:
     if not request_inputs:
         return "input"
+    if operation_id == _RETENTION_QUERY and _carries_property_condition(request_inputs):
+        return "property_condition"
     groups = request_inputs.get("group_by_list")
     if isinstance(groups, (list, tuple)):
         for item in groups:
@@ -225,6 +254,19 @@ def _unclassified_next_action(
     if field == "group_by_list" and operation_id == _RETENTION_QUERY:
         hints.append(_TIME_GRAIN_HINT)
     hint = f" known analysis shape: {'; '.join(hints)}." if hints else ""
+    if operation_id == _RETENTION_QUERY and _carries_property_condition(request_inputs):
+        return (
+            f"actual value: operation={actual_value(operation)} field={actual_value(field)} "
+            f"sent_keys={actual_value(sent)}; allowed next action: treat this as "
+            "an unresolved Retention property-condition contract, not caller input. "
+            "Do not retry unchanged or blindly switch between type=user and "
+            "type=user_property; issues #21/#29 rejected both while a no-condition "
+            "control succeeded. Report sanitized extra.error and HTTP status "
+            "together with the property's metadata data_type and the condition "
+            "operator/value representation type and count (not the values). An "
+            "upstream-accepted Retention property_condition request or a paired "
+            "current-main probe is required before changing the compiler."
+        )
     if operation_id in _ANALYSIS_QUERIES:
         return (
             f"actual value: operation={actual_value(operation)} field={actual_value(field)} "
