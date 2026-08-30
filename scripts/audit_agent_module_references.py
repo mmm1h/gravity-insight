@@ -211,7 +211,13 @@ def reference_module_mapping(mapping: dict[str, str]) -> dict[str, str]:
 
 
 def _read_text(path: Path) -> str | None:
-    raw = path.read_bytes()
+    try:
+        raw = path.read_bytes()
+    except FileNotFoundError:
+        # Concurrent repository tests can remove an untracked fixture after the
+        # git file census. Keep its enumerated count so checkpoint drift still
+        # fails closed, but do not replace the intended gate error with an I/O race.
+        return None
     if b"\x00" in raw:
         return None
     try:

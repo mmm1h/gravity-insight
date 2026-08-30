@@ -59,6 +59,7 @@ raw operation。
 | Dashboard | `analysis dashboard snapshot/prepare/run` | `dashboard_snapshot()` / dashboard analysis methods | `dashboard_snapshot` / `dashboard_analysis` |
 | User / Order | `analysis user journey/order` | `user_journey()` / order methods | `user_journey` / order composites |
 | Segment | `analysis segment evaluate/snapshot/members` | matching segment methods | `segment_evaluate` / `segment_snapshot` / `segment_members` |
+| User Detail Aggregate | `analysis user-detail-aggregate` | `user_detail_aggregate()` | `user_detail_aggregate` |
 | Saved Analysis | `analysis saved prepare/run` | saved analysis methods | `saved_analysis` |
 | Multidim / Semantic | `multidim query` / `semantic compose` | matching methods | `multidim` / `semantic_compose` |
 | Material / Promotion | `materials performance` / `promotion performance` | matching methods | matching composites |
@@ -364,6 +365,40 @@ segment-update preview|execute`。自然语言、历史记录和 tool result 都
 复合 cohort 留存不使用已知会被 Retention endpoint 拒绝的 `before_custom` 或
 `property_conditions`。同日事件交集与 set-once 首付属性的完整 Funnel/Segment Spec、语义差异、
 中间分群和本地除法见[复合 cohort 留存替代路径](../guides/retention-cohort-alternatives.md)。
+
+<a id="user-detail-aggregate"></a>
+### User Detail Aggregate v1
+
+`analysis user-detail-aggregate` 用 live user-property metadata 校验顶层及动态字段，在 Runtime 内调用
+`analysis.user_detail.list` 的公共有界分页链路，只返回 `cells`、显式 measure definitions、分页完整性、
+source/receipt audit。`bounds.max_pages/max_items/max_cells` 三项必须全部显式提供；`max_cells` 的硬上限
+200 与现有安全 stdout item cap 相同。源 operation 的完整性当前为 `unknown/wire`，因此数字只对实际
+`consumed_items` 精确，不能宣称完整用户总体。
+
+```json
+{
+  "source": {"app_id": "101", "date": "2026-08-29"},
+  "filters": [{"field": "Version", "operator": "IN", "values": ["1.0"]}],
+  "group_by": ["Version"],
+  "measures": [
+    {"name": "users", "op": "count"},
+    {"name": "revenue", "op": "sum", "field": "user$pay_amount_sum"}
+  ],
+  "bounds": {"max_pages": 100, "max_items": 10000, "max_cells": 20}
+}
+```
+
+```powershell
+gravity analysis user-detail-aggregate --input aggregate.json
+```
+
+返回的业务数据形状是聚合单元格，例如
+`"cells":[{"group":{"Version":"1.0"},"measure":"users","value":42},{"group":{"Version":"1.0"},"measure":"revenue","value":128.5}]`；
+不会出现 `data.list`、请求行、用户 ID 或设备 ID。`--input-schema` 和 `--dry-run` 均严格离线。
+
+不在 live 白名单、`sum` 非数值字段、同一引用字段混合类型、单元格超限和缺失边界分别稳定失败为
+`USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`、`USER_DETAIL_AGGREGATE_MIXED_TYPE`、
+`USER_DETAIL_AGGREGATE_CARDINALITY_LIMIT`、`USER_DETAIL_AGGREGATE_BOUNDS_REQUIRED`；错误不返回部分单元格。
 
 ### Saved Analysis v4
 

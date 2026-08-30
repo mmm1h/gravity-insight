@@ -100,7 +100,7 @@ preflight 决定；先用 Agent 产品卡生成节点，不手写猜测。
 
 | 领域 | composite `request.name` |
 | --- | --- |
-| Analysis | `analysis_query`、`analysis_context`、`analysis_default_dictionary`、`analysis_template`、`derived_metrics`、`monetization_detail`、`realtime_event_catalog`、`metadata_sync` |
+| Analysis | `analysis_query`、`user_detail_aggregate`、`analysis_context`、`analysis_default_dictionary`、`analysis_template`、`derived_metrics`、`monetization_detail`、`realtime_event_catalog`、`metadata_sync` |
 | App / Attribution | `app_snapshot`、`attribution_snapshot`、`attribution_performance`、`attribution_user_detail` |
 | Dashboard / Journey | `dashboard_snapshot`、`dashboard_analysis`、`user_journey` |
 | Segment / Order | `segment_evaluate`、`segment_snapshot`、`segment_members`、`order_directory`、`order_split_trace` |
@@ -205,6 +205,15 @@ global filter。
 
 `multidim` 要求 `input_schema_version` 与闭合物理输入，未知指标/维度/关系或 cohort horizon 发网前
 失败。结果同时检查顶层状态、query 状态和分页完整性。
+
+<a id="user-detail-aggregate-composite"></a>
+## User Detail Aggregate composite
+
+`user_detail_aggregate` request 只接受 `name/input_schema_version/inputs`，不接受 binding 或 foreach
+目标；`inputs` 与 CLI 的闭合 schema 相同。adapter 内部固定 `max_workers=1`，要求请求
+`bounds.max_pages <= node.limits.max_pages`、`bounds.max_cells <= node.limits.max_items`。结果 projector
+从闭合单元格、分页/source/audit 白名单重新构造信封，原始 `data/request/next_page_input` 或未知容器
+不会穿过 Plan 边界。
 
 ## Material Performance composite
 

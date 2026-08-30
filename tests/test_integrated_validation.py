@@ -8,6 +8,7 @@ from pathlib import Path
 
 from scripts.check_installed_wheel_consumer import (
     ConsumerCheckError,
+    _project_consumer_tests,
     _require_revision_on_main,
     check_installed_wheel_consumer,
 )
@@ -67,6 +68,58 @@ def _repository(root: Path, initial_branch: str = "main") -> tuple[Path, str]:
 
 
 class InstalledWheelConsumerGuardTests(unittest.TestCase):
+    def test_historical_consumer_tests_use_exact_package_root_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            tests = root / "tests"
+            tests.mkdir()
+            adoption = tests / "test_gravity_sdk_adoption.py"
+            adoption.write_text(
+                "WORK_DASHBOARD_GRAVITY_SDK_ROOT\n"
+                "WORK_DASHBOARD_GRAVITY_SDK_ROOT\n"
+                'ROOT.parent / "gravity-sdk"\n'
+                "gravity-sdk sibling checkout or gravity executable is unavailable\n"
+                "gravity_sdk gravity_sdk gravity_sdk gravity_sdk\n",
+                encoding="utf-8",
+            )
+            r01 = tests / "test_r01_reference_journey_consumer.py"
+            r01.write_text(
+                "WORK_DASHBOARD_GRAVITY_SDK_ROOT\n"
+                'ROOT.parent / "gravity-sdk"\n'
+                "gravity-sdk source checkout is unavailable\n"
+                "gravity_sdk\n",
+                encoding="utf-8",
+            )
+
+            receipts = _project_consumer_tests(root, "fixture-commit")
+
+            projected = tests / "test_gravity_insight_adoption.py"
+            self.assertFalse(adoption.exists())
+            self.assertTrue(projected.is_file())
+            self.assertEqual(2, len(receipts))
+            self.assertTrue(
+                all(item["mode"] == "exact_package_root_projection" for item in receipts)
+            )
+            for path in (projected, r01):
+                text = path.read_text(encoding="utf-8")
+                self.assertNotIn("gravity_sdk", text)
+                self.assertNotIn("WORK_DASHBOARD_GRAVITY_SDK_ROOT", text)
+
+    def test_historical_consumer_projection_rejects_source_shape_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            tests = root / "tests"
+            tests.mkdir()
+            (tests / "test_gravity_sdk_adoption.py").write_text(
+                "gravity_sdk\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                ConsumerCheckError, "projection precondition drifted"
+            ):
+                _project_consumer_tests(root, "fixture-commit")
+
     def test_pinned_revision_on_main_is_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             repository, commit = _repository(Path(raw))

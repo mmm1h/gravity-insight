@@ -24,6 +24,46 @@ CONSUMER_TESTS = (
     "tests.test_gravity_insight_adoption",
     "tests.test_r01_reference_journey_consumer",
 )
+CONSUMER_TEST_PROJECTIONS = (
+    {
+        "source_module": "tests.test_gravity_sdk_adoption",
+        "target_module": "tests.test_gravity_insight_adoption",
+        "default_source_sha256": "c072f16ff1eaf012c60bbfbd8b414a50d7bd01601230aaf895bc85ee7167a745",
+        "replacements": (
+            (
+                "WORK_DASHBOARD_GRAVITY_SDK_ROOT",
+                "WORK_DASHBOARD_GRAVITY_INSIGHT_ROOT",
+                2,
+            ),
+            ('ROOT.parent / "gravity-sdk"', 'ROOT.parent / "gravity-insight"', 1),
+            (
+                "gravity-sdk sibling checkout or gravity executable is unavailable",
+                "gravity-insight sibling checkout or gravity executable is unavailable",
+                1,
+            ),
+            ("gravity_sdk", "gravity_insight", 4),
+        ),
+    },
+    {
+        "source_module": "tests.test_r01_reference_journey_consumer",
+        "target_module": "tests.test_r01_reference_journey_consumer",
+        "default_source_sha256": "6c2b762b629a4156127f7ab19639722c9ea94f2edbd2270f2a72f36901c08519",
+        "replacements": (
+            (
+                "WORK_DASHBOARD_GRAVITY_SDK_ROOT",
+                "WORK_DASHBOARD_GRAVITY_INSIGHT_ROOT",
+                1,
+            ),
+            ('ROOT.parent / "gravity-sdk"', 'ROOT.parent / "gravity-insight"', 1),
+            (
+                "gravity-sdk source checkout is unavailable",
+                "gravity-insight source checkout is unavailable",
+                1,
+            ),
+            ("gravity_sdk", "gravity_insight", 1),
+        ),
+    },
+)
 
 
 class ConsumerCheckError(RuntimeError):
@@ -128,6 +168,78 @@ def _require_consumer_tests(consumer: Path, commit: str) -> None:
         )
 
 
+def _module_path(root: Path, module: str) -> Path:
+    return root / Path(*module.split(".")).with_suffix(".py")
+
+
+def _project_consumer_tests(consumer: Path, commit: str) -> list[dict[str, Any]]:
+    """Project the pinned consumer's live tests without mutating its repository."""
+
+    receipts: list[dict[str, Any]] = []
+    for specification in CONSUMER_TEST_PROJECTIONS:
+        source_module = str(specification["source_module"])
+        target_module = str(specification["target_module"])
+        source = _module_path(consumer, source_module)
+        target = _module_path(consumer, target_module)
+        selected = target if target.is_file() and target != source else source
+        if not selected.is_file():
+            continue
+        text = selected.read_text(encoding="utf-8")
+        replacements = specification["replacements"]
+        observed_counts = [text.count(old) for old, _new, _count in replacements]
+        if not any(observed_counts):
+            if "gravity_sdk" in text or "WORK_DASHBOARD_GRAVITY_SDK_ROOT" in text:
+                raise ConsumerCheckError(
+                    f"canonical consumer test has an ungoverned old package root: {target_module}"
+                )
+            receipts.append(
+                {
+                    "mode": "native_current_root",
+                    "source_module": target_module,
+                    "target_module": target_module,
+                    "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                }
+            )
+            continue
+        expected_counts = [count for _old, _new, count in replacements]
+        if observed_counts != expected_counts:
+            raise ConsumerCheckError(
+                "canonical consumer package-root projection precondition drifted: "
+                f"module={source_module}; expected_counts={expected_counts}; "
+                f"observed_counts={observed_counts}"
+            )
+        source_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        if (
+            commit == DEFAULT_REVISION
+            and source_sha256 != specification["default_source_sha256"]
+        ):
+            raise ConsumerCheckError(
+                "canonical consumer package-root projection source digest drifted: "
+                f"module={source_module}; sha256={source_sha256}"
+            )
+        rendered = text
+        for old, new, _count in replacements:
+            rendered = rendered.replace(old, new)
+        if "gravity_sdk" in rendered or "WORK_DASHBOARD_GRAVITY_SDK_ROOT" in rendered:
+            raise ConsumerCheckError(
+                f"canonical consumer projection left an old package root: {source_module}"
+            )
+        target.write_text(rendered, encoding="utf-8", newline="\n")
+        if source != target:
+            source.unlink()
+        receipts.append(
+            {
+                "mode": "exact_package_root_projection",
+                "source_module": source_module,
+                "target_module": target_module,
+                "source_sha256": source_sha256,
+                "target_sha256": hashlib.sha256(rendered.encode("utf-8")).hexdigest(),
+                "replacement_counts": expected_counts,
+            }
+        )
+    return receipts
+
+
 def check_installed_wheel_consumer(
     consumer_repository: Path = DEFAULT_CONSUMER,
     revision: str = DEFAULT_REVISION,
@@ -202,12 +314,13 @@ def check_installed_wheel_consumer(
             raise ConsumerCheckError(
                 f"canonical consumer checkout failed: {checked_out.stderr.strip()}"
             )
+        consumer_test_projection = _project_consumer_tests(consumer, commit)
         _require_consumer_tests(consumer, commit)
         environment = os.environ.copy()
         environment.pop("PYTHONPATH", None)
         environment["PYTHONNOUSERSITE"] = "1"
         environment["GRAVITY_SDK_AUTO_UPGRADE"] = "0"
-        environment["WORK_DASHBOARD_GRAVITY_SDK_ROOT"] = str(sdk_root)
+        environment["WORK_DASHBOARD_GRAVITY_INSIGHT_ROOT"] = str(sdk_root)
         probe = _run(
             [
                 sys.executable,
@@ -238,11 +351,12 @@ def check_installed_wheel_consumer(
         combined = tested.stdout + tested.stderr
         summary = parse_unittest_summary(combined)
         return {
-            "schema_version": "gravity.installed-wheel-consumer-check.v1",
+            "schema_version": "gravity.installed-wheel-consumer-check.v2",
             "passed": tested.returncode == 0 and summary["ok"] is True,
             "exit_code": tested.returncode,
             "consumer_commit": commit,
             "consumer_tests": list(CONSUMER_TESTS),
+            "consumer_test_projection": consumer_test_projection,
             "wheel": wheel.name,
             "wheel_sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
             "installed_package": str(package_path),

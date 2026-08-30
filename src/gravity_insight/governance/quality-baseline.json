@@ -111,10 +111,10 @@
       "sloc_hard_limit": 1281
     },
     "src/gravity_insight/cli.py": {
-      "ast_hard_limit": 3965,
-      "ast_nodes": 3965,
+      "ast_hard_limit": 3627,
+      "ast_nodes": 3627,
       "migration_sloc": 715,
-      "sloc_hard_limit": 668
+      "sloc_hard_limit": 596
     },
     "src/gravity_insight/client.py": {
       "ast_hard_limit": 4277,
