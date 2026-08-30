@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.cli import _ndjson_rows
-from gravity_sdk.models import BatchResult
-from gravity_sdk.result_source import (
+from gravity_insight.cli import _ndjson_rows
+from gravity_insight.models import BatchResult
+from gravity_insight.result_source import (
     CALLER_DEFINED,
     GOVERNED_PRODUCT,
     LOCAL_AUDIT,
@@ -14,7 +14,7 @@ from gravity_sdk.result_source import (
     plan_result_source,
     result_source,
 )
-from gravity_sdk.sql.query import _envelope
+from gravity_insight.sql.query import _envelope
 
 
 class ResultSourceTests(unittest.TestCase):

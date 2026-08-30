@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.parent_resolution import (
+from gravity_insight.parent_resolution import (
     extract_parent_items,
     extract_parent_values,
     resolve_declared_parents,
 )
-from gravity_sdk.prober.parents import _offline_resolution
+from gravity_insight.prober.parents import _offline_resolution
 
 
 def _description(selection: str = "caller_select", field_type: str = "string"):

@@ -68,12 +68,12 @@
     "network_policy": "No real network; live PyPI provenance is post-release only."
   },
   "shared_spine": [
-    "src/gravity_sdk/plan_adapters.py",
-    "src/gravity_sdk/agents/capabilities.py",
-    "src/gravity_sdk/agents/composite.py",
-    "src/gravity_sdk/agents/handoff.py",
-    "src/gravity_sdk/cli.py",
-    "src/gravity_sdk/__main__.py"
+    "src/gravity_insight/plan_adapters.py",
+    "src/gravity_insight/agents/capabilities.py",
+    "src/gravity_insight/agents/composite.py",
+    "src/gravity_insight/agents/handoff.py",
+    "src/gravity_insight/cli.py",
+    "src/gravity_insight/__main__.py"
   ],
   "requirements": [
     {"id":"R00","path":"R00-product-constitution.md","status":"released","dependencies":[],"parallel_group":"bootstrap","shared_spine":false},
@@ -259,8 +259,8 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "d11f103066df69a487a8928587a083bce985f0b9d97fcd1be9872093b20c093c",
-          "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v1",
+          "live_checkpoint_sha256": "4a4db1f3037d0f3912384ce0936007c3c7f4fa211269a8b141bb86009ad6578b",
+          "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v2",
           "live_checkpoint_tracked_sites": 310,
           "live_checkpoint_unclassified_sites": 0,
           "live_checkpoint_blocking_sites": 0,

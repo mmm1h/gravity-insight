@@ -7,8 +7,8 @@ import sys
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk.thinkingai_inventory import (
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.thinkingai_inventory import (
     ThinkingAIInventoryError,
     build_source_observation,
     compile_inventory_diff,
@@ -24,7 +24,7 @@ from gravity_sdk.thinkingai_inventory import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts" / "thinkingai"
+ARTIFACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts" / "thinkingai"
 OBSERVATION = next((ARTIFACT_ROOT / "observations").glob("*.json"))
 SNAPSHOT = next((ARTIFACT_ROOT / "snapshots").glob("*.json"))
 DIFF = next((ARTIFACT_ROOT / "diffs").glob("*.json"))

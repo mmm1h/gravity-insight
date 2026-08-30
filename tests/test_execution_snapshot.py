@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk import __version__
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk.execution_snapshot import (
+from gravity_insight import __version__
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.execution_snapshot import (
     ExecutionSnapshotError,
     build_execution_snapshot,
     compile_execution_snapshot,

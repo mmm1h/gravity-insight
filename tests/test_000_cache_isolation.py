@@ -9,10 +9,10 @@ from tests import _cache_root
 
 class CacheIsolationTests(unittest.TestCase):
     def test_default_cache_paths_stay_under_the_test_directory(self) -> None:
-        from gravity_sdk.find_metadata import _default_catalog_path
-        from gravity_sdk.metadata_sync import default_catalog_path
-        from gravity_sdk.workspace import user_cache_root
-        from gravity_sdk import GravityInsightClient
+        from gravity_insight.find_metadata import _default_catalog_path
+        from gravity_insight.metadata_sync import default_catalog_path
+        from gravity_insight.workspace import user_cache_root
+        from gravity_insight import GravityInsightClient
 
         catalog = _default_catalog_path()
 
@@ -32,7 +32,7 @@ class CacheIsolationTests(unittest.TestCase):
         principal-scoped layout exists to prevent.
         """
 
-        from gravity_sdk.find_metadata import _default_catalog_path
+        from gravity_insight.find_metadata import _default_catalog_path
 
         scope = _default_catalog_path().parents[1].name
 

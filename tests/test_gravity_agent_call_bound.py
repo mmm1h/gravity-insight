@@ -5,13 +5,13 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.agent import run_agent_command
-from gravity_sdk.agents.analysis_task import analysis_task_cards
-from gravity_sdk.agents.capabilities import composite_capability_inventory
-from gravity_sdk.agents.handoff import attach_plan_node
-from gravity_sdk.domains import MULTIDIM_METADATA_OPERATIONS
-from gravity_sdk.plan import (
+from gravity_insight import GravitySDK
+from gravity_insight.agent import run_agent_command
+from gravity_insight.agents.analysis_task import analysis_task_cards
+from gravity_insight.agents.capabilities import composite_capability_inventory
+from gravity_insight.agents.handoff import attach_plan_node
+from gravity_insight.domains import MULTIDIM_METADATA_OPERATIONS
+from gravity_insight.plan import (
     PlanAdapter,
     PlanAdapters,
     PlanValidationError,
@@ -71,7 +71,7 @@ class AgentCallBoundTests(unittest.TestCase):
                     else ["app.list", "promotion.metric.list"]
                 )
                 self.assertEqual(expected, selectors)
-        with patch("gravity_sdk.find.search_metadata", side_effect=OSError):
+        with patch("gravity_insight.find.search_metadata", side_effect=OSError):
             analysis = _scenarios(
                 _card("purchase trend", _NoOperations())
             )

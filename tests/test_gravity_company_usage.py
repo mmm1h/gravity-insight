@@ -6,13 +6,13 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.cli import main
-from gravity_sdk.company_usage import OPERATION_ID, company_usage
-from gravity_sdk.errors import ContractChangedError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_report_adapter import execute_report_composite, validate_report_composite
+from gravity_insight import GravitySDK
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.cli import main
+from gravity_insight.company_usage import OPERATION_ID, company_usage
+from gravity_insight.errors import ContractChangedError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_report_adapter import execute_report_composite, validate_report_composite
 
 class Client:
     def __init__(self, status="success"):
@@ -61,7 +61,7 @@ class CompanyUsageTests(unittest.TestCase):
         sdk = GravitySDK(insight=Client())
         self.assertEqual("success", sdk.company_usage(max_items=2)["status"])
         stdout = io.StringIO()
-        with patch("gravity_sdk.business_pulse_cli.runtime.build_client", return_value=Client()), \
+        with patch("gravity_insight.business_pulse_cli.runtime.build_client", return_value=Client()), \
                 contextlib.redirect_stdout(stdout):
             self.assertEqual(0, main(["reports", "usage", "--max-items", "2"]))
         self.assertEqual("gravity-insight.company-usage.v1", json.loads(stdout.getvalue())["schema_version"])

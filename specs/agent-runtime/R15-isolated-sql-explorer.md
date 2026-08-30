@@ -115,7 +115,7 @@ production database, Gravity SQL, credentials, network calls, release or `main`.
   usability remains selection `296/336`, fillability `248/248`, offline terminal
   `53/53`, recovery `5/5`, security violations `0`, skipped production cases
   `283` and production HTTP requests `0`.
-- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Final isolated wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `a275d5bd16dba237c0d65a74a10a226f737a67cc99e6f9acaf33b18b03cef012`.
   External `site-packages` proved exact SQLGlot metadata, all four packaged
   schemas, root validators and a real temporary mode-ro SQLite aggregate with

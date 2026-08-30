@@ -2,14 +2,14 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk import cli
-from gravity_sdk import plan_segment_snapshot_adapter as plan_subject
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.segment_snapshot import SCHEMA_VERSION
-from gravity_sdk.segment_spec_cli import run_segment_command
-from gravity_sdk.onboarding import command_requires_credentials
+from gravity_insight import GravitySDK
+from gravity_insight import cli
+from gravity_insight import plan_segment_snapshot_adapter as plan_subject
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.segment_snapshot import SCHEMA_VERSION
+from gravity_insight.segment_spec_cli import run_segment_command
+from gravity_insight.onboarding import command_requires_credentials
 
 
 class _Workspace:
@@ -38,9 +38,9 @@ class SegmentSnapshotSurfaceTests(unittest.TestCase):
         workspace = _Workspace()
         expected = {"schema_version": SCHEMA_VERSION, "ok": True}
         with (
-            patch("gravity_sdk.segment_spec_cli.load_workspace", return_value=workspace),
-            patch("gravity_sdk.segment_spec_cli.resolve_workspace_app", return_value=17) as resolve,
-            patch("gravity_sdk.segment_spec_cli.segment_snapshot", return_value=expected) as snapshot,
+            patch("gravity_insight.segment_spec_cli.load_workspace", return_value=workspace),
+            patch("gravity_insight.segment_spec_cli.resolve_workspace_app", return_value=17) as resolve,
+            patch("gravity_insight.segment_spec_cli.segment_snapshot", return_value=expected) as snapshot,
         ):
             result = run_segment_command(parsed, lambda: object(), lambda _v: {}, lambda *_a, **_k: {})
         self.assertIs(expected, result)
@@ -54,7 +54,7 @@ class SegmentSnapshotSurfaceTests(unittest.TestCase):
             workspace=workspace,
             insight_factory=lambda: (order.append("insight"), object())[1],
         )
-        with patch("gravity_sdk.segment_snapshot.segment_snapshot", return_value=expected) as facade:
+        with patch("gravity_insight.segment_snapshot.segment_snapshot", return_value=expected) as facade:
             self.assertIs(expected, sdk.segment_snapshot(
                 "main", 8, date="2026-08-12", max_workers=2,
                 max_pages=3, max_items=30,

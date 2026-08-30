@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.host_effects import (
+from gravity_insight.errors import InputValidationError
+from gravity_insight.host_effects import (
     ACTION_SCHEMA_VERSION,
     CONFIRMATION_SCHEMA_VERSION,
     HOST_PLAN_SCHEMA_VERSION,
@@ -19,7 +19,7 @@ from gravity_sdk.host_effects import (
     host_source,
     normalized_host_plan_request,
 )
-from gravity_sdk.plan_binding import resolve_pointer
+from gravity_insight.plan_binding import resolve_pointer
 
 
 ROOT = Path(__file__).resolve().parents[1]

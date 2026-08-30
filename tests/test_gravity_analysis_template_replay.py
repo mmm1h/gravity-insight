@@ -5,22 +5,22 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.cli import build_parser
-from gravity_sdk.agents.capabilities import composite_capability_cards
-from gravity_sdk.agents.handoff import attach_plan_node
-from gravity_sdk.errors import PaginationLimitError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_dashboard_adapter import (
+from gravity_insight.cli import build_parser
+from gravity_insight.agents.capabilities import composite_capability_cards
+from gravity_insight.agents.handoff import attach_plan_node
+from gravity_insight.errors import PaginationLimitError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_dashboard_adapter import (
     execute_dashboard_plan,
     validate_dashboard_plan,
 )
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.template_replay import (
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.template_replay import (
     list_analysis_templates,
     prepare_analysis_template,
     run_analysis_template,
 )
-from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
 
 
 def _workspace() -> Workspace:
@@ -73,7 +73,7 @@ def _catalog(item: dict) -> dict:
 class AnalysisTemplateReplayTests(unittest.TestCase):
     def test_catalog_pagination_limit_uses_shared_caller_exit(self) -> None:
         with patch(
-            "gravity_sdk.template_replay.call_read",
+            "gravity_insight.template_replay.call_read",
             side_effect=PaginationLimitError("catalog exceeded max_items"),
         ):
             result = list_analysis_templates(_Client(), scope="own")
@@ -100,11 +100,11 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
         client = _Client()
         with (
             patch(
-                "gravity_sdk.template_replay.call_read",
+                "gravity_insight.template_replay.call_read",
                 return_value=_catalog(item),
             ) as catalog_read,
             patch(
-                "gravity_sdk.saved_analysis_result.call_read",
+                "gravity_insight.saved_analysis_result.call_read",
                 return_value={
                     "schema_version": "gravity-insight.read.v1",
                     "operation_id": "analysis.event.query",
@@ -155,10 +155,10 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
         client = _Client()
         with (
             patch(
-                "gravity_sdk.template_replay.call_read",
+                "gravity_insight.template_replay.call_read",
                 return_value=_catalog(item),
             ) as catalog_read,
-            patch("gravity_sdk.saved_analysis_result.call_read") as query_read,
+            patch("gravity_insight.saved_analysis_result.call_read") as query_read,
         ):
             result = run_analysis_template(
                 client,
@@ -202,7 +202,7 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
             }
         )
         with patch(
-            "gravity_sdk.template_replay.call_read", return_value=_catalog(item)
+            "gravity_insight.template_replay.call_read", return_value=_catalog(item)
         ):
             result = prepare_analysis_template(
                 _Client(),
@@ -231,7 +231,7 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
         expected = {"schema_version": "gravity-insight.analysis-template-replay.v1"}
         sdk = GravitySDK(insight=object(), workspace=_workspace())
         with patch(
-            "gravity_sdk.template_replay_surface.run_analysis_template",
+            "gravity_insight.template_replay_surface.run_analysis_template",
             return_value=expected,
         ) as delegated:
             self.assertIs(

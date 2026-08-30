@@ -9,7 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from gravity_sdk.pagination_contract_audit import (
+from gravity_insight.pagination_contract_audit import (
     OPERATIONS_ROOT,
     _response_scalar_only,
     current_operation_pagination,
@@ -290,7 +290,7 @@ class PaginationContractAuditTests(unittest.TestCase):
             document["operation"]["pagination"]["kind"] = "none"
             path.write_text(json.dumps(document), encoding="utf-8")
             with patch(
-                "gravity_sdk.pagination_contract_audit.OPERATIONS_ROOT",
+                "gravity_insight.pagination_contract_audit.OPERATIONS_ROOT",
                 Path(directory),
             ):
                 current = current_operation_pagination()

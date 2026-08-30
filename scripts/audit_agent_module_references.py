@@ -15,6 +15,13 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[1]
+HISTORICAL_PACKAGE_ROOT = "gravity_sdk"
+CURRENT_PACKAGE_ROOT = "gravity_insight"
+PACKAGE_ROOT_MIGRATION = {
+    "historical_package_root": HISTORICAL_PACKAGE_ROOT,
+    "current_package_root": CURRENT_PACKAGE_ROOT,
+    "projection": "replace_exact_leading_package_component",
+}
 FROZEN_SCOPE_LEDGER = PurePosixPath(
     "tests/fixtures/agent_module_reference_dispositions.json"
 )
@@ -94,6 +101,7 @@ class AuditResult:
             "reference_count": len(self.references),
             "manual_review_count": len(self.manual_review),
             "owner_state": self.owner_state,
+            "package_root_migration": PACKAGE_ROOT_MIGRATION,
             "reference_categories": dict(sorted(reference_counts.items())),
             "manual_review_forms": dict(sorted(manual_counts.items())),
             "governance_exclusion_rule": GOVERNANCE_EXCLUSION_RULE,
@@ -165,6 +173,41 @@ def canonical_sha256(rows: Iterable[Finding | ModuleMap]) -> str:
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
+
+
+def project_module_root(module: str) -> str:
+    """Project a historical R17 module identity onto the current package root."""
+
+    if module == HISTORICAL_PACKAGE_ROOT:
+        return CURRENT_PACKAGE_ROOT
+    prefix = HISTORICAL_PACKAGE_ROOT + "."
+    if module.startswith(prefix):
+        return CURRENT_PACKAGE_ROOT + module.removeprefix(HISTORICAL_PACKAGE_ROOT)
+    return module
+
+
+def historical_module_root(module: str) -> str:
+    """Return the immutable-ledger identity for a projected current module."""
+
+    if module == CURRENT_PACKAGE_ROOT:
+        return HISTORICAL_PACKAGE_ROOT
+    prefix = CURRENT_PACKAGE_ROOT + "."
+    if module.startswith(prefix):
+        return HISTORICAL_PACKAGE_ROOT + module.removeprefix(CURRENT_PACKAGE_ROOT)
+    return module
+
+
+def projected_module_mapping(mapping: dict[str, str]) -> dict[str, str]:
+    return {
+        project_module_root(old): project_module_root(new)
+        for old, new in mapping.items()
+    }
+
+
+def reference_module_mapping(mapping: dict[str, str]) -> dict[str, str]:
+    """Scan immutable historical identities and their current-root projection."""
+
+    return {**mapping, **projected_module_mapping(mapping)}
 
 
 def _read_text(path: Path) -> str | None:
@@ -240,19 +283,20 @@ def _category_for_python_literal(relative: str) -> str:
         return "test_fixture"
     if (
         path.name in {"__init__.py", "cli.py", "__main__.py"}
-        and relative.startswith("src/gravity_sdk/")
+        and relative.startswith(f"src/{CURRENT_PACKAGE_ROOT}/")
     ):
         return "entrypoint_config"
     return "string_reference"
 
 
 def _module_file(root: Path, module: str) -> Path:
-    return root / "src" / Path(*module.split(".")).with_suffix(".py")
+    current_module = project_module_root(module)
+    return root / "src" / Path(*current_module.split(".")).with_suffix(".py")
 
 
 def _moved_agent_target(old_module: str) -> str | None:
     parts = old_module.split(".")
-    if len(parts) != 2 or parts[0] != "gravity_sdk":
+    if len(parts) != 2 or parts[0] != HISTORICAL_PACKAGE_ROOT:
         return None
     name = parts[1]
     if name.startswith("agent_"):
@@ -261,7 +305,11 @@ def _moved_agent_target(old_module: str) -> str | None:
         responsibility = name.removesuffix("_agent")
     else:
         return None
-    return f"gravity_sdk.agents.{responsibility}" if responsibility else None
+    return (
+        f"{HISTORICAL_PACKAGE_ROOT}.agents.{responsibility}"
+        if responsibility
+        else None
+    )
 
 
 def _frozen_module_scope(root: Path) -> list[tuple[str, str]]:
@@ -360,17 +408,17 @@ def make_module_map(root: Path = ROOT) -> tuple[list[ModuleMap], dict[str, str]]
             f"pagination_old={pagination_old}"
         )
     expected_root_owners = {
-        old
+        project_module_root(old)
         for old, _ in move_scope
         if old.rsplit(".", 1)[-1].startswith("agent_")
         and _module_file(root, old).is_file()
     }
     if pagination_old:
-        expected_root_owners.add("gravity_sdk.agent_pagination")
-    expected_root_owners.add("gravity_sdk.agent_runtime_contracts")
+        expected_root_owners.add(project_module_root("gravity_sdk.agent_pagination"))
+    expected_root_owners.add(project_module_root("gravity_sdk.agent_runtime_contracts"))
     actual_root_owners = {
-        f"gravity_sdk.{path.stem}"
-        for path in (root / "src/gravity_sdk").glob("agent_*.py")
+        f"{CURRENT_PACKAGE_ROOT}.{path.stem}"
+        for path in (root / "src" / CURRENT_PACKAGE_ROOT).glob("agent_*.py")
     }
     if actual_root_owners != expected_root_owners:
         raise RuntimeError(
@@ -455,10 +503,11 @@ class ReferenceScanner:
 
     @staticmethod
     def _importfrom_full_module(relative: str, node: ast.ImportFrom) -> str | None:
-        if not relative.startswith("src/gravity_sdk/") or not node.level:
+        package_source = f"src/{CURRENT_PACKAGE_ROOT}"
+        if not relative.startswith(package_source + "/") or not node.level:
             return node.module
-        parent = PurePosixPath(relative).parent.relative_to("src/gravity_sdk")
-        package_parts = ["gravity_sdk", *parent.parts]
+        parent = PurePosixPath(relative).parent.relative_to(package_source)
+        package_parts = [CURRENT_PACKAGE_ROOT, *parent.parts]
         keep = len(package_parts) - (node.level - 1)
         if keep < 1:
             return None
@@ -798,7 +847,13 @@ class ReferenceScanner:
                             "unrelated data; inspect caller contract before replacing",
                         )
                     )
-                if "gravity_sdk.agent_" in value and not self._module_replacements(value):
+                if any(
+                    f"{package_root}.agent_" in value
+                    for package_root in (
+                        HISTORICAL_PACKAGE_ROOT,
+                        CURRENT_PACKAGE_ROOT,
+                    )
+                ) and not self._module_replacements(value):
                     manual.append(
                         Finding(
                             "manual_review",
@@ -938,7 +993,7 @@ def _de_duplicate(rows: Iterable[Finding]) -> list[Finding]:
 
 def scan_repository(root: Path = ROOT) -> AuditResult:
     mappings, mapping = make_module_map(root)
-    scanner = ReferenceScanner(mapping)
+    scanner = ReferenceScanner(reference_module_mapping(mapping))
     files, excluded = version_controlled_files(root)
     ast_findings: list[Finding] = []
     text_findings: list[Finding] = []

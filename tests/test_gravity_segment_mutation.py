@@ -6,23 +6,23 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
-from gravity_sdk.agents.segment import segment_mutation_cards
-from gravity_sdk.errors import InputValidationError, PolicyViolation
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.mutation import MutationExecutor
-from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
-from gravity_sdk.registry import PolicyEngine, Registry, _consume_authorized_request
-from gravity_sdk.segment_mutation import (
+from gravity_insight.agents.segment import segment_mutation_cards
+from gravity_insight.errors import InputValidationError, PolicyViolation
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.mutation import MutationExecutor
+from gravity_insight.prober.read_semantics import assert_probe_read_semantics
+from gravity_insight.registry import PolicyEngine, Registry, _consume_authorized_request
+from gravity_insight.segment_mutation import (
     create_segment_from_rule,
     delete_segment,
     is_sdk_segment_remark,
 )
-from gravity_sdk.transport import Transport
+from gravity_insight.transport import Transport
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_ROOT = ROOT / "src" / "gravity_sdk" / "manifests"
-CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts"
+MANIFEST_ROOT = ROOT / "src" / "gravity_insight" / "manifests"
+CONTRACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts"
 
 
 def _registry() -> Registry:

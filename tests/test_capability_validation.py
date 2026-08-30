@@ -6,8 +6,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from gravity_sdk.capability_contract import capability_contract
-from gravity_sdk.capability_validation import (
+from gravity_insight.capability_contract import capability_contract
+from gravity_insight.capability_validation import (
     CapabilityValidationError,
     CapabilityValidationStore,
     STORE_RELATIVE_PATH,
@@ -15,7 +15,7 @@ from gravity_sdk.capability_validation import (
     validate_capability_validation,
     validation_digest,
 )
-from gravity_sdk.data_quality import data_quality_result
+from gravity_insight.data_quality import data_quality_result
 
 
 def validation(**overrides):

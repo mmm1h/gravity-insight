@@ -5,14 +5,14 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from gravity_sdk import Credential, GravityInsightClient
-from gravity_sdk.errors import (
+from gravity_insight import Credential, GravityInsightClient
+from gravity_insight.errors import (
     ContractChangedError,
     InputValidationError,
     PaginationError,
     UnsupportedOperationError,
 )
-from gravity_sdk.saved_analysis import (
+from gravity_insight.saved_analysis import (
     GET_OPERATION_ID,
     LIST_OPERATION_ID,
     compile_saved_analysis_definition,
@@ -21,10 +21,10 @@ from gravity_sdk.saved_analysis import (
     list_saved_analyses,
     resolve_saved_analysis,
 )
-from gravity_sdk.saved_analysis_result import saved_result_item_count
-from gravity_sdk.domains import ANALYSIS_QUERY_OPERATIONS
-from gravity_sdk.http_runtime import GravityHttpRuntime
-from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+from gravity_insight.saved_analysis_result import saved_result_item_count
+from gravity_insight.domains import ANALYSIS_QUERY_OPERATIONS
+from gravity_insight.http_runtime import GravityHttpRuntime
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
 
 
 class NetworkForbiddenSession:

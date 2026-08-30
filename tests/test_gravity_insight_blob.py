@@ -11,8 +11,8 @@ from unittest.mock import patch
 import zipfile
 
 try:
-    from gravity_sdk import blob as blob_module
-    from gravity_sdk.blob import (
+    from gravity_insight import blob as blob_module
+    from gravity_insight.blob import (
         ArchivePolicy,
         AuthorizedBlobSource,
         AuthorizedUploadTarget,
@@ -24,8 +24,8 @@ try:
         SafeLocalSource,
     )
 except ModuleNotFoundError:  # source checkout without an editable install
-    from gravity_sdk import blob as blob_module
-    from gravity_sdk.blob import (
+    from gravity_insight import blob as blob_module
+    from gravity_insight.blob import (
         ArchivePolicy,
         AuthorizedBlobSource,
         AuthorizedUploadTarget,
@@ -491,7 +491,7 @@ class SafeBlobTransferTests(unittest.TestCase):
             self.assertFalse((root / "report.csv").exists())
 
     def test_resume_request_omits_blank_if_range(self):
-        from gravity_sdk.blob_download import _download_request_headers
+        from gravity_insight.blob_download import _download_request_headers
 
         headers = _download_request_headers(
             BlobResumeState(partial_path=Path("partial"), bytes_received=4, etag="")

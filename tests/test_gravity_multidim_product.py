@@ -6,20 +6,20 @@ import threading
 import unittest
 from pathlib import Path
 
-from gravity_sdk.errors import (
+from gravity_insight.errors import (
     ContractChangedError,
     InputValidationError,
     ManifestError,
     PaginationError,
 )
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.multidim import _validate_multi_keys, parse_multi_days
-from gravity_sdk.multidim_contract import (
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.multidim import _validate_multi_keys, parse_multi_days
+from gravity_insight.multidim_contract import (
     MULTIDIM_COHORT_HORIZON_GAP_CODE,
     MultidimCohortHorizonGapError,
     multidim_multi_key_contract,
 )
-from gravity_sdk.multidim_product import (
+from gravity_insight.multidim_product import (
     FRONTEND_ADREPORT_DATA_CONF,
     MULTIDIM_INPUT_SCHEMA_VERSION,
     MULTIDIM_PREVIEW_SCHEMA_VERSION,
@@ -32,7 +32,7 @@ from gravity_sdk.multidim_product import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_MANIFEST = ROOT / "src" / "gravity_sdk" / "manifests" / "report.json"
+REPORT_MANIFEST = ROOT / "src" / "gravity_insight" / "manifests" / "report.json"
 
 
 def _inputs() -> dict[str, object]:

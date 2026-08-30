@@ -72,7 +72,7 @@ jobs:
           $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
           $diff = Join-Path $evidence "route-diff.json"
           $impact = Join-Path $evidence "operation-impact.json"
-          gravity census diff src/gravity_sdk/census/data/routes.json (Join-Path $evidence "current-routes.json") --output $diff
+          gravity census diff src/gravity_insight/census/data/routes.json (Join-Path $evidence "current-routes.json") --output $diff
           gravity census impact $diff --output $impact --overlay-output (Join-Path $evidence "health-overlay-candidate.json") --require-complete
           $plan = (Get-Content -Raw $impact | ConvertFrom-Json).probe_plan
           $plan | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $evidence "targeted-probe-plan.json")

@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from gravity_sdk import cli, result_output
-from gravity_sdk.sql.__main__ import _emit_query_result
+from gravity_insight import cli, result_output
+from gravity_insight.sql.__main__ import _emit_query_result
 
 class ResultOutputTests(unittest.TestCase):
     def test_partial_is_written_but_terminal_error_preserves_target(self):
@@ -19,13 +19,13 @@ class ResultOutputTests(unittest.TestCase):
             output = Path(folder) / "result.json"
             argv = ["reports", "pulse", "--app", "1", "--start", "2026-08-01", "--end", "2026-08-02", "--output", str(output)]
             stdout, stderr = io.StringIO(), io.StringIO()
-            with patch("gravity_sdk.cli.dispatch_command", return_value=terminal[0]), contextlib.redirect_stderr(stderr):
+            with patch("gravity_insight.cli.dispatch_command", return_value=terminal[0]), contextlib.redirect_stderr(stderr):
                 self.assertEqual(3, cli.main(argv)); self.assertFalse(output.exists())
-            with patch("gravity_sdk.cli.dispatch_command", return_value=partial), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            with patch("gravity_insight.cli.dispatch_command", return_value=partial), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 self.assertEqual(3, cli.main(argv))
             self.assertEqual(partial, json.loads(output.read_text(encoding="utf-8")))
             self.assertEqual({"ok": True, "status": "written", "output": str(output), "format": "json", "size_bytes": output.stat().st_size}, json.loads(stdout.getvalue()))
-            with patch("gravity_sdk.cli.dispatch_command", return_value=terminal[1]), contextlib.redirect_stderr(stderr):
+            with patch("gravity_insight.cli.dispatch_command", return_value=terminal[1]), contextlib.redirect_stderr(stderr):
                 self.assertEqual(4, cli.main(argv))
             self.assertEqual(partial, json.loads(output.read_text(encoding="utf-8")))
 

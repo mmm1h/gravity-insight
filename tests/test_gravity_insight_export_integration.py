@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
-from gravity_sdk.blob import (
+from gravity_insight.blob import (
     AuthorizedBlobSource,
     BlobMetadata,
     BlobPolicy,
@@ -19,53 +19,53 @@ from gravity_sdk.blob import (
     MagicSignature,
     SafeBlobTransfer,
 )
-from gravity_sdk.errors import (
+from gravity_insight.errors import (
     InputValidationError,
     PolicyViolation,
 )
-from gravity_sdk.client import GravityInsightClient
-from gravity_sdk.export_contracts import ExportContractRegistry, validate_wire_projection
-from gravity_sdk.export_gateway import (
+from gravity_insight.client import GravityInsightClient
+from gravity_insight.export_contracts import ExportContractRegistry, validate_wire_projection
+from gravity_insight.export_gateway import (
     ExportTaskCenter,
     GravityExportGateway,
 )
-from gravity_sdk.export_cli import output_argument
-from gravity_sdk.export_models import (
+from gravity_insight.export_cli import output_argument
+from gravity_insight.export_models import (
     ExportCreationRequest,
     ExportPrivacyContract,
     ExportRuntimeError,
     ExportState,
 )
-from gravity_sdk.export_privacy import ExportPrivacyFinalizer
-from gravity_sdk.export_results import _snapshot_completeness, export_result_envelope
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.registry import (
+from gravity_insight.export_privacy import ExportPrivacyFinalizer
+from gravity_insight.export_results import _snapshot_completeness, export_result_envelope
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.registry import (
     EffectRoute,
     PolicyEngine,
     Registry,
     _consume_authorized_blob_download,
     _consume_authorized_request,
 )
-from gravity_sdk.cli import build_parser, main
+from gravity_insight.cli import build_parser, main
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = (
     ROOT
     / "src"
-    / "gravity_sdk"
+    / "gravity_insight"
     / "contracts"
     / "exports"
     / "routes-v1.json"
 )
-COVERAGE_PATH = ROOT / "src" / "gravity_sdk" / "census" / "data" / "coverage.json"
+COVERAGE_PATH = ROOT / "src" / "gravity_insight" / "census" / "data" / "coverage.json"
 NOW = datetime(2026, 8, 9, 12, 0, tzinfo=timezone.utc)
 
 
 def read_registry() -> Registry:
     operations = []
     for path in sorted(
-        (ROOT / "src" / "gravity_sdk" / "manifests").glob("*.json")
+        (ROOT / "src" / "gravity_insight" / "manifests").glob("*.json")
     ):
         operations.extend(load_operation_manifest(path))
     return Registry(operations)
@@ -704,8 +704,8 @@ class GatewayAndCliTests(unittest.TestCase):
                     status_code=200, payload={"code": 0, "data": {"total": 1}}
                 )
 
-        from gravity_sdk.export_client import ExportClientMixin
-        from gravity_sdk.registry import PolicyEngine
+        from gravity_insight.export_client import ExportClientMixin
+        from gravity_insight.registry import PolicyEngine
 
         class Client(ExportClientMixin):
             def __init__(self):
@@ -816,7 +816,7 @@ class GatewayAndCliTests(unittest.TestCase):
             code="EXPORT_SCHEMA_MISMATCH",
             stage="finalizer",
         )
-        with patch("gravity_sdk.cli.dispatch_command", side_effect=error):
+        with patch("gravity_insight.cli.dispatch_command", side_effect=error):
             with contextlib.redirect_stderr(stderr):
                 exit_code = main(["export", "list"])
         envelope = json.loads(stderr.getvalue())

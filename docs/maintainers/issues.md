@@ -43,7 +43,7 @@ triage -> ready -> in-progress -> released
 只领取 `status:ready`：
 
 ```powershell
-gh issue list --repo mmm1h/gravity-sdk --state open `
+gh issue list --repo mmm1h/gravity-insight --state open `
   --label status:ready --json number,title,labels,url
 ```
 

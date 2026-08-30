@@ -6,13 +6,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.census.cli import _coverage_summary, build_parser, run
-from gravity_sdk.census.coverage import build_coverage
-from gravity_sdk.census.diffing import diff_routes
-from gravity_sdk.census.fetcher import StaticFetcher, _FetchError, _looks_like_vite_chunk, check_upstream
-from gravity_sdk.census.io import json_bytes, sha256_bytes, stable_bundle_id
-from gravity_sdk.census.normalize import comparison_path, normalize_path
-from gravity_sdk.census.parser import build_routes, parse_text
+from gravity_insight.census.cli import _coverage_summary, build_parser, run
+from gravity_insight.census.coverage import build_coverage
+from gravity_insight.census.diffing import diff_routes
+from gravity_insight.census.fetcher import StaticFetcher, _FetchError, _looks_like_vite_chunk, check_upstream
+from gravity_insight.census.io import json_bytes, sha256_bytes, stable_bundle_id
+from gravity_insight.census.normalize import comparison_path, normalize_path
+from gravity_insight.census.parser import build_routes, parse_text
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +30,7 @@ class GravityCensusCliTests(unittest.TestCase):
     def test_run_dispatches_to_the_selected_command_handler(self) -> None:
         expected = ({"unique_method_path": 2}, 0)
         args = SimpleNamespace(smoke=False, command="parse")
-        with patch("gravity_sdk.census.cli._run_parse", return_value=expected) as handler:
+        with patch("gravity_insight.census.cli._run_parse", return_value=expected) as handler:
             self.assertEqual(expected, run(args))
         handler.assert_called_once_with(args)
 

@@ -9,30 +9,30 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gravity_sdk import (
+from gravity_insight import (
     GovernorObservationService,
     GravitySDK,
     validate_adaptive_governor_snapshot,
     validate_governor_observation,
     validate_governor_observation_snapshot,
 )
-from gravity_sdk.errors import InputValidationError, TransportError
-from gravity_sdk.external_context_provider import ExternalContextProvider
-from gravity_sdk.governor_observation import (
+from gravity_insight.errors import InputValidationError, TransportError
+from gravity_insight.external_context_provider import ExternalContextProvider
+from gravity_insight.governor_observation import (
     GovernorObservationContractError,
     GovernorObservationRecorder,
     governor_observation_mode,
     process_observation_snapshot,
 )
-from gravity_sdk.http_runtime import GravityHttpRuntime, SQL_PROFILE
-from gravity_sdk.receipt import (
+from gravity_insight.http_runtime import GravityHttpRuntime, SQL_PROFILE
+from gravity_insight.receipt import (
     PRODUCTION_HTTP_KIND,
     count_http_requests,
     perform_http_request,
     request_receipt_context,
 )
-from gravity_sdk.provider_rpc_transport import CallableProviderTransport
-from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+from gravity_insight.provider_rpc_transport import CallableProviderTransport
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
 from tests.test_external_context_contracts import provider_descriptor, response
 from tests.test_gravity_http_runtime import FakeResponse, StaticCredentials
 
@@ -178,7 +178,7 @@ class GovernorObservationEquivalenceTests(unittest.TestCase):
     def test_observation_failure_cannot_change_request_outcome(self) -> None:
         response_value = FakeResponse({"ok": True})
         with mock.patch(
-            "gravity_sdk.governor_observation.observe_http_attempt",
+            "gravity_insight.governor_observation.observe_http_attempt",
             side_effect=RuntimeError("observer failed"),
         ):
             result = perform_http_request(
@@ -408,19 +408,19 @@ class GovernorObservationContractTests(unittest.TestCase):
         )
 
     def test_root_exports_are_lazy_and_exact(self) -> None:
-        import gravity_sdk
+        import gravity_insight
 
-        self.assertIs(gravity_sdk.GovernorObservationService, GovernorObservationService)
+        self.assertIs(gravity_insight.GovernorObservationService, GovernorObservationService)
         self.assertIs(
-            gravity_sdk.validate_governor_observation,
+            gravity_insight.validate_governor_observation,
             validate_governor_observation,
         )
         self.assertIs(
-            gravity_sdk.validate_governor_observation_snapshot,
+            gravity_insight.validate_governor_observation_snapshot,
             validate_governor_observation_snapshot,
         )
         self.assertIs(
-            gravity_sdk.validate_adaptive_governor_snapshot,
+            gravity_insight.validate_adaptive_governor_snapshot,
             validate_adaptive_governor_snapshot,
         )
 

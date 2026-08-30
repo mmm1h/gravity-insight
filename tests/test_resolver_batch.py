@@ -6,9 +6,9 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.resolver_batch import MAX_EXPANDED_ITEMS, resolver_batch_schema, run_many
-from gravity_sdk.resolver_support import error_diagnostic, parse_parameter_assignments
+from gravity_insight.errors import InputValidationError
+from gravity_insight.resolver_batch import MAX_EXPANDED_ITEMS, resolver_batch_schema, run_many
+from gravity_insight.resolver_support import error_diagnostic, parse_parameter_assignments
 
 
 class ResolverBatchTests(unittest.TestCase):
@@ -78,7 +78,7 @@ class ResolverBatchTests(unittest.TestCase):
                 {"selector": "bad.operation", "request_id": "bad"},
             ]
         }
-        with patch("gravity_sdk.resolver_batch.resolve_and_run", side_effect=resolve):
+        with patch("gravity_insight.resolver_batch.resolve_and_run", side_effect=resolve):
             result = run_many(
                 requests,
                 client=object(),
@@ -105,7 +105,7 @@ class ResolverBatchTests(unittest.TestCase):
         self.assertTrue(all(call["read_all"] is True for call in weekly))
 
     def test_invalid_wrapper_fails_before_any_resolver_work(self) -> None:
-        with patch("gravity_sdk.resolver_batch.resolve_and_run") as resolve:
+        with patch("gravity_insight.resolver_batch.resolve_and_run") as resolve:
             with self.assertRaises(InputValidationError) as raised:
                 run_many(
                     [{"selector": "app.list", "input": {}, "inputs": {}}],
@@ -119,7 +119,7 @@ class ResolverBatchTests(unittest.TestCase):
 
     def test_apps_expansion_is_bounded_before_workers_start(self) -> None:
         apps = {f"app-{index}": index + 1 for index in range(MAX_EXPANDED_ITEMS + 1)}
-        with patch("gravity_sdk.resolver_batch.resolve_and_run") as resolve:
+        with patch("gravity_insight.resolver_batch.resolve_and_run") as resolve:
             with self.assertRaises(InputValidationError) as raised:
                 run_many(
                     [{"selector": "app.list", "apps": "*"}],
@@ -146,7 +146,7 @@ class ResolverBatchTests(unittest.TestCase):
             ],
         }
         with patch(
-            "gravity_sdk.resolver_batch.resolve_and_run", return_value=unsafe_failure
+            "gravity_insight.resolver_batch.resolve_and_run", return_value=unsafe_failure
         ):
             result = run_many(
                 [{"selector": "app.list", "request_id": "unsafe"}],

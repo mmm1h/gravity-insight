@@ -5,17 +5,17 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk import (
+from gravity_insight import (
     GravityInsightClient,
     InputValidationError,
 )
-from gravity_sdk.transport import TransportResponse
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OPERATION_ID = "promotion.tencent.medium_adgroup.list"
 PARENT_OPERATION_ID = "promotion.tencent.adgroup_filter.list"
-CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+CONTRACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts" / "operations"
 
 
 def manifest() -> dict[str, Any]:
@@ -208,8 +208,8 @@ class TencentAdgroupReportAndCreativeTests(unittest.TestCase):
         self.assertEqual({"video_id": "v1"}, row["creative_components"])
 
     def test_empty_tencent_kuaishou_reads_stay_confirmed_and_uninvented(self) -> None:
-        from gravity_sdk.agents.unavailable_promotion import unavailable_promotion_gap
-        from gravity_sdk.prober.read_semantics import (
+        from gravity_insight.agents.unavailable_promotion import unavailable_promotion_gap
+        from gravity_insight.prober.read_semantics import (
             CONFIRMATIONS_PATH,
             confirmation_keys,
         )

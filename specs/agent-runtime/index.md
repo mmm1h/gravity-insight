@@ -1,6 +1,6 @@
 # Gravity Agent Runtime Requirement Index
 
-本目录是 [Gravity Agent Runtime v9.4 canonical architecture](architecture-source.md) 的派生需求层。[directive.json](directive.json) v9.4 绑定总纲 SHA-256。总纲是唯一产品与共享架构源；这里的文档只定义有界交付单元，不得反向改写总纲。
+本目录是 [Gravity Agent Runtime v9.5 canonical architecture](architecture-source.md) 的派生需求层。[directive.json](directive.json) v9.5 绑定总纲 SHA-256。总纲是唯一产品与共享架构源；这里的文档只定义有界交付单元，不得反向改写总纲。
 
 ## Program Rules
 
@@ -106,16 +106,16 @@ included gate 均禁用真实网络。
 The following files are shared-spine integration points and cannot be wired concurrently across worktrees:
 
 ```text
-src/gravity_sdk/plan_adapters.py
-src/gravity_sdk/agents/capabilities.py
-src/gravity_sdk/agents/composite.py
-src/gravity_sdk/agents/handoff.py
-src/gravity_sdk/cli.py
-src/gravity_sdk/__main__.py
+src/gravity_insight/plan_adapters.py
+src/gravity_insight/agents/capabilities.py
+src/gravity_insight/agents/composite.py
+src/gravity_insight/agents/handoff.py
+src/gravity_insight/cli.py
+src/gravity_insight/__main__.py
 ```
 
 R17's human-reviewed 82-module manifest included the three Agent spine modules.
-Their delivered owners are now `src/gravity_sdk/agents/{capabilities,composite,handoff}.py`;
+Their delivered owners are now `src/gravity_insight/agents/{capabilities,composite,handoff}.py`;
 the machine list above matches the accepted core checkpoint.
 
 Short-lived branches implement domain cores and focused tests first. A named integrator performs final shared-spine wiring, generated artifact refresh and cross-requirement validation serially before PR merge to protected `main`.
@@ -177,7 +177,7 @@ manifest、公开 owner、现有 eager SCC、concept/errata/wheel 和 consumer g
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=d11f103066df69a487a8928587a083bce985f0b9d97fcd1be9872093b20c093c`；
+`live_checkpoint_sha256=4a4db1f3037d0f3912384ce0936007c3c7f4fa211269a8b141bb86009ad6578b`；
 `live_checkpoint_tracked_sites=310`。
 
 The user approved the R01 binding and designated the Requirement document as

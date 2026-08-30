@@ -3,7 +3,7 @@
   "git": {
     "index_path": "content/thinkingai/full/hub/index.json",
     "ref": "refs/heads/dev",
-    "repository_uri": "https://github.com/mmm1h/gravity-sdk.git"
+    "repository_uri": "https://github.com/mmm1h/gravity-insight.git"
   },
   "https": null,
   "limits": {

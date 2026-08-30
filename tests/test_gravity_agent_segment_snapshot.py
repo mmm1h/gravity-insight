@@ -1,6 +1,6 @@
 import unittest
-from gravity_sdk.agents.capabilities import analysis_query_spec_cards, composite_capability_cards
-from gravity_sdk.agents.handoff import attach_plan_node
+from gravity_insight.agents.capabilities import analysis_query_spec_cards, composite_capability_cards
+from gravity_insight.agents.handoff import attach_plan_node
 
 class SegmentSnapshotAgentTest(unittest.TestCase):
     def test_strict_snapshot_intent_and_handoff_are_table_driven(self) -> None:

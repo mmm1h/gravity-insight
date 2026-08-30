@@ -48,9 +48,9 @@ def _package_files(source: Path) -> Iterable[tuple[str, bytes]]:
             continue
         relative = path.relative_to(source).as_posix()
         if path.suffix == ".py" or path.suffix == ".json":
-            yield f"gravity_sdk/{relative}", _wheel_bytes(path)
+            yield f"gravity_insight/{relative}", _wheel_bytes(path)
         elif path.suffix == ".md" and relative.startswith("skills/"):
-            yield f"gravity_sdk/{relative}", _wheel_bytes(path)
+            yield f"gravity_insight/{relative}", _wheel_bytes(path)
 
 
 def _git_head(repository: Path) -> str | None:
@@ -74,7 +74,7 @@ def _offline_wheel_input_sha256(repository: Path) -> str:
     inputs = [
         ("scripts/build_offline_wheel.py", Path(__file__).resolve().read_bytes()),
         ("pyproject.toml", (repository / "pyproject.toml").read_bytes()),
-        *_package_files(repository / "src/gravity_sdk"),
+        *_package_files(repository / "src/gravity_insight"),
     ]
     for name, value in inputs:
         encoded_name = name.encode("utf-8")
@@ -191,7 +191,7 @@ def build_offline_wheel(
     wheelhouse.mkdir(parents=True, exist_ok=True)
     wheel = wheelhouse / f"{distribution}-{version}-py3-none-any.whl"
     dist_info = f"{distribution}-{version}.dist-info"
-    entries = list(_package_files(repository / "src/gravity_sdk"))
+    entries = list(_package_files(repository / "src/gravity_insight"))
     entries.extend(
         [
             (f"{dist_info}/METADATA", _metadata(project)),
@@ -201,7 +201,7 @@ def build_offline_wheel(
                 b"Root-Is-Purelib: true\nTag: py3-none-any\n",
             ),
             (f"{dist_info}/entry_points.txt", _entry_points(project)),
-            (f"{dist_info}/top_level.txt", b"gravity_sdk\n"),
+            (f"{dist_info}/top_level.txt", b"gravity_insight\n"),
         ]
     )
     record_path = f"{dist_info}/RECORD"

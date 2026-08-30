@@ -9,13 +9,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.semantic_contract import (
+from gravity_insight.semantic_contract import (
     SemanticContractError,
     builtin_semantic_source,
     compile_semantic_source,
     load_semantic_source,
 )
-from gravity_sdk.semantic_registry import SemanticRegistry
+from gravity_insight.semantic_registry import SemanticRegistry
 
 
 KINDS = ("metric", "dimension", "entity", "cohort", "event", "sku", "activity", "release")
@@ -474,8 +474,8 @@ forbidden = []
         self.assertTrue(all(not item["network_called"] for item in result["dependencies"]))
 
     def test_plural_cli_and_root_export_are_offline(self) -> None:
-        from gravity_sdk import SemanticRegistry as RootSemanticRegistry
-        from gravity_sdk.cli import main
+        from gravity_insight import SemanticRegistry as RootSemanticRegistry
+        from gravity_insight.cli import main
 
         self.assertIs(SemanticRegistry, RootSemanticRegistry)
 
@@ -483,7 +483,7 @@ forbidden = []
             stdout, stderr = io.StringIO(), io.StringIO()
             with (
                 patch(
-                    "gravity_sdk.runtime.build_client",
+                    "gravity_insight.runtime.build_client",
                     side_effect=AssertionError("client constructed"),
                 ),
                 redirect_stdout(stdout),

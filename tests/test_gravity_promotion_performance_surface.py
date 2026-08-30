@@ -4,24 +4,24 @@ import unittest
 from contextlib import redirect_stderr
 from unittest.mock import Mock, patch
 
-from gravity_sdk import cli
-from gravity_sdk.__main__ import main as unified_main
-from gravity_sdk.errors import ErrorCode, ErrorDetail
-from gravity_sdk.onboarding import command_requires_credentials
-from gravity_sdk.plan import AdapterContext, execute_plan
-from gravity_sdk.plan_adapters import build_plan_adapters
-from gravity_sdk.plan_promotion_performance_adapter import (
+from gravity_insight import cli
+from gravity_insight.__main__ import main as unified_main
+from gravity_insight.errors import ErrorCode, ErrorDetail
+from gravity_insight.onboarding import command_requires_credentials
+from gravity_insight.plan import AdapterContext, execute_plan
+from gravity_insight.plan_adapters import build_plan_adapters
+from gravity_insight.plan_promotion_performance_adapter import (
     project_promotion_performance_result,
     sanitize_product_result,
     validate_promotion_performance_plan,
 )
-from gravity_sdk.promotion_performance_result import (
+from gravity_insight.promotion_performance_result import (
     PROMOTION_PLATFORM_OPERATIONS,
     product_envelope,
     promotion_performance_item_count,
     safe_component,
 )
-from gravity_sdk.sdk import GravitySDK
+from gravity_insight.sdk import GravitySDK
 
 
 WINDOW = ("2026-08-01", "2026-08-02")
@@ -144,8 +144,8 @@ class PromotionPerformanceSurfaceTests(unittest.TestCase):
             [*BASE, "--output", "pyproject.toml/child.json"],
         )
         with (
-            patch("gravity_sdk.promotion_cli.load_workspace", return_value=_Workspace()),
-            patch("gravity_sdk.promotion_cli.runtime.build_client") as client,
+            patch("gravity_insight.promotion_cli.load_workspace", return_value=_Workspace()),
+            patch("gravity_insight.promotion_cli.runtime.build_client") as client,
         ):
             self.assertTrue(command_requires_credentials(BASE, cli.build_parser))
             for argv in invalid:
@@ -153,7 +153,7 @@ class PromotionPerformanceSurfaceTests(unittest.TestCase):
                     self.assertFalse(command_requires_credentials(argv, cli.build_parser))
                     with (
                         patch(
-                            "gravity_sdk.__main__.ensure_first_run_credentials",
+                            "gravity_insight.__main__.ensure_first_run_credentials",
                             return_value=True,
                         ) as onboard,
                         redirect_stderr(io.StringIO()),
@@ -181,7 +181,7 @@ class PromotionPerformanceSurfaceTests(unittest.TestCase):
         insight, expected = object(), {"schema_version": "test"}
         factory.return_value = insight
         with patch(
-            "gravity_sdk.promotion_performance.promotion_performance",
+            "gravity_insight.promotion_performance.promotion_performance",
             return_value=expected,
         ) as core:
             result = sdk.promotion_performance(

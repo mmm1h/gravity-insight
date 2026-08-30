@@ -1,6 +1,11 @@
 # Gravity Agent Runtime：产品方向、产品形态、目标架构与 Codex 开发总纲
 
 
+## v9.5 修订摘要
+
+本版执行用户于 2026-08-30 明确批准的独立命名迁移：分发包与预期 GitHub 仓库名统一为 `gravity-insight`，Python import 根由 `gravity_sdk` 直接迁移为 `gravity_insight`，`gravity` CLI 保持稳定；不提供旧 import 兼容包。v9.1 的“不为定位升级改名”决定在本版被明确推翻，不再是当前约束。R17 的不可变 ledger 继续保留交付当时的 `gravity_sdk.*` 历史身份，live checkpoint 通过显式包根投影验证当前 `gravity_insight.*` owner，不改写历史 blob 或 digest。
+
+
 ## v9.4 修订摘要
 
 本版记录计划完成后的治理迁移：原 `dev` 集成层已履行全计划完成装置的职责；`main` 成为唯一受保护长期主干，日常变更经短命分支、必需状态检查和 PR 合入。`fixed_dev` 退役为冻结交付证据 token，当前主干状态使用 `merged_main`，发布终态仍为 `released`。
@@ -18,7 +23,7 @@ four physical path corrections; no architectural semantic change
 本版在 v9 完成产品重定位、需求拆分和主分支冻结后，根据首轮需求图复核进一步收口可访问架构源、Semantic 所有权和独立交付边界：
 
 1. **新增“架构裁决与反路径依赖”规则**。当前源码、测试和活动文档用于证明“现在是什么”，不能自动决定“未来必须是什么”；Codex 开工前必须建立冲突台账，区分安全不变量、当前行为合同、过渡规则、旧产品假设和历史材料。
-2. **Phase -1 改为“产品宪法与冲突台账迁移”**。明确 Gravity Agent Runtime 的目标边界，但保持仓库名 `gravity-sdk`、Python 包名和 `gravity` CLI 稳定，不为定位升级制造无收益的重命名迁移。
+2. **Phase -1 改为“产品宪法与冲突台账迁移”**。v9.1 当时决定保持仓库名、Python 包名和 `gravity` CLI 稳定；其中仓库名与 Python 包名的稳定决定已由 v9.5 的独立用户授权迁移明确推翻，只有 `gravity` CLI 继续稳定。
 3. **纵向切片仍是实施策略，不是架构降级**。长期目标架构、Hub 协议、扩展类型和信任边界现在一次设计完整；首条纵向切片负责证伪和校准合同，而不是把未进入切片的长期能力从架构中删除。
 4. **Skill Hub 仍是核心产品面**。Stage A 不再仅限本机缓存，而是实现冻结的 Hub Protocol、基础团队同步、digest、exact lock、离线缓存和确定性构建；Stage B 再增强 OCI、签名、TUF、组织撤销和合规供应链。
 5. **ThinkingAI 全量迁移仍是明确交付目标**。3～5 个代表 Skill 只用于验证 Schema 和依赖模型；验证后必须继续完成全部公开主题的 Inventory、独立 Specification 和 readiness 状态，不得无限停留在代表样本。
@@ -31,10 +36,10 @@ four physical path corrections; no architectural semantic change
 12. **拆除大爆炸集成点**。R09 拆为 Core Skill Runtime、Team Hub Binding、External Context Binding；R13 拆为 Artifact Transfer、Analysis Artifact/Renderer、Gravity Dashboard Connector。外部 Hub/Provider/Action 不再阻塞基础 Runtime 或素材传输。
 13. **细化高风险交付与上下文对齐**。R12/R14 使用强制里程碑逐阶段交付；Stage A 增加与 Skill 内容分离的 Team Trusted Pack；Context 按实体、有效时间、观察时间和来源权威对齐。
 
-> 仓库：`mmm1h/gravity-sdk`
-> 本版审阅基线：`main@6d72d26dace534ec9b56c316746578cdd76c812c`
-> Directive ID / Version：`gravity-agent-runtime / v9.4`
-> 批准状态：用户已于 2026-08-21 批准总纲与需求拆分，并于 2026-08-30 在计划完成和整体发布后批准迁移到受保护 `main` 主干
+> 仓库：`mmm1h/gravity-insight`
+> 本版审阅基线：`main@d83c4509f253e748fd43221430a154b89c243066`
+> Directive ID / Version：`gravity-agent-runtime / v9.5`
+> 批准状态：用户已于 2026-08-21 批准总纲与需求拆分，并于 2026-08-30 批准迁移到受保护 `main` 主干及独立的仓库/Python 包命名统一
 > Canonical repository path：`specs/agent-runtime/architecture-source.md`
 > 文档性质：仓库内唯一产品总纲 + 目标架构 + 演进路线 + Codex 开发约束
 > 目标宿主：Codex、Claude Code，以及其他支持 CLI / MCP / Python 工具调用的通用 Agent
@@ -247,7 +252,7 @@ Codex 必须按以下顺序读取：
 总纲只冻结跨需求共享的产品目标、职责、术语、架构不变量和依赖顺序。具体实现必须拆成有界需求规格：
 
 ```text
-唯一架构总纲 v9.4（repository canonical source）
+唯一架构总纲 v9.5（repository canonical source）
 → specs/agent-runtime/directive.json 绑定批准版本与 digest
 → specs/agent-runtime/index.json / index.md 定义依赖图和状态
 → R00-R17 family leaves / CT01-CT03 细化单一交付单元
@@ -378,7 +383,8 @@ Gravity 只允许四类扩展：
 
 ## 2.5 目标产品名称
 
-- 仓库与 Python 包：继续使用 `gravity-sdk`，不因本轮架构升级强制重命名；
+- 分发包与预期 GitHub 仓库名：`gravity-insight`；仓库外部重命名由所有者执行；
+- Python import 根：`gravity_insight`；旧 `gravity_sdk` 根不提供兼容包；
 - 产品定位与架构概念：`Gravity Agent Runtime`；
 - Skill 分发面：`Gravity Skill Hub`；
 - Context 面：`Gravity Context Hub`；
@@ -494,7 +500,7 @@ External Control Plane
 ## 4.2 团队最小使用体验
 
 ```text
-安装 gravity-sdk
+安装 gravity-insight
 → 安装 Bootstrap Skill
 → 从本地或已配置 Hub resolve 精确依赖
 → 生成并提交 gravity.skills.lock.json
@@ -2678,7 +2684,7 @@ pyproject.toml package description / metadata
 
 必须明确：
 
-- 产品定位演进为“Gravity Agent Runtime”，但仓库名、Python 包名和 `gravity` CLI 保持稳定，除非未来另有独立迁移决策；
+- 产品定位是“Gravity Agent Runtime”；v9.5 的独立迁移决策已把分发包/预期仓库名统一为 `gravity-insight`、Python import 根统一为 `gravity_insight`，`gravity` CLI 保持稳定；
 - Host Agent、Runtime、调用项目、Skill、Semantic、Operator/Model、Context、Control Plane 的职责；
 - 可复用业务方法可以进入 Runtime 的版本化 Skill/Semantic/Operator，项目活动/SKU/埋点和值绑定仍归调用项目；
 - 允许总纲批准的类型化 Registry，继续禁止万能可执行插件系统；
@@ -2832,7 +2838,7 @@ ThinkingAI 内容 Track 不阻塞 Phase -1、Phase 0 和参考纵向切片。
 ### 验收
 
 - `AGENTS.md`、README、roadmap、architecture 和 package description 对产品边界、指令优先级和旧规则分类一致；
-- 保持仓库名、Python 包名与 CLI 稳定，不进行无收益重命名；
+- 完成 v9.5 批准的仓库/分发/import 命名统一，保留 `gravity` CLI，并以消费者、wheel、生成物和 R17 历史投影门禁证明迁移完整；
 - 建立架构冲突台账，并对旧规则逐条标记 keep/strengthen/migrate/supersede/defer；
 - 明确 Runtime/Control Plane、业务方法与项目语义归属；
 - 现有执行、路由、消费者迁移和 fail-closed 规则未退化；
@@ -3180,7 +3186,7 @@ journey regression
 40. 让 ThinkingAI 全量目录反向决定 Runtime Schema 或阻塞参考纵向切片；
 41. 仅因为旧文档、旧测试、旧文件布局或旧 Mixin 更容易保留，就把已批准目标架构压回旧 SDK 思路；
 42. 为避免迁移而永久新增影子 Registry、第二套兼容层或无退出条件的双轨；
-43. 为产品定位升级强制重命名仓库、Python 包或 CLI，而没有独立收益与消费者迁移方案。
+43. 没有独立收益、用户授权与消费者迁移方案就重命名仓库、Python 包或 CLI；v9.5 是已满足这些前提的仓库/import 迁移，且不改变 `gravity` CLI。
 44. 把本机下载文件名与摘要当作最高权威，却不给执行者仓库内完整可读正文；
 45. 让 Team Hub 或 External Provider 的缺失阻塞 Built-in Core Skill Runtime；
 46. 让 Action/Experiment 阻塞独立二进制 Artifact Transfer，或让 Dashboard 阻塞非 Gravity Renderer；
@@ -3194,7 +3200,7 @@ journey regression
 ```text
 # Role
 
-你是 Codex，担任 gravity-sdk / Gravity Agent Runtime 的首席架构实施工程师。
+你是 Codex，担任 gravity-insight / Gravity Agent Runtime 的首席架构实施工程师。
 
 产品同时服务 Codex、Claude Code 等 Host Agent，但本次仓库改造由你执行。你不得在仓库内再造 Web ChatBI、内置 LLM 或自由多 Agent。
 
@@ -3244,7 +3250,7 @@ ThinkingAI 是并行内容 Track：先全量 Inventory，再以 3～5 个代表 
 
 任何新平台代码开工前，先让 AGENTS.md、README、roadmap、architecture 和 package description 对目标边界、指令优先级和旧规则分类一致：
 
-- 产品定位是 Gravity Agent Runtime，仓库名、Python 包名和 CLI 暂时保持稳定；
+- 产品定位是 Gravity Agent Runtime，分发包/预期仓库名为 `gravity-insight`、Python import 根为 `gravity_insight`，`gravity` CLI 保持稳定；
 - Host Agent 负责推理，Runtime 负责确定性事实、方法、执行和证据；
 - Runtime Plane 与 External Control Plane 分离；
 - Runtime 拥有可复用 Semantic 类型/Schema、通用定义、URI 和通用校验；调用项目拥有具体活动/SKU/App/埋点绑定、公式参数与生效窗口；
@@ -3468,17 +3474,17 @@ Focused cases：
 
 ## 24.1 当前仓库事实源
 
-- 当前架构：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/architecture.md>
-- 当前路线图：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/roadmap.md>
-- Agent 工作流：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/agent-workflow.md>
-- 当前 Agent 指南：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/agent-skills/index.md>
-- 分析 Journey 台账：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/analysis-journeys.md>
-- 当前技术债：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/maintainers/technical-debt.md>
-- 完整性合同：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/pagination_completeness.py>
-- Principal Runtime Scope：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/runtime_scope.py>
-- Direct Composite 示例：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/business_pulse.py>
-- Host Plan 来源边界：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/host_effects.py>
-- Plan Execution：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/plan_execution.py>
+- 当前架构：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/architecture.md>
+- 当前路线图：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/roadmap.md>
+- Agent 工作流：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/agent-workflow.md>
+- 当前 Agent 指南：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/agent-skills/index.md>
+- 分析 Journey 台账：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/analysis-journeys.md>
+- 当前技术债：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/maintainers/technical-debt.md>
+- 完整性合同：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/pagination_completeness.py>
+- Principal Runtime Scope：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/runtime_scope.py>
+- Direct Composite 示例：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/business_pulse.py>
+- Host Plan 来源边界：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/host_effects.py>
+- Plan Execution：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/plan_execution.py>
 
 实施时必须替换为当前 HEAD 对应链接，不能继续把本基线当作最新事实。
 
@@ -3543,9 +3549,9 @@ Focused cases：
 
 # 最终产品结论
 
-`gravity-sdk` 的最终形态是：
+`gravity-insight` 的最终形态是：
 
-> **以可信私有 API 能力为底座、面向 Codex / Claude Code 的无头游戏数据分析 Agent Runtime。当前 `gravity-sdk` 是必须兼容和迁移的起点，不是目标架构的路径依赖上限；长期架构与 Hub Protocol 现在设计完整，实施先用真实纵向切片证伪关键合同，再推进团队 Skill Hub、全域 Context、受治理执行和 ThinkingAI 全量独立规格。组织级签名供应链按安全与分发需求分阶段强化。**
+> **以可信私有 API 能力为底座、面向 Codex / Claude Code 的无头游戏数据分析 Agent Runtime。`gravity-insight` 是当前统一的分发与仓库身份，`gravity_insight` 是唯一 Python import 根；旧 `gravity-sdk` / `gravity_sdk` 只在明确的历史证据或稳定契约标识中保留，不构成兼容运行面。长期架构与 Hub Protocol 保持完整，组织级签名供应链按安全与分发需求分阶段强化。**
 
 最终逻辑链路：
 

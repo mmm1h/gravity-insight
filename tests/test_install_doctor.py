@@ -4,14 +4,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.install_doctor import assess_install_consistency
+from gravity_insight.install_doctor import assess_install_consistency
 
 
 class InstallDoctorTests(unittest.TestCase):
     def test_consistent_editable_install_passes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            package = root / "src" / "gravity_sdk"
+            package = root / "src" / "gravity_insight"
             package.mkdir(parents=True)
             result = assess_install_consistency(
                 [{
@@ -32,8 +32,8 @@ class InstallDoctorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "current"
             other = Path(temporary) / "stale"
-            (root / "src" / "gravity_sdk").mkdir(parents=True)
-            (other / "src" / "gravity_sdk").mkdir(parents=True)
+            (root / "src" / "gravity_insight").mkdir(parents=True)
+            (other / "src" / "gravity_insight").mkdir(parents=True)
             result = assess_install_consistency(
                 [{
                     "version": "0.2.0", "editable": True,
@@ -45,7 +45,7 @@ class InstallDoctorTests(unittest.TestCase):
                 },
                 {
                     "version": "0.2.0",
-                    "path": str(other / "src" / "gravity_sdk" / "__init__.py"),
+                    "path": str(other / "src" / "gravity_insight" / "__init__.py"),
                 },
             )
         self.assertEqual("fail", result["status"])

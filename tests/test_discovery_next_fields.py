@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk import GravityInsightClient
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agents.caller_language import caller_language_fields
-from gravity_sdk.agents.discovery_support import (
+from gravity_insight import GravityInsightClient
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.agents.caller_language import caller_language_fields
+from gravity_insight.agents.discovery_support import (
     ANSWERABLE_LIMIT,
     CATALOG_BROWSE_ARGV,
     HOST_CATALOG_ARGV,
@@ -16,7 +16,7 @@ from gravity_sdk.agents.discovery_support import (
     discovery_next_fields,
     unranked_operations_gap,
 )
-from gravity_sdk.agents.product_inventory import canonical_capability_cards
+from gravity_insight.agents.product_inventory import canonical_capability_cards
 
 
 class DiscoveryNextFieldsTests(unittest.TestCase):

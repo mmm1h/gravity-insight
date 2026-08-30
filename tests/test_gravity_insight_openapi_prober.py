@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.prober.drafts import build_draft, create_drafts
-from gravity_sdk.prober.promotion import evaluate_gate
-from gravity_sdk.prober.transport import (
+from gravity_insight.prober.drafts import build_draft, create_drafts
+from gravity_insight.prober.promotion import evaluate_gate
+from gravity_insight.prober.transport import (
     RecordingSession,
     RequestDiscipline,
     _OpenApiProbeRuntime,
@@ -77,7 +77,7 @@ class _BaseRuntime:
 
 class RepositoryOpenApiContractTests(unittest.TestCase):
     def test_precise_drafts_replace_all_placeholder_candidates(self) -> None:
-        root = Path(__file__).resolve().parents[1] / "src" / "gravity_sdk" / "contracts"
+        root = Path(__file__).resolve().parents[1] / "src" / "gravity_insight" / "contracts"
         expected = {
             "developer.application.list": (
                 "/openapi/api/v1/open_develop/list/", "gravity_authorization"

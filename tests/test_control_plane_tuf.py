@@ -3,8 +3,8 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk.control_plane.errors import ControlPlaneVerificationError
-from gravity_sdk.control_plane.verification import verify_offline_bundle
+from gravity_insight.control_plane.errors import ControlPlaneVerificationError
+from gravity_insight.control_plane.verification import verify_offline_bundle
 from tests.test_control_plane_fixtures import (
     NOW,
     build_fixture,
@@ -125,7 +125,7 @@ class ControlPlaneTufTests(unittest.TestCase):
     def test_missing_pynacl_fails_closed_without_successful_verification(self) -> None:
         from unittest import mock
 
-        from gravity_sdk.control_plane import crypto
+        from gravity_insight.control_plane import crypto
 
         fixture = build_fixture("valid")
         result = None

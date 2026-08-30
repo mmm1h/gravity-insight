@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk.census.io import json_bytes, read_json, sha256_bytes, write_json
-from gravity_sdk.census.parser import build_routes
-from gravity_sdk.census.response import (
+from gravity_insight.census.io import json_bytes, read_json, sha256_bytes, write_json
+from gravity_insight.census.parser import build_routes
+from gravity_insight.census.response import (
     apply_response_fields_to_drafts,
     build_route_response_fields,
 )

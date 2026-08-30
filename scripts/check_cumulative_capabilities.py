@@ -26,6 +26,7 @@ CATEGORIES = (
 
 _SNAPSHOT_PROBE = r'''
 import argparse
+import importlib
 import json
 import pathlib
 import sys
@@ -35,8 +36,14 @@ root = pathlib.Path(sys.argv[1]).resolve()
 source = root / "src"
 sys.path.insert(0, str(source))
 
-import gravity_sdk
-from gravity_sdk.cli import build_parser
+package_names = [
+    name for name in ("gravity_insight", "gravity_sdk") if (source / name).is_dir()
+]
+if len(package_names) != 1:
+    raise RuntimeError(f"revision must contain exactly one runtime package: {package_names}")
+package_name = package_names[0]
+runtime_package = importlib.import_module(package_name)
+build_parser = importlib.import_module(f"{package_name}.cli").build_parser
 
 
 def cli_commands(parser, prefix=()):
@@ -56,7 +63,7 @@ def cli_commands(parser, prefix=()):
 
 journeys = set()
 products = set()
-for path in (source / "gravity_sdk/contracts/journeys").glob("*.json"):
+for path in (source / package_name / "contracts/journeys").glob("*.json"):
     value = json.loads(path.read_text(encoding="utf-8"))
     if value.get("artifact_kind") != "journey":
         continue
@@ -66,14 +73,14 @@ for path in (source / "gravity_sdk/contracts/journeys").glob("*.json"):
             products.add("journey:" + str(requirement["selector"]))
 
 operations = set()
-for path in (source / "gravity_sdk/contracts/operations").glob("*.json"):
+for path in (source / package_name / "contracts/operations").glob("*.json"):
     value = json.loads(path.read_text(encoding="utf-8"))
     operation = value.get("operation", {})
     operation_id = operation.get("operation_id")
     if operation_id:
         operations.add(str(operation_id))
 
-sql_catalog = source / "gravity_sdk/contracts/sql-products/catalog.json"
+sql_catalog = source / package_name / "contracts/sql-products/catalog.json"
 if sql_catalog.is_file():
     value = json.loads(sql_catalog.read_text(encoding="utf-8"))
     products.update("sql-kind:" + str(name) for name in value.get("product_kinds", {}))
@@ -82,7 +89,7 @@ for path in (root / "examples").rglob("*.toml"):
     products.update("workspace:" + str(name) for name in value.get("products", {}))
 
 snapshot = {
-    "public_api": sorted(str(name) for name in gravity_sdk.__all__),
+    "public_api": sorted(str(name) for name in runtime_package.__all__),
     "cli_commands": sorted(cli_commands(build_parser())),
     "journeys": sorted(journeys),
     "operations": sorted(operations),

@@ -8,9 +8,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.agent import run_agent_command
-from gravity_sdk.agents.batch import capabilities_many
-from gravity_sdk.plan import (
+from gravity_insight.agent import run_agent_command
+from gravity_insight.agents.batch import capabilities_many
+from gravity_insight.plan import (
     PlanAdapter,
     PlanAdapters,
     PlanValidationError,
@@ -18,8 +18,8 @@ from gravity_sdk.plan import (
     plan_schema,
     validate_plan,
 )
-from gravity_sdk.plan_adapters import build_plan_adapters
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.plan_adapters import build_plan_adapters
+from gravity_insight.workspace import load_workspace
 
 
 def _plan(*nodes, budget=None):
@@ -256,8 +256,8 @@ class PlanExecutionTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["result"], {"safe": 1})
         self.assertEqual(projected, [(('safe',), 1)])
 
-    @patch("gravity_sdk.plan_metadata_adapter.search_table_lineage")
-    @patch("gravity_sdk.plan_metadata_adapter.search_metadata")
+    @patch("gravity_insight.plan_metadata_adapter.search_table_lineage")
+    @patch("gravity_insight.plan_metadata_adapter.search_metadata")
     def test_production_adapters_execute_all_four_engines(self, metadata, lineage):
         workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
 
@@ -427,7 +427,7 @@ class PlanExecutionTests(unittest.TestCase):
         class SDK:
             insight = Insight()
             def analysis_query(self, kind, spec, **options):
-                from gravity_sdk.analysis_spec import validate_query_spec
+                from gravity_insight.analysis_spec import validate_query_spec
                 compiled, _ = validate_query_spec(
                     self.insight, kind, spec, workspace=options["workspace"],
                     app=options.get("app"), start=options.get("start"), end=options.get("end"),
@@ -535,8 +535,8 @@ class PlanExecutionTests(unittest.TestCase):
         )
 
     def test_analysis_query_contract_constants_are_adapter_reexports(self):
-        from gravity_sdk import plan_analysis_adapter as adapter
-        from gravity_sdk import plan_analysis_contract as contract
+        from gravity_insight import plan_analysis_adapter as adapter
+        from gravity_insight import plan_analysis_contract as contract
 
         for name in (
             "ANALYSIS_QUERY_BINDING_TARGETS",
@@ -636,7 +636,7 @@ class AgentBatchTests(unittest.TestCase):
     def workspace():
         return SimpleNamespace(recipes={}, products={}, datasources={}, apps={})
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata")
+    @patch("gravity_insight.agents.batch_sources.search_metadata")
     def test_capabilities_many_scans_sources_once_and_returns_plan_nodes(self, metadata):
         metadata.return_value = {"results": []}
         client = self.Client()
@@ -653,7 +653,7 @@ class AgentBatchTests(unittest.TestCase):
         self.assertTrue(all("complete_collection_count" not in card["allowed_claims"] for card in cards))
         self.assertTrue(all("complete_collection_count" in card["forbidden_claims"] for card in cards))
 
-    @patch("gravity_sdk.agents.batch.capabilities_many")
+    @patch("gravity_insight.agents.batch.capabilities_many")
     def test_agent_input_routes_to_batch_without_positional_query(self, batch):
         batch.return_value = {"schema_version": "gravity.agent-batch.v1", "ok": True}
         args = SimpleNamespace(

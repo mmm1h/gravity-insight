@@ -124,7 +124,7 @@ Current materials characterization, streaming/interruption, redirect/MIME/magic/
   `1330 = 1163 A + 167 B + 0 C`. Development usability remains selection
   `296/336`, fillability `248/248`, offline terminal `53/53`, recovery `5/5`,
   security violations `0`, and production HTTP requests `0`.
-- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Isolated real wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `ccb13cf1867d0b3f2b551c9ef71401d2a2ce0756ca972fdc4e552a417aaae18b`.
   It imported from isolated `site-packages`, loaded the packaged v2 source
   contract and Artifact schema, discovered the updated Agent card and passed

@@ -4,9 +4,9 @@ import unittest
 from typing import Any, Mapping
 from unittest.mock import patch
 
-from gravity_sdk.analysis_spec import analysis_query_spec_schema, compile_query_spec
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.sdk import GravitySDK
+from gravity_insight.analysis_spec import analysis_query_spec_schema, compile_query_spec
+from gravity_insight.errors import InputValidationError
+from gravity_insight.sdk import GravitySDK
 
 
 def metric() -> dict[str, str]:
@@ -249,7 +249,7 @@ class AnalysisQuerySpecTests(unittest.TestCase):
         self.assertEqual("success", result["status"])
         self.assertEqual("analysis.funnel.query", insight.reads[0][0])
         with patch(
-            "gravity_sdk.analysis_query_batch.run_analysis_query_batch",
+            "gravity_insight.analysis_query_batch.run_analysis_query_batch",
             return_value={"status": "validated"},
         ) as run_batch:
             batch = sdk.analysis_queries(

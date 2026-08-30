@@ -4,14 +4,14 @@ import copy
 import unittest
 import unittest.mock
 
-from gravity_sdk.agents.host_catalog import (
+from gravity_insight.agents.host_catalog import (
     host_product_catalog,
     owner_boundaries,
     validate_host_catalog_projection,
 )
-from gravity_sdk.agents.product_inventory import canonical_capability_cards
-from gravity_sdk.agents.unavailable import registered_unavailable_gaps
-from gravity_sdk.client import GravityInsightClient
+from gravity_insight.agents.product_inventory import canonical_capability_cards
+from gravity_insight.agents.unavailable import registered_unavailable_gaps
+from gravity_insight.client import GravityInsightClient
 
 
 GENERIC = (
@@ -60,13 +60,13 @@ class OwnerBoundaryFieldTests(unittest.TestCase):
             owner_boundaries(_card(boundaries=(" ",)))
 
     def test_composite_inventory_rejects_a_card_without_boundaries(self) -> None:
-        from gravity_sdk.agents.capabilities import composite_capability_inventory
-        from gravity_sdk.agents.composite_inventory import COMPOSITE_CAPABILITIES
+        from gravity_insight.agents.capabilities import composite_capability_inventory
+        from gravity_insight.agents.composite_inventory import COMPOSITE_CAPABILITIES
 
         broken = dict(COMPOSITE_CAPABILITIES[0])
         broken.pop("boundaries", None)
         with unittest.mock.patch(
-            "gravity_sdk.agents.capabilities._COMPOSITE_CAPABILITIES",
+            "gravity_insight.agents.capabilities._COMPOSITE_CAPABILITIES",
             (broken, *COMPOSITE_CAPABILITIES[1:]),
         ):
             with self.assertRaisesRegex(RuntimeError, "must declare non-empty boundaries"):

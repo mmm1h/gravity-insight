@@ -5,32 +5,32 @@ import json
 from pathlib import Path
 import unittest
 
-from gravity_sdk.composite import CompositeService
-from gravity_sdk.composite_result import bounded_structural_drift_diagnostics
-from gravity_sdk.domains import PROMOTION_PLATFORMS, PROMOTION_PRIMARY_OPERATIONS
-from gravity_sdk.errors import (
+from gravity_insight.composite import CompositeService
+from gravity_insight.composite_result import bounded_structural_drift_diagnostics
+from gravity_insight.domains import PROMOTION_PLATFORMS, PROMOTION_PRIMARY_OPERATIONS
+from gravity_insight.errors import (
     GravityInsightError, InputValidationError, LocalIOError, PaginationError)
-from gravity_sdk.promotion_performance import (
+from gravity_insight.promotion_performance import (
     PROMOTION_PLATFORM_OPERATIONS,
     SUPPORTED_PLATFORMS,
     promotion_performance,
     promotion_performance_input_schema,
 )
-from gravity_sdk.promotion_performance_result import (
+from gravity_insight.promotion_performance_result import (
     PROMOTION_OPAQUE_JSON_FIELDS,
     PROMOTION_ROW_FIELDS,
     safe_component,
 )
-from gravity_sdk.promotion_performance_snapshot import (
+from gravity_insight.promotion_performance_snapshot import (
     PROMOTION_SNAPSHOT_RESOURCE_OPERATIONS,
     promotion_component_binding,
 )
-from gravity_sdk.promotion_performance_rows import (
+from gravity_insight.promotion_performance_rows import (
     MAX_JSON_STRING_LENGTH,
     MAX_OPAQUE_JSON_DEPTH,
     MAX_OPAQUE_JSON_ELEMENTS,
 )
-from gravity_sdk.promotion_snapshot_compat import _compatibility_snapshot
+from gravity_insight.promotion_snapshot_compat import _compatibility_snapshot
 
 
 SNAPSHOT_INVENTORY = (
@@ -233,7 +233,7 @@ def _registered_operation_row(operation_id):
     contract = (
         Path(__file__).parents[1]
         / "src"
-        / "gravity_sdk"
+        / "gravity_insight"
         / "contracts"
         / "operations"
         / f"{operation_id}.json"
@@ -315,7 +315,7 @@ class PromotionPerformanceTests(unittest.TestCase):
                 {"bing", "xiaohongshu", "taptap", "wechat_video"}
             )
         )
-        contracts = Path(__file__).parents[1] / "src" / "gravity_sdk" / "contracts" / "operations"
+        contracts = Path(__file__).parents[1] / "src" / "gravity_insight" / "contracts" / "operations"
         for platform in SUPPORTED_PLATFORMS:
             operation_id = PROMOTION_PLATFORM_OPERATIONS[platform]
             with self.subTest(platform=platform):
@@ -369,7 +369,7 @@ class PromotionPerformanceTests(unittest.TestCase):
         contracts = (
             Path(__file__).parents[1]
             / "src"
-            / "gravity_sdk"
+            / "gravity_insight"
             / "contracts"
             / "operations"
         )
@@ -451,7 +451,7 @@ class PromotionPerformanceTests(unittest.TestCase):
         contracts = (
             Path(__file__).parents[1]
             / "src"
-            / "gravity_sdk"
+            / "gravity_insight"
             / "contracts"
             / "operations"
         )

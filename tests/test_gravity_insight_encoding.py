@@ -4,11 +4,11 @@ import unittest
 from unittest import mock
 
 try:
-    from gravity_sdk import content_encoding
-    from gravity_sdk import http_runtime
+    from gravity_insight import content_encoding
+    from gravity_insight import http_runtime
 except ModuleNotFoundError:  # source checkout without an editable install
-    from gravity_sdk import content_encoding
-    from gravity_sdk import http_runtime
+    from gravity_insight import content_encoding
+    from gravity_insight import http_runtime
 
 
 class GravityInsightEncodingTests(unittest.TestCase):

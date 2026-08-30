@@ -5,30 +5,30 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agents.custom_metric import (
+from gravity_insight.agents.custom_metric import (
     SELECTORS,
     custom_metric_capability_inventory,
     custom_metric_cards,
 )
-from gravity_sdk.cli import build_parser
-from gravity_sdk.custom_metric_contracts import (
+from gravity_insight.cli import build_parser
+from gravity_insight.custom_metric_contracts import (
     CUSTOM_METRIC_DELETE,
     CUSTOM_METRIC_UPSERT,
 )
-from gravity_sdk.custom_metric_mutation import (
+from gravity_insight.custom_metric_mutation import (
     create_custom_metric,
     delete_custom_metric,
     update_custom_metric,
 )
-from gravity_sdk.custom_metric_wire import validate_custom_metric_wire
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_custom_metric_adapter import validate_custom_metric_plan
-from gravity_sdk.sdk import GravitySDK
+from gravity_insight.custom_metric_wire import validate_custom_metric_wire
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_custom_metric_adapter import validate_custom_metric_plan
+from gravity_insight.sdk import GravitySDK
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACTS = ROOT / "src" / "gravity_sdk" / "contracts"
+CONTRACTS = ROOT / "src" / "gravity_insight" / "contracts"
 
 
 class _Client:

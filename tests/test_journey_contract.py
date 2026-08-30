@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from gravity_sdk.journey_contract import (
+from gravity_insight.journey_contract import (
     JourneyContractError,
     journey_artifact,
     journey_artifacts,
@@ -14,7 +14,7 @@ from gravity_sdk.journey_contract import (
     validate_journey_bindings,
     verify_journey_registry,
 )
-from gravity_sdk.journey_ledger import load_packaged_journey_ledger
+from gravity_insight.journey_ledger import load_packaged_journey_ledger
 
 
 EXPECTED = {

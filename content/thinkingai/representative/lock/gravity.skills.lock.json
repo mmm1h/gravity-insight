@@ -1,6 +1,6 @@
 {
   "artifact_kind": "skills_lock",
-  "lock_digest": "661bd0e5bd100c3eca6b96947d386d8294c8cc88733b87d2a53f33d4b147dc26",
+  "lock_digest": "abdd99bbdfdab97c16cea2dd8ef33148cab78511d78f491d7364165a2f2bb2fc",
   "requested": [
     "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
     "skill://gravity.game/app-device-performance-analysis@1.0.0",
@@ -177,7 +177,7 @@
   ],
   "source": {
     "index_digest": "7a499e64743c7959e7debcdda7e091b59babad4f72f705afe5d92101355ca98e",
-    "source_descriptor_digest": "8013e578f6648d5d9efa01f634b724b3a6017304a86abdab85e63938a5e6d2a3",
+    "source_descriptor_digest": "12920d53539600f1c333c2794b1ba31e1a634d8ddfdd13e2ab22f5c67e24bb53",
     "source_id": "hub-source://gravity/thinkingai-representative@1",
     "source_revision": "f8c92a5678f3ccc142d082fde28e678edc2ef81c",
     "transport": "git"

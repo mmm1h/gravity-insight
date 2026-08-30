@@ -12,14 +12,14 @@ from datetime import date, datetime
 from pathlib import Path
 from unittest import mock
 
-from gravity_sdk.sql import __main__ as gravity_cli
-from gravity_sdk.sql import credentials, products, provenance
-from gravity_sdk.sql.client import GravityClient
+from gravity_insight.sql import __main__ as gravity_cli
+from gravity_insight.sql import credentials, products, provenance
+from gravity_insight.sql.client import GravityClient
 try:
-    from gravity_sdk.errors import AuthenticationError, CredentialError, TransportError
+    from gravity_insight.errors import AuthenticationError, CredentialError, TransportError
 except ModuleNotFoundError:  # pragma: no cover - source-tree test execution.
-    from gravity_sdk.errors import AuthenticationError, CredentialError, TransportError
-from gravity_sdk.sql.products import (
+    from gravity_insight.errors import AuthenticationError, CredentialError, TransportError
+from gravity_insight.sql.products import (
     BEIJING,
     EvidenceFormatError,
     build_evidence,
@@ -60,6 +60,9 @@ class GravityProductTests(unittest.TestCase):
 
     def test_credential_self_test_runs_directly(self):
         self.assertIsNone(credentials.self_test())
+
+    def test_credential_release_asset_uses_current_distribution_identity(self):
+        self.assertEqual("gravity-insight-credentials.json", credentials.ASSET_NAME)
 
     def test_latest_safe_day_changes_at_0200_beijing(self):
         self.assertEqual(
@@ -115,7 +118,7 @@ class GravityProductTests(unittest.TestCase):
             self.assertEqual([], list(path.parent.glob("*.tmp")))
 
             original = path.read_text(encoding="utf-8")
-            with mock.patch("gravity_sdk.sql.products.os.replace", side_effect=OSError("disk")):
+            with mock.patch("gravity_insight.sql.products.os.replace", side_effect=OSError("disk")):
                 with self.assertRaises(OSError):
                     publish_evidence(evidence, path)
             self.assertEqual(original, path.read_text(encoding="utf-8"))
@@ -127,7 +130,7 @@ class GravityProductTests(unittest.TestCase):
 
         now = datetime(2026, 7, 23, 12, tzinfo=BEIJING)
         with mock.patch(
-            "gravity_sdk.sql.products.datasource_verification_status",
+            "gravity_insight.sql.products.datasource_verification_status",
             return_value="verified_with_gaps",
         ):
             self.assertTrue(readiness_status(evidence, now)["query_ready"])
@@ -145,15 +148,15 @@ class GravityProductTests(unittest.TestCase):
                 invalid_schema["schema_version"] = invalid_version
                 with self.assertRaises(EvidenceFormatError):
                     readiness_status(invalid_schema, now)
-            with mock.patch("gravity_sdk.sql.products.contract_hash", return_value="0" * 64):
+            with mock.patch("gravity_insight.sql.products.contract_hash", return_value="0" * 64):
                 status = readiness_status(evidence, now)
         self.assertEqual("stale", status["status"])
         self.assertFalse(status["query_ready"])
 
         with mock.patch(
-            "gravity_sdk.sql.products.datasource_verification_status",
+            "gravity_insight.sql.products.datasource_verification_status",
             return_value="verified_with_gaps",
-        ), mock.patch("gravity_sdk.sql.products.build_sql", return_value="SELECT 'drift'"):
+        ), mock.patch("gravity_insight.sql.products.build_sql", return_value="SELECT 'drift'"):
             self.assertEqual("stale", readiness_status(evidence, now)["status"])
 
         with self.assertRaises(EvidenceFormatError):
@@ -173,15 +176,15 @@ class GravityProductTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             rolling = Path(temporary) / "gravity-latest.json"
             product_root = Path(temporary) / "gravity-daily-verification"
-            with mock.patch("gravity_sdk.sql.products.EVIDENCE_PATH", rolling), mock.patch(
-                "gravity_sdk.sql.products.EVIDENCE_PRODUCT_ROOT", product_root
+            with mock.patch("gravity_insight.sql.products.EVIDENCE_PATH", rolling), mock.patch(
+                "gravity_insight.sql.products.EVIDENCE_PRODUCT_ROOT", product_root
             ), mock.patch(
-                "gravity_sdk.sql.products.git_state", return_value=("a" * 40, True)
+                "gravity_insight.sql.products.git_state", return_value=("a" * 40, True)
             ), mock.patch(
-                "gravity_sdk.sql.products.load_workspace",
+                "gravity_insight.sql.products.load_workspace",
                 side_effect=AssertionError("publish reloaded its bound workspace"),
             ):
-                from gravity_sdk.workspace import load_workspace
+                from gravity_insight.workspace import load_workspace
 
                 publish_evidence(
                     evidence,
@@ -214,13 +217,13 @@ class GravityProductTests(unittest.TestCase):
             rolling = Path(temporary) / "gravity-latest.json"
             rolling.write_text('{"previous": true}\n', encoding="utf-8")
             before = rolling.read_bytes()
-            with mock.patch("gravity_sdk.sql.products.EVIDENCE_PATH", rolling), mock.patch(
-                "gravity_sdk.sql.products.EVIDENCE_PRODUCT_ROOT",
+            with mock.patch("gravity_insight.sql.products.EVIDENCE_PATH", rolling), mock.patch(
+                "gravity_insight.sql.products.EVIDENCE_PRODUCT_ROOT",
                 Path(temporary) / "gravity-daily-verification",
             ), mock.patch(
-                "gravity_sdk.sql.products.git_state", return_value=("a" * 40, True)
+                "gravity_insight.sql.products.git_state", return_value=("a" * 40, True)
             ), mock.patch(
-                "gravity_sdk.sql.products.publish_json_snapshot",
+                "gravity_insight.sql.products.publish_json_snapshot",
                 side_effect=OSError("snapshot failed"),
             ):
                 with self.assertRaisesRegex(OSError, "snapshot failed"):
@@ -240,7 +243,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "query",
                 "daily-event-summary",
                 "--start",
@@ -248,11 +251,11 @@ class GravityProductTests(unittest.TestCase):
                 "--end",
                 "2026-07-23T00:00:00",
             ],
-        ), mock.patch("gravity_sdk.sql.__main__.resolve_current_evidence", return_value=binding), mock.patch(
-            "gravity_sdk.sql.__main__.readiness_status",
+        ), mock.patch("gravity_insight.sql.__main__.resolve_current_evidence", return_value=binding), mock.patch(
+            "gravity_insight.sql.__main__.readiness_status",
             return_value={"query_ready": False, "status": "pending_review", "reason": "missing"},
         ), mock.patch(
-            "gravity_sdk.sql.__main__._client", return_value=_AggregateClient()
+            "gravity_insight.sql.__main__._client", return_value=_AggregateClient()
         ), redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
 
@@ -265,9 +268,9 @@ class GravityProductTests(unittest.TestCase):
     def test_bad_evidence_credentials_and_injection_have_stable_failures(self):
 
         with mock.patch.object(
-            gravity_cli.sys, "argv", ["gravity_sdk.sql", "status", "--json"]
+            gravity_cli.sys, "argv", ["gravity_insight.sql", "status", "--json"]
         ), mock.patch(
-            "gravity_sdk.sql.__main__.resolve_current_evidence",
+            "gravity_insight.sql.__main__.resolve_current_evidence",
             side_effect=EvidenceFormatError("bad evidence"),
         ), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             self.assertEqual(2, gravity_cli.main())
@@ -277,7 +280,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "query",
                 "daily-event-summary",
                 "--start",
@@ -285,11 +288,11 @@ class GravityProductTests(unittest.TestCase):
                 "--end",
                 "2026-07-23T00:00:00",
             ],
-        ), mock.patch("gravity_sdk.sql.__main__.resolve_current_evidence", return_value=mock.Mock()), mock.patch(
-            "gravity_sdk.sql.__main__.readiness_status",
+        ), mock.patch("gravity_insight.sql.__main__.resolve_current_evidence", return_value=mock.Mock()), mock.patch(
+            "gravity_insight.sql.__main__.readiness_status",
             return_value={"query_ready": True},
         ), mock.patch(
-            "gravity_sdk.sql.__main__._client",
+            "gravity_insight.sql.__main__._client",
             side_effect=CredentialError("secret credential path token=abc123"),
         ), redirect_stdout(
             io.StringIO()
@@ -310,7 +313,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "query",
                 "daily-event-summary",
                 "--start",
@@ -318,10 +321,10 @@ class GravityProductTests(unittest.TestCase):
                 "--end",
                 "2026-07-23T00:00:00",
             ],
-        ), mock.patch("gravity_sdk.sql.__main__.resolve_current_evidence", return_value=mock.Mock()), mock.patch(
-            "gravity_sdk.sql.__main__.readiness_status",
+        ), mock.patch("gravity_insight.sql.__main__.resolve_current_evidence", return_value=mock.Mock()), mock.patch(
+            "gravity_insight.sql.__main__.readiness_status",
             return_value={"query_ready": True},
-        ), mock.patch("gravity_sdk.sql.__main__._client") as client, redirect_stdout(
+        ), mock.patch("gravity_insight.sql.__main__._client") as client, redirect_stdout(
             io.StringIO()
         ), redirect_stderr(injection_error):
             self.assertEqual(2, gravity_cli.main())
@@ -336,7 +339,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "query",
                 "missing token=abc123",
                 "--start",
@@ -344,7 +347,7 @@ class GravityProductTests(unittest.TestCase):
                 "--end",
                 "2026-07-23T00:00:00",
             ],
-        ), mock.patch("gravity_sdk.sql.__main__._client") as client, redirect_stdout(
+        ), mock.patch("gravity_insight.sql.__main__._client") as client, redirect_stdout(
             io.StringIO()
         ), redirect_stderr(unknown_error):
             self.assertEqual(2, gravity_cli.main())
@@ -359,7 +362,7 @@ class GravityProductTests(unittest.TestCase):
         with mock.patch.object(
             gravity_cli.sys,
             "argv",
-            ["gravity_sdk.sql", "query", "--input", secret_path],
+            ["gravity_insight.sql", "query", "--input", secret_path],
         ), redirect_stdout(io.StringIO()), redirect_stderr(local_error):
             self.assertEqual(4, gravity_cli.main())
         local_payload = json.loads(local_error.getvalue())
@@ -381,7 +384,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "query",
                 "daily-event-summary",
                 "--start",
@@ -390,11 +393,11 @@ class GravityProductTests(unittest.TestCase):
                 "2026-07-23T00:00:00",
             ],
         ), mock.patch(
-            "gravity_sdk.sql.__main__.resolve_current_evidence", return_value=binding
+            "gravity_insight.sql.__main__.resolve_current_evidence", return_value=binding
         ) as resolver, mock.patch(
-            "gravity_sdk.sql.__main__.readiness_status", return_value={"query_ready": True}
+            "gravity_insight.sql.__main__.readiness_status", return_value={"query_ready": True}
         ), mock.patch(
-            "gravity_sdk.sql.__main__._client", return_value=_AggregateClient()
+            "gravity_insight.sql.__main__._client", return_value=_AggregateClient()
         ), redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
 
@@ -413,7 +416,7 @@ class GravityProductTests(unittest.TestCase):
     def test_products_command_is_one_safe_discovery_call(self):
         output = io.StringIO()
         with mock.patch.object(
-            gravity_cli.sys, "argv", ["gravity_sdk.sql", "products"]
+            gravity_cli.sys, "argv", ["gravity_insight.sql", "products"]
         ), redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
 
@@ -432,7 +435,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "--dry-run",
                 "query",
                 "daily-event-summary",
@@ -441,8 +444,8 @@ class GravityProductTests(unittest.TestCase):
                 "--end",
                 "2026-07-23T00:00:00+08:00",
             ],
-        ), mock.patch("gravity_sdk.sql.__main__._client") as client, mock.patch(
-            "gravity_sdk.sql.__main__.resolve_current_evidence"
+        ), mock.patch("gravity_insight.sql.__main__._client") as client, mock.patch(
+            "gravity_insight.sql.__main__.resolve_current_evidence"
         ) as evidence, redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
 
@@ -474,13 +477,13 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "--dry-run",
                 "query",
                 "--input",
                 json.dumps({"requests": requests}),
             ],
-        ), mock.patch("gravity_sdk.sql.__main__._client") as client, redirect_stdout(
+        ), mock.patch("gravity_insight.sql.__main__._client") as client, redirect_stdout(
             output
         ), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
@@ -496,7 +499,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "--dry-run",
                 "query",
                 "daily-event-summary",
@@ -505,7 +508,7 @@ class GravityProductTests(unittest.TestCase):
                 "--end",
                 "2026-07-23T00:00:00+08:00",
             ],
-        ), mock.patch("gravity_sdk.sql.__main__._client") as client, redirect_stdout(
+        ), mock.patch("gravity_insight.sql.__main__._client") as client, redirect_stdout(
             io.StringIO()
         ), redirect_stderr(error):
             self.assertEqual(2, gravity_cli.main())
@@ -520,16 +523,16 @@ class GravityProductTests(unittest.TestCase):
 
     def test_dry_run_rejects_commands_that_may_access_external_state(self):
         for argv, patch_target in (
-            (["gravity_sdk.sql", "--dry-run", "verify"], "verify_all"),
+            (["gravity_insight.sql", "--dry-run", "verify"], "verify_all"),
             (
-                ["gravity_sdk.sql", "--dry-run", "credentials", "pull"],
+                ["gravity_insight.sql", "--dry-run", "credentials", "pull"],
                 "credentials.pull",
             ),
         ):
             with self.subTest(argv=argv):
                 error = io.StringIO()
                 with mock.patch.object(gravity_cli.sys, "argv", argv), mock.patch(
-                    f"gravity_sdk.sql.__main__.{patch_target}"
+                    f"gravity_insight.sql.__main__.{patch_target}"
                 ) as external, redirect_stdout(io.StringIO()), redirect_stderr(error):
                     self.assertEqual(2, gravity_cli.main())
                 external.assert_not_called()
@@ -542,8 +545,8 @@ class GravityProductTests(unittest.TestCase):
     def test_standalone_dry_run_self_check_is_preserved(self):
         output = io.StringIO()
         with mock.patch.object(
-            gravity_cli.sys, "argv", ["gravity_sdk.sql", "--dry-run"]
-        ), mock.patch("gravity_sdk.sql.__main__._client") as client, redirect_stdout(
+            gravity_cli.sys, "argv", ["gravity_insight.sql", "--dry-run"]
+        ), mock.patch("gravity_insight.sql.__main__._client") as client, redirect_stdout(
             output
         ), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
@@ -599,12 +602,12 @@ class GravityProductTests(unittest.TestCase):
         with mock.patch.object(
             gravity_cli.sys,
             "argv",
-            ["gravity_sdk.sql", "query", "--input", json.dumps(requests)],
+            ["gravity_insight.sql", "query", "--input", json.dumps(requests)],
         ), mock.patch(
-            "gravity_sdk.sql.__main__.resolve_current_evidence",
+            "gravity_insight.sql.__main__.resolve_current_evidence",
             side_effect=EvidenceFormatError("missing"),
         ), mock.patch(
-            "gravity_sdk.sql.__main__._client", return_value=_AggregateClient()
+            "gravity_insight.sql.__main__._client", return_value=_AggregateClient()
         ), redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
 
@@ -644,7 +647,7 @@ class GravityProductTests(unittest.TestCase):
             gravity_cli.sys,
             "argv",
             [
-                "gravity_sdk.sql",
+                "gravity_insight.sql",
                 "query",
                 "user-event-aggregate",
                 "--start",
@@ -653,10 +656,10 @@ class GravityProductTests(unittest.TestCase):
                 "2026-07-23T00:00:00",
             ],
         ), mock.patch(
-            "gravity_sdk.sql.__main__.resolve_current_evidence",
+            "gravity_insight.sql.__main__.resolve_current_evidence",
             side_effect=EvidenceFormatError("missing"),
         ), mock.patch(
-            "gravity_sdk.sql.__main__._client",
+            "gravity_insight.sql.__main__._client",
             return_value=GravityClient(runtime),
         ), redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(3, gravity_cli.main())
@@ -814,7 +817,7 @@ class GravityProductTests(unittest.TestCase):
         self.assertEqual("start/end", window_error["field"])
 
     def test_product_batch_uses_explicit_workspace_after_environment_changes(self):
-        from gravity_sdk.workspace import load_workspace
+        from gravity_insight.workspace import load_workspace
 
         workspace = load_workspace(EXAMPLE_WORKSPACE)
         request = {
@@ -852,11 +855,11 @@ class GravityProductTests(unittest.TestCase):
                     active -= 1
 
         with mock.patch(
-            "gravity_sdk.sql.products.product_names", return_value=("one", "two")
+            "gravity_insight.sql.products.product_names", return_value=("one", "two")
         ), mock.patch(
-            "gravity_sdk.sql.products.run_product", side_effect=fake_run
+            "gravity_insight.sql.products.run_product", side_effect=fake_run
         ), mock.patch(
-            "gravity_sdk.sql.products.build_evidence",
+            "gravity_insight.sql.products.build_evidence",
             side_effect=lambda _day, results, **_options: {"results": results},
         ):
             result = verify_all(mock.Mock(), date(2026, 7, 22))
@@ -867,7 +870,7 @@ class GravityProductTests(unittest.TestCase):
         self.assertEqual(2, max_active)
 
     def test_query_and_verify_bind_ambient_workspace_once(self):
-        from gravity_sdk.workspace import load_workspace
+        from gravity_insight.workspace import load_workspace
 
         workspace = load_workspace(EXAMPLE_WORKSPACE)
         request = {
@@ -876,11 +879,11 @@ class GravityProductTests(unittest.TestCase):
             "end": "2026-07-23T00:00:00",
         }
         no_reload = mock.patch(
-            "gravity_sdk.sql.products.load_workspace",
+            "gravity_insight.sql.products.load_workspace",
             side_effect=AssertionError("workspace was reloaded inside one operation"),
         )
         with mock.patch(
-            "gravity_sdk.sql.query.load_workspace", return_value=workspace
+            "gravity_insight.sql.query.load_workspace", return_value=workspace
         ) as query_load, no_reload:
             queried = run_product_queries(
                 _AggregateClient(), [request, request], max_workers=1
@@ -889,9 +892,9 @@ class GravityProductTests(unittest.TestCase):
         query_load.assert_called_once_with()
 
         with mock.patch(
-            "gravity_sdk.sql.verification.load_workspace", return_value=workspace
+            "gravity_insight.sql.verification.load_workspace", return_value=workspace
         ) as verify_load, mock.patch(
-            "gravity_sdk.sql.products.load_workspace",
+            "gravity_insight.sql.products.load_workspace",
             side_effect=AssertionError("workspace was reloaded during verification"),
         ):
             evidence = verify_all(
@@ -913,12 +916,12 @@ class GravityProductTests(unittest.TestCase):
                 return mock.Mock(returncode=0, stdout="codex/test\n")
             return mock.Mock(returncode=0, stdout=b"")
 
-        with mock.patch("gravity_sdk.sql.products.subprocess.run", side_effect=fake_git), mock.patch(
-            "gravity_sdk.sql.products._credential_source", return_value="ignored_local_file"
+        with mock.patch("gravity_insight.sql.products.subprocess.run", side_effect=fake_git), mock.patch(
+            "gravity_insight.sql.products._credential_source", return_value="ignored_local_file"
         ), mock.patch(
-            "gravity_sdk.sql.products.resolve_current_evidence", return_value=binding
+            "gravity_insight.sql.products.resolve_current_evidence", return_value=binding
         ), mock.patch(
-            "gravity_sdk.sql.products.readiness_status",
+            "gravity_insight.sql.products.readiness_status",
             return_value={"status": "stale", "query_ready": False, "reason": "test"},
         ):
             result = evidence_preflight(date(2026, 7, 22), now=datetime(2026, 7, 23, 12, tzinfo=BEIJING))
@@ -1040,11 +1043,11 @@ class GravityProductTests(unittest.TestCase):
         output = io.StringIO()
         payload = {"mode": "offline_preflight_only", "network_called": False}
         with mock.patch.object(
-            gravity_cli.sys, "argv", ["gravity_sdk.sql", "evidence-preflight", "--json"]
+            gravity_cli.sys, "argv", ["gravity_insight.sql", "evidence-preflight", "--json"]
         ), mock.patch(
-            "gravity_sdk.sql.__main__.evidence_preflight", return_value=payload
+            "gravity_insight.sql.__main__.evidence_preflight", return_value=payload
         ) as preflight, mock.patch(
-            "gravity_sdk.sql.__main__._client"
+            "gravity_insight.sql.__main__._client"
         ) as client, redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
 

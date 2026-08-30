@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from gravity_sdk.project_skill_overlay import (
+from gravity_insight.project_skill_overlay import (
     ProjectSkillOverlayError,
     compile_project_skill_overlay,
     load_project_skill_overlay,

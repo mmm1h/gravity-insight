@@ -10,29 +10,29 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.artifact_transfer import (
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.artifact_transfer import (
     ArtifactTransferError,
     validate_artifact_transfer,
 )
-from gravity_sdk.cli import build_parser, main
-from gravity_sdk.client import GravityInsightClient
-from gravity_sdk.errors import (
+from gravity_insight.cli import build_parser, main
+from gravity_insight.client import GravityInsightClient
+from gravity_insight.errors import (
     ContractChangedError,
     InputValidationError,
     error_detail_from_exception,
     exit_code_for_error,
 )
-from gravity_sdk.material_asset import fetch_material_asset
-from gravity_sdk.material_asset import (
+from gravity_insight.material_asset import fetch_material_asset
+from gravity_insight.material_asset import (
     MaterialAssetSourceUnsupportedError,
     MaterialAssetUnavailableError,
 )
-from gravity_sdk.material_asset_contract import _validate_sources, material_asset_contract
-from gravity_sdk.material_asset_transfer import MaterialAssetHttpError
-from gravity_sdk.result_audit import error_receipt_references
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.transport import TransportResponse
+from gravity_insight.material_asset_contract import _validate_sources, material_asset_contract
+from gravity_insight.material_asset_transfer import MaterialAssetHttpError
+from gravity_insight.result_audit import error_receipt_references
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.transport import TransportResponse
 
 
 SOURCE_RECEIPT = {"receipt_id": "a" * 32, "storage_status": "stored"}
@@ -192,7 +192,7 @@ class MaterialAssetTests(unittest.TestCase):
         operation_root = (
             Path(__file__).resolve().parents[1]
             / "src"
-            / "gravity_sdk"
+            / "gravity_insight"
             / "contracts"
             / "operations"
         )
@@ -865,9 +865,9 @@ class MaterialAssetTests(unittest.TestCase):
                 str(root),
             ]
             with patch(
-                "gravity_sdk.material_asset.fetch_material_asset", fake_fetch
+                "gravity_insight.material_asset.fetch_material_asset", fake_fetch
             ), patch(
-                "gravity_sdk.material_cli.runtime.build_client", return_value=object()
+                "gravity_insight.material_cli.runtime.build_client", return_value=object()
             ), patch("sys.stdout", new_callable=io.StringIO):
                 self.assertEqual(0, main(argv))
             self.assertEqual(b"binary", output.read_bytes())
@@ -875,7 +875,7 @@ class MaterialAssetTests(unittest.TestCase):
             sdk = GravitySDK(insight=object())
             sentinel = {"ok": True}
             with patch(
-                "gravity_sdk.material_asset.fetch_material_asset",
+                "gravity_insight.material_asset.fetch_material_asset",
                 return_value=sentinel,
             ) as fetch:
                 self.assertIs(

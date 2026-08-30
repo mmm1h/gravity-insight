@@ -9,17 +9,17 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk import GravitySDK
-from gravity_sdk.core_skill_runtime import CoreSkillRuntime
-from gravity_sdk.external_context_binding import BINDINGS_FILENAME
-from gravity_sdk.external_context_provider import ExternalContextProvider
-from gravity_sdk.journey_contract import journey_artifact
-from gravity_sdk.provider_rpc_transport import CallableProviderTransport
-from gravity_sdk.reference_journey import ReferenceJourneyRunner
-from gravity_sdk.reference_journey_contract import JOURNEY_ID, SKILL_URI
-from gravity_sdk.skill_contract import skill_artifact
-from gravity_sdk.skill_render import skill_package_descriptor
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight import GravitySDK
+from gravity_insight.core_skill_runtime import CoreSkillRuntime
+from gravity_insight.external_context_binding import BINDINGS_FILENAME
+from gravity_insight.external_context_provider import ExternalContextProvider
+from gravity_insight.journey_contract import journey_artifact
+from gravity_insight.provider_rpc_transport import CallableProviderTransport
+from gravity_insight.reference_journey import ReferenceJourneyRunner
+from gravity_insight.reference_journey_contract import JOURNEY_ID, SKILL_URI
+from gravity_insight.skill_contract import skill_artifact
+from gravity_insight.skill_render import skill_package_descriptor
 from tests.test_core_skill_runtime import scope
 from tests.test_external_context_binding import REQUIREMENT_ID, binding
 from tests.test_external_context_contracts import provider_descriptor, resource, response
@@ -158,7 +158,7 @@ class CoreExternalContextBindingTests(unittest.TestCase):
             provider_descriptor(), CallableProviderTransport("host", handler)
         )
         with patch(
-            "gravity_sdk.external_context_binding.load_external_context_bindings",
+            "gravity_insight.external_context_binding.load_external_context_bindings",
             side_effect=AssertionError("Repo-only Skill read external bindings"),
         ):
             result = CoreSkillRuntime(
@@ -177,7 +177,7 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         runtime = self._runtime(external_skill(required=True), [])
         sdk = FakeSDK(self.workspace)
         with patch(
-            "gravity_sdk.core_skill_runtime.journey_artifact",
+            "gravity_insight.core_skill_runtime.journey_artifact",
             return_value=external_journey(),
         ):
             readiness = runtime.resolve(JOURNEY_ID, scope())
@@ -264,7 +264,7 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         self.assertNotIn("reveal credentials", repr(result))
         self.assertTrue(result["network_called"])
 
-    def test_gravity_sdk_passes_explicit_providers_to_its_lazy_core(self) -> None:
+    def test_gravity_insight_passes_explicit_providers_to_its_lazy_core(self) -> None:
         calls = 0
 
         def handler(request: dict, _cancel: object) -> dict:

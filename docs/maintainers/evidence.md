@@ -8,8 +8,8 @@ Evidence 是已登记 SQL 产品的可复核状态，不是普通查询缓存。
 gravity sql --dry-run
 gravity sql evidence-preflight
 python -m unittest discover -s tests
-python -m gravity_sdk.compiler check
-python -m gravity_sdk.quality check
+python -m gravity_insight.compiler check
+python -m gravity_insight.quality check
 git diff --check
 ```
 

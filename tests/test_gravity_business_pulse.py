@@ -1,9 +1,9 @@
 import unittest
 
-from gravity_sdk.business_pulse import business_pulse
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_pulse_adapter import execute_business_pulse, validate_business_pulse
+from gravity_insight.business_pulse import business_pulse
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 
 
 class RecordingClient:

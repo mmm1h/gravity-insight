@@ -40,21 +40,21 @@ flowchart LR
 
 当前源码真相：
 
-- operation：`src/gravity_sdk/contracts/operations/`
-- operation schema：`src/gravity_sdk/contracts/schema/operation-v2.schema.json`
-- 编译 manifest：`src/gravity_sdk/manifests/`（不要手改）
-- provenance：`src/gravity_sdk/contracts/generated/`
-- export：`src/gravity_sdk/contracts/exports/`
-- workspace/recipe/SQL product schema：`src/gravity_sdk/contracts/schema/workspace-v1.schema.json`
-- SQL 机制合同：`src/gravity_sdk/contracts/sql-products/catalog.json`
-- Census：`src/gravity_sdk/census/data/`
+- operation：`src/gravity_insight/contracts/operations/`
+- operation schema：`src/gravity_insight/contracts/schema/operation-v2.schema.json`
+- 编译 manifest：`src/gravity_insight/manifests/`（不要手改）
+- provenance：`src/gravity_insight/contracts/generated/`
+- export：`src/gravity_insight/contracts/exports/`
+- workspace/recipe/SQL product schema：`src/gravity_insight/contracts/schema/workspace-v1.schema.json`
+- SQL 机制合同：`src/gravity_insight/contracts/sql-products/catalog.json`
+- Census：`src/gravity_insight/census/data/`
 
 ## 新增原子 operation
 
 1. 用 Census、浏览器或获批 probe 留下可复核的路由和响应形状证据。
 2. 选择稳定且窄的 `operation_id`；一个 operation 表达一个读取动作。
 3. 在源合同声明固定路由、effect、输入、投影、分页、隐私和最小 probe。
-4. 运行 compiler 的正式生成流程，再用 `python -m gravity_sdk.compiler check` 验证确定性。
+4. 运行 compiler 的正式生成流程，再用 `python -m gravity_insight.compiler check` 验证确定性。
 5. 添加脱敏 fixture 和针对该 operation 的输入、投影、分页、错误测试。
 6. 离线检查通过后，才按 [探测安全](probing.md) 做最小 live probe。
 7. 证据、合同、隐私和 probe 全部成立后再标为 stable。

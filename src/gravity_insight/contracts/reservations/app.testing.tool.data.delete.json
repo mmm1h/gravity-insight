@@ -1,0 +1,137 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20694,
+  "operation": {
+    "action": "delete",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "mutation_sdk_not_implemented",
+    "contract_version": 1,
+    "description": "Reserved mutation route POST /turbo_engine/api/v1/user/device_white/testing_tool/clear_data/; this version never dispatches the upstream request.",
+    "domain": "app",
+    "effect": "mutation",
+    "examples": [],
+    "executable": false,
+    "input_fields": {},
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "app.testing.tool.data.delete",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/user/device_white/testing_tool/clear_data/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "reservations/app.testing.tool.data.delete.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "testing_tool_data",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "blocked_write",
+    "upstream_method": "POST"
+  },
+  "reservation": {
+    "block_reason": "mutation_sdk_not_implemented",
+    "generated_at": "2026-08-08T21:15:23Z",
+    "implementation_prerequisites": [
+      "approved_mutation_policy",
+      "exact_request_schema",
+      "idempotency_and_retry_contract",
+      "approval_and_audit_requirements",
+      "preimage_readback_and_rollback_contract"
+    ],
+    "mutation_semantics": {
+      "affects_live_delivery": "unknown",
+      "batch_action": null,
+      "evidence": [
+        "explicit_delete_path_token",
+        "explicit_irreversible_action",
+        "live_delivery_effect_not_proven"
+      ],
+      "idempotency": "conditional",
+      "kind": "delete",
+      "reversibility": "irreversible",
+      "risk_level": "high",
+      "scope": "unknown"
+    },
+    "request_contract_status": "unknown_until_mutation_sdk_implementation",
+    "route_evidence": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/694",
+      "route_index": 694,
+      "route_sha256": "28d584906eed2bc05f4526e57d699c2645edfdbd459fcaa8616322e6c9941e62",
+      "source_status": "uncovered_write"
+    },
+    "status": "blocked_write"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

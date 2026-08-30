@@ -145,7 +145,7 @@ def _external_selector_receipt(
         "catalog_capability_count": len(catalog["capabilities"]),
         "catalog_category_count": len(catalog["categories"]),
         "runtime_dispatcher": (
-            "gravity_sdk.agents.host_selection.host_routing_discovery"
+            "gravity_insight.agents.host_selection.host_routing_discovery"
         ),
         "runtime_routing_mode": "host_catalog",
         "runtime_host_catalog_schema_version": catalog[
@@ -159,8 +159,8 @@ def _external_selector_receipt(
 
 
 def _catalog(client: Any) -> tuple[dict[str, Any], dict[str, Any]]:
-    from gravity_sdk.agents.catalog import _categories, _inventory, _summary
-    from gravity_sdk.agents.host_catalog import host_product_catalog
+    from gravity_insight.agents.catalog import _categories, _inventory, _summary
+    from gravity_insight.agents.host_catalog import host_product_catalog
 
     runtime_catalog = host_product_catalog(client)
     refs = set(map(str, runtime_catalog["catalog_refs"]))
@@ -356,7 +356,7 @@ def _selection_result(
     query = str(case["prompt"])
     selection = _runtime_selection(query, selected, runtime_catalog)
     if dispatch_mode == "explicit_host":
-        from gravity_sdk.agents.host_selection import (
+        from gravity_insight.agents.host_selection import (
             HOST_ROUTING_MODE,
             host_routing_discovery,
         )
@@ -417,8 +417,8 @@ def _default_dispatch_result(
 ) -> dict[str, Any]:
     """Enter the public CLI command and record its value-free call shape."""
 
-    from gravity_sdk.agent import run_agent_command
-    from gravity_sdk.cli import build_parser
+    from gravity_insight.agent import run_agent_command
+    from gravity_insight.cli import build_parser
 
     argv = ["agent", query]
     if include_host_selection:

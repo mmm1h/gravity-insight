@@ -9,20 +9,20 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, RuntimeSkillResolver, __version__
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk.core_skill_runtime import CoreSkillRuntime
-from gravity_sdk.journey_contract import journey_artifact
-from gravity_sdk.reference_journey import ReferenceJourneyRunner
-from gravity_sdk.reference_journey_contract import JOURNEY_ID, SKILL_URI
-from gravity_sdk.skill_contract import compile_skill_manifest, skill_uri
-from gravity_sdk.skill_hub_contract import compile_hub_index
-from gravity_sdk.skill_hub_locks import (
+from gravity_insight import GravitySDK, RuntimeSkillResolver, __version__
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.core_skill_runtime import CoreSkillRuntime
+from gravity_insight.journey_contract import journey_artifact
+from gravity_insight.reference_journey import ReferenceJourneyRunner
+from gravity_insight.reference_journey_contract import JOURNEY_ID, SKILL_URI
+from gravity_insight.skill_contract import compile_skill_manifest, skill_uri
+from gravity_insight.skill_hub_contract import compile_hub_index
+from gravity_insight.skill_hub_locks import (
     build_skills_lock,
     build_trusted_packs_lock,
 )
-from gravity_sdk.skill_hub_state import build_trusted_installation_state
-from gravity_sdk.skill_render import render_package_files, skill_package_descriptor
+from gravity_insight.skill_hub_state import build_trusted_installation_state
+from gravity_insight.skill_render import render_package_files, skill_package_descriptor
 from tests.test_project_skill_overlay import project_overlay, project_semantic_source
 from tests.test_reference_journey import (
     FakeSDK,
@@ -239,19 +239,19 @@ class RuntimeSkillResolverTests(unittest.TestCase):
 
         with (
             patch(
-                "gravity_sdk.core_skill_runtime.journey_artifact",
+                "gravity_insight.core_skill_runtime.journey_artifact",
                 return_value=synthetic,
             ),
             patch(
-                "gravity_sdk.skill_hub_client.SkillHubClient.sync",
+                "gravity_insight.skill_hub_client.SkillHubClient.sync",
                 side_effect=AssertionError("Runtime attempted Hub sync"),
             ),
             patch(
-                "gravity_sdk.skill_hub_client.SkillHubClient.fetch",
+                "gravity_insight.skill_hub_client.SkillHubClient.fetch",
                 side_effect=AssertionError("Runtime attempted Hub fetch"),
             ),
             patch(
-                "gravity_sdk.skill_hub_client.SkillHubClient.install",
+                "gravity_insight.skill_hub_client.SkillHubClient.install",
                 side_effect=AssertionError("Runtime attempted Hub install"),
             ),
         ):

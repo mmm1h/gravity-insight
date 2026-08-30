@@ -6,14 +6,14 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.capability_contract import capability_contract
-from gravity_sdk.capability_validation import (
+from gravity_insight import GravitySDK
+from gravity_insight.capability_contract import capability_contract
+from gravity_insight.capability_validation import (
     STORE_RELATIVE_PATH,
     STORE_SCHEMA_VERSION,
 )
-from gravity_sdk.data_quality import data_quality_result
-from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+from gravity_insight.data_quality import data_quality_result
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
 
 
 def workspace(root: Path) -> Workspace:

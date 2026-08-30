@@ -8,15 +8,15 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk.runtime_compatibility import runtime_satisfies, runtime_within
-from gravity_sdk.skill_contract import compile_skill_manifest, skill_uri
-from gravity_sdk.skill_hub_contract import (
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.runtime_compatibility import runtime_satisfies, runtime_within
+from gravity_insight.skill_contract import compile_skill_manifest, skill_uri
+from gravity_insight.skill_hub_contract import (
     SkillHubContractError,
     compile_hub_index,
     compile_hub_source,
 )
-from gravity_sdk.skill_hub_locks import (
+from gravity_insight.skill_hub_locks import (
     build_skills_lock,
     build_trusted_pack_install_plan,
     build_trusted_packs_lock,
@@ -24,8 +24,8 @@ from gravity_sdk.skill_hub_locks import (
     compile_trusted_pack_install_plan,
     compile_trusted_packs_lock,
 )
-from gravity_sdk.skill_render import skill_package_descriptor
-from gravity_sdk.trusted_pack_contract import compile_trusted_pack_descriptor
+from gravity_insight.skill_render import skill_package_descriptor
+from gravity_insight.trusted_pack_contract import compile_trusted_pack_descriptor
 from tests.test_operator_model_contracts import trusted_pack
 
 
@@ -38,7 +38,7 @@ def team_manifest(
     path = (
         ROOT
         / "src"
-        / "gravity_sdk"
+        / "gravity_insight"
         / "contracts"
         / "skills"
         / "gravity.game.ap-cost-anomaly-localization.v1.json"
@@ -301,7 +301,7 @@ class SkillHubContractTests(unittest.TestCase):
         path = (
             ROOT
             / "src"
-            / "gravity_sdk"
+            / "gravity_insight"
             / "contracts"
             / "skills"
             / "gravity.game.ap-cost-anomaly-localization.v1.json"

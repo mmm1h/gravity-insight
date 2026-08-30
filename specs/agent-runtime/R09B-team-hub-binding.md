@@ -76,7 +76,7 @@ promotion.
 
 - Feature commit `909ae1a` and merge `e8fd2a1` add one public
   `RuntimeSkillResolver`; root public API now has `126` lazy exports and
-  `gravity_sdk.__all__` has `127` entries including `__version__`. No CLI
+  `gravity_insight.__all__` has `127` entries including `__version__`. No CLI
   command, Journey, router, executor, Plan adapter, Provider, operation or
   worker pool was added.
 - Built-in identity resolves before project access, remains `unlocked`, writes

@@ -5,13 +5,13 @@ import re
 import unittest
 from pathlib import Path
 
-from gravity_sdk.models import PaginationSpec, load_operation_manifest
-from gravity_sdk.registry import Registry
-from gravity_sdk.runtime import validate_manifest_json
+from gravity_insight.models import PaginationSpec, load_operation_manifest
+from gravity_insight.registry import Registry
+from gravity_insight.runtime import validate_manifest_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_DIR = ROOT / "src" / "gravity_sdk" / "manifests"
+MANIFEST_DIR = ROOT / "src" / "gravity_insight" / "manifests"
 MANIFEST_NAMES = {
     "analysis.json",
     "analysis_auxiliary.json",

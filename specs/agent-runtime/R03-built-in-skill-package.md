@@ -126,7 +126,7 @@ Render golden tests, repeated build digest equality, wheel installation test, pa
   `248/248`, offline terminal `53/53`, recovery `5/5`, security PASS and
   production HTTP requests `0`. Canonical consumer adoption/R01 remains
   `10 passed, 94 subtests` with no consumer file migration.
-- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Final isolated wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `2bfc8f9d09dba361a91dbc674cdb626bb9ddcac449d9ed7c31bd0fa9e82703bf`.
   It loaded the exact package from isolated `site-packages`, rendered the
   Agent export outside the checkout and preserved consumer R01 exit 4.

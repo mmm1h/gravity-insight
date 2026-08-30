@@ -9,28 +9,28 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import catalog, cli, runtime
+from gravity_insight import catalog, cli, runtime
 
 try:
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.errors import (
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.errors import (
         ErrorCode,
         ErrorDetail,
         InputValidationError,
         UpstreamError,
         exit_code_for_error,
     )
-    from gravity_sdk.models import ReadResult
+    from gravity_insight.models import ReadResult
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.errors import (
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.errors import (
         ErrorCode,
         ErrorDetail,
         InputValidationError,
         UpstreamError,
         exit_code_for_error,
     )
-    from gravity_sdk.models import ReadResult
+    from gravity_insight.models import ReadResult
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,7 +113,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         document = json.loads(
             (
                 ROOT
-                / "src/gravity_sdk/contracts/runtime-operation-bindings.json"
+                / "src/gravity_insight/contracts/runtime-operation-bindings.json"
             ).read_text(encoding="utf-8")
         )
         bindings = document["catalog"]
@@ -211,7 +211,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
 
     def test_contract_example_and_parent_trace_fill_rates_are_locked(self):
         operation_root = (
-            ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+            ROOT / "src" / "gravity_insight" / "contracts" / "operations"
         )
         examples_complete = 0
         examples_unknown = 0
@@ -429,11 +429,11 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         self.assertEqual(2, code)
         self.assertEqual("INPUT_INVALID", payload["error"]["code"])
 
-        with patch("gravity_sdk.cli.run", side_effect=UpstreamError("down")):
+        with patch("gravity_insight.cli.run", side_effect=UpstreamError("down")):
             stderr = io.StringIO()
             with contextlib.redirect_stderr(stderr):
                 self.assertEqual(3, cli.main(["operations", "list"]))
-        with patch("gravity_sdk.cli.run", side_effect=OSError("disk")):
+        with patch("gravity_insight.cli.run", side_effect=OSError("disk")):
             stderr = io.StringIO()
             with contextlib.redirect_stderr(stderr):
                 self.assertEqual(4, cli.main(["operations", "list"]))

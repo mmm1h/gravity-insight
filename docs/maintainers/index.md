@@ -31,11 +31,11 @@
 
 ## 源码真相
 
-- operation 源合同：`src/gravity_sdk/contracts/operations/`
-- 编译后 manifest：`src/gravity_sdk/manifests/`
-- 生成 provenance：`src/gravity_sdk/contracts/generated/`
-- SQL 产品机器合同：`src/gravity_sdk/contracts/sql-products/`
-- Census 数据：`src/gravity_sdk/census/data/`
+- operation 源合同：`src/gravity_insight/contracts/operations/`
+- 编译后 manifest：`src/gravity_insight/manifests/`
+- 生成 provenance：`src/gravity_insight/contracts/generated/`
+- SQL 产品机器合同：`src/gravity_insight/contracts/sql-products/`
+- Census 数据：`src/gravity_insight/census/data/`
 - operation 探针证据：`evidence/probe/`
 - SQL Evidence：当前 workspace 对应的用户私有 `state_root/evidence/`
 
@@ -57,10 +57,10 @@ manifest 编译、投影/隐私审核与 fail-closed 漂移。业务词、App al
 ```powershell
 python -m unittest discover -s tests
 python -m pytest -q
-python -m gravity_sdk.compiler check
-python -m gravity_sdk.quality check
+python -m gravity_insight.compiler check
+python -m gravity_insight.quality check
 $env:PYTHONPATH='src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1; if ($LASTEXITCODE) { exit $LASTEXITCODE }
-python -m gravity_sdk --help
+python -m gravity_insight --help
 git diff --check
 ```
 

@@ -216,7 +216,7 @@ class DocumentationArchitectureTests(unittest.TestCase):
         legacy = DOCS / "data-contracts"
         self.assertEqual([], [path for path in legacy.rglob("*") if path.is_file()])
         self.assertTrue(
-            (ROOT / "src/gravity_sdk/contracts/sql-products/catalog.json").is_file()
+            (ROOT / "src/gravity_insight/contracts/sql-products/catalog.json").is_file()
         )
 
 

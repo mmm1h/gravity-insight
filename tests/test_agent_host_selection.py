@@ -5,24 +5,24 @@ import unittest
 
 from unittest.mock import patch
 
-from gravity_sdk.agent import discover_capabilities, run_agent_command
-from gravity_sdk.agents.host_catalog import (
+from gravity_insight.agent import discover_capabilities, run_agent_command
+from gravity_insight.agents.host_catalog import (
     SELECTION_SCHEMA_VERSION,
     host_product_catalog,
     validate_host_catalog_projection,
 )
-from gravity_sdk.agents.host_selection import (
+from gravity_insight.agents.host_selection import (
     EMPTY_SELECTION_GAP,
     DEFAULT_ROUTING_MODE,
     assess_host_product_selection,
     compile_host_product_selection,
     resolve_host_product_selection,
 )
-from gravity_sdk.agents.product_inventory import canonical_capability_cards
-from gravity_sdk.agents.unavailable import registered_unavailable_gaps
-from gravity_sdk.cli import build_parser
-from gravity_sdk.client import GravityInsightClient
-from gravity_sdk.errors import InputValidationError
+from gravity_insight.agents.product_inventory import canonical_capability_cards
+from gravity_insight.agents.unavailable import registered_unavailable_gaps
+from gravity_insight.cli import build_parser
+from gravity_insight.client import GravityInsightClient
+from gravity_insight.errors import InputValidationError
 
 
 class _NoNetwork:
@@ -152,7 +152,7 @@ class HostProductSelectionTests(unittest.TestCase):
 
     def test_cli_default_and_unspecified_behavior_remain_recognizer(self) -> None:
         import inspect
-        from gravity_sdk.agents.host_selection import RECOGNIZER_ROUTING_MODE
+        from gravity_insight.agents.host_selection import RECOGNIZER_ROUTING_MODE
 
         args = build_parser().parse_args(["agent", "event analysis"])
         self.assertEqual(RECOGNIZER_ROUTING_MODE, DEFAULT_ROUTING_MODE)
@@ -176,7 +176,7 @@ class HostProductSelectionTests(unittest.TestCase):
 
     def test_cli_selection_implies_host_without_weakening_explicit_arms(self) -> None:
         import json
-        from gravity_sdk.agents.host_selection import (
+        from gravity_insight.agents.host_selection import (
             HOST_ROUTING_MODE,
             RECOGNIZER_ROUTING_MODE,
         )
@@ -202,10 +202,10 @@ class HostProductSelectionTests(unittest.TestCase):
             [implied["routing_mode"], explicit["routing_mode"]],
         )
 
-        from gravity_sdk.find_input import load_json_input
+        from gravity_insight.find_input import load_json_input
 
         with patch(
-            "gravity_sdk.find_input.load_json_input", wraps=load_json_input
+            "gravity_insight.find_input.load_json_input", wraps=load_json_input
         ) as load:
             with self.assertRaisesRegex(ValueError, "--input is required"):
                 run_agent_command(
@@ -229,7 +229,7 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertIn("explicitly set to host_catalog", caught.exception.next_action)
 
     def test_discover_capabilities_routes_from_selection_presence(self) -> None:
-        from gravity_sdk.agents.host_selection import (
+        from gravity_insight.agents.host_selection import (
             HOST_ROUTING_MODE,
             RECOGNIZER_ROUTING_MODE,
         )
@@ -257,8 +257,8 @@ class HostProductSelectionTests(unittest.TestCase):
 
     def test_batch_and_cli_input_route_each_question_from_its_selection(self) -> None:
         import json
-        from gravity_sdk.agents.batch import capabilities_many
-        from gravity_sdk.agents.host_selection import (
+        from gravity_insight.agents.batch import capabilities_many
+        from gravity_insight.agents.host_selection import (
             HOST_ROUTING_MODE,
             RECOGNIZER_ROUTING_MODE,
         )
@@ -301,8 +301,8 @@ class HostProductSelectionTests(unittest.TestCase):
         )
 
     def test_gravity_facade_routes_from_selection_presence(self) -> None:
-        from gravity_sdk import GravitySDK
-        from gravity_sdk.agents.host_selection import (
+        from gravity_insight import GravitySDK
+        from gravity_insight.agents.host_selection import (
             HOST_ROUTING_MODE,
             RECOGNIZER_ROUTING_MODE,
         )
@@ -321,14 +321,14 @@ class HostProductSelectionTests(unittest.TestCase):
                 self.assertEqual(is_floor, result["routing"]["floor"])
 
     def test_no_selection_still_needs_one_discovery_call(self) -> None:
-        from gravity_sdk.agents.host_selection import RECOGNIZER_ROUTING_MODE
+        from gravity_insight.agents.host_selection import RECOGNIZER_ROUTING_MODE
 
         parser = build_parser()
         with patch(
-            "gravity_sdk.agent.discover_capabilities",
+            "gravity_insight.agent.discover_capabilities",
             wraps=discover_capabilities,
         ) as discovery, patch(
-            "gravity_sdk.agents.host_selection.resolve_host_product_selection"
+            "gravity_insight.agents.host_selection.resolve_host_product_selection"
         ) as host:
             result = run_agent_command(
                 parser.parse_args(["agent", "event analysis"]), self.client
@@ -361,9 +361,9 @@ class HostProductSelectionTests(unittest.TestCase):
         else:
             self.fail("host selection has no default routing assignment")
         ast.fix_missing_locations(tree)
-        rebound = types.ModuleType("gravity_sdk.agents._host_selection_rebound_default")
+        rebound = types.ModuleType("gravity_insight.agents._host_selection_rebound_default")
         rebound.__file__ = str(source_path)
-        rebound.__package__ = "gravity_sdk.agents"
+        rebound.__package__ = "gravity_insight.agents"
         exec(compile(tree, str(source_path), "exec"), rebound.__dict__)
 
         self.assertEqual(("recognizer", "host_catalog"), rebound.ROUTING_MODES)
@@ -418,7 +418,7 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertIn("HOST_SELECTION_REASON_INVALID", str(caught.exception))
 
     def test_agent_input_rejects_single_query_object_with_legal_shape(self) -> None:
-        from gravity_sdk.agents.batch import validate_questions
+        from gravity_insight.agents.batch import validate_questions
 
         with self.assertRaises(InputValidationError) as caught:
             validate_questions({"query": "event trend"})

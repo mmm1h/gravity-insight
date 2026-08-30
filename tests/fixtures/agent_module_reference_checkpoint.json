@@ -1,5 +1,5 @@
 {
-  "schema_version": "gravity.agent-module-reference-checkpoint.v1",
+  "schema_version": "gravity.agent-module-reference-checkpoint.v2",
   "receipt_role": "live_checkpoint_scan_only; not authority for canonical errata replacements",
   "immutable_baseline_ledger": {
     "role": "errata_source_only_immutable_baseline",
@@ -8,17 +8,26 @@
     "sha256": "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20",
     "schema_version": "gravity.agent-module-reference-dispositions.v2"
   },
+  "package_root_migration": {
+    "historical_package_root": "gravity_sdk",
+    "current_package_root": "gravity_insight",
+    "projection": "replace_exact_leading_package_component",
+    "historical_evidence_role": "immutable_baseline_records_names_at_r17_delivery_time",
+    "current_validation_role": "project_historical_r17_owners_before_filesystem_and_reference_checks",
+    "compatibility_package_present": false,
+    "projected_scope_sha256": "584bf38b6135204717a01f4fb3ee26165927a58a55176a54c7de66c9c9949588"
+  },
   "source_audit": {
     "method": "direct repository scan",
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "90a5dbf090eed5152cdf19c8ebab7125ebeb4d105593be06ddc16d95ba69f762",
+    "scanner_sha256": "504724d569f1d5cc52bc8fa047087c1cd0965710d062347d012e8eafa13edb9a",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
-    "candidate_map_sha256": "44869b03429b1bc59a1d72c04a2951741f0b23619207bb856231cd9e4845e116",
-    "reference_evidence_sha256": "737e524a5c129d5c00ed919e6eb5f85e2726c793805ca39a0186fc86d1c466e9",
-    "manual_review_sha256": "b303144c4b7380624984fb0de3de944aa1d7ae9e49fff6c49735b74b472cec65",
+    "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
+    "reference_evidence_sha256": "cfd6dd8e0cb81928be342926bb369c2d7fbae73428b9049216eca39566b9d7ce",
+    "manual_review_sha256": "3535e48c596ab5c3e0fe8a0417572b05ba71fe3d82dc54ca140d62a4fc802d6f",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3198,
     "scanned_file_count": 3190,
@@ -394,7 +403,7 @@
   },
   "classification_basis": [
     {
-      "basis": "The receiver is a locally enumerated error compatibility symbol whose owner is normalized to gravity_sdk.errors.",
+      "basis": "The receiver is a locally enumerated error compatibility symbol whose owner is normalized to gravity_insight.errors.",
       "evidence_kind": "receiver_binding_census"
     },
     {
@@ -582,7 +591,7 @@
       "evidence_kind": "finite_input_dataflow"
     },
     {
-      "basis": "__name__ is gravity_sdk.sql.credentials. The target is outside the R17 module set.",
+      "basis": "__name__ is gravity_insight.sql.credentials. The target is outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -590,15 +599,15 @@
       "evidence_kind": "finite_input_dataflow"
     },
     {
-      "basis": "_atomic_update_env is owned by gravity_sdk.credentials. The target is outside the R17 module set.",
-      "evidence_kind": "finite_input_dataflow"
-    },
-    {
-      "basis": "sdk.__name__ is gravity_sdk and the only appended suffix is '.errors'.",
+      "basis": "_atomic_update_env is owned by gravity_insight.credentials. The target is outside the R17 module set.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
       "basis": "The six expressions append fixed root-module suffixes outside R17.",
+      "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "sdk.__name__ is gravity_insight and the only appended suffix is '.errors'.",
       "evidence_kind": "finite_input_dataflow"
     },
     {
@@ -626,31 +635,31 @@
       "evidence_kind": "three_state_gate_contract"
     },
     {
-      "basis": "_atomic_update_env is imported from gravity_sdk.credentials. That owner is outside the R17 move set.",
+      "basis": "error_type is selected from gravity_insight.errors. That owner is outside the R17 move set.",
       "evidence_kind": "receiver_binding_census"
     },
     {
-      "basis": "ExecutionVariantService is imported from gravity_sdk.execution_variant. That owner is outside the R17 move set.",
+      "basis": "ExecutionVariantService is imported from gravity_insight.execution_variant. That owner is outside the R17 move set.",
       "evidence_kind": "receiver_binding_census"
     },
     {
-      "basis": "error_type is selected from gravity_sdk.errors. That owner is outside the R17 move set.",
+      "basis": "_atomic_update_env is imported from gravity_insight.credentials. That owner is outside the R17 move set.",
       "evidence_kind": "receiver_binding_census"
     },
     {
-      "basis": "R17 explicitly retains gravity_sdk.agent_runtime_contracts at the root; this active governance reference names that unchanged terminal owner.",
+      "basis": "R17 retained the historical gravity_sdk.agent_runtime_contracts owner; the package-root migration projects it to the current root without changing the R17 disposition.",
       "evidence_kind": "r17_scope_contract"
     },
     {
-      "basis": "R17 retains gravity_sdk.agent_runtime_contracts at the root, so this exact reference remains unchanged.",
+      "basis": "R17 retains the historical gravity_sdk.agent_runtime_contracts owner; the current package-root projection preserves that disposition.",
       "evidence_kind": "r17_scope_contract"
     },
     {
-      "basis": "All six finite _EXPORTS owner values already name their terminal gravity_sdk.agents owners.",
+      "basis": "All six finite _EXPORTS owner values already name their terminal gravity_insight.agents owners.",
       "evidence_kind": "finite_selector_dataflow"
     },
     {
-      "basis": "The loop input is the literal singleton ('gravity_sdk',), so it cannot select any deep agent module.",
+      "basis": "The loop input is the literal singleton ('gravity_insight',), so it cannot select any deep agent module.",
       "evidence_kind": "finite_input_dataflow"
     }
   ],
@@ -683,7 +692,7 @@
     "dispositions": {
       "no_migration_effect": 310
     },
-    "sites_sha256": "963a04c0bb72b38f662381da6b5675366eb25ff3bf8d847298d63f1a25c2cae3"
+    "sites_sha256": "93847036cc4e1702d97680da6b15ebacd116740624e91a3ee198adc8a07039fa"
   },
   "blockers": [],
   "site_fields": [
@@ -2024,8 +2033,8 @@
       "scripts/generate_thinkingai_full_specifications.py:17:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2039,8 +2048,8 @@
       "scripts/generate_thinkingai_full_specifications.py:34:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2054,8 +2063,8 @@
       "scripts/generate_thinkingai_representatives.py:16:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2126,7 +2135,7 @@
       }
     ],
     [
-      "src/gravity_sdk/__init__.py:278:21:import_module",
+      "src/gravity_insight/__init__.py:278:21:import_module",
       "rm",
       "dynamic_import",
       "module_name",
@@ -2141,11 +2150,11 @@
       }
     ],
     [
-      "src/gravity_sdk/action_dashboard_connector.py:15:1:from import",
+      "src/gravity_insight/action_dashboard_connector.py:15:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2156,11 +2165,11 @@
       }
     ],
     [
-      "src/gravity_sdk/adaptive_governor_snapshot.py:15:1:from import",
+      "src/gravity_insight/adaptive_governor_snapshot.py:15:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2171,11 +2180,11 @@
       }
     ],
     [
-      "src/gravity_sdk/analysis_artifact.py:10:1:from import",
+      "src/gravity_insight/analysis_artifact.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2186,11 +2195,11 @@
       }
     ],
     [
-      "src/gravity_sdk/analysis_artifact_delivery.py:11:1:from import",
+      "src/gravity_insight/analysis_artifact_delivery.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2201,11 +2210,11 @@
       }
     ],
     [
-      "src/gravity_sdk/analysis_artifact_markdown.py:12:1:from import",
+      "src/gravity_insight/analysis_artifact_markdown.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2216,11 +2225,11 @@
       }
     ],
     [
-      "src/gravity_sdk/analysis_result_contract.py:9:1:from import",
+      "src/gravity_insight/analysis_result_contract.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2231,11 +2240,11 @@
       }
     ],
     [
-      "src/gravity_sdk/artifact_transfer.py:16:1:from import",
+      "src/gravity_insight/artifact_transfer.py:16:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2246,11 +2255,11 @@
       }
     ],
     [
-      "src/gravity_sdk/capability_contract.py:10:1:from import",
+      "src/gravity_insight/capability_contract.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2261,11 +2270,11 @@
       }
     ],
     [
-      "src/gravity_sdk/capability_trust.py:11:1:from import",
+      "src/gravity_insight/capability_trust.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2276,11 +2285,11 @@
       }
     ],
     [
-      "src/gravity_sdk/capability_validation.py:12:1:from import",
+      "src/gravity_insight/capability_validation.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2291,11 +2300,11 @@
       }
     ],
     [
-      "src/gravity_sdk/context_contract.py:14:1:from import",
+      "src/gravity_insight/context_contract.py:14:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2306,11 +2315,11 @@
       }
     ],
     [
-      "src/gravity_sdk/core_skill_references.py:9:1:from import",
+      "src/gravity_insight/core_skill_references.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2321,11 +2330,11 @@
       }
     ],
     [
-      "src/gravity_sdk/core_skill_runtime.py:11:1:from import",
+      "src/gravity_insight/core_skill_runtime.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2336,11 +2345,11 @@
       }
     ],
     [
-      "src/gravity_sdk/data_quality.py:10:1:from import",
+      "src/gravity_insight/data_quality.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2351,7 +2360,7 @@
       }
     ],
     [
-      "src/gravity_sdk/error_mapping.py:101:5:__module__",
+      "src/gravity_insight/error_mapping.py:101:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",
@@ -2366,7 +2375,7 @@
       }
     ],
     [
-      "src/gravity_sdk/error_models.py:315:5:__module__",
+      "src/gravity_insight/error_models.py:315:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",
@@ -2381,7 +2390,7 @@
       }
     ],
     [
-      "src/gravity_sdk/error_sql.py:31:5:__module__",
+      "src/gravity_insight/error_sql.py:31:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",
@@ -2396,7 +2405,7 @@
       }
     ],
     [
-      "src/gravity_sdk/error_types.py:182:5:__module__",
+      "src/gravity_insight/error_types.py:182:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",
@@ -2411,11 +2420,11 @@
       }
     ],
     [
-      "src/gravity_sdk/execution_snapshot.py:10:1:from import",
+      "src/gravity_insight/execution_snapshot.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2426,11 +2435,11 @@
       }
     ],
     [
-      "src/gravity_sdk/execution_variant_characterization.py:9:1:from import",
+      "src/gravity_insight/execution_variant_characterization.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2441,11 +2450,11 @@
       }
     ],
     [
-      "src/gravity_sdk/execution_variant_contract.py:10:1:from import",
+      "src/gravity_insight/execution_variant_contract.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2456,11 +2465,11 @@
       }
     ],
     [
-      "src/gravity_sdk/execution_variant_selection.py:9:1:from import",
+      "src/gravity_insight/execution_variant_selection.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2471,11 +2480,11 @@
       }
     ],
     [
-      "src/gravity_sdk/experiment_handoff.py:12:1:from import",
+      "src/gravity_insight/experiment_handoff.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2486,11 +2495,11 @@
       }
     ],
     [
-      "src/gravity_sdk/external_context_binding.py:10:1:from import",
+      "src/gravity_insight/external_context_binding.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2501,11 +2510,11 @@
       }
     ],
     [
-      "src/gravity_sdk/external_context_binding_contract.py:13:1:from import",
+      "src/gravity_insight/external_context_binding_contract.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2516,11 +2525,11 @@
       }
     ],
     [
-      "src/gravity_sdk/external_context_contract.py:13:1:from import",
+      "src/gravity_insight/external_context_contract.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2531,11 +2540,11 @@
       }
     ],
     [
-      "src/gravity_sdk/governor_observation.py:16:1:from import",
+      "src/gravity_insight/governor_observation.py:16:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2546,11 +2555,11 @@
       }
     ],
     [
-      "src/gravity_sdk/journey_contract.py:11:1:from import",
+      "src/gravity_insight/journey_contract.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2561,11 +2570,11 @@
       }
     ],
     [
-      "src/gravity_sdk/journey_ledger.py:12:1:from import",
+      "src/gravity_insight/journey_ledger.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2576,11 +2585,11 @@
       }
     ],
     [
-      "src/gravity_sdk/journey_service.py:10:1:from import",
+      "src/gravity_insight/journey_service.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2591,11 +2600,11 @@
       }
     ],
     [
-      "src/gravity_sdk/mcp/resources.py:15:1:from import",
+      "src/gravity_insight/mcp/resources.py:15:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2606,11 +2615,11 @@
       }
     ],
     [
-      "src/gravity_sdk/mcp/results.py:9:1:from import",
+      "src/gravity_insight/mcp/results.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2621,11 +2630,11 @@
       }
     ],
     [
-      "src/gravity_sdk/mcp/server.py:12:1:from import",
+      "src/gravity_insight/mcp/server.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2636,11 +2645,11 @@
       }
     ],
     [
-      "src/gravity_sdk/mcp/tool_catalog.py:9:1:from import",
+      "src/gravity_insight/mcp/tool_catalog.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2651,11 +2660,11 @@
       }
     ],
     [
-      "src/gravity_sdk/model_contract.py:12:1:from import",
+      "src/gravity_insight/model_contract.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2666,11 +2675,11 @@
       }
     ],
     [
-      "src/gravity_sdk/operator_contract.py:12:1:from import",
+      "src/gravity_insight/operator_contract.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2681,11 +2690,11 @@
       }
     ],
     [
-      "src/gravity_sdk/operator_model_receipt.py:9:1:from import",
+      "src/gravity_insight/operator_model_receipt.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2696,11 +2705,11 @@
       }
     ],
     [
-      "src/gravity_sdk/outcome_evaluation_handoff.py:11:1:from import",
+      "src/gravity_insight/outcome_evaluation_handoff.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2711,7 +2720,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/cli.py:328:14:importlib.import_module",
+      "src/gravity_insight/prober/cli.py:328:14:importlib.import_module",
       "rm",
       "dynamic_import",
       "sdk.__name__ + \".errors\"",
@@ -2720,13 +2729,13 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      50,
+      51,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_sdk/prober/export_verify.py:60:12:importlib.import_module",
+      "src/gravity_insight/prober/export_verify.py:60:12:importlib.import_module",
       "rm",
       "dynamic_import",
       "f\"{base}.{name}\"",
@@ -2741,7 +2750,7 @@
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:196:19:importlib.import_module",
+      "src/gravity_insight/prober/transport.py:196:19:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".models\"",
@@ -2750,13 +2759,13 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      51,
+      50,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:197:21:importlib.import_module",
+      "src/gravity_insight/prober/transport.py:197:21:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".registry\"",
@@ -2765,13 +2774,13 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      51,
+      50,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:198:21:importlib.import_module",
+      "src/gravity_insight/prober/transport.py:198:21:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".executor\"",
@@ -2780,13 +2789,13 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      51,
+      50,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:199:22:importlib.import_module",
+      "src/gravity_insight/prober/transport.py:199:22:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".transport\"",
@@ -2795,13 +2804,13 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      51,
+      50,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:200:25:importlib.import_module",
+      "src/gravity_insight/prober/transport.py:200:25:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".http_runtime\"",
@@ -2810,13 +2819,13 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      51,
+      50,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_sdk/prober/transport.py:201:24:importlib.import_module",
+      "src/gravity_insight/prober/transport.py:201:24:importlib.import_module",
       "rm",
       "dynamic_import",
       "base + \".credentials\"",
@@ -2825,17 +2834,17 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      51,
+      50,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_sdk/project_skill_overlay.py:11:1:from import",
+      "src/gravity_insight/project_skill_overlay.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2846,11 +2855,11 @@
       }
     ],
     [
-      "src/gravity_sdk/receipt.py:455:5:from import",
+      "src/gravity_insight/receipt.py:455:5:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2861,11 +2870,11 @@
       }
     ],
     [
-      "src/gravity_sdk/receipt_facets.py:10:1:from import",
+      "src/gravity_insight/receipt_facets.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2876,11 +2885,11 @@
       }
     ],
     [
-      "src/gravity_sdk/repo_context_index.py:13:1:from import",
+      "src/gravity_insight/repo_context_index.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2891,7 +2900,7 @@
       }
     ],
     [
-      "src/gravity_sdk/runtime.py:34:20:importlib.import_module",
+      "src/gravity_insight/runtime.py:34:20:importlib.import_module",
       "rm",
       "dynamic_import",
       "name",
@@ -2906,11 +2915,11 @@
       }
     ],
     [
-      "src/gravity_sdk/runtime_skill_resolver.py:13:1:from import",
+      "src/gravity_insight/runtime_skill_resolver.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2921,11 +2930,11 @@
       }
     ],
     [
-      "src/gravity_sdk/semantic_contract.py:14:1:from import",
+      "src/gravity_insight/semantic_contract.py:14:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2936,11 +2945,11 @@
       }
     ],
     [
-      "src/gravity_sdk/semantic_registry.py:13:1:from import",
+      "src/gravity_insight/semantic_registry.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2951,11 +2960,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_contract.py:12:1:from import",
+      "src/gravity_insight/skill_contract.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2966,11 +2975,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_hub_archive.py:17:1:from import",
+      "src/gravity_insight/skill_hub_archive.py:17:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2981,11 +2990,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_hub_contract.py:10:1:from import",
+      "src/gravity_insight/skill_hub_contract.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -2996,11 +3005,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_hub_locks.py:10:1:from import",
+      "src/gravity_insight/skill_hub_locks.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3011,11 +3020,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_hub_source.py:13:1:from import",
+      "src/gravity_insight/skill_hub_source.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3026,11 +3035,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_hub_state.py:15:1:from import",
+      "src/gravity_insight/skill_hub_state.py:15:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3041,11 +3050,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_package.py:14:1:from import",
+      "src/gravity_insight/skill_package.py:14:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3056,11 +3065,11 @@
       }
     ],
     [
-      "src/gravity_sdk/skill_render.py:12:1:from import",
+      "src/gravity_insight/skill_render.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3071,7 +3080,7 @@
       }
     ],
     [
-      "src/gravity_sdk/sql/credentials.py:355:10:patch",
+      "src/gravity_insight/sql/credentials.py:355:10:patch",
       "rm",
       "non_string_patch_expression",
       "f\"{__name__}.restrict_local_secret\"",
@@ -3086,11 +3095,11 @@
       }
     ],
     [
-      "src/gravity_sdk/sql_explorer.py:9:1:from import",
+      "src/gravity_insight/sql_explorer.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3101,11 +3110,11 @@
       }
     ],
     [
-      "src/gravity_sdk/sql_explorer_contract.py:10:1:from import",
+      "src/gravity_insight/sql_explorer_contract.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3116,11 +3125,11 @@
       }
     ],
     [
-      "src/gravity_sdk/sql_explorer_policy.py:14:1:from import",
+      "src/gravity_insight/sql_explorer_policy.py:14:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3131,11 +3140,11 @@
       }
     ],
     [
-      "src/gravity_sdk/thinkingai_full_eval.py:8:1:from import",
+      "src/gravity_insight/thinkingai_full_eval.py:8:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3146,11 +3155,11 @@
       }
     ],
     [
-      "src/gravity_sdk/thinkingai_full_shared.py:10:1:from import",
+      "src/gravity_insight/thinkingai_full_shared.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3161,11 +3170,11 @@
       }
     ],
     [
-      "src/gravity_sdk/thinkingai_full_specification.py:9:1:from import",
+      "src/gravity_insight/thinkingai_full_specification.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3176,11 +3185,11 @@
       }
     ],
     [
-      "src/gravity_sdk/thinkingai_inventory_contract.py:10:1:from import",
+      "src/gravity_insight/thinkingai_inventory_contract.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3191,11 +3200,11 @@
       }
     ],
     [
-      "src/gravity_sdk/thinkingai_inventory_diff.py:10:1:from import",
+      "src/gravity_insight/thinkingai_inventory_diff.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3206,11 +3215,11 @@
       }
     ],
     [
-      "src/gravity_sdk/thinkingai_representative.py:10:1:from import",
+      "src/gravity_insight/thinkingai_representative.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3221,11 +3230,11 @@
       }
     ],
     [
-      "src/gravity_sdk/trusted_pack_contract.py:8:1:from import",
+      "src/gravity_insight/trusted_pack_contract.py:8:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3239,7 +3248,7 @@
       "tests/agent_migration_characterization.py:20:28:python string literal",
       "m",
       "agent_prefix_template",
-      "gravity_sdk.agent_",
+      "gravity_insight.agent_",
       "",
       null,
       null,
@@ -3251,7 +3260,7 @@
       }
     ],
     [
-      "tests/agent_migration_characterization.py:21:30:python string literal",
+      "tests/agent_migration_characterization.py:22:34:python string literal",
       "m",
       "agent_prefix_template",
       "gravity_sdk.agent_",
@@ -3269,8 +3278,8 @@
       "tests/test_action_dashboard_connector.py:19:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3281,11 +3290,11 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:18:24:python string literal",
+      "tests/test_agent_concept_deletions.py:20:24:python string literal",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_pagination",
-      "gravity_sdk.pagination_completeness",
+      "gravity_insight.agent_pagination",
+      "gravity_insight.pagination_completeness",
       "string_reference",
       "exact",
       "no_migration_effect",
@@ -3296,11 +3305,11 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:20:27:python string literal",
+      "tests/test_agent_concept_deletions.py:22:27:python string literal",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_sources",
-      "gravity_sdk.agents.sources",
+      "gravity_insight.agent_sources",
+      "gravity_insight.agents.sources",
       "string_reference",
       "exact",
       "no_migration_effect",
@@ -3311,11 +3320,11 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:22:22:python string literal",
+      "tests/test_agent_concept_deletions.py:24:22:python string literal",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_batch_sources",
-      "gravity_sdk.agents.batch_sources",
+      "gravity_insight.agent_batch_sources",
+      "gravity_insight.agents.batch_sources",
       "string_reference",
       "exact",
       "no_migration_effect",
@@ -3326,11 +3335,11 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:824:17:python string literal",
+      "tests/test_agent_concept_deletions.py:826:17:python string literal",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_batch_sources",
-      "gravity_sdk.agents.batch_sources",
+      "gravity_insight.agent_batch_sources",
+      "gravity_insight.agents.batch_sources",
       "string_reference",
       "exact",
       "no_migration_effect",
@@ -3341,11 +3350,11 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:856:17:python string literal",
+      "tests/test_agent_concept_deletions.py:858:17:python string literal",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_batch_sources",
-      "gravity_sdk.agents.batch_sources",
+      "gravity_insight.agent_batch_sources",
+      "gravity_insight.agents.batch_sources",
       "string_reference",
       "exact",
       "no_migration_effect",
@@ -3419,8 +3428,8 @@
       "tests/test_analysis_artifact.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3449,8 +3458,8 @@
       "tests/test_artifact_transfer.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3464,8 +3473,8 @@
       "tests/test_capability_trust.py:8:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3494,8 +3503,8 @@
       "tests/test_core_external_context_binding.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3506,7 +3515,7 @@
       }
     ],
     [
-      "tests/test_error_import_compatibility.py:94:56:__module__",
+      "tests/test_error_import_compatibility.py:94:60:__module__",
       "rm",
       "module_owner_receiver",
       "error_type.__module__",
@@ -3515,7 +3524,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      60,
+      58,
       {
         "kind": "none"
       }
@@ -3524,8 +3533,8 @@
       "tests/test_execution_snapshot.py:7:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3599,8 +3608,8 @@
       "tests/test_experiment_handoff.py:12:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -3935,7 +3944,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      58,
+      60,
       {
         "kind": "none"
       }
@@ -4559,7 +4568,7 @@
       "tests/test_gravity_material_performance.py:61:21:importlib.import_module",
       "rm",
       "dynamic_import",
-      "f\"gravity_sdk.{name}\"",
+      "f\"gravity_insight.{name}\"",
       "",
       "dynamic_import",
       "manual",
@@ -4694,7 +4703,7 @@
       "tests/test_gravity_order_trace_surface.py:80:49:patch",
       "rm",
       "non_string_patch_expression",
-      "f\"gravity_sdk.{module}.runtime.build_client\"",
+      "f\"gravity_insight.{module}.runtime.build_client\"",
       "",
       "manual_patch_expression",
       "manual",
@@ -4724,7 +4733,7 @@
       "tests/test_http_receipt_durability.py:73:26:mock.patch",
       "rm",
       "non_string_patch_expression",
-      "f\"gravity_sdk.executor.{stage}\"",
+      "f\"gravity_insight.executor.{stage}\"",
       "",
       "manual_patch_expression",
       "manual",
@@ -4859,8 +4868,8 @@
       "tests/test_receipt_facets.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -4889,8 +4898,8 @@
       "tests/test_runtime_skill_resolver.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -4904,8 +4913,8 @@
       "tests/test_skill_hub_clients.py:232:9:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -4919,8 +4928,8 @@
       "tests/test_skill_hub_contracts.py:11:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -4934,8 +4943,8 @@
       "tests/test_sql_explorer.py:26:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -4976,7 +4985,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1007:14:mock.patch.object",
+      "tests/test_sql_products.py:1010:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "provenance",
@@ -4991,7 +5000,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1032:18:mock.patch.object",
+      "tests/test_sql_products.py:1035:18:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.credentials",
@@ -5006,7 +5015,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1032:84:mock.patch.object",
+      "tests/test_sql_products.py:1035:84:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.credentials.subprocess",
@@ -5021,7 +5030,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1042:14:mock.patch.object",
+      "tests/test_sql_products.py:1045:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5036,7 +5045,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:239:14:mock.patch.object",
+      "tests/test_sql_products.py:242:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5051,7 +5060,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:267:14:mock.patch.object",
+      "tests/test_sql_products.py:270:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5066,7 +5075,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:276:14:mock.patch.object",
+      "tests/test_sql_products.py:279:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5081,7 +5090,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:309:14:mock.patch.object",
+      "tests/test_sql_products.py:312:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5096,7 +5105,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:335:14:mock.patch.object",
+      "tests/test_sql_products.py:338:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5111,7 +5120,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:359:14:mock.patch.object",
+      "tests/test_sql_products.py:362:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5126,7 +5135,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:380:14:mock.patch.object",
+      "tests/test_sql_products.py:383:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5141,7 +5150,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:415:14:mock.patch.object",
+      "tests/test_sql_products.py:418:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5156,7 +5165,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:431:14:mock.patch.object",
+      "tests/test_sql_products.py:434:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5171,7 +5180,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:473:14:mock.patch.object",
+      "tests/test_sql_products.py:476:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5186,7 +5195,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:495:14:mock.patch.object",
+      "tests/test_sql_products.py:498:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5201,7 +5210,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:531:22:mock.patch.object",
+      "tests/test_sql_products.py:534:22:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5216,10 +5225,10 @@
       }
     ],
     [
-      "tests/test_sql_products.py:531:72:mock.patch",
+      "tests/test_sql_products.py:534:72:mock.patch",
       "rm",
       "non_string_patch_expression",
-      "f\"gravity_sdk.sql.__main__.{patch_target}\"",
+      "f\"gravity_insight.sql.__main__.{patch_target}\"",
       "",
       "manual_patch_expression",
       "manual",
@@ -5231,7 +5240,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:544:14:mock.patch.object",
+      "tests/test_sql_products.py:547:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5246,7 +5255,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:581:14:mock.patch.object",
+      "tests/test_sql_products.py:584:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5261,7 +5270,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:599:14:mock.patch.object",
+      "tests/test_sql_products.py:602:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5276,7 +5285,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:643:12:mock.patch.object",
+      "tests/test_sql_products.py:646:12:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -5291,7 +5300,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:973:18:mock.patch.object",
+      "tests/test_sql_products.py:976:18:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "provenance",
@@ -5309,8 +5318,8 @@
       "tests/test_thinkingai_full_specification.py:9:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -5324,8 +5333,8 @@
       "tests/test_thinkingai_inventory.py:10:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",
@@ -5339,8 +5348,8 @@
       "tests/test_thinkingai_representative.py:13:1:from import",
       "r",
       "exact_reference",
-      "gravity_sdk.agent_runtime_contracts",
-      "gravity_sdk.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
       "static_import",
       "exact",
       "no_migration_effect",

@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Sequence
 
-from gravity_sdk import __version__
+from gravity_insight import __version__
 
 
 ROOT = Path(__file__).resolve().parents[1]

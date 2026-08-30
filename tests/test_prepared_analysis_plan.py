@@ -12,11 +12,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from gravity_sdk import GravitySDK, PreparedAnalysisPlanService, execute_host_plan
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.host_effects import ACTION_SCHEMA_VERSION, HOST_PLAN_SCHEMA_VERSION, host_source
-from gravity_sdk.shared_runtime import reset_shared_runtimes
-from gravity_sdk.workspace import load_workspace
+from gravity_insight import GravitySDK, PreparedAnalysisPlanService, execute_host_plan
+from gravity_insight.errors import InputValidationError
+from gravity_insight.host_effects import ACTION_SCHEMA_VERSION, HOST_PLAN_SCHEMA_VERSION, host_source
+from gravity_insight.shared_runtime import reset_shared_runtimes
+from gravity_insight.workspace import load_workspace
 
 
 OPERATION_ID = "analysis.fixture.read"
@@ -231,7 +231,7 @@ class PreparedAnalysisPlanParityTests(unittest.TestCase):
         direct_calls = copy.deepcopy(self.sdk.target_calls)
         self.sdk.target_calls.clear()
 
-        with mock.patch("gravity_sdk.prepared_analysis_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.prepared_analysis_plan._utcnow", return_value=NOW):
             summary = self.sdk.prepared_plans.prepare_host(
                 self.host_plan, self.sources, max_workers=4
             )
@@ -288,14 +288,14 @@ class PreparedAnalysisPlanParityTests(unittest.TestCase):
         schema = json.loads(
             (
                 Path(__file__).resolve().parents[1]
-                / "src/gravity_sdk/contracts/schema/prepared-analysis-plan-v1.schema.json"
+                / "src/gravity_insight/contracts/schema/prepared-analysis-plan-v1.schema.json"
             ).read_text(encoding="utf-8")
         )
         self.assertEqual(set(schema["required"]), set(json.loads(artifact)))
         summary_schema = json.loads(
             (
                 Path(__file__).resolve().parents[1]
-                / "src/gravity_sdk/contracts/schema/prepared-analysis-plan-summary-v1.schema.json"
+                / "src/gravity_insight/contracts/schema/prepared-analysis-plan-summary-v1.schema.json"
             ).read_text(encoding="utf-8")
         )
         self.assertEqual(set(summary_schema["required"]), set(summary))
@@ -410,12 +410,12 @@ class PreparedAnalysisPlanDriftTests(unittest.TestCase):
         workspace = _workspace(fresh_root)
         sdk = FixtureSDK(workspace)
         host_plan, sources = _host_plan()
-        with mock.patch("gravity_sdk.prepared_analysis_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.prepared_analysis_plan._utcnow", return_value=NOW):
             expired_id = sdk.prepared_plans.prepare_host(
                 host_plan, sources, ttl_seconds=1
             )["pap_id"]
         with mock.patch(
-            "gravity_sdk.prepared_analysis_plan._utcnow",
+            "gravity_insight.prepared_analysis_plan._utcnow",
             return_value=NOW + timedelta(seconds=2),
         ):
             with self.assertRaises(InputValidationError) as expired:
@@ -431,7 +431,7 @@ class PreparedAnalysisPlanDriftTests(unittest.TestCase):
 
         expiry_path = _artifact_path(workspace)
         expiry_path.unlink()
-        with mock.patch("gravity_sdk.prepared_analysis_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.prepared_analysis_plan._utcnow", return_value=NOW):
             with self.assertRaises(InputValidationError) as missing:
                 sdk.prepared_plans.execute_host(expired_id, host_plan, sources)
         self.assertEqual("PAP_NOT_FOUND", missing.exception.code)
@@ -449,7 +449,7 @@ class PreparedAnalysisPlanDriftTests(unittest.TestCase):
         bounded = FixtureSDK(_workspace(self.root / "bounded"))
         host_plan, sources = _host_plan()
         with mock.patch(
-            "gravity_sdk.prepared_analysis_plan.MAX_STORED_ARTIFACTS", 1
+            "gravity_insight.prepared_analysis_plan.MAX_STORED_ARTIFACTS", 1
         ):
             bounded.prepared_plans.prepare_host(host_plan, sources)
             with self.assertRaises(InputValidationError) as raised:
@@ -458,15 +458,15 @@ class PreparedAnalysisPlanDriftTests(unittest.TestCase):
         self.assertEqual([], bounded.target_calls)
 
     def test_expired_cleanup_and_failed_commit_leave_no_partial_artifact(self) -> None:
-        with mock.patch("gravity_sdk.prepared_analysis_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.prepared_analysis_plan._utcnow", return_value=NOW):
             self.sdk.prepared_plans.prepare_host(
                 self.host_plan, self.sources, ttl_seconds=1
             )
         with mock.patch(
-            "gravity_sdk.prepared_analysis_plan._utcnow",
+            "gravity_insight.prepared_analysis_plan._utcnow",
             return_value=NOW + timedelta(seconds=2),
         ), mock.patch(
-            "gravity_sdk.prepared_analysis_plan.MAX_STORED_ARTIFACTS", 1
+            "gravity_insight.prepared_analysis_plan.MAX_STORED_ARTIFACTS", 1
         ):
             self.sdk.prepared_plans.prepare_host(self.host_plan, self.sources)
         self.assertEqual(
@@ -476,7 +476,7 @@ class PreparedAnalysisPlanDriftTests(unittest.TestCase):
 
         failed = FixtureSDK(_workspace(self.root / "failed"))
         host_plan, sources = _host_plan()
-        with mock.patch("gravity_sdk.prepared_analysis_plan.os.replace", side_effect=OSError("fixture")):
+        with mock.patch("gravity_insight.prepared_analysis_plan.os.replace", side_effect=OSError("fixture")):
             with self.assertRaises(OSError):
                 failed.prepared_plans.prepare_host(host_plan, sources)
         store = failed.workspace.state_root / "prepared-analysis-plans"

@@ -2,23 +2,23 @@ from __future__ import annotations
 
 import unittest
 
-import gravity_sdk
-from gravity_sdk import GravitySDK
-from gravity_sdk.analysis_artifact import AnalysisArtifactService
+import gravity_insight
+from gravity_insight import GravitySDK
+from gravity_insight.analysis_artifact import AnalysisArtifactService
 from tests.test_analysis_result_contract import success_result
 
 
 class AnalysisArtifactSurfaceTests(unittest.TestCase):
     def test_root_exports_are_reachable_and_share_the_canonical_service(self):
-        artifact = gravity_sdk.compile_analysis_artifact(success_result())
-        self.assertEqual(artifact, gravity_sdk.validate_analysis_artifact(artifact))
+        artifact = gravity_insight.compile_analysis_artifact(success_result())
+        self.assertEqual(artifact, gravity_insight.validate_analysis_artifact(artifact))
         self.assertEqual(
             artifact,
-            gravity_sdk.verify_analysis_artifact_source(artifact, success_result()),
+            gravity_insight.verify_analysis_artifact_source(artifact, success_result()),
         )
-        rendering = gravity_sdk.render_analysis_artifact_markdown(artifact)
+        rendering = gravity_insight.render_analysis_artifact_markdown(artifact)
         self.assertEqual("gravity.analysis-rendering.v1", rendering["schema_version"])
-        self.assertIs(gravity_sdk.AnalysisArtifactService, AnalysisArtifactService)
+        self.assertIs(gravity_insight.AnalysisArtifactService, AnalysisArtifactService)
 
     def test_sdk_service_is_lazy_cached_and_constructs_no_clients(self):
         sdk = GravitySDK(

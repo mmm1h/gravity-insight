@@ -29,9 +29,9 @@ jobs:
       - name: Run tests with duration budget gate
         run: python scripts/check_test_duration_budget.py
       - name: Check deterministic contracts
-        run: python -m gravity_sdk.compiler check
+        run: python -m gravity_insight.compiler check
       - name: Check quality ratchet
-        run: python -m gravity_sdk.quality check
+        run: python -m gravity_insight.quality check
       - name: Check release tag matches package version
         run: python scripts/check_release_tag.py
       - name: Check development Agent usability eval

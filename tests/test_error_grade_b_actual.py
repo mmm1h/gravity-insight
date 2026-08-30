@@ -4,49 +4,49 @@ import unittest
 from types import SimpleNamespace
 from typing import Any, Mapping
 
-from gravity_sdk._field_policy_analysis import (
+from gravity_insight._field_policy_analysis import (
     validate_analysis_date_list,
     validate_analysis_query,
     validate_analysis_segment_rule,
     validate_analysis_shape,
 )
-from gravity_sdk._field_policy_conditions import (
+from gravity_insight._field_policy_conditions import (
     validate_analysis_conditions,
     validate_analysis_filter_map,
     validate_analysis_group_by,
 )
-from gravity_sdk._field_policy_retention import validate_retention_before_after
-from gravity_sdk._field_policy_segment_members import validate_segment_member_fields
-from gravity_sdk._field_policy_shared import (
+from gravity_insight._field_policy_retention import validate_retention_before_after
+from gravity_insight._field_policy_segment_members import validate_segment_member_fields
+from gravity_insight._field_policy_shared import (
     new_analysis_references,
     parse_iso_calendar_date,
     require_exact_mapping,
     validate_optional_label,
     validate_scalar_list,
 )
-from gravity_sdk._order_read import canonical_app, canonical_date
-from gravity_sdk.analysis_primitives import AnalysisFilter
-from gravity_sdk.analysis_query_batch import (
+from gravity_insight._order_read import canonical_app, canonical_date
+from gravity_insight.analysis_primitives import AnalysisFilter
+from gravity_insight.analysis_query_batch import (
     BATCH_SCHEMA_VERSION,
     MAX_QUERIES,
     _identity,
     validate_analysis_query_batch,
 )
-from gravity_sdk.analysis_query_multi_app import MAX_COMPONENTS, parse_multi_app_queries
-from gravity_sdk.analysis_spec_cli import _spec_schema_result
-from gravity_sdk.attribution import attribution_snapshot
-from gravity_sdk.bilibili_account_performance import normalize_bilibili_account_window
-from gravity_sdk.errors import InputValidationError, SqlValidationError
-from gravity_sdk.material_performance import normalize_material_platforms
-from gravity_sdk.models import InputField, _validate_date_range, _validate_filters
-from gravity_sdk.monetization_detail import validate_monetization_operation_request
-from gravity_sdk.monetization_detail_cli import dispatch_monetization_detail
-from gravity_sdk.order_trace import _bounded_trace
-from gravity_sdk.pagination_inputs import validate_page_inputs
-from gravity_sdk.promotion_performance_request import normalize_promotion_platforms
-from gravity_sdk.promotion_snapshot_compat import promotion_snapshot_compat
-from gravity_sdk.sql.client import GravityClient as SqlClient
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.analysis_query_multi_app import MAX_COMPONENTS, parse_multi_app_queries
+from gravity_insight.analysis_spec_cli import _spec_schema_result
+from gravity_insight.attribution import attribution_snapshot
+from gravity_insight.bilibili_account_performance import normalize_bilibili_account_window
+from gravity_insight.errors import InputValidationError, SqlValidationError
+from gravity_insight.material_performance import normalize_material_platforms
+from gravity_insight.models import InputField, _validate_date_range, _validate_filters
+from gravity_insight.monetization_detail import validate_monetization_operation_request
+from gravity_insight.monetization_detail_cli import dispatch_monetization_detail
+from gravity_insight.order_trace import _bounded_trace
+from gravity_insight.pagination_inputs import validate_page_inputs
+from gravity_insight.promotion_performance_request import normalize_promotion_platforms
+from gravity_insight.promotion_snapshot_compat import promotion_snapshot_compat
+from gravity_insight.sql.client import GravityClient as SqlClient
+from gravity_insight.workspace import load_workspace
 
 
 QUERY_ID = "1700000000000AAAAAAAAAAAAAAAAAAA"

@@ -1,0 +1,301 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260811T032255Z_promotion.bytedance.standard_project.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260811T032255Z_promotion.bytedance.standard_project.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/374",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/manager/std_project/list/",
+      "route_index": 374,
+      "route_sha256": "3e20c5a014b38997cb42c141861d6daa8a7544517af02decee72dc9fbbe67563"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205623Z_promotion.bytedance.std_project.list.yaml",
+        "probed_at": "2026-08-08T20:56:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231113Z_promotion.bytedance.std_project.list.yaml",
+        "probed_at": "2026-08-08T23:11:13Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231935Z_promotion.bytedance.std_project.list.yaml",
+        "probed_at": "2026-08-08T23:19:35Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "86da02df593bee59550d1636ee3be4f67fcf4d6362dc106c99162c36456f80ea",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260809T142912Z_promotion.bytedance.std_project.list.yaml",
+        "probed_at": "2026-08-09T14:29:12Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "c7066680fb7c4728ca0ebe6efd66f9d46e039674ba301095371e5cde45d317a1",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260811T032255Z_promotion.bytedance.standard_project.list.yaml",
+        "probed_at": "2026-08-11T03:22:55Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "c7066680fb7c4728ca0ebe6efd66f9d46e039674ba301095371e5cde45d317a1",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [],
+      "contract_family": null,
+      "cost_reason": "项目 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 12762,
+        "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
+        "line": 1,
+        "offset": 12761,
+        "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 24117,
+            "column": 12762,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
+            "line": 1,
+            "route_offset": 12761
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/bytedance/manager/std_project/list/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "stable_parent_candidates": [
+          {
+            "input_field": "advertiser_id",
+            "operation_id": "promotion.bytedance.account.list",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "caller_select"
+          }
+        ],
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "advertiser_id",
+            "path": "$.advertiser_id",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "filtering",
+            "path": "$.filtering",
+            "presence": "observed_always",
+            "types": [
+              "object"
+            ]
+          }
+        ]
+      },
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 1,
+            "candidate_types": [
+              "int"
+            ],
+            "output_path": "data.list[].advertiser_id",
+            "parent_operation_id": "promotion.bytedance.account.list",
+            "selection": "caller_select",
+            "status": "resolved",
+            "target_cardinality": "one",
+            "target_input": "advertiser_id"
+          }
+        ],
+        "conclusion": "unblocked",
+        "detail": "The frontend-verified account parent yielded a selectable value; values stayed in process memory.",
+        "evidence": "evidence/probe/20260811T032255Z_promotion.bytedance.standard_project.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
+      "path": "/turbo_engine/api/v1/bytedance/manager/std_project/list/",
+      "promotion_level": "项目",
+      "promotion_platform": "bytedance",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "请选择广告",
+        "请选择账户",
+        "请选择项目"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "标准投放项目选择器草稿；请求参数与启用状态筛选已验证，当前租户样本为空，响应条目结构仍待验证。",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "巨量广告主 ID；由受治理的项目筛选列表返回。",
+        "required": true,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "advertiser_id": "$parent:advertiser_id"
+      }
+    },
+    "operation_id": "promotion.bytedance.standard_project.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/manager/std_project/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "frontend_verified_parent_binding"
+      ],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "drafts/promotion.bytedance.standard_project.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id"
+      ],
+      "defaults": {},
+      "fixed_body": {
+        "filtering": {
+          "status_first": "PROJECT_STATUS_ENABLE"
+        }
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "advertiser_id",
+        "operation_id": "promotion.bytedance.account.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "standard_project",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

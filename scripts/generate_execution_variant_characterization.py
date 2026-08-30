@@ -8,29 +8,29 @@ import json
 from pathlib import Path
 from typing import Any
 
-from gravity_sdk.analysis_query_execution_variant import (
+from gravity_insight.analysis_query_execution_variant import (
     execute_fixed_analysis_query_event_variant,
 )
-from gravity_sdk.execution_variant_characterization import (
+from gravity_insight.execution_variant_characterization import (
     build_execution_variant_characterization,
     execution_evidence,
 )
-from gravity_sdk.execution_variant_contract import (
+from gravity_insight.execution_variant_contract import (
     DIRECT_VARIANT_URI,
     PLAN_VARIANT_URI,
     REFERENCE_JOURNEY,
     product_reference,
 )
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.plan import AdapterContext
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.workspace import load_workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = (
     ROOT
     / "src"
-    / "gravity_sdk"
+    / "gravity_insight"
     / "contracts"
     / "execution-variants"
     / "analysis-query-event-direct-plan-v1.json"

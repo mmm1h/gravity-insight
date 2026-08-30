@@ -8,8 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
-from gravity_sdk.mcp.server import MCPServer, PROTOCOL_VERSION, main
+from gravity_insight import GravitySDK
+from gravity_insight.mcp.server import MCPServer, PROTOCOL_VERSION, main
 
 
 def request_params(**values) -> dict:
@@ -272,7 +272,7 @@ class MCPProtocolTests(unittest.TestCase):
             return self.sdk
 
         with (
-            patch("gravity_sdk.sdk.GravitySDK.from_env", side_effect=sdk_from_env),
+            patch("gravity_insight.sdk.GravitySDK.from_env", side_effect=sdk_from_env),
             patch("sys.stdin", io.StringIO()),
             patch("sys.stdout", stdout),
             patch("sys.stderr", stderr),

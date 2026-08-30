@@ -131,7 +131,7 @@ Schema/golden render tests, escaping/injection cases, output budgets, claim pres
 - Actionable errors remain `1330 = 1163 A + 167 B + 0 C`. Development usability
   remains selection `296/336`, fillability `248/248`, offline terminal `53/53`,
   recovery `5/5`, security violations `0`, and production HTTP requests `0`.
-- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+- Isolated real wheel `gravity_insight-0.3.0-py3-none-any.whl` has SHA-256
   `875be2a600d1c2f04ab7338a71e8d3bfcde340a6caadbe3da4d163e702b7557c`.
   From external `site-packages` it loaded all three packaged schemas, reached
   the five new root exports, validated a written Artifact and rendered the same

@@ -5,10 +5,10 @@ from __future__ import annotations
 import unittest
 from typing import Any, Mapping
 
-from gravity_sdk.analysis_spec import analysis_query_spec_schema, compile_query_spec
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.segment_mutation import create_segment_from_analysis
-from gravity_sdk.segment_spec import compile_segment_spec
+from gravity_insight.analysis_spec import analysis_query_spec_schema, compile_query_spec
+from gravity_insight.errors import InputValidationError
+from gravity_insight.segment_mutation import create_segment_from_analysis
+from gravity_insight.segment_spec import compile_segment_spec
 
 
 _METRIC = {"field": "PresetAllCount", "aggregation": "PresetAllCount"}

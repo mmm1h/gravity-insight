@@ -10,13 +10,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from gravity_sdk import cli
-from gravity_sdk.cli import build_parser
-from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan
-from gravity_sdk.plan_cli import run_plan_command
-from gravity_sdk.sdk import GravitySDK
-from gravity_sdk.workspace import load_workspace
-from gravity_sdk.workspace_plan_recipe import (
+from gravity_insight import cli
+from gravity_insight.cli import build_parser
+from gravity_insight.plan import PlanAdapter, PlanAdapters, execute_plan
+from gravity_insight.plan_cli import run_plan_command
+from gravity_insight.sdk import GravitySDK
+from gravity_insight.workspace import load_workspace
+from gravity_insight.workspace_plan_recipe import (
     PlanRecipeError,
     expand_plan_recipe,
     parse_plan_recipe_parameters,
@@ -86,7 +86,7 @@ class PlanRecipeTests(unittest.TestCase):
             stderr = io.StringIO()
             with mock.patch.dict(
                 os.environ, {"GRAVITY_WORKSPACE": str(broken)}
-            ), mock.patch("gravity_sdk.sdk.GravitySDK.from_env") as factory, redirect_stderr(stderr):
+            ), mock.patch("gravity_insight.sdk.GravitySDK.from_env") as factory, redirect_stderr(stderr):
                 exit_code = cli.main([
                     "plan", "run", "--recipe", "demo-order-window",
                     "--param", "date=2026-08-14", "--param", "app=demo", "--dry-run",
@@ -107,7 +107,7 @@ class PlanRecipeTests(unittest.TestCase):
             stderr = io.StringIO()
             with self.subTest(parameters=parameters), mock.patch.dict(
                 os.environ, {"GRAVITY_WORKSPACE": str(EXAMPLE)}
-            ), mock.patch("gravity_sdk.sdk.GravitySDK.from_env") as factory, redirect_stderr(stderr):
+            ), mock.patch("gravity_insight.sdk.GravitySDK.from_env") as factory, redirect_stderr(stderr):
                 exit_code = cli.main([
                     "plan", "run", "--recipe", "demo-order-window",
                     *parameters, "--dry-run",

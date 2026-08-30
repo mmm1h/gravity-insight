@@ -8,21 +8,21 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from gravity_sdk.analysis_bootstrap import bootstrap_event_analysis
-from gravity_sdk.errors import AuthenticationError, InputValidationError
-from gravity_sdk.field_metadata_override import selected_metadata_loader
-from gravity_sdk.metadata_catalog_snapshot import create_metadata_snapshot
-from gravity_sdk.metadata_sync import (
+from gravity_insight.analysis_bootstrap import bootstrap_event_analysis
+from gravity_insight.errors import AuthenticationError, InputValidationError
+from gravity_insight.field_metadata_override import selected_metadata_loader
+from gravity_insight.metadata_catalog_snapshot import create_metadata_snapshot
+from gravity_insight.metadata_sync import (
     _create_schema,
     _utc_now,
     _write_apps,
     _write_catalog_metadata,
     _write_rows,
 )
-from gravity_sdk.plan import execute_plan
-from gravity_sdk.plan_adapters import build_plan_adapters
-from gravity_sdk.result_audit import error_receipt_references
-from gravity_sdk.workspace import load_workspace
+from gravity_insight.plan import execute_plan
+from gravity_insight.plan_adapters import build_plan_adapters
+from gravity_insight.result_audit import error_receipt_references
+from gravity_insight.workspace import load_workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -126,14 +126,14 @@ class AnalysisBootstrapTests(unittest.TestCase):
             "database": "fixture.sqlite3",
         }
         with tempfile.TemporaryDirectory() as temporary, patch(
-            "gravity_sdk.analysis_bootstrap.metadata_status",
+            "gravity_insight.analysis_bootstrap.metadata_status",
             side_effect=[missing, ready],
         ), patch(
-            "gravity_sdk.analysis_bootstrap.sync_app", return_value=sync
+            "gravity_insight.analysis_bootstrap.sync_app", return_value=sync
         ) as sync_app, patch(
-            "gravity_sdk.analysis_bootstrap.search_metadata", return_value=found
+            "gravity_insight.analysis_bootstrap.search_metadata", return_value=found
         ), patch(
-            "gravity_sdk.analysis_bootstrap.create_metadata_snapshot",
+            "gravity_insight.analysis_bootstrap.create_metadata_snapshot",
             return_value=snapshot,
         ):
             database = Path(temporary) / "metadata.sqlite3"
@@ -171,9 +171,9 @@ class AnalysisBootstrapTests(unittest.TestCase):
             }],
         }
         with patch(
-            "gravity_sdk.analysis_bootstrap.metadata_status",
+            "gravity_insight.analysis_bootstrap.metadata_status",
             return_value={"status": "missing"},
-        ), patch("gravity_sdk.analysis_bootstrap.sync_app", return_value=sync):
+        ), patch("gravity_insight.analysis_bootstrap.sync_app", return_value=sync):
             with self.assertRaises(InputValidationError) as raised:
                 bootstrap_event_analysis(
                     sdk, app="101", start="2026-08-01", end="2026-08-02",

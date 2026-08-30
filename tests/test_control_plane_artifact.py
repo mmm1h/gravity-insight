@@ -3,14 +3,14 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk.control_plane.errors import ControlPlaneVerificationError
-from gravity_sdk.control_plane.models import (
+from gravity_insight.control_plane.errors import ControlPlaneVerificationError
+from gravity_insight.control_plane.models import (
     ArtifactTrustPolicy,
     OciArtifactRef,
     OciDescriptor,
     Signature,
 )
-from gravity_sdk.control_plane.verification import verify_offline_bundle
+from gravity_insight.control_plane.verification import verify_offline_bundle
 from tests.test_control_plane_fixtures import (
     IDENTITY,
     NOW,

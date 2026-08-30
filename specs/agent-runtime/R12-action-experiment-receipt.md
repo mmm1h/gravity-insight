@@ -76,7 +76,7 @@ package installation, release or `main` promotion.
   authorization, confirmation, public/private plan, claim, execution and Policy
   schemas; one `ActionPlanService`; lazy `GravitySDK.actions`; one root export;
   and explicit `gravity action segment-update preview|execute`. Root public API
-  now has `129` lazy exports and `gravity_sdk.__all__` has `130` entries including
+  now has `129` lazy exports and `gravity_insight.__all__` has `130` entries including
   `__version__`. No connector discovery/registry, Agent card, Skill permission,
   arbitrary tool/URL/operation, Plan node kind or second mutation executor exists.
 - The only connector is `gravity.segment-metadata-update@1`. Segment create was
@@ -278,7 +278,7 @@ installation, release or `main` promotion.
   request/result; one stateless `ExperimentHandoffService`; lazy
   `GravitySDK.experiments`; root export; and explicit offline
   `gravity experiment propose|outcome-handoff`. Root lazy exports are now `130`
-  and `gravity_sdk.__all__` has `131` entries including `__version__`.
+  and `gravity_insight.__all__` has `131` entries including `__version__`.
 - Proposal first recompiles the exact source `gravity.analysis-result.v1` and
   planning `gravity.execution-snapshot.v1`. It projects only safe result/scope/
   snapshot digests, Journey/Skill references and explicit hypothesis data;

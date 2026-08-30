@@ -108,7 +108,7 @@ class InstalledWheelConsumerGuardTests(unittest.TestCase):
             repository, _ = _repository(Path(raw))
             tests = repository / "tests"
             tests.mkdir()
-            (tests / "test_gravity_sdk_adoption.py").write_text(
+            (tests / "test_gravity_insight_adoption.py").write_text(
                 "import unittest\n\nclass AdoptionTests(unittest.TestCase):\n    pass\n",
                 encoding="utf-8",
             )

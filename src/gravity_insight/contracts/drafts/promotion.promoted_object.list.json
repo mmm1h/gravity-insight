@@ -1,0 +1,174 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "not_probed",
+        "detail": "No live probe evidence exists for this route.",
+        "status": "open"
+      },
+      {
+        "code": "openapi_developer_credentials_unavailable",
+        "detail": "OpenAPI developer signing credentials are unavailable to the stable runtime.",
+        "status": "open"
+      },
+      {
+        "code": "request_binding_unverified",
+        "detail": "Query/body fields and fixed request values have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "status": "open"
+      },
+      {
+        "code": "stable_runtime_route_unsupported",
+        "detail": "The stable runtime does not expose OpenAPI draft routes.",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/137",
+      "method": "POST",
+      "path": "/openapi/api/v1/user/promoted_object/list/",
+      "route_index": 137,
+      "route_sha256": "92b484e17a2e4c81980af22fa70d19502c5e36e1ac6b08f46d0ccf4b4633b659"
+    },
+    "generated_at": "2026-08-08T20:41:21Z",
+    "manual_review_fields": [],
+    "probe_evidence": [],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "not_probed",
+        "openapi_developer_credentials_unavailable",
+        "request_binding_unverified",
+        "response_projection",
+        "response_schema_unverified",
+        "stable_runtime_route_unsupported",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "资产",
+      "callers": [],
+      "contract_family": null,
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 69653,
+        "file": "raw/web.gravity-engine.com/assets/api-B9xDXL35.js",
+        "line": 1,
+        "offset": 69652,
+        "url": "https://web.gravity-engine.com/assets/api-B9xDXL35.js"
+      },
+      "method_certainty": "high",
+      "method_evidence": [
+        "live_options_allow",
+        "method_not_resolved"
+      ],
+      "ui_texts": [
+        "下载-事件-提交任务",
+        "推广活动列表",
+        "推广活动创建"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_openapi_signature",
+    "block_reason": "draft blockers: not_probed, openapi_developer_credentials_unavailable, request_binding_unverified, response_schema_unverified, stable_runtime_route_unsupported",
+    "contract_version": 1,
+    "description": "Draft inferred from census route POST /openapi/api/v1/user/promoted_object/list/; response remains hidden until probe classification.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "page": 1,
+        "page_size": 2
+      }
+    },
+    "operation_id": "promotion.promoted_object.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/openapi/api/v1/user/promoted_object/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "candidate.openapi.promotion_object.list_superseded"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.openapi.promotion_object.list.json",
+        "drafts/promotion.promoted_object.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "promoted_object",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

@@ -4,18 +4,18 @@ import copy
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import InputValidationError
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_semantic_compose_adapter import validate_semantic_compose_plan
-from gravity_sdk.semantic_compose import (
+from gravity_insight import InputValidationError
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_semantic_compose_adapter import validate_semantic_compose_plan
+from gravity_insight.semantic_compose import (
     SEMANTIC_COMPOSE_INPUT_SCHEMA_VERSION,
     compiled_semantic_bytes,
     compile_semantic_compose,
     run_semantic_compose,
     semantic_compose_input_schema,
 )
-from gravity_sdk.semantic_compose_catalog import definition_by_id
+from gravity_insight.semantic_compose_catalog import definition_by_id
 
 
 APP_ID = 17
@@ -171,8 +171,8 @@ class SemanticComposeTests(unittest.TestCase):
 
         versions = []
         with (
-            patch("gravity_sdk.semantic_compose.definition_by_id", side_effect=versioned),
-            patch("gravity_sdk.semantic_compose.run_multidim_query", return_value=native_result()),
+            patch("gravity_insight.semantic_compose.definition_by_id", side_effect=versioned),
+            patch("gravity_insight.semantic_compose.run_multidim_query", return_value=native_result()),
         ):
             for version in (1, 2):
                 value = request()
@@ -242,7 +242,7 @@ class SemanticComposeTests(unittest.TestCase):
     def test_result_carries_members_query_validation_and_allowed_claims(self):
         value = request("total", dimensions=[CLICK_DIMENSION], joins=[CLICK_JOIN])
         with patch(
-            "gravity_sdk.semantic_compose.run_multidim_query",
+            "gravity_insight.semantic_compose.run_multidim_query",
             return_value=native_result(),
         ):
             result = run_semantic_compose(object(), value, app_id=APP_ID)

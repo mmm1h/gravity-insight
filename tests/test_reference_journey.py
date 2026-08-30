@@ -8,17 +8,17 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 
-from gravity_sdk.analysis_playbook import run_metric_anomaly_playbook
-from gravity_sdk.analysis_artifact import compile_analysis_artifact
-from gravity_sdk.analysis_artifact_markdown import render_analysis_artifact_markdown
-from gravity_sdk.core_skill_runtime import CoreSkillRuntime
-from gravity_sdk.data_quality import data_quality_result
-from gravity_sdk.execution_snapshot import build_execution_snapshot
-from gravity_sdk.reference_journey import (
+from gravity_insight.analysis_playbook import run_metric_anomaly_playbook
+from gravity_insight.analysis_artifact import compile_analysis_artifact
+from gravity_insight.analysis_artifact_markdown import render_analysis_artifact_markdown
+from gravity_insight.core_skill_runtime import CoreSkillRuntime
+from gravity_insight.data_quality import data_quality_result
+from gravity_insight.execution_snapshot import build_execution_snapshot
+from gravity_insight.reference_journey import (
     INPUT_SCHEMA_VERSION,
     ReferenceJourneyRunner,
 )
-from gravity_sdk.reference_journey_contract import reference_artifacts
+from gravity_insight.reference_journey_contract import reference_artifacts
 from tests.test_analysis_playbook import FakePlanExecutor, playbook_input
 from tests.test_project_skill_overlay import project_overlay, project_semantic_source
 

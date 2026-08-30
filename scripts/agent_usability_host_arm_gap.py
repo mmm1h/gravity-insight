@@ -55,11 +55,11 @@ def main() -> int:
         )
         stack.enter_context(patch.object(socket.socket, "connect", network.block))
         stack.enter_context(patch("socket.create_connection", network.block))
-        from gravity_sdk.agents.batch import capabilities_many
-        from gravity_sdk.agents.host_catalog import host_product_catalog
-        from gravity_sdk.agents.host_selection import resolve_host_product_selection
-        from gravity_sdk.client import GravityInsightClient
-        from gravity_sdk.errors import InputValidationError
+        from gravity_insight.agents.batch import capabilities_many
+        from gravity_insight.agents.host_catalog import host_product_catalog
+        from gravity_insight.agents.host_selection import resolve_host_product_selection
+        from gravity_insight.client import GravityInsightClient
+        from gravity_insight.errors import InputValidationError
 
         client = GravityInsightClient.from_env(transport=blocker)
         manifest, cases = load_cases("development", None)
@@ -526,8 +526,8 @@ def measure_default_dispatch(
         }))
         stack.enter_context(patch("socket.socket.connect", network.block))
         stack.enter_context(patch("socket.create_connection", network.block))
-        from gravity_sdk.agents import host_selection as checked_in
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.agents import host_selection as checked_in
+        from gravity_insight.client import GravityInsightClient
 
         if checked_in.DEFAULT_ROUTING_MODE != checked_in.RECOGNIZER_ROUTING_MODE:
             raise RuntimeError("checked-in default must remain the recognizer")

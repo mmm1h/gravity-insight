@@ -66,7 +66,7 @@ release or `main` promotion.
 - Feature commit `f76099c` and merge `ae66b22` add strict private/public PAP
   schemas, one `PreparedAnalysisPlanService`, lazy `GravitySDK.prepared_plans`
   and one root export. The root now has `128` lazy exports and
-  `gravity_sdk.__all__` has `129` entries including `__version__`; no CLI, MCP,
+  `gravity_insight.__all__` has `129` entries including `__version__`; no CLI, MCP,
   Agent card, Skill/Journey dependency or new execution owner was added.
 - The pilot accepts only principal/credential-generation-scoped `from_env()`
   SDKs and read-only host Plans composed of stable executable operation `run`

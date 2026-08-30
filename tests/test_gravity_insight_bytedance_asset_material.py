@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk import GravityInsightClient, InputValidationError
-from gravity_sdk.transport import TransportResponse
+from gravity_insight import GravityInsightClient, InputValidationError
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,7 +15,7 @@ PARENT_OPERATION_ID = "promotion.bytedance.account.list"
 CONTRACT_PATH = (
     ROOT
     / "src"
-    / "gravity_sdk"
+    / "gravity_insight"
     / "contracts"
     / "operations"
     / f"{OPERATION_ID}.json"
@@ -23,7 +23,7 @@ CONTRACT_PATH = (
 PARENT_CONTRACT_PATH = (
     ROOT
     / "src"
-    / "gravity_sdk"
+    / "gravity_insight"
     / "contracts"
     / "operations"
     / f"{PARENT_OPERATION_ID}.json"

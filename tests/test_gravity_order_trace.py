@@ -5,10 +5,10 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk._field_policy_detail import validate_analysis_detail
-from gravity_sdk import GravityInsightClient
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.order_trace import (
+from gravity_insight._field_policy_detail import validate_analysis_detail
+from gravity_insight import GravityInsightClient
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.order_trace import (
     CHILD_OPERATION_ID,
     PARENT_FIELDS,
     PARENT_OPERATION_ID,
@@ -16,7 +16,7 @@ from gravity_sdk.order_trace import (
     sanitize_order_split_trace_result,
     validate_order_split_trace_request,
 )
-from gravity_sdk.transport import TransportResponse
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -108,7 +108,7 @@ class OrderSplitTraceTests(unittest.TestCase):
                     "Status": "paid", "CreateTime": f"{DAY} 12:01:00",
                 }]}
             raise AssertionError(path)
-        operations = [operation for path in (ROOT / "src" / "gravity_sdk" / "manifests").glob("*.json")
+        operations = [operation for path in (ROOT / "src" / "gravity_insight" / "manifests").glob("*.json")
                       for operation in json.loads(path.read_text(encoding="utf-8"))["operations"]]
         transport = _RoutingTransport(handler)
         client = GravityInsightClient._from_manifest_for_tests(
@@ -350,7 +350,7 @@ class OrderSplitTraceTests(unittest.TestCase):
     def test_exact_static_parent_skips_metadata_but_nearby_request_does_not(self):
         operation = next(
             item for item in load_operation_manifest(
-                ROOT / "src" / "gravity_sdk" / "manifests" / "analysis.json"
+                ROOT / "src" / "gravity_insight" / "manifests" / "analysis.json"
             ) if item.operation_id == PARENT_OPERATION_ID
         )
         calls = []

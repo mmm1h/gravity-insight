@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from gravity_sdk.capability_contract import (
+from gravity_insight.capability_contract import (
     CapabilityContractError,
     capability_contract,
     capability_contracts,

@@ -20,7 +20,7 @@ SOURCE_ONLY_RESOURCES = frozenset({
     "contracts/prober-guide.md",
 })
 KNOWN_WHEEL_IMPORT_FAILURES = {
-    "gravity_sdk.quality": (
+    "gravity_insight.quality": (
         "ValueError",
         "is not in the subpath",
     ),
@@ -75,12 +75,12 @@ class InstalledWheelTests(unittest.TestCase):
         self,
     ) -> None:
         _require_build_backend()
-        with tempfile.TemporaryDirectory(prefix="gravity-sdk-wheel-") as raw:
+        with tempfile.TemporaryDirectory(prefix="gravity-insight-wheel-") as raw:
             temporary = Path(raw).resolve()
             self.assertNotEqual(ROOT, temporary)
             self.assertNotIn(ROOT, temporary.parents)
             project = temporary / "project"
-            source = project / "src" / "gravity_sdk"
+            source = project / "src" / "gravity_insight"
             wheelhouse = temporary / "wheelhouse"
             extracted = temporary / "extracted"
             project.mkdir()
@@ -119,7 +119,7 @@ class InstalledWheelTests(unittest.TestCase):
                 self.assertEqual(1, len(entry_point_paths))
                 entry_points = wheel.read(entry_point_paths[0]).decode("utf-8")
                 self.assertIn(
-                    "gravity-mcp = gravity_sdk.mcp.server:main", entry_points
+                    "gravity-mcp = gravity_insight.mcp.server:main", entry_points
                 )
                 wheel.extractall(extracted)
 
@@ -129,7 +129,7 @@ class InstalledWheelTests(unittest.TestCase):
             source_resources = _resource_inventory(source)
             self.assertLessEqual(SOURCE_ONLY_RESOURCES, source_resources)
             expected_resources = source_resources - SOURCE_ONLY_RESOURCES
-            wheel_package = extracted / "gravity_sdk"
+            wheel_package = extracted / "gravity_insight"
             installed_modules = {
                 name for name, _ in module_inventory(wheel_package).values()
             }
@@ -157,11 +157,11 @@ import sys
 
 target = pathlib.Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(target))
-import gravity_sdk
-assert pathlib.Path(gravity_sdk.__file__).resolve().is_relative_to(target)
+import gravity_insight
+assert pathlib.Path(gravity_insight.__file__).resolve().is_relative_to(target)
 assert all(
     pathlib.Path(entry).resolve().is_relative_to(target)
-    for entry in gravity_sdk.__path__
+    for entry in gravity_insight.__path__
 )
 failures = []
 for module in json.load(sys.stdin):
@@ -174,7 +174,7 @@ for module in json.load(sys.stdin):
 leaks = []
 for name, module in sys.modules.items():
     location = getattr(module, "__file__", None)
-    if name.startswith("gravity_sdk") and location:
+    if name.startswith("gravity_insight") and location:
         resolved = pathlib.Path(location).resolve()
         if not resolved.is_relative_to(target):
             leaks.append({"module": name, "path": str(resolved)})

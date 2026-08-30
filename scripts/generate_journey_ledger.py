@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from gravity_sdk.journey_ledger import render_journey_ledger_snapshot
+from gravity_insight.journey_ledger import render_journey_ledger_snapshot
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,7 +13,7 @@ SOURCE = ROOT / "docs" / "analysis-journeys.md"
 TARGET = (
     ROOT
     / "src"
-    / "gravity_sdk"
+    / "gravity_insight"
     / "contracts"
     / "journeys"
     / "ledger-snapshot.v1.json"
@@ -38,7 +38,7 @@ def main() -> int:
             print(
                 "Journey ledger snapshot does not match docs/analysis-journeys.md. "
                 "Run `python scripts/generate_journey_ledger.py` to rebuild "
-                "src/gravity_sdk/contracts/journeys/ledger-snapshot.v1.json from "
+                "src/gravity_insight/contracts/journeys/ledger-snapshot.v1.json from "
                 "that checked-in source, then review the generated snapshot."
             )
             return 1

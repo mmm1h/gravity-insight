@@ -15,28 +15,28 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import (
+from gravity_insight import (
     GravitySDK,
     SqlExplorerService,
     validate_sql_explorer_promotion,
     validate_sql_explorer_request,
     validate_sql_explorer_result,
 )
-from gravity_sdk.capability_trust import CapabilityTrustService
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk.sql.__main__ import build_parser
-from gravity_sdk.sql.products import build_sql, day_window
-from gravity_sdk.sql_explorer_contract import (
+from gravity_insight.capability_trust import CapabilityTrustService
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.sql.__main__ import build_parser
+from gravity_insight.sql.products import build_sql, day_window
+from gravity_insight.sql_explorer_contract import (
     SqlExplorerContractError,
     promotion_digest,
     result_digest,
     session_digest,
 )
-from gravity_sdk.sql_explorer_policy import compile_sql_explorer_statement
-from gravity_sdk.sql_explorer_sqlite import _SqliteReadOnlySession
-import gravity_sdk.sql_explorer_sqlite as sqlite_adapter_module
-import gravity_sdk.workspace_sql_product_install as workspace_install_module
-from gravity_sdk.workspace import (
+from gravity_insight.sql_explorer_policy import compile_sql_explorer_statement
+from gravity_insight.sql_explorer_sqlite import _SqliteReadOnlySession
+import gravity_insight.sql_explorer_sqlite as sqlite_adapter_module
+import gravity_insight.workspace_sql_product_install as workspace_install_module
+from gravity_insight.workspace import (
     load_workspace,
     validate_registered_sql_product_definition,
 )
@@ -366,7 +366,7 @@ class SqlExplorerTests(unittest.TestCase):
         self.assertFalse(unsupported["error"]["statement_executed"])
 
     def test_parser_and_result_tamper_fail_closed(self) -> None:
-        with patch("gravity_sdk.sql_explorer_policy.sqlglot.__version__", "0.0.0"):
+        with patch("gravity_insight.sql_explorer_policy.sqlglot.__version__", "0.0.0"):
             unavailable = self.service.inspect(_request(self.database))
         self.assertEqual("SQL_EXPLORER_PARSER_UNAVAILABLE", unavailable["error"]["code"])
 
@@ -459,7 +459,7 @@ class SqlExplorerTests(unittest.TestCase):
                 target_path.write_text("schema_version =", encoding="utf-8")
 
         with patch(
-            "gravity_sdk.workspace_sql_product_install.replace_atomic_durable",
+            "gravity_insight.workspace_sql_product_install.replace_atomic_durable",
             side_effect=corrupt_first_commit,
         ), self.assertRaises(SqlExplorerContractError) as raised:
             service.promote(_promotion_request(source, name="rollback-summary-v1"))
@@ -507,19 +507,19 @@ class SqlExplorerTests(unittest.TestCase):
         inspected = sdk.sql_explorer.inspect(_request(self.database))
         self.assertEqual("ready", inspected["status"])
 
-        import gravity_sdk
+        import gravity_insight
 
-        self.assertIs(gravity_sdk.SqlExplorerService, SqlExplorerService)
+        self.assertIs(gravity_insight.SqlExplorerService, SqlExplorerService)
         self.assertIs(
-            gravity_sdk.validate_sql_explorer_request,
+            gravity_insight.validate_sql_explorer_request,
             validate_sql_explorer_request,
         )
         self.assertIs(
-            gravity_sdk.validate_sql_explorer_result,
+            gravity_insight.validate_sql_explorer_result,
             validate_sql_explorer_result,
         )
         self.assertIs(
-            gravity_sdk.validate_sql_explorer_promotion,
+            gravity_insight.validate_sql_explorer_promotion,
             validate_sql_explorer_promotion,
         )
 
@@ -571,7 +571,7 @@ class SqlExplorerTests(unittest.TestCase):
             [
                 sys.executable,
                 "-m",
-                "gravity_sdk",
+                "gravity_insight",
                 "sql",
                 "explorer",
                 "execute",
@@ -606,7 +606,7 @@ class SqlExplorerTests(unittest.TestCase):
             [
                 sys.executable,
                 "-m",
-                "gravity_sdk",
+                "gravity_insight",
                 "sql",
                 "explorer",
                 "promote",

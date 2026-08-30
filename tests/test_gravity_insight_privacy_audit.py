@@ -5,8 +5,8 @@ import unittest
 import json
 
 
-from gravity_sdk.models import ResponseProjection
-from gravity_sdk.prober.privacy import (
+from gravity_insight.models import ResponseProjection
+from gravity_insight.prober.privacy import (
     build_projection,
     candidate_fields,
     classify_candidate_field,
@@ -14,8 +14,8 @@ from gravity_sdk.prober.privacy import (
     projection_exposes_path,
     response_schema_sketch,
 )
-from gravity_sdk.prober.privacy_stats import profile_named_fields
-from gravity_sdk.projection_validation import validate_projection_bindings
+from gravity_insight.prober.privacy_stats import profile_named_fields
+from gravity_insight.projection_validation import validate_projection_bindings
 
 
 

@@ -9,13 +9,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk import cache_disk, credentials as credentials_module
-from gravity_sdk.cache import MetadataCache
-from gravity_sdk.client import GravityInsightClient
-from gravity_sdk.credentials import DEFAULT_ENV_PATH, CredentialProvider
-from gravity_sdk.models import ReadResult
-from gravity_sdk.paths import PROJECT_ROOT
-from gravity_sdk.runtime_scope import (
+from gravity_insight import cache_disk, credentials as credentials_module
+from gravity_insight.cache import MetadataCache
+from gravity_insight.client import GravityInsightClient
+from gravity_insight.credentials import DEFAULT_ENV_PATH, CredentialProvider
+from gravity_insight.models import ReadResult
+from gravity_insight.paths import PROJECT_ROOT
+from gravity_insight.runtime_scope import (
     env_isolation_key,
     field_policy_cache_dir,
     operation_catalog_state_path,

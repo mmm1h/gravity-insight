@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONSUMER = ROOT.parent / "work-dashboard"
 DEFAULT_REVISION = "64c08582690ac4bb2b04d3c3cd22a5716b1dc0f0"
 CONSUMER_TESTS = (
-    "tests.test_gravity_sdk_adoption",
+    "tests.test_gravity_insight_adoption",
     "tests.test_r01_reference_journey_consumer",
 )
 
@@ -146,7 +146,7 @@ def check_installed_wheel_consumer(
     with tempfile.TemporaryDirectory(prefix="gravity-canonical-consumer-") as raw:
         temporary = Path(raw).resolve()
         wheelhouse = temporary / "wheelhouse"
-        sdk_root = temporary / "gravity-sdk-wheel"
+        sdk_root = temporary / "gravity-insight-wheel"
         site = sdk_root / "src"
         consumer = temporary / "work-dashboard"
         wheelhouse.mkdir()
@@ -214,8 +214,8 @@ def check_installed_wheel_consumer(
                 "-I",
                 "-c",
                 "import pathlib,sys; sys.path.insert(0, sys.argv[1]); "
-                "import gravity_sdk; print(pathlib.Path(gravity_sdk.__file__).resolve()); "
-                "print(gravity_sdk.__version__)",
+                "import gravity_insight; print(pathlib.Path(gravity_insight.__file__).resolve()); "
+                "print(gravity_insight.__version__)",
                 str(site),
             ],
             cwd=temporary,

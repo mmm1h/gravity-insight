@@ -3,10 +3,10 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agents.batch import capabilities_many
-from gravity_sdk.agents.capabilities import authoritative_capability_cards
-from gravity_sdk.agents.order_trace import ORDER_SPLIT_TRACE_RAW_SELECTOR, order_split_trace_query
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.agents.batch import capabilities_many
+from gravity_insight.agents.capabilities import authoritative_capability_cards
+from gravity_insight.agents.order_trace import ORDER_SPLIT_TRACE_RAW_SELECTOR, order_split_trace_query
 
 
 class OrderSplitTraceAgentTests(unittest.TestCase):
@@ -106,7 +106,7 @@ class OrderSplitTraceAgentTests(unittest.TestCase):
             [card["selector"] for card in result["candidates"]],
         )
 
-    @patch("gravity_sdk.agents.batch_sources.search_metadata", return_value={"results": []})
+    @patch("gravity_insight.agents.batch_sources.search_metadata", return_value={"results": []})
     def test_batch_positive_and_blocked_intents_never_load_operations(self, _metadata):
         class NoOperationClient:
             def export_capabilities(self):

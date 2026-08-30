@@ -7,11 +7,11 @@ import json
 from pathlib import Path
 import unittest
 
-from gravity_sdk import ExperimentHandoffService, GravitySDK
-from gravity_sdk import cli
-from gravity_sdk.agent_runtime_contracts import canonical_digest, validate_schema
-from gravity_sdk.execution_snapshot import build_execution_snapshot
-from gravity_sdk.experiment_handoff import (
+from gravity_insight import ExperimentHandoffService, GravitySDK
+from gravity_insight import cli
+from gravity_insight.agent_runtime_contracts import canonical_digest, validate_schema
+from gravity_insight.execution_snapshot import build_execution_snapshot
+from gravity_insight.experiment_handoff import (
     ExperimentContractError,
     OUTCOME_JOURNEY_ID,
     compile_experiment_power_analysis,
@@ -546,7 +546,7 @@ class ExperimentSurfaceTests(unittest.TestCase):
     def test_all_machine_schemas_are_packaged_local_and_observation_is_standalone(self) -> None:
         root = (
             Path(__file__).resolve().parents[1]
-            / "src/gravity_sdk/contracts/schema"
+            / "src/gravity_insight/contracts/schema"
         )
         expected = {
             "experiment-power-analysis-v1.schema.json": "gravity.experiment-power-analysis.v1",

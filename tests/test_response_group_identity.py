@@ -5,21 +5,21 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
-from gravity_sdk.analysis_projection_contract import (
+from gravity_insight.analysis_projection_contract import (
     ANALYSIS_GROUP_SHAPE_OPENINGS,
     allowed_analysis_response_key,
     analysis_group_shape,
     operation_uses_dynamic_aggregate,
     validate_group_identity_invariant,
 )
-from gravity_sdk.errors import ManifestError
-from gravity_sdk.executor import _project as project_response
-from gravity_sdk.models import InputField, OperationSpec, ResponseProjection, load_operation_manifest
+from gravity_insight.errors import ManifestError
+from gravity_insight.executor import _project as project_response
+from gravity_insight.models import InputField, OperationSpec, ResponseProjection, load_operation_manifest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OPERATIONS = ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
-MANIFESTS = ROOT / "src" / "gravity_sdk" / "manifests"
+OPERATIONS = ROOT / "src" / "gravity_insight" / "contracts" / "operations"
+MANIFESTS = ROOT / "src" / "gravity_insight" / "manifests"
 
 
 def _projection(**overrides: object) -> ResponseProjection:

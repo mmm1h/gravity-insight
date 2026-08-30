@@ -13,25 +13,25 @@ import subprocess
 import zipfile
 from typing import Any
 
-from gravity_sdk import __version__
-from gravity_sdk.agent_runtime_contracts import load_json_object
-from gravity_sdk.skill_contract import skill_uri
-from gravity_sdk.skill_hub_archive import validate_skill_archive
-from gravity_sdk.skill_hub_contract import compile_hub_index, compile_hub_source
-from gravity_sdk.skill_hub_locks import build_skills_lock, compile_skills_lock
-from gravity_sdk.skill_render import render_package_files, skill_package_descriptor
-from gravity_sdk.thinkingai_full_specification import (
+from gravity_insight import __version__
+from gravity_insight.agent_runtime_contracts import load_json_object
+from gravity_insight.skill_contract import skill_uri
+from gravity_insight.skill_hub_archive import validate_skill_archive
+from gravity_insight.skill_hub_contract import compile_hub_index, compile_hub_source
+from gravity_insight.skill_hub_locks import build_skills_lock, compile_skills_lock
+from gravity_insight.skill_render import render_package_files, skill_package_descriptor
+from gravity_insight.thinkingai_full_specification import (
     compile_full_source,
     compile_full_specification,
     full_source_manifests,
 )
-from gravity_sdk.thinkingai_full_eval import compile_full_eval
-from gravity_sdk.thinkingai_inventory import load_inventory_snapshot
-from gravity_sdk.thinkingai_representative import (
+from gravity_insight.thinkingai_full_eval import compile_full_eval
+from gravity_insight.thinkingai_inventory import load_inventory_snapshot
+from gravity_insight.thinkingai_representative import (
     validate_representative_eval,
     validate_representative_set,
 )
-from gravity_sdk.agent_runtime_contracts import canonical_digest
+from gravity_insight.agent_runtime_contracts import canonical_digest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -154,7 +154,7 @@ def render_outputs(source_revision: str | None) -> dict[Path, bytes]:
 
 def _snapshot() -> dict[str, Any]:
     paths = sorted(
-        (ROOT / "src" / "gravity_sdk" / "contracts" / "thinkingai" / "snapshots").glob(
+        (ROOT / "src" / "gravity_insight" / "contracts" / "thinkingai" / "snapshots").glob(
             "*.json"
         )
     )
@@ -173,7 +173,7 @@ def _hub_source() -> dict[str, Any]:
             "owner": "gravity-content",
             "trust_model": "stage_a_team_controlled_reviewed",
             "git": {
-                "repository_uri": "https://github.com/mmm1h/gravity-sdk.git",
+                "repository_uri": "https://github.com/mmm1h/gravity-insight.git",
                 "ref": "refs/heads/dev",
                 "index_path": _INDEX_REPOSITORY_PATH,
             },

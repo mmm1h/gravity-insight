@@ -11,19 +11,19 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.external_context_binding import (
+from gravity_insight.external_context_binding import (
     BINDINGS_FILENAME,
     ExternalContextBindingError,
     ExternalContextBindingResolver,
     compile_external_context_bindings,
     load_external_context_bindings,
 )
-from gravity_sdk.external_context_provider import ExternalContextProvider
-from gravity_sdk.provider_rpc_transport import (
+from gravity_insight.external_context_provider import ExternalContextProvider
+from gravity_insight.provider_rpc_transport import (
     CallableProviderTransport,
     ProviderTransportError,
 )
-from gravity_sdk.reference_journey_contract import JOURNEY_ID, SKILL_URI
+from gravity_insight.reference_journey_contract import JOURNEY_ID, SKILL_URI
 from tests.test_external_context_contracts import (
     provider_descriptor,
     resource,
@@ -484,7 +484,7 @@ class ExternalContextBindingTests(unittest.TestCase):
         )
 
         with patch(
-            "gravity_sdk.external_context_provider.SubprocessProviderTransport",
+            "gravity_insight.external_context_provider.SubprocessProviderTransport",
             side_effect=AssertionError("Project binding constructed a transport"),
         ) as constructed:
             result = self._resolve(project, [])

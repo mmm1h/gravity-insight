@@ -20,7 +20,7 @@
   preflight 对 exact registered mutation 的身份放行不会派发 mutation 请求。该拒绝位于 stable probe
   内部，不应表述成 session/runtime 构造前的闸门；mutation 仍只走产品自有授权路径。
 - 人工确认只按精确的 `method + path` 放行，记录在
-  `src/gravity_sdk/contracts/routes/probe-read-confirmations.json`。每条必须包含 `reviewer`、
+  `src/gravity_insight/contracts/routes/probe-read-confirmations.json`。每条必须包含 `reviewer`、
   ISO 日期 `reviewed_at`、`decision=confirmed_read`，以及至少一条带 `source/detail` 的静态控制流证据；
   缺字段、重复记录、路径变化或确认文件损坏都失败关闭。确认前只读前端控制流、UI 文案和同作用域
   调用链，不得用在线请求判断是否为写。Draft prober 只对该文件完整校验通过的精确 POST 路径跨过

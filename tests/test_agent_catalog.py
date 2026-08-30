@@ -6,14 +6,14 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-from gravity_sdk import GravityInsightClient
-from gravity_sdk.agent import SCHEMA_VERSION as AGENT_SCHEMA_VERSION, discover_capabilities
-from gravity_sdk.agents.catalog import SCHEMA_VERSION, _inventory, run_agent_catalog_command
-from gravity_sdk.agents.catalog_parity import validate_catalog_parity
-from gravity_sdk.agents.product_inventory import canonical_capability_cards
-from gravity_sdk.agents.unavailable import registered_unavailable_gaps
-from gravity_sdk.agents.unavailable import unavailable_journey_gap
-from gravity_sdk.multidim_contract import (
+from gravity_insight import GravityInsightClient
+from gravity_insight.agent import SCHEMA_VERSION as AGENT_SCHEMA_VERSION, discover_capabilities
+from gravity_insight.agents.catalog import SCHEMA_VERSION, _inventory, run_agent_catalog_command
+from gravity_insight.agents.catalog_parity import validate_catalog_parity
+from gravity_insight.agents.product_inventory import canonical_capability_cards
+from gravity_insight.agents.unavailable import registered_unavailable_gaps
+from gravity_insight.agents.unavailable import unavailable_journey_gap
+from gravity_insight.multidim_contract import (
     MULTIDIM_COHORT_HORIZON_GAP_CODE,
     multidim_multi_key_contract,
 )
@@ -53,7 +53,7 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual("read", described["capability"]["effect"])
 
     def test_unknown_category_and_selector_point_at_catalog_browse(self) -> None:
-        from gravity_sdk.errors import InputValidationError
+        from gravity_insight.errors import InputValidationError
 
         with self.assertRaises(InputValidationError) as category_error:
             run_agent_catalog_command(
@@ -170,9 +170,9 @@ class AgentCatalogTests(unittest.TestCase):
             )
 
     def test_every_public_mutation_action_has_a_safe_catalog_handoff(self) -> None:
-        from gravity_sdk.kanban_mutation import kanban_mutation_schema
-        from gravity_sdk.metadata_template_mutation import metadata_template_mutation_schema
-        from gravity_sdk.segment_mutation_cli import MUTATION_ACTIONS
+        from gravity_insight.kanban_mutation import kanban_mutation_schema
+        from gravity_insight.metadata_template_mutation import metadata_template_mutation_schema
+        from gravity_insight.segment_mutation_cli import MUTATION_ACTIONS
 
         cards = [
             card for card in canonical_capability_cards(self.client)
@@ -310,7 +310,7 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertIn("never executes", result["next_action"])
 
     def test_same_selector_describe_surfaces_keep_the_full_input_contract(self) -> None:
-        from gravity_sdk.find import run_operation_command
+        from gravity_insight.find import run_operation_command
 
         for selector in ("report.get.query", "app.list", "app.app_info.get"):
             with self.subTest(selector=selector):

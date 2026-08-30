@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 
 try:
-    from gravity_sdk.catalog import OperationCatalog
-    from gravity_sdk.drift import (
+    from gravity_insight.catalog import OperationCatalog
+    from gravity_insight.drift import (
         AUTH_ERROR,
         CONTRACT_CHANGED_ADDITIVE,
         DEGRADED,
@@ -17,10 +17,10 @@ try:
         DriftSignal,
         HealthOverlay,
     )
-    from gravity_sdk.errors import ContractChangedError
+    from gravity_insight.errors import ContractChangedError
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk.catalog import OperationCatalog
-    from gravity_sdk.drift import (
+    from gravity_insight.catalog import OperationCatalog
+    from gravity_insight.drift import (
         AUTH_ERROR,
         CONTRACT_CHANGED_ADDITIVE,
         DEGRADED,
@@ -30,9 +30,9 @@ except ModuleNotFoundError:  # source checkout before editable installation
         DriftSignal,
         HealthOverlay,
     )
-    from gravity_sdk.errors import ContractChangedError
+    from gravity_insight.errors import ContractChangedError
 
-from gravity_sdk.census.schema import (
+from gravity_insight.census.schema import (
     build_raw_schema_sketch,
     compare_raw_schema_sketches,
     fingerprint_contract,

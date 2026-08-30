@@ -8,9 +8,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import ModelRegistry, OperatorRegistry
-from gravity_sdk.cli import main
-from gravity_sdk.operator_ids import RETURNED_DIMENSION_CHANGE_URI
+from gravity_insight import ModelRegistry, OperatorRegistry
+from gravity_insight.cli import main
+from gravity_insight.operator_ids import RETURNED_DIMENSION_CHANGE_URI
 from tests.test_model_registry import MODEL_URI, model_artifact
 
 
@@ -19,7 +19,7 @@ class OperatorModelCliTests(unittest.TestCase):
         stdout, stderr = io.StringIO(), io.StringIO()
         with (
             patch(
-                "gravity_sdk.runtime.build_client",
+                "gravity_insight.runtime.build_client",
                 side_effect=AssertionError("client constructed"),
             ),
             patch("socket.socket", side_effect=AssertionError("network attempted")),

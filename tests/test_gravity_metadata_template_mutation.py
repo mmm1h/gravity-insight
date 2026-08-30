@@ -4,13 +4,13 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agents.metadata_template import (
+from gravity_insight.agents.metadata_template import (
     SELECTORS,
     metadata_template_capability_inventory,
 )
-from gravity_sdk.cli import build_parser
-from gravity_sdk.errors import ContractChangedError, InputValidationError
-from gravity_sdk.metadata_template_contracts import (
+from gravity_insight.cli import build_parser
+from gravity_insight.errors import ContractChangedError, InputValidationError
+from gravity_insight.metadata_template_contracts import (
     TEMPLATE_APPEND,
     TEMPLATE_EVENT_MEMBERS,
     TEMPLATE_EVENT_REMOVE,
@@ -19,17 +19,17 @@ from gravity_sdk.metadata_template_contracts import (
     TEMPLATE_PROPERTY_MEMBERS,
     TEMPLATE_PROPERTY_REMOVE,
 )
-from gravity_sdk.metadata_template_mutation import (
+from gravity_insight.metadata_template_mutation import (
     append_metadata_template_members,
     create_metadata_template,
     delete_metadata_template,
     remove_metadata_template_members,
 )
-from gravity_sdk.metadata_template_wire import validate_metadata_template_wire
-from gravity_sdk.mutation_client import MutationClientMixin
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_metadata_template_adapter import validate_metadata_template_plan
-from gravity_sdk.sdk import GravitySDK
+from gravity_insight.metadata_template_wire import validate_metadata_template_wire
+from gravity_insight.mutation_client import MutationClientMixin
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_metadata_template_adapter import validate_metadata_template_plan
+from gravity_insight.sdk import GravitySDK
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -199,7 +199,7 @@ class MetadataTemplateMutationTests(unittest.TestCase):
             TEMPLATE_PROPERTY_REMOVE: "/turbo_engine/api/v2/event/property_template/property_delete/",
         }
         for operation_id, path in cases.items():
-            source = json.loads((ROOT / "src/gravity_sdk/contracts/operations" / f"{operation_id}.json").read_text(encoding="utf-8"))["operation"]
+            source = json.loads((ROOT / "src/gravity_insight/contracts/operations" / f"{operation_id}.json").read_text(encoding="utf-8"))["operation"]
             self.assertEqual(("POST", path, "mutation", "stable", True), (
                 source["upstream_method"], source["path_template"], source["effect"],
                 source["stability"], source["executable"],

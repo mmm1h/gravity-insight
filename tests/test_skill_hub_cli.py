@@ -8,8 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import SkillHubClient, TrustedPackHubClient
-from gravity_sdk.cli import build_parser, main
+from gravity_insight import SkillHubClient, TrustedPackHubClient
+from gravity_insight.cli import build_parser, main
 from tests.test_skill_hub_contracts import (
     _render_without_wheel_paths,
     git_source,
@@ -51,7 +51,7 @@ class SkillHubCliTests(unittest.TestCase):
         stdout, stderr = io.StringIO(), io.StringIO()
         with (
             patch(
-                "gravity_sdk.runtime.build_client",
+                "gravity_insight.runtime.build_client",
                 side_effect=AssertionError("Gravity client constructed"),
             ),
             patch("socket.socket", side_effect=AssertionError("network attempted")),

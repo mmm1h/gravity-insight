@@ -6,10 +6,10 @@ import math
 import unittest
 from pathlib import Path
 
-from gravity_sdk import GravityInsightClient
-from gravity_sdk._field_policy_detail import validate_analysis_detail
-from gravity_sdk.models import load_operation_manifest
-from gravity_sdk.order_directory import (
+from gravity_insight import GravityInsightClient
+from gravity_insight._field_policy_detail import validate_analysis_detail
+from gravity_insight.models import load_operation_manifest
+from gravity_insight.order_directory import (
     OPERATION_ID,
     SAFE_ROW_FIELDS,
     order_directory,
@@ -17,8 +17,8 @@ from gravity_sdk.order_directory import (
     sanitize_order_directory_result,
     validate_order_directory_request,
 )
-from gravity_sdk.order_trace import PARENT_FIELDS
-from gravity_sdk.transport import TransportResponse
+from gravity_insight.order_trace import PARENT_FIELDS
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,7 +115,7 @@ class OrderDirectoryTests(unittest.TestCase):
     def test_real_client_reads_all_pages_with_no_metadata_or_child(self):
         operations = [
             operation
-            for path in (ROOT / "src" / "gravity_sdk" / "manifests").glob("*.json")
+            for path in (ROOT / "src" / "gravity_insight" / "manifests").glob("*.json")
             for operation in json.loads(path.read_text(encoding="utf-8"))["operations"]
         ]
         transport = _Transport()
@@ -349,7 +349,7 @@ class OrderDirectoryTests(unittest.TestCase):
     def test_field_policy_fast_path_is_exact_and_data_driven(self):
         operation = next(
             item for item in load_operation_manifest(
-                ROOT / "src" / "gravity_sdk" / "manifests" / "analysis.json"
+                ROOT / "src" / "gravity_insight" / "manifests" / "analysis.json"
             ) if item.operation_id == OPERATION_ID
         )
         calls = []

@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gravity_sdk.quality import (
+from gravity_insight.quality import (
     COMPLEXITY_LIMIT,
     FILE_SLOC_LIMIT,
     FUNCTION_SLOC_LIMIT,
@@ -32,7 +32,7 @@ from gravity_sdk.quality import (
     render_markdown,
     validate as _validate,
 )
-from gravity_sdk.governance.privacy_consistency import (
+from gravity_insight.governance.privacy_consistency import (
     exposed_field_names,
     inspect_privacy_classification_consistency,
 )
@@ -84,7 +84,7 @@ def _validate_repository(
     if resolved != ROOT.resolve():
         return _validate(resolved, base_ref=base_ref)
     profile = _repository_profile(resolved)
-    with mock.patch("gravity_sdk.quality.inspect_repository", return_value=profile):
+    with mock.patch("gravity_insight.quality.inspect_repository", return_value=profile):
         return _validate(resolved, base_ref=base_ref)
 
 
@@ -98,16 +98,16 @@ def _profile(
     literals: int = 0,
 ) -> QualityProfile:
     occurrences = tuple(
-        LiteralOccurrence("src/gravity_sdk/sample.py", line + 1, "app.list")
+        LiteralOccurrence("src/gravity_insight/sample.py", line + 1, "app.list")
         for line in range(literals)
     )
     return QualityProfile(
-        file_sloc={"src/gravity_sdk/sample.py": file_sloc},
-        file_ast_nodes={"src/gravity_sdk/sample.py": ast_nodes},
-        file_lines={"src/gravity_sdk/sample.py": file_lines or file_sloc},
+        file_sloc={"src/gravity_insight/sample.py": file_sloc},
+        file_ast_nodes={"src/gravity_insight/sample.py": ast_nodes},
+        file_lines={"src/gravity_insight/sample.py": file_lines or file_sloc},
         functions=(
             FunctionMetric(
-                "src/gravity_sdk/sample.py",
+                "src/gravity_insight/sample.py",
                 "sample",
                 1,
                 function_sloc,
@@ -131,7 +131,7 @@ def product_result(truncated):
 def _component_exit_code(error):
     return {"caller": 2, "upstream": 3, "local": 4}[error["category"]]
 '''
-        errors = hardcoded_exit_code_errors("src/gravity_sdk/sample.py", source, ast.parse(source))
+        errors = hardcoded_exit_code_errors("src/gravity_insight/sample.py", source, ast.parse(source))
         self.assertEqual(2, len(errors), errors)
         self.assertTrue(all("shared error classification" in item for item in errors))
 
@@ -145,7 +145,7 @@ def success_result():
 '''
         self.assertEqual(
             [],
-            hardcoded_exit_code_errors("src/gravity_sdk/sample.py", source, ast.parse(source)),
+            hardcoded_exit_code_errors("src/gravity_insight/sample.py", source, ast.parse(source)),
         )
 
     def test_exit_code_guard_requires_an_exemption_reason(self) -> None:
@@ -177,8 +177,8 @@ def capability_gap():
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            operations = root / "src/gravity_sdk/contracts/operations"
-            drafts = root / "src/gravity_sdk/contracts/drafts"
+            operations = root / "src/gravity_insight/contracts/operations"
+            drafts = root / "src/gravity_insight/contracts/drafts"
             operations.mkdir(parents=True)
             drafts.mkdir(parents=True)
             stable = {
@@ -264,8 +264,8 @@ def capability_gap():
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            operations = root / "src/gravity_sdk/contracts/operations"
-            drafts = root / "src/gravity_sdk/contracts/drafts"
+            operations = root / "src/gravity_insight/contracts/operations"
+            drafts = root / "src/gravity_insight/contracts/drafts"
             operations.mkdir(parents=True)
             drafts.mkdir(parents=True)
             (operations / "stable.report.list.json").write_text(
@@ -305,8 +305,8 @@ def capability_gap():
     def test_privacy_consistency_ignores_non_stable_operations(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            operations = root / "src/gravity_sdk/contracts/operations"
-            drafts = root / "src/gravity_sdk/contracts/drafts"
+            operations = root / "src/gravity_insight/contracts/operations"
+            drafts = root / "src/gravity_insight/contracts/drafts"
             operations.mkdir(parents=True)
             drafts.mkdir(parents=True)
             (operations / "experimental.example.json").write_text(
@@ -435,7 +435,7 @@ def sample(value):
         self.assertTrue(any("AST nodes current=" in item and "hard limit=" in item for item in errors))
 
     def test_ast_improvement_cannot_rebound_with_a_growth_reason(self) -> None:
-        path = "src/gravity_sdk/sample.py"
+        path = "src/gravity_insight/sample.py"
         base_profile = _profile(file_sloc=550, ast_nodes=100)
         base = debt_snapshot(base_profile)
         improved = debt_snapshot(_profile(file_sloc=550, ast_nodes=60), base)
@@ -452,7 +452,7 @@ def sample(value):
             debt_snapshot(_profile(file_sloc=550, ast_nodes=140), improved)
 
     def test_sloc_hard_limit_uses_sloc_and_tightens_after_improvement(self) -> None:
-        path = "src/gravity_sdk/sample.py"
+        path = "src/gravity_insight/sample.py"
         base = debt_snapshot(_profile(file_sloc=550, file_lines=600))
         self.assertEqual(550, base["legacy_files"][path]["sloc_hard_limit"])
 
@@ -463,7 +463,7 @@ def sample(value):
             debt_snapshot(_profile(file_sloc=526, file_lines=600), improved)
 
     def test_v2_migration_replaces_physical_limit_with_current_sloc(self) -> None:
-        path = "src/gravity_sdk/sample.py"
+        path = "src/gravity_insight/sample.py"
         v2 = debt_snapshot(_profile(file_sloc=550, file_lines=600, ast_nodes=100))
         v2["baseline_version"] = 2
         v2["legacy_files"][path].update(
@@ -482,7 +482,7 @@ def sample(value):
         proposed = json.loads(json.dumps(base))
         proposed["growth_ledger"].append(
             {
-                "path": "src/gravity_sdk/sample.py",
+                "path": "src/gravity_insight/sample.py",
                 "from": 100,
                 "to": 101,
                 "reason": "attempted rebound",
@@ -492,7 +492,7 @@ def sample(value):
         self.assertTrue(any("historical growth ledger is immutable" in item for item in errors))
 
     def test_migration_hard_limits_are_derived_from_base_source(self) -> None:
-        path = "src/gravity_sdk/sample.py"
+        path = "src/gravity_insight/sample.py"
         source = "# formatting reserve\n" * 50 + "value = 1\n" * 550
         baseline = debt_snapshot(
             _profile(
@@ -509,8 +509,8 @@ def sample(value):
         profile = _profile(file_sloc=550, function_sloc=90, complexity=18, literals=2)
         output = io.StringIO()
         with (
-            mock.patch("gravity_sdk.quality.validate", return_value=[]),
-            mock.patch("gravity_sdk.quality.inspect_repository", return_value=profile),
+            mock.patch("gravity_insight.quality.validate", return_value=[]),
+            mock.patch("gravity_insight.quality.inspect_repository", return_value=profile),
             redirect_stdout(output),
         ):
             exit_code = quality_main(["--root", str(ROOT), "check"])
@@ -529,7 +529,7 @@ def sample(value):
             provenance_covered=2,
         )
         with mock.patch(
-            "gravity_sdk.quality._base_quality_snapshot",
+            "gravity_insight.quality._base_quality_snapshot",
             return_value=({"app.list"}, 100),
         ):
             errors = evaluate_slope(profile, ROOT, "base")
@@ -537,13 +537,13 @@ def sample(value):
             self.assertEqual([], evaluate_slope(replace(profile, src_python_sloc=100), ROOT, "base"))
 
     def test_repository_quality_source_parses_as_python_311(self) -> None:
-        source = (ROOT / "src/gravity_sdk/quality.py").read_text(encoding="utf-8")
+        source = (ROOT / "src/gravity_insight/quality.py").read_text(encoding="utf-8")
         ast.parse(source, filename="quality.py", feature_version=(3, 11))
 
     def test_repository_profile_uses_exact_contract_ids(self) -> None:
         profile = _repository_profile(ROOT)
         provenance = json.loads(
-            (ROOT / "src/gravity_sdk/contracts/generated/provenance.json").read_text(
+            (ROOT / "src/gravity_insight/contracts/generated/provenance.json").read_text(
                 encoding="utf-8"
             )
         )
@@ -551,8 +551,8 @@ def sample(value):
         self.assertEqual(profile.operation_count, profile.provenance_covered)
         self.assertEqual("PASS", profile.compiler_check)
         self.assertFalse(profile.scan_errors, profile.scan_errors)
-        self.assertIn("src/gravity_sdk/compiler.py", profile.file_sloc)
-        self.assertIn("src/gravity_sdk/quality.py", profile.file_sloc)
+        self.assertIn("src/gravity_insight/compiler.py", profile.file_sloc)
+        self.assertIn("src/gravity_insight/quality.py", profile.file_sloc)
         self.assertFalse(
             any(
                 item.value == "analysis.user_event.list"
@@ -562,18 +562,18 @@ def sample(value):
         self.assertFalse(
             any(
                 item.path in {
-                    "src/gravity_sdk/catalog.py",
-                    "src/gravity_sdk/registry.py",
+                    "src/gravity_insight/catalog.py",
+                    "src/gravity_insight/registry.py",
                 }
                 for item in profile.operation_literals
             )
         )
-        self.assertFalse(any(item.value == "gravity_sdk" for item in profile.operation_literals))
+        self.assertFalse(any(item.value == "gravity_insight" for item in profile.operation_literals))
 
     def test_repository_profile_metrics_and_markdown_match_baseline(self) -> None:
         profile = _repository_profile(ROOT)
         identities = {(item.path, item.qualname, item.line) for item in profile.functions}
-        baseline = json.loads((ROOT / "src/gravity_sdk/governance/quality-baseline.json").read_text())
+        baseline = json.loads((ROOT / "src/gravity_insight/governance/quality-baseline.json").read_text())
         function_excess = sum(max(0, item.sloc - FUNCTION_SLOC_LIMIT) for item in profile.functions)
         complexity_excess = sum(max(0, item.complexity - COMPLEXITY_LIMIT) for item in profile.functions)
         self.assertEqual(len(identities), len(profile.functions))

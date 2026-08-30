@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.analysis_context import ANALYSIS_CONTEXT_SOURCES, analysis_context
-from gravity_sdk.app_snapshot import app_snapshot
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.output_projection import project_output
+from gravity_insight.analysis_context import ANALYSIS_CONTEXT_SOURCES, analysis_context
+from gravity_insight.app_snapshot import app_snapshot
+from gravity_insight.errors import InputValidationError
+from gravity_insight.output_projection import project_output
 
 
 class _BatchClient:

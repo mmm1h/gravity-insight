@@ -1,11 +1,11 @@
 import unittest
 
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agents.capabilities import (
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.agents.capabilities import (
     authoritative_capability_cards,
     composite_capability_cards,
 )
-from gravity_sdk.agents.handoff import attach_plan_node
+from gravity_insight.agents.handoff import attach_plan_node
 
 
 class SavedAnalysisAgentTest(unittest.TestCase):

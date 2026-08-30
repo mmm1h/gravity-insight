@@ -5,15 +5,15 @@ import json
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.errors import InputValidationError, PaginationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_user_journey_adapter import (
+from gravity_insight.errors import InputValidationError, PaginationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_user_journey_adapter import (
     execute_user_journey_plan,
     project_user_journey_result,
     validate_user_journey_plan,
 )
-from gravity_sdk.user_journey import USER_JOURNEY_OPERATIONS, user_journey
-from gravity_sdk.user_journey_cli import add_user_journey_command
+from gravity_insight.user_journey import USER_JOURNEY_OPERATIONS, user_journey
+from gravity_insight.user_journey_cli import add_user_journey_command
 
 
 class _BatchClient:
@@ -150,10 +150,10 @@ class UserJourneyTests(unittest.TestCase):
             ]
         )
         with (
-            patch("gravity_sdk.user_journey_cli.load_workspace") as load,
-            patch("gravity_sdk.user_journey_cli.resolve_workspace_app", return_value=17) as resolve,
-            patch("gravity_sdk.user_journey_cli.runtime.build_client", return_value=object()),
-            patch("gravity_sdk.user_journey_cli.user_journey", return_value={"ok": True}) as run,
+            patch("gravity_insight.user_journey_cli.load_workspace") as load,
+            patch("gravity_insight.user_journey_cli.resolve_workspace_app", return_value=17) as resolve,
+            patch("gravity_insight.user_journey_cli.runtime.build_client", return_value=object()),
+            patch("gravity_insight.user_journey_cli.user_journey", return_value={"ok": True}) as run,
         ):
             result = args._gravity_handler(args, lambda _value: {})
 

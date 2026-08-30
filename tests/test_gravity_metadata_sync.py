@@ -11,26 +11,26 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, cli
-from gravity_sdk.domains import ANALYSIS_METADATA_OPERATIONS
-from gravity_sdk.errors import ContractChangedError, UpstreamError
-from gravity_sdk.find_metadata import search_metadata
-from gravity_sdk.metadata_lineage import (
+from gravity_insight import GravitySDK, cli
+from gravity_insight.domains import ANALYSIS_METADATA_OPERATIONS
+from gravity_insight.errors import ContractChangedError, UpstreamError
+from gravity_insight.find_metadata import search_metadata
+from gravity_insight.metadata_lineage import (
     TABLE_LINEAGE_OPERATIONS,
     TABLE_OPERATION_LOG_OPERATION_ID,
     search_table_lineage,
 )
-from gravity_sdk.metadata_vocabulary import VOCABULARY_SOURCES
-from gravity_sdk.metadata_sync import (
+from gravity_insight.metadata_vocabulary import VOCABULARY_SOURCES
+from gravity_insight.metadata_sync import (
     _create_schema,
     _write_apps,
     _write_catalog_metadata,
     _write_rows,
     sync_all_apps,
 )
-from gravity_sdk.metadata_onboarding import sync_app
-from gravity_sdk.metadata_status import metadata_status
-from gravity_sdk.agents.catalog_refresh import refresh_complete_catalog
+from gravity_insight.metadata_onboarding import sync_app
+from gravity_insight.metadata_status import metadata_status
+from gravity_insight.agents.catalog_refresh import refresh_complete_catalog
 
 
 class FakeSyncClient:
@@ -230,7 +230,7 @@ class MetadataSyncTests(unittest.TestCase):
             self._fixture_catalog(database)
             stdout = io.StringIO()
             with (
-                patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                patch("gravity_insight.cli.runtime.build_client") as build_client,
                 contextlib.redirect_stdout(stdout),
             ):
                 exit_code = cli.main(
@@ -311,7 +311,7 @@ class MetadataSyncTests(unittest.TestCase):
             )
             stdout = io.StringIO()
             with (
-                patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                patch("gravity_insight.cli.runtime.build_client") as build_client,
                 contextlib.redirect_stdout(stdout),
             ):
                 exit_code = cli.main([
@@ -432,7 +432,7 @@ class MetadataSyncTests(unittest.TestCase):
             ):
                 stdout = io.StringIO()
                 with (
-                    patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                    patch("gravity_insight.cli.runtime.build_client") as build_client,
                     contextlib.redirect_stdout(stdout),
                 ):
                     exit_code = cli.main(argv)
@@ -446,8 +446,8 @@ class MetadataSyncTests(unittest.TestCase):
             }
             stdout = io.StringIO()
             with (
-                patch("gravity_sdk.cli.runtime.build_client", return_value=object()),
-                patch("gravity_sdk.metadata_cli.sync_app", return_value=expected) as app_sync,
+                patch("gravity_insight.cli.runtime.build_client", return_value=object()),
+                patch("gravity_insight.metadata_cli.sync_app", return_value=expected) as app_sync,
                 contextlib.redirect_stdout(stdout),
             ):
                 exit_code = cli.main([
@@ -559,7 +559,7 @@ class MetadataSyncTests(unittest.TestCase):
             )
             stdout = io.StringIO()
             with (
-                patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                patch("gravity_insight.cli.runtime.build_client") as build_client,
                 contextlib.redirect_stdout(stdout),
             ):
                 exit_code = cli.main(

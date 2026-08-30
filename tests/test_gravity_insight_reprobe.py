@@ -7,23 +7,23 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from gravity_sdk.prober.model import build_draft
-from gravity_sdk.prober.drafts import validate_source
-from gravity_sdk.prober.parameters import (
+from gravity_insight.prober.model import build_draft
+from gravity_insight.prober.drafts import validate_source
+from gravity_insight.prober.parameters import (
     apply_error_learning,
     apply_stable_request_patterns,
     assemble_source_parameters,
     bind_stable_parent_candidates,
     parameter_hints_from_error,
 )
-from gravity_sdk.prober.probe_support import resolve_inputs
-from gravity_sdk.prober.reprobe import (
+from gravity_insight.prober.probe_support import resolve_inputs
+from gravity_insight.prober.reprobe import (
     downgrade_auth_contaminated_draft,
     prune_missing_probe_references,
     run_parameter_targets,
     select_parameter_reprobes,
 )
-from gravity_sdk.prober.transport import RecordingSession, RequestDiscipline
+from gravity_insight.prober.transport import RecordingSession, RequestDiscipline
 
 
 def _route() -> dict[str, object]:

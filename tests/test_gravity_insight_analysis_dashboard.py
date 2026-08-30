@@ -6,22 +6,22 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk.kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
+from gravity_insight.kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
 
 try:
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.errors import InputValidationError
-    from gravity_sdk.models import load_operation_manifest
-    from gravity_sdk.transport import TransportResponse
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.errors import InputValidationError
+    from gravity_insight.models import load_operation_manifest
+    from gravity_insight.transport import TransportResponse
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import GravityInsightClient
-    from gravity_sdk.errors import InputValidationError
-    from gravity_sdk.models import load_operation_manifest
-    from gravity_sdk.transport import TransportResponse
+    from gravity_insight import GravityInsightClient
+    from gravity_insight.errors import InputValidationError
+    from gravity_insight.models import load_operation_manifest
+    from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_DIR = ROOT / "src" / "gravity_sdk" / "manifests"
+MANIFEST_DIR = ROOT / "src" / "gravity_insight" / "manifests"
 DASHBOARD_MANIFEST = MANIFEST_DIR / "analysis_dashboard.json"
 
 

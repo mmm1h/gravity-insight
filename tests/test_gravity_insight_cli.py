@@ -11,17 +11,17 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import cli, runtime
-from gravity_sdk.actionable_error_values import (
+from gravity_insight import cli, runtime
+from gravity_insight.actionable_error_values import (
     ALTERNATIVE_DISPLAY_LIMIT,
     actual_value,
     allowed_values,
 )
-from gravity_sdk.analysis_spec import analysis_query_spec_schema
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.export_batch import validate_batch_item
-from gravity_sdk.find_input import set_input_path
-from gravity_sdk.domains import (
+from gravity_insight.analysis_spec import analysis_query_spec_schema
+from gravity_insight.errors import InputValidationError
+from gravity_insight.export_batch import validate_batch_item
+from gravity_insight.find_input import set_input_path
+from gravity_insight.domains import (
     ANALYSIS_AUXILIARY_OPERATIONS,
     ANALYSIS_DASHBOARD_OPERATIONS,
     ANALYSIS_DETAIL_OPERATIONS,
@@ -39,7 +39,7 @@ from gravity_sdk.domains import (
     PROMOTION_PRIMARY_OPERATIONS,
     promotion_operation,
 )
-from gravity_sdk.domains import (
+from gravity_insight.domains import (
     COMPILED_CATALOG_OPERATIONS,
     CatalogOperation,
     derive_legacy_domain_maps,
@@ -47,9 +47,9 @@ from gravity_sdk.domains import (
 from tests.repository_tree_gate import repository_tree_read
 
 try:
-    from gravity_sdk import GravityInsightClient
+    from gravity_insight import GravityInsightClient
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk import GravityInsightClient
+    from gravity_insight import GravityInsightClient
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -202,10 +202,10 @@ class GravityInsightCliTests(unittest.TestCase):
                 adjusted_argv.extend(["--output", str(output_path)])
             stack.enter_context(
             patch(
-                "gravity_sdk.cli.runtime.build_client", return_value=client
+                "gravity_insight.cli.runtime.build_client", return_value=client
             ))
             stack.enter_context(patch(
-                "gravity_sdk.cli.runtime.validate_manifest_json",
+                "gravity_insight.cli.runtime.validate_manifest_json",
                 return_value={
                     "manifest_files": 4,
                     "operations": len(client.operation_ids),
@@ -355,9 +355,9 @@ class GravityInsightCliTests(unittest.TestCase):
             path = Path(temporary) / "resolver-batch.json"
             path.write_text(json.dumps(payload), encoding="utf-8")
             with (
-                patch("gravity_sdk.workspace.load_workspace", return_value=workspace),
+                patch("gravity_insight.workspace.load_workspace", return_value=workspace),
                 patch(
-                    "gravity_sdk.resolver_batch.resolve_and_run", side_effect=resolved
+                    "gravity_insight.resolver_batch.resolve_and_run", side_effect=resolved
                 ) as run,
             ):
                 code, result, error, _ = self.invoke(
@@ -479,7 +479,7 @@ class GravityInsightCliTests(unittest.TestCase):
                 "exit_code": 0,
             }
             with patch(
-                "gravity_sdk.metadata_sync.sync_all_apps", return_value=envelope
+                "gravity_insight.metadata_sync.sync_all_apps", return_value=envelope
             ) as sync:
                 code, result, error, client = self.invoke(
                     [
@@ -911,9 +911,9 @@ class GravityInsightCliTests(unittest.TestCase):
         expected = {"schema_version": "gravity-insight.dashboard-snapshot.v1", "ok": True}
         workspace = object()
         with (
-            patch("gravity_sdk.dashboard_snapshot_cli.load_workspace", return_value=workspace),
-            patch("gravity_sdk.dashboard_snapshot_cli.resolve_workspace_app", return_value=17) as resolve,
-            patch("gravity_sdk.dashboard_snapshot_cli.dashboard_snapshot", return_value=expected) as snapshot,
+            patch("gravity_insight.dashboard_snapshot_cli.load_workspace", return_value=workspace),
+            patch("gravity_insight.dashboard_snapshot_cli.resolve_workspace_app", return_value=17) as resolve,
+            patch("gravity_insight.dashboard_snapshot_cli.dashboard_snapshot", return_value=expected) as snapshot,
         ):
             code, result, error, client = self.invoke([
                 "analysis", "dashboard", "snapshot", "--app", "main", "--ref", "Overview",
@@ -936,7 +936,7 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertIn("--format {json,ndjson}", output.getvalue())
 
     def test_dashboard_parser_marks_only_complete_unmixed_forms_as_networked(self):
-        from gravity_sdk.onboarding import command_requires_credentials
+        from gravity_insight.onboarding import command_requires_credentials
 
         offline = (
             ["analysis", "dashboard"],
@@ -1106,7 +1106,7 @@ class GravityInsightCliTests(unittest.TestCase):
             "exit_code": 0,
         }
         with patch(
-            "gravity_sdk.multidim_product.run_multidim_query",
+            "gravity_insight.multidim_product.run_multidim_query",
             return_value=envelope,
         ) as run:
             code, result, _, _ = self.invoke(
@@ -1148,7 +1148,7 @@ class GravityInsightCliTests(unittest.TestCase):
         raw = ('{"date_list":["2026-08-01","2026-08-02"],"time_dims":"day",'
                '"metrics_list":["cost"],"custom_metrics_list":["input"],'
                '"relate_dims":["input"],"filters":[]}')
-        with patch("gravity_sdk.multidim_product.run_multidim_query", return_value={}) as run:
+        with patch("gravity_insight.multidim_product.run_multidim_query", return_value={}) as run:
             code, _, _, _ = self.invoke([
                 "multidim", "query", "--app", "7", "--input", raw,
                 "--set", 'custom_metrics_list=["set"]', "--custom-metric", "custom_a,custom_b",
@@ -1181,7 +1181,7 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertIn("exactly one", error["error"]["message"])
 
     def test_multidim_query_accepts_controlled_multi_days(self):
-        from gravity_sdk.multidim_contract import (
+        from gravity_insight.multidim_contract import (
             MULTIDIM_COHORT_HORIZON_GAP_CODE,
         )
 
@@ -1192,7 +1192,7 @@ class GravityInsightCliTests(unittest.TestCase):
             "exit_code": 0,
         }
         with patch(
-            "gravity_sdk.multidim_product.run_multidim_query",
+            "gravity_insight.multidim_product.run_multidim_query",
             return_value=envelope,
         ) as run:
             code, result, _, _ = self.invoke(
@@ -1499,7 +1499,7 @@ class GravityInsightCliTests(unittest.TestCase):
     ):
         expected = {"schema_version": "governed", "status": "success"}
         with patch(
-            "gravity_sdk.promotion_performance.promotion_performance",
+            "gravity_insight.promotion_performance.promotion_performance",
             return_value=expected,
         ) as core:
             code, result, _, client = self.invoke(
@@ -1703,7 +1703,7 @@ class GravityInsightCliTests(unittest.TestCase):
             stderr = io.StringIO()
             with (
                 self.subTest(flag=flag),
-                patch("gravity_sdk.cli.runtime.build_client") as factory,
+                patch("gravity_insight.cli.runtime.build_client") as factory,
                 contextlib.redirect_stderr(stderr),
             ):
                 self.assertEqual(2, cli.main([flag, "D:/untrusted", "--dry-run"]))
@@ -1714,7 +1714,7 @@ class GravityInsightCliTests(unittest.TestCase):
 
     def test_doctor_is_offline_by_default_and_live_uses_safe_app_probe(self):
         with patch(
-            "gravity_sdk.cli.runtime.credential_status",
+            "gravity_insight.cli.runtime.credential_status",
             return_value={"credential_present": True},
         ):
             code, result, _, client = self.invoke(["doctor"])
@@ -1723,7 +1723,7 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertEqual([], client.read_calls)
 
         with patch(
-            "gravity_sdk.cli.runtime.credential_status",
+            "gravity_insight.cli.runtime.credential_status",
             return_value={"credential_present": True},
         ):
             code, result, _, client = self.invoke(["doctor", "--live"])
@@ -1745,10 +1745,10 @@ class GravityInsightCliTests(unittest.TestCase):
         stderr = io.StringIO()
         with (
             patch(
-                "gravity_sdk.doctor_cli.inspect_install_consistency",
+                "gravity_insight.doctor_cli.inspect_install_consistency",
                 return_value=diagnostic,
             ),
-            patch("gravity_sdk.cli.runtime.build_client") as client_factory,
+            patch("gravity_insight.cli.runtime.build_client") as client_factory,
             contextlib.redirect_stderr(stderr),
         ):
             self.assertEqual(4, cli.main(["doctor", "--live"]))
@@ -1859,7 +1859,7 @@ class GravityInsightCliTests(unittest.TestCase):
         }
         stdout = io.StringIO()
         with (
-            patch("gravity_sdk.cli.dispatch_command", return_value=sdk_result),
+            patch("gravity_insight.cli.dispatch_command", return_value=sdk_result),
             contextlib.redirect_stdout(stdout),
         ):
             self.assertEqual(0, cli.main(["doctor"]))
@@ -1876,7 +1876,7 @@ class GravityInsightCliTests(unittest.TestCase):
         )
         stderr = io.StringIO()
         with (
-            patch("gravity_sdk.cli.dispatch_command", side_effect=RuntimeError(message)),
+            patch("gravity_insight.cli.dispatch_command", side_effect=RuntimeError(message)),
             contextlib.redirect_stderr(stderr),
         ):
             self.assertEqual(4, cli.main(["doctor"]))
@@ -1917,7 +1917,7 @@ class GravityInsightCliTests(unittest.TestCase):
 
     def test_domain_operation_ids_exist_in_current_manifests(self):
         operation_ids: set[str] = set()
-        for path in (ROOT / "src" / "gravity_sdk" / "manifests").glob("*.json"):
+        for path in (ROOT / "src" / "gravity_insight" / "manifests").glob("*.json"):
             payload = json.loads(path.read_text(encoding="utf-8"))
             operation_ids.update(item["operation_id"] for item in payload["operations"])
         for choices in DOMAIN_OPERATIONS.values():
@@ -2044,13 +2044,13 @@ class GravityInsightCliTests(unittest.TestCase):
         ):
             profile = runtime.to_jsonable(
                 __import__(
-                    "gravity_sdk.quality", fromlist=["inspect_repository"]
+                    "gravity_insight.quality", fromlist=["inspect_repository"]
                 ).inspect_repository(ROOT)
             )
         occurrences = profile["operation_literals"]
         target_paths = {
-            "src/gravity_sdk/domains.py",
-            "src/gravity_sdk/cli.py",
+            "src/gravity_insight/domains.py",
+            "src/gravity_insight/cli.py",
         }
 
         self.assertFalse(

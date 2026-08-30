@@ -6,12 +6,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import GravityInsightClient, GravitySDK, cli
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.analysis_default_dictionary import SCHEMA_VERSION, analysis_default_dictionary
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk import plan_analysis_default_adapter as plan_subject
-from gravity_sdk.transport import TransportResponse
+from gravity_insight import GravityInsightClient, GravitySDK, cli
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.analysis_default_dictionary import SCHEMA_VERSION, analysis_default_dictionary
+from gravity_insight.plan import AdapterContext
+from gravity_insight import plan_analysis_default_adapter as plan_subject
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +19,7 @@ OPERATION_ID = "analysis.default_val.list"
 
 
 def _manifest():
-    root = ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+    root = ROOT / "src" / "gravity_insight" / "contracts" / "operations"
     operations = []
     for name in ("app.list", OPERATION_ID):
         operations.append(json.loads((root / f"{name}.json").read_text(encoding="utf-8"))["operation"])
@@ -74,15 +74,15 @@ class AnalysisDefaultDictionaryTests(unittest.TestCase):
         parsed = cli.build_parser().parse_args(["analysis", "defaults", "--app", "main"])
         expected = {"schema_version": SCHEMA_VERSION, "ok": True, "status": "success"}
         workspace = _Workspace()
-        with (patch("gravity_sdk.capability_cli.load_workspace", return_value=workspace),
-              patch("gravity_sdk.capability_cli.runtime.build_client", return_value=object()),
-              patch("gravity_sdk.capability_cli.analysis_default_dictionary",
+        with (patch("gravity_insight.capability_cli.load_workspace", return_value=workspace),
+              patch("gravity_insight.capability_cli.runtime.build_client", return_value=object()),
+              patch("gravity_insight.capability_cli.analysis_default_dictionary",
                     return_value=expected) as facade):
             self.assertIs(expected, parsed._gravity_handler(parsed, None))
         self.assertEqual(7, facade.call_args.args[1])
 
         sdk = GravitySDK(workspace=workspace, insight_factory=lambda: object())
-        with patch("gravity_sdk.analysis_default_dictionary.analysis_default_dictionary",
+        with patch("gravity_insight.analysis_default_dictionary.analysis_default_dictionary",
                    return_value=expected) as core:
             self.assertIs(expected, sdk.analysis_default_dictionary("main"))
         self.assertEqual(7, core.call_args.args[1])

@@ -1,0 +1,270 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T231932Z_promotion.apple.apple_campaigns.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T231932Z_promotion.apple.apple_campaigns.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_insight/census/data/coverage.json",
+      "json_pointer": "/routes/216",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/apple/campaigns/",
+      "route_index": 216,
+      "route_sha256": "3e311b92ce109ec98f0e0810567f49051a250502c8dc1bfd74c58e623f82f296"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205621Z_promotion.apple.apple_campaigns.list.yaml",
+        "probed_at": "2026-08-08T20:56:21Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231136Z_promotion.apple.apple_campaigns.list.yaml",
+        "probed_at": "2026-08-08T23:11:36Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231932Z_promotion.apple.apple_campaigns.list.yaml",
+        "probed_at": "2026-08-08T23:19:32Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "0d7a87f422d9bb5fe9399280216a04f6966c952f5fe65b9b6426749850320b88",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "probe_inconclusive",
+        "response_schema_unverified",
+        "response_projection",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "y"
+      ],
+      "contract_family": null,
+      "cost_reason": "计划 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 8473,
+        "file": "raw/web.gravity-engine.com/assets/AsaAd-RDZDSIH2.js",
+        "line": 1,
+        "offset": 8472,
+        "url": "https://web.gravity-engine.com/assets/AsaAd-RDZDSIH2.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 11783,
+            "column": 8473,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/AsaAd-RDZDSIH2.js",
+            "line": 1,
+            "route_offset": 8472
+          },
+          {
+            "call_offset": 17982,
+            "column": 15371,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/AsaAd-RDZDSIH2.js",
+            "line": 1,
+            "route_offset": 15370
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/apple/campaigns/"
+        },
+        "source": "src/gravity_insight/census/data/route-params.json",
+        "stable_parent_candidates": [
+          {
+            "input_field": "advertiser_id",
+            "operation_id": "promotion.apple.advertiser.list",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "caller_select"
+          }
+        ],
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "advertiser_id",
+            "path": "$.advertiser_id",
+            "presence": "observed_always",
+            "types": [
+              "string",
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/apple/campaigns/",
+      "promotion_level": "计划",
+      "promotion_platform": "apple",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "优化师",
+        "广告组",
+        "投放产品",
+        "暂无数据可分析"
+      ],
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 0,
+            "candidate_types": [],
+            "output_path": "data.list[].advertiser_id",
+            "parent_operation_id": "promotion.apple.advertiser.list",
+            "selection": "caller_select",
+            "status": "empty",
+            "target_cardinality": "one",
+            "target_input": "advertiser_id"
+          }
+        ],
+        "conclusion": "blocked_by_data",
+        "detail": "The binding is declared and typed, but the current account cannot supply a selectable parent value.",
+        "evidence": "evidence/probe/20260809T145638Z_promotion.apple.apple_campaigns.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": "empty_sample"
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: probe_inconclusive, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/apple/campaigns/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "advertiser_id": "$parent:advertiser_id"
+      }
+    },
+    "operation_id": "promotion.apple.apple_campaigns.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/apple/campaigns/",
+    "platform": "apple",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "stable_parent_candidate_binding"
+      ],
+      "family": null,
+      "platform": "apple",
+      "source_files": [
+        "drafts/promotion.apple.apple_campaigns.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "advertiser_id",
+        "operation_id": "promotion.apple.advertiser.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "apple_campaigns",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

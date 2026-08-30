@@ -9,26 +9,26 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.agent_runtime_contracts import canonical_digest
-from gravity_sdk.analysis_artifact import (
+from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.analysis_artifact import (
     AnalysisArtifactContractError,
     AnalysisArtifactService,
     compile_analysis_artifact,
     validate_analysis_artifact,
     verify_analysis_artifact_source,
 )
-from gravity_sdk.analysis_artifact_delivery import (
+from gravity_insight.analysis_artifact_delivery import (
     AnalysisDeliveryError,
     validate_analysis_delivery,
 )
-from gravity_sdk.analysis_artifact_markdown import (
+from gravity_insight.analysis_artifact_markdown import (
     AnalysisArtifactRenderError,
     render_analysis_artifact_markdown,
     validate_analysis_rendering,
 )
-from gravity_sdk.analysis_result_contract import compile_analysis_result
-from gravity_sdk.data_quality import data_quality_result
-from gravity_sdk.execution_snapshot import build_execution_snapshot
+from gravity_insight.analysis_result_contract import compile_analysis_result
+from gravity_insight.data_quality import data_quality_result
+from gravity_insight.execution_snapshot import build_execution_snapshot
 from tests.test_analysis_result_contract import execution_snapshot, success_result
 
 

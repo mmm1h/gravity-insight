@@ -1,0 +1,189 @@
+{
+  "baseline_version": 3,
+  "debt": {
+    "cyclomatic_complexity": {},
+    "function_sloc": {},
+    "operation_literals": {}
+  },
+  "growth_ledger": [
+    {
+      "from": 8597,
+      "path": "src/gravity_insight/models.py",
+      "reason": "extract duplicate-field validation so readable line breaks keep OperationSpec.from_dict below its existing function ratchet",
+      "to": 8622
+    },
+    {
+      "from": 6690,
+      "path": "src/gravity_insight/client.py",
+      "reason": "forward continue_without_total through read_all/read_limited so missing total_page stays fail-closed unless callers opt in",
+      "to": 6718
+    },
+    {
+      "from": 5247,
+      "path": "src/gravity_insight/catalog.py",
+      "reason": "add sanitized actual_value to two caller-recoverable search validation errors",
+      "to": 5271
+    },
+    {
+      "from": 4117,
+      "path": "src/gravity_insight/cli.py",
+      "reason": "add sanitized actual_value to two caller-recoverable CLI validation errors",
+      "to": 4146
+    },
+    {
+      "from": 6718,
+      "path": "src/gravity_insight/client.py",
+      "reason": "add sanitized actual_value to four caller-recoverable batch item validation errors",
+      "to": 6764
+    },
+    {
+      "from": 5271,
+      "path": "src/gravity_insight/catalog.py",
+      "reason": "add field path and discovery command to unknown-operation errors",
+      "to": 5284
+    },
+    {
+      "from": 4146,
+      "path": "src/gravity_insight/cli.py",
+      "reason": "add argv field path to argparse InputValidationError",
+      "to": 4148
+    },
+    {
+      "from": 3747,
+      "path": "src/gravity_insight/http_runtime.py",
+      "reason": "add field path and must-markers to Gravity SQL validation errors",
+      "to": 3755
+    },
+    {
+      "from": 5976,
+      "path": "src/gravity_insight/models.py",
+      "reason": "add field path and actionable remedy to OperationSpec input and path errors",
+      "to": 6049
+    },
+    {
+      "from": 4748,
+      "path": "src/gravity_insight/registry.py",
+      "reason": "add field path and discovery command to unknown-operation errors",
+      "to": 4751
+    },
+    {
+      "from": 4753,
+      "path": "src/gravity_insight/executor.py",
+      "reason": "emit contracted unreliable-item warnings on read envelopes",
+      "to": 4832
+    },
+    {
+      "from": 6049,
+      "path": "src/gravity_insight/models.py",
+      "reason": "parse unreliable_item_keys contract notes so callers can see yesterday_count is not event volume",
+      "to": 6302
+    },
+    {
+      "from": 4795,
+      "path": "src/gravity_insight/executor.py",
+      "reason": "pass validated request inputs into semantic rejection so callers get field= and next_action without echoing extra.error",
+      "to": 4797
+    },
+    {
+      "from": 6302,
+      "path": "src/gravity_insight/models.py",
+      "reason": "add sanitized actual_value to OperationSpec input, date_list, and filter validation errors",
+      "to": 6522
+    },
+    {
+      "from": 4226,
+      "path": "src/gravity_insight/client.py",
+      "reason": "from_env now constructs a persisted FieldPolicy metadata cache so CLI cold starts reuse the same 10-minute field catalog without a second cache",
+      "to": 4237
+    }
+  ],
+  "legacy_files": {
+    "src/gravity_insight/catalog.py": {
+      "ast_hard_limit": 5248,
+      "ast_nodes": 5248,
+      "migration_sloc": 664,
+      "sloc_hard_limit": 633
+    },
+    "src/gravity_insight/census/params.py": {
+      "ast_hard_limit": 9763,
+      "ast_nodes": 9763,
+      "migration_sloc": 1568,
+      "sloc_hard_limit": 1281
+    },
+    "src/gravity_insight/cli.py": {
+      "ast_hard_limit": 3965,
+      "ast_nodes": 3965,
+      "migration_sloc": 715,
+      "sloc_hard_limit": 668
+    },
+    "src/gravity_insight/client.py": {
+      "ast_hard_limit": 4277,
+      "ast_nodes": 4277,
+      "migration_sloc": 1087,
+      "sloc_hard_limit": 730
+    },
+    "src/gravity_insight/compiler.py": {
+      "ast_hard_limit": 5341,
+      "ast_nodes": 5341,
+      "migration_sloc": 662,
+      "sloc_hard_limit": 657
+    },
+    "src/gravity_insight/executor.py": {
+      "ast_hard_limit": 4565,
+      "ast_nodes": 4565,
+      "migration_sloc": 1330,
+      "sloc_hard_limit": 717
+    },
+    "src/gravity_insight/http_runtime.py": {
+      "ast_hard_limit": 3021,
+      "ast_nodes": 3021,
+      "migration_sloc": 675,
+      "sloc_hard_limit": 572
+    },
+    "src/gravity_insight/models.py": {
+      "ast_hard_limit": 6202,
+      "ast_nodes": 6202,
+      "migration_sloc": 1071,
+      "sloc_hard_limit": 833
+    },
+    "src/gravity_insight/prober/drafts.py": {
+      "ast_hard_limit": 12903,
+      "ast_nodes": 12903,
+      "migration_sloc": 1805,
+      "sloc_hard_limit": 1642
+    },
+    "src/gravity_insight/prober/export_verify.py": {
+      "ast_hard_limit": 4371,
+      "ast_nodes": 4371,
+      "migration_sloc": 655,
+      "sloc_hard_limit": 613
+    },
+    "src/gravity_insight/quality.py": {
+      "ast_hard_limit": 8459,
+      "ast_nodes": 8459,
+      "migration_sloc": 1022,
+      "sloc_hard_limit": 1008
+    },
+    "src/gravity_insight/registry.py": {
+      "ast_hard_limit": 4833,
+      "ast_nodes": 4833,
+      "migration_sloc": 746,
+      "sloc_hard_limit": 741
+    },
+    "src/gravity_insight/sql/products.py": {
+      "ast_hard_limit": 3622,
+      "ast_nodes": 3622,
+      "migration_sloc": 533,
+      "sloc_hard_limit": 539
+    }
+  },
+  "scope": [
+    "src/gravity_insight/**/*.py (including compiler.py and quality.py)"
+  ],
+  "thresholds": {
+    "cyclomatic_complexity": 15,
+    "file_sloc": 500,
+    "function_sloc": 80,
+    "operation_literals": 0
+  }
+}

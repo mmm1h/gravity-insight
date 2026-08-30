@@ -2,17 +2,17 @@ from __future__ import annotations
 import copy, unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, InputValidationError
-from gravity_sdk.agent import discover_capabilities
-from gravity_sdk.agents.capabilities import (
+from gravity_insight import GravitySDK, InputValidationError
+from gravity_insight.agent import discover_capabilities
+from gravity_insight.agents.capabilities import (
     composite_capability_cards, composite_capability_inventory,
 )
-from gravity_sdk.agents.handoff import attach_plan_node
-from gravity_sdk.material_performance_result import product_envelope, safe_component
-from gravity_sdk.material_performance import MATERIAL_REPORT_OPERATION
-from gravity_sdk.material_performance_plan_result import sanitize_product_result
-from gravity_sdk.plan import AdapterContext, PlanAdapter, execute_plan
-from gravity_sdk.plan_material_performance_adapter import (
+from gravity_insight.agents.handoff import attach_plan_node
+from gravity_insight.material_performance_result import product_envelope, safe_component
+from gravity_insight.material_performance import MATERIAL_REPORT_OPERATION
+from gravity_insight.material_performance_plan_result import sanitize_product_result
+from gravity_insight.plan import AdapterContext, PlanAdapter, execute_plan
+from gravity_insight.plan_material_performance_adapter import (
     execute_material_performance_plan,
     validate_material_performance_plan,
 )
@@ -81,7 +81,7 @@ class MaterialPerformanceSurfaceTests(unittest.TestCase):
         self.assertEqual((1, 2), (len(built), result["app_count"]))
 
     def test_cli_keeps_catalogs_and_rejects_invalid_before_client(self):
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         for command in ("list", "tags", "reviews"):
             parsed = cli.build_parser().parse_args(["materials", command])
@@ -91,8 +91,8 @@ class MaterialPerformanceSurfaceTests(unittest.TestCase):
             "--start", "bad", "--end", "2026-08-02",
         ]
         with (
-            patch("gravity_sdk.material_cli.load_workspace", return_value=_Workspace()),
-            patch("gravity_sdk.material_cli.runtime.build_client") as build,
+            patch("gravity_insight.material_cli.load_workspace", return_value=_Workspace()),
+            patch("gravity_insight.material_cli.runtime.build_client") as build,
         ):
             args = cli.build_parser().parse_args(argv)
             with self.assertRaises(InputValidationError): cli.run(args)
@@ -104,8 +104,8 @@ class MaterialPerformanceSurfaceTests(unittest.TestCase):
                 "--output", "-",
             ])
     def test_onboarding_requires_only_a_complete_local_request(self):
-        from gravity_sdk import cli
-        from gravity_sdk.onboarding import command_requires_credentials
+        from gravity_insight import cli
+        from gravity_insight.onboarding import command_requires_credentials
 
         base = [
             "materials", "performance", "--app", "main",
@@ -118,7 +118,7 @@ class MaterialPerformanceSurfaceTests(unittest.TestCase):
             [*base, "--concurrency", "25"],
             [*base, "--max-items", "0"],
         )
-        with patch("gravity_sdk.workspace.load_workspace", return_value=_Workspace()):
+        with patch("gravity_insight.workspace.load_workspace", return_value=_Workspace()):
             self.assertTrue(command_requires_credentials(base, cli.build_parser))
             for argv in invalid:
                 with self.subTest(argv=argv):

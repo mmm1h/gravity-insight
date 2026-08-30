@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUEST_SCRIPT = r"""
 import json,logging,sys,time
 from pathlib import Path
-from gravity_sdk.receipt import PRODUCTION_HTTP_KIND,perform_http_request,request_receipt_context
+from gravity_insight.receipt import PRODUCTION_HTTP_KIND,perform_http_request,request_receipt_context
 class Response: status_code=200
 root=Path(sys.argv[1]); operation=sys.argv[2]
 response=perform_http_request(lambda:Response(),kind=PRODUCTION_HTTP_KIND,http_receipt=request_receipt_context(operation_id=operation,method='GET',path='/synthetic'),receipt_root=root)
@@ -40,7 +40,7 @@ class HttpReceiptRetentionTests(unittest.TestCase):
         subprocess.run([sys.executable, "-c", REQUEST_SCRIPT, str(age_root), "age.new"],
             env=_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="100", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="1"), check=True, capture_output=True, text=True)
         assert not expired.exists()
-        command = "import json;from gravity_sdk.receipt_retention import http_receipt_retention_policy as p;x=p();print(json.dumps([x.max_files,x.max_age_days]))"; environment = _environment()
+        command = "import json;from gravity_insight.receipt_retention import http_receipt_retention_policy as p;x=p();print(json.dumps([x.max_files,x.max_age_days]))"; environment = _environment()
         environment.pop("GRAVITY_HTTP_RECEIPT_MAX_FILES", None); environment.pop("GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS", None)
         defaults = subprocess.run([sys.executable, "-c", command], env=environment, check=True, capture_output=True, text=True)
         assert json.loads(defaults.stdout) == [10_000, 7]
@@ -83,9 +83,9 @@ while not Path(sys.argv[4]).exists() and time.time()<deadline: time.sleep(.01)
 
     def test_windows_liveness_probe_does_not_deliver_console_events(self):
         from unittest import mock
-        from gravity_sdk import receipt_retention
-        from gravity_sdk.receipt_query import list_http_receipts
-        from gravity_sdk.receipt_retention import _process_is_alive
+        from gravity_insight import receipt_retention
+        from gravity_insight.receipt_query import list_http_receipts
+        from gravity_insight.receipt_retention import _process_is_alive
         child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
         self.addCleanup(lambda: child.terminate() or child.wait(timeout=5))
         identifier = "a" * 32

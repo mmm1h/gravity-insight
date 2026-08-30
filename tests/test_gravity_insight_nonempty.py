@@ -11,8 +11,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk import cli, nonempty_cli, nonempty_runtime, nonempty_support
-from gravity_sdk.nonempty import (
+from gravity_insight import cli, nonempty_cli, nonempty_runtime, nonempty_support
+from gravity_insight.nonempty import (
     SearchDimension,
     _apply_found_draft,
     _build_plan,
@@ -20,10 +20,10 @@ from gravity_sdk.nonempty import (
     discover_nonempty,
     task_empty_sample_operation_ids,
 )
-from gravity_sdk.prober import probe_support
-from gravity_sdk.prober.probe_support import conclusion, data_nonempty
-from gravity_sdk.prober.promotion import _runnable_example_inputs
-from gravity_sdk.prober.transport import HttpObservation
+from gravity_insight.prober import probe_support
+from gravity_insight.prober.probe_support import conclusion, data_nonempty
+from gravity_insight.prober.promotion import _runnable_example_inputs
+from gravity_insight.prober.transport import HttpObservation
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -738,7 +738,7 @@ class GravityInsightNonemptyTests(unittest.TestCase):
         source_path = (
             ROOT
             / "src"
-            / "gravity_sdk"
+            / "gravity_insight"
             / "contracts"
             / "drafts"
             / "promotion.youdao.campaign.list.json"
@@ -806,7 +806,7 @@ class GravityInsightNonemptyTests(unittest.TestCase):
         )
         expected = {"schema_version": "gravity-insight.nonempty-discovery.v2"}
         with patch(
-            "gravity_sdk.nonempty.discover_nonempty", return_value=expected
+            "gravity_insight.nonempty.discover_nonempty", return_value=expected
         ) as discover:
             result = nonempty_cli.dispatch_or(args, cli._object_input, cli.run)
 
@@ -847,7 +847,7 @@ class GravityInsightNonemptyTests(unittest.TestCase):
 
     def test_task_scope_tracks_integrated_exact_blocker_sets(self):
         operation_ids = task_empty_sample_operation_ids(
-            ROOT / "src" / "gravity_sdk" / "contracts" / "drafts"
+            ROOT / "src" / "gravity_insight" / "contracts" / "drafts"
         )
 
         # 快手计划/创意本轮 confirmed-read 后从参数错误转入 empty-sample。

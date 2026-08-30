@@ -7,15 +7,15 @@ from pathlib import Path
 from typing import Any
 
 
-from gravity_sdk import GravityInsightClient, InputValidationError
-from gravity_sdk.transport import TransportResponse
+from gravity_insight import GravityInsightClient, InputValidationError
+from gravity_insight.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = (
     ROOT
     / "src"
-    / "gravity_sdk"
+    / "gravity_insight"
     / "contracts"
     / "operations"
     / "report.hour_comparison.query.json"

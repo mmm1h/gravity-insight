@@ -6,8 +6,8 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.agent_runtime_contracts import AgentRuntimeContractError
-from gravity_sdk.artifact_transfer import (
+from gravity_insight.agent_runtime_contracts import AgentRuntimeContractError
+from gravity_insight.artifact_transfer import (
     ArtifactTransferError,
     ArtifactTransferService,
     _ArtifactTypeContract,
@@ -15,7 +15,7 @@ from gravity_sdk.artifact_transfer import (
     _ResolvedArtifactSource,
     validate_artifact_transfer,
 )
-from gravity_sdk.blob_models import MagicSignature
+from gravity_insight.blob_models import MagicSignature
 
 
 class Response:
@@ -153,7 +153,7 @@ class ArtifactTransferTests(unittest.TestCase):
             prepared = service.prepare(
                 "image.jpg", image_contract(), output_root=root
             )
-            with patch("gravity_sdk.artifact_transfer.STATE_ROOT", state):
+            with patch("gravity_insight.artifact_transfer.STATE_ROOT", state):
                 outcome = service.transfer(prepared, source())
             self.assertEqual(payload, (root / "image.jpg").read_bytes())
             self.assertEqual(1, len(outcome.receipt_references))
@@ -210,7 +210,7 @@ class ArtifactTransferTests(unittest.TestCase):
                 "image.jpg", image_contract(), output_root=root
             )
             with patch(
-                "gravity_sdk.artifact_transfer.validate_artifact_transfer",
+                "gravity_insight.artifact_transfer.validate_artifact_transfer",
                 side_effect=AgentRuntimeContractError("tampered schema"),
             ), self.assertRaises(ArtifactTransferError) as raised:
                 service.transfer(prepared, source())

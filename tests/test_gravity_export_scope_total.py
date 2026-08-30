@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import unittest
 
-from gravity_sdk.blob import BlobTransferError
-from gravity_sdk.export_scope_total import classify_export_rows, pin_export_scope_total
+from gravity_insight.blob import BlobTransferError
+from gravity_insight.export_scope_total import classify_export_rows, pin_export_scope_total
 
 
 class _ListClient:

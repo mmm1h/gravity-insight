@@ -13,13 +13,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from gravity_sdk import ActionPlanService, GravitySDK, host_source
-from gravity_sdk.action_plan import REQUEST_SCHEMA_VERSION
-from gravity_sdk.action_segment_connector import ACTION_KIND
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.find_input import object_input
-from gravity_sdk.result_audit import SCHEMA_VERSION as AUDIT_SCHEMA_VERSION
-from gravity_sdk.segment_mutation_contracts import DETAIL_OPERATION, SAVE
+from gravity_insight import ActionPlanService, GravitySDK, host_source
+from gravity_insight.action_plan import REQUEST_SCHEMA_VERSION
+from gravity_insight.action_segment_connector import ACTION_KIND
+from gravity_insight.errors import InputValidationError
+from gravity_insight.find_input import object_input
+from gravity_insight.result_audit import SCHEMA_VERSION as AUDIT_SCHEMA_VERSION
+from gravity_insight.segment_mutation_contracts import DETAIL_OPERATION, SAVE
 
 
 SCOPE_A = "a" * 32
@@ -179,7 +179,7 @@ class ActionPlanHappyPathTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def preview(self) -> dict[str, object]:
-        with mock.patch("gravity_sdk.action_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.action_plan._utcnow", return_value=NOW):
             return self.service.preview_segment_update(
                 self.request,
                 authorization=_authorization(self.service, self.request),
@@ -219,7 +219,7 @@ class ActionPlanHappyPathTests(unittest.TestCase):
 
     def test_exact_confirmation_executes_existing_owner_once_and_cannot_replay(self) -> None:
         preview = self.preview()
-        with mock.patch("gravity_sdk.action_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.action_plan._utcnow", return_value=NOW):
             result = self.service.execute(
                 preview["plan_id"],
                 self.request,
@@ -230,7 +230,7 @@ class ActionPlanHappyPathTests(unittest.TestCase):
         self.assertEqual(RECEIPT_ID, result["receipt_references"][0]["receipt_id"])
         self.assertFalse(result["automatic_retry"])
         self.assertEqual("allow", result["policy"]["decision"])
-        with mock.patch("gravity_sdk.action_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.action_plan._utcnow", return_value=NOW):
             with self.assertRaises(InputValidationError) as replay:
                 self.service.execute(
                     preview["plan_id"],
@@ -248,7 +248,7 @@ class ActionPlanHappyPathTests(unittest.TestCase):
         self.assertEqual(("updated", 2, 1), (done["status"], client.reads, client.writes))
 
     def test_new_plan_from_verified_new_preimage_can_update_again(self) -> None:
-        with mock.patch("gravity_sdk.action_plan._utcnow", return_value=NOW):
+        with mock.patch("gravity_insight.action_plan._utcnow", return_value=NOW):
             first = self.preview()
             self.service.execute(
                 first["plan_id"],
@@ -493,7 +493,7 @@ class ActionPlanAuthorityAndDriftTests(unittest.TestCase):
             str(preview["expires_at"]).replace("Z", "+00:00")
         ) + timedelta(seconds=1)
         with mock.patch(
-            "gravity_sdk.action_plan._utcnow", return_value=expired_at
+            "gravity_insight.action_plan._utcnow", return_value=expired_at
         ), self.assertRaises(InputValidationError) as expired:
             sdk.actions.execute(
                 preview["plan_id"],
@@ -543,7 +543,7 @@ class ActionPlanAuthorityAndDriftTests(unittest.TestCase):
             link.unlink(missing_ok=True)
 
         bounded, bounded_insight = _sdk(self.root / "bounded")
-        with mock.patch("gravity_sdk.action_plan_store.MAX_STORED_PLANS", 1):
+        with mock.patch("gravity_insight.action_plan_store.MAX_STORED_PLANS", 1):
             bounded.actions.preview_segment_update(
                 request, authorization=_authorization(bounded.actions, request)
             )
@@ -566,13 +566,13 @@ class ActionPlanSurfaceTests(unittest.TestCase):
         self.assertEqual("ACTION_SCOPE_UNBOUND", raised.exception.code)
 
     def test_cli_requires_explicit_matching_confirmation_and_uses_service(self) -> None:
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         with tempfile.TemporaryDirectory() as raw:
             sdk, _insight = _sdk(Path(raw))
             request = _request()
             encoded = json.dumps(request)
-            with mock.patch("gravity_sdk.sdk.GravitySDK.from_env", return_value=sdk):
+            with mock.patch("gravity_insight.sdk.GravitySDK.from_env", return_value=sdk):
                 parsed = cli.build_parser().parse_args(
                     ["action", "segment-update", "preview", "--input", encoded]
                 )
@@ -597,7 +597,7 @@ class ActionPlanSurfaceTests(unittest.TestCase):
 
     def test_schema_required_fields_match_public_private_and_execution_values(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        schema_root = root / "src/gravity_sdk/contracts/schema"
+        schema_root = root / "src/gravity_insight/contracts/schema"
         with tempfile.TemporaryDirectory() as raw:
             sdk, _insight = _sdk(Path(raw))
             request = _request()

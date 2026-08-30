@@ -13,11 +13,11 @@ from pathlib import Path
 from threading import Event, Lock
 from unittest.mock import Mock, patch
 
-from gravity_sdk import __version__
-from gravity_sdk import _auto_upgrade_state as upgrade_state
-from gravity_sdk import __main__ as entry
-from gravity_sdk import auto_upgrade as upgrade
-from gravity_sdk.auto_upgrade import (
+from gravity_insight import __version__
+from gravity_insight import _auto_upgrade_state as upgrade_state
+from gravity_insight import __main__ as entry
+from gravity_insight import auto_upgrade as upgrade
+from gravity_insight.auto_upgrade import (
     AUTO_UPGRADE_ENV,
     PINNED_VERSION_ENV,
     TARGET_PYTHON_ENV,
@@ -30,7 +30,7 @@ from gravity_sdk.auto_upgrade import (
     update_attempt_state_path,
     update_state_path,
 )
-from gravity_sdk.receipt import (
+from gravity_insight.receipt import (
     DISTRIBUTION_HTTP_KIND,
     count_http_requests,
 )
@@ -122,7 +122,7 @@ class UpdateStateTests(unittest.TestCase):
                     update_state_path(),
                 )
         with patch.dict(os.environ, {}, clear=True), patch(
-            "gravity_sdk.runtime_scope.Path.home", return_value=Path("/Users/analyst")
+            "gravity_insight.runtime_scope.Path.home", return_value=Path("/Users/analyst")
         ):
             self.assertEqual(
                 Path(
@@ -207,6 +207,7 @@ class UpdateStateTests(unittest.TestCase):
             result = check_latest_version(state_path=path, now=NOW, request=request)
             stored = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual('W/"release-etag"', observed["If-None-Match"])
+        self.assertEqual(f"gravity-insight/{__version__}", observed["User-Agent"])
         self.assertEqual(("not_modified", "0.3.2"), (result.status, result.latest_version))
         self.assertEqual(
             (3, timestamp(NOW), 'W/"release-etag"', "0.3.2"),
@@ -247,7 +248,7 @@ class UpdateStateTests(unittest.TestCase):
 
     def test_distribution_request_enters_authoritative_boundary_without_production_count(self) -> None:
         response = FakeResponse(200, pypi(__version__))
-        with patch("gravity_sdk.auto_upgrade.requests.get", return_value=response) as network:
+        with patch("gravity_insight.auto_upgrade.requests.get", return_value=response) as network:
             with count_http_requests() as counter:
                 actual = upgrade._distribution_get({"If-None-Match": '"known"'})
         self.assertIs(response, actual)
@@ -390,7 +391,7 @@ class UpdateStateTests(unittest.TestCase):
 
     def test_success_state_is_published_with_atomic_replace(self) -> None:
         with tempfile.TemporaryDirectory() as raw, patch(
-            "gravity_sdk._auto_upgrade_state.os.replace", wraps=os.replace
+            "gravity_insight._auto_upgrade_state.os.replace", wraps=os.replace
         ) as replace:
             path = Path(raw) / "update-check.json"
             result = check_latest_version(
@@ -523,7 +524,7 @@ class StartupPlanOnlyTests(unittest.TestCase):
             }
             stdout, stderr = io.StringIO(), io.StringIO()
             with patch.dict(os.environ, environment), patch(
-                "gravity_sdk.auto_upgrade._distribution_get",
+                "gravity_insight.auto_upgrade._distribution_get",
                 return_value=FakeResponse(200, pypi("99.0.0")),
             ), redirect_stdout(stdout), redirect_stderr(stderr):
                 exit_code = entry.main(["--help"])
@@ -572,7 +573,7 @@ class StartupPlanOnlyTests(unittest.TestCase):
             }
             stdout, stderr = io.StringIO(), io.StringIO()
             with patch.dict(os.environ, environment), patch(
-                "gravity_sdk.auto_upgrade._distribution_get", side_effect=OSError("offline")
+                "gravity_insight.auto_upgrade._distribution_get", side_effect=OSError("offline")
             ), redirect_stdout(stdout), redirect_stderr(stderr):
                 exit_code = entry.main(["--help"])
         self.assertEqual(UPDATE_POLICY_EXIT_CODE, exit_code)
@@ -585,7 +586,7 @@ class StartupPlanOnlyTests(unittest.TestCase):
             stdout, stderr = io.StringIO(), io.StringIO()
             with patch.dict(os.environ, {
                 AUTO_UPGRADE_ENV: "1", "LOCALAPPDATA": raw, "XDG_CACHE_HOME": raw
-            }), patch("gravity_sdk.auto_upgrade._distribution_get", network), redirect_stdout(
+            }), patch("gravity_insight.auto_upgrade._distribution_get", network), redirect_stdout(
                 stdout
             ), redirect_stderr(stderr):
                 exit_code = entry.main(["doctor"])
@@ -601,7 +602,7 @@ class StartupPlanOnlyTests(unittest.TestCase):
             with patch.dict(os.environ, {
                 AUTO_UPGRADE_ENV: "1", PINNED_VERSION_ENV: __version__,
                 "LOCALAPPDATA": raw, "XDG_CACHE_HOME": raw,
-            }), patch("gravity_sdk.auto_upgrade._distribution_get", network), redirect_stdout(
+            }), patch("gravity_insight.auto_upgrade._distribution_get", network), redirect_stdout(
                 stdout
             ), redirect_stderr(stderr):
                 exit_code = entry.main(["--help"])

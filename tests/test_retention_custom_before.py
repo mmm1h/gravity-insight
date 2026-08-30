@@ -13,9 +13,9 @@ import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk import models
-from gravity_sdk.models import _is_bounded_json_value, _validate_date_range
-from gravity_sdk.operation_input_field import (
+from gravity_insight import models
+from gravity_insight.models import _is_bounded_json_value, _validate_date_range
+from gravity_insight.operation_input_field import (
     _input_type_valid,
     parse_input_field,
     validate_input_field,
@@ -23,7 +23,7 @@ from gravity_sdk.operation_input_field import (
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = (
-    ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+    ROOT / "src" / "gravity_insight" / "contracts" / "operations"
     / "analysis.retention.query.json"
 )
 _TARGET = {"name": "DistinctCount", "field": "$UserID"}
@@ -106,7 +106,7 @@ class CustomBeforeRejectionRemedyTests(unittest.TestCase):
     _GROUPS = [{"type": "default_event", "field": "create_time", "group_by": "day"}]
 
     def _classify(self, inputs: dict[str, object]) -> tuple[str, str, str]:
-        from gravity_sdk.semantic_rejection import classify_read_rejection
+        from gravity_insight.semantic_rejection import classify_read_rejection
 
         return classify_read_rejection(
             self._UPSTREAM,

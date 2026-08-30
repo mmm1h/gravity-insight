@@ -12,8 +12,8 @@ import unittest
 from importlib import metadata
 from pathlib import Path
 
-import gravity_sdk
-from gravity_sdk.auto_upgrade import AUTO_UPGRADE_ENV, startup_update_enabled
+import gravity_insight
+from gravity_insight.auto_upgrade import AUTO_UPGRADE_ENV, startup_update_enabled
 from scripts.verify_release_provenance import (
     MAX_ATTEMPTS,
     PUBLISH_PREDICATE_TYPE,
@@ -55,14 +55,14 @@ def _unpinned_action_uses(workflow: str) -> list[str]:
 class ReleaseVersionTests(unittest.TestCase):
     def test_project_import_and_distribution_versions_are_identical(self) -> None:
         project_version = PROJECT["project"]["version"]
-        self.assertEqual(project_version, gravity_sdk.__version__)
+        self.assertEqual(project_version, gravity_insight.__version__)
         self.assertEqual(project_version, metadata.version("gravity-insight"))
 
     def test_uninstalled_source_checkout_derives_version_from_pyproject(self) -> None:
         probe = (
             "import sys; "
             f"sys.path.insert(0, {str(ROOT / 'src')!r}); "
-            "import gravity_sdk; print(gravity_sdk.__version__)"
+            "import gravity_insight; print(gravity_insight.__version__)"
         )
         completed = _run([sys.executable, "-S", "-c", probe], cwd=ROOT.parent)
         self.assertEqual(0, completed.returncode, completed.stderr)
@@ -75,8 +75,8 @@ class ReleaseTagGateTests(unittest.TestCase):
         repository.mkdir()
         for command in (
             ["git", "init", "--quiet"],
-            ["git", "config", "user.name", "Gravity SDK Tests"],
-            ["git", "config", "user.email", "gravity-sdk-tests@example.invalid"],
+            ["git", "config", "user.name", "Gravity Insight Tests"],
+            ["git", "config", "user.email", "gravity-insight-tests@example.invalid"],
             ["git", "commit", "--allow-empty", "--quiet", "-m", "initial"],
         ):
             completed = _run(command, cwd=repository)

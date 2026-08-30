@@ -9,18 +9,18 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK, InputValidationError
-from gravity_sdk.composite_result import multidim_envelope
-from gravity_sdk.errors import ContractChangedError, PaginationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_multidim_adapter import (
+from gravity_insight import GravitySDK, InputValidationError
+from gravity_insight.composite_result import multidim_envelope
+from gravity_insight.errors import ContractChangedError, PaginationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight.plan_multidim_adapter import (
     execute_multidim_plan,
     multidim_result_item_count,
     validate_multidim_plan,
 )
-from gravity_sdk.plan_multidim_result import sanitize_multidim_result
-from gravity_sdk.agents.multidim import MULTIDIM_CAPABILITY
-from gravity_sdk.multidim_contract import multidim_multi_key_contract
+from gravity_insight.plan_multidim_result import sanitize_multidim_result
+from gravity_insight.agents.multidim import MULTIDIM_CAPABILITY
+from gravity_insight.multidim_contract import multidim_multi_key_contract
 
 
 PRODUCT_INPUT = {
@@ -51,7 +51,7 @@ class _Workspace:
 
 class MultidimSurfaceTests(unittest.TestCase):
     def test_cli_help_schema_and_agent_card_expose_compiled_horizon(self):
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         contract = multidim_multi_key_contract()
         output = io.StringIO()
@@ -86,7 +86,7 @@ class MultidimSurfaceTests(unittest.TestCase):
             insight_factory=lambda: built.append(True), workspace=_Workspace()
         )
         with patch(
-            "gravity_sdk.multidim_product.prepare_multidim_query",
+            "gravity_insight.multidim_product.prepare_multidim_query",
             return_value={"ok": True, "network_called": False},
         ) as prepare:
             result = sdk.prepare_multidim_query(PRODUCT_INPUT, app="main")
@@ -97,12 +97,12 @@ class MultidimSurfaceTests(unittest.TestCase):
         self.assertEqual([], built)
 
     def test_cli_product_offline_modes_never_build_client(self):
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         workspace = _Workspace()
         with (
-            patch("gravity_sdk.multidim_cli.load_workspace", return_value=workspace),
-            patch("gravity_sdk.multidim_cli.runtime.build_client") as build,
+            patch("gravity_insight.multidim_cli.load_workspace", return_value=workspace),
+            patch("gravity_insight.multidim_cli.runtime.build_client") as build,
         ):
             args = cli.build_parser().parse_args([
                 "multidim", "query", "--app", "main", "--input",
@@ -136,7 +136,7 @@ class MultidimSurfaceTests(unittest.TestCase):
         build.assert_not_called()
 
     def test_cli_removes_legacy_multidim_options_and_calc_total_command(self):
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         invalid = (
             ["multidim", "query", "--app-id", "17", "--input", "{}"],
@@ -148,7 +148,7 @@ class MultidimSurfaceTests(unittest.TestCase):
                 cli.build_parser().parse_args(argv)
 
     def test_exact_multidim_operations_remain_available_through_gravity_run(self):
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         for selector in ("report.multidim.query", "report.multidim.calc_total"):
             args = cli.build_parser().parse_args(
@@ -156,10 +156,10 @@ class MultidimSurfaceTests(unittest.TestCase):
             )
             with (
                 self.subTest(selector=selector),
-                patch("gravity_sdk.resolver_cli.runtime.build_client", return_value=object()),
-                patch("gravity_sdk.resolver_cli.load_workspace", return_value=object()),
+                patch("gravity_insight.resolver_cli.runtime.build_client", return_value=object()),
+                patch("gravity_insight.resolver_cli.load_workspace", return_value=object()),
                 patch(
-                    "gravity_sdk.resolver_cli.resolve_and_run",
+                    "gravity_insight.resolver_cli.resolve_and_run",
                     return_value={"ok": True, "operation_id": selector},
                 ) as run,
             ):
@@ -171,15 +171,15 @@ class MultidimSurfaceTests(unittest.TestCase):
             ))
 
     def test_onboarding_requires_a_locally_complete_product_request(self):
-        from gravity_sdk import cli
-        from gravity_sdk.onboarding import command_requires_credentials
+        from gravity_insight import cli
+        from gravity_insight.onboarding import command_requires_credentials
 
         encoded = (
             '{"date_list":["2026-08-01","2026-08-02"],'
             '"time_dims":"day","metrics_list":[]}'
         )
         base = ["multidim", "query", "--app", "main", "--input", encoded]
-        with patch("gravity_sdk.workspace.load_workspace", return_value=_Workspace()):
+        with patch("gravity_insight.workspace.load_workspace", return_value=_Workspace()):
             self.assertTrue(command_requires_credentials(base, cli.build_parser))
             self.assertFalse(command_requires_credentials(
                 [*base[:3], "missing", *base[4:]], cli.build_parser
@@ -238,7 +238,7 @@ class MultidimSurfaceTests(unittest.TestCase):
             max_pages=2, max_items=200,
         )
         with patch(
-            "gravity_sdk.multidim_product.run_multidim_query", return_value=native
+            "gravity_insight.multidim_product.run_multidim_query", return_value=native
         ) as run:
             with self.assertRaises(PaginationError):
                 execute_multidim_plan(
@@ -284,7 +284,7 @@ class MultidimSurfaceTests(unittest.TestCase):
             max_pages=1, max_items=10,
         )
         with patch(
-            "gravity_sdk.multidim_product.run_multidim_query", return_value=native
+            "gravity_insight.multidim_product.run_multidim_query", return_value=native
         ):
             safe = execute_multidim_plan(
                 SDK(), PRODUCT_REQUEST, context
@@ -295,7 +295,7 @@ class MultidimSurfaceTests(unittest.TestCase):
         self.assertNotIn("data", safe["query"])
 
     def test_multidim_ndjson_streams_each_query_row(self):
-        from gravity_sdk import cli
+        from gravity_insight import cli
 
         rows = [{"day": index} for index in range(201)]
         envelope = {

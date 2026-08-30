@@ -6,18 +6,18 @@ from collections import UserDict
 from types import MappingProxyType
 import unittest
 
-from gravity_sdk.material_performance_result import (
+from gravity_insight.material_performance_result import (
     MATERIAL_REPORT_OPERATION,
     _safe_rows as safe_material_rows,
     contract_component as material_contract_component,
     product_envelope as material_envelope,
 )
-from gravity_sdk.promotion_performance_result import (
+from gravity_insight.promotion_performance_result import (
     PROMOTION_PLATFORM_OPERATIONS,
     contract_component as promotion_contract_component,
     product_envelope as promotion_envelope,
 )
-from gravity_sdk.promotion_performance_rows import (
+from gravity_insight.promotion_performance_rows import (
     MAX_JSON_INTEGER_BITS,
     MAX_JSON_STRING_LENGTH,
     MAX_OPAQUE_JSON_BYTES,

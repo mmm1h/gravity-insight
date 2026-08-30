@@ -14,13 +14,15 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_ROOT = ROOT / "src/gravity_sdk"
-OLD_PAGINATION_OWNER = "gravity_sdk.agent_pagination"
-NEW_PAGINATION_OWNER = "gravity_sdk.pagination_completeness"
-OLD_PAGINATION_CONSUMER = "gravity_sdk.agent_sources"
-NEW_PAGINATION_CONSUMER = "gravity_sdk.agents.sources"
-OLD_METADATA_OWNER = "gravity_sdk.agent_batch_sources"
-NEW_METADATA_OWNER = "gravity_sdk.agents.batch_sources"
+PACKAGE_ROOT = ROOT / "src/gravity_insight"
+HISTORICAL_PACKAGE_ROOT = "gravity_sdk"
+CURRENT_PACKAGE_ROOT = "gravity_insight"
+OLD_PAGINATION_OWNER = "gravity_insight.agent_pagination"
+NEW_PAGINATION_OWNER = "gravity_insight.pagination_completeness"
+OLD_PAGINATION_CONSUMER = "gravity_insight.agent_sources"
+NEW_PAGINATION_CONSUMER = "gravity_insight.agents.sources"
+OLD_METADATA_OWNER = "gravity_insight.agent_batch_sources"
+NEW_METADATA_OWNER = "gravity_insight.agents.batch_sources"
 
 
 @dataclass(frozen=True)
@@ -111,11 +113,11 @@ class _TargetUsage:
 
 
 _REVIEWED_OPAQUE_IMPORT_EXPRESSIONS = {
-    "gravity_sdk": {"module_name"},
-    "gravity_sdk.runtime": {"name"},
-    "gravity_sdk.prober.cli": {'sdk.__name__ + ".errors"'},
-    "gravity_sdk.prober.export_verify": {'f"{base}.{name}"'},
-    "gravity_sdk.prober.transport": {
+    "gravity_insight": {"module_name"},
+    "gravity_insight.runtime": {"name"},
+    "gravity_insight.prober.cli": {'sdk.__name__ + ".errors"'},
+    "gravity_insight.prober.export_verify": {'f"{base}.{name}"'},
+    "gravity_insight.prober.transport": {
         'base + ".models"',
         'base + ".registry"',
         'base + ".executor"',
@@ -722,15 +724,15 @@ class AgentConceptDeletionTests(unittest.TestCase):
             "wrong owner": {
                 NEW_PAGINATION_OWNER: "",
                 NEW_PAGINATION_CONSUMER: "",
-                "gravity_sdk.wrong": "def compact_pagination(value):\n    return value\n",
+                "gravity_insight.wrong": "def compact_pagination(value):\n    return value\n",
             },
             "wrong consumer": {
                 NEW_PAGINATION_OWNER: (
                     "def compact_pagination(value):\n    return value\n"
                 ),
                 NEW_PAGINATION_CONSUMER: "",
-                "gravity_sdk.wrong": (
-                    "from gravity_sdk.pagination_completeness import "
+                "gravity_insight.wrong": (
+                    "from gravity_insight.pagination_completeness import "
                     "compact_pagination\n"
                     "result = compact_pagination(None)\n"
                 ),
@@ -753,7 +755,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
                 f"from {NEW_PAGINATION_OWNER} import compact_pagination\n"
                 "result = compact_pagination(None)\n"
             ),
-            "gravity_sdk.extra_consumer": (
+            "gravity_insight.extra_consumer": (
                 "from importlib import import_module\n"
                 f"module_name = {NEW_PAGINATION_OWNER!r}\n"
                 "loader = import_module\n"
@@ -772,7 +774,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
         _metadata_inventory_contract(modules)
 
         field_and_attribute_only = {
-            "gravity_sdk.snapshot": (
+            "gravity_insight.snapshot": (
                 "from dataclasses import dataclass\n"
                 "@dataclass\n"
                 "class Snapshot:\n"
@@ -783,7 +785,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
         }
         _assert_metadata_inventory_has_no_callers(field_and_attribute_only)
         real_call = {
-            "gravity_sdk.consumer": (
+            "gravity_insight.consumer": (
                 f"from {OLD_METADATA_OWNER} import metadata_inventory\n"
                 "metadata_inventory([])\n"
             )
@@ -820,8 +822,8 @@ class AgentConceptDeletionTests(unittest.TestCase):
 
     def test_metadata_inventory_guard_rejects_reexport(self) -> None:
         sources = {
-            "gravity_sdk.consumer": (
-                "from gravity_sdk.agent_batch_sources import metadata_inventory\n"
+            "gravity_insight.consumer": (
+                "from gravity_insight.agent_batch_sources import metadata_inventory\n"
             )
         }
         with self.assertRaisesRegex(AssertionError, "metadata_inventory.*references"):
@@ -852,8 +854,8 @@ class AgentConceptDeletionTests(unittest.TestCase):
 
     def test_metadata_inventory_guard_rejects_getattr_call(self) -> None:
         sources = {
-            "gravity_sdk.consumer": (
-                "import gravity_sdk.agent_batch_sources as sources\n"
+            "gravity_insight.consumer": (
+                "import gravity_insight.agent_batch_sources as sources\n"
                 "getattr(sources, 'metadata_inventory')([])\n"
             )
         }
@@ -866,7 +868,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
                 "def metadata_inventory_state(warnings):\n"
                 "    return (), True\n"
             ),
-            "gravity_sdk.extra_consumer": (
+            "gravity_insight.extra_consumer": (
                 "loader = __import__\n"
                 f"module_name = {NEW_METADATA_OWNER!r}\n"
                 "owner = loader(module_name, fromlist=['metadata_inventory'])\n"
@@ -917,7 +919,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
                 AssertionError, "metadata_inventory.*references"
             ):
                 _assert_metadata_inventory_has_no_callers(
-                    {"gravity_sdk.extra_consumer": source},
+                    {"gravity_insight.extra_consumer": source},
                     target_module=NEW_METADATA_OWNER,
                 )
 
@@ -962,13 +964,13 @@ class AgentConceptDeletionTests(unittest.TestCase):
                 AssertionError, "metadata_inventory.*blocker"
             ):
                 _assert_metadata_inventory_has_no_callers(
-                    {"gravity_sdk.extra_consumer": source},
+                    {"gravity_insight.extra_consumer": source},
                     target_module=NEW_METADATA_OWNER,
                 )
 
     def test_dynamic_symbol_guard_blocks_native_extension_modules(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
-            package = Path(temp) / "gravity_sdk"
+            package = Path(temp) / "gravity_insight"
             owner = package / "agents" / "batch_sources.py"
             owner.parent.mkdir(parents=True)
             owner.write_text(
@@ -1062,7 +1064,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
             )
             with self.subTest(symbol=symbol):
                 usage = _target_usage(
-                    _synthetic_modules({"gravity_sdk.extra_consumer": source}),
+                    _synthetic_modules({"gravity_insight.extra_consumer": source}),
                     target_module,
                     symbol,
                 )
@@ -1077,7 +1079,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
             )
             with self.subTest(symbol=symbol):
                 usage = _target_usage(
-                    _synthetic_modules({"gravity_sdk.extra_consumer": source}),
+                    _synthetic_modules({"gravity_insight.extra_consumer": source}),
                     target_module,
                     symbol,
                 )
@@ -1101,7 +1103,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
                 )
                 with self.subTest(symbol=symbol, flow=label):
                     usage = _target_usage(
-                        _synthetic_modules({"gravity_sdk.extra_consumer": source}),
+                        _synthetic_modules({"gravity_insight.extra_consumer": source}),
                         target_module,
                         symbol,
                     )
@@ -1122,12 +1124,12 @@ class AgentConceptDeletionTests(unittest.TestCase):
             )
             with self.subTest(symbol=symbol):
                 owner_usage = _target_usage(
-                    _synthetic_modules({"gravity_sdk.owner_consumer": owner_source}),
+                    _synthetic_modules({"gravity_insight.owner_consumer": owner_source}),
                     target_module,
                     symbol,
                 )
                 ordinary_usage = _target_usage(
-                    _synthetic_modules({"gravity_sdk.ordinary": ordinary_source}),
+                    _synthetic_modules({"gravity_insight.ordinary": ordinary_source}),
                     target_module,
                     symbol,
                 )
@@ -1158,7 +1160,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
                 )
                 with self.subTest(symbol=symbol, flow=label):
                     usage = _target_usage(
-                        _synthetic_modules({"gravity_sdk.escape": source}),
+                        _synthetic_modules({"gravity_insight.escape": source}),
                         target_module,
                         symbol,
                     )
@@ -1169,13 +1171,13 @@ class AgentConceptDeletionTests(unittest.TestCase):
             (
                 NEW_PAGINATION_OWNER,
                 "compact_pagination",
-                "'gravity_sdk.' + 'pagination_' + 'completeness'",
+                "'gravity_insight.' + 'pagination_' + 'completeness'",
                 "'compact_' + 'pagination'",
             ),
             (
                 NEW_METADATA_OWNER,
                 "metadata_inventory",
-                "'gravity_sdk.' + 'agents.' + 'batch_' + 'sources'",
+                "'gravity_insight.' + 'agents.' + 'batch_' + 'sources'",
                 "'metadata_' + 'inventory'",
             ),
         )
@@ -1188,7 +1190,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
             )
             with self.subTest(symbol=symbol):
                 usage = _target_usage(
-                    _synthetic_modules({"gravity_sdk.composed": source}),
+                    _synthetic_modules({"gravity_insight.composed": source}),
                     target_module,
                     symbol,
                 )
@@ -1284,7 +1286,24 @@ def _frozen_tree_blobs(prefix: str) -> dict[str, bytes]:
 def _frozen_migration_scope() -> dict[str, Any]:
     blobs = _frozen_tree_blobs(R17_DISPOSITION_LEDGER)
     document = json.loads(blobs[R17_DISPOSITION_LEDGER].decode("utf-8"))
-    return document["scope"]
+    scope = copy.deepcopy(document["scope"])
+
+    def project(module: str) -> str:
+        root, separator, relative = module.partition(".")
+        if root != HISTORICAL_PACKAGE_ROOT or not separator:
+            raise AssertionError(f"unexpected frozen module root: {module}")
+        return f"{CURRENT_PACKAGE_ROOT}.{relative}"
+
+    for move in scope["one_to_one_moves"]:
+        move["old_module"] = project(move["old_module"])
+        move["new_module"] = project(move["new_module"])
+    consolidation = scope["consolidate_delete"]
+    consolidation["old_module"] = project(consolidation["old_module"])
+    consolidation["new_module"] = project(consolidation["new_module"])
+    scope["retained_modules"] = [
+        project(module) for module in scope["retained_modules"]
+    ]
+    return scope
 
 
 def _frozen_repository_modules() -> list[_ModuleSource]:
@@ -1292,18 +1311,26 @@ def _frozen_repository_modules() -> list[_ModuleSource]:
     if _FROZEN_MODULE_CACHE is not None:
         return _FROZEN_MODULE_CACHE
     modules: list[_ModuleSource] = []
-    for path, raw_source in sorted(_frozen_tree_blobs("src/gravity_sdk").items()):
+    historical_root = f"src/{HISTORICAL_PACKAGE_ROOT}"
+    for path, raw_source in sorted(_frozen_tree_blobs(historical_root).items()):
         suffix = Path(path).suffix.lower()
         if suffix not in {".py", ".pyd", ".so", ".dll", ".dylib"}:
             continue
-        package_relative = Path(path).relative_to("src/gravity_sdk")
+        package_relative = Path(path).relative_to(historical_root)
         parts = list(package_relative.with_suffix("").parts)
         is_package = parts[-1] == "__init__"
         if is_package:
             parts.pop()
-        module = "gravity_sdk" + ("." + ".".join(parts) if parts else "")
+        module = CURRENT_PACKAGE_ROOT + ("." + ".".join(parts) if parts else "")
         native = suffix != ".py"
-        source = "" if native else raw_source.decode("utf-8")
+        source = (
+            ""
+            if native
+            else raw_source.decode("utf-8").replace(
+                HISTORICAL_PACKAGE_ROOT,
+                CURRENT_PACKAGE_ROOT,
+            )
+        )
         modules.append(
             _ModuleSource(
                 module=module,

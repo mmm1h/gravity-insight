@@ -8,29 +8,29 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
-from gravity_sdk.census.coverage import (
+from gravity_insight.census.coverage import (
     build_coverage,
     load_manifest_operations,
     load_route_classifications,
     load_write_reservations,
 )
-from gravity_sdk.compiler import ContractCompiler
-from gravity_sdk.kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
-from gravity_sdk.custom_metric_contracts import CUSTOM_METRIC_MUTATIONS
-from gravity_sdk.metadata_template_contracts import TEMPLATE_MUTATIONS
+from gravity_insight.compiler import ContractCompiler
+from gravity_insight.kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
+from gravity_insight.custom_metric_contracts import CUSTOM_METRIC_MUTATIONS
+from gravity_insight.metadata_template_contracts import TEMPLATE_MUTATIONS
 
 try:
-    from gravity_sdk import GravityInsightClient
+    from gravity_insight import GravityInsightClient
 except ModuleNotFoundError:
-    from gravity_sdk import GravityInsightClient
+    from gravity_insight import GravityInsightClient
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts"
+CONTRACT_ROOT = ROOT / "src" / "gravity_insight" / "contracts"
 RESERVATION_ROOT = CONTRACT_ROOT / "reservations"
 ROUTE_REGISTRY = CONTRACT_ROOT / "routes" / "registry.json"
-COVERAGE_PATH = ROOT / "src" / "gravity_sdk" / "census" / "data" / "coverage.json"
-MANIFEST_ROOT = ROOT / "src" / "gravity_sdk" / "manifests"
+COVERAGE_PATH = ROOT / "src" / "gravity_insight" / "census" / "data" / "coverage.json"
+MANIFEST_ROOT = ROOT / "src" / "gravity_insight" / "manifests"
 
 
 class _NoNetworkTransport:
@@ -222,7 +222,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 [
                     sys.executable,
                     "-m",
-                    "gravity_sdk.census",
+                    "gravity_insight.census",
                     "coverage",
                     "--routes",
                     str(routes_path),

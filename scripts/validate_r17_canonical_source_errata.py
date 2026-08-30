@@ -27,6 +27,11 @@ POST_PROGRAM_FROM_SHA256 = "0ba1cd5069d397bc067d88d21dea76b196f5c33404adba7a6f23
 POST_PROGRAM_REPLACEMENTS_SHA256 = (
     "044ec663d6ae674525d56442acea97a69e1e48076548af5e7435663683312dce"
 )
+NAMING_FROM_GIT_REVISION = "d83c4509f253e748fd43221430a154b89c243066"
+NAMING_FROM_SHA256 = "9a6725dd6b4bf52b46fae60cc17df600ab8bc0b760c00d4b5bd8526688486ffb"
+NAMING_REPLACEMENTS_SHA256 = (
+    "5fd7037f1e995fe01b013db4393450c3e01d1c3278940f3f71e324780319e896"
+)
 
 EXPECTED_ERRATA_KEYS = {
     "rule",
@@ -106,6 +111,19 @@ EXPECTED_AMENDMENT_FORBIDDEN = [
     "rewrite_historical_requirement_evidence",
     "weaken_main_branch_protection",
     "allow_non_main_integrated_validation_green",
+]
+EXPECTED_NAMING_REQUIRES = [
+    "v9_4_bytes_from_git_baseline",
+    "exact_source_allowlist_only",
+    "r17_immutable_ledger_projection_without_mutation",
+    "directive_and_source_digest_updated_atomically",
+]
+EXPECTED_NAMING_FORBIDDEN = [
+    "modify_r17_immutable_ledger",
+    "create_gravity_sdk_compatibility_package",
+    "rename_github_repository",
+    "rename_gravity_cli",
+    "change_stable_contract_identifiers_without_separate_decision",
 ]
 EXPECTED_MAIN_INTEGRATION = {
     "status": "completed",
@@ -206,6 +224,61 @@ def _post_program_amendment(directive: dict[str, Any]) -> dict[str, Any]:
     _require(
         amendment.get("does_not_authorize") == EXPECTED_AMENDMENT_FORBIDDEN,
         "post-program amendment forbidden-action list changed",
+    )
+    return amendment
+
+
+def _naming_amendment(directive: dict[str, Any]) -> dict[str, Any]:
+    amendment = directive.get("canonical_source_naming_amendment")
+    _require(
+        isinstance(amendment, dict),
+        "canonical_source_naming_amendment must be an object",
+    )
+    _require(
+        set(amendment) == EXPECTED_AMENDMENT_KEYS,
+        "canonical source naming amendment has missing or additional authority fields",
+    )
+    _require(
+        amendment.get("rule") == "package_root_v9_4_to_v9_5_exact_allowlist",
+        "canonical source naming amendment rule changed",
+    )
+    _require(
+        amendment.get("authorized_by") == "user",
+        "naming amendment authority changed",
+    )
+    _require(
+        amendment.get("authorized_at") == "2026-08-30",
+        "naming amendment authorization date changed",
+    )
+    _require(
+        amendment.get("scope")
+        == "repository_distribution_and_python_import_identity_unification",
+        "naming amendment scope changed",
+    )
+    _require(
+        amendment.get("transition")
+        == {
+            "from_version": "v9.4",
+            "from_sha256": NAMING_FROM_SHA256,
+            "from_git_revision": NAMING_FROM_GIT_REVISION,
+            "to_version": "v9.5",
+        },
+        "naming transition must remain the reviewed v9.4 to v9.5 baseline",
+    )
+    replacements = amendment.get("allowed_source_replacements")
+    _require(
+        isinstance(replacements, list)
+        and len(replacements) == 17
+        and _canonical_json_sha256(replacements) == NAMING_REPLACEMENTS_SHA256,
+        "naming source allowlist changed from the exact user-authorized operations",
+    )
+    _require(
+        amendment.get("requires") == EXPECTED_NAMING_REQUIRES,
+        "naming amendment requirements changed",
+    )
+    _require(
+        amendment.get("does_not_authorize") == EXPECTED_NAMING_FORBIDDEN,
+        "naming amendment forbidden-action list changed",
     )
     return amendment
 
@@ -975,10 +1048,10 @@ def _expected_post_program_directive(
     return expected
 
 
-def validate_current_state(
+def validate_post_program_state(
     directive: dict[str, Any], ledger: dict[str, Any], source_bytes: bytes
 ) -> dict[str, Any]:
-    """Prove the immutable R17 transition before applying the owner amendment."""
+    """Prove R17 before applying the exact v9.3 to v9.4 owner amendment."""
 
     baseline_directive = load_post_program_baseline_directive()
     source_file = _canonical_source_file(baseline_directive)
@@ -1020,6 +1093,103 @@ def validate_current_state(
         "prior_transition": prior["transition"],
         "source_replacements": len(
             directive["canonical_source_amendment"]["allowed_source_replacements"]
+        ),
+        "sha256": actual_sha,
+    }
+
+
+def load_naming_baseline_directive() -> dict[str, Any]:
+    relative = DIRECTIVE_PATH.relative_to(ROOT).as_posix()
+    baseline = json.loads(
+        _git_file_bytes(NAMING_FROM_GIT_REVISION, relative).decode("utf-8")
+    )
+    _require(isinstance(baseline, dict), "v9.4 baseline directive must be an object")
+    expected = _expected_post_program_directive(baseline, NAMING_FROM_SHA256)
+    mismatch_paths = _directive_mismatch_paths(baseline, expected)
+    _require(
+        not mismatch_paths,
+        "naming directive baseline is not the terminal v9.4 state at: "
+        + ", ".join(mismatch_paths),
+    )
+    return baseline
+
+
+def build_naming_source(directive: dict[str, Any]) -> bytes:
+    amendment = _naming_amendment(directive)
+    source_file = _canonical_source_file(directive)
+    baseline = _git_file_bytes(NAMING_FROM_GIT_REVISION, source_file)
+    _require(
+        hashlib.sha256(baseline).hexdigest() == NAMING_FROM_SHA256,
+        "Git-bound v9.4 source SHA differs from the naming transition",
+    )
+    expected = _apply_exact_text_changes(
+        baseline.decode("utf-8"), amendment["allowed_source_replacements"]
+    )
+    return expected.encode("utf-8")
+
+
+def _expected_naming_directive(
+    directive: dict[str, Any], expected_source_sha256: str
+) -> dict[str, Any]:
+    amendment = _naming_amendment(directive)
+    expected = copy.deepcopy(load_naming_baseline_directive())
+    transition = amendment["transition"]
+    expected["version"] = transition["to_version"]
+    expected["supersedes"] = {
+        "version": transition["from_version"],
+        "sha256": transition["from_sha256"],
+    }
+    expected["canonical_source"]["sha256"] = expected_source_sha256
+    expected["canonical_source_naming_amendment"] = copy.deepcopy(amendment)
+    expected["review_baseline"] = {
+        "branch": "main",
+        "sha": NAMING_FROM_GIT_REVISION,
+    }
+    return expected
+
+
+def validate_current_state(
+    directive: dict[str, Any], ledger: dict[str, Any], source_bytes: bytes
+) -> dict[str, Any]:
+    """Prove the full immutable-R17, v9.4, and v9.5 amendment chain."""
+
+    baseline_directive = load_naming_baseline_directive()
+    source_file = _canonical_source_file(baseline_directive)
+    v94_source = _git_file_bytes(NAMING_FROM_GIT_REVISION, source_file)
+    prior = validate_post_program_state(baseline_directive, ledger, v94_source)
+    expected_source = build_naming_source(directive)
+    expected_sha = hashlib.sha256(expected_source).hexdigest()
+    expected_directive = _expected_naming_directive(directive, expected_sha)
+    mismatch_paths = _directive_mismatch_paths(directive, expected_directive)
+    _require(
+        not mismatch_paths,
+        "current directive exceeds the naming amendment at field path(s): "
+        + ", ".join(mismatch_paths),
+    )
+    if source_bytes != expected_source:
+        delta = "".join(
+            difflib.unified_diff(
+                expected_source.decode("utf-8").splitlines(True),
+                source_bytes.decode("utf-8").splitlines(True),
+                fromfile="allowlist-derived-v9.5",
+                tofile="actual-v9.5",
+                n=2,
+            )
+        )
+        raise ErrataValidationError(
+            "canonical v9.4 to v9.5 diff exceeds the exact naming amendment:\n"
+            + delta[:8000]
+        )
+    actual_sha = hashlib.sha256(source_bytes).hexdigest()
+    _require(actual_sha == expected_sha, "current canonical source SHA mismatch")
+    return {
+        "transition": "v9.4->v9.5",
+        "prior_transition": prior["transition"],
+        "r17_transition": prior["prior_transition"],
+        "source_replacements": len(
+            directive["canonical_source_naming_amendment"][
+                "allowed_source_replacements"
+            ]
         ),
         "sha256": actual_sha,
     }

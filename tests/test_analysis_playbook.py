@@ -3,15 +3,15 @@ from __future__ import annotations
 import copy
 import unittest
 
-from gravity_sdk.analysis_playbook import (
+from gravity_insight.analysis_playbook import (
     INPUT_SCHEMA_VERSION,
     compile_metric_anomaly_playbook,
     metric_anomaly_playbook_schema,
     run_metric_anomaly_playbook,
 )
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.result_source import GOVERNED_PRODUCT, result_source
-from gravity_sdk.semantic_compose import compile_semantic_compose
+from gravity_insight.errors import InputValidationError
+from gravity_insight.result_source import GOVERNED_PRODUCT, result_source
+from gravity_insight.semantic_compose import compile_semantic_compose
 from tests.test_project_skill_overlay import project_semantic_source
 
 

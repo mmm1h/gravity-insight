@@ -438,7 +438,7 @@ def _selection_identity(result: Mapping[str, Any] | None) -> tuple[str, ...]:
 def _discover_trials(
     cases: Sequence[Mapping[str, Any]], client: Any, trials: int
 ) -> tuple[dict[str, Any], int, list[dict[str, Any]]]:
-    from gravity_sdk.agents.batch import capabilities_many
+    from gravity_insight.agents.batch import capabilities_many
 
     states = {
         case["case_id"]: {
@@ -516,9 +516,9 @@ def _valid_plan() -> dict[str, Any]:
 
 
 def recovery_score(client: Any) -> tuple[dict[str, Any], int]:
-    from gravity_sdk.agent import discover_capabilities
-    from gravity_sdk.errors import UpstreamUnavailableError, error_detail_from_exception
-    from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan, validate_plan
+    from gravity_insight.agent import discover_capabilities
+    from gravity_insight.errors import UpstreamUnavailableError, error_detail_from_exception
+    from gravity_insight.plan import PlanAdapter, PlanAdapters, execute_plan, validate_plan
 
     results: list[bool] = []
     calls = 0
@@ -571,7 +571,7 @@ def _git(*args: str) -> str:
 
 def _source_fingerprint() -> str:
     digest = hashlib.sha256()
-    for path in sorted((ROOT / "src" / "gravity_sdk").rglob("*.py")):
+    for path in sorted((ROOT / "src" / "gravity_insight").rglob("*.py")):
         digest.update(path.relative_to(ROOT).as_posix().encode("utf-8") + b"\0")
         digest.update(path.read_bytes() + b"\0")
     return digest.hexdigest()
@@ -596,7 +596,7 @@ def _evaluator_fingerprint() -> str:
 def _subject(manifest: Mapping[str, Any]) -> dict[str, Any]:
     reference = str(manifest["source_revision"])
     changed = subprocess.run(
-        ["git", "diff", "--quiet", reference, "--", "src/gravity_sdk"], cwd=ROOT
+        ["git", "diff", "--quiet", reference, "--", "src/gravity_insight"], cwd=ROOT
     ).returncode != 0
     return {
         "git_commit": _git("rev-parse", "HEAD"),
@@ -707,7 +707,7 @@ def _run_evaluation_unrecorded(
         stack.enter_context(patch.dict(os.environ, {"GRAVITY_CACHE_HOME": cache, "LOCALAPPDATA": cache, "XDG_CACHE_HOME": cache}))
         stack.enter_context(patch.object(socket.socket, "connect", network.block))
         stack.enter_context(patch("socket.create_connection", network.block))
-        from gravity_sdk.client import GravityInsightClient
+        from gravity_insight.client import GravityInsightClient
         client = GravityInsightClient.from_env(transport=blocker)
         selector_path = (
             Path(args.selector_plugin).resolve()

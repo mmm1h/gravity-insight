@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.model_contract import ModelContractError, compile_model_artifact
-from gravity_sdk.model_registry import ModelRegistry
-from gravity_sdk.operator_ids import RETURNED_DIMENSION_CHANGE_URI
+from gravity_insight.model_contract import ModelContractError, compile_model_artifact
+from gravity_insight.model_registry import ModelRegistry
+from gravity_insight.operator_ids import RETURNED_DIMENSION_CHANGE_URI
 
 
 MODEL_URI = "model://project/ltv-curve@1"

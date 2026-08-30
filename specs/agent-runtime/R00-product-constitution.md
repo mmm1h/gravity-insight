@@ -11,7 +11,7 @@
 
 ## Outcome
 
-The repository consistently describes `gravity-sdk` as the implementation repository for Gravity Agent Runtime. Codex can distinguish approved target architecture from current behavior, classify old rules, and select only an explicitly ready derived requirement.
+The repository consistently describes `gravity-insight` as the implementation repository for Gravity Agent Runtime. Codex can distinguish approved target architecture from current behavior, classify old rules, and select only an explicitly ready derived requirement.
 
 ## Current Baseline
 
@@ -55,7 +55,7 @@ This requirement is documentation-only and performs zero production requests. Th
 
 ## Verification
 
-Run documentation tests, JSON parsing and dependency validation, link checks, `python -m gravity_sdk --help`, and `git diff --check`. Full runtime tests are not required solely for prose unless repository documentation gates import or generate runtime artifacts.
+Run documentation tests, JSON parsing and dependency validation, link checks, `python -m gravity_insight --help`, and `git diff --check`. Full runtime tests are not required solely for prose unless repository documentation gates import or generate runtime artifacts.
 
 Validation record at `dev@c1a8656` working baseline on 2026-08-21:
 

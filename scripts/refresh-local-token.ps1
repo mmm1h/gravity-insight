@@ -215,7 +215,7 @@ function Invoke-GitHubCredentialSync {
   }
   Push-Location $repoRoot
   try {
-    $output = & $python -m gravity_sdk sql credentials push --if-enabled
+    $output = & $python -m gravity_insight sql credentials push --if-enabled
     if ($LASTEXITCODE -ne 0) {
       throw "GitHub credential sync failed: $output"
     }

@@ -4,8 +4,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import cli
-from gravity_sdk.skill_cli import dispatch
+from gravity_insight import cli
+from gravity_insight.skill_cli import dispatch
 
 
 class Resolver:
@@ -56,9 +56,9 @@ class SkillCliTests(unittest.TestCase):
                     bool(getattr(parsed, "product_file_output", False)),
                 )
 
-    @patch("gravity_sdk.skill_package.LocalSkillResolver", Resolver)
-    @patch("gravity_sdk.workspace.load_workspace", return_value=object())
-    @patch("gravity_sdk.sdk.GravitySDK", SDK)
+    @patch("gravity_insight.skill_package.LocalSkillResolver", Resolver)
+    @patch("gravity_insight.workspace.load_workspace", return_value=object())
+    @patch("gravity_insight.sdk.GravitySDK", SDK)
     def test_dispatch_delegates_without_owning_resolution(self, _workspace):
         listed = dispatch(SimpleNamespace(skills_command="list"), None)
         shown = dispatch(

@@ -81,8 +81,8 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             (py, "scripts/check_test_duration_budget.py"),
             1800,
         ),
-        GateSpec("compiler_check", (py, "-m", "gravity_sdk.compiler", "check")),
-        GateSpec("quality_check", (py, "-m", "gravity_sdk.quality", "check")),
+        GateSpec("compiler_check", (py, "-m", "gravity_insight.compiler", "check")),
+        GateSpec("quality_check", (py, "-m", "gravity_insight.quality", "check")),
         GateSpec(
             "agent_usability_development",
             (
@@ -96,13 +96,13 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             ),
             600,
         ),
-        GateSpec("cli_help", (py, "-m", "gravity_sdk", "--help")),
+        GateSpec("cli_help", (py, "-m", "gravity_insight", "--help")),
         GateSpec(
             "cli_sql_offline_smoke",
             (
                 py,
                 "-m",
-                "gravity_sdk",
+                "gravity_insight",
                 "--workspace",
                 "examples/workspace",
                 "sql",
@@ -111,11 +111,11 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
         ),
         GateSpec(
             "cli_census_offline_smoke",
-            (py, "-m", "gravity_sdk", "census", "--smoke"),
+            (py, "-m", "gravity_insight", "census", "--smoke"),
         ),
         GateSpec(
             "cli_insight_offline_smoke",
-            (py, "-m", "gravity_sdk", "insight", "--dry-run"),
+            (py, "-m", "gravity_insight", "insight", "--dry-run"),
         ),
         GateSpec("git_diff_check", ("git", "diff", "--check")),
         GateSpec(

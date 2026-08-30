@@ -4,7 +4,7 @@ import re
 import threading
 import unittest
 
-from gravity_sdk.sql.export import GravityExportError, fetch_all_rows_with_audit
+from gravity_insight.sql.export import GravityExportError, fetch_all_rows_with_audit
 
 
 _OFFSET_RE = re.compile(r"\bOFFSET\s+(\d+)\s*$", re.IGNORECASE)

@@ -4,13 +4,13 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from gravity_sdk import GravitySDK, cli
-from gravity_sdk.agents.capabilities import composite_capability_cards
-from gravity_sdk.agents.handoff import attach_plan_node
-from gravity_sdk.dashboard_snapshot_cli import dispatch_dashboard_analysis
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.plan import AdapterContext
-from gravity_sdk import plan_dashboard_analysis_adapter as plan_adapter
+from gravity_insight import GravitySDK, cli
+from gravity_insight.agents.capabilities import composite_capability_cards
+from gravity_insight.agents.handoff import attach_plan_node
+from gravity_insight.dashboard_snapshot_cli import dispatch_dashboard_analysis
+from gravity_insight.errors import InputValidationError
+from gravity_insight.plan import AdapterContext
+from gravity_insight import plan_dashboard_analysis_adapter as plan_adapter
 
 
 class _Workspace:
@@ -31,7 +31,7 @@ def _context(workspace, *, targets=(), fields=(), items=40):
 
 
 def _core_module(calls, result=None):
-    module = types.ModuleType("gravity_sdk.dashboard_analysis")
+    module = types.ModuleType("gravity_insight.dashboard_analysis")
 
     def prepare(*args, **kwargs):
         calls.append(("prepare", args, kwargs))
@@ -57,10 +57,10 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
         self.assertTrue(args.network_required)
         calls, workspace, client = [], object(), object()
         with (
-            patch.dict(sys.modules, {"gravity_sdk.dashboard_analysis": _core_module(calls)}),
-            patch("gravity_sdk.dashboard_snapshot_cli.load_workspace", return_value=workspace),
-            patch("gravity_sdk.dashboard_snapshot_cli.resolve_workspace_app", return_value=17),
-            patch("gravity_sdk.dashboard_snapshot_cli.runtime.build_client", return_value=client),
+            patch.dict(sys.modules, {"gravity_insight.dashboard_analysis": _core_module(calls)}),
+            patch("gravity_insight.dashboard_snapshot_cli.load_workspace", return_value=workspace),
+            patch("gravity_insight.dashboard_snapshot_cli.resolve_workspace_app", return_value=17),
+            patch("gravity_insight.dashboard_snapshot_cli.runtime.build_client", return_value=client),
         ):
             result = dispatch_dashboard_analysis(args, None)
         self.assertEqual({"mode": "run"}, result)
@@ -85,7 +85,7 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
             insight_factory=lambda: (order.append(("insight", None)), insight)[1],
             workspace=Workspace(),
         )
-        with patch.dict(sys.modules, {"gravity_sdk.dashboard_analysis": _core_module(calls)}):
+        with patch.dict(sys.modules, {"gravity_insight.dashboard_analysis": _core_module(calls)}):
             sdk.prepare_dashboard_analysis(
                 "main", 8, start="2026-08-01", end="2026-08-08", max_charts=9
             )

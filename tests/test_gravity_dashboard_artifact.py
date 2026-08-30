@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.dashboard_artifact import compile_dashboard_chart
-from gravity_sdk.errors import InputValidationError, UnsupportedOperationError
+from gravity_insight.dashboard_artifact import compile_dashboard_chart
+from gravity_insight.errors import InputValidationError, UnsupportedOperationError
 
 
 def _event(name: str = "event") -> dict:

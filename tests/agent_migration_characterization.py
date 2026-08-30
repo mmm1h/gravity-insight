@@ -10,15 +10,17 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_ROOT = ROOT / "src" / "gravity_sdk"
+PACKAGE_ROOT = ROOT / "src" / "gravity_insight"
 PUBLIC_API_BASELINE = ROOT / "tests" / "fixtures" / "public_api_exports.json"
 OWNER_MIGRATIONS = ROOT / "tests/fixtures/public_api_owner_migrations.json"
 REFERENCE_DISPOSITIONS = (
     ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 )
 
-INTERNAL_AGENT_PREFIXES = ("gravity_sdk.agent_", "gravity_sdk.agents")
-LEGACY_AGENT_LEDGER_PREFIX = "gravity_sdk.agent_"
+INTERNAL_AGENT_PREFIXES = ("gravity_insight.agent_", "gravity_insight.agents")
+HISTORICAL_PACKAGE_ROOT = "gravity_sdk"
+HISTORICAL_AGENT_LEDGER_PREFIX = "gravity_sdk.agent_"
+CURRENT_PACKAGE_ROOT = "gravity_insight"
 KNOWN_ROOT_EXPORT_MODULE_COLLISIONS = frozenset(
     {
         "analysis_query_batch_schema",
@@ -105,13 +107,13 @@ def agent_path_references(roots: tuple[Path, ...]) -> list[tuple[Path, int, str]
                 references.extend(
                     (path, node.lineno, value)
                     for value in values
-                    if value and value.startswith("gravity_sdk.agent")
+                    if value and value.startswith("gravity_insight.agent")
                 )
     return references
 
 
 def agent_path_classification(reference: str) -> str | None:
-    if reference == "gravity_sdk.agent" or reference.startswith("gravity_sdk.agent."):
+    if reference == "gravity_insight.agent" or reference.startswith("gravity_insight.agent."):
         return "public"
     if reference.startswith(INTERNAL_AGENT_PREFIXES):
         return "internal"
@@ -162,7 +164,7 @@ class _EagerImportVisitor(ast.NodeVisitor):
         self.targets: set[str] = set()
 
     def _record(self, target: str | None, *, allow_exact_self: bool = False) -> None:
-        if not target or not target.startswith("gravity_sdk"):
+        if not target or not target.startswith("gravity_insight"):
             return
         parts = target.split(".")
         candidates = {
@@ -278,7 +280,7 @@ def eager_import_sccs(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
 def migration_module_names(
     ledger: Path = REFERENCE_DISPOSITIONS,
 ) -> frozenset[str]:
-    """Return the exact old/new owners touched by the reviewed R17 ledger."""
+    """Project the exact historical R17 owners onto the current package root."""
 
     document = json.loads(ledger.read_text(encoding="utf-8"))
     scope = document.get("scope", {})
@@ -291,9 +293,11 @@ def migration_module_names(
             raise AssertionError(f"R17 move {index} is not an object")
         old_module = move.get("old_module")
         new_module = move.get("new_module")
+        old_parts = old_module.partition(".") if isinstance(old_module, str) else ()
+        new_parts = new_module.partition(".") if isinstance(new_module, str) else ()
         old_name = (
-            old_module.removeprefix("gravity_sdk.")
-            if isinstance(old_module, str)
+            old_parts[2]
+            if old_parts[:2] == (HISTORICAL_PACKAGE_ROOT, ".")
             else ""
         )
         if old_name.startswith("agent_"):
@@ -303,15 +307,23 @@ def migration_module_names(
         else:
             responsibility = ""
         if not (
-            isinstance(new_module, str)
+            isinstance(old_module, str)
+            and old_parts[:2] == (HISTORICAL_PACKAGE_ROOT, ".")
+            and isinstance(new_module, str)
             and bool(responsibility)
-            and new_module == f"gravity_sdk.agents.{responsibility}"
+            and new_parts
+            == (HISTORICAL_PACKAGE_ROOT, ".", f"agents.{responsibility}")
         ):
             raise AssertionError(
                 f"R17 move {index} has an invalid owner pair: "
                 f"{old_module!r} -> {new_module!r}"
             )
-        modules.update((old_module, new_module))
+        modules.update(
+            (
+                f"{CURRENT_PACKAGE_ROOT}.{old_parts[2]}",
+                f"{CURRENT_PACKAGE_ROOT}.{new_parts[2]}",
+            )
+        )
     if len(modules) != 164:
         raise AssertionError("R17 move ledger must contain 82 unique old/new pairs")
 
@@ -324,10 +336,18 @@ def migration_module_names(
     if not (
         isinstance(old_module, str)
         and isinstance(new_module, str)
+        and old_module.partition(".")
+        == (HISTORICAL_PACKAGE_ROOT, ".", "agent_" + "pagination")
+        and new_module == "gravity_sdk.pagination_completeness"
         and consolidation.get("symbol") == "compact_pagination"
     ):
         raise AssertionError("R17 pagination consolidation is invalid")
-    modules.update((old_module, new_module))
+    modules.update(
+        (
+            f"{CURRENT_PACKAGE_ROOT}.{old_module.partition('.')[2]}",
+            f"{CURRENT_PACKAGE_ROOT}.{new_module.partition('.')[2]}",
+        )
+    )
     return frozenset(modules)
 
 
@@ -357,6 +377,10 @@ MODULE_GRAPH_DEFINITION_END = "<!-- MODULE_GRAPH_DEFINITION_V1_END -->"
 MODULE_GRAPH_BASELINE_START = "<!-- MODULE_GRAPH_BASELINE_V1_START -->"
 MODULE_GRAPH_BASELINE_END = "<!-- MODULE_GRAPH_BASELINE_V1_END -->"
 MODULE_GRAPH_DEBT_PATH = ROOT / "docs/maintainers/technical-debt.md"
+MODULE_GRAPH_CURRENT_DEFINITION_ID = (
+    "gravity-insight-runtime-possible-module-dependency-graph.v1"
+)
+MODULE_GRAPH_CURRENT_PACKAGE_ROOT = "src/gravity_insight"
 MODULE_GRAPH_EDGE_KINDS = (
     "ast_eager_import",
     "ast_delayed_import",
@@ -431,6 +455,59 @@ def module_graph_baseline(
         MODULE_GRAPH_BASELINE_END,
         path,
     )
+
+
+def module_graph_current_definition(
+    path: Path = MODULE_GRAPH_DEBT_PATH,
+) -> dict[str, _ModuleGraphAny]:
+    """Project the embedded graph contract onto the current package identity."""
+
+    definition = module_graph_definition(path)
+    definition["definition_id"] = MODULE_GRAPH_CURRENT_DEFINITION_ID
+    scope = definition["scope"]
+    scope["package_root"] = MODULE_GRAPH_CURRENT_PACKAGE_ROOT
+    for field in ("excluded", "package_init"):
+        scope[field] = scope[field].replace("gravity_sdk", "gravity_insight")
+    return definition
+
+
+def _replace_module_graph_document(
+    source: str,
+    start_marker: str,
+    end_marker: str,
+    value: _ModuleGraphAny,
+) -> str:
+    start = source.index(start_marker)
+    end = source.index(end_marker, start) + len(end_marker)
+    payload = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    replacement = f"{start_marker}\n```json\n{payload}\n```\n{end_marker}"
+    return source[:start] + replacement + source[end:]
+
+
+def refresh_module_graph_baseline(path: Path = MODULE_GRAPH_DEBT_PATH) -> dict[str, _ModuleGraphAny]:
+    definition = module_graph_current_definition(path)
+    package_root = ROOT / definition["scope"]["package_root"]
+    baseline = module_graph_measurement(package_root, definition)
+    source = path.read_text(encoding="utf-8")
+    source = _replace_module_graph_document(
+        source,
+        MODULE_GRAPH_DEFINITION_START,
+        MODULE_GRAPH_DEFINITION_END,
+        definition,
+    )
+    source = _replace_module_graph_document(
+        source,
+        MODULE_GRAPH_BASELINE_START,
+        MODULE_GRAPH_BASELINE_END,
+        baseline,
+    )
+    path.write_text(source, encoding="utf-8")
+    return baseline
 
 
 def _module_graph_type_checking_value(node: ast.expr) -> bool | None:
@@ -848,7 +925,7 @@ def module_graph_render_text(
 
 def module_graph_main(argv: _ModuleGraphSequence[str] | None = None) -> int:
     parser = _module_graph_argparse.ArgumentParser(
-        description="Build the governed Gravity SDK module graph and SCC report."
+        description="Build the governed Gravity Insight module graph and SCC report."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     report_parser = subparsers.add_parser("report", help="print the SCC report")
@@ -857,7 +934,17 @@ def module_graph_main(argv: _ModuleGraphSequence[str] | None = None) -> int:
     graph_parser = subparsers.add_parser("graph", help="print JSON adjacency")
     graph_parser.add_argument("--profile")
     subparsers.add_parser("check", help="compare with the embedded baseline")
+    subparsers.add_parser("refresh", help="regenerate the embedded definition and baseline")
     args = parser.parse_args(argv)
+    if args.command == "refresh":
+        report = refresh_module_graph_baseline()
+        eager = report["profiles"]["eager-ast-only"]
+        print(
+            "PASS regenerated module dependency graph: "
+            f"nodes={report['node_count']} "
+            f"eager_largest={eager['largest_cyclic_scc_size']}"
+        )
+        return 0
     definition = module_graph_definition()
     package_root = ROOT / definition["scope"]["package_root"]
     if args.command == "graph":

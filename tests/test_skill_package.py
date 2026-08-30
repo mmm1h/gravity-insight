@@ -6,9 +6,9 @@ import shutil
 import tempfile
 import unittest
 
-from gravity_sdk.skill_contract import skill_artifact
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.skill_package import (
+from gravity_insight.skill_contract import skill_artifact
+from gravity_insight.errors import InputValidationError
+from gravity_insight.skill_package import (
     LocalSkillResolver,
     MAX_FILE_BYTES,
     MAX_PACKAGE_FILES,
@@ -17,11 +17,11 @@ from gravity_sdk.skill_package import (
     validate_package_entries,
     validate_skill_package,
 )
-from gravity_sdk.skill_render import skill_package_descriptor
+from gravity_insight.skill_render import skill_package_descriptor
 
 
 SKILL_URI = "skill://gravity.game/ap-cost-anomaly-localization@1.0.0"
-PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "gravity_sdk"
+PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "gravity_insight"
 
 
 class SkillPackageTests(unittest.TestCase):

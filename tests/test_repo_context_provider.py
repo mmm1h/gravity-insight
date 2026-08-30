@@ -10,13 +10,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.context_contract import (
+from gravity_insight.context_contract import (
     ContextContractError,
     context_pack_digest,
     public_context_reference,
     validate_context_pack,
 )
-from gravity_sdk.repo_context_provider import RepoContextProvider
+from gravity_insight.repo_context_provider import RepoContextProvider
 
 
 WINDOWS = {
@@ -497,10 +497,10 @@ class RepoContextProviderTests(unittest.TestCase):
 
     def test_search_reads_one_snapshot_and_index_detects_revision_drift(self) -> None:
         index = self.provider.index()
-        from gravity_sdk import repo_context_index
+        from gravity_insight import repo_context_index
 
         with patch(
-            "gravity_sdk.repo_context_index._read_utf8",
+            "gravity_insight.repo_context_index._read_utf8",
             wraps=repo_context_index._read_utf8,
         ) as read:
             result = self.provider.search("ignore previous")
@@ -514,13 +514,13 @@ class RepoContextProviderTests(unittest.TestCase):
         }
         changed = {**first, "source_revision": "2" * 40}
         with patch(
-            "gravity_sdk.repo_context_index.git_snapshot",
+            "gravity_insight.repo_context_index.git_snapshot",
             side_effect=[first, changed],
         ), self.assertRaisesRegex(ContextContractError, "CONTEXT_SNAPSHOT_CHANGED"):
             self.provider.index()
 
     def test_index_detects_ignore_rule_appearance_during_build(self) -> None:
-        from gravity_sdk import repo_context_index
+        from gravity_insight import repo_context_index
 
         original_read = repo_context_index._read_utf8
         changed = False
@@ -535,7 +535,7 @@ class RepoContextProviderTests(unittest.TestCase):
 
         try:
             with patch(
-                "gravity_sdk.repo_context_index._read_utf8",
+                "gravity_insight.repo_context_index._read_utf8",
                 side_effect=read_with_drift,
             ), self.assertRaises(ContextContractError) as raised:
                 self.provider.index()
@@ -617,7 +617,7 @@ class RepoContextSafetyCorpusTests(unittest.TestCase):
                 self.repo.write(name, original)
 
     def test_invalid_ignore_rules_fail_closed_with_stable_reason(self) -> None:
-        from gravity_sdk import repo_context_ignore
+        from gravity_insight import repo_context_ignore
 
         original_read = repo_context_ignore._read_utf8
         for name in (".gitignore", ".gravityignore"):
@@ -639,7 +639,7 @@ class RepoContextSafetyCorpusTests(unittest.TestCase):
                 return original_read(path)
 
             with self.subTest(name=name, failure="unreadable"), patch(
-                "gravity_sdk.repo_context_ignore._read_utf8",
+                "gravity_insight.repo_context_ignore._read_utf8",
                 side_effect=unreadable,
             ), self.assertRaises(ContextContractError) as raised:
                 self.provider.index()

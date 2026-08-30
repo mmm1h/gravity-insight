@@ -7,8 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION_ROOTS = (
-    ROOT / "src" / "gravity_sdk",
-    ROOT / "src" / "gravity_sdk",
+    ROOT / "src" / "gravity_insight",
+    ROOT / "src" / "gravity_insight",
 )
 FORBIDDEN_BROWSER_IMPORTS = {
     "playwright",

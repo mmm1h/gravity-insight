@@ -1,11 +1,11 @@
 {
   "schema_version": "gravity.agent-runtime-directive.v1",
   "directive_id": "gravity-agent-runtime",
-  "version": "v9.4",
+  "version": "v9.5",
   "status": "approved",
   "canonical_source": {
     "repository_path": "architecture-source.md",
-    "sha256": "9a6725dd6b4bf52b46fae60cc17df600ab8bc0b760c00d4b5bd8526688486ffb",
+    "sha256": "8543de03b695868699eb9276706f9e31637e600a0d5ecbe55b9aba36dc96c1b2",
     "format": "markdown",
     "retrieval": "repository_relative_to_directive"
   },
@@ -15,8 +15,8 @@
     "authority": "provenance_only"
   },
   "supersedes": {
-    "version": "v9.3",
-    "sha256": "0ba1cd5069d397bc067d88d21dea76b196f5c33404adba7a6f2322e926abd2ec"
+    "version": "v9.4",
+    "sha256": "9a6725dd6b4bf52b46fae60cc17df600ab8bc0b760c00d4b5bd8526688486ffb"
   },
   "approval": {
     "approved_by": "user",
@@ -117,9 +117,53 @@
       "allow_non_main_integrated_validation_green"
     ]
   },
+  "canonical_source_naming_amendment": {
+    "rule": "package_root_v9_4_to_v9_5_exact_allowlist",
+    "authorized_by": "user",
+    "authorized_at": "2026-08-30",
+    "scope": "repository_distribution_and_python_import_identity_unification",
+    "transition": {
+      "from_version": "v9.4",
+      "from_sha256": "9a6725dd6b4bf52b46fae60cc17df600ab8bc0b760c00d4b5bd8526688486ffb",
+      "from_git_revision": "d83c4509f253e748fd43221430a154b89c243066",
+      "to_version": "v9.5"
+    },
+    "allowed_source_replacements": [
+      {"operation":"insert_before","anchor":"## v9.4 修订摘要","text":"## v9.5 修订摘要\n\n本版执行用户于 2026-08-30 明确批准的独立命名迁移：分发包与预期 GitHub 仓库名统一为 `gravity-insight`，Python import 根由 `gravity_sdk` 直接迁移为 `gravity_insight`，`gravity` CLI 保持稳定；不提供旧 import 兼容包。v9.1 的“不为定位升级改名”决定在本版被明确推翻，不再是当前约束。R17 的不可变 ledger 继续保留交付当时的 `gravity_sdk.*` 历史身份，live checkpoint 通过显式包根投影验证当前 `gravity_insight.*` owner，不改写历史 blob 或 digest。\n\n\n","count":1},
+      {"old":"2. **Phase -1 改为“产品宪法与冲突台账迁移”**。明确 Gravity Agent Runtime 的目标边界，但保持仓库名 `gravity-sdk`、Python 包名和 `gravity` CLI 稳定，不为定位升级制造无收益的重命名迁移。","new":"2. **Phase -1 改为“产品宪法与冲突台账迁移”**。v9.1 当时决定保持仓库名、Python 包名和 `gravity` CLI 稳定；其中仓库名与 Python 包名的稳定决定已由 v9.5 的独立用户授权迁移明确推翻，只有 `gravity` CLI 继续稳定。","count":1},
+      {"old":"> 仓库：`mmm1h/gravity-sdk`","new":"> 仓库：`mmm1h/gravity-insight`","count":1},
+      {"old":"> 本版审阅基线：`main@6d72d26dace534ec9b56c316746578cdd76c812c`","new":"> 本版审阅基线：`main@d83c4509f253e748fd43221430a154b89c243066`","count":1},
+      {"old":"> Directive ID / Version：`gravity-agent-runtime / v9.4`","new":"> Directive ID / Version：`gravity-agent-runtime / v9.5`","count":1},
+      {"old":"> 批准状态：用户已于 2026-08-21 批准总纲与需求拆分，并于 2026-08-30 在计划完成和整体发布后批准迁移到受保护 `main` 主干","new":"> 批准状态：用户已于 2026-08-21 批准总纲与需求拆分，并于 2026-08-30 批准迁移到受保护 `main` 主干及独立的仓库/Python 包命名统一","count":1},
+      {"old":"唯一架构总纲 v9.4（repository canonical source）","new":"唯一架构总纲 v9.5（repository canonical source）","count":1},
+      {"old":"- 仓库与 Python 包：继续使用 `gravity-sdk`，不因本轮架构升级强制重命名；","new":"- 分发包与预期 GitHub 仓库名：`gravity-insight`；仓库外部重命名由所有者执行；\n- Python import 根：`gravity_insight`；旧 `gravity_sdk` 根不提供兼容包；","count":1},
+      {"old":"安装 gravity-sdk","new":"安装 gravity-insight","count":1},
+      {"old":"- 产品定位演进为“Gravity Agent Runtime”，但仓库名、Python 包名和 `gravity` CLI 保持稳定，除非未来另有独立迁移决策；","new":"- 产品定位是“Gravity Agent Runtime”；v9.5 的独立迁移决策已把分发包/预期仓库名统一为 `gravity-insight`、Python import 根统一为 `gravity_insight`，`gravity` CLI 保持稳定；","count":1},
+      {"old":"- 保持仓库名、Python 包名与 CLI 稳定，不进行无收益重命名；","new":"- 完成 v9.5 批准的仓库/分发/import 命名统一，保留 `gravity` CLI，并以消费者、wheel、生成物和 R17 历史投影门禁证明迁移完整；","count":1},
+      {"old":"43. 为产品定位升级强制重命名仓库、Python 包或 CLI，而没有独立收益与消费者迁移方案。","new":"43. 没有独立收益、用户授权与消费者迁移方案就重命名仓库、Python 包或 CLI；v9.5 是已满足这些前提的仓库/import 迁移，且不改变 `gravity` CLI。","count":1},
+      {"old":"你是 Codex，担任 gravity-sdk / Gravity Agent Runtime 的首席架构实施工程师。","new":"你是 Codex，担任 gravity-insight / Gravity Agent Runtime 的首席架构实施工程师。","count":1},
+      {"old":"- 产品定位是 Gravity Agent Runtime，仓库名、Python 包名和 CLI 暂时保持稳定；","new":"- 产品定位是 Gravity Agent Runtime，分发包/预期仓库名为 `gravity-insight`、Python import 根为 `gravity_insight`，`gravity` CLI 保持稳定；","count":1},
+      {"old":"- 当前架构：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/architecture.md>\n- 当前路线图：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/roadmap.md>\n- Agent 工作流：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/agent-workflow.md>\n- 当前 Agent 指南：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/agent-skills/index.md>\n- 分析 Journey 台账：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/analysis-journeys.md>\n- 当前技术债：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/docs/maintainers/technical-debt.md>\n- 完整性合同：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/pagination_completeness.py>\n- Principal Runtime Scope：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/runtime_scope.py>\n- Direct Composite 示例：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/business_pulse.py>\n- Host Plan 来源边界：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/host_effects.py>\n- Plan Execution：<https://github.com/mmm1h/gravity-sdk/blob/b9c029db7f41fa90d04b4e019a892cba25eb9230/src/gravity_sdk/plan_execution.py>","new":"- 当前架构：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/architecture.md>\n- 当前路线图：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/roadmap.md>\n- Agent 工作流：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/agent-workflow.md>\n- 当前 Agent 指南：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/agent-skills/index.md>\n- 分析 Journey 台账：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/analysis-journeys.md>\n- 当前技术债：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/docs/maintainers/technical-debt.md>\n- 完整性合同：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/pagination_completeness.py>\n- Principal Runtime Scope：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/runtime_scope.py>\n- Direct Composite 示例：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/business_pulse.py>\n- Host Plan 来源边界：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/host_effects.py>\n- Plan Execution：<https://github.com/mmm1h/gravity-insight/blob/d83c4509f253e748fd43221430a154b89c243066/src/gravity_insight/plan_execution.py>","count":1},
+      {"old":"`gravity-sdk` 的最终形态是：","new":"`gravity-insight` 的最终形态是：","count":1},
+      {"old":"> **以可信私有 API 能力为底座、面向 Codex / Claude Code 的无头游戏数据分析 Agent Runtime。当前 `gravity-sdk` 是必须兼容和迁移的起点，不是目标架构的路径依赖上限；长期架构与 Hub Protocol 现在设计完整，实施先用真实纵向切片证伪关键合同，再推进团队 Skill Hub、全域 Context、受治理执行和 ThinkingAI 全量独立规格。组织级签名供应链按安全与分发需求分阶段强化。**","new":"> **以可信私有 API 能力为底座、面向 Codex / Claude Code 的无头游戏数据分析 Agent Runtime。`gravity-insight` 是当前统一的分发与仓库身份，`gravity_insight` 是唯一 Python import 根；旧 `gravity-sdk` / `gravity_sdk` 只在明确的历史证据或稳定契约标识中保留，不构成兼容运行面。长期架构与 Hub Protocol 保持完整，组织级签名供应链按安全与分发需求分阶段强化。**","count":1}
+    ],
+    "requires": [
+      "v9_4_bytes_from_git_baseline",
+      "exact_source_allowlist_only",
+      "r17_immutable_ledger_projection_without_mutation",
+      "directive_and_source_digest_updated_atomically"
+    ],
+    "does_not_authorize": [
+      "modify_r17_immutable_ledger",
+      "create_gravity_sdk_compatibility_package",
+      "rename_github_repository",
+      "rename_gravity_cli",
+      "change_stable_contract_identifiers_without_separate_decision"
+    ]
+  },
   "review_baseline": {
     "branch": "main",
-    "sha": "6d72d26dace534ec9b56c316746578cdd76c812c"
+    "sha": "d83c4509f253e748fd43221430a154b89c243066"
   },
   "documentation_baseline": {
     "branch": "dev",

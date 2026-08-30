@@ -7,8 +7,8 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 
-from gravity_sdk.core_skill_runtime import CoreSkillRuntime
-from gravity_sdk.reference_journey_contract import JOURNEY_ID
+from gravity_insight.core_skill_runtime import CoreSkillRuntime
+from gravity_insight.reference_journey_contract import JOURNEY_ID
 from tests.test_project_skill_overlay import project_overlay, project_semantic_source
 from tests.test_reference_journey import StaticTrustService, stable_trust
 

@@ -4,16 +4,16 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import gravity_sdk
-from gravity_sdk import cli
-from gravity_sdk.onboarding import command_requires_credentials
-from gravity_sdk.order_trace_result import success_result
-from gravity_sdk.order_directory_result import success_result as directory_success
-from gravity_sdk.plan import AdapterContext, execute_plan
-from gravity_sdk.plan_adapters import build_plan_adapters
-from gravity_sdk.plan_order_trace_adapter import project_order_split_trace_result, validate_order_split_trace_plan
-from gravity_sdk.plan_order_directory_adapter import project_order_directory_result, validate_order_directory_plan
-from gravity_sdk.sdk import GravitySDK
+import gravity_insight
+from gravity_insight import cli
+from gravity_insight.onboarding import command_requires_credentials
+from gravity_insight.order_trace_result import success_result
+from gravity_insight.order_directory_result import success_result as directory_success
+from gravity_insight.plan import AdapterContext, execute_plan
+from gravity_insight.plan_adapters import build_plan_adapters
+from gravity_insight.plan_order_trace_adapter import project_order_split_trace_result, validate_order_split_trace_plan
+from gravity_insight.plan_order_directory_adapter import project_order_directory_result, validate_order_directory_plan
+from gravity_insight.sdk import GravitySDK
 
 BASE = ["analysis", "order", "trace", "--app", "main", "--date", "2026-08-08",
         "--trace-id", "trace-secret", "--max-pages", "5", "--max-items", "10"]
@@ -77,7 +77,7 @@ def _context(dynamic=(), fields=()):
 class OrderTraceSurfaceTests(unittest.TestCase):
     def test_root_dry_run_is_not_an_order_preview(self):
         for base, module in ((BASE, "order_trace_cli"), (DIRECTORY_BASE, "order_directory_cli")):
-            with self.subTest(command=base[2]), patch(f"gravity_sdk.{module}.runtime.build_client") as factory:
+            with self.subTest(command=base[2]), patch(f"gravity_insight.{module}.runtime.build_client") as factory:
                 args = cli.build_parser().parse_args(["--dry-run", *base])
                 self.assertFalse(command_requires_credentials(["--dry-run", *base], cli.build_parser))
                 with self.assertRaisesRegex(ValueError, "--dry-run cannot be combined"):
@@ -92,17 +92,17 @@ class OrderTraceSurfaceTests(unittest.TestCase):
             with self.subTest(flag=flag), self.assertRaises(ValueError):
                 parser.parse_args([*BASE, flag, "ndjson"])
         invalid = [*BASE[:6], "bad", *BASE[7:]]
-        with patch("gravity_sdk.order_trace_cli.load_workspace", return_value=_Workspace()), \
-             patch("gravity_sdk.order_trace_cli.runtime.build_client") as factory:
+        with patch("gravity_insight.order_trace_cli.load_workspace", return_value=_Workspace()), \
+             patch("gravity_insight.order_trace_cli.runtime.build_client") as factory:
             self.assertTrue(command_requires_credentials(BASE, cli.build_parser))
             self.assertFalse(command_requires_credentials(invalid, cli.build_parser))
             with self.assertRaises(ValueError):
                 parser.parse_args(invalid)._gravity_handler(parser.parse_args(invalid), lambda _: {})
         factory.assert_not_called()
         client, factory = object(), Mock()
-        with patch("gravity_sdk.order_trace_cli.load_workspace", return_value=_Workspace()), \
-             patch("gravity_sdk.order_trace_cli.runtime.build_client", return_value=client), \
-             patch("gravity_sdk.order_trace.order_split_trace", return_value=_result()) as core:
+        with patch("gravity_insight.order_trace_cli.load_workspace", return_value=_Workspace()), \
+             patch("gravity_insight.order_trace_cli.runtime.build_client", return_value=client), \
+             patch("gravity_insight.order_trace.order_split_trace", return_value=_result()) as core:
             selected._gravity_handler(selected, lambda _: {})
         core.assert_called_once_with(client, "7", "2026-08-08", "trace-secret",
                                      max_workers=6, max_pages=5, max_items=10)
@@ -111,7 +111,7 @@ class OrderTraceSurfaceTests(unittest.TestCase):
             sdk.order_split_trace("main", "bad", "trace-secret")
         factory.assert_not_called()
         factory.return_value = client
-        with patch("gravity_sdk.order_trace.order_split_trace", return_value=_result()) as core:
+        with patch("gravity_insight.order_trace.order_split_trace", return_value=_result()) as core:
             sdk.order_split_trace("main", "2026-08-08", "trace-secret", max_pages=5, max_items=10)
         core.assert_called_once_with(client, "7", "2026-08-08", "trace-secret",
                                      max_workers=6, max_pages=5, max_items=10)
@@ -151,8 +151,8 @@ class OrderDirectorySurfaceTests(unittest.TestCase):
         unknown = [*DIRECTORY_BASE]; unknown[4] = "missing"
         invalid_outputs = ([*DIRECTORY_BASE, "--output", "-"], [*DIRECTORY_BASE, "--output", "."],
                            [*DIRECTORY_BASE, "--output", "pyproject.toml/child.json"])
-        with patch("gravity_sdk.order_directory_cli.load_workspace", return_value=_Workspace()), \
-             patch("gravity_sdk.order_directory_cli.runtime.build_client") as client_factory:
+        with patch("gravity_insight.order_directory_cli.load_workspace", return_value=_Workspace()), \
+             patch("gravity_insight.order_directory_cli.runtime.build_client") as client_factory:
             self.assertTrue(command_requires_credentials(DIRECTORY_BASE, cli.build_parser))
             self.assertFalse(command_requires_credentials(invalid, cli.build_parser)); self.assertFalse(command_requires_credentials(unknown, cli.build_parser))
             for argv in invalid_outputs: self.assertFalse(command_requires_credentials(argv, cli.build_parser))
@@ -162,9 +162,9 @@ class OrderDirectorySurfaceTests(unittest.TestCase):
                 args = parser.parse_args(unknown); args._gravity_handler(args, lambda _: {})
         client_factory.assert_not_called()
         client = object()
-        with patch("gravity_sdk.order_directory_cli.load_workspace", return_value=_Workspace()), \
-             patch("gravity_sdk.order_directory_cli.runtime.build_client", return_value=client), \
-             patch("gravity_sdk.order_directory.order_directory", return_value=_directory_result()) as core:
+        with patch("gravity_insight.order_directory_cli.load_workspace", return_value=_Workspace()), \
+             patch("gravity_insight.order_directory_cli.runtime.build_client", return_value=client), \
+             patch("gravity_insight.order_directory.order_directory", return_value=_directory_result()) as core:
             selected._gravity_handler(selected, lambda _: {})
         core.assert_called_once_with(client, "7", "2026-08-08", max_workers=6, max_pages=5, max_items=10)
         factory, workspace = Mock(return_value=client), Mock(wraps=_Workspace())
@@ -174,19 +174,19 @@ class OrderDirectorySurfaceTests(unittest.TestCase):
             with self.subTest(app=app), self.assertRaises(ValueError): sdk.order_directory(app, "2026-08-08")
         with self.assertRaises(ValueError): sdk.order_directory("main", "2026-08-08", max_workers=25)
         factory.assert_not_called(); workspace.resolve_app.assert_not_called()
-        with patch("gravity_sdk.order_directory.order_directory", return_value=_directory_result()):
+        with patch("gravity_insight.order_directory.order_directory", return_value=_directory_result()):
             sdk.order_directory("main", "2026-08-08", max_pages=5, max_items=10)
-        self.assertLessEqual({"order_directory", "validate_order_directory_request"}, set(gravity_sdk.__all__))
-        self.assertNotIn("sanitize_order_directory_result", gravity_sdk.__all__)
+        self.assertLessEqual({"order_directory", "validate_order_directory_request"}, set(gravity_insight.__all__))
+        self.assertNotIn("sanitize_order_directory_result", gravity_insight.__all__)
 
     def test_cli_json_file_preserves_more_than_stdout_row_limit(self):
         rows = [{"CreateTime": "2026-08-08", "Amount": i, "BackAmount": 0, "Status": "paid"} for i in range(201)]
         complete = _directory_result(); complete["data"]["list"] = rows; complete["returned_items"] = 201
         with tempfile.TemporaryDirectory() as folder:
             output = f"{folder}/orders.json"; argv = [*DIRECTORY_BASE, "--output", output]
-            with patch("gravity_sdk.order_directory_cli.load_workspace", return_value=_Workspace()), \
-                 patch("gravity_sdk.order_directory_cli.runtime.build_client", return_value=object()), \
-                 patch("gravity_sdk.order_directory.order_directory", return_value=complete):
+            with patch("gravity_insight.order_directory_cli.load_workspace", return_value=_Workspace()), \
+                 patch("gravity_insight.order_directory_cli.runtime.build_client", return_value=object()), \
+                 patch("gravity_insight.order_directory.order_directory", return_value=complete):
                 self.assertEqual(0, cli.main(argv))
             with open(output, encoding="utf-8") as stream: written = json.load(stream)
         self.assertEqual((201, 200), (len(written["data"]["list"]), written["data"]["list"][200]["Amount"]))

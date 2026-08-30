@@ -33,12 +33,18 @@ import scripts.validate_r17_canonical_source_errata as errata_validator
 from scripts.run_integrated_validation import GateSpec, run_gate
 from scripts.audit_agent_module_references import (
     AuditResult,
+    CURRENT_PACKAGE_ROOT,
     GENERATED_GOVERNANCE_FILES,
     GOVERNANCE_EXCLUSION_RULE,
+    HISTORICAL_PACKAGE_ROOT,
+    PACKAGE_ROOT_MIGRATION,
     Finding,
     ReferenceScanner,
+    historical_module_root,
     is_generated_governance_artifact,
     make_module_map,
+    project_module_root,
+    reference_module_mapping,
     scan_repository as _scan_repository,
     source_key,
     version_controlled_files,
@@ -60,13 +66,16 @@ from scripts.generate_agent_module_reference_dispositions import (
 from scripts.validate_r17_canonical_source_errata import (
     ErrataValidationError,
     build_expected_source,
+    build_naming_source,
     derive_source_replacements,
     load_git_baseline,
+    load_naming_baseline_directive,
     load_post_program_baseline_directive,
     validate_bound_ledger,
     validate_current_state,
     validate_final_state,
     validate_phase1_reviewed_state,
+    validate_post_program_state,
 )
 from tests.repository_tree_gate import (
     DEFAULT_TIMEOUT_SECONDS,
@@ -111,6 +120,9 @@ ALLOWED_DISPOSITIONS = {
 PAGINATION_MODULE = "gravity_sdk.agent_pagination"
 PAGINATION_TARGET = "gravity_sdk.pagination_completeness"
 RETAINED_MODULE = "gravity_sdk.agent_runtime_contracts"
+CURRENT_PAGINATION_MODULE = project_module_root(PAGINATION_MODULE)
+CURRENT_PAGINATION_TARGET = project_module_root(PAGINATION_TARGET)
+CURRENT_RETAINED_MODULE = project_module_root(RETAINED_MODULE)
 FROZEN_BASELINE_EXCLUSION_RULE = (
     "Exclude only tmp/**, direct specs/agent-runtime/R17-*.md migration "
     "specifications, the checked-in disposition fixture and its validator, and "
@@ -655,7 +667,7 @@ def validate_ledger(document: dict[str, Any]) -> None:
 def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
     _require(
         document.get("schema_version")
-        == "gravity.agent-module-reference-checkpoint.v1",
+        == "gravity.agent-module-reference-checkpoint.v2",
         "invalid checkpoint schema",
     )
     _require(
@@ -721,12 +733,44 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
         "baseline ledger digest changed",
     )
 
+    package_root_migration = document.get("package_root_migration", {})
+    _require(
+        {
+            key: package_root_migration.get(key)
+            for key in PACKAGE_ROOT_MIGRATION
+        }
+        == PACKAGE_ROOT_MIGRATION,
+        "checkpoint package-root migration changed",
+    )
+    _require(
+        package_root_migration.get("historical_evidence_role")
+        == "immutable_baseline_records_names_at_r17_delivery_time",
+        "checkpoint historical evidence role changed",
+    )
+    _require(
+        package_root_migration.get("current_validation_role")
+        == "project_historical_r17_owners_before_filesystem_and_reference_checks",
+        "checkpoint current projection role changed",
+    )
+    _require(
+        package_root_migration.get("compatibility_package_present") is False,
+        "checkpoint must not claim an old compatibility package",
+    )
+    _require(
+        isinstance(package_root_migration.get("projected_scope_sha256"), str)
+        and re.fullmatch(
+            r"[0-9a-f]{64}", package_root_migration["projected_scope_sha256"]
+        ),
+        "checkpoint projected scope digest is invalid",
+    )
+
     scope = document.get("scope", {})
     moves = scope.get("one_to_one_moves", [])
-    move_mapping = {
+    historical_move_mapping = {
         item.get("old_module"): item.get("new_module") for item in moves
     }
-    _require(len(move_mapping) == 82, "checkpoint move scope changed")
+    _require(len(historical_move_mapping) == 82, "checkpoint move scope changed")
+    move_mapping = reference_module_mapping(historical_move_mapping)
     site_records = document.get("sites")
     _require(isinstance(site_records, list), "checkpoint sites must be a list")
     sites = checkpoint_sites(document)
@@ -793,8 +837,10 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
         elif disposition == "rewrite_consolidated_reference":
             _require(
                 action.get("kind") == "replace_module"
-                and action.get("old_module") == PAGINATION_MODULE
-                and action.get("new_module") == PAGINATION_TARGET,
+                and historical_module_root(action.get("old_module", ""))
+                == PAGINATION_MODULE
+                and historical_module_root(action.get("new_module", ""))
+                == PAGINATION_TARGET,
                 f"invalid consolidation at {key}",
             )
         elif disposition == "rewrite_selector_data":
@@ -814,20 +860,39 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
                 old_module = next(
                     (
                         old
-                        for old in [*move_mapping, PAGINATION_MODULE, RETAINED_MODULE]
+                        for old in [
+                            *move_mapping,
+                            PAGINATION_MODULE,
+                            CURRENT_PAGINATION_MODULE,
+                            RETAINED_MODULE,
+                            CURRENT_RETAINED_MODULE,
+                        ]
                         if old_value == "src/" + old.replace(".", "/") + ".py"
                     ),
                     old_value
-                    if old_value in {PAGINATION_MODULE, RETAINED_MODULE}
+                    if old_value
+                    in {
+                        PAGINATION_MODULE,
+                        CURRENT_PAGINATION_MODULE,
+                        RETAINED_MODULE,
+                        CURRENT_RETAINED_MODULE,
+                    }
                     else None,
                 )
             sentinel = (
                 file == "tests/test_agent_concept_deletions.py"
                 and source.get("reference_category") == "string_reference"
             )
-            if file.startswith("docs/archive/") or sentinel or old_module == RETAINED_MODULE:
+            historical_old_module = (
+                historical_module_root(old_module) if old_module else None
+            )
+            if (
+                file.startswith("docs/archive/")
+                or sentinel
+                or historical_old_module == RETAINED_MODULE
+            ):
                 _require(disposition == "no_migration_effect", f"frozen exact reference moved at {key}")
-            elif old_module == PAGINATION_MODULE:
+            elif historical_old_module == PAGINATION_MODULE:
                 if site.get("reason_code") == "deleted_module_governance_fact":
                     _require(
                         disposition == "no_migration_effect",
@@ -1136,7 +1201,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         cls.directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
         cls.membership_registry = tomllib.loads(
             PYPROJECT.read_text(encoding="utf-8")
-        )["tool"]["gravity_sdk"]["agent-package-membership"]
+        )["tool"]["gravity_insight"]["agent-package-membership"]
 
     def test_reviewed_fixture_sha256_is_bound(self) -> None:
         self.assertEqual(LEDGER_SHA256, hashlib.sha256(self.raw).hexdigest())
@@ -1455,7 +1520,8 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         if pagination_old:
             modules.add(PAGINATION_MODULE)
         for module in modules:
-            path = root / "src" / Path(*module.split(".")).with_suffix(".py")
+            current_module = project_module_root(module)
+            path = root / "src" / Path(*current_module.split(".")).with_suffix(".py")
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("", encoding="utf-8")
 
@@ -1505,9 +1571,19 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                     root, old_count=old_count, pagination_old=pagination_old
                 )
                 if removed:
-                    (root / "src" / Path(*removed.split(".")).with_suffix(".py")).unlink()
+                    current_removed = project_module_root(removed)
+                    (
+                        root
+                        / "src"
+                        / Path(*current_removed.split(".")).with_suffix(".py")
+                    ).unlink()
                 if added:
-                    (root / "src" / Path(*added.split(".")).with_suffix(".py")).write_text(
+                    current_added = project_module_root(added)
+                    (
+                        root
+                        / "src"
+                        / Path(*current_added.split(".")).with_suffix(".py")
+                    ).write_text(
                         "", encoding="utf-8"
                     )
                 with self.assertRaisesRegex(RuntimeError, message):
@@ -1533,7 +1609,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             members,
             "registered agent members must be unique and sorted",
         )
-        agents_root = ROOT / "src/gravity_sdk/agents"
+        agents_root = ROOT / "src/gravity_insight/agents"
         actual = {
             path.relative_to(agents_root).as_posix()
             for path in agents_root.rglob("*.py")
@@ -1546,13 +1622,13 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             [],
             unregistered,
             "unregistered agents module(s); register each new module in "
-            "[tool.gravity_sdk.agent-package-membership] in pyproject.toml: "
+            "[tool.gravity_insight.agent-package-membership] in pyproject.toml: "
             f"{unregistered}",
         )
         self.assertEqual(
             [],
             registered_but_missing,
-            "registered agents module(s) missing from src/gravity_sdk/agents; "
+            "registered agents module(s) missing from src/gravity_insight/agents; "
             f"update the registration with the code change: {registered_but_missing}",
         )
 
@@ -1575,7 +1651,9 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             new_module
             for _, new_module in frozen_scope
             if not (
-                ROOT / "src" / Path(*new_module.split(".")).with_suffix(".py")
+                ROOT
+                / "src"
+                / Path(*project_module_root(new_module).split(".")).with_suffix(".py")
             ).is_file()
         )
         self.assertEqual(
@@ -1620,12 +1698,12 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             if item.old_module == "gravity_sdk.relative_date_agent"
         )
         self.assertEqual("gravity_sdk.agents.relative_date", relative_date.new_module)
-        self.assertEqual("src/gravity_sdk/agents/relative_date.py", relative_date.new_file)
+        self.assertEqual("src/gravity_insight/agents/relative_date.py", relative_date.new_file)
         self.assertTrue(relative_date.target_exists)
         self.assertFalse((ROOT / relative_date.old_file).exists())
         self.assertFalse(relative_date.casefold_target_collision)
         self.assertFalse(relative_date.stdlib_basename_collision)
-        self.assertFalse((ROOT / "src/gravity_sdk/relative_date.py").exists())
+        self.assertFalse((ROOT / "src/gravity_insight/relative_date.py").exists())
 
     def test_canonical_errata_replacements_are_derived_only_from_ledger(self) -> None:
         declaration = self.directive["canonical_source_errata"][
@@ -2039,7 +2117,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
 
         def remains_in_terminal(row: Any) -> bool:
             return source_key(row) not in actionable_keys or (
-                row.file == "src/gravity_sdk/__init__.py"
+                row.file == "src/gravity_insight/__init__.py"
                 and row.form == "import_module"
             )
 
@@ -2056,13 +2134,15 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         )
         exports = copy.deepcopy(baseline_exports)
         move_mapping = {
-            move["old_module"]: move["new_module"]
+            project_module_root(move["old_module"]): project_module_root(
+                move["new_module"]
+            )
             for move in baseline_receipt["scope"]["one_to_one_moves"]
         }
         for value in exports.values():
-            owner = f"gravity_sdk{value[0]}"
+            owner = f"gravity_insight{value[0]}"
             if owner in move_mapping:
-                value[0] = move_mapping[owner].removeprefix("gravity_sdk")
+                value[0] = move_mapping[owner].removeprefix("gravity_insight")
 
         terminal_receipt = build_document(
             audit=terminal_audit,
@@ -2153,9 +2233,26 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         ):
             build_expected_source(forged_directive, forged, baseline)
 
-    def test_current_canonical_source_matches_exact_v94_amendment(self) -> None:
+    def test_v94_baseline_matches_exact_post_program_amendment(self) -> None:
+        directive = load_naming_baseline_directive()
+        source_path = errata_validator._canonical_source_file(directive)
+        source = errata_validator._git_file_bytes(
+            errata_validator.NAMING_FROM_GIT_REVISION,
+            source_path,
+        )
+        self.assertEqual("v9.4", directive["version"])
+        result = validate_post_program_state(
+            directive,
+            self.document,
+            source,
+        )
+        self.assertEqual("v9.2->v9.3", result["prior_transition"])
+        self.assertEqual("v9.3->v9.4", result["transition"])
+        self.assertEqual(15, result["source_replacements"])
+
+    def test_current_canonical_source_matches_exact_v95_naming_amendment(self) -> None:
         source = CANONICAL_SOURCE.read_bytes()
-        self.assertEqual("v9.4", self.directive["version"])
+        self.assertEqual("v9.5", self.directive["version"])
         self.assertEqual(
             self.directive["canonical_source"]["sha256"],
             hashlib.sha256(source).hexdigest(),
@@ -2165,9 +2262,47 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             self.document,
             source,
         )
-        self.assertEqual("v9.2->v9.3", result["prior_transition"])
-        self.assertEqual("v9.3->v9.4", result["transition"])
-        self.assertEqual(15, result["source_replacements"])
+        self.assertEqual("v9.2->v9.3", result["r17_transition"])
+        self.assertEqual("v9.3->v9.4", result["prior_transition"])
+        self.assertEqual("v9.4->v9.5", result["transition"])
+        self.assertEqual(17, result["source_replacements"])
+
+    def test_v95_naming_amendment_rejects_allowlist_or_source_drift(self) -> None:
+        allowlist_drift = copy.deepcopy(self.directive)
+        allowlist_drift["canonical_source_naming_amendment"][
+            "allowed_source_replacements"
+        ][0]["text"] += "expand authority\n"
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "naming source allowlist changed",
+        ):
+            build_naming_source(allowlist_drift)
+
+        source = CANONICAL_SOURCE.read_bytes()
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "diff exceeds the exact naming amendment",
+        ):
+            validate_current_state(
+                self.directive,
+                self.document,
+                source + b"unexpected source expansion\n",
+            )
+
+    def test_v95_naming_amendment_rejects_directive_authority_drift(self) -> None:
+        directive_drift = copy.deepcopy(self.directive)
+        directive_drift["canonical_source_naming_amendment"][
+            "does_not_authorize"
+        ].remove("modify_r17_immutable_ledger")
+        with self.assertRaisesRegex(
+            ErrataValidationError,
+            "naming amendment forbidden-action list changed",
+        ):
+            validate_current_state(
+                directive_drift,
+                self.document,
+                CANONICAL_SOURCE.read_bytes(),
+            )
 
     def test_governance_exclusion_is_narrow_and_explicit(self) -> None:
         for path in GENERATED_GOVERNANCE_FILES:
@@ -2185,26 +2320,36 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             "specs/agent-runtime/index.md",
             "docs/maintainers/technical-debt.md",
             "tests/agent_migration_characterization.py",
-            "src/gravity_sdk/agent_sources.py",
+            "src/gravity_insight/agent_sources.py",
         )
         for path in protected:
             self.assertFalse(is_generated_governance_artifact(path), path)
 
         scanner = ReferenceScanner(
-            {"gravity_sdk.agent_sources": "gravity_sdk.agents.sources"}
+            reference_module_mapping(
+                {"gravity_sdk.agent_sources": "gravity_sdk.agents.sources"}
+            )
         )
         references, _ = scanner.scan_python(
-            "src/gravity_sdk/real_consumer.py",
-            "from gravity_sdk.agent_sources import snapshot_recipe_cards\n",
+            "src/gravity_insight/real_consumer.py",
+            "from gravity_insight.agent_sources import snapshot_recipe_cards\n",
         )
         self.assertEqual(["static_import"], [item.category for item in references])
-        pagination_scanner = ReferenceScanner({PAGINATION_MODULE: PAGINATION_TARGET})
+        pagination_scanner = ReferenceScanner(
+            reference_module_mapping({PAGINATION_MODULE: PAGINATION_TARGET})
+        )
         references, _ = pagination_scanner.scan_python(
-            "src/gravity_sdk/real_pagination_consumer.py",
+            "src/gravity_insight/real_pagination_consumer.py",
             "from .agent_pagination import compact_pagination\n",
         )
         self.assertEqual(
-            [("static_import", PAGINATION_MODULE, PAGINATION_TARGET)],
+            [
+                (
+                    "static_import",
+                    CURRENT_PAGINATION_MODULE,
+                    CURRENT_PAGINATION_TARGET,
+                )
+            ],
             [(item.category, item.old_value, item.new_value) for item in references],
         )
 
@@ -2234,11 +2379,11 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 generator_classify_active_bare_context(PAGINATION_MODULE, context),
             )
         for context in (
-            "from gravity_sdk.agent_pagination import compact_pagination",
+            f"from {HISTORICAL_PACKAGE_ROOT}.agent_pagination import compact_pagination",
             "from .agent_pagination import compact_pagination",
-            "from gravity_sdk import agent_pagination",
-            "import gravity_sdk.agent_pagination",
-            "gravity_sdk.agent_pagination.compact_pagination(items)",
+            f"from {HISTORICAL_PACKAGE_ROOT} import agent_pagination",
+            f"import {HISTORICAL_PACKAGE_ROOT}.agent_pagination",
+            f"{HISTORICAL_PACKAGE_ROOT}.agent_pagination.compact_pagination(items)",
         ):
             self.assertEqual(
                 RUNTIME_CONSUMER,
@@ -2349,10 +2494,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
 
     def test_consumer_syntax_takes_precedence_over_dated_evidence(self) -> None:
         consumers = {
-            "import": "from gravity_sdk.agent_batch import capabilities_many",
-            "call": "gravity_sdk.agent_batch.capabilities_many([])",
-            "patch": "patch('gravity_sdk.agent_batch.capabilities_many')",
-            "attribute": "handler = gravity_sdk.agent_batch.capabilities_many",
+            "import": f"from {HISTORICAL_PACKAGE_ROOT}.agent_batch import capabilities_many",
+            "call": f"{HISTORICAL_PACKAGE_ROOT}.agent_batch.capabilities_many([])",
+            "patch": f"patch('{HISTORICAL_PACKAGE_ROOT}.agent_batch.capabilities_many')",
+            "attribute": f"handler = {HISTORICAL_PACKAGE_ROOT}.agent_batch.capabilities_many",
         }
         for form, consumer in consumers.items():
             context = f"Decision record (2026-08-26)\n{consumer}"
@@ -2424,7 +2569,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             for item in injected["sites"]
             if item["source"].get("old_value") == "agent_pagination"
         )
-        consumer = "from gravity_sdk.agent_pagination import compact_pagination"
+        consumer = (
+            f"from {HISTORICAL_PACKAGE_ROOT}.agent_pagination "
+            "import compact_pagination"
+        )
         site["source"]["audit_snippet"] = consumer
         site["source"]["audit_context"] = consumer
         with self.assertRaisesRegex(
@@ -2442,10 +2590,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             and item["source"].get("old_value") == "agent_batch"
         )
         consumers = {
-            "import": "from gravity_sdk.agent_batch import capabilities_many",
-            "call": "gravity_sdk.agent_batch.capabilities_many([])",
-            "patch": "patch('gravity_sdk.agent_batch.capabilities_many')",
-            "attribute": "handler = gravity_sdk.agent_batch.capabilities_many",
+            "import": f"from {HISTORICAL_PACKAGE_ROOT}.agent_batch import capabilities_many",
+            "call": f"{HISTORICAL_PACKAGE_ROOT}.agent_batch.capabilities_many([])",
+            "patch": f"patch('{HISTORICAL_PACKAGE_ROOT}.agent_batch.capabilities_many')",
+            "attribute": f"handler = {HISTORICAL_PACKAGE_ROOT}.agent_batch.capabilities_many",
         }
         for form, consumer in consumers.items():
             mutated = copy.deepcopy(injected)

@@ -8,14 +8,14 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk.skill_hub_client import SkillHubClient
-from gravity_sdk.skill_hub_contract import SkillHubContractError
-from gravity_sdk.skill_hub_state import (
+from gravity_insight.skill_hub_client import SkillHubClient
+from gravity_insight.skill_hub_contract import SkillHubContractError
+from gravity_insight.skill_hub_state import (
     build_trusted_installation_state,
     compile_skill_installation_state,
     read_json,
 )
-from gravity_sdk.trusted_pack_hub import (
+from gravity_insight.trusted_pack_hub import (
     TrustedPackHubClient,
     verify_trusted_pack_startup,
 )
@@ -229,7 +229,7 @@ class SkillHubClientTests(unittest.TestCase):
 
         wrong = copy.deepcopy(state)
         wrong["installations"][0]["health"] = "tampered"
-        from gravity_sdk.agent_runtime_contracts import canonical_digest
+        from gravity_insight.agent_runtime_contracts import canonical_digest
 
         wrong["state_digest"] = canonical_digest(
             {key: value for key, value in wrong.items() if key != "state_digest"}

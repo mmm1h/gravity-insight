@@ -6,8 +6,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from gravity_sdk.errors import InputValidationError
-from gravity_sdk.skill_contract import (
+from gravity_insight.errors import InputValidationError
+from gravity_insight.skill_contract import (
     SkillContractError,
     load_skill_manifest,
     normalize_skill_identity,

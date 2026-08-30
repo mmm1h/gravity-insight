@@ -6,7 +6,7 @@ Agent 优先使用 CLI。产品边界、结果状态和 fail-closed 规则见[�
 ## 构造与最小调用
 
 ```python
-from gravity_sdk import connect
+from gravity_insight import connect
 
 gravity = connect(workspace="/path/to/gravity.toml")
 
@@ -35,7 +35,7 @@ prefix = gravity.read_limited("app.list", {"page": 1, "page_size": 20})
 
 ```python
 import inspect
-from gravity_sdk import GravitySDK
+from gravity_insight import GravitySDK
 
 print(inspect.signature(GravitySDK.analysis_query))
 print(inspect.signature(GravitySDK.segment_members))
@@ -85,7 +85,7 @@ methods = sorted(
 
 ```python
 from pathlib import Path
-from gravity_sdk import GravitySDK
+from gravity_insight import GravitySDK
 
 gravity = GravitySDK.from_env()
 result = gravity.fetch_material_asset(
@@ -208,7 +208,7 @@ fingerprint，不保存请求值、响应体或凭据。使用 `list_http_receip
 ## Insight 专用 facade
 
 ```python
-from gravity_sdk import GravityInsightClient
+from gravity_insight import GravityInsightClient
 
 client = GravityInsightClient.from_env()
 contract = client.describe("analysis.event.list")
@@ -236,7 +236,7 @@ result = client.read("analysis.event.list", {"app_id": "101"})
 ## SQL 专用底层 facade
 
 ```python
-from gravity_sdk import GravityClient
+from gravity_insight import GravityClient
 
 sql = GravityClient.from_env()
 rows = sql.execute_sql("SELECT count(*) AS total FROM governed_source")
@@ -252,7 +252,7 @@ Evidence、聚合隐私或输出投影。团队产品和 Agent 使用 `query_sql
 
 ## 错误与输出
 
-SDK 返回 versioned envelope，并从 `gravity_sdk` 公开结构化异常。调用方按 `status`、`code`、
+SDK 返回 versioned envelope，并从 `gravity_insight` 公开结构化异常。调用方按 `status`、`code`、
 `category`、`field`、`stage`、`next_action` 处理，不解析 message。状态、partial 和 fail-closed 规则统一
 见[结果与错误](cli.md#result-and-errors)。
 

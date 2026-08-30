@@ -12,7 +12,7 @@ from tests.agent_migration_characterization import expected_public_exports
 
 
 ROOT = Path(__file__).resolve().parents[1]
-INIT = ROOT / "src" / "gravity_sdk" / "__init__.py"
+INIT = ROOT / "src" / "gravity_insight" / "__init__.py"
 
 
 def _lazy_exports() -> dict[str, list[str]]:
@@ -75,12 +75,12 @@ class PublicApiSnapshotTests(unittest.TestCase):
         )
 
     def test_every_snapshot_symbol_is_reachable_from_the_root_package(self) -> None:
-        """An entry in the map is worthless if `from gravity_sdk import X` fails."""
+        """An entry in the map is worthless if `from gravity_insight import X` fails."""
 
-        import gravity_sdk
+        import gravity_insight
 
         expected = expected_public_exports()
-        missing = [name for name in expected if not hasattr(gravity_sdk, name)]
+        missing = [name for name in expected if not hasattr(gravity_insight, name)]
 
         self.assertEqual([], missing)
 
