@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import unittest
 import threading
-import time
 from copy import deepcopy
 from datetime import date, timedelta
 from pathlib import Path
@@ -32,6 +31,7 @@ from gravity_sdk.workspace import load_workspace
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_DIR = ROOT / "src" / "gravity_sdk" / "manifests"
+RENDEZVOUS_TIMEOUT_SECONDS = 20
 
 
 def _repository_manifest(*operation_ids: str) -> dict[str, Any]:
@@ -121,20 +121,35 @@ def _thaw(value: Any) -> Any:
 class RequestCaptureTransport:
     is_test_transport = True
 
-    def __init__(self, response: Any) -> None:
+    def __init__(self, response: Any, *, rendezvous_parties: int = 1) -> None:
         self.response = dict(response) if isinstance(response, Mapping) else response
         self.calls: list[tuple[str, str, Mapping[str, Any]]] = []
         self.active = 0
         self.peak = 0
         self.lock = threading.Lock()
+        self.rendezvous = (
+            threading.Barrier(
+                rendezvous_parties, timeout=RENDEZVOUS_TIMEOUT_SECONDS
+            )
+            if rendezvous_parties > 1
+            else None
+        )
+        self.rendezvous_started = 0
+        self.rendezvous_failures: list[str] = []
 
     def request(self, method: str, path: str, **kwargs: Any) -> TransportResponse:
         with self.lock:
             self.calls.append((method, path, kwargs))
             self.active += 1
             self.peak = max(self.peak, self.active)
+            self.rendezvous_started += 1
+            synchronize = (
+                self.rendezvous is not None
+                and self.rendezvous_started <= self.rendezvous.parties
+            )
         try:
-            time.sleep(0.01)
+            if synchronize:
+                self._wait_for_first_wave(path)
             response = (
                 self.response(method, path, kwargs)
                 if callable(self.response)
@@ -147,6 +162,21 @@ class RequestCaptureTransport:
             with self.lock:
                 self.active -= 1
 
+    def _wait_for_first_wave(self, path: str) -> None:
+        assert self.rendezvous is not None
+        try:
+            self.rendezvous.wait()
+        except threading.BrokenBarrierError as exc:
+            with self.lock:
+                message = (
+                    "request concurrency rendezvous timed out or broke after "
+                    f"{RENDEZVOUS_TIMEOUT_SECONDS}s: path={path!r}, "
+                    f"parties={self.rendezvous.parties}, active={self.active}, "
+                    f"peak={self.peak}"
+                )
+                self.rendezvous_failures.append(message)
+            raise AssertionError(message) from exc
+
     @property
     def bodies(self) -> list[dict[str, Any]]:
         return [_thaw(call[2]["body"]) for call in self.calls]
@@ -157,8 +187,11 @@ def _transport_sdk(
     *,
     operation_id: str = "analysis.event.query",
     disable_field_validation: bool = True,
+    rendezvous_parties: int = 1,
 ) -> tuple[GravitySDK, RequestCaptureTransport]:
-    transport = RequestCaptureTransport(response)
+    transport = RequestCaptureTransport(
+        response, rendezvous_parties=rendezvous_parties
+    )
     insight = GravityInsightClient._from_manifest_for_tests(
         _repository_manifest(operation_id), transport=transport
     )
@@ -331,11 +364,17 @@ class FakeSDK:
 
 
 class CountingInsight:
-    def __init__(self) -> None:
+    def __init__(self, workers: int) -> None:
         self.active = 0
         self.peak = 0
         self.read_app_ids: list[str] = []
         self.lock = threading.Lock()
+        self.rendezvous = (
+            threading.Barrier(workers, timeout=RENDEZVOUS_TIMEOUT_SECONDS)
+            if workers > 1
+            else None
+        )
+        self.rendezvous_failures: list[str] = []
 
     def validate(self, _operation_id: str, _inputs: Mapping[str, Any]) -> dict[str, Any]:
         return {"ok": True, "status": "needs_live_metadata"}
@@ -349,8 +388,9 @@ class CountingInsight:
             self.active += 1
             self.peak = max(self.peak, self.active)
             self.read_app_ids.append(app_id)
-        time.sleep(0.02)
         try:
+            if self.rendezvous is not None:
+                self._wait_for_reads(app_id)
             if app_id == "202":
                 raise PermissionUnavailableError("not available")
             status = "empty" if app_id == "303" else "success"
@@ -365,13 +405,30 @@ class CountingInsight:
             with self.lock:
                 self.active -= 1
 
+    def _wait_for_reads(self, app_id: str) -> None:
+        assert self.rendezvous is not None
+        try:
+            self.rendezvous.wait()
+        except threading.BrokenBarrierError as exc:
+            with self.lock:
+                message = (
+                    "Insight read rendezvous timed out or broke after "
+                    f"{RENDEZVOUS_TIMEOUT_SECONDS}s: app_id={app_id!r}, "
+                    f"parties={self.rendezvous.parties}, active={self.active}, "
+                    f"peak={self.peak}"
+                )
+                self.rendezvous_failures.append(message)
+            raise AssertionError(message) from exc
+
 class AnalysisQueryBatchTests(unittest.TestCase):
     def test_31_component_batch_matches_scalar_wire_shape_and_global_budget(self) -> None:
         scalar_sdk, scalar_transport = _transport_sdk(_event_result())
         scalar_sdk.analysis_query("event", _issue_24_spec(0), app="demo")
         scalar_body = scalar_transport.bodies[0]
 
-        batch_sdk, batch_transport = _transport_sdk(_event_result())
+        batch_sdk, batch_transport = _transport_sdk(
+            _event_result(), rendezvous_parties=4
+        )
         result = batch_sdk.analysis_queries(_issue_24_batch(), max_workers=4)
         representative = next(
             body
@@ -390,6 +447,7 @@ class AnalysisQueryBatchTests(unittest.TestCase):
         fixed_sdk, fixed_transport = _transport_sdk(_event_result())
         fixed_sdk.analysis_query("event", fixed_spec, app="demo")
         self.assertEqual(representative, fixed_transport.bodies[0])
+        self.assertEqual([], batch_transport.rendezvous_failures)
         self.assertEqual((31, 4), (len(batch_transport.calls), batch_transport.peak))
         self.assertEqual(("success", 31, 0, 0, 0), (
             result["status"], result["success_count"], result["failure_count"],
@@ -398,7 +456,10 @@ class AnalysisQueryBatchTests(unittest.TestCase):
 
     def test_31_unreviewed_rejections_remain_failures_but_are_retryable_upstream(self) -> None:
         upstream_text = "fixture unreviewed rejection"
-        sdk, transport = _transport_sdk({"code": 0, "extra": {"error": upstream_text}})
+        sdk, transport = _transport_sdk(
+            {"code": 0, "extra": {"error": upstream_text}},
+            rendezvous_parties=4,
+        )
 
         result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
 
@@ -406,6 +467,7 @@ class AnalysisQueryBatchTests(unittest.TestCase):
             result["status"], result["success_count"], result["failure_count"],
             result["skipped_count"], result["exit_code"],
         ))
+        self.assertEqual([], transport.rendezvous_failures)
         self.assertEqual((31, 4), (len(transport.calls), transport.peak))
         for item in result["results"]:
             error = item["error"]
@@ -564,12 +626,16 @@ class AnalysisQueryBatchTests(unittest.TestCase):
 
         observations = []
         for workers in (1, 3):
-            insight = CountingInsight()
+            insight = CountingInsight(workers)
             result = execute_analysis_query_batch(
                 GravitySDK(insight=insight, workspace="examples/workspace"),
                 payload,
                 max_workers=workers,
             )
+            if insight.rendezvous_failures:
+                self.fail(
+                    f"workers={workers}: " + "; ".join(insight.rendezvous_failures)
+                )
             observations.append((insight, result))
 
         serial, concurrent = observations

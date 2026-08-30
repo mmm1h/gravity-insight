@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-import time
+from threading import Barrier
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -396,7 +396,7 @@ class GravitySqlClientTests(unittest.TestCase):
                 client.execute_batch(["SELECT 1"], max_workers=invalid)
 
     def test_batch_runs_more_than_one_request_concurrently(self):
-        lock = threading.Lock()
+        lock, rendezvous = threading.Lock(), Barrier(2, timeout=20)
         active = 0
         max_active = 0
 
@@ -407,7 +407,7 @@ class GravitySqlClientTests(unittest.TestCase):
                     active += 1
                     max_active = max(max_active, active)
                 try:
-                    time.sleep(0.02)
+                    rendezvous.wait()
                     return super().request(*args, **kwargs)
                 finally:
                     with lock:

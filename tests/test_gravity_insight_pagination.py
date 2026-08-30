@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-import time
+from threading import Barrier
 import unittest
 from unittest.mock import patch
 
@@ -146,7 +146,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
         )
 
     def test_known_page_range_runs_concurrently_and_preserves_order(self) -> None:
-        lock = threading.Lock()
+        lock, rendezvous = threading.Lock(), Barrier(3, timeout=20)
         active = 0
         peak = 0
 
@@ -159,7 +159,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
                 active += 1
                 peak = max(peak, active)
             try:
-                time.sleep(0.04)
+                rendezvous.wait()
                 return _page(page, [{"id": page}], 4)
             finally:
                 with lock:
@@ -255,7 +255,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertIn("total_page absent", audit["completeness"]["criterion"])
 
     def test_limited_known_range_is_parallel_ordered_and_resumable(self) -> None:
-        lock = threading.Lock()
+        lock, rendezvous = threading.Lock(), Barrier(2, timeout=20)
         active = 0
         peak = 0
 
@@ -268,7 +268,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
                 active += 1
                 peak = max(peak, active)
             try:
-                time.sleep(0.04)
+                rendezvous.wait()
                 return _page(page, [{"id": page}], 4)
             finally:
                 with lock:

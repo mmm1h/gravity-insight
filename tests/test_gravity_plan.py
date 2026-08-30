@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import threading
 import tempfile
-import time
 import unittest
 from copy import deepcopy
 from pathlib import Path
@@ -113,6 +112,8 @@ class PlanValidationTests(unittest.TestCase):
 class PlanExecutionTests(unittest.TestCase):
     def test_same_layer_is_concurrent_and_output_keeps_declaration_order(self):
         lock = threading.Lock()
+        rendezvous = threading.Barrier(2, timeout=20)
+        rendezvous_failures: list[str] = []
         active = 0
         peak = 0
 
@@ -121,16 +122,28 @@ class PlanExecutionTests(unittest.TestCase):
             with lock:
                 active += 1
                 peak = max(peak, active)
-            time.sleep(0.03)
-            with lock:
-                active -= 1
-            return {"ok": True, "status": "success", "name": context.node_id}
+            try:
+                try:
+                    rendezvous.wait()
+                except threading.BrokenBarrierError as exc:
+                    with lock:
+                        message = (
+                            "same-layer Plan rendezvous timed out or broke after "
+                            f"20s: node={context.node_id!r}, active={active}, peak={peak}"
+                        )
+                        rendezvous_failures.append(message)
+                    raise AssertionError(message) from exc
+                return {"ok": True, "status": "success", "name": context.node_id}
+            finally:
+                with lock:
+                    active -= 1
 
         result = execute_plan(
             _plan(_node("first"), _node("second"), budget={"max_workers": 2}),
             adapters=PlanAdapters(run=_adapter(execute)),
             workspace=object(),
         )
+        self.assertEqual([], rendezvous_failures)
         self.assertGreaterEqual(peak, 2)
         self.assertEqual([item["node_id"] for item in result["results"]], ["first", "second"])
         self.assertEqual(result["exit_code"], 0)
