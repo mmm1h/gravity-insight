@@ -10,7 +10,6 @@ import stat
 import subprocess
 import tempfile
 import threading
-import time
 import unittest
 from unittest.mock import Mock, patch
 import zipfile
@@ -405,6 +404,9 @@ class SkillHubIoTests(unittest.TestCase):
         entry = compiled["skills"][self.skill["skill_uri"]]
         calls = 0
         guard = threading.Lock()
+        callers_ready = threading.Barrier(6, timeout=20)
+        source_entered = threading.Event()
+        release_source = threading.Event()
 
         def read(relative: str, maximum: int) -> bytes:
             nonlocal calls
@@ -412,8 +414,21 @@ class SkillHubIoTests(unittest.TestCase):
             self.assertGreaterEqual(maximum, len(self.skill_zip))
             with guard:
                 calls += 1
-            time.sleep(0.03)
+            source_entered.set()
+            self.assertTrue(
+                release_source.wait(20),
+                "single-flight source release timed out after 20s",
+            )
             return self.skill_zip
+
+        def fetch(cas: SkillHubCAS, session: HubSourceSession) -> dict[str, Any]:
+            try:
+                callers_ready.wait()
+            except threading.BrokenBarrierError as exc:
+                raise AssertionError(
+                    "single-flight caller rendezvous timed out or broke after 20s"
+                ) from exc
+            return cas.fetch_skill(session, entry)
 
         session = HubSourceSession(
             git_source(),
@@ -425,9 +440,15 @@ class SkillHubIoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             cas = SkillHubCAS(Path(directory) / "cas")
             with ThreadPoolExecutor(max_workers=6) as pool:
-                results = list(
-                    pool.map(lambda _index: cas.fetch_skill(session, entry), range(6))
-                )
+                futures = [pool.submit(fetch, cas, session) for _index in range(6)]
+                try:
+                    self.assertTrue(
+                        source_entered.wait(20),
+                        "single-flight source was not entered within 20s",
+                    )
+                finally:
+                    release_source.set()
+                results = [future.result(timeout=20) for future in futures]
             destination = Path(directory) / "installed" / "team-analysis"
             installed = cas.materialize_skill(
                 entry["package"]["package_digest"], destination
