@@ -7,7 +7,7 @@ from gravity_sdk.semantic_rejection import (
     classify_read_rejection,
     raise_read_rejection,
 )
-from gravity_sdk.errors import SemanticRejectedError
+from gravity_sdk.errors import SemanticRejectedError, UpstreamContradictedRequestError
 
 
 class SemanticRejectionTests(unittest.TestCase):
@@ -139,6 +139,58 @@ class ContradictedGroupClaimTests(unittest.TestCase):
         self.assertEqual("caller", error.category)
         self.assertFalse(error.retryable)
         self.assertIn("add create_time/day", error.next_action)
+
+    def test_retention_property_condition_is_the_observed_boundary(self) -> None:
+        condition = {
+            "field": "first_pay_time",
+            "operator": "RANGE_IN",
+            "type": "user",
+            "value": ["private-start", "private-end"],
+        }
+        with self.assertRaises(UpstreamContradictedRequestError) as caught:
+            raise_read_rejection(
+                self._MISSING,
+                operation_id=ANALYSIS_QUERY_OPERATIONS["retention"],
+                request_inputs={
+                    "group_by_list": list(self._GENERATED),
+                    "property_condition": [condition],
+                },
+            )
+
+        error = caught.exception
+        self.assertEqual(("property_condition", "upstream", True), (
+            error.field,
+            error.category,
+            error.retryable,
+        ))
+        self.assertIn("issues #21/#29", error.next_action)
+        self.assertIn("metadata data_type", error.next_action)
+        self.assertNotIn("private-start", str(error))
+        self.assertNotIn("private-start", error.next_action)
+
+    def test_unreviewed_retention_condition_does_not_get_batch_advice(self) -> None:
+        with self.assertRaises(UpstreamContradictedRequestError) as caught:
+            raise_read_rejection(
+                {"extra": {"error": "private unreviewed rejection"}},
+                operation_id=ANALYSIS_QUERY_OPERATIONS["retention"],
+                request_inputs={
+                    "group_by_list": list(self._GENERATED),
+                    "property_condition": [{
+                        "field": "first_pay_time",
+                        "operator": "RANGE_IN",
+                        "type": "user_property",
+                        "value": [1, 2],
+                    }],
+                },
+            )
+
+        error = caught.exception
+        self.assertEqual("property_condition", error.field)
+        self.assertIn("unresolved Retention property-condition contract", error.next_action)
+        self.assertIn("paired current-main probe", error.next_action)
+        self.assertNotIn("--concurrency 1", error.next_action)
+        self.assertNotIn("scalar entry", error.next_action)
+        self.assertNotIn("private unreviewed rejection", str(error))
 
     def test_unclassified_rejection_stops_guessing_group_by_list(self) -> None:
         """Nothing in an event request points at a group; do not invent one."""
