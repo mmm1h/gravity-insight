@@ -16,6 +16,11 @@ def build_analysis_query_batch_schema() -> dict[str, Any]:
         RESULT_SCHEMA_VERSION,
         SCHEMA_SCHEMA_VERSION,
     )
+    from .analysis_query_batch_retry import (
+        ADAPTIVE_CONCURRENCY_POLICY,
+        BASE_BACKOFF_MS,
+        MAX_BACKOFF_MS,
+    )
 
     return {
         "schema_version": SCHEMA_SCHEMA_VERSION,
@@ -49,6 +54,9 @@ def build_analysis_query_batch_schema() -> dict[str, Any]:
             "outer_concurrency_default": DEFAULT_MAX_WORKERS,
             "outer_concurrency_max": 24,
             "adapter_inner_concurrency": 1,
+            "adaptive_concurrency": _adaptive_concurrency_contract(
+                ADAPTIVE_CONCURRENCY_POLICY, BASE_BACKOFF_MS, MAX_BACKOFF_MS
+            ),
             "preflight": "every literal spec is compiled before Plan execution",
             "natural_language_auto_execute": False,
         },
@@ -67,8 +75,40 @@ def build_analysis_query_batch_schema() -> dict[str, Any]:
             "echoes_compiled_input": False,
             "failure_isolation": "Plan v1 sibling isolation",
             "exit_precedence": "local 4 > upstream 3 > caller 2 > success 0",
+            "adaptive_execution": _adaptive_execution_contract(),
         },
         "example": _example(BATCH_SCHEMA_VERSION),
+    }
+
+
+def _adaptive_concurrency_contract(
+    policy: str, base_backoff_ms: int, max_backoff_ms: int
+) -> dict[str, Any]:
+    return {
+        "policy": policy,
+        "trigger": "component status=error with category=upstream and retryable=true",
+        "worker_sequence": "requested max_workers, then floor(max_workers/2), down to 1",
+        "retry_scope": "only failed retryable upstream components",
+        "base_backoff_ms": base_backoff_ms,
+        "max_backoff_ms": max_backoff_ms,
+        "retry_after_ms": "honored up to max_backoff_ms",
+        "serial_failure": "terminal for this batch invocation",
+    }
+
+
+def _adaptive_execution_contract() -> dict[str, Any]:
+    return {
+        "live_only": True,
+        "attempt_fields": [
+            "attempt",
+            "max_workers",
+            "component_count",
+            "success_count",
+            "retryable_upstream_failure_count",
+            "scheduled_retry_count",
+            "terminal_failure_count",
+            "backoff_ms_before_attempt",
+        ],
     }
 
 

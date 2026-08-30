@@ -109,6 +109,13 @@ def _kind_schemas() -> dict[str, Any]:
                         "default": {},
                     },
                     **_shared_filter_properties(),
+                    "property_conditions": {
+                        **_array_ref("condition", 0, 0),
+                        "description": (
+                            "Non-empty Retention property conditions are rejected "
+                            "before network dispatch; use Segment Rule evaluation."
+                        ),
+                    },
                 },
             ),
             "property": _property_schema(),
@@ -274,7 +281,6 @@ def _retention_definitions() -> dict[str, Any]:
                 "after": {"$ref": "#/definitions/retention_after_event"},
                 "after_custom": {"$ref": "#/definitions/retention_after_custom"},
                 "before": {"$ref": "#/definitions/retention_before_event"},
-                "before_custom": {"$ref": "#/definitions/retention_before_custom"},
                 "formula": _enum("+", "-", "*", "/"),
                 "decimal_point": precision,
                 "before_decimal_point": precision,

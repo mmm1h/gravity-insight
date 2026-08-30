@@ -11,6 +11,7 @@ from .errors import InputValidationError
 
 
 def retention_controls(spec: Mapping[str, Any]) -> dict[str, Any]:
+    _reject_unsupported_retention_cohorts(spec)
     offset = spec.get("offset")
     if not isinstance(offset, int) or isinstance(offset, bool) or not 1 <= offset <= 365:
         raise InputValidationError(
@@ -36,6 +37,49 @@ def retention_controls(spec: Mapping[str, Any]) -> dict[str, Any]:
             dict(_mapping(spec["query_item_before_after"], "query_item_before_after"))
         )
     return controls
+
+
+def _reject_unsupported_retention_cohorts(spec: Mapping[str, Any]) -> None:
+    property_conditions = spec.get("property_conditions")
+    if (
+        isinstance(property_conditions, Sequence)
+        and not isinstance(property_conditions, (str, bytes))
+        and len(property_conditions) > 0
+    ):
+        raise InputValidationError(
+            f"actual value: {actual_value({'count': len(property_conditions)})}; "
+            "Retention property_conditions are not supported by the upstream "
+            "Retention endpoint",
+            field="property_conditions",
+            next_action=(
+                "Use `gravity analysis segment evaluate --spec-schema`; evaluate "
+                "the first-pay property cohort once for the denominator and the "
+                "same cohort AND the next-day launch event for the numerator, then "
+                "compute numerator.part / denominator.part. Do not retry this "
+                "Retention spec."
+            ),
+        )
+
+    before_after = spec.get("query_item_before_after")
+    if not isinstance(before_after, Mapping):
+        return
+    before_custom = before_after.get("before_custom")
+    if isinstance(before_custom, Mapping) and before_custom:
+        raise InputValidationError(
+            f"actual value: {actual_value({'non_empty': True})}; Retention "
+            "query_item_before_after.before_custom is not supported by the "
+            "upstream Retention endpoint",
+            field="query_item_before_after.before_custom",
+            next_action=(
+                "Use a one-day `gravity analysis query --kind funnel` with the "
+                "supported `type=user` filter; persist matched step 1 with "
+                "`gravity analysis segment create-from-analysis --step 1 "
+                "--matched`; evaluate that segment alone and AND the next-day "
+                "launch event with `gravity analysis segment evaluate`; then "
+                "compute numerator.part / denominator.part. Do not retry this "
+                "Retention spec."
+            ),
+        )
 
 
 def funnel_window(value: Any) -> dict[str, Any]:

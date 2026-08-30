@@ -182,6 +182,53 @@ class RequestCaptureTransport:
         return [_thaw(call[2]["body"]) for call in self.calls]
 
 
+class AdaptiveRejectionTransport(RequestCaptureTransport):
+    def __init__(
+        self, rejection_rounds: int, *, first_round_successes: frozenset[str] = frozenset()
+    ) -> None:
+        super().__init__({})
+        self.rejection_rounds = rejection_rounds
+        self.first_round_successes = first_round_successes
+        self.query_calls: dict[str, int] = {}
+        self.phase_calls: dict[int, int] = {}
+        self.phase_active: dict[int, int] = {}
+        self.phase_peaks: dict[int, int] = {}
+        self.phase_started: dict[int, int] = {}
+        self.phase_barriers = {
+            1: threading.Barrier(4, timeout=RENDEZVOUS_TIMEOUT_SECONDS),
+            2: threading.Barrier(2, timeout=RENDEZVOUS_TIMEOUT_SECONDS),
+        }
+
+    def request(self, method: str, path: str, **kwargs: Any) -> TransportResponse:
+        body = _thaw(kwargs["body"])
+        query = body["date_list"][0]["start_date"]
+        with self.lock:
+            phase = self.query_calls.get(query, 0) + 1
+            self.query_calls[query] = phase
+            self.phase_calls[phase] = self.phase_calls.get(phase, 0) + 1
+            self.phase_started[phase] = self.phase_started.get(phase, 0) + 1
+            self.phase_active[phase] = self.phase_active.get(phase, 0) + 1
+            self.phase_peaks[phase] = max(
+                self.phase_peaks.get(phase, 0), self.phase_active[phase]
+            )
+            self.calls.append((method, path, kwargs))
+            synchronize = (
+                phase in self.phase_barriers
+                and self.phase_started[phase] <= self.phase_barriers[phase].parties
+            )
+        try:
+            if synchronize:
+                self.phase_barriers[phase].wait()
+            first_success = phase == 1 and query in self.first_round_successes
+            payload = _event_result() if first_success or phase > self.rejection_rounds else {
+                "code": 0, "extra": {"error": "fixture capacity rejection"}
+            }
+            return TransportResponse(200, payload, "2026-08-20T00:00:00Z")
+        finally:
+            with self.lock:
+                self.phase_active[phase] -= 1
+
+
 def _transport_sdk(
     response: Any,
     *,
@@ -197,6 +244,21 @@ def _transport_sdk(
     )
     if disable_field_validation:
         insight._executor._field_validator = lambda *_args, **_kwargs: None
+    return GravitySDK(insight=insight, workspace="examples/workspace"), transport
+
+
+def _adaptive_transport_sdk(
+    rejection_rounds: int,
+    *,
+    first_round_successes: frozenset[str] = frozenset(),
+) -> tuple[GravitySDK, AdaptiveRejectionTransport]:
+    transport = AdaptiveRejectionTransport(
+        rejection_rounds, first_round_successes=first_round_successes
+    )
+    insight = GravityInsightClient._from_manifest_for_tests(
+        _repository_manifest("analysis.event.query"), transport=transport
+    )
+    insight._executor._field_validator = lambda *_args, **_kwargs: None
     return GravitySDK(insight=insight, workspace="examples/workspace"), transport
 
 
@@ -453,31 +515,127 @@ class AnalysisQueryBatchTests(unittest.TestCase):
             result["status"], result["success_count"], result["failure_count"],
             result["skipped_count"], result["exit_code"],
         ))
+        self.assertEqual((4, 4, False, 0, 31, "completed"), (
+            result["adaptive_execution"]["requested_max_workers"],
+            result["adaptive_execution"]["final_max_workers"],
+            result["adaptive_execution"]["degraded"],
+            result["adaptive_execution"]["retry_count"],
+            result["adaptive_execution"]["total_component_attempts"],
+            result["adaptive_execution"]["terminal_reason"],
+        ))
 
-    def test_31_unreviewed_rejections_remain_failures_but_are_retryable_upstream(self) -> None:
-        upstream_text = "fixture unreviewed rejection"
-        sdk, transport = _transport_sdk(
-            {"code": 0, "extra": {"error": upstream_text}},
-            rendezvous_parties=4,
+    def test_31_capacity_rejections_degrade_4_to_2_to_1_then_succeed(self) -> None:
+        sdk, transport = _adaptive_transport_sdk(rejection_rounds=2)
+
+        with patch("gravity_sdk.analysis_query_batch_retry.time.sleep") as sleeper:
+            result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
+
+        self.assertEqual(("success", 31, 0, 0, 0), (
+            result["status"], result["success_count"], result["failure_count"],
+            result["skipped_count"], result["exit_code"],
+        ))
+        self.assertEqual([1.0, 2.0], [call.args[0] for call in sleeper.call_args_list])
+        self.assertEqual({1: 31, 2: 31, 3: 31}, transport.phase_calls)
+        self.assertEqual({1: 4, 2: 2, 3: 1}, transport.phase_peaks)
+        self.assertEqual(93, len(transport.calls))
+        self.assertEqual({3}, set(transport.query_calls.values()))
+        adaptive = result["adaptive_execution"]
+        self.assertEqual((4, 1, True, 2, 93, "completed"), (
+            adaptive["requested_max_workers"], adaptive["final_max_workers"],
+            adaptive["degraded"], adaptive["retry_count"],
+            adaptive["total_component_attempts"], adaptive["terminal_reason"],
+        ))
+        self.assertEqual(
+            [
+                (1, 4, 31, 0, 31, 31, 0, 0),
+                (2, 2, 31, 0, 31, 31, 0, 1000),
+                (3, 1, 31, 31, 0, 0, 0, 2000),
+            ],
+            [
+                (
+                    item["attempt"], item["max_workers"], item["component_count"],
+                    item["success_count"], item["retryable_upstream_failure_count"],
+                    item["scheduled_retry_count"], item["terminal_failure_count"],
+                    item["backoff_ms_before_attempt"],
+                )
+                for item in adaptive["attempts"]
+            ],
         )
+        self.assertEqual(
+            [f"day_{index:02d}" for index in range(1, 32)],
+            [item["node_id"] for item in result["results"]],
+        )
+        self.assertNotIn("fixture capacity rejection", repr(result))
 
-        result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
+    def test_31_capacity_rejections_stop_after_serial_attempt(self) -> None:
+        sdk, transport = _adaptive_transport_sdk(rejection_rounds=3)
+
+        with patch("gravity_sdk.analysis_query_batch_retry.time.sleep") as sleeper:
+            result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
 
         self.assertEqual(("error", 0, 31, 0, 3), (
             result["status"], result["success_count"], result["failure_count"],
             result["skipped_count"], result["exit_code"],
         ))
-        self.assertEqual([], transport.rendezvous_failures)
-        self.assertEqual((31, 4), (len(transport.calls), transport.peak))
+        self.assertEqual([1.0, 2.0], [call.args[0] for call in sleeper.call_args_list])
+        self.assertEqual({1: 31, 2: 31, 3: 31}, transport.phase_calls)
+        self.assertEqual({1: 4, 2: 2, 3: 1}, transport.phase_peaks)
+        self.assertEqual(93, len(transport.calls))
+        adaptive = result["adaptive_execution"]
+        self.assertEqual((4, 1, 2, 93, "serial_retryable_failure"), (
+            adaptive["requested_max_workers"], adaptive["final_max_workers"],
+            adaptive["retry_count"], adaptive["total_component_attempts"],
+            adaptive["terminal_reason"],
+        ))
+        self.assertEqual(
+            [(31, 0), (31, 0), (0, 31)],
+            [
+                (item["scheduled_retry_count"], item["terminal_failure_count"])
+                for item in adaptive["attempts"]
+            ],
+        )
         for item in result["results"]:
             error = item["error"]
             self.assertEqual(
                 ("UPSTREAM_UNAVAILABLE", "upstream", "input", True),
                 (error["code"], error["category"], error["field"], error["retryable"]),
             )
-            self.assertIn("same-shape scalar request succeeded", error["next_action"])
-            self.assertIn("--concurrency 1", error["next_action"])
-        self.assertNotIn(upstream_text, repr(result))
+            self.assertIn("reached concurrency 1", error["next_action"])
+        self.assertNotIn("fixture capacity rejection", repr(result))
+
+    def test_adaptive_retry_does_not_replay_a_successful_component(self) -> None:
+        first_day = "2026-07-01"
+        sdk, transport = _adaptive_transport_sdk(
+            rejection_rounds=1,
+            first_round_successes=frozenset({first_day}),
+        )
+
+        with patch("gravity_sdk.analysis_query_batch_retry.time.sleep") as sleeper:
+            result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual([1.0], [call.args[0] for call in sleeper.call_args_list])
+        self.assertEqual({1: 31, 2: 30}, transport.phase_calls)
+        self.assertEqual({1: 4, 2: 2}, transport.phase_peaks)
+        self.assertEqual(61, len(transport.calls))
+        self.assertEqual(1, transport.query_calls[first_day])
+        self.assertEqual({2}, set(transport.query_calls.values()) - {1})
+        adaptive = result["adaptive_execution"]
+        self.assertEqual((2, 1, 61, "completed"), (
+            adaptive["final_max_workers"], adaptive["retry_count"],
+            adaptive["total_component_attempts"], adaptive["terminal_reason"],
+        ))
+        self.assertEqual(
+            [(1, 30, 30), (30, 0, 0)],
+            [
+                (
+                    item["success_count"],
+                    item["retryable_upstream_failure_count"],
+                    item["scheduled_retry_count"],
+                )
+                for item in adaptive["attempts"]
+            ],
+        )
 
     def test_v2_property_batch_reports_shared_dispersed_group_item_limit(self) -> None:
         payload = _issue_24_property_batch()
@@ -561,6 +719,23 @@ class AnalysisQueryBatchTests(unittest.TestCase):
         self.assertTrue(all("depends_on" not in node for node in plan["nodes"]))
         self.assertEqual((True, 5, []), (result["dry_run"], result["query_count"], result["results"]))
         self.assertNotIn("request", result)
+        schema = analysis_query_batch_schema()
+        adaptive = schema["execution"]["adaptive_concurrency"]
+        self.assertEqual(
+            (
+                "gravity.analysis-query-batch.adaptive-concurrency.v1",
+                1000,
+                30000,
+                "terminal for this batch invocation",
+            ),
+            (
+                adaptive["policy"],
+                adaptive["base_backoff_ms"],
+                adaptive["max_backoff_ms"],
+                adaptive["serial_failure"],
+            ),
+        )
+        self.assertTrue(schema["output"]["adaptive_execution"]["live_only"])
         arguments = [
             "analysis", "query", "batch", "--input", "queries.json",
             "--concurrency", "5", "--dry-run",
@@ -651,6 +826,12 @@ class AnalysisQueryBatchTests(unittest.TestCase):
         ))
         self.assertFalse(result["cross_app_aggregation"])
         self.assertEqual([101, 202, 303], [item["app"] for item in result["results"]])
+        self.assertEqual((False, 0, 3, "non_retryable_failure"), (
+            result["adaptive_execution"]["degraded"],
+            result["adaptive_execution"]["retry_count"],
+            result["adaptive_execution"]["total_component_attempts"],
+            result["adaptive_execution"]["terminal_reason"],
+        ))
         failed = result["results"][1]
         self.assertEqual(("retention", False, "error", "PERMISSION_UNAVAILABLE"), (
             failed["query_id"], failed["ok"], failed["status"], failed["error"]["code"],
