@@ -34,11 +34,16 @@ def _prepare_response_bound_asset(
         for item in role_contract["magic_signatures"]
     )
     extensions = tuple(str(value) for value in role_contract["extensions"])
+    allowed_sources = {
+        str(item["host"]): (str(item["path_pattern"]),)
+        for item in role_contract["allowed_sources"]
+    }
     contract = _ArtifactTypeContract(
         media_type=str(role_contract["observed_content_type"]),
         extensions=extensions,
         magic_signatures={extension: signatures for extension in extensions},
         max_bytes=int(role_contract["max_bytes"]),
+        allowed_sources=allowed_sources,
         max_redirects=int(role_contract["max_redirects"]),
         timeout_seconds=float(role_contract["timeout_seconds"]),
     )

@@ -71,6 +71,7 @@ def image_contract(max_bytes: int = 64) -> _ArtifactTypeContract:
             ".jpg": (MagicSignature(0, b"\xff\xd8\xff"),),
         },
         max_bytes=max_bytes,
+        allowed_sources={"files.example.test": (r"^/source\.jpg$",)},
         max_redirects=1,
         timeout_seconds=5,
     )

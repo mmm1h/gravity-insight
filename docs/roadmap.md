@@ -52,10 +52,10 @@
 - 归因表现 owner 仅在“归音”紧邻“表现/汇总/聚合”时将其归一为“归因”；配置否定仍由原有 affirmative-intent 解析，其他“归音”语境不参与全局模糊匹配。
 - **已批准的授权边界**：SDK 可由调用方在请求中承担授权决策；该边界覆盖调用方提供数据库路径与 `allowed_relations`（`sql_explorer_policy.py:158`）、原始行返回及作为标签的 `trust` / `allowed_claims`（`sql_explorer.py:137`）、Hub source 的 `index_url` / `artifact_base_url`（`skill_hub_contract.py:221`），以及按路径过滤敏感内容（`repo_context_index.py:349`）。这是一项设计决策，不作为技术债登记。
 
-## 待裁定设计
+## 已裁定设计
 
-- **Artifact transfer 的主机授权来源**：`artifact_transfer.py:152-156` 以 `replace()` 将上游素材响应中的 host 写入 `allowed_hosts`、`allowed_redirect_hosts` 和根路径前缀。该授权来自上游响应而非调用方，不在“调用方承担授权决策”的已批准边界内；所有者需单独裁定是否接受此信任来源，并据裁定保留受控边界或改为调用方/固定合同授权。
-- **Issue 19 精确素材五码合同**：现有 `material.asset.fetch` v2 只证明 fresh response-bound URL 的受治理传输，不证明 `not_found`、`expired`、`not_cached`、`permission_unavailable`、`upstream_deleted` 五态。公开 OceanEngine 合同可证明账户范围内按 material ID 查询、URL 授权前提和显式删除状态，但没有给出 Gravity 固定 route 上的过期、未缓存或缺失判别，现有 source operation 还会在普通 JSON 投影 URL。保持 Issue 为 `status:needs-evidence`；只有取得固定 route、私有 URL binding、完整 redirect/expiry/retention 和五态值无关真实响应证据后才实施，通用 403/404/410 不得代替业务证据。
+- **Artifact transfer 的主机授权来源**：Issue 19 受限子集不再把 fresh response host 当授权。合同按既有生产样本固定三个 exact origin 与 per-role path pattern，首跳和每次同 host redirect 都复核；其他 shard/path 以 `MATERIAL_ASSET_SOURCE_UNSUPPORTED` 失败关闭。新增 origin 只能由值无关生产证据扩合同，不动态学习。
+- **Issue 19 关闭路径**：按 fresh-response 可证明子集闭环，不宣称任意历史 ID。`local` 的 5 条自然引用与 `bytedance_project` 的 1 条非空项目素材已经覆盖 JPEG 缩略图和 MP4；普通 source projection 移除 URL，file effect 以私有读取上下文传给共享 Artifact Transfer。缺失、过期、未缓存、删除和二进制权限没有可靠区分信号，统一为 `MATERIAL_ASSET_BINARY_UNAVAILABLE`。破坏性影响是两个 source operation 的直接 URL 消费者必须迁移到 `material.asset.fetch`；已证明的素材内容读取能力由 CLI/SDK/Agent file effect 保留，Plan 仍因文件副作用设计不适用。
 
 ## 明确不做
 

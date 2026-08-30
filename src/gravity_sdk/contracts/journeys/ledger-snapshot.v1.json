@@ -1200,22 +1200,22 @@
       }
     },
     {
-      "blocker_note": "上游证据阻断。`material.asset.fetch` v2 已能把 fresh registered response 中唯一素材 URL 交给共享 Artifact Transfer，并完成同 host redirect、JPEG/MP4 MIME+magic/size/digest 校验与原子 no-clobber；成功结果不含 URL。Issue 19 新验收仍未闭合：source operation 的普通 JSON 仍可投影 URL，且 `not_found/expired/not_cached/permission_unavailable/upstream_deleted` 只有权限类可复用既有确定性语义。公开 OceanEngine 文档证明精确 material ID 查询、URL 授权约束和删除状态存在，但没有证明 Gravity 响应里的过期/缓存/缺失判别；本轮 SDK 生产请求 0，不把通用 HTTP 状态猜成业务状态。",
-      "can_return_business_content": false,
+      "blocker_note": "以可证明的 fresh-response 子集闭环，不宣称任意历史 ID。既有生产证据实际覆盖 `local` 5 条自然引用（4 个 JPEG Range、3 个 MP4 HEAD）与 `bytedance_project` 1 条非空素材（JPEG/MP4 各 1 个有效样本）；合同据此固定三个 exact origin 和 per-role path pattern。`material.asset.fetch` 一次调用在私有 source 上下文唯一匹配引用，执行首跳/同 host redirect、MIME+magic/size/digest 与原子 no-clobber；普通 `material.local.list` / `material.bytedance.project_material.list` JSON 不再投影 URL。fresh scope 无唯一行、role 缺失或非重试 4xx 统一为 `MATERIAL_ASSET_BINARY_UNAVAILABLE`，不猜缺失/过期/未缓存/删除/权限；allowlist 越界为 `MATERIAL_ASSET_SOURCE_UNSUPPORTED`。URL 哨兵覆盖 source JSON、成功结果、错误和 receipt；本轮生产请求 0。",
+      "can_return_business_content": true,
       "counted": true,
       "display_name": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
-      "ledger_status": "部分闭环",
+      "ledger_status": "已闭环",
       "legacy_display_key": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "c57ec013d774728e7b23d6161860a2e243de9f47d8c4db8ce8ad9363e5b1fe05",
+      "row_digest": "a6bb621fcf91cd248285d61d26c1b17f3cc1445ae0afb8c585224bb56b5f6350",
       "surfaces": {
         "agent": "有",
-        "cli": "部分",
+        "cli": "有",
         "plan": "设计不适用",
-        "raw": "部分 / 部分 / 设计不适用 / 有",
-        "sdk": "部分"
+        "raw": "有 / 有 / 设计不适用 / 有",
+        "sdk": "有"
       }
     },
     {
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "5bcecfe829e5c2360160616016c23aca7dea16a5d455ca9548000de6e7aa53cd",
+  "snapshot_digest": "340469ca8bfaee9c7f58899a0b5440b7e88ad01fd422b1306627d08b24d9539f",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "46b3d57a1b25226b33c5824853679d8d402bec41d51322f28a095a997590ddad"
+  "source_sha256": "a85a5e2111055c956cd58f88261538c04be5c0ecc42d815b3ffd0edf686beade"
 }

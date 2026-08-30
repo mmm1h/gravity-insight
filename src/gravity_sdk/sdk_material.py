@@ -102,7 +102,7 @@ class MaterialSdkMixin:
         *,
         output_root: str | Path | None = None,
     ) -> dict[str, Any]:
-        """Fetch a URL resolved from one fresh registered material response."""
+        """Fetch one allowlisted asset while keeping its fresh source URL private."""
 
         from .material_asset import fetch_material_asset
 

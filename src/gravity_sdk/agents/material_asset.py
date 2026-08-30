@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import re
 from typing import Any, Mapping
 
@@ -9,6 +10,27 @@ from .intent_text import affirmative_intent_text
 
 
 SELECTOR = "material.asset.fetch"
+_SOURCE_CONTRACT = {
+    "accepts_caller_url": False,
+    "public_source_urls": False,
+    "fresh_registered_response_required": True,
+    "artifact_schema_version": "gravity.artifact-transfer.v1",
+    "initial_host_policy": "contract_allowlist",
+    "redirect_policy": "same_host_only",
+    "output_root_bound": True,
+    "sources": ["local", "bytedance_project"],
+    "source_inputs": {
+        "local": ["album_id", "page", "page_size", "search_keyword", "search_type"],
+        "bytedance_project": ["advertiser_id", "project_id"],
+    },
+    "reference_fields": {
+        "local": ["id", "gravity_material_id", "material_id"],
+        "bytedance_project": ["material_id"],
+    },
+    "coverage": "fresh_response_observed_origin_subset",
+    "unavailable_error": "MATERIAL_ASSET_BINARY_UNAVAILABLE",
+    "unsupported_source_error": "MATERIAL_ASSET_SOURCE_UNSUPPORTED",
+}
 
 
 def material_asset_capability_cards(
@@ -27,11 +49,13 @@ def material_asset_capability_cards(
             "selector": SELECTOR,
             "domain": "material",
             "description": (
-                "从刚读取的已登记素材 operation 响应按精确引用取出文件或缩略图 URL，"
-                "跟随重定向并原子下载；调用方不能提交 URL。"
+                "在同一次调用的私有上下文中重读已登记素材 source，按精确引用"
+                "原子下载文件或缩略图；普通 JSON 和调用方都接触不到 URL。"
             ),
             "boundaries": (
                 "调用方不能提交 URL。",
+                "只支持 fresh source 中唯一命中且 host/path 在已观察 allowlist 内的素材。",
+                "不保证任意历史 material ID 仍可恢复，也不猜测缺失、过期、未缓存或删除。",
                 "不读取素材表现报表。",
             ),
             "effect": "material_file_download",
@@ -55,14 +79,7 @@ def material_asset_capability_cards(
                 "output": "<new-local-file-path>",
             },
             "optional_inputs": ["output_root"],
-            "source_contract": {
-                "accepts_caller_url": False,
-                "fresh_registered_response_required": True,
-                "artifact_schema_version": "gravity.artifact-transfer.v1",
-                "redirect_policy": "same_host_only",
-                "output_root_bound": True,
-                "sources": ["local", "bytedance_project"],
-            },
+            "source_contract": deepcopy(_SOURCE_CONTRACT),
             "match": {
                 "confidence": "strong",
                 "coverage": 1.0,

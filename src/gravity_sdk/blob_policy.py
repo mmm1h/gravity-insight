@@ -29,6 +29,7 @@ class BlobPolicy:
     allowed_hosts: frozenset[str] = frozenset()
     allowed_redirect_hosts: frozenset[str] = frozenset()
     allowed_path_prefixes: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    allowed_path_patterns: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     allowed_https_ports: frozenset[int] = frozenset({443})
     archive_policy: ArchivePolicy = field(default_factory=ArchivePolicy)
     overwrite_policy: str = "deny"
@@ -64,6 +65,7 @@ def _normalize_policy_fields(
     dict[str, tuple[MagicSignature, ...]],
     dict[str, tuple[str, ...]],
     dict[str, tuple[str, ...]],
+    dict[str, tuple[str, ...]],
 ]:
     extensions = frozenset(_normalize_extension(value) for value in policy.allowed_extensions)
     mime_types = frozenset(_normalize_mime(value) for value in policy.allowed_mime_types)
@@ -86,6 +88,11 @@ def _normalize_policy_fields(
         normalized_host = _normalize_host(host)
         normalized_values = tuple(_normalize_path_prefix(value) for value in values)
         prefixes[normalized_host] = normalized_values
+    patterns: dict[str, tuple[str, ...]] = {}
+    for host, values in policy.allowed_path_patterns.items():
+        normalized_host = _normalize_host(host)
+        normalized_values = tuple(_normalize_path_pattern(value) for value in values)
+        patterns[normalized_host] = normalized_values
     return (
         extensions,
         mime_types,
@@ -94,6 +101,7 @@ def _normalize_policy_fields(
         magic,
         mime_by_extension,
         prefixes,
+        patterns,
     )
 
 
@@ -152,6 +160,7 @@ def _commit_normalized_policy(
         dict[str, tuple[MagicSignature, ...]],
         dict[str, tuple[str, ...]],
         dict[str, tuple[str, ...]],
+        dict[str, tuple[str, ...]],
     ],
 ) -> None:
     (
@@ -162,6 +171,7 @@ def _commit_normalized_policy(
         magic,
         mime_by_extension,
         prefixes,
+        patterns,
     ) = normalized
     object.__setattr__(policy, "allowed_extensions", extensions)
     object.__setattr__(policy, "allowed_mime_types", mime_types)
@@ -175,6 +185,7 @@ def _commit_normalized_policy(
         MappingProxyType(mime_by_extension),
     )
     object.__setattr__(policy, "allowed_path_prefixes", MappingProxyType(prefixes))
+    object.__setattr__(policy, "allowed_path_patterns", MappingProxyType(patterns))
     object.__setattr__(
         policy,
         "destination_root",
@@ -289,8 +300,7 @@ def _validate_remote_url(
             stage="source_policy",
         )
     safe_path = _decode_and_validate_url_path(raw_path)
-    prefixes = policy.allowed_path_prefixes.get(host, ())
-    if not any(_path_has_prefix(safe_path, prefix) for prefix in prefixes):
+    if not _path_is_allowed(policy, host, safe_path):
         raise BlobTransferError(
             "blob URL path is outside the allowlist",
             code="BLOB_URL_DENIED",
@@ -332,6 +342,14 @@ def _path_has_prefix(path: str, prefix: str) -> bool:
         return True
     boundary = prefix.rstrip("/")
     return path == boundary or path.startswith(boundary + "/")
+
+
+def _path_is_allowed(policy: BlobPolicy, host: str, path: str) -> bool:
+    prefixes = policy.allowed_path_prefixes.get(host, ())
+    patterns = policy.allowed_path_patterns.get(host, ())
+    return any(_path_has_prefix(path, prefix) for prefix in prefixes) or any(
+        re.fullmatch(pattern, path) for pattern in patterns
+    )
 
 
 def _parse_content_length(value: str | None) -> int | None:
@@ -458,6 +476,16 @@ def _normalize_path_prefix(value: str) -> str:
     except BlobTransferError as exc:
         raise ValueError("path prefix is unsafe") from exc
     return normalized
+
+
+def _normalize_path_pattern(value: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > 512:
+        raise ValueError("allowed path patterns must be non-empty strings")
+    try:
+        re.compile(value)
+    except re.error as exc:
+        raise ValueError("allowed path pattern is invalid") from exc
+    return value
 
 
 def _header(headers: Mapping[str, Any], name: str | None) -> str | None:

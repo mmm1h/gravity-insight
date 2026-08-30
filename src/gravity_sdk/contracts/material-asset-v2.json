@@ -1,9 +1,10 @@
 {
   "schema_version": "gravity.material-asset-contract.v2",
   "effect": "material_file_download",
-  "input_boundary": "url_from_fresh_registered_operation_response",
+  "input_boundary": "private_url_from_fresh_registered_operation_response",
   "accepts_caller_url": false,
-  "initial_host_policy": "fresh_response_exact_host",
+  "public_source_projection": "url_fields_omitted",
+  "initial_host_policy": "contract_allowlist",
   "redirect_policy": "same_host_only",
   "output_policy": "root_bound_relative_atomic_no_clobber",
   "receipt_policy": "value_free_http_references",
@@ -15,6 +16,12 @@
       "roles": {
         "file": {
           "url_field": "file_url",
+          "allowed_sources": [
+            {
+              "host": "tos-accelerate.gravity-engine.com",
+              "path_pattern": "^/[^/]+/video/[^/]+\\.mp4$"
+            }
+          ],
           "observed_content_type": "video/mp4",
           "extensions": [".mp4"],
           "magic_signatures": [{"offset": 4, "hex": "66747970"}],
@@ -24,6 +31,12 @@
         },
         "thumbnail": {
           "url_field": "thumbnail_url",
+          "allowed_sources": [
+            {
+              "host": "tos-accelerate.gravity-engine.com",
+              "path_pattern": "^/[^/]+/image/video_thumbnail_url_[^/]+\\.jpg$"
+            }
+          ],
           "observed_content_type": "image/jpeg",
           "extensions": [".jpg", ".jpeg"],
           "magic_signatures": [{"offset": 0, "hex": "ffd8ff"}],
@@ -42,6 +55,12 @@
       "roles": {
         "file": {
           "url_field": "file_url",
+          "allowed_sources": [
+            {
+              "host": "v26-cc.oceanengine.com",
+              "path_pattern": "^/[^/]+/[^/]+/video/tos/cn/tos-cn-ve-51/[^/]+$"
+            }
+          ],
           "observed_content_type": "video/mp4",
           "extensions": [".mp4"],
           "magic_signatures": [{"offset": 4, "hex": "66747970"}],
@@ -51,6 +70,12 @@
         },
         "thumbnail": {
           "url_field": "thumbnail_url",
+          "allowed_sources": [
+            {
+              "host": "p26-sign.douyinpic.com",
+              "path_pattern": "^/tos-cn-v-[0-9]+/[^/]+~tplv-noop\\.image$"
+            }
+          ],
           "observed_content_type": "image/jpeg",
           "extensions": [".jpg", ".jpeg"],
           "magic_signatures": [{"offset": 0, "hex": "ffd8ff"}],
@@ -64,8 +89,11 @@
   "http_status_categories": {
     "200": "success",
     "same_host_redirect_with_location": "follow",
-    "all_other_terminal_statuses": "upstream"
+    "indistinguishable_terminal_4xx": "binary_unavailable",
+    "429_or_retryable_terminal_status": "upstream"
   },
+  "unavailable_error_code": "MATERIAL_ASSET_BINARY_UNAVAILABLE",
+  "unsupported_source_error_code": "MATERIAL_ASSET_SOURCE_UNSUPPORTED",
   "local_failure_category": "local",
   "caller_input_failure_category": "caller"
 }
