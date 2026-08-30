@@ -31,6 +31,7 @@ Usage:
   gravity analysis bootstrap --app <id> --start <date> --end <date> --target <event> --plan-output <plan.json>
   gravity analysis dashboard prepare|run --app <alias|id> --ref <id|name> --start <date> --end <date>
   gravity analysis user journey --app <alias|id> --client-id <id> --date <date>
+  gravity analysis user-detail-aggregate --input <json|file|->
   gravity analysis segment snapshot --app <alias|id> --ref <id|name> --date <date>
   gravity analysis segment members --app <alias|id> --ref <id|name> [--fields <a,b>]
   gravity analysis segment create-from-analysis|create-from-rule|update|update-rule|refresh|delete --dry-run|--execute

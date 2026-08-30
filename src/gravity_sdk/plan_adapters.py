@@ -27,6 +27,13 @@ from .plan_multidim_adapter import (
     project_multidim_result,
     validate_multidim_plan,
 )
+from .plan_user_detail_aggregate_adapter import (
+    USER_DETAIL_AGGREGATE_NAME,
+    execute_user_detail_aggregate_plan,
+    is_user_detail_aggregate_result,
+    project_user_detail_aggregate_result,
+    validate_user_detail_aggregate_plan,
+)
 from . import plan_semantic_compose_adapter as semantic_plan
 from .plan_material_performance_adapter import (
     MATERIAL_PERFORMANCE_NAME,
@@ -73,7 +80,8 @@ _COMPOSITE_FIELDS = frozenset(
 _COMPOSITES = frozenset(
     {
         *fixed_plan.COMPOSITE_NAMES,
-        *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME, MATERIAL_PERFORMANCE_NAME,
+        *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME,
+        USER_DETAIL_AGGREGATE_NAME, MATERIAL_PERFORMANCE_NAME,
         semantic_plan.SEMANTIC_COMPOSE_NAME,
         TITLE_PACKAGE_NAME,
         promotion_plan.PROMOTION_PERFORMANCE_NAME,
@@ -251,8 +259,11 @@ def _validate_composite(
             request, context, workspace, _COMPOSITE_OUTPUT_FIELDS
         )
         return
-    if name == MULTIDIM_NAME:
-        validate_multidim_plan(insight, workspace, request, context)
+    if name in {MULTIDIM_NAME, USER_DETAIL_AGGREGATE_NAME}:
+        {
+            MULTIDIM_NAME: validate_multidim_plan,
+            USER_DETAIL_AGGREGATE_NAME: validate_user_detail_aggregate_plan,
+        }[name](insight, workspace, request, context)
         return
     if name == semantic_plan.SEMANTIC_COMPOSE_NAME:
         semantic_plan.validate_semantic_compose_plan(workspace, request, context)
@@ -289,8 +300,16 @@ def _execute_composite(
         return report_plan.execute_report_composite(sdk, request, context)
     if name == "saved_analysis":
         return execute_saved_analysis_plan(sdk, request, context)
-    if name in {MULTIDIM_NAME, semantic_plan.SEMANTIC_COMPOSE_NAME}:
-        return semantic_plan.execute_multidim_or_semantic(sdk, request, context)
+    if name in {
+        MULTIDIM_NAME,
+        semantic_plan.SEMANTIC_COMPOSE_NAME,
+        USER_DETAIL_AGGREGATE_NAME,
+    }:
+        return {
+            MULTIDIM_NAME: semantic_plan.execute_multidim_or_semantic,
+            semantic_plan.SEMANTIC_COMPOSE_NAME: semantic_plan.execute_multidim_or_semantic,
+            USER_DETAIL_AGGREGATE_NAME: execute_user_detail_aggregate_plan,
+        }[name](sdk, request, context)
     if name == MATERIAL_PERFORMANCE_NAME:
         return execute_material_performance_plan(sdk, request, context)
     if name == TITLE_PACKAGE_NAME:
@@ -331,6 +350,8 @@ def _project_composite(
         return project_saved_analysis_result(result, fields, context)
     if is_multidim_result(result):
         return project_multidim_result(result, fields, context)
+    if is_user_detail_aggregate_result(result):
+        return project_user_detail_aggregate_result(result, fields, context)
     if semantic_plan.is_semantic_compose_result(result):
         return semantic_plan.project_semantic_compose_result(result, fields, context)
     if is_material_performance_result(result):

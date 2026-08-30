@@ -17,18 +17,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """The material binary boundary removes two caller-error sites.
-
-        A missing fresh row or role is now an indistinguishable upstream state,
-        covered by stable material error-code tests rather than this caller-only
-        inventory.
-        """
+        """The aggregate product adds bounded, actionable validation sites."""
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1345
-        assert counts["A"] == 1178
-        assert counts["B"] == 167
+        assert len(rows) == 1367
+        assert counts["A"] == 1184
+        assert counts["B"] == 183
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)
 

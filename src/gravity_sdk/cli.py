@@ -65,8 +65,8 @@ except ModuleNotFoundError:  # source checkout before editable installation
 from gravity_sdk.parents import add_parent_commands, run_parent_command
 from gravity_sdk.attribution import add_snapshot_command
 from gravity_sdk.analysis_spec_cli import run_analysis_query_command
-from gravity_sdk.analysis_query_batch_cli import add_analysis_query_commands
-from gravity_sdk.segment_spec_cli import add_segment_commands, run_segment_command
+from gravity_sdk.analysis_read_cli import add_analysis_commands
+from gravity_sdk.segment_spec_cli import run_segment_command
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
 from gravity_sdk.material_cli import add_material_commands, dispatch_material_command
 from gravity_sdk.promotion_cli import (
@@ -76,12 +76,8 @@ from gravity_sdk.promotion_cli import (
     merge_query_shortcuts as _merge_query_shortcuts,
     split_values as _split_values,
 )
-from gravity_sdk.dashboard_snapshot_cli import add_dashboard_commands
-from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
 from gravity_sdk.multidim_cli import add_multidim_commands, multidim_ndjson_view
-from gravity_sdk.user_journey_cli import add_user_journey_command
 from gravity_sdk.metadata_cli import (
-    add_metadata_commands,
     run_analysis_metadata,
     run_metadata_command,
 )
@@ -100,7 +96,6 @@ from gravity_sdk.find_input import (
 from gravity_sdk.recipe import add_recipe_commands
 from gravity_sdk.resolver_cli import add_resolver_command
 from gravity_sdk.agent import DeferredAgentClient, ndjson_metadata, run_agent_command
-from gravity_sdk.capability_cli import add_deepening_commands
 from gravity_sdk.read_cli import add_read_command
 from gravity_sdk.cli_root_commands import add_root_commands, dispatch_root_command
 from gravity_sdk.plan_cli import add_plan_commands
@@ -167,84 +162,6 @@ def _add_doctor_command(commands):
     doctor.set_defaults(network_required=False)
 
 
-def _add_analysis_metadata_commands(apps_commands, analysis_commands):
-    analysis_metadata = analysis_commands.add_parser("metadata")
-    analysis_metadata.add_argument("--app-id", required=True)
-    _add_input(analysis_metadata)
-    add_deepening_commands(apps_commands, analysis_commands, _concurrency)
-    analysis_segments = analysis_commands.add_parser("segments")
-    analysis_segments.add_argument("--app-id", required=True)
-    analysis_segments.add_argument(
-        "--experimental",
-        action="store_true",
-        help="allow the operation only when the registry marks it experimental",
-    )
-    _add_input(analysis_segments)
-    _add_all_pages(analysis_segments)
-
-
-def _add_typed_analysis_read_command(
-    commands, name, help_text, choices, *, required_input, paginated, fields=False
-):
-    command = commands.add_parser(name, help=help_text)
-    command.add_argument("--kind", required=True, choices=sorted(choices))
-    if fields:
-        command.add_argument(
-            "--fields",
-            action="append",
-            help="Comma-separated contracted response fields; may be repeated.",
-        )
-    _add_input(command, required=required_input)
-    if paginated:
-        _add_all_pages(command)
-
-
-def _add_analysis_read_commands(analysis_commands):
-    _add_typed_analysis_read_command(
-        analysis_commands, "report-config",
-        "List or read a saved Analysis configuration.", ANALYSIS_REPORT_CONFIG_OPERATIONS,
-        required_input=True, paginated=True,
-    )
-    add_dashboard_commands(
-        analysis_commands, _add_input, _add_all_pages, _concurrency, _positive_int
-    )
-    _add_typed_analysis_read_command(
-        analysis_commands, "values",
-        "Read enumerable user or event property values.", ANALYSIS_VALUE_OPERATIONS,
-        required_input=True, paginated=False,
-    )
-    analysis_users = analysis_commands.add_parser("users", help="Read the account member directory.")
-    _add_input(analysis_users)
-    _add_all_pages(analysis_users)
-    _add_typed_analysis_read_command(
-        analysis_commands, "templates",
-        "Read Analysis template subjects or template rows.", ANALYSIS_TEMPLATE_OPERATIONS,
-        required_input=False, paginated=True,
-    )
-    _add_typed_analysis_read_command(
-        analysis_commands, "auxiliary",
-        "Read hidden properties or task event catalogs.", ANALYSIS_AUXILIARY_OPERATIONS,
-        required_input=True, paginated=True,
-    )
-    _add_typed_analysis_read_command(
-        analysis_commands, "detail",
-        "Read order, monetization, user, event, or postback detail.", ANALYSIS_DETAIL_OPERATIONS,
-        required_input=True, paginated=True, fields=True,
-    )
-
-
-def _add_analysis_commands(commands):
-    apps_commands, _ = add_metadata_commands(commands, _concurrency, _add_input, _add_all_pages)
-    analysis_commands = add_saved_analysis_commands(commands, _positive_int)
-    _add_analysis_metadata_commands(apps_commands, analysis_commands)
-    add_analysis_query_commands(
-        analysis_commands, _add_input, _add_query_shortcuts, _concurrency
-    )
-    add_user_journey_command(analysis_commands, _concurrency, _positive_int)
-    add_segment_commands(analysis_commands, _add_input, _add_all_pages)
-    _add_analysis_read_commands(analysis_commands)
-
-
 def _add_paginated_input_command(commands, name):
     command = commands.add_parser(name)
     _add_input(command)
@@ -294,7 +211,10 @@ def build_parser() -> argparse.ArgumentParser:
         commands, _add_input, _add_all_pages, _concurrency, _positive_int
     )
     _add_doctor_command(commands)
-    _add_analysis_commands(commands)
+    add_analysis_commands(
+        commands, _add_input, _add_all_pages, _concurrency, _positive_int,
+        _add_query_shortcuts,
+    )
     add_multidim_commands(commands, _add_input, _add_all_pages)
     add_promotion_commands(
         commands, _add_input, _add_all_pages, _concurrency, _positive_int

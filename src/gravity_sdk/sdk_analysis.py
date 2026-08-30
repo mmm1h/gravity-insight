@@ -30,6 +30,43 @@ class AnalysisSdkMixin:
             dry_run=dry_run,
         )
 
+    @staticmethod
+    def user_detail_aggregate_input_schema() -> dict[str, Any]:
+        """Return the closed aggregate product input contract offline."""
+
+        from .user_detail_aggregate_product import user_detail_aggregate_input_schema
+
+        return user_detail_aggregate_input_schema()
+
+    def prepare_user_detail_aggregate(
+        self, inputs: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        """Validate one aggregate request without constructing an Insight client."""
+
+        from .user_detail_aggregate_product import prepare_user_detail_aggregate
+
+        return prepare_user_detail_aggregate(inputs)
+
+    def user_detail_aggregate(
+        self,
+        inputs: Mapping[str, Any],
+        *,
+        max_workers: int = 6,
+    ) -> dict[str, Any]:
+        """Consume bounded user-detail pages and return only aggregate cells."""
+
+        if type(max_workers) is not int or not 1 <= max_workers <= 24:
+            from .errors import InputValidationError
+
+            raise InputValidationError(
+                "max_workers must be between 1 and 24", field="max_workers"
+            )
+        from .user_detail_aggregate_product import run_user_detail_aggregate
+
+        return run_user_detail_aggregate(
+            self.insight, inputs, max_workers=max_workers
+        )
+
     def user_journey(
         self,
         client_id: str,
