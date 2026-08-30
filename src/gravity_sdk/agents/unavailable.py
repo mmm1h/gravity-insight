@@ -10,6 +10,7 @@ _REGISTERED_GAP_QUERIES = (
     "analysis export results",
     "media reports",
     "non bytedance campaign group creative performance",
+    "exact platform material reference preview download image and video",
     "platform specific creative fields",
     "registered sql analysis product",
     "query multidim cohort horizon D60",

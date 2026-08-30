@@ -1200,22 +1200,22 @@
       }
     },
     {
-      "blocker_note": "`material.asset.fetch` 不接收 URL：一次调用先重读 `local` 或 `bytedance_project` stable source，再按精确引用从唯一行取私有 URL。R13A v2 通过共享 Artifact Transfer 完整流式下载：fresh 首跳精确 host/path 动态授权、redirect 仅同 host，root/reparse/overwrite/extension 在 source read 前检查，JPEG/MP4 分别受 16 MiB/1 GiB cap 与 MIME/magic/size/MD5/SHA-256/原子 no-clobber 约束；公开只含相对 `local_ref` 和值无关 Receipt 引用。既有生产样本均无 redirect；HTTP terminal 状态仍统一归 upstream/3，不创造素材失效 taxonomy。",
-      "can_return_business_content": true,
+      "blocker_note": "上游证据阻断。`material.asset.fetch` v2 已能把 fresh registered response 中唯一素材 URL 交给共享 Artifact Transfer，并完成同 host redirect、JPEG/MP4 MIME+magic/size/digest 校验与原子 no-clobber；成功结果不含 URL。Issue 19 新验收仍未闭合：source operation 的普通 JSON 仍可投影 URL，且 `not_found/expired/not_cached/permission_unavailable/upstream_deleted` 只有权限类可复用既有确定性语义。公开 OceanEngine 文档证明精确 material ID 查询、URL 授权约束和删除状态存在，但没有证明 Gravity 响应里的过期/缓存/缺失判别；本轮 SDK 生产请求 0，不把通用 HTTP 状态猜成业务状态。",
+      "can_return_business_content": false,
       "counted": true,
       "display_name": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
-      "ledger_status": "已闭环",
+      "ledger_status": "部分闭环",
       "legacy_display_key": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "63888f0af5eeb069563df83eef93bb11566f64cb63b064f81b76574ae72c4512",
+      "row_digest": "c57ec013d774728e7b23d6161860a2e243de9f47d8c4db8ce8ad9363e5b1fe05",
       "surfaces": {
         "agent": "有",
-        "cli": "有",
+        "cli": "部分",
         "plan": "设计不适用",
-        "raw": "有 / 有 / 设计不适用 / 有",
-        "sdk": "有"
+        "raw": "部分 / 部分 / 设计不适用 / 有",
+        "sdk": "部分"
       }
     },
     {
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "282fd5d12ca8d7d3311242bb2a08f24678e8d193be6d9a80567b4bc7ebec3674",
+  "snapshot_digest": "5bcecfe829e5c2360160616016c23aca7dea16a5d455ca9548000de6e7aa53cd",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "17dd2ffb8f91691ece7bfe288c0c39d7d3488c9546dd13253b3b37bdec0ed5d6"
+  "source_sha256": "46b3d57a1b25226b33c5824853679d8d402bec41d51322f28a095a997590ddad"
 }

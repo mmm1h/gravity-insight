@@ -55,6 +55,7 @@
 ## 待裁定设计
 
 - **Artifact transfer 的主机授权来源**：`artifact_transfer.py:152-156` 以 `replace()` 将上游素材响应中的 host 写入 `allowed_hosts`、`allowed_redirect_hosts` 和根路径前缀。该授权来自上游响应而非调用方，不在“调用方承担授权决策”的已批准边界内；所有者需单独裁定是否接受此信任来源，并据裁定保留受控边界或改为调用方/固定合同授权。
+- **Issue 19 精确素材五码合同**：现有 `material.asset.fetch` v2 只证明 fresh response-bound URL 的受治理传输，不证明 `not_found`、`expired`、`not_cached`、`permission_unavailable`、`upstream_deleted` 五态。公开 OceanEngine 合同可证明账户范围内按 material ID 查询、URL 授权前提和显式删除状态，但没有给出 Gravity 固定 route 上的过期、未缓存或缺失判别，现有 source operation 还会在普通 JSON 投影 URL。保持 Issue 为 `status:needs-evidence`；只有取得固定 route、私有 URL binding、完整 redirect/expiry/retention 和五态值无关真实响应证据后才实施，通用 403/404/410 不得代替业务证据。
 
 ## 明确不做
 
