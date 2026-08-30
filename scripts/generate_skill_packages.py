@@ -43,11 +43,26 @@ def main() -> int:
     ]
     if args.check:
         if mismatched or extras:
-            selected = [*mismatched, *extras]
-            raise SystemExit(
-                "generated Skill packages are stale: "
-                + ", ".join(str(path.relative_to(ROOT)) for path in selected)
-            )
+            parts: list[str] = []
+            if mismatched:
+                parts.append(
+                    "generated Skill package files are missing or differ from their "
+                    "authoritative manifests: "
+                    + ", ".join(
+                        str(path.relative_to(ROOT)) for path in mismatched
+                    )
+                    + ". Run `python scripts/generate_skill_packages.py` to rebuild "
+                    "those generated package files, then review the result."
+                )
+            if extras:
+                parts.append(
+                    "unregistered files exist inside generated Skill package roots: "
+                    + ", ".join(str(path.relative_to(ROOT)) for path in extras)
+                    + ". The generator will not delete them. Review each listed file "
+                    "and delete only files that are not registered package content; "
+                    "then run `python scripts/generate_skill_packages.py`."
+                )
+            raise SystemExit(" ".join(parts))
         print("Built-in Skill packages are current")
         return 0
     if extras:

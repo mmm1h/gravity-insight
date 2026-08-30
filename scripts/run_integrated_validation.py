@@ -30,6 +30,29 @@ POST_RELEASE_GATES = (
         ),
     },
 )
+R17_STALE_RECEIPT_GUIDANCE = "\n".join(
+    (
+        "R17 checkpoint receipt is stale. It binds the repository scan's file "
+        "universe and counts, scanner and generator hashes, every "
+        "coordinate-bound disposition and its evidence, and the "
+        "actionable/blocker summary. Do not blindly regenerate it.",
+        "A rebind is safe only after manual comparison shows that the change is "
+        "limited to newly added non-reference files: no existing source_key "
+        "disappeared or changed; sites_sha256, tracked-site/disposition counts, "
+        "classifications, actionable count, and blocker count are unchanged.",
+        "Stop for manual R17 review if any disposition count changes, any site "
+        "disappears or changes classification, any blocker/actionable count "
+        "changes, or scanner/generator logic changed.",
+        "After that review approves a rebind: run `python "
+        "scripts/generate_agent_module_reference_dispositions.py`; inspect the "
+        "candidate receipt diff and copy its printed SHA-256 into exactly "
+        "specs/agent-runtime/R17-agent-module-package-migration.md, "
+        "specs/agent-runtime/index.json, and specs/agent-runtime/index.md; run "
+        "the generator once more to confirm the fixed point; then run `python "
+        "scripts/generate_agent_module_reference_dispositions.py --check` and "
+        "require exit 0.",
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -336,6 +359,9 @@ def run_gate(
                 f"\nTIMEOUT after {gate.timeout_seconds} seconds; process terminated\n"
             )
     output = log.read_text(encoding="utf-8", errors="replace")
+    if gate.name == "r17_live_checkpoint" and "stale checkpoint receipt:" in output:
+        output += "\n" + R17_STALE_RECEIPT_GUIDANCE + "\n"
+        log.write_text(output, encoding="utf-8", newline="\n")
     return {
         "name": gate.name,
         "command": list(gate.command),
