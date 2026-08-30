@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Validate ordered steps, eligibility, deduplication and time constraints before any funnel-loss diagnosis.",
+  "description": "在诊断任何漏斗流失前，验证有序步骤、资格条件、去重规则和时间约束。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when a project supplies the exact ordered event semantics and cohort entry rule.",
-    "context_boundary": "Step labels and returned percentages cannot define sequence, denominator or causality; unresolved rules stop interpretation.",
+    "applicability": "当项目提供确切的有序事件语义和队列进入规则时使用。",
+    "context_boundary": "步骤标签和返回的百分比无法定义顺序、分母或因果关系；规则尚未解决时停止解读。",
     "steps": [
-      "Resolve ordered step events, identity, cohort entry, conversion window and deduplication rules.",
-      "Apply a reviewed funnel-diagnosis Operator to governed returned steps and preserve partial coverage.",
-      "Report contract conflicts and returned step loss without inferring unobserved reasons or causal interventions."
+      "解析有序步骤事件、身份、队列进入条件、转化时间窗和去重规则。",
+      "对受治理的返回步骤应用已评审的漏斗诊断 Operator，并保留部分覆盖状态。",
+      "报告契约冲突和返回的步骤流失，不推断未观测到的原因或因果干预。"
     ],
-    "title": "Funnel interpretation contract check"
+    "title": "漏斗解读契约检查"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -77,7 +77,7 @@
   ],
   "skill_id": "funnel-analysis-misunderstanding-diagnosis",
   "specification": "specified",
-  "summary": "Detect incompatible funnel questions before interpreting returned steps.",
+  "summary": "在解读返回的步骤前，识别不兼容的漏斗问题。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

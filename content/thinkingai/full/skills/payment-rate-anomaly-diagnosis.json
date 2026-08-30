@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Require project payment numerator, eligible denominator, timezone and attribution definitions before decomposing movement.",
+  "description": "分解变化前，必须具备项目支付分子、合格分母、时区和归因定义。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use for two bounded windows when numerator and denominator semantics are compatible and reviewed.",
-    "context_boundary": "A field named payment rate is not a definition; returned dimension changes do not prove root cause or full coverage.",
+    "applicability": "当分子和分母语义相互兼容且已经评审时，用于两个有界时间窗。",
+    "context_boundary": "名为支付率的字段并不构成定义；返回的维度变化不能证明根因或完整覆盖。",
     "steps": [
-      "Resolve payment numerator, eligible denominator, timezone, cohort and attribution semantics.",
-      "Use the registered anomaly product to compare compatible returned windows and dimensions.",
-      "Report observed metric and contribution changes, excluded factors and hypotheses within allowed claims."
+      "解析支付分子、合格分母、时区、队列和归因语义。",
+      "使用已注册的异常分析产品，比较相互兼容的返回时间窗和维度。",
+      "在允许的断言范围内，报告观测到的指标与贡献变化、已排除因素和假设。"
     ],
-    "title": "Payment-rate anomaly localization"
+    "title": "支付率异常定位"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   ],
   "skill_id": "payment-rate-anomaly-diagnosis",
   "specification": "specified",
-  "summary": "Localize returned payment-rate movement under one additive denominator contract.",
+  "summary": "依据一个可加总分母契约，定位返回的支付率变化。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

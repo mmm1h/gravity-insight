@@ -8,8 +8,8 @@
   "lifecycle": "reviewed",
   "readiness": "executable",
   "validation": "validated",
-  "summary": "Verify a project-owned metric contract before reading its observations.",
-  "description": "Resolve the project metric definition, binding, unit, aggregation, time grain, and effective range before the governed event query is allowed to support a result.",
+  "summary": "读取观测结果前，验证项目自有的指标契约。",
+  "description": "在允许受治理的事件查询支持分析结果前，解析项目指标的定义、绑定、单位、聚合方式、时间粒度和生效范围。",
   "runtime_requires": ">=0.3,<0.4",
   "covers_journeys": ["analysis.thinkingai.project-metric-contract-check"],
   "capability_dependencies": [
@@ -53,14 +53,14 @@
     "license_review": "approved_internal"
   },
   "guide": {
-    "title": "Project metric contract check",
-    "applicability": "Use when a project metric must be resolved to an exact definition and physical binding before any observed value is interpreted.",
+    "title": "项目指标契约检查",
+    "applicability": "当解读任何观测值前必须把项目指标解析为确切定义和物理绑定时使用。",
     "steps": [
-      "Resolve the exact project metric URI for the requested App and date window.",
-      "Check owner, unit, aggregation, time grain, formula dependencies, binding, and effective range.",
-      "Stop before product selection when the definition or binding is missing, conflicting, or outside its effective range.",
-      "After resolution, use the existing event-analysis product and report only returned observations under that contract."
+      "解析所请求 App 和日期时间窗对应的确切项目指标 URI。",
+      "检查负责人、单位、聚合方式、时间粒度、公式依赖、绑定和生效范围。",
+      "定义或绑定缺失、冲突或超出生效范围时，在选择产品前停止。",
+      "解析完成后，使用现有的事件分析产品，并且仅报告该契约下返回的观测结果。"
     ],
-    "context_boundary": "Project Semantic sources are authoritative data contracts; prose and field names cannot substitute for a missing definition or binding."
+    "context_boundary": "项目 Semantic 来源是权威数据契约；自然语言描述和字段名不能替代缺失的定义或绑定。"
   }
 }

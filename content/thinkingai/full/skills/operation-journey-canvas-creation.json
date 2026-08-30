@@ -17,19 +17,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Translate reviewed project objectives and contact policies into a proposal with explicit entry, exit and measurement rules.",
+  "description": "将已评审的项目目标和触达策略转化为提案，并明确进入、退出和衡量规则。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when the project owns audience semantics, channel policy, cadence and guardrail definitions.",
-    "context_boundary": "Strategy documents cannot authorize audience mutation, message delivery or scheduling in an external system.",
+    "applicability": "当项目拥有受众语义、渠道策略、触达节奏和护栏定义时使用。",
+    "context_boundary": "策略文档不能授权更改受众、发送消息或在外部系统中排期。",
     "steps": [
-      "Resolve objective, eligibility, exclusions, contact policy, cadence, exit criteria and guardrail metrics.",
-      "Model the journey as a value-free proposal with measurement and conflict checks.",
-      "Require a separate governed connector preview, explicit user authorization and readback for every mutation."
+      "解析目标、资格条件、排除项、触达策略、触达节奏、退出标准和护栏指标。",
+      "将旅程建模为不含具体取值的提案，并包含衡量和冲突检查。",
+      "每次变更都必须另行获得受治理的连接器预览、明确的用户授权并完成回读。"
     ],
-    "title": "Governed operations journey proposal"
+    "title": "受治理的运营旅程提案"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -66,7 +66,7 @@
   ],
   "skill_id": "operation-journey-canvas-creation",
   "specification": "specified",
-  "summary": "Describe a staged contact journey without creating audiences, messages or schedules.",
+  "summary": "描述分阶段触达旅程，不创建受众、消息或排期。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

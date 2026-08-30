@@ -15,19 +15,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Require an exact Trino dialect, read-only identity and metadata allowlist before any governed query path is proposed.",
+  "description": "提出任何受治理的查询路径前，必须具备确切的 Trino 方言、只读身份和元数据允许列表。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use to classify a metadata gap for a named catalog, schema and bounded question.",
-    "context_boundary": "The SQLite Explorer and generic SQL text do not prove Trino identity, transaction, function or resource controls.",
+    "applicability": "用于对指定 catalog、schema 和有界问题的元数据缺口进行分类。",
+    "context_boundary": "SQLite Explorer 和通用 SQL 文本不能证明 Trino 的身份、事务、函数或资源控制。",
     "steps": [
-      "Define the catalog, schema, metadata relation, fields and read-only purpose.",
-      "Check for an exact registered Trino capability with dialect, identity, allowlist and resource budgets.",
-      "Return the unsupported gap and required evidence; do not route through SQLite or arbitrary SQL."
+      "定义 catalog、schema、元数据关系、字段和只读目的。",
+      "检查是否存在确切的已注册 Trino 能力，并具备方言、身份、允许列表和资源预算。",
+      "返回不受支持的缺口和所需证据；不得通过 SQLite 或任意 SQL 路由。"
     ],
-    "title": "Trino metadata readiness review"
+    "title": "Trino 元数据就绪性评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -62,7 +62,7 @@
   "semantic_dependencies": [],
   "skill_id": "trino-metadata-query-analysis",
   "specification": "specified",
-  "summary": "Assess a metadata question without claiming unsupported Trino execution.",
+  "summary": "评估元数据问题，不声称可执行不受支持的 Trino 查询。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

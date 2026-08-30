@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Distinguish eligible population, exposure and qualifying purchase observations before proposing any optimization experiment.",
+  "description": "提出任何优化实验前，区分合格人群、曝光和符合条件的购买观测结果。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when the project defines the eligible base, offer exposure, purchase and refund semantics.",
-    "context_boundary": "Returned reach cannot reveal unobserved eligibility or prove that an offer change would improve purchase behavior.",
+    "applicability": "当项目定义合格基数、优惠曝光、购买和退款语义时使用。",
+    "context_boundary": "返回的覆盖情况无法揭示未观测到的资格，也不能证明更改优惠会改善购买行为。",
     "steps": [
-      "Resolve eligible population, offer exposure, qualifying purchase and refund definitions.",
-      "Apply a reviewed decomposition Operator to compatible returned counts and units.",
-      "Report observed component gaps and testable hypotheses without causal or unreturned-population claims."
+      "解析合格人群、优惠曝光、合格购买和退款定义。",
+      "对单位兼容的返回计数应用已评审的分解 Operator。",
+      "报告观测到的组成缺口和可测试假设，不作因果或未返回人群的断言。"
     ],
-    "title": "Gift offer reach decomposition"
+    "title": "礼包优惠覆盖分解"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -77,7 +77,7 @@
   ],
   "skill_id": "gift-penetration-optimization",
   "specification": "specified",
-  "summary": "Decompose returned offer reach under explicit eligibility and purchase definitions.",
+  "summary": "依据明确的资格和购买定义，分解返回的优惠覆盖情况。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

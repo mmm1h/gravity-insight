@@ -24,19 +24,19 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "Prepare exact step, cohort, window and output contracts while leaving dashboard or saved-analysis writes separate.",
+  "description": "准备确切的步骤、队列、时间窗和输出契约，将仪表盘或已保存分析的写入保持为独立操作。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when payment events, identity, ordering and conversion windows are reviewed.",
-    "context_boundary": "The specification cannot invent events, create a dashboard or authorize any saved-analysis mutation.",
+    "applicability": "当支付事件、身份、顺序和转化时间窗均已评审时使用。",
+    "context_boundary": "该规格不能臆造事件、创建仪表盘，也不能授权更改任何已保存的分析。",
     "steps": [
-      "Resolve payment eligibility, ordered events, identity, conversion window and refund semantics.",
-      "Define a target-neutral Analysis Artifact with exact metrics, filters, completeness and claim boundaries.",
-      "Require a separate governed connector preview, explicit authorization and readback before target creation."
+      "解析支付资格、有序事件、身份、转化时间窗和退款语义。",
+      "定义与目标系统无关的 Analysis Artifact，包含确切的指标、筛选条件、完整性和断言边界。",
+      "创建目标前，必须另行获得受治理的连接器预览、明确授权并完成回读。"
     ],
-    "title": "Payment funnel artifact proposal"
+    "title": "支付漏斗产物提案"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -75,7 +75,7 @@
   ],
   "skill_id": "payment-funnel-setup",
   "specification": "specified",
-  "summary": "Specify a governed payment funnel artifact without creating saved analysis state.",
+  "summary": "定义受治理的支付漏斗产物，不创建已保存的分析状态。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

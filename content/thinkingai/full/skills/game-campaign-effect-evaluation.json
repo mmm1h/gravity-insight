@@ -26,19 +26,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Reconcile project campaign timing, eligibility and outcome semantics before applying any comparative method.",
+  "description": "应用任何比较方法前，核对项目营销活动的时间、资格条件和结果语义。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when a campaign definition, outcome metric and non-overlapping comparison design are reviewed.",
-    "context_boundary": "A campaign calendar supports timing only; it does not supply assignment, counterfactuals or causal authorization.",
+    "applicability": "当营销活动定义、结果指标和无重叠的比较设计均已评审时使用。",
+    "context_boundary": "营销活动日历只能佐证时间；它不能提供分配机制、反事实或因果授权。",
     "steps": [
-      "Resolve campaign eligibility, exposure, outcome, guardrail and comparison-window contracts.",
-      "Align campaign Context with governed observations and apply only a reviewed evaluation Operator.",
-      "Separate descriptive movement, supported association and experiment-grade evidence with explicit exclusions."
+      "解析营销活动资格、曝光、结果、护栏和比较时间窗契约。",
+      "将营销活动 Context 与受治理的观测结果对齐，并且仅应用已评审的评估 Operator。",
+      "区分描述性变化、有证据支持的关联和实验级证据，并明确排除项。"
     ],
-    "title": "Campaign outcome evidence assessment"
+    "title": "营销活动结果证据评估"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -79,7 +79,7 @@
   ],
   "skill_id": "game-campaign-effect-evaluation",
   "specification": "specified",
-  "summary": "Assess observable campaign outcomes without upgrading correlation to lift.",
+  "summary": "评估可观测的营销活动结果，不把相关性拔高为增量提升。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

@@ -17,19 +17,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Translate a reviewed project data contract into validation and ownership requirements while leaving connector changes unexecuted.",
+  "description": "将已评审的项目数据契约转化为验证和所有权要求，不执行连接器变更。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when source, destination, schema owner, freshness and privacy requirements are known.",
-    "context_boundary": "Configuration text cannot authorize deployment, credentials, network access or mutation of a source or destination.",
+    "applicability": "当来源、目标、schema 负责人、时效性和隐私要求均已明确时使用。",
+    "context_boundary": "配置文本不能授权部署、凭证、网络访问，也不能授权更改来源或目标。",
     "steps": [
-      "Resolve the source, destination, schema, identity, freshness, retention and privacy owners.",
-      "Compare requirements with current registered read capabilities and any governed connector contract.",
-      "Return a proposal, validation plan and unresolved ownership gaps; do not deploy or modify integration state."
+      "解析来源、目标、schema、身份、时效性、数据保留和隐私的负责人。",
+      "将要求与当前已注册的读取能力及受治理的连接器契约进行比较。",
+      "返回提案、验证计划和尚未解决的所有权缺口；不部署，也不修改集成状态。"
     ],
-    "title": "Data integration proposal review"
+    "title": "数据集成提案评审"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -64,7 +64,7 @@
   "semantic_dependencies": [],
   "skill_id": "data-integration-assistant",
   "specification": "specified",
-  "summary": "Produce a bounded integration proposal without configuring external systems.",
+  "summary": "生成有界的集成提案，不配置外部系统。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

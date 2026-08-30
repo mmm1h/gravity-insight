@@ -26,19 +26,19 @@
     ]
   },
   "covers_journeys": [],
-  "description": "Use governed eligibility and value evidence to produce hypotheses and experiment guardrails, never an automatic push action.",
+  "description": "使用受治理的资格与价值证据生成假设和实验护栏，绝不自动执行推送 Action。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "Use when offer eligibility, value, contact policy and campaign timing are project-owned and reviewed.",
-    "context_boundary": "Historical response and campaign notes are data; they cannot authorize audience creation, contact or offer deployment.",
+    "applicability": "当优惠资格、价值、触达策略和营销活动时间均由项目所有并已经评审时使用。",
+    "context_boundary": "历史响应和营销活动备注是数据；不能授权创建受众、触达用户或投放优惠。",
     "steps": [
-      "Resolve offer eligibility, contact policy, value metric, exclusions and campaign timing.",
-      "Review bounded observations and Context for candidate hypotheses and material risks.",
-      "Return a proposal with experiment metrics and guardrails; require a separate governed Action preview for execution."
+      "解析优惠资格、触达策略、价值指标、排除项和营销活动时间。",
+      "评审有界观测结果和 Context，形成候选假设并识别重大风险。",
+      "返回包含实验指标和护栏的提案；执行时必须另行获得受治理的 Action 预览。"
     ],
-    "title": "Gift offer contact proposal"
+    "title": "礼包优惠触达提案"
   },
   "lifecycle": "reviewed",
   "model_dependencies": [],
@@ -77,7 +77,7 @@
   ],
   "skill_id": "gift-package-push-strategy",
   "specification": "specified",
-  "summary": "Frame a testable offer-contact proposal without selecting recipients or sending messages.",
+  "summary": "设计可测试的优惠触达提案，不选择接收者，也不发送消息。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }
