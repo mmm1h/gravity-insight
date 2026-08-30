@@ -37,6 +37,46 @@ def _dependencies(item: Mapping[str, Any]) -> list[str]:
 
 MAIN_INTEGRATED_STATUSES = frozenset({"merged_main", "released"})
 HISTORICAL_DELIVERY_STATUS = "fixed_dev"
+REMEDIATION_BY_CODE = {
+    "requirement_not_main_integrated": (
+        "Complete and merge the requirement to main, then record its actual "
+        "index status as `merged_main` or `released`."
+    ),
+    "milestone_not_main_integrated": (
+        "Complete and merge the milestone to main, then record its actual index "
+        "status as `merged_main` or `released`."
+    ),
+    "index_markdown_status_mismatch": (
+        "Set the Status cell in specs/agent-runtime/index.md to the exact status "
+        "recorded for this ID in specs/agent-runtime/index.json."
+    ),
+    "historical_spec_delivery_status_mismatch": (
+        "Restore this requirement's approved historical delivery status to "
+        "`fixed_dev` in its requirement specification; do not invent a new "
+        "delivery state to satisfy the audit."
+    ),
+    "undeclared_release_exception": (
+        "For a `merged_main` requirement, add its ID and the same status to "
+        "main_integration.release_exceptions, or record `released` only after "
+        "release has actually occurred."
+    ),
+    "release_exception_status_mismatch": (
+        "Make the declared release exception status exactly match this ID's "
+        "index.json status, after verifying that the exception is still needed."
+    ),
+    "dependency_not_main_integrated": (
+        "First complete every ID listed in dependencies and record each as "
+        "`merged_main` or `released`; then rerun this audit."
+    ),
+    "milestone_parent_mismatch": (
+        "Set this milestone's Parent requirement cell in index.md to the exact "
+        "requirement ID that owns it in index.json."
+    ),
+    "milestone_dependencies_mismatch": (
+        "Set this milestone's Dependencies cell in index.md to the exact ordered "
+        "dependency list recorded for it in index.json."
+    ),
+}
 
 
 def build_promotion_readiness(
@@ -108,7 +148,12 @@ def build_promotion_readiness(
         }
         requirement_results.append(result)
         blockers.extend(
-            {"id": requirement_id, "kind": "requirement", "code": reason}
+            {
+                "id": requirement_id,
+                "kind": "requirement",
+                "code": reason,
+                "remediation": REMEDIATION_BY_CODE[reason],
+            }
             for reason in reasons
         )
 
@@ -151,7 +196,12 @@ def build_promotion_readiness(
             }
             milestone_results.append(milestone_result)
             blockers.extend(
-                {"id": milestone_id, "kind": "milestone", "code": reason}
+                {
+                    "id": milestone_id,
+                    "kind": "milestone",
+                    "code": reason,
+                    "remediation": REMEDIATION_BY_CODE[reason],
+                }
                 for reason in milestone_reasons
             )
 

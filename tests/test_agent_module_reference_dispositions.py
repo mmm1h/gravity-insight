@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import ast
 from collections import Counter
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 import copy
 from dataclasses import replace
 import hashlib
+import io
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -22,7 +24,13 @@ import unittest
 from unittest.mock import patch
 
 import scripts.generate_agent_module_reference_dispositions as checkpoint_generator
+import scripts.generate_agent_skills as agent_guides
+import scripts.generate_execution_variant_characterization as execution_variant
+import scripts.generate_journey_ledger as journey_ledger
+import scripts.generate_skill_packages as skill_packages
+import scripts.generate_thinkingai_inventory as ct01
 import scripts.validate_r17_canonical_source_errata as errata_validator
+from scripts.run_integrated_validation import GateSpec, run_gate
 from scripts.audit_agent_module_references import (
     AuditResult,
     GENERATED_GOVERNANCE_FILES,
@@ -2481,6 +2489,107 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         for label, document in mutations.items():
             with self.subTest(label=label), self.assertRaises(AssertionError):
                 validate_ledger(document)
+
+
+class GateFailureGuidanceTests(unittest.TestCase):
+    def test_agent_guides_stale_message_gives_rebuild_command(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            target = Path(temp) / "guide.md"
+            with patch.object(agent_guides, "render_documents", return_value={target: "new"}), patch.object(
+                sys, "argv", ["generate_agent_skills.py", "--check"]
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    agent_guides.main()
+        self.assertIn("do not match their current contract inputs", str(raised.exception))
+        self.assertIn("python scripts/generate_agent_skills.py", str(raised.exception))
+
+    def test_skill_package_mismatch_message_gives_rebuild_command(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            target = Path(temp) / "package" / "SKILL.md"
+            with patch.object(skill_packages, "render_outputs", return_value={target: b"new"}), patch.object(
+                sys, "argv", ["generate_skill_packages.py", "--check"]
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    skill_packages.main()
+        self.assertIn("missing or differ", str(raised.exception))
+        self.assertIn("python scripts/generate_skill_packages.py", str(raised.exception))
+
+    def test_skill_package_extra_message_requires_manual_deletion_review(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            target = Path(temp) / "package" / "SKILL.md"
+            target.parent.mkdir()
+            target.write_bytes(b"current")
+            extra = target.parent / "unexpected.txt"
+            extra.write_text("unexpected", encoding="utf-8")
+            with patch.object(skill_packages, "render_outputs", return_value={target: b"current"}), patch.object(
+                sys, "argv", ["generate_skill_packages.py", "--check"]
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    skill_packages.main()
+        self.assertIn("unregistered files", str(raised.exception))
+        self.assertIn("will not delete", str(raised.exception))
+        self.assertIn("delete only files that are not registered", str(raised.exception))
+
+    def test_journey_ledger_stale_message_gives_rebuild_command(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            target = Path(temp) / "ledger.json"
+            target.write_text("old", encoding="utf-8")
+            output = io.StringIO()
+            with patch.object(journey_ledger, "TARGET", target), patch.object(
+                journey_ledger, "rendered_snapshot", return_value="new"
+            ), patch.object(sys, "argv", ["generate_journey_ledger.py", "--check"]), redirect_stdout(output):
+                self.assertEqual(1, journey_ledger.main())
+        self.assertIn("does not match docs/analysis-journeys.md", output.getvalue())
+        self.assertIn("python scripts/generate_journey_ledger.py", output.getvalue())
+
+    def test_ct01_stale_message_distinguishes_observation_import(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            target = Path(temp) / "snapshot.json"
+            with patch.object(ct01, "load_source_observation", return_value={}), patch.object(
+                ct01, "render_outputs", return_value={target: "new"}
+            ), patch.object(sys, "argv", ["generate_thinkingai_inventory.py", "--check"]):
+                with self.assertRaises(SystemExit) as raised:
+                    ct01.main()
+        self.assertIn("pinned immutable source observation", str(raised.exception))
+        self.assertIn("python scripts/generate_thinkingai_inventory.py", str(raised.exception))
+        self.assertIn("Do not use `--import-playwright-output`", str(raised.exception))
+
+    def test_execution_variant_stale_message_gives_rebuild_command(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            target = Path(temp) / "characterization.json"
+            with patch.object(execution_variant, "TARGET", target), patch.object(
+                execution_variant, "build_artifact", return_value={}
+            ), patch.object(execution_variant, "_render", return_value="new"), patch.object(
+                sys, "argv", ["generate_execution_variant_characterization.py", "--check"]
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    execution_variant.main()
+        self.assertIn("deterministic characterization corpus", str(raised.exception))
+        self.assertIn(
+            "python scripts/generate_execution_variant_characterization.py",
+            str(raised.exception),
+        )
+
+    def test_r17_stale_receipt_message_requires_review_before_rebind(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
+            missing_receipt = Path(temp) / "checkpoint.json"
+            command = "\n".join(
+                (
+                    "from pathlib import Path",
+                    "import scripts.generate_agent_module_reference_dispositions as checkpoint",
+                    f"checkpoint.OUTPUT = Path({str(missing_receipt)!r})",
+                    "raise SystemExit(checkpoint.main(['--check']))",
+                )
+            )
+            gate = GateSpec("r17_live_checkpoint", (sys.executable, "-c", command))
+            result = run_gate(gate, Path(temp), dict(os.environ))
+            text = (Path(temp) / "r17_live_checkpoint.log").read_text(encoding="utf-8")
+        self.assertEqual(1, result["exit_code"])
+        self.assertIn("stale checkpoint receipt", text)
+        self.assertIn("Do not blindly regenerate it", text)
+        self.assertIn("newly added non-reference files", text)
+        self.assertIn("Stop for manual R17 review", text)
+        self.assertIn("exactly specs/agent-runtime/R17-agent-module-package-migration.md", text)
 
 
 if __name__ == "__main__":

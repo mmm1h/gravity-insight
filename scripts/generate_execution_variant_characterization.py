@@ -209,7 +209,12 @@ def main() -> int:
     if options.check:
         current = TARGET.read_text(encoding="utf-8") if TARGET.is_file() else ""
         if current != rendered:
-            raise SystemExit("generated Execution Variant Characterization is stale")
+            raise SystemExit(
+                "generated Execution Variant Characterization does not match its "
+                "deterministic characterization corpus. Run `python "
+                "scripts/generate_execution_variant_characterization.py` to "
+                "rebuild the artifact, then review the generated diff."
+            )
         return 0
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     TARGET.write_text(rendered, encoding="utf-8", newline="")

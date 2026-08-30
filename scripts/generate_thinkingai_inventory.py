@@ -100,8 +100,13 @@ def main() -> int:
     if options.check:
         if mismatched:
             raise SystemExit(
-                "generated ThinkingAI inventory artifacts are stale: "
+                "generated ThinkingAI inventory artifacts do not match the pinned "
+                "immutable source observation: "
                 + ", ".join(str(path.relative_to(ROOT)) for path in mismatched)
+                + ". Run `python scripts/generate_thinkingai_inventory.py` to "
+                "rebuild only the derived snapshot and diff. Do not use "
+                "`--import-playwright-output` to repair this stale check; that mode "
+                "imports a new observation and is a separate review decision."
             )
         print("ThinkingAI inventory artifacts are current")
         return 0
