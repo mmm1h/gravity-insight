@@ -24,9 +24,7 @@ Gravity Agent Runtime 的实现仓库，当前稳定内核是面向数据分析�
 
 ## Agent Runtime 演进计划
 
-当前可执行能力仍以上述 CLI、SDK、Plan、运行时 catalog 和机器合同为准；目标架构不等于已经交付。批准的 Gravity Agent Runtime 改造已拆成版本化[需求索引](specs/agent-runtime/index.md)，每个单元独立验收并集成到 `dev`。
-
-本计划完整完成前不把其中的功能开发合入 `main`。Skill Hub、Context、Operator/Model、MCP、SQL Explorer 等只有在对应需求达到 `ready` 并实际落地后，才会进入当前能力文档和公共接口承诺。
+Gravity Agent Runtime 计划已整体发布到 `main`；当前可执行能力仍以上述 CLI、SDK、Plan、运行时 catalog 和机器合同为准。版本化[需求索引](specs/agent-runtime/index.md)保存交付状态，目标架构不自动扩大当前公共接口；试点能力仍服从各自的毕业条件。
 
 ## 安装
 
@@ -47,6 +45,6 @@ result = gravity.read("app.list", {"page": 1, "page_size": 20})
 
 ## 文档
 
-[文档导航](docs/index.md)按任务给出最短阅读路径。接口签名以 [CLI](docs/reference/cli.md)、[SDK](docs/reference/sdk.md) 和 [Plan](docs/reference/plan.md) 参考为准；当前能力以本机 `agent-catalog` 与合同编译结果为准，完整目标以 [canonical architecture source](specs/agent-runtime/architecture-source.md) 为准，交付顺序由批准 directive 与[需求索引](specs/agent-runtime/index.md)约束。
+[文档导航](docs/index.md)按任务给出最短阅读路径。调用方式见 [CLI](docs/reference/cli.md)、[SDK](docs/reference/sdk.md) 和 [Plan](docs/reference/plan.md)；精确字段、错误和 fail-closed 行为从[机器契约索引](docs/reference/cli.md#machine-contract-index)进入当前 catalog 与合同。完整目标以 [canonical architecture source](specs/agent-runtime/architecture-source.md) 为准。
 
 历史归档的拆仓来源见 [2026-08-10 拆仓记录](docs/archive/repository-migration-2026-08-10.md)。
