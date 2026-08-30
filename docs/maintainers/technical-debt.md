@@ -66,8 +66,8 @@
 
 ### 14. 根包仍然扁平，跨执行核心的大环仍未解
 - **接续范围**：接续已关闭 #11 中未由 R17 处理的两部分：R17 只迁移了 `agent_*` 家族，没有解决
-  `src/gravity_sdk` 根包整体扁平化；跨 plan/analysis/metadata/kanban 执行核心的大环仍未拆。
-- **可测事实（2026-08-28）**：`src/gravity_sdk/*.py` 共 496 个；按文件名前缀计数，`plan*` 48、`analysis*` 29、
+  `src/gravity_insight` 根包整体扁平化；跨 plan/analysis/metadata/kanban 执行核心的大环仍未拆。
+- **可测事实（2026-08-28，改名前）**：`src/gravity_sdk/*.py` 共 496 个；按文件名前缀计数，`plan*` 48、`analysis*` 29、
   `export*` 16、`metadata*` 12、`segment*` 12、`kanban*` 11、`saved*` 8、`report*` 6。
 - **影响边界**：当前债务不改变公开导入或运行时行为，只增加模块定位、变更归属判断和跨域审查成本；后续治理也不得
   以整理目录为由损失调用能力或改变执行 owner。
