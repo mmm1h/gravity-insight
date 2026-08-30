@@ -36,7 +36,7 @@ Skill 是声明式方法与依赖合同，不是执行器；Project Overlay 只�
 
 完整目标架构以仓库内 [architecture source](../specs/agent-runtime/architecture-source.md) 为唯一上层来源，并由 [directive](../specs/agent-runtime/directive.json) 绑定 digest；具体交付按 [Requirement Index](../specs/agent-runtime/index.md) 拆分。当前源码和测试证明迁移起点；旧产品假设可以在 R00 后显式迁移，但安全、权限、隐私、写入确认、生产请求和能力不退化规则不能由需求自行豁免。
 
-所有计划单元只集成到 `dev`；完整计划完成和整体验收前不向 `main` 推广。
+计划已完成整体验收并发布到 `main`。日常变更从 `main` 建短命分支，经必需状态检查和 PR 合入；已交付架构不表示试点能力自动毕业。
 
 ## 三条调用路径
 
