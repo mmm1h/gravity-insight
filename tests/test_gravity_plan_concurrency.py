@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import threading
-import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -58,7 +57,9 @@ class PeakTransport:
 
     def batch(self, requests, *, max_workers, **_options):
         first_wave = min(max_workers, len(requests))
-        barrier = threading.Barrier(first_wave) if first_wave > 1 else None
+        barrier = (
+            threading.Barrier(first_wave, timeout=20) if first_wave > 1 else None
+        )
         started = 0
 
         def send(request):
@@ -70,8 +71,14 @@ class PeakTransport:
                 started += 1
                 synchronize = started <= first_wave
             if barrier is not None and synchronize:
-                barrier.wait(timeout=2)
-            time.sleep(0.01)
+                try:
+                    barrier.wait()
+                except threading.BrokenBarrierError as exc:
+                    raise AssertionError(
+                        "transport first-wave rendezvous timed out or broke after "
+                        f"20s: parties={first_wave}, started={started}, "
+                        f"active={self.active}, peak={self.peak}"
+                    ) from exc
             try:
                 return self.response(request)
             finally:

@@ -448,6 +448,7 @@ class GravityHttpRuntimeTests(unittest.TestCase):
 
     def test_runtime_sql_limit_is_shared_across_runtime_instances(self):
         lock = threading.Lock()
+        rendezvous = threading.Barrier(2, timeout=20)
         active = 0
         max_active = 0
 
@@ -458,7 +459,13 @@ class GravityHttpRuntimeTests(unittest.TestCase):
                     active += 1
                     max_active = max(max_active, active)
                 try:
-                    time.sleep(0.02)
+                    try:
+                        rendezvous.wait()
+                    except threading.BrokenBarrierError as exc:
+                        raise AssertionError(
+                            "shared SQL limit rendezvous timed out or broke after "
+                            f"20s: active={active}, peak={max_active}"
+                        ) from exc
                     return FakeResponse([])
                 finally:
                     with lock:

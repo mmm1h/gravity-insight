@@ -5,7 +5,7 @@ import os
 import subprocess
 import tempfile
 import threading
-import time
+from threading import Barrier
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import date, datetime
@@ -690,7 +690,7 @@ class GravityProductTests(unittest.TestCase):
             self.assertNotIn(secret, rendered)
 
     def test_product_batch_defaults_to_concurrent_ordered_isolated_execution(self):
-        lock = threading.Lock()
+        lock, rendezvous = threading.Lock(), Barrier(2, timeout=20)
         active = 0
         max_active = 0
 
@@ -701,7 +701,7 @@ class GravityProductTests(unittest.TestCase):
                     active += 1
                     max_active = max(max_active, active)
                 try:
-                    time.sleep(0.02)
+                    rendezvous.wait()
                     return [
                         {
                             "app_id": 1001,
@@ -800,7 +800,7 @@ class GravityProductTests(unittest.TestCase):
         self.assertEqual([4, 3], [item["exit_code"] for item in mixed["results"]])
 
         invalid_window = run_product_queries(
-            ConcurrentAggregateClient(),
+            _AggregateClient(),
             [
                 {
                     "product": "daily-event-summary",
@@ -834,7 +834,7 @@ class GravityProductTests(unittest.TestCase):
         self.assertEqual([1001], result["results"][0]["app_ids"])
 
     def test_verify_all_runs_independent_products_concurrently(self):
-        lock = threading.Lock()
+        lock, rendezvous = threading.Lock(), Barrier(2, timeout=20)
         active = 0
         max_active = 0
 
@@ -845,7 +845,7 @@ class GravityProductTests(unittest.TestCase):
                 active += 1
                 max_active = max(max_active, active)
             try:
-                time.sleep(0.02)
+                rendezvous.wait()
                 return {"product": product, "window": [start_at, end_at]}
             finally:
                 with lock:
