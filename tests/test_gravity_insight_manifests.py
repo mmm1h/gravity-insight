@@ -1381,9 +1381,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "trial_play_material_list": [],
                     "video_material_list": [
                         "file_name",
-                        "file_url",
                         "material_id",
-                        "thumbnail_url",
                         "type",
                     ]
                 },
@@ -1527,6 +1525,12 @@ class GravityInsightManifestTests(unittest.TestCase):
                 },
             },
             data_item_contracts,
+        )
+        self.assertEqual(
+            {"video_material_list": ["file_url", "thumbnail_url"]},
+            self.by_id["material.bytedance.project_material.list"][
+                "response_projection"
+            ]["known_omitted_data_item_keys"],
         )
 
         self.assertEqual(

@@ -52,8 +52,14 @@ class RecordingTransport:
                             "file_name": "example-video.mp4",
                             "material_id": 303,
                             "type": "VIDEO",
-                            "file_url": "https://media.example.test/video.mp4",
-                            "thumbnail_url": "https://media.example.test/thumb.jpg",
+                            "file_url": (
+                                "https://media.example.test/video.mp4?signature="
+                                "PRIVATE_URL_SENTINEL_19"
+                            ),
+                            "thumbnail_url": (
+                                "https://media.example.test/thumb.jpg?signature="
+                                "PRIVATE_URL_SENTINEL_19"
+                            ),
                             "new_item_field": "hidden by default",
                         }
                     ],
@@ -93,9 +99,10 @@ class ByteDanceProjectMaterialOperationTests(unittest.TestCase):
             dict(kwargs["body"]),
         )
         self.assertEqual(
-            {"file_name", "file_url", "material_id", "thumbnail_url", "type"},
+            {"file_name", "material_id", "type"},
             set(result["data"]["video_material_list"][0]),
         )
+        self.assertNotIn("PRIVATE_URL_SENTINEL_19", json.dumps(result, sort_keys=True))
         self.assertEqual([], result["data"]["instant_play_material_list"])
         self.assertEqual([], result["data"]["trial_play_material_list"])
         self.assertNotIn("new_data_field", result["data"])
