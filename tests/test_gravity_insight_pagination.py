@@ -9,6 +9,7 @@ from gravity_insight import GravityInsightClient
 from gravity_insight import runtime
 from gravity_insight.models import ReadResult
 from gravity_insight.pagination_audit import pagination_audit
+from gravity_insight.pagination_completeness import aggregate_completeness
 from gravity_insight.pagination_policy import has_next_page
 
 
@@ -423,6 +424,64 @@ class GravityInsightPaginationTests(unittest.TestCase):
         none_schema = self.client.schema("example.concurrent.detail")
         self.assertEqual("none", none_schema["pagination"]["kind"])
         self.assertEqual("page", none_schema["pagination"]["page_field"])
+
+
+class AggregateCompletenessTests(unittest.TestCase):
+    """A result envelope must survive every shape a completeness field can take."""
+
+    def test_structured_audit_block_does_not_break_the_scalar_rollup(self) -> None:
+        # pagination_audit reports completeness as a structured block. Walking a
+        # result that carries one must still yield the scalar the envelope needs.
+        result = {
+            "page": {
+                "number": 1,
+                "size": 100,
+                "item_count": 2,
+                "total_items": 2,
+                "has_more": False,
+                "pages_fetched": 1,
+            },
+            "completeness": "complete",
+            "data": {"list": [{"id": 1}, {"id": 2}]},
+        }
+        audit = pagination_audit(result, {}, all_pages=True)
+
+        self.assertIsInstance(audit["completeness"], dict)
+        self.assertEqual("complete", aggregate_completeness({**result, "pagination_audit": audit}))
+
+    def test_unrecognised_completeness_values_degrade_to_unknown(self) -> None:
+        for status in ("bogus", "", 3, None, True):
+            with self.subTest(status=status):
+                self.assertEqual(
+                    "unknown", aggregate_completeness({"completeness": status})
+                )
+
+    def test_nested_prefix_still_wins_over_a_complete_sibling(self) -> None:
+        self.assertEqual(
+            "prefix",
+            aggregate_completeness(
+                [
+                    {"completeness": "complete"},
+                    {"result": {"pagination": {"completeness": "prefix"}}},
+                ]
+            ),
+        )
+
+    def test_a_container_completeness_is_walked_not_read_as_a_state(self) -> None:
+        # The block itself proves nothing; only the states inside it count.
+        self.assertEqual(
+            "unknown",
+            aggregate_completeness({"pagination_audit": {"completeness": {"status": "complete"}}}),
+        )
+        self.assertEqual(
+            "complete",
+            aggregate_completeness(
+                {
+                    "pagination": {"completeness": "complete"},
+                    "pagination_audit": {"completeness": {"status": "complete"}},
+                }
+            ),
+        )
 
 
 if __name__ == "__main__":

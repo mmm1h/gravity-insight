@@ -155,15 +155,29 @@ def collection_claims(completeness: str) -> tuple[list[str], list[str]]:
 
 def _collect_completeness(value: Any, observed: list[str]) -> None:
     if isinstance(value, Mapping):
-        status = value.get("completeness")
-        if status in COMPLETENESS_VALUES:
-            observed.append(str(status))
+        if "completeness" in value:
+            _observe_completeness(value["completeness"], observed)
         for nested in value.values():
             if isinstance(nested, (Mapping, list, tuple)):
                 _collect_completeness(nested, observed)
     elif isinstance(value, (list, tuple)):
         for nested in value:
             _collect_completeness(nested, observed)
+
+
+def _observe_completeness(status: Any, observed: list[str]) -> None:
+    """Read one completeness field without trusting its declared type.
+
+    A structured audit block such as ``pagination_audit.completeness`` is a
+    container rather than a state, so the walk descends into it instead of
+    reading it here. Any other unrecognised value degrades to unknown, which
+    keeps a malformed envelope from being reported as a complete collection.
+    """
+
+    if isinstance(status, str):
+        observed.append(status if status in COMPLETENESS_VALUES else UNKNOWN)
+    elif not isinstance(status, (Mapping, list, tuple)):
+        observed.append(UNKNOWN)
 
 
 def _nonnegative_int(value: Any) -> bool:

@@ -9,8 +9,17 @@ from collections.abc import Mapping
 from unittest.mock import patch
 
 from gravity_insight import GravitySDK, cli
-from gravity_insight.errors import error_detail_from_exception, error_envelope
-from gravity_insight.plan import AdapterContext
+from gravity_insight.errors import (
+    PaginationError,
+    error_detail_from_exception,
+    error_envelope,
+)
+from gravity_insight.plan import (
+    AdapterContext,
+    PlanAdapter,
+    PlanAdapters,
+    execute_plan,
+)
 from gravity_insight.plan_user_detail_aggregate_adapter import (
     USER_DETAIL_AGGREGATE_NAME,
     execute_user_detail_aggregate_plan,
@@ -491,6 +500,187 @@ class UserDetailAggregateTests(unittest.TestCase):
         )
         self.assertIn("cells", projected)
         self.assertNotIn("query", projected)
+
+
+def _plan_adapters(insight: object) -> PlanAdapters:
+    """Bind the real aggregate adapter into the closed composite slot."""
+
+    class SDK:
+        pass
+
+    sdk = SDK()
+    sdk.insight = insight
+    return PlanAdapters(
+        composite=PlanAdapter(
+            execute=lambda request, context: execute_user_detail_aggregate_plan(
+                sdk, request, context
+            ),
+            validate=lambda request, context: validate_user_detail_aggregate_plan(
+                object(), object(), request, context
+            ),
+            project=project_user_detail_aggregate_result,
+        )
+    )
+
+
+def _aggregate_plan(inputs: Mapping[str, object]) -> dict[str, object]:
+    return {
+        "schema_version": "gravity.plan.v1",
+        "budget": {"max_workers": 4, "max_total_items": 2000},
+        "nodes": [
+            {
+                "id": "cohort",
+                "kind": "composite",
+                "request": {
+                    "name": USER_DETAIL_AGGREGATE_NAME,
+                    "input_schema_version": INPUT_SCHEMA_VERSION,
+                    "inputs": dict(inputs),
+                },
+                "limits": {"max_pages": 100, "max_items": 200},
+            }
+        ],
+    }
+
+
+class PlanAggregateParityTests(unittest.TestCase):
+    """Issue #48: the closed Plan projector must carry the direct envelope."""
+
+    def _rows(self) -> list[dict[str, object]]:
+        return [
+            {
+                "Version": "1.0",
+                "userassignment_property": "control",
+                "user$pay_count": 1,
+                "user$pay_amount_sum": 4.5,
+                "ClientID": f"{SENTINEL}-a",
+                "user_id": f"{SENTINEL}-a",
+                "device_id": f"{SENTINEL}-a",
+            },
+            {
+                "Version": "2.0",
+                "userassignment_property": "treatment",
+                "user$pay_count": 0,
+                "user$pay_amount_sum": 7.0,
+                "ClientID": f"{SENTINEL}-b",
+                "user_id": f"{SENTINEL}-b",
+                "device_id": f"{SENTINEL}-b",
+            },
+        ]
+
+    def _execute(self, source: Mapping[str, object], inputs: Mapping[str, object]):
+        envelope = execute_plan(
+            _aggregate_plan(inputs),
+            adapters=_plan_adapters(_Client(source)),
+            workspace=object(),
+        )
+        return envelope, envelope["results"][0]
+
+    def test_plan_node_preserves_the_successful_direct_envelope(self) -> None:
+        rows = self._rows()
+        inputs = _inputs()
+        direct = run_user_detail_aggregate(_Client(_source(rows)), inputs, max_workers=1)
+        envelope, node = self._execute(_source(rows), inputs)
+
+        self.assertTrue(envelope["ok"], envelope["results"][0].get("error"))
+        self.assertEqual("success", envelope["status"])
+        self.assertEqual(0, envelope["exit_code"])
+        self.assertTrue(node["ok"])
+        self.assertIsNone(node["error"])
+
+        # count, count_if and sum must all survive the projector unchanged.
+        planned = node["result"]
+        self.assertEqual(direct["cells"], planned["cells"])
+        self.assertEqual(direct["cell_count"], planned["cell_count"])
+        self.assertEqual(direct["group_count"], planned["group_count"])
+        self.assertEqual(
+            {"users", "payers", "revenue"},
+            {item["measure"] for item in planned["cells"]},
+        )
+
+    def test_plan_node_preserves_pagination_and_audit_evidence(self) -> None:
+        rows = self._rows()
+        inputs = _inputs()
+        direct = run_user_detail_aggregate(_Client(_source(rows)), inputs, max_workers=1)
+        _, node = self._execute(_source(rows), inputs)
+        planned = node["result"]
+
+        self.assertEqual(
+            direct["pagination"]["completeness"], planned["pagination"]["completeness"]
+        )
+        self.assertEqual(
+            direct["pagination"]["consumed_pages"],
+            planned["pagination"]["consumed_pages"],
+        )
+        self.assertEqual(
+            direct["pagination"]["consumed_items"],
+            planned["pagination"]["consumed_items"],
+        )
+        self.assertEqual(
+            direct["source"]["schema_fingerprint"],
+            planned["source"]["schema_fingerprint"],
+        )
+        audit = planned["pagination_audit"]
+        self.assertEqual("all_pages", audit["mode"])
+        self.assertEqual(
+            planned["pagination"]["consumed_pages"], audit["operation_requests_made"]
+        )
+        # The audit block keeps its structured completeness without breaking the
+        # scalar completeness the Plan envelope reports.
+        self.assertIsInstance(audit["completeness"], dict)
+        self.assertEqual(
+            planned["pagination"]["completeness"], audit["completeness"]["status"]
+        )
+        self.assertEqual(planned["pagination"]["completeness"], node["completeness"])
+        self.assertNotIn(SENTINEL, json.dumps(planned, sort_keys=True))
+
+    def test_unknown_completeness_survives_without_a_complete_collection_claim(
+        self,
+    ) -> None:
+        rows = self._rows()
+        envelope, node = self._execute(
+            _source(rows, completeness="unknown"), _inputs()
+        )
+
+        self.assertTrue(envelope["ok"], node.get("error"))
+        self.assertEqual("unknown", node["result"]["pagination"]["completeness"])
+        self.assertEqual("unknown", node["completeness"])
+        self.assertEqual("unknown", envelope["completeness"])
+        self.assertIn(
+            "complete_collection",
+            node["result"]["pagination"]["claims"]["forbidden"],
+        )
+
+    def test_empty_result_reaches_the_envelope_as_empty_not_as_an_exception(
+        self,
+    ) -> None:
+        inputs = _inputs()
+        inputs["group_by"] = []
+        envelope, node = self._execute(_source([]), inputs)
+
+        self.assertTrue(envelope["ok"], node.get("error"))
+        self.assertEqual("empty", node["status"])
+        self.assertEqual(1, envelope["empty_count"])
+        self.assertIsNone(node["error"])
+        self.assertEqual(
+            {"users": 0, "payers": 0, "revenue": 0},
+            {item["measure"]: item["value"] for item in node["result"]["cells"]},
+        )
+
+    def test_local_failure_is_reported_once_and_never_marked_retryable(self) -> None:
+        with patch(
+            "gravity_insight.user_detail_aggregate_product.run_user_detail_aggregate",
+            side_effect=PaginationError("aggregate page budget exhausted"),
+        ):
+            envelope, node = self._execute(_source(self._rows()), _inputs())
+
+        self.assertFalse(envelope["ok"])
+        self.assertEqual("error", envelope["status"])
+        self.assertEqual("error", node["status"])
+        self.assertIsNone(node["result"])
+        self.assertFalse(node["error"]["retryable"])
+        self.assertIsNone(node["error"]["retry_after_ms"])
+        # A local bound is reported as itself, not as an opaque adapter crash.
+        self.assertEqual("PAGINATION_LIMIT", node["error"]["code"])
 
 
 if __name__ == "__main__":
