@@ -13,6 +13,20 @@ env:
   PYTHONIOENCODING: utf-8
 
 jobs:
+  surface-parity:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and test runner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Check stable Direct and Plan surface parity
+        run: python -m pytest -q tests/test_user_detail_aggregate.py
+
   test:
     runs-on: windows-latest
     timeout-minutes: 20
