@@ -26,6 +26,7 @@ _MANIFEST_ROOT = Path(__file__).resolve().parent / "contracts" / "skills"
 _COMPACT_IDENTITY = re.compile(
     r"^(?P<namespace>[a-z][a-z0-9.-]*)/(?P<skill_id>[a-z0-9-]+)@(?P<version>[0-9A-Za-z.-]+)$"
 )
+_AVAILABLE_METHOD_DEPENDENCY_STATUSES = frozenset({"available", "optional"})
 
 
 class SkillContractError(AgentRuntimeContractError):
@@ -93,7 +94,214 @@ def compile_skill_manifest(
         contract["context_dependencies"]["optional"]
     ):
         raise SkillContractError("Skill Context dependency cannot be required and optional")
+    method_errors = validate_method_structure(contract)
+    if method_errors:
+        raise SkillContractError("; ".join(method_errors))
     return contract
+
+
+def validate_method_structure(manifest: Mapping[str, Any]) -> list[str]:
+    """Return Method cross-field errors not expressible in JSON Schema."""
+
+    method = manifest.get("method")
+    if method is None:
+        return []
+    errors: list[str] = []
+    _unique_method_ids(method["procedure"], "step_id", "procedure", errors)
+    _unique_method_ids(method["formulas"], "formula_id", "formulas", errors)
+    _unique_method_ids(
+        method["dimension_scan"]["dimensions"],
+        "dimension_id",
+        "dimensions",
+        errors,
+    )
+    _unique_method_ids(
+        method["diagnostic_tree"]["branches"],
+        "branch_id",
+        "diagnostic branches",
+        errors,
+    )
+    leaves = [
+        leaf
+        for branch in method["diagnostic_tree"]["branches"]
+        for leaf in branch["leaves"]
+    ]
+    _unique_method_ids(leaves, "leaf_id", "diagnostic leaves", errors)
+    _unique_method_ids(
+        method["result"]["sections"], "section_id", "result sections", errors
+    )
+    _unique_method_ids(
+        method["examples"]["eval_cases"], "eval_id", "Eval cases", errors
+    )
+    _validate_method_step_dependencies(method["procedure"], errors)
+    _validate_method_formula_calibrations(method, errors)
+    _validate_method_eval_references(manifest, method, errors)
+    _validate_method_dependency_status(manifest, method, errors)
+    return errors
+
+
+def _unique_method_ids(
+    values: list[dict[str, Any]], key: str, label: str, errors: list[str]
+) -> None:
+    identities = [item[key] for item in values]
+    if len(identities) != len(set(identities)):
+        errors.append(f"Method {label} must use unique {key} values")
+
+
+def _validate_method_step_dependencies(
+    steps: list[dict[str, Any]], errors: list[str]
+) -> None:
+    prior: set[str] = set()
+    for step in steps:
+        if set(step["depends_on"]) - prior:
+            errors.append(
+                f"Method step {step['step_id']} depends on unknown or later steps"
+            )
+        prior.add(step["step_id"])
+
+
+def _validate_method_formula_calibrations(
+    method: Mapping[str, Any], errors: list[str]
+) -> None:
+    declared = {
+        item["calibration_id"]
+        for item in method["assumptions"]["requires_project_calibration"]
+    }
+    for formula in method["formulas"]:
+        if not set(formula["requires_project_calibration"]).issubset(declared):
+            errors.append(
+                f"Method formula {formula['formula_id']} references undeclared "
+                "project calibration"
+            )
+
+
+def _validate_method_eval_references(
+    manifest: Mapping[str, Any], method: Mapping[str, Any], errors: list[str]
+) -> None:
+    sections = {item["section_id"] for item in method["result"]["sections"]}
+    forbidden = set(manifest["claim_policy"]["forbidden"])
+    for case in method["examples"]["eval_cases"]:
+        if not set(case["expected_sections"]).issubset(sections):
+            errors.append(
+                f"Method Eval {case['eval_id']} references an unknown result section"
+            )
+        if not set(case["forbidden_claims"]).issubset(forbidden):
+            errors.append(
+                f"Method Eval {case['eval_id']} references an undeclared forbidden claim"
+            )
+
+
+def _declared_method_dependencies(
+    manifest: Mapping[str, Any],
+) -> set[tuple[str, str]]:
+    values = {
+        ("capability", item["selector"])
+        for item in manifest["capability_dependencies"]
+    }
+    values.update(("semantic", item) for item in manifest["semantic_dependencies"])
+    values.update(("operator", item) for item in manifest["operator_dependencies"])
+    values.update(("model", item) for item in manifest["model_dependencies"])
+    values.update(
+        ("context", item)
+        for item in manifest["context_dependencies"]["required"]
+    )
+    values.update(
+        ("context", item)
+        for item in manifest["context_dependencies"]["optional"]
+    )
+    return values
+
+
+def _validate_method_dependency_status(
+    manifest: Mapping[str, Any], method: Mapping[str, Any], errors: list[str]
+) -> None:
+    rows = method["dependency_status"]
+    identities = [(item["kind"], item["identity"]) for item in rows]
+    if len(identities) != len(set(identities)):
+        errors.append("Method dependency_status identities must be unique")
+    if set(identities) != _declared_method_dependencies(manifest):
+        errors.append(
+            "Method dependency_status must exactly cover declared dependencies"
+        )
+    optional_context = set(manifest["context_dependencies"]["optional"])
+    for row in rows:
+        errors.extend(
+            _method_dependency_status_errors(manifest, row, optional_context)
+        )
+    if (
+        any(
+            row["status"] not in _AVAILABLE_METHOD_DEPENDENCY_STATUSES
+            for row in rows
+        )
+        and manifest["readiness"] != "blocked"
+    ):
+        errors.append(
+            "Skill with unresolved Method dependencies must declare blocked readiness"
+        )
+
+
+def _method_dependency_status_errors(
+    manifest: Mapping[str, Any],
+    row: Mapping[str, Any],
+    optional_context: set[str],
+) -> list[str]:
+    kind, identity, status = row["kind"], row["identity"], row["status"]
+    errors: list[str] = []
+    if status == "requires_project_binding" and not (
+        kind == "semantic" and "://project/" in identity
+    ):
+        errors.append(
+            "requires_project_binding is valid only for project Semantic dependencies"
+        )
+    if status == "requires_project_context" and not (
+        kind == "context" and "://project/" in identity
+    ):
+        errors.append(
+            "requires_project_context is valid only for project Context dependencies"
+        )
+    if status == "optional" and not (
+        kind == "context" and identity in optional_context
+    ):
+        errors.append(
+            "optional status is valid only for optional Context dependencies"
+        )
+    if status == "available" and not _method_dependency_available(
+        manifest, kind, identity
+    ):
+        errors.append(
+            f"Method dependency {kind}:{identity} is marked available but is not "
+            "registered"
+        )
+    return errors
+
+
+def _method_dependency_available(
+    manifest: Mapping[str, Any], kind: str, identity: str
+) -> bool:
+    if kind == "capability":
+        requirement = next(
+            (
+                item
+                for item in manifest["capability_dependencies"]
+                if item["selector"] == identity
+            ),
+            None,
+        )
+        return bool(
+            requirement
+            and capability_contract(requirement["identity_kind"], identity) is not None
+        )
+    roots = {
+        "operator": Path(__file__).resolve().parent / "contracts" / "operators",
+        "semantic": Path(__file__).resolve().parent / "contracts" / "semantics",
+    }
+    root = roots.get(kind)
+    if root is None:
+        return False
+    return identity in {
+        str(load_json_object(path, f"{kind} dependency {path.name}").get("uri"))
+        for path in sorted(root.glob("*.json"))
+    }
 
 
 @lru_cache(maxsize=1)
@@ -186,5 +394,6 @@ __all__ = [
     "skill_artifact",
     "skill_artifacts",
     "skill_uri",
+    "validate_method_structure",
     "validate_skill_journey_parity",
 ]
