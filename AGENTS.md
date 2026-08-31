@@ -3,7 +3,7 @@
 **先选路，再往下读。**
 
 - **要用这个 SDK 取数分析** → [团队上手包](docs/team-onboarding.md)。最短命令：`$env:PYTHONPATH='src'; python -m gravity_insight agent-catalog categories`。不要通读本文。
-- **要修改这个仓库** → 继续读下面的开发约束。
+- **要修改这个仓库** → 继续读下面的开发约束；已知 Issue、Journey、Skill、selector 或 changed files 时，先运行 `python scripts/task_context.py --help`，只读生成的 L1-L3 最小引用。History/Archive 默认不加载。
 
 ## Product goal
 

@@ -11,7 +11,7 @@ Gravity Agent Runtime 的实现仓库，当前稳定内核是面向数据分析�
   python -m gravity_insight agent-catalog categories
   ```
 
-- **修改本仓库**：先读 [AGENTS.md](AGENTS.md)，再从 [维护者入口](docs/maintainers/index.md) 选择当前任务。
+- **修改本仓库**：先读 [AGENTS.md](AGENTS.md)；已知 Issue、Journey、Skill、selector 或 changed files 时，先运行 `python scripts/task_context.py --help`，只按生成的读取顺序展开当前上下文。
 
 ## 产品入口
 

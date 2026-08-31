@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "c85974bc174b94d01eac1a98bacb41ea16a42f7845d98bc9dadc73ea30033dcf",
+    "reference_evidence_sha256": "9db00cdafa50a937e802e05cad9918518d561e12a9c52f29f0c8ff5ef56e93a2",
     "manual_review_sha256": "054b157cbe9638807c4df1b60199ec16af67caf03e533511805c7fadc99c055e",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3109,
-    "scanned_file_count": 3102,
+    "version_controlled_file_count": 3116,
+    "scanned_file_count": 3109,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -659,12 +659,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 299,
-    "reference_site_count": 297,
+    "tracked_site_count": 356,
+    "reference_site_count": 354,
     "manual_review_site_count": 220,
     "reference_manual_overlap_count": 218,
     "manual_only_site_count": 2,
-    "unique_source_keys": 299,
+    "unique_source_keys": 356,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -672,9 +672,10 @@
     "reference_categories": {
       "documentation_spec": 88,
       "dynamic_import": 11,
+      "entrypoint_config": 56,
       "manual_patch_expression": 118,
       "module_qualname_dependency": 7,
-      "static_import": 68,
+      "static_import": 69,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -685,9 +686,9 @@
       "non_string_patch_expression": 118
     },
     "dispositions": {
-      "no_migration_effect": 299
+      "no_migration_effect": 356
     },
-    "sites_sha256": "169c8dab504251d6654b0f4b4e48c4f728d7516b5a455ed120013cbce37ac960"
+    "sites_sha256": "aed8d1f8f92c47455c5343c9159a8651d5638148302ecb4a6b6f780d483d8b26"
   },
   "blockers": [],
   "site_fields": [
@@ -2070,6 +2071,21 @@
       }
     ],
     [
+      "scripts/repository_map.py:724:5:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
       "src/gravity_insight/__init__.py:278:21:import_module",
       "rm",
       "dynamic_import",
@@ -2241,6 +2257,846 @@
       "gravity_insight.agent_runtime_contracts",
       "gravity_insight.agent_runtime_contracts",
       "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:103673:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:105512:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:106495:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:128322:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:128562:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:128782:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:133954:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:135630:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:140329:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:140807:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:141188:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:147622:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:14894:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:149180:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:149321:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:152827:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:154419:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:154836:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:155012:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:155158:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:156031:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:159069:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:159310:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:159567:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:160013:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:161525:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163148:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163314:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163452:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168703:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168831:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:169062:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:169385:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172694:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179290:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179597:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:181527:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:201548:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:206560:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:207123:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:209749:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:213742:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:226092:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:226275:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:227527:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:227723:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:228701:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:228941:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229275:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229468:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229633:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229850:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:232781:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233345:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233445:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:235883:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
       "exact",
       "no_migration_effect",
       "retained_module_reference",

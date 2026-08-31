@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.repository-map.v1",
+  "title": "Gravity Repository Map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generation_metadata",
+    "field_derivation",
+    "estimate_method",
+    "counts",
+    "entries",
+    "issue_index",
+    "module_graph"
+  ],
+  "properties": {
+    "schema_version": {"const": "gravity.repository-map.v1"},
+    "generation_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deterministic", "generated_at", "generated_at_reason"],
+      "properties": {
+        "deterministic": {"const": true},
+        "generated_at": {"type": "null"},
+        "generated_at_reason": {"const": "volatile timestamps are excluded from the reproducible projection"}
+      }
+    },
+    "field_derivation": {
+      "type": "object",
+      "minProperties": 15,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sources", "method", "null_reason"],
+        "properties": {
+          "sources": {"type": "array", "items": {"type": "string"}},
+          "method": {"type": "string", "minLength": 1},
+          "null_reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "estimate_method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "tokens", "expected_error"],
+      "properties": {
+        "bytes": {"type": "string", "minLength": 1},
+        "tokens": {"type": "string", "minLength": 1},
+        "expected_error": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "entries": {"type": "array", "items": {"$ref": "#/$defs/entry"}},
+    "issue_index": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"$ref": "#/$defs/location"}
+      }
+    },
+    "module_graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["definition_id", "definition_sha256", "profile", "node_count", "edge_count", "graph_sha256", "edges"],
+      "properties": {
+        "definition_id": {"type": "string"},
+        "definition_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "profile": {"const": "canonical"},
+        "node_count": {"type": "integer", "minimum": 1},
+        "edge_count": {"type": "integer", "minimum": 0},
+        "graph_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "edges": {
+          "type": "object",
+          "additionalProperties": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "line": {"type": "integer", "minimum": 1}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "entity_kind", "source_files", "source_spans", "domain",
+        "capability", "skill", "journey", "owner", "public_surfaces",
+        "dependencies", "schema", "tests", "current_docs", "issue",
+        "debt", "maturity", "token_estimate", "byte_estimate", "unavailable"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "entity_kind": {"enum": ["component", "capability", "journey", "skill", "debt"]},
+        "source_files": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "source_spans": {"type": "array", "items": {"$ref": "#/$defs/span"}},
+        "domain": {"description": "Null only when the source entity has no machine-owned namespace or domain identity.", "type": ["string", "null"]},
+        "capability": {"description": "Null when capability is not applicable to the entity kind; a proven empty declaration is an empty array.", "type": ["array", "null"], "items": {"type": "string"}},
+        "skill": {"description": "Null when skill is not applicable to the entity kind; a proven empty declaration is an empty array.", "type": ["array", "null"], "items": {"type": "string"}},
+        "journey": {"description": "Null when journey is not applicable to the entity kind; a proven empty declaration is an empty array.", "type": ["array", "null"], "items": {"type": "string"}},
+        "owner": {"description": "Null when no explicit machine owner field exists; Git author and provenance authorship are not ownership.", "type": ["string", "null"]},
+        "public_surfaces": {"description": "Null when the entity has no explicit public-surface declaration; documentation filenames are not availability evidence.", "type": ["object", "null"], "additionalProperties": {"type": "string"}},
+        "dependencies": {"description": "Null when no governed dependency declaration or graph-bound Python source exists.", "type": ["array", "null"], "items": {"type": "string"}},
+        "schema": {"description": "Null when no exact schema_version const or component schema machine source is bound.", "type": ["array", "null"], "items": {"type": "string"}},
+        "tests": {"description": "Null only if the current test scan cannot run; no exact reference is represented by an empty array.", "type": ["array", "null"], "items": {"type": "string"}},
+        "current_docs": {"description": "Null only if the current-doc scan cannot run; no exact non-History reference is an empty array.", "type": ["array", "null"], "items": {"type": "string"}},
+        "issue": {"description": "Null only if issue-reference derivation cannot run; no exact repository reference is an empty array and does not assert external absence.", "type": ["array", "null"], "items": {"type": "string", "pattern": "^[0-9]+$"}},
+        "debt": {"description": "Null only if current debt parsing cannot run; no exact current debt reference is an empty array.", "type": ["array", "null"], "items": {"type": "string", "pattern": "^[0-9]+$"}},
+        "maturity": {"description": "Null when the entity source has no maturity or lifecycle field.", "type": ["string", "null"]},
+        "token_estimate": {"type": "integer", "minimum": 0},
+        "byte_estimate": {"type": "integer", "minimum": 0},
+        "unavailable": {
+          "description": "Every null required field is paired with a derivation reason code; non-null fields must not have one.",
+          "type": "object",
+          "additionalProperties": {"enum": ["not_applicable_to_entity_kind", "no_machine_binding", "explicitly_declared_none", "no_exact_repository_reference"]}
+        }
+      }
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line_start", "line_end"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "line_start": {"type": "integer", "minimum": 1},
+        "line_end": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
