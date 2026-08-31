@@ -130,6 +130,21 @@ class InstalledWheelConsumerGuardTests(unittest.TestCase):
         self.assertTrue(result["strict_prerequisites"])
         self.assertEqual("consumer_repository_missing", result["reason_code"])
 
+    def test_a_non_canonical_consumer_path_still_resolves_to_the_repository_root(
+        self,
+    ) -> None:
+        # git reports the canonical root, so an uncanonicalised caller path must
+        # be resolved before the two are compared. On a CI runner the temporary
+        # directory arrives as a Windows 8.3 short name (C:\Users\RUNNER~1\...)
+        # while git reports the long form; a detour through "..", which pathlib
+        # also leaves unresolved, reproduces that asymmetry portably.
+        with tempfile.TemporaryDirectory() as raw:
+            repository, pinned = _repository(Path(raw))
+            detoured = repository.parent / repository.name / ".." / repository.name
+
+            self.assertNotEqual(repository, detoured)
+            self.assertEqual(pinned, _resolve_consumer_revision(detoured, pinned))
+
     def test_available_prerequisites_execute_the_existing_consumer_check(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             repository, pinned = _repository(Path(raw))

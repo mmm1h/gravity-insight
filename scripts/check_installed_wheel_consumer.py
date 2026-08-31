@@ -117,8 +117,10 @@ def _resolve_consumer_revision(consumer_repository: Path, revision: str) -> str:
             "canonical consumer path is not a Git repository: "
             f"path={consumer_repository}; git_error={detail}",
         )
+    # Both sides must be resolved before comparing: git reports the long form
+    # while the caller's path can still carry a Windows 8.3 short name.
     discovered_root = Path(repository_root.stdout.strip()).resolve()
-    if discovered_root != consumer_repository:
+    if discovered_root != consumer_repository.resolve():
         raise ConsumerPrerequisiteError(
             "consumer_repository_not_git",
             "canonical consumer path is not a Git repository root: "
