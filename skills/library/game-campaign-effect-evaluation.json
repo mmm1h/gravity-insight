@@ -11,41 +11,329 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "design-qualified-association",
+      "observed-campaign-outcome-change",
+      "returned-segment-contribution"
+    ],
     "forbidden": [
       "causality",
       "incremental-lift",
       "unobserved-campaign-effect"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "design-qualified-association",
+      "observed-campaign-outcome-change",
+      "returned-segment-contribution"
+    ]
   },
   "context_dependencies": {
     "optional": [],
     "required": [
-      "context://project/campaign-calendar@1"
+      "context://project/campaign-calendar@1",
+      "context://project/campaign-evaluation-contract@1"
     ]
   },
   "covers_journeys": [],
-  "description": "应用任何比较方法前，核对项目营销活动的时间、资格条件和结果语义。",
-  "effects": [
-    "read"
-  ],
+  "description": "在活动日历、资格、分配、曝光和结果归因均由项目声明后，按证据等级评估观测结果，并把同期变化与增量或因果结论严格分开。",
+  "effects": ["read"],
   "guide": {
-    "applicability": "当营销活动定义、结果指标和无重叠的比较设计均已评审时使用。",
-    "context_boundary": "营销活动日历只能佐证时间；它不能提供分配机制、反事实或因果授权。",
+    "applicability": "适用于活动定义、资格与比较组、结果指标、前后窗口和污染规则均已评审的活动结果评估。",
+    "context_boundary": "活动日历只能证明时间重叠；缺少分配机制、曝光、比较组和反事实证据时，只能报告观测变化，不得声称增量提升或因果效果。",
     "steps": [
-      "解析营销活动资格、曝光、结果、护栏和比较时间窗契约。",
-      "将营销活动 Context 与受治理的观测结果对齐，并且仅应用已评审的评估 Operator。",
-      "区分描述性变化、有证据支持的关联和实验级证据，并明确排除项。"
+      "锁定活动资格、分配、曝光、结果、护栏、时区、归因窗和比较设计。",
+      "将活动日历和评估 Context 与项目 outcome Semantic 对齐，拒绝只凭活动名称或日期推断绑定。",
+      "获取活动组、比较组和前后窗口的分子分母，并检查分页、样本、污染和并行活动。",
+      "按设计证据选择同期差、前后差或双重差分算式；公式可计算不等于因果授权。",
+      "沿设计充分或设计不足分支执行两层诊断，每个叶子核对排除项。",
+      "按渠道、平台、地区和队列扫描观测差异贡献，单列未返回与交叉曝光残差。",
+      "输出结构化结果与证据等级；实验 Handoff 只生成建议，不自动创建或执行实验。"
     ],
-    "title": "营销活动结果证据评估"
+    "title": "活动效果证据评估"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "结果只归入项目批准的曝光后窗口；多次曝光、跨活动重叠、自然触达和跨端合并按项目规则处理。"
+      ],
+      "cohort": [
+        "活动组与比较组在分配前按稳定用户键固定，资格规则一致，交叉曝光和退出规则显式记录。"
+      ],
+      "inputs": [
+        "输入至少包含活动日历、资格、分配或曝光证据、稳定用户键、结果分子分母、比较组和待扫描维度。"
+      ],
+      "requires_project_calibration": [
+        {"calibration_id": "campaign-eligibility", "subject": "活动资格、排除、入组时点和重复参与规则。"},
+        {"calibration_id": "assignment-mechanism", "subject": "随机、规则或运营分配机制，以及比较组如何形成。"},
+        {"calibration_id": "exposure-definition", "subject": "何种送达、展示、点击或参与证据算有效曝光。"},
+        {"calibration_id": "campaign-outcome-definition", "subject": "结果指标的分子、分母、去重键、单位和护栏。"},
+        {"calibration_id": "campaign-attribution-window", "subject": "曝光后结果窗口、多触点、跨活动重叠和归因优先级。"},
+        {"calibration_id": "comparison-window", "subject": "前置期、活动期、后置期和季节性可比基准。"},
+        {"calibration_id": "evaluation-threshold", "subject": "最小样本量、污染上限、最小可报告差异和并行趋势容差。"}
+      ],
+      "time": [
+        "活动日历、曝光时间、结果时间和比较窗口使用同一业务时区；结果窗在活动后闭合且不偷看未来。"
+      ],
+      "unit": [
+        "结果率使用同一实体和稳定用户去重键；金额或次数指标必须声明单位与可加总性，比例不跨切片直接相加。"
+      ]
+    },
+    "business_question": "活动期间结果相对明确比较基准发生了什么变化；现有分配、曝光和反事实证据允许把结论提升到哪一级，哪些维度贡献和排除项必须同时报告？",
+    "data_checks": {
+      "completeness": [
+        "核对活动组、比较组、前置期和活动期的所有分页完成，结果窗均已成熟且样本流转可对账。",
+        "核对资格、分配、有效曝光、结果和交叉曝光人数，未匹配或未返回用户单列残差。"
+      ],
+      "data_quality": [
+        "检查用户重复分配、活动后入组、结果先于曝光、时区错位、分母为零和跨组重复用户。",
+        "检查比较组污染、并行活动、版本发布、价格或渠道策略变化，以及前置期趋势是否超出项目容差。"
+      ],
+      "failure_behavior": "分配或曝光证据缺失时降级为描述性评估；比较组污染、窗口不完整或关键质量检查失败时返回 Partial 或 Gap。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "Runtime 已登记稳定产品 metric-anomaly-localization@1。",
+        "identity": "metric-anomaly-localization@1",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "活动结果是调用项目拥有的业务口径，Runtime 内置 Semantic registry 未提供 Definition 或 Binding。",
+        "identity": "metric://project/campaign-outcome@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 当前未登记 campaign-outcome-evaluation Operator 实现或 golden cases。",
+        "identity": "operator://gravity/campaign-outcome-evaluation@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      },
+      {
+        "evidence": "活动起止、阶段和并行活动事实必须由调用项目 Context Provider 提供，本仓库未绑定。",
+        "identity": "context://project/campaign-calendar@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      },
+      {
+        "evidence": "资格、分配、曝光、结果窗和污染规则必须由调用项目 Context Provider 提供，本仓库未绑定。",
+        "identity": "context://project/campaign-evaluation-contract@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "comparison-design-qualified",
+          "checks": [
+            "验证活动组和比较组的形成机制、分配前固定性、交叉曝光和样本流转。",
+            "验证结果窗、前置趋势、并行活动和项目要求的最小样本及污染门槛。"
+          ],
+          "condition": "项目 Context 提供可审计分配或准实验设计，比较组与窗口检查全部通过。",
+          "leaves": [
+            {
+              "conclusion": "可报告随机或规则分配组之间的观测结果差，但本 Skill 的 Claim Policy 仍不授权因果或增量提升断言。",
+              "condition": "分配机制经项目确认，活动组和比较组在结果窗内独立，交叉曝光低于项目门槛。",
+              "exclusions": [
+                "若分配后存在选择性退出、跨组迁移或不对称结果缺失，组间差异不成立。",
+                "若实验停止、样本量或多重检验规则未由项目评审，不得补造显著性或置信度。"
+              ],
+              "leaf_id": "assigned-group-difference"
+            },
+            {
+              "conclusion": "可报告通过前置趋势检查的双重差分算术估计，并明确它仍是设计限定的关联证据。",
+              "condition": "活动组与比较组前置趋势在项目容差内，窗口无重叠，且同期冲击检查通过。",
+              "exclusions": [
+                "若前置趋势不平行或项目未定义容差，双重差分解释不成立。",
+                "若同期发布、价格、渠道或其他活动差异化影响组别，不得把估计归于本活动。"
+              ],
+              "leaf_id": "difference-in-differences-association"
+            }
+          ]
+        },
+        {
+          "branch_id": "comparison-design-insufficient",
+          "checks": [
+            "区分只有活动前后窗口、只有曝光用户或比较组污染的证据形状。",
+            "量化未匹配、交叉曝光、并行活动和时区错位对可报告范围的影响。"
+          ],
+          "condition": "缺少可审计分配机制、有效比较组、前置趋势或污染控制中的任一项。",
+          "leaves": [
+            {
+              "conclusion": "只能报告活动窗口相对基准窗口的描述性结果变化和返回维度贡献。",
+              "condition": "活动日历与结果 Semantic 可用，但没有有效比较组或分配证据。",
+              "exclusions": [
+                "季节性、自然趋势、版本发布、价格变化和并行活动未排除时，不得称活动效果。",
+                "若活动窗或基准窗未成熟，连描述性变化也必须降级为 Partial。"
+              ],
+              "leaf_id": "before-after-description"
+            },
+            {
+              "conclusion": "证据被污染或无法对齐，返回 Gap 或 Partial，不输出活动效果结论。",
+              "condition": "交叉曝光超过项目上限、分配后入组、结果先于曝光或组别无法稳定去重。",
+              "exclusions": [
+                "不得删除污染用户后假装仍保持原分配设计，除非项目预先批准该排除规则。",
+                "不得用活动名称、日期重叠或用户自选择参与替代分配和曝光证据。"
+              ],
+              "leaf_id": "contaminated-comparison"
+            }
+          ]
+        }
+      ],
+      "root_question": "项目是否提供足以形成有效比较的分配、曝光、窗口和污染证据，还是只能做描述性前后变化？"
+    },
+    "dimension_scan": {
+      "baseline": "每个维度使用同一活动资格、组别、结果窗和比较设计；只在互斥返回切片内汇总，不跨维度叠加贡献。",
+      "contribution_formula": "impact_s = eligible_s * (outcome_rate_campaign_s - outcome_rate_comparison_s); contribution_s = impact_s / sum(impact_returned_s)，总和为零时不输出占比。",
+      "dimensions": [
+        {"dimension_id": "acquisition-channel", "label": "获客渠道"},
+        {"dimension_id": "client-platform", "label": "客户端平台"},
+        {"dimension_id": "region", "label": "地区"},
+        {"dimension_id": "cohort-age-band", "label": "队列年龄段"}
+      ],
+      "minimum_volume_rule": "任一组的合格用户数低于项目最小样本量时，该切片并入低样本残差，不单独排名。",
+      "ranking_rule": "按观测影响绝对值排序，同时报告两组分子、分母、结果率、方向、污染率和证据等级。",
+      "residual_policy": "未匹配用户、交叉曝光、低样本和未返回维度单列残差；残差足以改变方向或排序时降级为 Partial。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "descriptive-only",
+          "expected_sections": ["design-readiness", "observed-results", "exclusions", "claims"],
+          "forbidden_claims": ["causality", "incremental-lift"],
+          "question": "只有活动前后窗口，没有比较组，请评估结果变化并说明能说到什么程度。"
+        },
+        {
+          "eval_id": "qualified-comparison",
+          "expected_sections": ["formula-definition", "design-readiness", "comparison-estimate", "dimension-contribution"],
+          "forbidden_claims": ["causality", "unobserved-campaign-effect"],
+          "question": "项目提供了固定比较组和前置趋势证据，请计算设计限定的结果差并扫描贡献维度。"
+        },
+        {
+          "eval_id": "calendar-only",
+          "expected_sections": ["dependency-gaps", "design-readiness", "claims"],
+          "forbidden_claims": ["causality", "incremental-lift", "unobserved-campaign-effect"],
+          "question": "我只有活动日历和同期收入上涨，能不能直接说活动带来了增量？"
+        }
+      ],
+      "questions": [
+        "活动组相对比较组的结果率发生了什么观测变化，设计证据允许如何表述？",
+        "没有比较组时，活动前后结果变化能否称为增量提升，哪些替代解释未排除？",
+        "哪些渠道、平台或地区贡献了最大的观测差异，交叉曝光残差有多大？"
+      ]
+    },
+    "exclusions": [
+      "活动资格、分配、曝光或结果定义未由项目绑定时，不得从字段名和日期推断活动效果。",
+      "比较组污染、分配后入组、前置趋势不通过或同期存在差异化冲击时，不得解释组间差。",
+      "结果窗未成熟、分页不完整、分母为零或跨组重复用户未解决时，不得输出总体结论。",
+      "时间重叠、相关性、前后上涨或维度集中均不能单独证明因果或增量提升。"
+    ],
+    "formulas": [
+      {
+        "denominator": "组 g 在结果窗口 W 内满足项目资格且进入固定分析集的去重用户数。",
+        "expression": "outcome_rate(g,W) = distinct_outcome_users(g,W) / distinct_eligible_users(g,W)",
+        "formula_id": "campaign-outcome-rate",
+        "interpretation": "该比例只描述明确组别与窗口内的观测结果；分母为零时未定义，不写成零。",
+        "numerator": "组 g 中在项目归因窗口内达到结果条件的去重用户数；同一用户每个组只计一次。",
+        "requires_project_calibration": ["campaign-eligibility", "assignment-mechanism", "campaign-outcome-definition", "campaign-attribution-window"],
+        "unit": "无量纲比例",
+        "variables": [
+          {"aggregation": "按组和窗口去重计数", "definition": "满足项目结果定义和曝光后归因窗口的用户。", "distinct_by": "stable-user-id", "symbol": "distinct_outcome_users"},
+          {"aggregation": "按固定分析集去重计数", "definition": "满足活动资格并按项目规则进入组别的用户。", "distinct_by": "stable-user-id", "symbol": "distinct_eligible_users"}
+        ],
+        "window": "结果窗相对有效曝光或分配时间定义，所有组使用同一时区、长度和成熟度。"
+      },
+      {
+        "denominator": "比较组与活动组的结果率使用相同分子、分母、窗口和去重规则。",
+        "expression": "observed_group_difference = outcome_rate(campaign,post) - outcome_rate(comparison,post)",
+        "formula_id": "observed-group-difference",
+        "interpretation": "结果是同期组间算术差；即使分配机制有效，本 Skill 仍只输出设计限定的观测差，不授权因果或增量提升断言。",
+        "numerator": "活动组结果率减比较组结果率。",
+        "requires_project_calibration": ["assignment-mechanism", "exposure-definition", "evaluation-threshold"],
+        "unit": "比例点",
+        "variables": [
+          {"aggregation": "按 campaign-outcome-rate 公式计算", "definition": "活动组在结果窗的观测结果率。", "distinct_by": "stable-user-id", "symbol": "outcome_rate_campaign"},
+          {"aggregation": "按 campaign-outcome-rate 公式计算", "definition": "比较组在同一结果窗的观测结果率。", "distinct_by": "stable-user-id", "symbol": "outcome_rate_comparison"}
+        ],
+        "window": "活动组与比较组使用同一同期结果窗，并在分配后、结果成熟后一次性计算。"
+      },
+      {
+        "denominator": "双重差分的比较基准是比较组自身前后变化，所有结果率口径必须一致。",
+        "expression": "did_association = (rate_campaign_post - rate_campaign_pre) - (rate_comparison_post - rate_comparison_pre)",
+        "formula_id": "difference-in-differences-association",
+        "interpretation": "这是通过项目前置趋势检查后的算术关联估计；并行趋势和无同期冲击无法由公式证明。",
+        "numerator": "活动组前后结果率变化减比较组前后结果率变化。",
+        "requires_project_calibration": ["assignment-mechanism", "comparison-window", "evaluation-threshold"],
+        "unit": "比例点",
+        "variables": [
+          {"aggregation": "同一组后窗结果率减前窗结果率", "definition": "活动组的前后观测变化。", "distinct_by": "stable-user-id", "symbol": "campaign_change"},
+          {"aggregation": "同一组后窗结果率减前窗结果率", "definition": "比较组的前后观测变化。", "distinct_by": "stable-user-id", "symbol": "comparison_change"}
+        ],
+        "window": "前窗不得受活动曝光影响，后窗必须成熟；两个组使用相同长度、时区和季节位置。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只可生成实验建议输入；创建、分配、执行和结果评估均由独立受治理流程与人工授权负责。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有当前证据不足以支持比较、项目明确提出验证假设且指标与护栏已绑定时，才可交给 gravity experiment propose。",
+        "Handoff 必须携带当前分析证据、禁止断言、目标队列、主指标和独立后置评估要求。"
+      ],
+      "kind": "experiment",
+      "target": "gravity experiment propose"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {"depends_on": [], "instruction": "解析活动日历、资格、分配、曝光、结果、护栏、时区、归因和比较窗口的项目契约。", "on_failure": "METHOD_INPUT_GAP", "step_id": "resolve-contracts"},
+      {"depends_on": ["resolve-contracts"], "instruction": "运行 Capability 获取活动组、比较组、前后窗口的分子、分母和返回维度，并保留请求与分页证据。", "on_failure": "METHOD_QUERY_ERROR", "step_id": "run-observations"},
+      {"depends_on": ["run-observations"], "instruction": "执行样本流转、交叉曝光、窗口成熟度、重复用户、并行活动和前置趋势检查。", "on_failure": "METHOD_DATA_INVALID", "step_id": "validate-data-and-design"},
+      {"depends_on": ["validate-data-and-design"], "instruction": "根据可用设计计算同期组间差、描述性前后差或双重差分算术估计，保留分子分母。", "on_failure": "METHOD_FORMULA_INVALID", "step_id": "compute-comparison"},
+      {"depends_on": ["compute-comparison"], "instruction": "沿设计充分或不足分支逐叶验证条件和排除项，确定证据等级与允许断言。", "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE", "step_id": "traverse-diagnostic-tree"},
+      {"depends_on": ["traverse-diagnostic-tree"], "instruction": "按互斥返回维度计算观测影响贡献，应用样本门槛并单列污染与未返回残差。", "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE", "step_id": "scan-dimensions"},
+      {"depends_on": ["scan-dimensions"], "instruction": "生成结构化 Result，区分描述性变化、设计限定关联、缺口、排除项与实验建议边界。", "on_failure": "METHOD_RESULT_INVALID", "step_id": "assemble-result"}
+    ],
+    "result": {
+      "required_fields": ["status", "reason-codes", "scope", "evidence", "design-level", "observed-values", "allowed-claims", "forbidden-claims"],
+      "sections": [
+        {"section_id": "scope", "title": "活动、组别与窗口"},
+        {"section_id": "formula-definition", "title": "结果率与比较公式"},
+        {"section_id": "dependency-gaps", "title": "依赖与项目事实缺口"},
+        {"section_id": "design-readiness", "title": "比较设计与数据质量"},
+        {"section_id": "observed-results", "title": "观测结果变化"},
+        {"section_id": "comparison-estimate", "title": "设计限定的比较估计"},
+        {"section_id": "dimension-contribution", "title": "维度扫描与贡献度"},
+        {"section_id": "exclusions", "title": "排除项与失效条件"},
+        {"section_id": "claims", "title": "允许与禁止的断言"},
+        {"section_id": "experiment-handoff", "title": "可选实验 Handoff"}
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "活动日历、资格、分配或曝光、结果 Semantic 和比较窗口均已由项目评审。",
+        "需要按证据等级区分描述性前后变化、同期组间差和双重差分关联。"
+      ],
+      "not_applicable": [
+        "需要仅凭日期重叠、同期上涨或用户自选择参与证明因果和增量提升。",
+        "活动组与比较组无法稳定识别、结果窗未成熟或项目没有明确结果分子分母。"
+      ]
+    },
+    "states": {
+      "empty": {"allowed_claims": [], "behavior": "活动组或比较组分母为零、结果窗没有合格用户时返回 Empty，不把结果率写成零。", "reason_code": "METHOD_EMPTY"},
+      "error": {"allowed_claims": [], "behavior": "查询、解析、公式或 Operator 失败时返回 Error，不保留半成品活动效果结论。", "reason_code": "METHOD_ERROR"},
+      "gap": {"allowed_claims": [], "behavior": "Semantic、Context、分配、曝光或比较设计缺失时返回 Gap，并列出项目需要补齐的事实。", "reason_code": "METHOD_GAP"},
+      "partial": {"allowed_claims": [], "behavior": "分页、样本流转、交叉曝光或窗口成熟度不完整时返回 Partial，只保留逐组观测证据。", "reason_code": "METHOD_PARTIAL"}
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
-  "operator_dependencies": [
-    "operator://gravity/campaign-outcome-evaluation@1"
-  ],
+  "operator_dependencies": ["operator://gravity/campaign-outcome-evaluation@1"],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {
     "authorship": "independently_authored",
@@ -55,31 +343,15 @@
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
   "readiness": "blocked",
-  "request_budget": {
-    "known_requests_max": 3,
-    "known_requests_min": 2,
-    "runtime_additional_requests": 0,
-    "unknown_discovery_max": 3
-  },
-  "requirements": {
-    "completeness": "unknown",
-    "data_quality": "pass"
-  },
-  "routing": {
-    "host_catalog_required": true,
-    "product_hints": [
-      "metric-anomaly-localization@1"
-    ],
-    "recognizer_fallback_allowed": true
-  },
+  "request_budget": {"known_requests_max": 3, "known_requests_min": 2, "runtime_additional_requests": 0, "unknown_discovery_max": 3},
+  "requirements": {"completeness": "unknown", "data_quality": "pass"},
+  "routing": {"host_catalog_required": true, "product_hints": ["metric-anomaly-localization@1"], "recognizer_fallback_allowed": true},
   "runtime_requires": ">=0.3,<0.4",
   "schema_version": "gravity.skill.v1",
-  "semantic_dependencies": [
-    "metric://project/campaign-outcome@1"
-  ],
+  "semantic_dependencies": ["metric://project/campaign-outcome@1"],
   "skill_id": "game-campaign-effect-evaluation",
   "specification": "specified",
-  "summary": "评估可观测的营销活动结果，不把相关性拔高为增量提升。",
+  "summary": "以活动 Context 和比较设计分级评估观测结果，明确阻断增量与因果越权。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }
