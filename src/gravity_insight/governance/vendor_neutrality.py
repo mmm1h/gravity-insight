@@ -111,6 +111,9 @@ def check_compilation_products(
         drift.append(str(provenance_path))
     if drift:
         raise error_type("compiled products are stale: " + ", ".join(drift))
+    from scripts.generate_method_gap_report import emit_compiler_report
+
+    emit_compiler_report(project_root)
 
 
 def _tracked_paths(root: Path) -> tuple[str, ...]:
