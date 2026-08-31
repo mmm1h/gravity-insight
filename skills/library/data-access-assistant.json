@@ -1,0 +1,70 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "access-authorized",
+      "credential-availability",
+      "unregistered-route-support"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/data-access-contracts@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "将项目数据需求与已注册能力、所有权和访问契约进行匹配，资源开通仍由外部完成。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "当所需数据集、负责人和预期分析均已明确时，用于记录访问缺口。",
+    "context_boundary": "项目文档仅作为证据；不能授予凭证、杜撰路由，也不能放宽隐私和投影策略。",
+    "steps": [
+      "定义所需数据集、业务目的、访问主体范围和最小字段集。",
+      "将需求与当前已注册能力、Trust、投影、隐私及权限证据进行比较。",
+      "返回确切的现有路径，或返回有界的能力/访问缺口及下一步所需的负责人证据。"
+    ],
+    "title": "受治理的数据访问就绪性评审"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.core",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/75db6249f57bd594",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 0,
+    "known_requests_min": 0,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 0
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "unknown"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [],
+  "skill_id": "data-access-assistant",
+  "specification": "specified",
+  "summary": "评估拟议的读取路径，不创建凭证或绕过路由。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

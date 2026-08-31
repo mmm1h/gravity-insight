@@ -51,13 +51,16 @@ PUBLIC_EXPORTS = ROOT / "tests/fixtures/public_api_exports.json"
 PUBLIC_EXPORT_OWNER_MIGRATIONS = (
     ROOT / "tests/fixtures/public_api_owner_migrations.json"
 )
-DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
 BASELINE_LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 OUTPUT = ROOT / "tests/fixtures/agent_module_reference_checkpoint.json"
+REVIEWED_LEDGER_REVISION = "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
+REVIEWED_LEDGER_GIT_BLOB = "0fcfa6c85e07c7cc901530ed8c2fe7516203e986"
+REVIEWED_LEDGER_SHA256 = "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20"
+REVIEWED_LEDGER_SCHEMA = "gravity.agent-module-reference-dispositions.v2"
 ACTIVE_BARE_FILES = {
     "AGENTS.md",
+    "docs/architecture.md",
     "docs/maintainers/technical-debt.md",
-    "specs/agent-runtime/architecture-source.md",
     "specs/agent-runtime/index.json",
     "specs/agent-runtime/index.md",
 }
@@ -150,13 +153,9 @@ def _sha256(path: Path) -> str:
 
 
 def _reviewed_generator_sha256() -> str:
-    directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
-    revision = directive["canonical_source_errata"]["allowed_source_replacements"][
-        "reviewed_at_revision"
-    ]
     relative = GENERATOR.relative_to(ROOT).as_posix()
     reviewed = subprocess.run(
-        ["git", "show", f"{revision}:{relative}"],
+        ["git", "show", f"{REVIEWED_LEDGER_REVISION}:{relative}"],
         cwd=ROOT,
         check=True,
         stdout=subprocess.PIPE,
@@ -852,20 +851,9 @@ def _classify_manual(
 
 
 def _immutable_baseline_binding() -> dict[str, Any]:
-    directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
-    derivation = directive["canonical_source_errata"]["allowed_source_replacements"]
     repository_path = BASELINE_LEDGER.relative_to(ROOT).as_posix()
-    if derivation.get("ledger_repository_path") != repository_path:
-        raise ValueError("directive no longer binds the immutable R17 baseline ledger")
-    blob = derivation.get("ledger_git_blob")
-    expected_sha = derivation.get("ledger_sha256")
-    reviewed_at_revision = derivation.get("reviewed_at_revision")
-    if not isinstance(reviewed_at_revision, str) or not re.fullmatch(
-        r"[0-9a-f]{40}", reviewed_at_revision
-    ):
-        raise ValueError("directive has no full immutable ledger review revision")
     reviewed_blob = subprocess.run(
-        ["git", "rev-parse", f"{reviewed_at_revision}:{repository_path}"],
+        ["git", "rev-parse", f"{REVIEWED_LEDGER_REVISION}:{repository_path}"],
         cwd=ROOT,
         check=True,
         text=True,
@@ -873,7 +861,7 @@ def _immutable_baseline_binding() -> dict[str, Any]:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ).stdout.strip()
-    if reviewed_blob != blob:
+    if reviewed_blob != REVIEWED_LEDGER_GIT_BLOB:
         raise ValueError("immutable baseline blob differs at the review revision path")
     current_blob = subprocess.run(
         ["git", "rev-parse", f"HEAD:{repository_path}"],
@@ -887,23 +875,23 @@ def _immutable_baseline_binding() -> dict[str, Any]:
     if current_blob != reviewed_blob:
         raise ValueError("current commit changed the reviewed baseline ledger")
     completed = subprocess.run(
-        ["git", "cat-file", "blob", blob],
+        ["git", "cat-file", "blob", REVIEWED_LEDGER_GIT_BLOB],
         cwd=ROOT,
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     bound = completed.stdout
-    if hashlib.sha256(bound).hexdigest() != expected_sha:
-        raise ValueError("immutable baseline Git object differs from directive digest")
+    if hashlib.sha256(bound).hexdigest() != REVIEWED_LEDGER_SHA256:
+        raise ValueError("immutable baseline Git object differs from reviewed digest")
     if BASELINE_LEDGER.read_bytes() != bound:
         raise ValueError("working-tree baseline ledger differs from immutable Git object")
     return {
         "role": "errata_source_only_immutable_baseline",
         "repository_path": repository_path,
-        "git_blob": blob,
-        "sha256": expected_sha,
-        "schema_version": derivation.get("ledger_schema_version"),
+        "git_blob": REVIEWED_LEDGER_GIT_BLOB,
+        "sha256": REVIEWED_LEDGER_SHA256,
+        "schema_version": REVIEWED_LEDGER_SCHEMA,
     }
 
 

@@ -453,9 +453,15 @@ App 归属或“当前版本”。
 
 ## SQL
 
-`gravity sql products|query` 只描述或执行 workspace 已登记 product，不返回 SQL 模板。Explorer 使用
-隔离 SQLite AST、只读数据库身份和资源预算，结果固定为 exploratory/unknown/no-claims；promote 只
-编译 reviewed definition，不自动安装或授予 stable Trust。
+`gravity sql products|query` 只描述或执行 workspace 已登记 product，不返回 SQL 模板。Explorer 只
+支持调用方显式选择的本地 SQLite regular database：成熟 parser 校验单语句 AST，数据库只读身份、
+relation/function allowlist、timeout、VM step、row 与 byte budget 共同失败关闭。VM step 是可执行资源
+预算，不是 scan-byte 证明，因此结果固定为 `trust=exploratory`、`completeness=unknown`、no claims。
+
+探索行只交给显式调用方，不成为持久 Runtime evidence。`promote` 校验并原子安装 reviewed definition，
+但 SQLite 探索与 Registered SQL 的语义等价性必须由外部 review 证明；安装本身不授予 stable Trust。
+Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
+前进入稳定 Journey、Skill、Dashboard 或 Action。
 
 ## Census
 

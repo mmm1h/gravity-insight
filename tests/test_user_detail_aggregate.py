@@ -1,22 +1,28 @@
 from __future__ import annotations
 
+import copy
 import contextlib
 import io
 import json
 import logging
 import unittest
 from collections.abc import Mapping
+from dataclasses import replace
 from unittest.mock import patch
 
 from gravity_insight import GravitySDK, cli
 from gravity_insight.errors import error_detail_from_exception, error_envelope
-from gravity_insight.plan import AdapterContext
-from gravity_insight.plan_user_detail_aggregate_adapter import (
-    USER_DETAIL_AGGREGATE_NAME,
-    execute_user_detail_aggregate_plan,
-    project_user_detail_aggregate_result,
-    validate_user_detail_aggregate_plan,
+from gravity_insight.pagination_completeness import (
+    STABLE_PRODUCT_SURFACES,
+    SURFACE_PARITY_OUTCOMES,
+    stable_product_surface_matrix,
+    surface_contract,
+    surface_parity_sample,
+    validate_surface_pair,
+    validate_surface_registry,
 )
+from gravity_insight.plan import PlanAdapter, PlanAdapters, execute_plan
+from gravity_insight.plan_adapters import build_plan_adapters
 from gravity_insight.user_detail_aggregate_contract import (
     BOUNDS_REQUIRED,
     CARDINALITY_LIMIT,
@@ -437,60 +443,211 @@ class UserDetailAggregateTests(unittest.TestCase):
         self.assertEqual(cli_result["cells"], sdk_result["cells"])
         self.assertFalse(sdk_preview["network_called"])
 
-    def test_plan_uses_one_worker_and_reconstructs_away_sentinel_containers(self) -> None:
-        rows = [
-            {
+
+class _PlanInsight(_Client):
+    def operations(self, **_options):
+        return []
+
+
+class _PlanSDK:
+    def __init__(self, source):
+        self.insight = _PlanInsight(source)
+        self.workspace = object()
+
+
+def _aggregate_plan(inputs):
+    return {
+        "schema_version": "gravity.plan.v1",
+        "budget": {"max_workers": 4, "max_total_items": 2_000},
+        "nodes": [{
+            "id": "aggregate",
+            "kind": "composite",
+            "request": {
+                "name": "user_detail_aggregate",
+                "input_schema_version": INPUT_SCHEMA_VERSION,
+                "inputs": inputs,
+            },
+            "limits": {"max_pages": 200, "max_items": 200},
+        }],
+    }
+
+
+class SurfaceParityHarnessTests(unittest.TestCase):
+    def test_registry_generates_one_parameterized_product_outcome_matrix(self) -> None:
+        matrix = stable_product_surface_matrix()
+        self.assertEqual(len(STABLE_PRODUCT_SURFACES), len(matrix))
+        self.assertEqual(len(matrix), len({item["name"] for item in matrix}))
+        for contract in STABLE_PRODUCT_SURFACES:
+            for outcome in SURFACE_PARITY_OUTCOMES:
+                with self.subTest(product=contract.name, outcome=outcome):
+                    direct, plan = surface_parity_sample(contract, outcome)
+                    validate_surface_pair(contract, direct, plan)
+        validate_surface_registry()
+
+    def test_six_dimensions_each_reject_an_injected_direct_plan_drift(self) -> None:
+        base = surface_contract("user_detail_aggregate")
+        assert base is not None
+        direct, plan = surface_parity_sample(base, "partial")
+        mutations = {
+            "input contract": lambda contract, value: (
+                replace(contract, plan=replace(
+                    contract.plan, input_contract="changed-input.v2"
+                )),
+                value,
+            ),
+            "result schema": lambda contract, value: (
+                contract, {**value, "schema_version": "changed-result.v2"}
+            ),
+            "completeness": lambda contract, value: (
+                contract,
+                {**value, "pagination": {
+                    **value["pagination"], "completeness": "prefix"
+                }},
+            ),
+            "allowed claims": lambda contract, value: (
+                contract,
+                {**value, "pagination": {
+                    **value["pagination"],
+                    "claims": {
+                        **value["pagination"]["claims"],
+                        "allowed": ["returned_items", "complete_collection"],
+                    },
+                }},
+            ),
+            "privacy": lambda contract, value: (
+                replace(contract, plan=replace(contract.plan, privacy="raw-user-rows")),
+                value,
+            ),
+            "error taxonomy": lambda contract, value: (
+                contract,
+                {**value, "error": {**value["error"], "category": "local"}},
+            ),
+        }
+        for dimension, mutate in mutations.items():
+            contract, changed = mutate(base, copy.deepcopy(plan))
+            with self.subTest(dimension=dimension), self.assertRaisesRegex(
+                RuntimeError, dimension
+            ):
+                validate_surface_pair(contract, direct, changed)
+
+    def test_user_detail_success_and_empty_preserve_full_direct_evidence(self) -> None:
+        contract = surface_contract("user_detail_aggregate")
+        assert contract is not None
+        cases = (
+            ("success", "unknown", [{
                 "Version": "1.0",
                 "userassignment_property": "control",
                 "user$pay_count": 1,
                 "user$pay_amount_sum": 4.5,
                 "ClientID": SENTINEL,
-                "user_id": SENTINEL,
-                "device_id": SENTINEL,
-            }
-        ]
-        native = run_user_detail_aggregate(_Client(_source(rows)), _inputs())
-        native["data"] = {"list": [{"ClientID": SENTINEL}]}
-        native["request"] = {"inputs": {"client_id": SENTINEL}}
-        native["source"]["unexpected"] = SENTINEL
-        native["pagination"]["next_page_input"] = {"cursor": SENTINEL}
-        native["pagination_audit"]["unexpected"] = SENTINEL
-        request = {
-            "name": USER_DETAIL_AGGREGATE_NAME,
-            "input_schema_version": INPUT_SCHEMA_VERSION,
-            "inputs": _inputs(),
-        }
-        context = AdapterContext(
-            node_id="aggregate",
-            execution_id="aggregate",
-            kind="composite",
-            workspace=object(),
-            output_fields=(),
-            dynamic_targets=(),
-            max_pages=100,
-            max_items=200,
+            }]),
+            ("empty", "complete", []),
         )
-        validate_user_detail_aggregate_plan(object(), object(), request, context)
+        for expected_status, completeness, rows in cases:
+            with self.subTest(status=expected_status):
+                source = _source(rows, completeness=completeness)
+                direct = run_user_detail_aggregate(
+                    _PlanInsight(source), _inputs(), max_workers=4
+                )
+                sdk = _PlanSDK(source)
+                dry_run = execute_plan(
+                    _aggregate_plan(_inputs()),
+                    adapters=build_plan_adapters(sdk),
+                    workspace=sdk.workspace,
+                    dry_run=True,
+                )
+                plan = execute_plan(
+                    _aggregate_plan(_inputs()),
+                    adapters=build_plan_adapters(sdk),
+                    workspace=sdk.workspace,
+                )
+                product = plan["results"][0]["result"]
+                self.assertEqual(("validated", 0), (dry_run["status"], dry_run["exit_code"]))
+                self.assertEqual((True, expected_status), (plan["ok"], product["status"]))
+                validate_surface_pair(contract, direct, product)
+                for field in ("pagination", "pagination_audit", "source", "result_audit"):
+                    self.assertEqual(direct[field], product[field], field)
+                self.assertNotIn(SENTINEL, repr(product))
+                self.assertTrue(all(
+                    call[2]["max_workers"] == 1 for call in sdk.insight.calls
+                ))
+                if expected_status == "success":
+                    tampered = copy.deepcopy(direct)
+                    tampered["data"] = {"list": [{"ClientID": SENTINEL}]}
+                    tampered["request"] = {"inputs": {"client_id": SENTINEL}}
+                    tampered["source"]["unexpected"] = SENTINEL
+                    tampered["pagination"]["next_page_input"] = {"cursor": SENTINEL}
+                    tampered["pagination_audit"]["unexpected"] = SENTINEL
+                    projected_plan = _aggregate_plan(_inputs())
+                    projected_plan["nodes"][0]["output_fields"] = ["cells"]
+                    with patch(
+                        "gravity_insight.user_detail_aggregate_product.run_user_detail_aggregate",
+                        return_value=tampered,
+                    ) as run:
+                        projected = execute_plan(
+                            projected_plan,
+                            adapters=build_plan_adapters(sdk),
+                            workspace=sdk.workspace,
+                        )["results"][0]["result"]
+                    self.assertEqual(1, run.call_args.kwargs["max_workers"])
+                    self.assertIn("cells", projected)
+                    self.assertNotIn("query", projected)
+                    self.assertNotIn(SENTINEL, repr(projected))
 
-        class SDK:
-            insight = object()
+    def test_user_detail_error_taxonomy_matches_and_is_not_retried(self) -> None:
+        inputs = _inputs()
+        inputs["group_by"] = ["ClientID"]
+        with self.assertRaises(Exception) as raised:
+            run_user_detail_aggregate(_PlanInsight(_source([])), inputs)
+        direct_error = error_detail_from_exception(raised.exception)
+        sdk = _PlanSDK(_source([]))
+        result = execute_plan(
+            _aggregate_plan(inputs),
+            adapters=build_plan_adapters(sdk),
+            workspace=sdk.workspace,
+        )
+        plan_error = result["results"][0]["error"]
+        self.assertEqual(
+            (direct_error.code, direct_error.category, direct_error.retryable),
+            (plan_error["code"], plan_error["category"], plan_error["retryable"]),
+        )
+        self.assertFalse(plan_error["retryable"])
+        self.assertEqual(1, len(sdk.insight.calls))
 
+    def test_result_envelope_type_error_keeps_safe_contract_classification(self) -> None:
+        calls = []
+        adapter = PlanAdapter(
+            execute=lambda request, context: calls.append(context.node_id)
+            or {"schema_version": "fixture.v1", "ok": True, "status": "success"},
+            validate=lambda request, context: None,
+        )
         with patch(
-            "gravity_insight.user_detail_aggregate_product.run_user_detail_aggregate",
-            return_value=native,
-        ) as run:
-            safe = execute_user_detail_aggregate_plan(SDK(), request, context)
-        self.assertEqual(1, run.call_args.kwargs["max_workers"])
-        self.assertNotIn(SENTINEL, json.dumps(safe, sort_keys=True))
-        self.assertNotIn("data", safe)
-        self.assertNotIn("request", safe)
-        projected = project_user_detail_aggregate_result(
-            safe,
-            ("cells",),
-            context,
+            "gravity_insight.plan_execution.aggregate_completeness",
+            side_effect=[TypeError("private"), "unknown", "unknown"],
+        ):
+            result = execute_plan(
+                {
+                    "schema_version": "gravity.plan.v1",
+                    "nodes": [{"id": "fixture", "kind": "run", "request": {}}],
+                },
+                adapters=PlanAdapters(run=adapter),
+                workspace=object(),
+            )
+        error = result["results"][0]["error"]
+        self.assertEqual(["fixture"], calls)
+        self.assertEqual(
+            (
+                "PLAN_ADAPTER_CONTRACT_INCOMPATIBLE",
+                "local",
+                "result_envelope",
+                "type_error",
+                False,
+            ),
+            (
+                error["code"], error["category"], error["stage"],
+                error["cause"], error["retryable"],
+            ),
         )
-        self.assertIn("cells", projected)
-        self.assertNotIn("query", projected)
 
 
 if __name__ == "__main__":

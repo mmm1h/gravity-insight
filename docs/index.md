@@ -16,7 +16,7 @@
 | 配置 App、recipe、SQL 产品或调用方语义 | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md) |
 | 导出文件或把结果交给 LLM | [导出指南](guides/export.md) | [结果与 LLM 安全](guides/llm-output-safety.md) |
 | 修改 SDK、合同、探针或 Evidence | [维护者入口](maintainers/index.md) | [扩展地图](maintainers/extending.md) |
-| 参与 Gravity Agent Runtime 大改造 | [完整架构总纲](../specs/agent-runtime/architecture-source.md) | [Requirement Index](../specs/agent-runtime/index.md)、[路线图](roadmap.md)；仅在 Index 存在外部批准的 `ready` 需求时再读取该需求，否则停止实施并等待 owner 指示 |
+| 修改 Gravity Agent Runtime 架构 | [Canonical Architecture](architecture.md) | [Runtime Component Index](../specs/agent-runtime/index.md)、[路线图](roadmap.md)；字段继续读取对应机器 Owner，不从架构文档猜测 |
 | 查看当前动线、候选阻塞、排期或技术债 | [分析动线](analysis-journeys.md) | [候选矩阵](candidate-capability-matrix.md)、[路线图](roadmap.md)、[技术债](maintainers/technical-debt.md) |
 | 复核外部调研或历史取证 | [当前调研结论](research.md) | [历史与证据归档](archive/index.md) |
 
@@ -31,5 +31,5 @@
 - 使用路径：本页、快速上手、团队上手包、Agent 工作流。
 - 行为合同：reference、manifest、operation contract 和 CLI 输出。
 - 当前决策：路线图、动线台账、候选矩阵、技术债。
-- 批准的目标架构交付单元：`specs/agent-runtime/`；它不替代当前行为合同。
+- 架构绑定与组件索引：`specs/agent-runtime/`；它不复制字段合同或保存施工史。
 - 历史证据：archive；归档内容不是当前接口承诺。

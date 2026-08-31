@@ -1,0 +1,81 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "complete-user-history",
+      "hidden-identity-linkage",
+      "user-intent"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "访问有界事件时间窗前，必须具备确切的项目身份绑定、目的和最小字段集。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "仅用于项目身份策略下已明确授权的主体和日期范围。",
+    "context_boundary": "不得超出已评审的身份与隐私契约，对标识符、缺失事件和自由文本字段进行关联或解读。",
+    "steps": [
+      "解析已授权的主体身份、目的、日期时间窗和最小允许事件字段。",
+      "仅查询确切、受治理的返回事件范围，并保留投影、隐私和完整性限制。",
+      "描述返回的序列和缺口，不扩展身份、不推断意图，也不作总体断言。"
+    ],
+    "title": "已授权单一主体事件评审"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/36c8f2e40f9036e1",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "analysis.query.spec:event"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "entity://project/authorized-subject@1"
+  ],
+  "skill_id": "single-user-behavior-analysis",
+  "specification": "specified",
+  "summary": "评审一个已授权主体的返回事件，不推断隐藏身份或意图。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

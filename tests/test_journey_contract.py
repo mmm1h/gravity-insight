@@ -24,11 +24,11 @@ EXPECTED = {
     "analysis.merge2.ap-cost-anomaly-localization",
     "analysis.experiment-outcome-evaluation",
     "analysis.ltv-curve-fit",
-    "analysis.thinkingai.community-context-correlation",
-    "analysis.thinkingai.device-segment-event-review",
-    "analysis.thinkingai.project-metric-contract-check",
-    "analysis.thinkingai.returned-filter-comparison",
-    "analysis.thinkingai.revenue-forecast-readiness",
+    "analysis.gravity.game.community-context-correlation",
+    "analysis.gravity.game.device-segment-event-review",
+    "analysis.gravity.core.project-metric-contract-check",
+    "analysis.gravity.core.returned-filter-comparison",
+    "analysis.gravity.game.revenue-forecast-readiness",
 }
 
 

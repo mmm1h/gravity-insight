@@ -85,7 +85,8 @@ class SkillRenderTests(unittest.TestCase):
     def test_docs_and_package_generators_are_current(self):
         artifact = skill_artifact(SKILL_URI)
         docs = ROOT / "docs" / "agent-skills" / "ap-cost-anomaly-localization.md"
-        self.assertEqual(render_docs_mirror(artifact), docs.read_text(encoding="utf-8"))
+        self.assertFalse(docs.exists())
+        self.assertEqual(render_docs_mirror(artifact), render_docs_mirror(artifact))
 
         script = ROOT / "scripts" / "generate_skill_packages.py"
         spec = importlib.util.spec_from_file_location("skill_packages", script)

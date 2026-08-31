@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import tempfile
-import unittest
+import io, json, sys, tempfile, unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_insight.census.cli import _coverage_summary, build_parser, run
+from gravity_insight.adaptive_governor_contract import GovernorRequestError
+from gravity_insight.census.cli import _coverage_summary, _exception_failure, build_parser, main, run
 from gravity_insight.census.coverage import build_coverage
-from gravity_insight.census.diffing import diff_routes
+from gravity_insight.census.diffing import CensusFailureClass, diff_routes
 from gravity_insight.census.fetcher import StaticFetcher, _FetchError, _looks_like_vite_chunk, check_upstream
-from gravity_insight.census.io import json_bytes, sha256_bytes, stable_bundle_id
+from gravity_insight.census.impact import locate_route_impacts; from gravity_insight.census.io import json_bytes, sha256_bytes, stable_bundle_id
 from gravity_insight.census.normalize import comparison_path, normalize_path
 from gravity_insight.census.parser import build_routes, parse_text
 
@@ -413,7 +413,7 @@ class GravityCensusFetcherTests(unittest.TestCase):
 class GravityCensusDiffTests(unittest.TestCase):
     def test_route_diff_detects_method_and_path_changes(self) -> None:
         old = {
-            "source": {"bundle_id": "old"},
+            "source": {"bundle_id": "old", "bundle_complete": True},
             "routes": [
                 {"method": "GET", "path": "/api/v1/same/"},
                 {"method": "GET", "path": "/api/v1/method/"},
@@ -422,7 +422,7 @@ class GravityCensusDiffTests(unittest.TestCase):
             ],
         }
         new = {
-            "source": {"bundle_id": "new"},
+            "source": {"bundle_id": "new", "bundle_complete": True},
             "routes": [
                 {"method": "GET", "path": "/api/v1/same/"},
                 {"method": "POST", "path": "/api/v1/method/"},
@@ -437,12 +437,14 @@ class GravityCensusDiffTests(unittest.TestCase):
 
     def test_path_change_matching_uses_each_route_at_most_once(self) -> None:
         old = {
+            "source": {"bundle_complete": True},
             "routes": [
                 {"method": "GET", "path": "/api/v1/team/a/items/"},
                 {"method": "GET", "path": "/api/v1/team/b/items/"},
             ]
         }
         new = {
+            "source": {"bundle_complete": True},
             "routes": [{"method": "GET", "path": "/api/v1/team/a2/items/"}]
         }
 
@@ -461,6 +463,120 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         self.assertEqual(
             REPO_ROOT / "tmp" / "census-failure.json", args.failure_output
         )
+
+    def test_classifies_upstream_capacity_from_http_429(self) -> None:
+        payload = _exception_failure(
+            _FetchError(
+                "rate limited",
+                url="https://example.test/a.js",
+                status_code=429,
+                status_class="rate_limited",
+            )
+        )
+        self.assertEqual(
+            CensusFailureClass.UPSTREAM_CAPACITY.value, payload["failure_class"]
+        )
+
+    def test_classifies_local_governor_capacity_without_upstream_disguise(self) -> None:
+        error = GovernorRequestError(
+            "local queue full",
+            code="GOVERNOR_BACKPRESSURE",
+            diagnostics={
+                "failure_class": "local_governor_capacity",
+                "classification_reason": "process_governor_capacity_denied_before_network",
+                "source_code": "GOVERNOR_BACKPRESSURE",
+            },
+        )
+        payload = _exception_failure(error)
+        self.assertEqual(
+            CensusFailureClass.LOCAL_GOVERNOR_CAPACITY.value,
+            payload["failure_class"],
+        )
+        self.assertEqual("local", payload["category"])
+        self.assertNotEqual("upstream", payload["category"])
+        self.assertNotEqual("upstream_capacity", payload["failure_class"])
+
+    def test_classifies_request_budget_exhausted(self) -> None:
+        payload = _exception_failure(
+            _FetchError(
+                "budget exhausted",
+                url="https://example.test/a.js",
+                status_class="request_budget_exhausted",
+                request_attempts=12,
+                request_limit=12,
+            )
+        )
+        self.assertEqual(
+            CensusFailureClass.REQUEST_BUDGET_EXHAUSTED.value,
+            payload["failure_class"],
+        )
+        self.assertEqual(
+            {"used": 12, "limit": 12, "remaining": 0},
+            payload["request_budget"],
+        )
+
+    def test_classifies_transport_failure(self) -> None:
+        payload = _exception_failure(
+            _FetchError(
+                "transport failed",
+                url="https://example.test/a.js",
+                status_class="transport_error",
+                exception_type="ConnectTimeout",
+            )
+        )
+        self.assertEqual(
+            CensusFailureClass.TRANSPORT_FAILURE.value, payload["failure_class"]
+        )
+
+    def test_classifies_http_client_error(self) -> None:
+        payload = _exception_failure(
+            _FetchError(
+                "client error",
+                url="https://example.test/a.js",
+                status_code=403,
+                status_class="client_error",
+            )
+        )
+        self.assertEqual(
+            CensusFailureClass.HTTP_CLIENT_ERROR.value, payload["failure_class"]
+        )
+
+    def test_classifies_http_server_error(self) -> None:
+        payload = _exception_failure(
+            _FetchError(
+                "server error",
+                url="https://example.test/a.js",
+                status_code=503,
+                status_class="server_error",
+            )
+        )
+        self.assertEqual(
+            CensusFailureClass.HTTP_SERVER_ERROR.value, payload["failure_class"]
+        )
+
+    def test_classifies_content_incomplete(self) -> None:
+        payload = _exception_failure(
+            _FetchError(
+                "content incomplete",
+                url="https://example.test/a.js",
+                status_class="content_incomplete",
+            )
+        )
+        self.assertEqual(
+            CensusFailureClass.CONTENT_INCOMPLETE.value, payload["failure_class"]
+        )
+
+    def test_classifies_unclassified_with_diagnostics(self) -> None:
+        payload = _exception_failure(RuntimeError("raw detail is not rendered"))
+        self.assertEqual(
+            CensusFailureClass.UNCLASSIFIED.value, payload["failure_class"]
+        )
+        self.assertEqual(
+            "exception_has_no_known_status_class_mapping",
+            payload["classification"]["reason"],
+        )
+        self.assertEqual("RuntimeError", payload["classification"]["exception_type"])
+        self.assertEqual("unknown", payload["classification"]["source_status_class"])
 
     def test_rate_limit_response_consumes_the_three_attempt_retry_budget(self) -> None:
         request_globals = StaticFetcher.__dict__["_get"].__globals__
@@ -497,6 +613,91 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         self.assertEqual(429, raised.exception.status_code)
         self.assertNotIn("signature=private", str(raised.exception))
 
+    def test_local_capacity_has_its_own_retry_limit_and_backoff(self) -> None:
+        response = SimpleNamespace(
+            status_code=200,
+            raise_for_status=lambda: None,
+        )
+        calls: list[int] = []
+        sleeps: list[float] = []
+
+        class LocalCapacityGovernor:
+            def execute(self, _descriptor, function):
+                calls.append(1)
+                if len(calls) < 3:
+                    raise GovernorRequestError(
+                        "queue full",
+                        code="GOVERNOR_BACKPRESSURE",
+                        diagnostics={
+                            "failure_class": "local_governor_capacity",
+                            "classification_reason": "process_governor_capacity_denied_before_network",
+                        },
+                    )
+                return function()
+
+        fetcher = StaticFetcher(
+            max_attempts=1,
+            max_requests=1,
+            local_capacity_retries=2,
+        )
+        fetcher._session = lambda: SimpleNamespace(get=lambda *_args, **_kwargs: response)
+        with (
+            patch(
+                "gravity_insight.adaptive_governor.get_process_governor",
+                return_value=LocalCapacityGovernor(),
+            ),
+            patch("gravity_insight.http_attempt.time.sleep", side_effect=sleeps.append),
+        ):
+            self.assertIs(response, fetcher._get("https://example.test/a.js"))
+
+        self.assertEqual(3, len(calls))
+        self.assertEqual([0.05, 0.1], sleeps)
+        self.assertEqual(1, fetcher.attempts)
+        self.assertEqual(2, fetcher.local_capacity_retries_used)
+
+    def test_non_capacity_governor_error_is_not_retried_as_capacity(self) -> None:
+        calls: list[int] = []
+        sleeps: list[float] = []
+
+        class CancelledGovernor:
+            def execute(self, _descriptor, _function):
+                calls.append(1)
+                raise GovernorRequestError(
+                    "cancelled",
+                    code="GOVERNOR_CANCELLED",
+                    diagnostics={
+                        "failure_class": "unclassified",
+                        "classification_reason": "non_capacity_governor_rejection",
+                    },
+                )
+
+        fetcher = StaticFetcher(max_attempts=3, local_capacity_retries=2)
+        with (
+            patch(
+                "gravity_insight.adaptive_governor.get_process_governor",
+                return_value=CancelledGovernor(),
+            ),
+            patch("gravity_insight.http_attempt.time.sleep", side_effect=sleeps.append),
+        ):
+            with self.assertRaises(GovernorRequestError):
+                fetcher._get("https://example.test/a.js")
+
+        self.assertEqual(1, len(calls))
+        self.assertEqual([], sleeps)
+        self.assertEqual(0, fetcher.attempts)
+
+    def test_http_200_empty_or_html_body_does_not_prove_js_content_complete(self) -> None:
+        for body, content_type in (
+            (b"", "application/javascript"),
+            (b"<!doctype html><title>gateway</title>", "text/html"),
+        ):
+            with self.subTest(content_type=content_type, size=len(body)):
+                with self.assertRaises(_FetchError) as raised:
+                    StaticFetcher._validate_js_content(
+                        body, "https://example.test/a.js", content_type
+                    )
+                self.assertEqual("content_incomplete", raised.exception.status_class)
+
     def test_incomplete_failure_classification_is_capacity_only_when_all_causes_are(self) -> None:
         private_query = "QUERY_VALUE_SENTINEL_81"
         result = {
@@ -511,8 +712,8 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
                     {
                         "url": f"https://example.test/a.js?token={private_query}",
                         "host": "example.test",
-                        "status_class": "server_error",
-                        "status_code": 503,
+                        "status_class": "rate_limited",
+                        "status_code": 429,
                         "exception_type": None,
                         "error": private_query,
                     }
@@ -534,15 +735,84 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             }
         )
         incomplete = classify(result)
-        self.assertEqual("incomplete_graph", incomplete["failure_class"])
+        self.assertEqual("unclassified", incomplete["failure_class"])
         self.assertFalse(incomplete["retryable"])
+        self.assertIn(
+            "mixed_failure_classes",
+            incomplete["classification"]["reason"],
+        )
+
+    def test_partial_routes_withhold_diff_impact_and_probe_plan(self) -> None:
+        old = {
+            "source": {"bundle_id": "old", "bundle_complete": True},
+            "routes": [{"method": "GET", "path": "/api/v1/a/"}],
+        }
+        partial = {
+            "source": {"bundle_id": "partial", "bundle_complete": False},
+            "routes": [],
+        }
+        route_diff = diff_routes(old, partial)
+        self.assertFalse(route_diff["drift_conclusion_available"])
+        self.assertEqual("content_incomplete", route_diff["failure_class"])
+        self.assertEqual([], route_diff["removed"])
+        self.assertIsNone(route_diff["summary"]["removed"])
+
+        impact = locate_route_impacts(
+            route_diff,
+            {},
+            REPO_ROOT / "src" / "gravity_insight" / "contracts",
+            census_complete=True,
+        )
+        self.assertFalse(impact["impact_conclusion_available"])
+        self.assertEqual([], impact["operations"])
+        self.assertEqual("withheld", impact["probe_plan"]["status"])
+        self.assertEqual([], impact["probe_plan"]["commands"])
+
+    def test_fetch_failure_path_always_writes_parseable_step_output(self) -> None:
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temporary:
+            root = Path(temporary)
+            step_output = root / "step-output.json"
+            failure_output = root / "failure.json"
+            fake_stderr = SimpleNamespace(buffer=io.BytesIO())
+            with (
+                patch(
+                    "gravity_insight.census.cli.StaticFetcher.fetch",
+                    side_effect=RuntimeError("boom"),
+                ),
+                patch("gravity_insight.cli_stdio.configure_utf8_stdio"),
+                patch("gravity_insight.census.cli.sys.stderr", fake_stderr),
+            ):
+                exit_code = main(
+                    [
+                        "fetch",
+                        "--raw-dir",
+                        str(root / "raw"),
+                        "--output",
+                        str(root / "snapshot.json"),
+                        "--require-complete",
+                        "--failure-output",
+                        str(failure_output),
+                        "--step-output",
+                        str(step_output),
+                    ]
+                )
+
+            self.assertNotEqual(0, exit_code)
+            step = json.loads(step_output.read_text(encoding="utf-8"))
+            failure = json.loads(failure_output.read_text(encoding="utf-8"))
+            self.assertEqual("gravity-census.step-output.v1", step["schema_version"])
+            self.assertEqual("error", step["status"])
+            self.assertFalse(step["complete"])
+            self.assertEqual("unclassified", step["failure_class"])
+            self.assertEqual(failure, step["failure"])
 
     def test_governor_exception_renders_machine_decidable_census_error(self) -> None:
         error = RuntimeError("safe circuit error")
         error.code = "GOVERNOR_CIRCUIT_OPEN"
         error.next_action = "Wait 30000 ms, then retry the same host once."
         error.diagnostics = {
-            "failure_class": "upstream_capacity",
+            "failure_class": "http_server_error",
+            "classification_reason": "circuit_opened_by_http_5xx",
             "lane": {"host": "example.test"},
             "failures": [
                 {"status_class": "server_error", "http_status": 503}
@@ -550,8 +820,11 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             "cooldown_remaining_ms": 30_000,
         }
         payload = run.__globals__["_exception_failure"](error)
-        self.assertEqual("GOVERNOR_CIRCUIT_OPEN", payload["code"])
-        self.assertEqual("upstream_capacity", payload["failure_class"])
+        self.assertEqual("CENSUS_HTTP_SERVER_ERROR", payload["code"])
+        self.assertEqual("http_server_error", payload["failure_class"])
+        self.assertEqual(
+            "GOVERNOR_CIRCUIT_OPEN", payload["classification"]["source_code"]
+        )
         self.assertEqual("example.test", payload["lane"]["host"])
         self.assertEqual(503, payload["failures"][0]["http_status"])
         self.assertIn("retry the same host once", payload["next_action"])
@@ -561,7 +834,15 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             REPO_ROOT / ".github" / "workflows" / "upstream-census.yml"
         ).read_text(encoding="utf-8")
         self.assertIn("$attemptLimit = 3", workflow)
-        self.assertIn("--max-attempts 1 --failure-output $failure", workflow)
+        self.assertIn(
+            "--max-attempts 1 --local-capacity-retries 2", workflow
+        )
+        self.assertIn("--step-output $stepResult", workflow)
+        self.assertIn("gravity-census.step-output.v1", workflow)
+        self.assertIn(
+            "workflow_attempt_started_without_terminal_cli_output", workflow
+        )
+        self.assertIn("ConvertFrom-Json -ErrorAction Stop", workflow)
         self.assertIn("Start-Sleep -Seconds $delaySeconds", workflow)
         self.assertIn(
             "steps.fetch.outputs.failure_class == 'upstream_capacity'", workflow
@@ -570,6 +851,7 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             "steps.fetch.outputs.failure_class != 'upstream_capacity'", workflow
         )
         self.assertIn("No route-drift conclusion was made", workflow)
+        self.assertNotIn("--concurrency 5", workflow)
 
 
 if __name__ == "__main__":
