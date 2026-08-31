@@ -36,6 +36,7 @@ from .adaptive_governor_contract import (
 from .adaptive_governor_policy import (
     capacity_failure_observation,
     circuit_rejection,
+    local_governor_rejection,
     record_lane_outcome,
     reset_lane_circuits,
 )
@@ -402,8 +403,8 @@ class AdaptiveRequestGovernor:
             None,
         )
         if removable is None:
-            self._raise_request_error(
-                "GOVERNOR_BACKPRESSURE", "scope registry is full"
+            self._reject_locked(
+                request, "GOVERNOR_BACKPRESSURE", "scope registry is full"
             )
         self._scopes.pop(removable)
         for lane_key in [key for key in self._lanes if key[0] == removable]:
@@ -499,7 +500,10 @@ class AdaptiveRequestGovernor:
         if stats is not None:
             stats.rejected += 1
         self._raise_request_error(
-            code, reason, diagnostics=diagnostics, next_action=next_action
+            code,
+            reason,
+            diagnostics=diagnostics or local_governor_rejection(request, code, reason),
+            next_action=next_action,
         )
 
     @staticmethod

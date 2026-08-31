@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import re
 import threading
 import time
@@ -20,8 +19,7 @@ from gravity_insight.receipt import (
     perform_http_request,
     request_receipt_context,
 )
-
-from .io import http_status_class, safe_url_host, sha256_bytes, stable_bundle_id, write_json
+from .io import CensusFetchError as _FetchError, census_entry_build_info, census_local_relative, census_looks_like_vite_chunk, census_manifest_assets, http_status_class, safe_url_host, sha256_bytes, stable_bundle_id, write_json
 
 
 DEFAULT_SITE = "https://web.gravity-engine.com/"
@@ -34,24 +32,6 @@ _BUILD_INFO = re.compile(r"window\.BUILD_INFO\s*=\s*(\{.*?\})\s*</script>", re.D
 _VITE_CHUNK_NAME = re.compile(
     r"^.+-(?=[A-Za-z0-9_-]{8}\.js$)(?=[A-Za-z0-9_-]*[A-Z0-9_])[A-Za-z0-9_-]{8}\.js$"
 )
-
-
-class _FetchError(RuntimeError):
-    def __init__(
-        self,
-        message: str,
-        *,
-        url: str,
-        status_code: int | None = None,
-        status_class: str = "unknown",
-        exception_type: str | None = None,
-    ) -> None:
-        super().__init__(message)
-        self.url = url
-        self.status_code = status_code
-        self.status_class = status_class
-        self.exception_type = exception_type
-        self.host = safe_url_host(url)
 
 
 class _EntryHTMLParser(HTMLParser):
@@ -78,12 +58,7 @@ class _EntryHTMLParser(HTMLParser):
 
 
 def _local_relative(url: str, *, default_name: str = "index.html") -> Path:
-    parsed = urlsplit(url)
-    relative = parsed.path.lstrip("/") or default_name
-    path = Path("raw") / parsed.netloc / relative
-    if parsed.query:
-        path = path.with_name(path.name + ".q-" + sha256_bytes(parsed.query.encode())[:12])
-    return path
+    return census_local_relative(url, default_name)
 
 
 def _extract_js_references(text: str, base_url: str) -> list[str]:
@@ -100,32 +75,15 @@ def _extract_js_references(text: str, base_url: str) -> list[str]:
 
 
 def _looks_like_vite_chunk(url: str) -> bool:
-    parsed = urlsplit(url)
-    return parsed.path.startswith("/assets/") and bool(
-        _VITE_CHUNK_NAME.fullmatch(Path(parsed.path).name)
-    )
+    return census_looks_like_vite_chunk(url, _VITE_CHUNK_NAME)
 
 
 def _manifest_assets(value: Any) -> Iterable[str]:
-    if isinstance(value, str) and value.split("?", 1)[0].endswith(".js"):
-        yield value
-    elif isinstance(value, dict):
-        for nested in value.values():
-            yield from _manifest_assets(nested)
-    elif isinstance(value, list):
-        for nested in value:
-            yield from _manifest_assets(nested)
+    yield from census_manifest_assets(value)
 
 
 def _entry_build_info(html_text: str) -> dict[str, Any]:
-    match = _BUILD_INFO.search(html_text)
-    if not match:
-        return {}
-    try:
-        parsed = json.loads(match.group(1))
-        return parsed if isinstance(parsed, dict) else {}
-    except json.JSONDecodeError:
-        return {"raw": match.group(1)}
+    return census_entry_build_info(html_text, _BUILD_INFO)
 
 
 class StaticFetcher:
@@ -137,6 +95,7 @@ class StaticFetcher:
         max_requests: int = 800,
         concurrency: int = 4,
         timeout: float = 45.0,
+        local_capacity_retries: int = 2,
     ) -> None:
         if not 1 <= max_attempts <= 3:
             raise ValueError("max_attempts must be between 1 and 3")
@@ -144,11 +103,15 @@ class StaticFetcher:
             raise ValueError("max_requests must be positive")
         if not 1 <= concurrency <= 4:
             raise ValueError("concurrency must be between 1 and 4")
+        if not 0 <= local_capacity_retries <= 2:
+            raise ValueError("local_capacity_retries must be between 0 and 2")
         self.max_attempts = max_attempts
         self.max_requests = max_requests
         self.concurrency = concurrency
         self.timeout = timeout
+        self.local_capacity_retries = local_capacity_retries
         self.attempts = 0
+        self.local_capacity_retries_used = 0
         self.user_agent = user_agent
         self._attempt_lock = threading.Lock()
         self._thread_local = threading.local()
@@ -168,72 +131,79 @@ class StaticFetcher:
             self.attempts += 1
             return True
 
+    def _record_pre_network_failure(self, error: BaseException) -> None:
+        with self._attempt_lock:
+            self.attempts -= 1
+            error.census_request_attempts = self.attempts
+            error.census_request_limit = self.max_requests
+            error.census_local_capacity_retries_used = self.local_capacity_retries_used
+
+    def _record_local_capacity_retry(self) -> None:
+        with self._attempt_lock:
+            self.local_capacity_retries_used += 1
+
     def _get(self, url: str) -> requests.Response:
         last_error: Exception | None = None
         last_status: int | None = None
         for attempt in range(self.max_attempts):
             if not self._reserve_attempt():
                 raise _FetchError(
-                    f"request budget exhausted for host={safe_url_host(url)}",
-                    url=url,
-                    status_class="request_budget_exhausted",
-                )
+                    f"request budget exhausted for host={safe_url_host(url)}", url=url,
+                    status_class="request_budget_exhausted", request_attempts=self.attempts,
+                    request_limit=self.max_requests,
+                    local_capacity_retries_used=self.local_capacity_retries_used)
             try:
                 response = perform_http_request(
-                    self._session().get,
-                    url,
-                    kind=PRODUCTION_HTTP_KIND,
-                    timeout=self.timeout,
-                    allow_redirects=True,
-                    http_receipt={
-                        **request_receipt_context(
-                            operation_id="census_fetch",
-                            method="GET",
-                            path=urlsplit(url).path,
-                            effect="read",
-                        ),
-                        "attempt": attempt + 1,
-                        "retry": attempt > 0,
-                    },
+                    self._session().get, url, kind=PRODUCTION_HTTP_KIND,
+                    timeout=self.timeout, allow_redirects=True,
+                    http_receipt={**request_receipt_context(
+                        operation_id="census_fetch", method="GET",
+                        path=urlsplit(url).path, effect="read"),
+                        "attempt": attempt + 1, "retry": attempt > 0},
                     receipt_root=STATE_ROOT,
-                    governor_context={
-                        "profile": "census",
-                        "attempt_budget": self.max_attempts,
+                    governor_context={"profile": "census", "attempt_budget": self.max_attempts,
                         "timeout_seconds": self.timeout,
-                    },
-                )
+                        "local_capacity_retries": self.local_capacity_retries,
+                        "local_capacity_backoff_seconds": 0.05,
+                        "local_capacity_retry_observer": self._record_local_capacity_retry,
+                        "pre_network_failure": self._record_pre_network_failure})
                 last_status = response.status_code
                 if 400 <= response.status_code < 500 and response.status_code != 429:
                     raise _FetchError(
-                        "GET returned non-retryable "
-                        f"HTTP {response.status_code} for host={safe_url_host(url)}",
-                        url=url,
-                        status_code=response.status_code,
-                        status_class="client_error",
-                    )
+                        f"GET returned non-retryable HTTP {response.status_code} "
+                        f"for host={safe_url_host(url)}", url=url,
+                        status_code=response.status_code, status_class="client_error",
+                        request_attempts=self.attempts, request_limit=self.max_requests,
+                        local_capacity_retries_used=self.local_capacity_retries_used)
                 response.raise_for_status()
                 return response
             except requests.RequestException as exc:
                 last_error = exc
-                response = getattr(exc, "response", None)
-                status = getattr(response, "status_code", None)
-                if type(status) is int:
-                    last_status = status
+                status = getattr(getattr(exc, "response", None), "status_code", None)
+                last_status = status if type(status) is int else last_status
                 if attempt + 1 < self.max_attempts and self.attempts < self.max_requests:
                     time.sleep(0.25 * (2**attempt))
         status_class = http_status_class(last_status)
         raise _FetchError(
             f"GET failed after {self.max_attempts} attempts for host={safe_url_host(url)}; "
-            f"status_class={status_class}",
-            url=url,
-            status_code=last_status,
-            status_class=(
-                status_class if status_class != "unknown" else "transport_error"
-            ),
-            exception_type=(
-                type(last_error).__name__ if status_class == "unknown" else None
-            ),
-        )
+            f"status_class={status_class}", url=url, status_code=last_status,
+            status_class=status_class if status_class != "unknown" else "transport_error",
+            exception_type=type(last_error).__name__ if status_class == "unknown" else None,
+            request_attempts=self.attempts, request_limit=self.max_requests,
+            local_capacity_retries_used=self.local_capacity_retries_used)
+
+    @staticmethod
+    def _validate_js_content(
+        content: bytes, url: str, content_type: str = ""
+    ) -> dict[str, Any]:
+        prefix = content[:256].lstrip().lower()
+        html = prefix.startswith((b"<!doctype html", b"<html", b"<head", b"<body"))
+        if not content or html or "text/html" in content_type.casefold():
+            raise _FetchError(
+                f"GET did not return complete static JS for host={safe_url_host(url)}",
+                url=url, status_class="content_incomplete")
+        return {"status": "validated_static_js", "nonempty": True,
+                "html_body_rejected": False, "http_200_alone_sufficient": False}
 
     def _fetch_js(self, url: str, raw_dir: Path) -> dict[str, Any]:
         requested_local = _local_relative(url, default_name="bundle.js")
@@ -244,6 +214,7 @@ class StaticFetcher:
             final_url = url
             local_path = requested_local
             text = content.decode("utf-8", errors="replace")
+            validation = self._validate_js_content(content, url)
         else:
             response = self._get(url)
             content = response.content
@@ -253,6 +224,9 @@ class StaticFetcher:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(content)
             text = content.decode(response.encoding or "utf-8", errors="replace")
+            validation = self._validate_js_content(
+                content, final_url, str(getattr(response, "headers", {}).get("Content-Type", ""))
+            )
         return {
             "requested_url": url,
             "url": final_url,
@@ -261,6 +235,7 @@ class StaticFetcher:
             "size": len(content),
             "text": text,
             "reused": reused,
+            "content_validation": validation,
         }
 
     def _entry_seeds(
@@ -278,7 +253,14 @@ class StaticFetcher:
         entry_urls = sorted({urljoin(html_url, item) for item in parser.module_scripts})
         preload_urls = sorted({urljoin(html_url, item) for item in parser.module_preloads})
         if not entry_urls:
-            raise RuntimeError("HTML contains no module entry script")
+            raise _FetchError(
+                f"entry HTML contains no module script for host={safe_url_host(html_url)}",
+                url=html_url,
+                status_class="content_incomplete",
+                request_attempts=self.attempts,
+                request_limit=self.max_requests,
+                local_capacity_retries_used=self.local_capacity_retries_used,
+            )
         build_info = _entry_build_info(html_text)
         manifest_urls = {urljoin(html_url, item) for item in parser.manifests}
         if probe_manifests:
@@ -298,7 +280,7 @@ class StaticFetcher:
                 assets = sorted({urljoin(manifest_url, item) for item in _manifest_assets(parsed)})
                 manifest_seed_urls.update(assets)
                 manifest_results.append({"url": manifest_url, "status": "parsed", "assets": assets})
-            except (RuntimeError, requests.JSONDecodeError, ValueError) as exc:
+            except (_FetchError, requests.JSONDecodeError, ValueError) as exc:
                 manifest_results.append({"url": manifest_url, "status": "unavailable", "error": str(exc)})
         return {
             "bytes": html_bytes, "url": html_url, "local": html_local, "parser": parser,
@@ -404,9 +386,27 @@ class StaticFetcher:
             )
             if final_entries == entry["entry_urls"] and sha256_bytes(final_html) == sha256_bytes(entry["bytes"]):
                 return True
-            failures.append({"url": site_url, "error": "entry HTML changed while static graph was being fetched"})
-        except RuntimeError as exc:
-            failures.append({"url": site_url, "error": f"final entry verification failed: {exc}"})
+            failures.append(
+                {
+                    "url": site_url,
+                    "host": safe_url_host(site_url),
+                    "status_class": "content_incomplete",
+                    "status_code": None,
+                    "exception_type": None,
+                    "error": "entry HTML changed while static graph was being fetched",
+                }
+            )
+        except _FetchError as exc:
+            failures.append(
+                {
+                    "url": site_url,
+                    "host": exc.host,
+                    "status_class": exc.status_class,
+                    "status_code": exc.status_code,
+                    "exception_type": exc.exception_type,
+                    "error": "final entry verification failed",
+                }
+            )
         return False
 
     def _build_snapshot(
@@ -461,6 +461,8 @@ class StaticFetcher:
                 "concurrency": self.concurrency,
                 "elapsed_seconds": round(time.monotonic() - started, 3),
                 "complete": complete, "completeness_reason": reason,
+                "local_capacity_retries_used": self.local_capacity_retries_used,
+                "local_capacity_retry_limit": self.local_capacity_retries,
             },
             "discovery": {
                 "strategies": ["HTML module scripts", "HTML modulepreload links",
@@ -505,15 +507,7 @@ def check_upstream(
     parser.feed(text)
     current_entries = sorted({urljoin(str(response.url), item) for item in parser.module_scripts})
     baseline_entries = sorted(str(item) for item in baseline.get("entry_urls", []))
-    build_info: dict[str, Any] = {}
-    match = _BUILD_INFO.search(text)
-    if match:
-        try:
-            value = json.loads(match.group(1))
-            if isinstance(value, dict):
-                build_info = value
-        except json.JSONDecodeError:
-            pass
+    build_info = _entry_build_info(text)
     return {
         "schema_version": 1,
         "site_url": site_url,

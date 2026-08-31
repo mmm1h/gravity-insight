@@ -298,6 +298,43 @@ def _family_samples(
     return sorted(set(samples))
 
 
+def _withheld_impact(route_diff: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": "gravity-census.route-impact.v1",
+        "status": "incomplete",
+        "candidate_diff_only": True,
+        "source_contracts_modified": False,
+        "impact_conclusion_available": False,
+        "failure_class": "content_incomplete",
+        "classification_reason": "route_diff_conclusion_was_withheld",
+        "old_bundle_id": route_diff.get("old_bundle_id"),
+        "new_bundle_id": route_diff.get("new_bundle_id"),
+        "census_complete": False,
+        "summary": {
+            "route_changes": None,
+            "affected_operations": None,
+            "unmapped_changes": None,
+            "direct_probes": None,
+            "family_sample_probes": None,
+        },
+        "operations": [],
+        "unmapped_changes": [],
+        "probe_plan": {
+            "status": "withheld",
+            "mode": "none",
+            "business_api_called": False,
+            "direct_operation_ids": [],
+            "family_sample_operation_ids": [],
+            "commands": [],
+            "reason": "A complete route diff is required before scheduling probes.",
+        },
+        "scope_note": (
+            "No drift or impact conclusion was made because static-graph "
+            "completeness was not proven."
+        ),
+    }
+
+
 def locate_route_impacts(
     route_diff: Mapping[str, Any],
     provenance: Mapping[str, Any],
@@ -305,13 +342,16 @@ def locate_route_impacts(
     *,
     census_complete: bool | None = None,
 ) -> dict[str, Any]:
+    evidence_complete = (
+        route_diff.get("drift_conclusion_available") is True
+        and route_diff.get("old_bundle_complete") is True
+        and route_diff.get("new_bundle_complete") is True
+    )
+    complete = evidence_complete and census_complete is not False
+    if not complete:
+        return _withheld_impact(route_diff)
     index = build_provenance_route_index(provenance, contracts_root)
     by_route: Mapping[tuple[str, str], list[dict[str, Any]]] = index["by_route"]
-    complete = (
-        bool(route_diff.get("new_bundle_complete"))
-        if census_complete is None
-        else bool(census_complete)
-    )
     changes = _route_changes(route_diff, complete)
     impacted, unmapped = _map_changes(changes, by_route)
     operation_rows = _operation_rows(impacted, complete)
@@ -320,11 +360,14 @@ def locate_route_impacts(
 
     return {
         "schema_version": "gravity-census.route-impact.v1",
+        "status": "complete",
         "candidate_diff_only": True,
         "source_contracts_modified": False,
         "old_bundle_id": route_diff.get("old_bundle_id"),
         "new_bundle_id": route_diff.get("new_bundle_id"),
         "census_complete": complete,
+        "impact_conclusion_available": True,
+        "failure_class": None,
         "summary": {
             "route_changes": len(changes),
             "affected_operations": len(operation_rows),
@@ -366,6 +409,9 @@ def assess_route_impacts(
         census_complete=census_complete,
     )
     active_overlay = overlay or HealthOverlay()
+    if report.get("impact_conclusion_available") is not True:
+        report["health_overlay"] = active_overlay.snapshot()
+        return report
     health = active_overlay.apply_impact_report(report)
     for operation in report["operations"]:
         operation_id = operation["operation_id"]
