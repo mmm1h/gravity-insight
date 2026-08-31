@@ -185,6 +185,18 @@ def build_parser() -> argparse.ArgumentParser:
     upstream.add_argument("--baseline", type=_path, default=DEFAULT_SNAPSHOT)
     upstream.add_argument("--output", type=_path)
     upstream.add_argument("--timeout", type=float, default=30.0)
+
+    status = subparsers.add_parser(
+        "status", help="report current request-governance and drift evidence"
+    )
+    status.add_argument("--json", action="store_true")
+    status.add_argument(
+        "--evidence",
+        type=_path,
+        action="append",
+        default=[],
+        help="current fetch-step or diff receipt; may be repeated",
+    )
     return parser
 
 
@@ -325,6 +337,10 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "impact": _run_impact,
         "check-upstream": _run_check_upstream,
     }
+    if args.command == "status":
+        from .status import census_status
+
+        return census_status(REPO_ROOT, args.evidence), 0
     handler = handlers.get(args.command)
     if handler is None:
         raise ValueError("choose --smoke or a subcommand")
