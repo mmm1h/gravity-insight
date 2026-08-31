@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "gravity.external-context-provider.v1",
   "type": "object",
-  "required": ["artifact_kind", "schema_version", "uri", "version", "provider_id", "owner", "transport", "effects", "auth_scope", "resource_types", "allowed_resource_prefixes", "capabilities", "rpc", "deployment", "source_trust", "role"],
+  "required": ["artifact_kind", "schema_version", "uri", "version", "provider_id", "owner", "transport", "effects", "auth_scope", "resource_types", "allowed_resource_prefixes", "capabilities", "rpc", "deployment", "source_trust", "authority_ceiling", "role"],
   "additionalProperties": false,
   "properties": {
     "artifact_kind": {"const": "external_context_provider"},
@@ -66,6 +66,7 @@
       }
     },
     "source_trust": {"enum": ["reviewed", "observed", "untrusted"]},
+    "authority_ceiling": {"enum": ["project_authoritative", "canonical", "supporting", "declared_intent", "unverified"]},
     "role": {"const": "data"}
   }
 }

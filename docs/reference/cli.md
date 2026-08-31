@@ -108,7 +108,7 @@ raw operation。
 | 分群、订单、用户动线 | `analysis segment`、`analysis order`、`analysis user journey` |
 | 语义与派生 | `derive`、`semantic compose`、`semantics`、`operators`、`models` |
 | 经营与投放 | `reports`、`materials`、`promotion`、`attribution`、`apps` |
-| 元数据与 Workspace | `metadata`、`recipe`、`context project` |
+| 元数据与 Workspace | `metadata`、`recipe`、[`context project`](#context-authority-and-feishu-provider-boundary) |
 | DAG 与方法 | `plan`、`analysis playbook`、`journey`、`capabilities` |
 | Skill 与交付控制面 | `skills`、`trusted-packs`、`action`、`experiment` |
 | 导出与诊断收据 | `export`、`receipts` |
@@ -463,6 +463,11 @@ relation/function allowlist、timeout、VM step、row 与 byte budget 共同失�
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
 前进入稳定 Journey、Skill、Dashboard 或 Action。
 
+CLI 的 `sql explorer inspect|execute` 仍是离线 SQLite 路径。联网 Gravity SQL Fast Lane 目前只由 SDK
+模块 `gravity_insight.sql.verification.GravitySqlExplorerAdapter` 显式暴露；它不会被 Agent、Plan 或
+Registered Product 自动选中，方言与上游身份/事务/scan/cancel 缺口见
+[SDK SQL 专用底层 facade](sdk.md#sql-专用底层-facade)。
+
 ## Census
 
 `gravity census` 只用于静态路由盘点、diff、coverage 和 drift 检查。生产使用遵循
@@ -485,3 +490,107 @@ gap 不创建/替换目标，partial 产品写入完整 partial envelope 并保�
 
 CLI 退出码为成功 `0`、caller `2`、upstream `3`、local `4`；组合结果按 `4 > 3 > 2 > 0` 聚合。业务
 空结果可为成功；不要用进程退出码替代 envelope 的 completeness、组件状态或 claims。
+
+<a id="context-authority-and-feishu-provider-boundary"></a>
+## Context authority and Feishu Provider boundary
+
+Context 是只读 data，不能选择 Product、改变 effect、授予权限或充当指令。Repo 与外部 Context 共用
+Item/Pack/Broker，但 Provider descriptor 有意分成两份 schema：内置
+`gravity.context-provider.v1` 允许 `builtin` 与 `project_authoritative` source trust；进程边界
+`gravity.external-context-provider.v1` 允许 `mcp|subprocess|host` 与
+`reviewed|observed|untrusted`。外部 schema 不校验 `project-repo`，所以两组枚举不是 drift。
+
+`source_trust` 描述 Provider/provenance，`authority` 描述 Item 可支撑的 claim：
+
+| authority | 判定 | 最大 claim 用途 |
+| --- | --- | --- |
+| `project_authoritative` | 项目指定的该事实 source of record | confirmed fact |
+| `canonical` | 较窄 source/domain 内的 canonical fact | policy-selected confirmation |
+| `supporting` | 补证 | supported association |
+| `declared_intent` | 人或系统对计划/规范的声明，不证明已发生 | hypothesis |
+| `unverified` | 未验证文本/观察 | discovery/citation only |
+
+Provider descriptor 的 `authority_ceiling` 是机器上限；Runtime 取 Item 自报值与已锁 descriptor
+ceiling 中较弱者。外部 `project_authoritative|canonical` 要求 reviewed + full entity/time alignment；
+`declared_intent` 允许 reviewed/observed + partial/full；untrusted 或 unaligned 一律降为
+`unverified`。binding digest 与注入 Provider digest 必须一致，Provider 不能靠 response 自提权。
+`project-repo` ceiling 固定为 `project_authoritative`；飞书计划/规范 Provider ceiling 为
+`declared_intent`。
+
+`declared_intent` 必须显式 `allow_declared_intent=true`，且不能进入
+`authority_policy.required`。只有声明的 Pack 可用来提假设，但
+`confirmed_claims_allowed=false`；optional Skill Context 会沿现有链把
+`forbidden_without_context` 从 allowed 移入 forbidden。Analysis Result 保留 Item authority 和 Pack
+authority ceiling。
+
+`source_revision` 继续必填，Pack 内所有 Item 继续共享同一 revision。可变源使用
+`snapshot:<sha256>`，digest 覆盖选择后的资源身份、可得的原生 revision/sync token、content hash
+和 `observed_at`；它只证明“Provider 在该时刻看到什么”，不是伪造上游 commit。
+`supersedes=[]` 表示无可证明 lineage；只有持有 durable previous observation 时才引用前一不可变
+观察，不能按时间戳猜。Git 的 exact HEAD/clean path/hash/verify 规则不变。
+
+时间不新增字段：计划适用期放 `valid_time`，定义被选作项目声明的生效期放 `effective_range`，抓取
+时间放 `observed_at`。实际发生必须是另一 observed/authoritative Item；没有实际来源就返回 Context
+Gap，不能把计划时间复制成实际时间。
+
+Broker 会在单 Pack 内按 `fact_id`、authority、content hash 和 supersession 检测多权威、内容分歧、
+环和跨 fact 替换。不同 Provider requirement 仍保留为不同 Pack；当前不把跨 Pack 分歧编译为单一
+machine conflict record。Pack 有 item/file、per-item byte、total byte、line 硬边界；无 host tokenizer
+时没有精确 token 预算，RPC `max_output_tokens` 目前是保守 UTF-8 byte units，不是模型 token 数。
+
+飞书载体能力以官方 API 为准：
+
+| 载体 | 排期 | 埋点规范 | change/revision | 采用方式 |
+| --- | --- | --- | --- | --- |
+| Base/Bitable | 首选结构化行 | 适合结构化字典 | App/table revision、record modified time、record/field events；无统一 pull `list_changed` | 精确表/字段投影 + 完整 snapshot；后续可加 event |
+| Docx | 叙述型可用 | 首选叙述型规范 | `revision_id`，可按指定 revision 读 blocks | 精确文档/section snapshot |
+| Sheets | 常见 legacy | legacy matrix | range read 返回递增 revision | 精确 range snapshot |
+| Calendar | 已用日程维护时适合 | 不适合 | 真正的 `sync_token` 增量 | 可选专用 carrier |
+| Approval | 只适合决策/审批证据 | 不适合 | query/detail timestamps + events；所查页面未发现内容 revision | optional supporting evidence |
+
+官方证据：[Base metadata](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app/get.md)、
+[Base table revision](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table/list.md)、
+[record modified time](https://open.feishu.cn/document/docs/bitable-v1/app-table-record/search.md)、
+[Docx revision](https://open.feishu.cn/document/server-docs/docs/docs/docx-v1/document/get.md)、
+[blocks by revision](https://open.feishu.cn/document/server-docs/docs/docs/docx-v1/document/list.md)、
+[Sheets revision](https://open.feishu.cn/document/server-docs/docs/sheets-v3/data-operation/reading-a-single-range.md)、
+[Calendar sync token](https://open.feishu.cn/document/server-docs/calendar-v4/calendar-event/list.md)、
+[Approval query](https://open.feishu.cn/document/server-docs/approval-v4/approval-search/query-2.md)。
+
+九字段映射：Base 排期的 `valid_time` 来自计划起止字段，Docx 埋点规范只在正文显式给出适用期时
+填写；二者的 `entity_refs` 都来自项目 binding，不能从标题猜；`effective_range` 来自项目配置而非
+modified time；`observed_at` 来自 poll；`authority=declared_intent`；`source_revision` 使用上述
+snapshot；无 previous snapshot 时 `supersedes=[]`；`sensitivity` 来自 binding；citation 使用
+App/table/record/field 或 document/revision/block ID，默认不取人员字段。
+
+精确预配置资源的最小只读权限点：
+
+| scope | 用途 |
+| --- | --- |
+| `base:table:read` | Base table metadata/revision |
+| `base:field:read` | 字段定义与 schema drift |
+| `base:record:retrieve` | 查询计划/规范记录及 modified time |
+| `docx:document:readonly` | Docx metadata/revision/blocks |
+| `wiki:node:read` | 条件项：把 exact Wiki node 解到 Docx/Base/Sheets token |
+| `sheets:spreadsheet:readonly` | 条件项：读取 legacy range |
+| `calendar:calendar.event:read` | 条件项：读取/增量同步 schedule calendar |
+| `approval:approval.list:readonly` | 条件项：查询 approval instances |
+| `approval:approval:readonly` | 条件项：详情与 instance events |
+
+权限依据：[Base tables](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table/list.md)、
+[fields](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-field/list.md)、
+[records](https://open.feishu.cn/document/docs/bitable-v1/app-table-record/search.md)、
+[Docx](https://open.feishu.cn/document/server-docs/docs/docs/docx-v1/document/list.md)、
+[Wiki](https://open.feishu.cn/document/server-docs/docs/wiki-v2/space-node/get_node.md)、
+[Sheets](https://open.feishu.cn/document/server-docs/docs/sheets-v3/data-operation/reading-a-single-range.md)、
+[Calendar](https://open.feishu.cn/document/server-docs/calendar-v4/calendar-event/list.md)、
+[Approval list](https://open.feishu.cn/document/server-docs/approval-v4/approval-search/query-2.md) 与
+[detail](https://open.feishu.cn/document/server-docs/approval-v4/instance/get.md)。不取 people 字段就不申请
+Contacts scope。API scope 之外，应用/用户仍须被授予 exact resource access；token/ID 留在调用项目
+binding，不进入 Runtime contract。
+
+生产选择现有 `subprocess` transport：隔离飞书凭据、只允许 exact prefix、声明
+`open.feishu.cn:443` egress，继续受 RPC call/concurrency/timeout/output/circuit 约束；不向外部 enum
+新增 `builtin`。`external_context_provider.FeishuFixtureContextProvider` 是现有模块内的无凭据 Host
+fixture，走同一 RPC Guard 并实现 `describe/list/search/read/list_changed/metrics`；它不调用飞书、不是
+真实 SDK，也不是 Registry。

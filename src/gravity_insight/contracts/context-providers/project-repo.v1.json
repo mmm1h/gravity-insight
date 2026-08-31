@@ -20,6 +20,7 @@
   "freshness": {"mode": "git-revision-content-hash"},
   "supports": ["list", "search", "read", "index", "pack", "verify"],
   "source_trust": "project_authoritative",
+  "authority_ceiling": "project_authoritative",
   "role": "data",
   "limits": {
     "max_index_files": 5000,

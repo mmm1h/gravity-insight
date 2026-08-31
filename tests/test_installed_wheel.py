@@ -94,6 +94,8 @@ class InstalledWheelTests(unittest.TestCase):
                 "wheel", "--no-deps", "--no-build-isolation", "--no-index",
                 "--wheel-dir", str(wheelhouse), str(project),
             ]
+            if sys.version_info >= (3, 13):
+                wheel_command.insert(1, "--ignore-requires-python")
             _run(pip + wheel_command, cwd=temporary)
             wheels = list(wheelhouse.glob("gravity_insight-*.whl"))
             self.assertEqual(1, len(wheels), f"unexpected wheels: {wheels}")

@@ -27,6 +27,9 @@ Gravity Agent Runtime 计划已整体发布到 `main`；当前可执行能力仍
 
 ## 安装
 
+公开支持 Python 3.11 和 3.12。CI 运行 Windows 3.11 完整门禁、Linux 3.11 / 3.12
+核心门禁，并在 Linux 3.12 上构建 wheel、以非 editable 方式隔离安装后验证公共 surface。
+
 ```powershell
 python -m pip install gravity-insight
 gravity --help

@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .context_contract import (
+    AUTHORITY_ORDER,
     PACK_SCHEMA_VERSION,
     context_pack_digest,
     validate_context_pack,
@@ -123,30 +124,46 @@ class ContextPackBroker:
     def _authority_removals(
         self, fact_id: str, values: Sequence[dict[str, Any]]
     ) -> set[str]:
+        project_authoritative = [
+            item for item in values if item["authority"] == "project_authoritative"
+        ]
+        if project_authoritative:
+            return self._authoritative_removals(
+                fact_id, values, project_authoritative
+            )
         canonical = [item for item in values if item["authority"] == "canonical"]
-        if len(canonical) > 1:
-            identities = [item["item_id"] for item in canonical]
-            self._conflict(fact_id, identities, "CONTEXT_AUTHORITY_CONFLICT")
-            return set(identities)
         if canonical:
-            shadowed = [item for item in values if item["authority"] != "canonical"]
-            for item in shadowed:
-                self.excluded.append(
-                    {
-                        "item_id": item["item_id"],
-                        "reason_code": "CONTEXT_AUTHORITY_SHADOWED",
-                    }
-                )
-                self.statuses[item["item_id"]] = _status(
-                    item["item_id"], "available", "CONTEXT_AUTHORITY_SHADOWED"
-                )
-            return {item["item_id"] for item in shadowed}
+            return self._authoritative_removals(fact_id, values, canonical)
         hashes = {item["content_hash"] for item in values}
         if len(hashes) > 1 and len(values) > 1:
             identities = [item["item_id"] for item in values]
             self._conflict(fact_id, identities, "CONTEXT_SOURCE_CONFLICT")
             return set(identities)
         return set()
+
+    def _authoritative_removals(
+        self,
+        fact_id: str,
+        values: Sequence[dict[str, Any]],
+        authoritative: Sequence[dict[str, Any]],
+    ) -> set[str]:
+        if len(authoritative) > 1:
+            identities = [item["item_id"] for item in authoritative]
+            self._conflict(fact_id, identities, "CONTEXT_AUTHORITY_CONFLICT")
+            return set(identities)
+        selected = authoritative[0]
+        shadowed = [item for item in values if item is not selected]
+        for item in shadowed:
+            self.excluded.append(
+                {
+                    "item_id": item["item_id"],
+                    "reason_code": "CONTEXT_AUTHORITY_SHADOWED",
+                }
+            )
+            self.statuses[item["item_id"]] = _status(
+                item["item_id"], "available", "CONTEXT_AUTHORITY_SHADOWED"
+            )
+        return {item["item_id"] for item in shadowed}
 
     def render(
         self,
@@ -214,7 +231,11 @@ class ContextPackBroker:
     ) -> dict[str, Any]:
         authorities = {item["authority"] for item in self.items}
         ceiling = next(
-            (name for name in ("canonical", "supporting", "unverified") if name in authorities),
+            (
+                name
+                for name in AUTHORITY_ORDER
+                if name in authorities
+            ),
             "none",
         )
         required = set(self.requirement["authority_policy"]["required"])

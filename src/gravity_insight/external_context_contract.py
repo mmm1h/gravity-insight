@@ -11,7 +11,11 @@ from typing import Any, Mapping, Sequence
 from urllib.parse import urlparse
 
 from .agent_runtime_contracts import AgentRuntimeContractError, canonical_digest, validate_schema
-from .context_contract import ContextContractError, validate_context_item
+from .context_contract import (
+    ContextContractError,
+    clamp_context_authority,
+    validate_context_item,
+)
 
 
 EXTERNAL_PROVIDER_SCHEMA_VERSION = "gravity.external-context-provider.v1"
@@ -75,6 +79,7 @@ def compile_external_provider(value: Mapping[str, Any]) -> dict[str, Any]:
     normalized = _normalized_provider(contract)
     _validate_provider_transport(normalized)
     _validate_provider_capabilities(normalized)
+    _validate_provider_authority(normalized)
     return {"contract": normalized, "digest": canonical_digest(normalized)}
 
 
@@ -148,6 +153,35 @@ def _validate_provider_capabilities(normalized: Mapping[str, Any]) -> None:
         raise ExternalContextContractError(
             "PROVIDER_DESCRIPTOR_INVALID",
             "list_changed requires a revision or freshness model",
+        )
+
+
+def _validate_provider_authority(normalized: Mapping[str, Any]) -> None:
+    ceiling = normalized["authority_ceiling"]
+    trust = normalized["source_trust"]
+    alignment = normalized["capabilities"]["entity_time_alignment"]
+    valid = (
+        ceiling == "unverified"
+        or (
+            ceiling == "declared_intent"
+            and trust in {"reviewed", "observed"}
+            and alignment in {"full", "partial"}
+        )
+        or (
+            ceiling == "supporting"
+            and trust == "reviewed"
+            and alignment in {"full", "partial"}
+        )
+        or (
+            ceiling in {"project_authoritative", "canonical"}
+            and trust == "reviewed"
+            and alignment == "full"
+        )
+    )
+    if not valid:
+        raise ExternalContextContractError(
+            "PROVIDER_DESCRIPTOR_INVALID",
+            "Provider authority ceiling exceeds its trust or alignment capability",
         )
 
 
@@ -272,8 +306,11 @@ def normalize_external_context_item(
             "CONTEXT_ALIGNMENT_UNSUPPORTED", "Provider resource has no entity identity"
         )
     alignment = compiled["capabilities"]["entity_time_alignment"]
-    trusted = compiled["source_trust"] == "reviewed"
-    authority = resource["authority"] if alignment == "full" and trusted else "unverified"
+    authority = clamp_context_authority(
+        resource["authority"], compiled["authority_ceiling"]
+    )
+    if compiled["source_trust"] == "untrusted" or alignment == "none":
+        authority = "unverified"
     source_trust = {
         "reviewed": "reviewed",
         "observed": "observed",

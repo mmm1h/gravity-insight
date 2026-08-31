@@ -31,8 +31,9 @@
           "required": ["required", "allow_supporting", "allow_unverified"],
           "additionalProperties": false,
           "properties": {
-            "required": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["canonical", "supporting"]}},
+            "required": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["project_authoritative", "canonical", "supporting"]}},
             "allow_supporting": {"type": "boolean"},
+            "allow_declared_intent": {"type": "boolean"},
             "allow_unverified": {"type": "boolean"}
           }
         },
