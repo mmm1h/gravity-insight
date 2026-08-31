@@ -84,7 +84,7 @@ def _install_failure(installation: Mapping[str, Any]) -> dict[str, Any]:
         next_action=str(installation["next_action"]),
     )
     return {
-        "schema_version": "gravity-sdk.doctor.v1",
+        "schema_version": "gravity-insight.doctor.v2",
         "ok": False,
         "status": "error",
         "live": False,
