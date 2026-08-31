@@ -69,9 +69,9 @@ R17 方括号是交付验收记录，不是新增 Requirement 或 milestone；R1
 | [R15](R15-isolated-sql-explorer.md) | Isolated SQL Explorer | R02, R05 | `released` | Leaf |
 | [R16](R16-control-plane-stage-b.md) | Control Plane Stage B | R04 + trigger | `released` | Conditional leaf; shipped local trust core plus plan-only lifecycle |
 | [R17](R17-agent-module-package-migration.md) | Compact Agent interaction package migration | -; bound delivery evidence | `released` | Leaf; original two serial checkpoints preserved |
-| [CT01](CT01-thinkingai-inventory.md) | ThinkingAI source inventory | R00 | `released` | Parallel content |
-| [CT02](CT02-thinkingai-representative-skills.md) | Representative ThinkingAI Skills | CT01, R09B | `released` | Content validation |
-| [CT03](CT03-thinkingai-full-specification.md) | Full independent Skill specifications | CT02 | `released` | Content expansion |
+| [CT01](CT01-external-method-inventory.md) | Isolated external method Source Registry | R00 | `released` | Parallel content |
+| [CT02](CT02-skill-library-validation.md) | Canonical vendor-neutral Skill library | CT01, R09B | `released` | Content validation |
+| [CT03](CT03-skill-library-specification.md) | Deterministic Skill Hub build | CT02 | `released` | Content expansion |
 
 [R09 legacy overview](R09-skill-runtime-project-overlay.md) and [R13 legacy overview](R13-artifact-analysis-delivery.md) are `superseded` navigation records and are not executable graph nodes.
 
@@ -177,8 +177,8 @@ manifest、公开 owner、现有 eager SCC、concept/errata/wheel 和 consumer g
 `m0_bound_implementation_baseline=113176a381b6d232e95a112d78d1d2f4bc5ac024`；
 `m0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640","tests/fixtures/public_api_exports.json":"d6aa4c9bb939f6e56428192ad432300fe985618fae69492cc9e12820dd43c053","tests/fixtures/public_api_owner_migrations.json":"37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570","tests/test_agent_module_migration_characterization.py":"6e5c0530fbc7b869d896d26cb01ec76649f4bf2a48adeeb0b9968395f4af8ffc","tests/test_installed_wheel.py":"bd8d9cf332354147fd4e11f87ac7d09b48ac7dcf1d4eae164900b0baf7bed117"}`；
 `ledger_sha256=9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20`；
-`live_checkpoint_sha256=ce6e9c3fe8987b0e2f9fbf453ef8828a571147cb7df9c644a7e39e55b4afe918`；
-`live_checkpoint_tracked_sites=310`。
+`live_checkpoint_sha256=086e295c75e85b418f0585aabc04d6a842843f51bbb891a282cfe39ddc045c2e`；
+`live_checkpoint_tracked_sites=301`。
 
 The user approved the R01 binding and designated the Requirement document as
 the internal program delivery ledger on 2026-08-21. The same authorization lets

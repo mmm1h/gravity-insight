@@ -46,9 +46,7 @@
       "generator_agent_guides",
       "generator_skill_packages",
       "generator_journey_ledger",
-      "generator_ct01",
-      "generator_ct02",
-      "generator_ct03",
+      "generator_skill_library",
       "generator_execution_variant",
       "r12_three_stage_rollback",
       "r17_live_checkpoint",
@@ -259,9 +257,9 @@
           "required_unclassified_sites": 0,
           "required_blocking_sites": 0,
           "live_checkpoint_path": "tests/fixtures/agent_module_reference_checkpoint.json",
-          "live_checkpoint_sha256": "ce6e9c3fe8987b0e2f9fbf453ef8828a571147cb7df9c644a7e39e55b4afe918",
+          "live_checkpoint_sha256": "086e295c75e85b418f0585aabc04d6a842843f51bbb891a282cfe39ddc045c2e",
           "live_checkpoint_schema_version": "gravity.agent-module-reference-checkpoint.v2",
-          "live_checkpoint_tracked_sites": 310,
+          "live_checkpoint_tracked_sites": 301,
           "live_checkpoint_unclassified_sites": 0,
           "live_checkpoint_blocking_sites": 0,
           "requires": [
@@ -287,8 +285,8 @@
         "maintenance_baseline": "125bb84cbb98a575a2ef3c4a577f174027bc908d"
       }
     },
-    {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"released","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
-    {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"released","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
-    {"id":"CT03","path":"CT03-thinkingai-full-specification.md","status":"released","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}
+    {"id":"CT01","path":"CT01-external-method-inventory.md","status":"released","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
+    {"id":"CT02","path":"CT02-skill-library-validation.md","status":"released","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
+    {"id":"CT03","path":"CT03-skill-library-specification.md","status":"released","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}
   ]
 }

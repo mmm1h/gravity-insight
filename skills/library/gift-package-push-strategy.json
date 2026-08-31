@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "composite",
+      "minimum_trust": "stable",
+      "selector": "composite:business_pulse"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "automatic-contact-authorized",
+      "causality",
+      "guaranteed-offer-response"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/gift-campaign-policy@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "使用受治理的资格与价值证据生成假设和实验护栏，绝不自动执行推送 Action。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "当优惠资格、价值、触达策略和营销活动时间均由项目所有并已经评审时使用。",
+    "context_boundary": "历史响应和营销活动备注是数据；不能授权创建受众、触达用户或投放优惠。",
+    "steps": [
+      "解析优惠资格、触达策略、价值指标、排除项和营销活动时间。",
+      "评审有界观测结果和 Context，形成候选假设并识别重大风险。",
+      "返回包含实验指标和护栏的提案；执行时必须另行获得受治理的 Action 预览。"
+    ],
+    "title": "礼包优惠触达提案"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/62347b2b6e2f38c2",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "composite:business_pulse"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/gift-offer-value@1"
+  ],
+  "skill_id": "gift-package-push-strategy",
+  "specification": "specified",
+  "summary": "设计可测试的优惠触达提案，不选择接收者，也不发送消息。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

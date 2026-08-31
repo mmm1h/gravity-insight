@@ -1,0 +1,82 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "composite",
+      "minimum_trust": "stable",
+      "selector": "composite:business_pulse"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "unvalidated-revenue-forecast",
+      "invented-confidence",
+      "causality"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [
+    "analysis.gravity.game.revenue-forecast-readiness"
+  ],
+  "description": "仅将当前 business-pulse 观测结果作为有界输入证据；除非具备确切获批的预测模型、血缘、评估、有效期和安全预测周期，否则停止。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "用于判断当前观测结果和确切且经过验证的模型是否足以支持有界预测；没有该模型时，结果只能是缺口。",
+    "context_boundary": "叙述性计划和供应商示例不属于模型产物、验证证据、预测输入，也不构成发布预测的授权。",
+    "steps": [
+      "验证 business-pulse 能力，并保留其完整性和数据质量限制。",
+      "解析确切的模型 URI，并验证可信分发、血缘、评估、审批、有效期和安全预测周期。",
+      "缺少任何模型要求时，以模型缺口停止；不要用提示词推理估算替代结果。",
+      "未来存在获批模型时，区分观测输入、情景假设、估算和验证限制。"
+    ],
+    "title": "收入预测就绪性"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [
+    "model://gravity/game-revenue-forecast@1"
+  ],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/215da3e1f74fde93",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [],
+  "skill_id": "game-revenue-forecast",
+  "specification": "specified",
+  "summary": "评估收入预测是否具备受治理且经过验证的模型依赖。",
+  "validation": "validated",
+  "version": "1.0.0"
+}
