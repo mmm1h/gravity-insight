@@ -66,4 +66,4 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - 候选证据更新[候选矩阵](candidate-capability-matrix.md)。
 - 动线状态更新[分析动线](analysis-journeys.md)。
 - 工作提案和请求账本放 `tmp/`；不要再创建逐趟 Markdown。
-- 完整历史与外部调研保留在[归档](archive/index.md)，归档不构成当前合同。
+- 历史与外部调研过程由 Git 保存；当前文档只保留写入唯一 Owner 的有效结论。

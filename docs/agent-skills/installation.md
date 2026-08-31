@@ -6,7 +6,7 @@
 
 ```json
 {
-  "schema_version": "gravity-sdk.agent-install.v1",
+  "schema_version": "gravity-insight.agent-install.v2",
   "distribution": "gravity-insight",
   "python_requires": ">=3.11",
   "channel": {
@@ -20,7 +20,7 @@
     "requires_executable": ["python"]
   },
   "version_pin": {
-    "environment": "GRAVITY_SDK_PINNED_VERSION",
+    "environment": "GRAVITY_INSIGHT_PINNED_VERSION",
     "value": "<version>",
     "install_command": "python -m pip install --upgrade \"gravity-insight==<version>\"",
     "effect": "Startup auto-upgrade is disabled while the exact installed version is pinned."

@@ -1010,7 +1010,7 @@
       }
     },
     {
-      "blocker_note": "阻塞归因：需上游人工动作。证据见 [媒体报表本轮结论](archive/decisions/2026-08/media-report-ad-platform.md)。Agent 首问返回 `MEDIA_REPORT_ITEM_SCHEMA_MISSING`。hash-matched `GeneralImportAd-CKb38unY.js`（sha256 `21961901fc606dbae4bfc432e0ab1272006435d1e4571ac3e95724b81a53424d`）证明装载 body 为 `ad_platform`/`app_id`（空则省略）、`start_date`/`end_date`/`page`/`page_size`/`order_by`，故省略 `ad_platform` 就是查全集。2026-08-18 对投放中 App `29034827` 发 11 次最小第一页：`bytedance` 字符串/整数 `app_id`、省略 App、以及 `bytedance_std` / `bytedance_star` / `bytedance_dy_game` / `gravity` / `tiktok`；窗为 `2026-07-17..2026-08-16`、当天 `2026-08-18`、`2026-08-17..2026-08-18`。11/11 HTTP 200 / `code=0` / `data.list=[]` / `page_info.total_number=0` / `total.cost=null`。item schema 未成立，不晋升。",
+      "blocker_note": "阻塞归因：需上游人工动作。当前证据：Agent 首问返回 `MEDIA_REPORT_ITEM_SCHEMA_MISSING`。hash-matched `GeneralImportAd-CKb38unY.js`（sha256 `21961901fc606dbae4bfc432e0ab1272006435d1e4571ac3e95724b81a53424d`）证明装载 body 为 `ad_platform`/`app_id`（空则省略）、`start_date`/`end_date`/`page`/`page_size`/`order_by`，故省略 `ad_platform` 就是查全集。2026-08-18 对投放中 App `29034827` 发 11 次最小第一页：`bytedance` 字符串/整数 `app_id`、省略 App、以及 `bytedance_std` / `bytedance_star` / `bytedance_dy_game` / `gravity` / `tiktok`；窗为 `2026-07-17..2026-08-16`、当天 `2026-08-18`、`2026-08-17..2026-08-18`。11/11 HTTP 200 / `code=0` / `data.list=[]` / `page_info.total_number=0` / `total.cost=null`。item schema 未成立，不晋升。",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "查找可用的媒体报表",
@@ -1019,7 +1019,7 @@
       "request_budget": {
         "raw": "未验证"
       },
-      "row_digest": "bcedd6182adf58fb72a19602ec9a1d9bcd24d43324071081e88d159e68ed7384",
+      "row_digest": "9d9faecf5543fd38d428102086f2c1de7206e5b2ec85258c6f25b0f2b0fee0f2",
       "surfaces": {
         "agent": "有（目标 gap）",
         "cli": "无",
@@ -1124,7 +1124,7 @@
       }
     },
     {
-      "blocker_note": "阻塞归因：上游无数据；需上游人工动作。Agent 首问仍返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。2026-08-18 hash-matched `DataSheet`/`AppSelect` 已坐实 list 自然 body 为 `page`/`page_size`/`app_id_list`/`name_like`，detail 只要 list item 的 `id`；绑投放中 App `29034827`（整数与字符串）、7 个 App、省略筛选、`name_like=dim_` 共 7 种 list 形状均为 HTTP 200 / `code=0` / `total=0`，`page_info` 仍无 `total_page`。`operation_log` 本页 16 个近期非 delete 的 32 位 `table_id` 对 `detail` 为 `code=1004` / `extra.error=table_id not exist`。读产品未实现。写产品仍不做。证据见 [F41 本轮结论](archive/decisions/2026-08/f41-data-table.md)。",
+      "blocker_note": "阻塞归因：上游无数据；需上游人工动作。Agent 首问仍返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。2026-08-18 hash-matched `DataSheet`/`AppSelect` 已坐实 list 自然 body 为 `page`/`page_size`/`app_id_list`/`name_like`，detail 只要 list item 的 `id`；绑投放中 App `29034827`（整数与字符串）、7 个 App、省略筛选、`name_like=dim_` 共 7 种 list 形状均为 HTTP 200 / `code=0` / `total=0`，`page_info` 仍无 `total_page`。`operation_log` 本页 16 个近期非 delete 的 32 位 `table_id` 对 `detail` 为 `code=1004` / `extra.error=table_id not exist`。读产品未实现。写产品仍不做。当前证据已收敛如下：",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "按表名或 App 查询数据表当前 schema、字段和版本（F41）",
@@ -1133,7 +1133,7 @@
       "request_budget": {
         "raw": "未验证"
       },
-      "row_digest": "d821cb41a022bd9b9b9e81090da48fd44eb4e90849fe8a0d8f0c89b9f8109a30",
+      "row_digest": "3d3bf5bc0ada1f6d84e4660a1e8ff6c4641fa9720a574a9cd11aad4fec387e92",
       "surfaces": {
         "agent": "有（目标 gap）",
         "cli": "无",
@@ -1143,7 +1143,7 @@
       }
     },
     {
-      "blocker_note": "阻塞归因：上游无数据；上游无权限。证据见 [非 Bytedance 投放前提](archive/decisions/2026-08/nonbytedance.md)。2026-08-17 hash-matched `index-D9HAN43D.js` 证明 `promotion.tencent.tencent_adgroup_v2.list` 是 TencentAdReport 装载列表；写操作走独立 `/tencent/batch_options/`。最小第一页非空，分页实测 `page_info`（`total_page`），已晋升 stable 并由 `gravity run` / SDK `read` / Plan operation / Agent raw 共用。`promotion.tencent.ad.list` 已 `confirmed_read`，但对声明父对象返回 `code=2000` / `permission_unavailable`，不再换父重试。同日 hash-matched `KuaishouAd-CEw_EhuL.js` 证明 `promotion.kuaishou.campaign.list` 是计划报表装载列表；写走独立 `/kuaishou/batch_options/`。最小第一页 HTTP 200 明确空，无 item schema，不晋升。快手投放行仍明确空。2026-08-18 先用已闭环 route 反查投放前提，未再打卡住的快手 route：对投放中抖音 App `29034827` 与快手分身 `27018426` 各发 1 次 `attribution.attribution.query`（`date_list=[\"2026-07-19\",\"2026-08-17\"]`、`dims_list=[\"date\",\"ad_platform\"]`、`metrics_list=[\"AppRealRegisterCnt\"]`、`statistics_caliber=user_activated_time`）和 1 次 `report.get.query`（同窗、`data_dims=[\"monetization_platform\"]`、`time_dims=total`、`metrics_list=[\"reporting_ad_revenue\"]`、字符串 `app_id` EQUALS），共 4 次生产请求。`29034827` 归因 `status=success` / `items=60`，`ad_platform` 仅 `bytedance` 30 行 + `natural` 30 行；变现 `status=success` / `list=2`，`monetization_platform` 仅 `dy_mini_game` 与空串（变现平台，不是投放平台）。`27018426` 归因 `status=empty`、变现 `status=empty` / `list=0`。因此本租户在这两个投放相关 App、该 30 日窗内没有可绑定的非 Bytedance `ad_platform`，剩余快手计划子路径按已知无数据阻塞，不晋升。冻结评测问法继续期待原 gap。",
+      "blocker_note": "阻塞归因：上游无数据；上游无权限。当前生产前提证据：2026-08-17 hash-matched `index-D9HAN43D.js` 证明 `promotion.tencent.tencent_adgroup_v2.list` 是 TencentAdReport 装载列表；写操作走独立 `/tencent/batch_options/`。最小第一页非空，分页实测 `page_info`（`total_page`），已晋升 stable 并由 `gravity run` / SDK `read` / Plan operation / Agent raw 共用。`promotion.tencent.ad.list` 已 `confirmed_read`，但对声明父对象返回 `code=2000` / `permission_unavailable`，不再换父重试。同日 hash-matched `KuaishouAd-CEw_EhuL.js` 证明 `promotion.kuaishou.campaign.list` 是计划报表装载列表；写走独立 `/kuaishou/batch_options/`。最小第一页 HTTP 200 明确空，无 item schema，不晋升。快手投放行仍明确空。2026-08-18 先用已闭环 route 反查投放前提，未再打卡住的快手 route：对投放中抖音 App `29034827` 与快手分身 `27018426` 各发 1 次 `attribution.attribution.query`（`date_list=[\"2026-07-19\",\"2026-08-17\"]`、`dims_list=[\"date\",\"ad_platform\"]`、`metrics_list=[\"AppRealRegisterCnt\"]`、`statistics_caliber=user_activated_time`）和 1 次 `report.get.query`（同窗、`data_dims=[\"monetization_platform\"]`、`time_dims=total`、`metrics_list=[\"reporting_ad_revenue\"]`、字符串 `app_id` EQUALS），共 4 次生产请求。`29034827` 归因 `status=success` / `items=60`，`ad_platform` 仅 `bytedance` 30 行 + `natural` 30 行；变现 `status=success` / `list=2`，`monetization_platform` 仅 `dy_mini_game` 与空串（变现平台，不是投放平台）。`27018426` 归因 `status=empty`、变现 `status=empty` / `list=0`。因此本租户在这两个投放相关 App、该 30 日窗内没有可绑定的非 Bytedance `ad_platform`，剩余快手计划子路径按已知无数据阻塞，不晋升。冻结评测问法继续期待原 gap。",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "下钻非 Bytedance 平台的计划、组和创意表现（D33/D34）",
@@ -1152,7 +1152,7 @@
       "request_budget": {
         "raw": "未验证"
       },
-      "row_digest": "a682ca74718f0467bf724a24f4c13eacf290db95f431f6f4a962027efa3deb95",
+      "row_digest": "1b16ce85ec8d0667cf1596a7ba34bb0a6f6aa50b177a4dd34a6f09ec48c0825c",
       "surfaces": {
         "agent": "有（目标 gap）",
         "cli": "有",
@@ -1162,7 +1162,7 @@
       }
     },
     {
-      "blocker_note": "阻塞归因：上游无数据。证据见 [非 Bytedance 投放前提](archive/decisions/2026-08/nonbytedance.md)。2026-08-17 hash-matched `Rules-ChMHnW7I.js` 证明 `material.tencent_medium_creative.list` 是托管规则抽屉装载可选创意；写操作走独立 `/task/ai_trusteeship/create/`。最小第一页非空，分页实测 `none`（无 `page_info`），`creative_components` 按 opaque JSON 暴露，已晋升 stable。`material.tencent.list` 仍是既有非空素材合同。同日 hash-matched `Gdt-zhrkAV97.js` / `KuaishouAd-CEw_EhuL.js` 证明 `material.tencent_asset_text_title.list` 与 `material.kuaishou_creative.list` 是装载列表；写走独立 add/delete/batch 或 `/kuaishou/batch_options/`。两条最小第一页均 HTTP 200 明确空，无 item schema，不晋升。4 个空数组人员容器仍无非空样本，继续不登记。2026-08-18 同一 4 次前提反查未给出 `tencent`/`kuaishou` 投放平台值（见 D33/D34 行），故未再打 `material.kuaishou_creative.list` 与 `material.tencent_asset_text_title.list`。剩余专属素材子路径按这两个 App 在该窗内无非 Bytedance 归因平台阻塞，不晋升。冻结评测问法继续期待原 gap。",
+      "blocker_note": "阻塞归因：上游无数据。当前生产前提证据：2026-08-17 hash-matched `Rules-ChMHnW7I.js` 证明 `material.tencent_medium_creative.list` 是托管规则抽屉装载可选创意；写操作走独立 `/task/ai_trusteeship/create/`。最小第一页非空，分页实测 `none`（无 `page_info`），`creative_components` 按 opaque JSON 暴露，已晋升 stable。`material.tencent.list` 仍是既有非空素材合同。同日 hash-matched `Gdt-zhrkAV97.js` / `KuaishouAd-CEw_EhuL.js` 证明 `material.tencent_asset_text_title.list` 与 `material.kuaishou_creative.list` 是装载列表；写走独立 add/delete/batch 或 `/kuaishou/batch_options/`。两条最小第一页均 HTTP 200 明确空，无 item schema，不晋升。4 个空数组人员容器仍无非空样本，继续不登记。2026-08-18 同一 4 次前提反查未给出 `tencent`/`kuaishou` 投放平台值（见 D33/D34 行），故未再打 `material.kuaishou_creative.list` 与 `material.tencent_asset_text_title.list`。剩余专属素材子路径按这两个 App 在该窗内无非 Bytedance 归因平台阻塞，不晋升。冻结评测问法继续期待原 gap。",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "深查各平台专属素材与创意（D32）",
@@ -1171,7 +1171,7 @@
       "request_budget": {
         "raw": "未验证"
       },
-      "row_digest": "e1b1ea02b1a3d0bedeed8fae22f527f652090c05f5ce860089ac30b801bb26f7",
+      "row_digest": "f514e5b15b5de48715c0fb4fd4af77a3908e69d77176314b80a07a4a2f5182dc",
       "surfaces": {
         "agent": "有（目标 gap）",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "b50bade496af7eb75d72e71b4624f491aa6e30c81c9d758c79b1723992c61e2c",
+  "snapshot_digest": "563d2857e4e9778de474065ac24a48a142933d5ea26fccd01ddda4f25f7318a6",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "67fbcca9a7a1ddb6227918efecf4eb0a4f83386e00d8d2fdc7c18a4af1448fba"
+  "source_sha256": "6906558e990c970e2545d7afef0aefe73f79024d6c0f7392831555e965b66aae"
 }
