@@ -71,20 +71,28 @@ attempts for transient network failures. It records the HTML digest, hashed entr
 Last-Modified; no JavaScript or business endpoint is fetched in this phase. A changed HTML digest
 or entry URL triggers the complete static crawl.
 
-The changed-entry crawl writes a sanitized `fetch-failure.json` containing a stable code,
-`failure_class`, lane host/hashed host key/operation/profile, the three bounded triggering
-failures with status class, optional HTTP status or transport exception type, cooldown remaining,
-and `next_action`. It never includes URL paths, userinfo, query values, headers, exception messages,
-credentials, or response values. `upstream_capacity` is emitted only when every causal failure is
-`transport_error`, `rate_limited`, or `server_error`.
+The changed-entry crawl always writes `census-step-output.json`; failures also write a sanitized
+`fetch-failure.json`. The closed `failure_class` set is `upstream_capacity`,
+`local_governor_capacity`, `request_budget_exhausted`, `transport_failure`, `http_client_error`,
+`http_server_error`, `content_incomplete`, and `unclassified`. The last class includes source code,
+status class, exception type, and a classification reason. Diagnostics never include URL paths,
+userinfo, query values, headers, exception messages, credentials, or response values. HTTP 429 is
+`upstream_capacity`; Governor queue/registry/wait saturation is `local_governor_capacity`; 5xx and
+transport failures retain their distinct classes even when their observations open the circuit.
 
-The schedule performs at most three one-attempt crawl rounds, reusing already downloaded raw
-bundles so outer retries do not multiply the existing three-attempt resource budget. It waits at
-least the 30-second circuit cooldown, capped at 60 seconds per backoff. Exhausted capacity rounds
-produce a GitHub warning and no route-drift conclusion. Mixed, budget, entry-stability, parsing, or
-other completeness failures remain hard failures. The governor threshold remains three actual HTTP
-attempts per scope/host/operation/profile lane; increasing it for a large bundle count would let one
-capacity-constrained host absorb more traffic without adding evidence.
+The schedule performs at most three one-attempt crawl rounds for `upstream_capacity`, reusing
+already downloaded raw bundles. It waits at least the 30-second circuit cooldown, capped at 60
+seconds per backoff. Each network attempt independently allows at most two local Governor-capacity
+retries with 50/100 ms backoff; pre-network denials are refunded from the upstream request budget.
+Non-capacity Governor errors are not retried. Exhausted capacity rounds produce structured evidence
+and no route-drift conclusion; all other incomplete results fail closed. The single process Governor
+and its shared total capacity remain unchanged, and Census concurrency remains capped at four.
+
+Diff requires both inputs to explicitly prove bundle completeness. Missing completeness is unknown,
+not success. An incomplete input produces a withheld marker with empty change sets; impact does not
+map operations, update health state, or schedule a probe plan from that marker. A 200 response also
+does not prove JS content: empty and HTML bodies are rejected, and completeness still requires
+validated JS resources, graph closure, no failures, and stable entry HTML.
 
 The reviewed baseline crawl used 504 request attempts to fetch 375 deployed chunks, reject 122
 lexical non-resource candidates, probe public manifests, and verify that the entry HTML remained

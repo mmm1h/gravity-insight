@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -36,7 +37,7 @@ def perform_governed_http_request(
         and governor_context is None
     ):
         return call()
-    from .adaptive_governor import get_process_governor
+    from .adaptive_governor import GovernorRequestError, get_process_governor
     from .adaptive_governor_http import build_governor_request
 
     governor = (
@@ -51,7 +52,36 @@ def perform_governed_http_request(
         governor_context=governor_context,
         cancellation=cancellation,
     )
-    return governor.execute(descriptor, call)
+    return _execute_with_local_capacity_retry(
+        governor, descriptor, call, governor_context or {}, GovernorRequestError
+    )
+
+
+def _execute_with_local_capacity_retry(
+    governor: Any,
+    descriptor: Any,
+    call: Callable[[], Any],
+    context: Mapping[str, Any],
+    request_error: type[BaseException],
+) -> Any:
+    local_retries = context.get("local_capacity_retries", 0)
+    local_retries = local_retries if type(local_retries) is int and 0 <= local_retries <= 2 else 0
+    backoff = context.get("local_capacity_backoff_seconds", 0.05)
+    backoff = float(backoff) if type(backoff) in {int, float} and 0 <= backoff <= 1 else 0.05
+    for local_retry in range(local_retries + 1):
+        try:
+            return governor.execute(descriptor, call)
+        except request_error as error:
+            if str(error.code) != "GOVERNOR_BACKPRESSURE" or local_retry >= local_retries:
+                terminal = context.get("pre_network_failure")
+                if callable(terminal):
+                    terminal(error)
+                raise
+            observer = context.get("local_capacity_retry_observer")
+            if callable(observer):
+                observer()
+            time.sleep(backoff * (2**local_retry))
+    raise AssertionError("local Governor retry loop did not terminate")
 
 
 def _perform_actual_http_request(
