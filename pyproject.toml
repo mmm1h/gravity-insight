@@ -128,6 +128,7 @@ members = [
   "output.py",
   "product_inventory.py",
   "promotion_performance.py",
+  "query_match.py",
   "realtime_event.py",
   "realtime_event_catalog.py",
   "relative_date.py",

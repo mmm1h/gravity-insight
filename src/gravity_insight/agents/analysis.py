@@ -9,7 +9,7 @@ from typing import Any
 
 from ..analysis_spec_schema import analysis_query_spec_schema
 from .intent_text import affirmative_intent_text
-from ..find import query_match
+from .query_match import query_match
 
 
 _ANALYSIS_KINDS = ("event", "funnel", "property", "retention", "scatter")

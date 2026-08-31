@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -30,18 +29,6 @@ def _lazy_exports() -> dict[str, list[str]]:
         key.value: [value.elts[0].value, value.elts[1].value]
         for key, value in zip(assignment.keys, assignment.values)
     }
-    for target, owner in (
-        ("_sdk_error_name", ".error_types"),
-        ("_sql_error_name", ".error_sql"),
-    ):
-        errors = next(
-            node.iter
-            for node in module.body
-            if isinstance(node, ast.For)
-            and isinstance(node.target, ast.Name)
-            and node.target.id == target
-        )
-        exports.update({error.value: [owner, error.value] for error in errors.elts})
     return dict(sorted(exports.items()))
 
 
@@ -59,20 +46,18 @@ class PublicApiSnapshotTests(unittest.TestCase):
         self.assertEqual(expected, _lazy_exports())
         self.assertEqual(147, len(expected))
 
-    def test_owner_migration_ledger_changes_only_the_declared_owner(self) -> None:
-        migration = [{
-            "symbol": "capabilities_many",
-            "from": ".agent_batch",
-            "to": ".agents.agent_batch",
-        }]
+    def test_manifest_rejects_a_duplicate_public_name(self) -> None:
+        from scripts.generate_public_api_exports import load_manifest
+
         with tempfile.TemporaryDirectory() as raw:
-            ledger = Path(raw) / "ledger.json"
-            ledger.write_text(json.dumps(migration), encoding="utf-8")
-            expected = expected_public_exports(ledger=ledger)
-        self.assertEqual(
-            [".agents.agent_batch", "capabilities_many"],
-            expected["capabilities_many"],
-        )
+            manifest = Path(raw) / "manifest.json"
+            manifest.write_text(
+                '{"schema_version":"gravity.public-api-manifest.v1","exports":['
+                '{"name":"same","module":".sdk","attribute":"connect"},'
+                '{"name":"same","module":".sdk","attribute":"connect"}]}'
+            )
+            with self.assertRaisesRegex(ValueError, "repeats export 'same'"):
+                load_manifest(manifest)
 
     def test_every_snapshot_symbol_is_reachable_from_the_root_package(self) -> None:
         """An entry in the map is worthless if `from gravity_insight import X` fails."""
