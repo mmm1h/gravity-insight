@@ -59,4 +59,18 @@ The feasibility draft also proposed App-scoped vocabulary, Dashboard and Segment
 
 The dependency choice is a minimal in-repository JSON-RPC stdio layer. No official `mcp` SDK or transitive Runtime dependency is added. Protocol evolution is therefore an explicit maintenance responsibility of this removable package.
 
-Graduation and rollback are governed by [R10 MCP Thin Surface](../../specs/agent-runtime/R10-mcp-thin-surface.md).
+## Graduation and rollback
+
+This surface remains experimental. Graduation requires all of the following:
+
+- a real supported Host run with versioned, sanitized evidence;
+- a blind 20-question holdout at the frozen `18/20` first-choice and `12/20`
+  legal-answer floors; and
+- one real existing consumer trial plus adoption intent from a second independent
+  Host or consumer.
+
+The architecture/plan owner judges those records; fixtures and the implementation
+cannot self-approve graduation. Loss of structured errors, failure of either floor,
+or absence of the second adopter removes/disables the server while retaining at
+most its versioned schema descriptions. Removal must leave every Journey available
+through CLI, SDK or Plan and requires no user-data migration.

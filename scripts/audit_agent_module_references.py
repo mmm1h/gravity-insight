@@ -40,13 +40,12 @@ GENERATED_GOVERNANCE_FILES = frozenset(
     }
 )
 GOVERNANCE_EXCLUSION_RULE = (
-    "Exclude only tmp/**, direct specs/agent-runtime/R17-*.md migration "
-    "specifications, the checked-in baseline disposition fixture, live checkpoint "
-    "receipt and their validator, and "
-    "the two scripts that produce this audit. These paths define, generate, or "
-    "validate R17 governance metadata rather than consume migrated runtime "
-    "modules. Do not exclude AGENTS.md; specs/agent-runtime/architecture-source.md, "
-    "index.json, or index.md; docs/maintainers/technical-debt.md; "
+    "Exclude only tmp/**, the checked-in immutable baseline disposition fixture, "
+    "live checkpoint receipt, its test validator, and the two scripts that produce "
+    "this audit. These paths define, generate, or validate frozen package-migration "
+    "metadata rather than consume runtime modules. Do not exclude AGENTS.md; "
+    "docs/architecture.md; specs/agent-runtime/index.json or index.md; "
+    "docs/maintainers/technical-debt.md; "
     "tests/agent_migration_characterization.py; or any other src, docs, specs, "
     "or tests path."
 )
@@ -130,12 +129,7 @@ def is_generated_governance_artifact(relative: str) -> bool:
     value = normalized.as_posix()
     if value in GENERATED_GOVERNANCE_FILES:
         return True
-    return (
-        len(parts) == 3
-        and parts[:2] == ("specs", "agent-runtime")
-        and normalized.name.startswith("R17-")
-        and normalized.suffix == ".md"
-    )
+    return False
 
 
 def version_controlled_files(root: Path = ROOT) -> tuple[list[Path], list[str]]:

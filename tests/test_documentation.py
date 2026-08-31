@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from collections import deque
 from pathlib import Path
 
+from gravity_insight.documentation_gate import (
+    CANONICAL_MAX_BYTES,
+    CANONICAL_MAX_LINES,
+    current_markdown_files,
+    documentation_errors,
+    validate_architecture_binding,
+    validate_mermaid,
+)
 from tests.repository_tree_gate import repository_tree_read
 
 
@@ -48,6 +57,12 @@ class DocumentationArchitectureTests(unittest.TestCase):
                     and target != DOCS.resolve()
                     and DOCS.resolve() not in target.parents
                 ):
+                    continue
+                if (
+                    source == ROOT / "README.md"
+                    and target == ROOT / "specs/agent-runtime/architecture-source.md"
+                ):
+                    # The release/CI migration owns this explicitly frozen hand-off.
                     continue
                 if not target.exists():
                     missing.append(f"{source.relative_to(ROOT)} -> {target}")
@@ -218,6 +233,49 @@ class DocumentationArchitectureTests(unittest.TestCase):
         self.assertTrue(
             (ROOT / "src/gravity_insight/contracts/sql-products/catalog.json").is_file()
         )
+
+    def test_current_documentation_governance_gate_passes(self) -> None:
+        self.assertEqual([], documentation_errors(ROOT))
+
+    def test_canonical_architecture_uses_upper_bounds_not_exact_sizes(self) -> None:
+        result = validate_architecture_binding(ROOT)
+        self.assertLessEqual(result["lines"], CANONICAL_MAX_LINES)
+        self.assertLessEqual(result["bytes"], CANONICAL_MAX_BYTES)
+
+    def test_canonical_architecture_mermaid_is_valid(self) -> None:
+        self.assertGreaterEqual(
+            validate_mermaid((DOCS / "architecture.md").read_text(encoding="utf-8")),
+            1,
+        )
+
+    def test_released_requirement_ledgers_are_not_current_documents(self) -> None:
+        current = {
+            path.relative_to(ROOT).as_posix()
+            for path in current_markdown_files(ROOT)
+        }
+        self.assertFalse(
+            any(path.startswith("specs/agent-runtime/R") for path in current)
+        )
+
+    def test_vendor_neutral_ct_references_are_current_and_exact(self) -> None:
+        names = (
+            "CT01-external-method-inventory.md",
+            "CT02-skill-library-validation.md",
+            "CT03-skill-library-specification.md",
+        )
+        markdown = (ROOT / "specs/agent-runtime/index.md").read_text(encoding="utf-8")
+        index = json.loads(
+            (ROOT / "specs/agent-runtime/index.json").read_text(encoding="utf-8")
+        )
+        library = next(
+            component
+            for component in index["components"]
+            if component["id"] == "external-method-library"
+        )
+        self.assertEqual(list(names), library["governance_references"])
+        for name in names:
+            self.assertTrue((ROOT / "specs/agent-runtime" / name).is_file())
+            self.assertIn(f"]({name})", markdown)
 
 
 if __name__ == "__main__":

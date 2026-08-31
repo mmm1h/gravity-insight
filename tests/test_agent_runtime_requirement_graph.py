@@ -8,8 +8,8 @@ from pathlib import Path
 from scripts.validate_agent_runtime_requirement_graph import (
     RequirementGraphError,
     validate_markdown_projection,
-    validate_requirement_graph,
     validate_repository,
+    validate_requirement_graph,
     validate_spec_status_projection,
 )
 
@@ -17,7 +17,6 @@ from scripts.validate_agent_runtime_requirement_graph import (
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "specs/agent-runtime/index.json"
 INDEX_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
-R17_SPECIFICATION = ROOT / "specs/agent-runtime/R17-agent-module-package-migration.md"
 
 
 class AgentRuntimeRequirementGraphTests(unittest.TestCase):
@@ -27,102 +26,81 @@ class AgentRuntimeRequirementGraphTests(unittest.TestCase):
 
     def test_current_requirement_graph_and_markdown_projection_are_valid(self) -> None:
         summary = validate_repository(INDEX, INDEX_MARKDOWN)
-        self.assertIn("merged_main", self.document["status_model"])
-        self.assertNotIn("fixed_dev", self.document["status_model"])
-        self.assertIn("fixed_dev", self.document["historical_status_tokens"])
-        self.assertEqual(
-            summary["requirement_count"], summary["markdown_requirement_count"]
-        )
-        self.assertEqual(summary["requirement_count"], summary["spec_status_count"])
-        self.assertEqual(7, summary["markdown_milestone_count"])
-        self.assertGreaterEqual(summary["graph_node_count"], summary["requirement_count"])
+        self.assertEqual("gravity.agent-runtime-components.v1", self.document["schema_version"])
+        self.assertEqual(summary["component_count"], summary["markdown_component_count"])
+        self.assertGreater(summary["maturity_counts"]["stable"], 0)
+        self.assertGreater(summary["maturity_counts"]["bounded"], 0)
+        self.assertGreater(summary["maturity_counts"]["experimental"], 0)
 
     def test_missing_requirement_file_is_rejected(self) -> None:
         changed = copy.deepcopy(self.document)
-        changed["requirements"][0]["path"] = "missing-requirement.md"
+        changed["components"][0]["machine_sources"][0] = "missing-machine-owner.json"
         with self.assertRaisesRegex(RequirementGraphError, "path does not exist"):
             validate_requirement_graph(changed, index_path=INDEX)
 
     def test_unknown_requirement_dependency_is_rejected(self) -> None:
         changed = copy.deepcopy(self.document)
-        changed["requirements"][0]["dependencies"] = ["R-NOT-REGISTERED"]
-        with self.assertRaisesRegex(RequirementGraphError, "unknown dependency"):
+        changed["components"][0]["reference"] = "missing-reference.md"
+        with self.assertRaisesRegex(RequirementGraphError, "path does not exist"):
             validate_requirement_graph(changed, index_path=INDEX)
 
     def test_unknown_milestone_dependency_is_rejected(self) -> None:
         changed = copy.deepcopy(self.document)
-        r13c = next(item for item in changed["requirements"] if item["id"] == "R13C")
-        r13c["milestone_dependencies"] = ["R12-NOT-REGISTERED"]
-        with self.assertRaisesRegex(RequirementGraphError, "unknown dependency"):
+        changed["components"][0]["maturity"] = "released"
+        with self.assertRaisesRegex(RequirementGraphError, "maturity is invalid"):
             validate_requirement_graph(changed, index_path=INDEX)
 
     def test_requirement_cycle_is_rejected(self) -> None:
         changed = copy.deepcopy(self.document)
-        r00 = next(item for item in changed["requirements"] if item["id"] == "R00")
-        r00["dependencies"] = ["R01"]
-        with self.assertRaisesRegex(RequirementGraphError, "R00 -> R01 -> R00"):
+        changed["requirements"] = []
+        with self.assertRaisesRegex(RequirementGraphError, "component index keys are invalid"):
             validate_requirement_graph(changed, index_path=INDEX)
 
     def test_duplicate_requirement_or_milestone_id_is_rejected(self) -> None:
         changed = copy.deepcopy(self.document)
-        changed["requirements"][0]["milestones"] = [
-            {"id": "R01", "status": "released", "dependencies": []}
-        ]
-        with self.assertRaisesRegex(RequirementGraphError, "duplicate requirement ID"):
+        changed["components"].append(copy.deepcopy(changed["components"][0]))
+        with self.assertRaisesRegex(RequirementGraphError, "duplicate component ID"):
             validate_requirement_graph(changed, index_path=INDEX)
 
     def test_missing_markdown_requirement_row_is_rejected(self) -> None:
         changed = "\n".join(
-            line for line in self.markdown.splitlines() if not line.startswith("| [R00]")
+            line for line in self.markdown.splitlines() if not line.startswith("| `execution-kernel`")
         )
-        with self.assertRaisesRegex(RequirementGraphError, "requirement IDs differ"):
+        with self.assertRaisesRegex(RequirementGraphError, "component IDs differ"):
             validate_markdown_projection(self.document, changed)
 
     def test_markdown_requirement_status_drift_is_rejected(self) -> None:
         changed = self.markdown.replace(
-            "| [R00](R00-product-constitution.md) | Product constitution and directive governance | - | `released` |",
-            "| [R00](R00-product-constitution.md) | Product constitution and directive governance | - | `specified` |",
+            "| `execution-kernel` | `stable` |",
+            "| `execution-kernel` | `bounded` |",
             1,
         )
-        with self.assertRaisesRegex(RequirementGraphError, "R00 status differs"):
+        with self.assertRaisesRegex(RequirementGraphError, "maturity differs"):
             validate_markdown_projection(self.document, changed)
 
     def test_markdown_milestone_status_drift_is_rejected(self) -> None:
-        changed = self.markdown.replace(
-            "| R12-B | R12 | R12-A | `released` |",
-            "| R12-B | R12 | R12-A | `in_progress` |",
-            1,
-        )
-        with self.assertRaisesRegex(RequirementGraphError, "R12-B milestone projection"):
+        changed = self.markdown + "\n## Milestones\n"
+        with self.assertRaisesRegex(RequirementGraphError, "retired Milestones"):
             validate_markdown_projection(self.document, changed)
 
     def test_spec_status_drift_is_rejected(self) -> None:
         changed = copy.deepcopy(self.document)
-        r15 = next(item for item in changed["requirements"] if item["id"] == "R15")
-        r15["status"] = "in_progress"
-        with self.assertRaisesRegex(
-            RequirementGraphError, "R15 spec delivery status differs"
-        ):
+        component = next(item for item in changed["components"] if item["id"] == "mcp-stdio")
+        component.pop("limits")
+        with self.assertRaisesRegex(RequirementGraphError, "limits must state"):
             validate_spec_status_projection(changed, index_path=INDEX)
 
 
 class R17DeliveryBaselineEvidenceTests(unittest.TestCase):
     def test_file_counts_are_explicit_immutable_delivery_evidence(self) -> None:
         document = json.loads(INDEX.read_text(encoding="utf-8"))
-        requirement = next(
-            item for item in document["requirements"] if item["id"] == "R17"
+        self.assertNotIn("requirements", document)
+        self.assertNotIn("milestones", INDEX_MARKDOWN.read_text(encoding="utf-8").lower())
+        package = next(item for item in document["components"] if item["id"] == "package-facade")
+        self.assertIn(
+            "../../tests/fixtures/agent_module_reference_dispositions.json",
+            package["machine_sources"],
         )
-        scope = requirement["scope"]
-        self.assertEqual("immutable_delivery_baseline", scope["file_count_evidence_role"])
-        self.assertEqual(
-            requirement["delivery_acceptance"]["maintenance_baseline"],
-            scope["file_count_evidence_revision"],
-        )
-        specification = " ".join(
-            R17_SPECIFICATION.read_text(encoding="utf-8").split()
-        )
-        self.assertIn("immutable delivery-baseline evidence", specification)
-        self.assertIn("not rolling limits on the evolving package", specification)
 
 
 if __name__ == "__main__":
