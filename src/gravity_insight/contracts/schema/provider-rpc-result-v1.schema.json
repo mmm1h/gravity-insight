@@ -22,7 +22,8 @@
     "circuit": {"$ref": "#/$defs/circuit"},
     "provider_rpc_called": {"type": "boolean"},
     "provider_internal_io_controlled": {"const": false},
-    "provider_internal_network": {"const": "not_observable"}
+    "provider_internal_network": {"const": "not_observable"},
+    "degradation": {"$ref": "#/$defs/degradation"}
   },
   "$defs": {
     "revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"},
@@ -89,6 +90,21 @@
         "consecutive_failures": {"type": "integer", "minimum": 0},
         "open_count": {"type": "integer", "minimum": 0},
         "cooldown_remaining_ms": {"type": "integer", "minimum": 0, "maximum": 3600000}
+      }
+    },
+    "degradation": {
+      "type": "object",
+      "required": ["schema_version", "kind", "cause", "missing", "message", "user_actions", "continuation", "authority_ceiling"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.command-source-degradation.v1"},
+        "kind": {"enum": ["source_unavailable", "resource_unavailable", "content_stale"]},
+        "cause": {"enum": ["command_not_found", "command_failed", "circuit_open", "resource_unavailable", "freshness_unknown", "freshness_expired"]},
+        "missing": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "message": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "user_actions": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+        "continuation": {"const": "supplemental_context_only"},
+        "authority_ceiling": {"enum": ["declared_intent", "unverified"]}
       }
     }
   }
