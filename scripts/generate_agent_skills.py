@@ -60,7 +60,6 @@ def render_documents() -> dict[Path, str]:
     from gravity_insight.analysis_spec_schema import analysis_query_spec_schema
     from gravity_insight.derived_metrics import SPEC_SCHEMA_VERSION as DERIVED_SPEC_VERSION
     from gravity_insight.workspace_semantic_context import SCHEMA_VERSION as SEMANTIC_VERSION
-    from gravity_insight.reference_journey_contract import reference_artifacts
 
     protocol = _protocol()
     cards = {
@@ -111,7 +110,6 @@ def render_documents() -> dict[Path, str]:
     catalog["selector_count"] = len(
         operation_ids | set(cards) | {f"gap:{gap['code']}" for gap in gaps}
     )
-    reference_skill = reference_artifacts()["skill"]
     return {
         OUTPUT / "index.md": _index(catalog),
         OUTPUT / "catalog-discovery.md": _catalog_discovery(catalog, exits),
@@ -127,9 +125,6 @@ def render_documents() -> dict[Path, str]:
         ),
         OUTPUT / "caller-semantics.md": _caller_semantics(
             SEMANTIC_VERSION, DERIVED_SPEC_VERSION
-        ),
-        OUTPUT / "ap-cost-anomaly-localization.md": _reference_skill(
-            reference_skill
         ),
     }
 
@@ -153,15 +148,8 @@ def _index(catalog: dict[str, int]) -> str:
 | 用同一分析定义比较两个时期 | [时期对比](period-comparison.md) |
 | 预览并确认执行分群、报表、订阅或 Kanban 写入 | [受治理写入](governed-writes.md) |
 | 声明调用方语义和派生指标 | [调用方语义与派生指标](caller-semantics.md) |
-| 运行 R01 获客消耗异常定位 Journey | [获客消耗异常定位](ap-cost-anomaly-localization.md) |
 | Agent 返回 `capability_gap` | [能力缺口](capability-gap.md) |
 """
-
-
-def _reference_skill(artifact: dict[str, Any]) -> str:
-    from gravity_insight.skill_render import render_docs_mirror
-
-    return render_docs_mirror(artifact)
 
 
 def _catalog_discovery(catalog: dict[str, int], exits: dict[str, str]) -> str:

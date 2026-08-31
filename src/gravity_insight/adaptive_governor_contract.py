@@ -40,8 +40,8 @@ _CURRENT_JOURNEY: contextvars.ContextVar[str] = contextvars.ContextVar(
 class GovernorRequestError(TransportError):
     """A request stopped before HTTP because governed capacity denied it."""
 
-    category = ErrorCategory.UPSTREAM
-    retryable = True
+    category = ErrorCategory.LOCAL
+    retryable = False
 
     def __init__(
         self,
@@ -50,6 +50,20 @@ class GovernorRequestError(TransportError):
         diagnostics: Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
+        selected = str((diagnostics or {}).get("failure_class", "unclassified"))
+        if selected in {
+            "upstream_capacity",
+            "transport_failure",
+            "http_server_error",
+        }:
+            self.category = ErrorCategory.UPSTREAM
+            self.retryable = True
+        elif selected == "local_governor_capacity":
+            self.category = ErrorCategory.LOCAL
+            self.retryable = True
+        else:
+            self.category = ErrorCategory.LOCAL
+            self.retryable = False
         super().__init__(message, **kwargs)
         self.diagnostics = dict(diagnostics or {})
 

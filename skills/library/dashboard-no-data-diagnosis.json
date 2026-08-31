@@ -1,0 +1,81 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "dashboard-ui-state",
+      "silent-permission-inference"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/dashboard-definition@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "通过核对已注册查询结果与确切的仪表盘定义和时间范围，诊断无数据显示。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "当项目能够提供版本化的仪表盘定义及其底层受治理分析身份时使用。",
+    "context_boundary": "布局和 UI 状态不是 Runtime 事实；缺少仪表盘配置时，不得断言页面为何为空。",
+    "steps": [
+      "解析仪表盘定义、来源分析、筛选条件、时区和预期数据时间窗。",
+      "将受治理来源的状态、完整性和质量与已配置的筛选及绑定预期进行比较。",
+      "对有证据支持的空数据、数据过期、权限、绑定或契约缺口进行分类；仅涉及 UI 的原因仍标为未验证。"
+    ],
+    "title": "仪表盘证据缺口诊断"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.core",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/8a1676583d63cef8",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [],
+  "skill_id": "dashboard-no-data-diagnosis",
+  "specification": "specified",
+  "summary": "依据受治理证据，区分仪表盘空数据、筛选、数据过期和契约漂移等原因。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

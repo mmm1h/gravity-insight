@@ -53,26 +53,26 @@ class CapabilityImpactTests(unittest.TestCase):
         self.assertEqual(
             [
                 "analysis.event-trend",
-                "analysis.thinkingai.community-context-correlation",
-                "analysis.thinkingai.device-segment-event-review",
-                "analysis.thinkingai.project-metric-contract-check",
-                "analysis.thinkingai.returned-filter-comparison",
+                "analysis.gravity.core.project-metric-contract-check",
+                "analysis.gravity.core.returned-filter-comparison",
+                "analysis.gravity.game.community-context-correlation",
+                "analysis.gravity.game.device-segment-event-review",
             ],
             [item["journey_id"] for item in event["affected_journeys"]],
         )
         self.assertEqual(
             [
                 "analysis.business-pulse",
-                "analysis.thinkingai.revenue-forecast-readiness",
+                "analysis.gravity.game.revenue-forecast-readiness",
             ],
             [item["journey_id"] for item in pulse["affected_journeys"]],
         )
         self.assertEqual(
             [
-                "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
+                "skill://gravity.core/analysis-metric-definition-alignment@1.0.0",
+                "skill://gravity.core/filter-result-bias-diagnosis@1.0.0",
                 "skill://gravity.game/app-device-performance-analysis@1.0.0",
                 "skill://gravity.game/community-hot-topic-analysis@1.0.0",
-                "skill://gravity.game/filter-result-bias-diagnosis@1.0.0",
             ],
             [item["skill_uri"] for item in event["affected_skills"]],
         )
