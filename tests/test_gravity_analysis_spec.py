@@ -195,6 +195,61 @@ class AnalysisQuerySpecTests(unittest.TestCase):
             )
         self.assertEqual([], sdk.insight.validated)
 
+    def test_device_id_count_is_rejected_before_dispatch_with_valid_controls(self) -> None:
+        dated = {
+            "app": "101",
+            "start": "2026-08-01",
+            "end": "2026-08-02",
+            "steps": [{
+                "event": "purchase",
+                "metric": {"field": "$device_id", "aggregation": "Count"},
+            }],
+        }
+        insight = FakeInsight()
+        with self.assertRaises(InputValidationError) as caught:
+            GravitySDK(insight=insight).compile_analysis_query("event", dated)
+
+        detail = caught.exception.to_error_detail(
+            operation_id="analysis.event.query"
+        ).to_dict()
+        self.assertEqual(
+            ("INPUT_INVALID", "caller", "target.name", False),
+            (
+                detail["code"],
+                detail["category"],
+                detail["field"],
+                detail["retryable"],
+            ),
+        )
+        self.assertIn("DistinctCount", detail["next_action"])
+        self.assertIn("PresetAllCount", detail["next_action"])
+        self.assertIn("do not retry", detail["next_action"])
+        self.assertEqual([], insight.validated)
+
+        distinct = {
+            **dated,
+            "steps": [{
+                "event": "purchase",
+                "metric": {
+                    "field": "$device_id",
+                    "aggregation": "DistinctCount",
+                },
+            }],
+        }
+        self.assertEqual(
+            "DistinctCount",
+            compile_query_spec("event", distinct).inputs["query_item_list"][0][
+                "target"
+            ]["name"],
+        )
+        self.assertEqual(
+            "PresetAllCount",
+            compile_query_spec("event", {
+                **dated,
+                "steps": [step("purchase")],
+            }).inputs["query_item_list"][0]["target"]["name"],
+        )
+
     def test_event_subday_grains_fail_before_dispatch_and_daily_control_still_succeeds(self) -> None:
         insight = FakeInsight()
         sdk = GravitySDK(insight=insight)

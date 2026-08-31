@@ -537,6 +537,98 @@
       "path": "/turbo_engine/api/v1/kuaishou/creative/list/",
       "reviewed_at": "2026-08-17",
       "reviewer": "codex/tencent-drill-2"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched Dashboard and Event call sites invoke this POST only from Analysis calculation/load functions. Their consumers render aggregate result rows, cancellation, and explicit no-data states; no save, create, update, delete, share, export, or other mutation continuation reaches the route.",
+          "source": "src/gravity_insight/census/data/routes.json"
+        },
+        {
+          "detail": "The extracted exact route has two load_call sites in Dashboard-DrzT0Orh.js and Event-BKh0ym6c.js. The route is separately bound to the stable analysis.event.query response projection and read effect.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.event.query",
+      "path": "/report/api/v3/dataanalysis/query_sql/",
+      "reviewed_at": "2026-08-31",
+      "reviewer": "codex/production-certification"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched Dashboard call sites invoke this POST from Funnel calculation/load functions and consume the response as analysis output with cancellation and an explicit current-query-no-data state. No mutation continuation or write feedback reaches the route.",
+          "source": "src/gravity_insight/census/data/routes.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.funnel.query",
+      "path": "/report/api/v3/dataanalysis/funnel/",
+      "reviewed_at": "2026-08-31",
+      "reviewer": "codex/production-certification"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched Dashboard call sites invoke this POST from Retention calculation/load functions and consume the response as day/week/month analysis output with an explicit no-data state. No create, update, delete, or persistence continuation reaches the route.",
+          "source": "src/gravity_insight/census/data/routes.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.retention.query",
+      "path": "/report/api/v3/dataanalysis/user/retention/",
+      "reviewed_at": "2026-08-31",
+      "reviewer": "codex/production-certification"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched Dashboard call sites invoke this POST from Scatter calculation/load functions and consume the response as chart output with cancellation and an explicit current-query-no-data state. No mutation continuation or write feedback reaches the route.",
+          "source": "src/gravity_insight/census/data/routes.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.scatter.query",
+      "path": "/report/api/v3/dataanalysis/scatter/",
+      "reviewed_at": "2026-08-31",
+      "reviewer": "codex/production-certification"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched Dashboard call sites invoke this POST from Property Analysis calculation/load functions and consume the response as aggregate analysis output with an explicit no-data state. The UI requires an explicit calculate action, and no mutation continuation or persistence feedback reaches the route.",
+          "source": "src/gravity_insight/census/data/routes.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.property.query",
+      "path": "/report/api/v3/dataanalysis/user/properties/",
+      "reviewed_at": "2026-08-31",
+      "reviewer": "codex/production-certification"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched search-B8IEKRTe.js route is reached by one resolved load_call. Its UI consumers ask the operator to query matching users, expose calculation cancellation, and render the returned list; no save, create, update, delete, export, or other mutation continuation reaches this exact route.",
+          "source": "src/gravity_insight/census/data/routes.json"
+        },
+        {
+          "detail": "The extracted call site sends app_id, field_map, conditions, ordering and pagination as a query load. The separately governed analysis.user_detail.list contract binds the same exact POST path to effect=read and a list/page_info response projection.",
+          "source": "src/gravity_insight/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.user_detail.list",
+      "path": "/report/api/v3/dataanalysis/user/detail/list/",
+      "reviewed_at": "2026-09-01",
+      "reviewer": "codex/production-certification"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"

@@ -38,6 +38,9 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、
   聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。
+- `analysis.event.query` 不再接受 `$device_id + Count`：生产对照证明该组合始终被拒，而同字段
+  `DistinctCount` 与事件次数 `PresetAllCount` 均可读取；因此 schema 收窄没有损失读取能力，并阻止 Agent 把
+  caller 输入错误当作 retryable upstream 故障无限重试。
 - 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。
 - 离线 `doctor` 必须绑定当前源码、editable metadata 与实际 import 来源；任一版本或根目录不一致均在 live probe 前以稳定 `INSTALL_*` 原因失败并给出重装命令。
 - 当前表 schema gap 只由明确的当前态 schema，或表语境中的当前态字段加版本触发；已同步沿革仍归 `metadata:table_lineage`，两者显式并列时返回带附属 gap 的 `MULTIPLE_INTENTS`。
