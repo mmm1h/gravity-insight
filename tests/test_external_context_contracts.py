@@ -17,6 +17,12 @@ from gravity_insight.external_context_contract import (
     decode_rpc_response,
     normalize_external_context_item,
 )
+from gravity_insight.external_context_binding import compile_external_context_bindings
+from gravity_insight.external_context_pack import assemble_external_context_pack
+from gravity_insight.external_context_provider import (
+    FeishuFixtureContextProvider,
+    feishu_fixture_provider_descriptor,
+)
 
 
 def provider_descriptor(
@@ -24,9 +30,15 @@ def provider_descriptor(
     transport: str = "host",
     source_trust: str = "reviewed",
     alignment: str = "full",
+    authority_ceiling: str | None = None,
     operations: tuple[str, ...] = ("list", "list_changed", "read", "search"),
     subprocess_binding: dict | None = None,
 ) -> dict:
+    selected_ceiling = authority_ceiling or (
+        "canonical"
+        if source_trust == "reviewed" and alignment == "full"
+        else "unverified"
+    )
     return {
         "artifact_kind": "external_context_provider",
         "schema_version": "gravity.external-context-provider.v1",
@@ -65,6 +77,7 @@ def provider_descriptor(
             "subprocess": subprocess_binding,
         },
         "source_trust": source_trust,
+        "authority_ceiling": selected_ceiling,
         "role": "data",
     }
 
@@ -100,6 +113,127 @@ def response(request_id: str, *, resources: list[dict] | None = None, status: st
         "next_cursor": None,
         "stats": {"internal_requests": 2, "retries": 1, "cache_hits": 0},
     }
+
+
+FEISHU_SCHEDULE_URI = (
+    "feishu://fixture/base/placeholder-schedule/record-placeholder-a"
+)
+
+
+def feishu_fixture() -> dict:
+    return {
+        "schema_version": "gravity.feishu-context-fixture.v1",
+        "observed_at": "2026-08-31T00:00:00Z",
+        "previous_snapshot_revision": "snapshot:" + "a" * 64,
+        "changed_resource_uris": [
+            FEISHU_SCHEDULE_URI,
+            "feishu://fixture/docx/placeholder-tracking-document/block-placeholder-a",
+        ],
+        "resources": [
+            {
+                "uri": FEISHU_SCHEDULE_URI,
+                "title": "Placeholder schedule declaration",
+                "resource_type": "document",
+                "item_id": "placeholder-schedule",
+                "fact_id": "fact.placeholder-schedule",
+                "entity_refs": ["entity://gravity/app@1"],
+                "valid_time": {
+                    "start": "2026-08-18",
+                    "end": "2026-08-20",
+                    "timezone": "Asia/Shanghai",
+                },
+                "effective_range": {"start": "2026-08-01", "end": None},
+                "authority": "declared_intent",
+                "supersedes": [
+                    "feishu://fixture/base/placeholder-schedule/snapshots/previous-placeholder"
+                ],
+                "sensitivity": "internal",
+                "citation_path": (
+                    "feishu/base/placeholder-schedule/record-placeholder-a"
+                ),
+                "content": (
+                    "Placeholder plan statement.\nActual occurrence is not asserted."
+                ),
+            },
+            {
+                "uri": (
+                    "feishu://fixture/docx/placeholder-tracking-document/"
+                    "block-placeholder-a"
+                ),
+                "title": "Placeholder tracking specification",
+                "resource_type": "project_semantic",
+                "item_id": "placeholder-tracking",
+                "fact_id": "fact.placeholder-tracking",
+                "entity_refs": ["entity://gravity/app@1"],
+                "valid_time": {
+                    "start": "2026-08-18",
+                    "end": "2026-08-20",
+                    "timezone": "Asia/Shanghai",
+                },
+                "effective_range": {"start": "2026-08-01", "end": None},
+                "authority": "declared_intent",
+                "supersedes": [],
+                "sensitivity": "internal",
+                "citation_path": (
+                    "feishu/docx/placeholder-tracking-document/block-placeholder-a"
+                ),
+                "content": (
+                    "Placeholder tracking declaration.\n"
+                    "Implementation evidence is not asserted."
+                ),
+            },
+        ],
+    }
+
+
+def feishu_bindings() -> dict:
+    descriptor = compile_external_provider(feishu_fixture_provider_descriptor())[
+        "contract"
+    ]
+    return compile_external_context_bindings(
+        {
+            "artifact_kind": "external_context_bindings",
+            "schema_version": "gravity.external-context-bindings.v1",
+            "providers": [descriptor],
+            "requirements": [
+                {
+                    "artifact_kind": "external_context_requirement",
+                    "schema_version": "gravity.external-context-requirement.v1",
+                    "requirement_id": "context://fixture/schedule-intent@1",
+                    "provider_uri": descriptor["uri"],
+                    "skill_uri": "skill://gravity.game/fixture@1.0.0",
+                    "journey_id": "analysis.fixture",
+                    "subject_entities": ["entity://gravity/app@1"],
+                    "required_windows": ["current"],
+                    "timezone": "Asia/Shanghai",
+                    "authority_policy": {
+                        "required": ["project_authoritative"],
+                        "allow_supporting": False,
+                        "allow_declared_intent": True,
+                        "allow_unverified": False,
+                    },
+                    "allowed_sensitivity": ["internal"],
+                    "freshness_policy": {
+                        "as_of": "2026-08-31",
+                        "max_age_days": 7,
+                    },
+                    "budget": {
+                        "max_files": 2,
+                        "max_file_bytes": 4096,
+                        "max_total_bytes": 8192,
+                        "max_total_lines": 32,
+                    },
+                    "resources": [
+                        {
+                            "item_id": "placeholder-schedule",
+                            "resource_uri": FEISHU_SCHEDULE_URI,
+                            "required": False,
+                        }
+                    ],
+                }
+            ],
+        }
+    )
 
 
 class ExternalContextContractTests(unittest.TestCase):
@@ -161,6 +295,85 @@ class ExternalContextContractTests(unittest.TestCase):
             ExternalContextContractError, "PROVIDER_DESCRIPTOR_INVALID"
         ):
             compile_external_provider(no_revision)
+
+    def test_authority_ceiling_is_bound_to_trust_and_clamps_provider_self_report(self) -> None:
+        declared = provider_descriptor(
+            source_trust="observed",
+            alignment="partial",
+            authority_ceiling="declared_intent",
+        )
+        reported = resource()
+        reported["authority"] = "project_authoritative"
+
+        item = normalize_external_context_item(declared, reported)
+
+        self.assertEqual("declared_intent", item["authority"])
+        invalid = provider_descriptor(
+            source_trust="observed",
+            alignment="partial",
+            authority_ceiling="canonical",
+        )
+        with self.assertRaisesRegex(
+            ExternalContextContractError, "PROVIDER_DESCRIPTOR_INVALID"
+        ):
+            compile_external_provider(invalid)
+
+    def test_feishu_fixture_provider_is_credential_free_and_snapshot_bounded(self) -> None:
+        provider = FeishuFixtureContextProvider(feishu_fixture())
+        description = provider.describe()
+        self.assertEqual(
+            "declared_intent", description["provider"]["authority_ceiling"]
+        )
+        self.assertEqual("host", description["provider"]["transport"])
+
+        listed = provider.list(limit=1)
+        searched = provider.search("tracking")
+        schedule = provider.read(FEISHU_SCHEDULE_URI)
+        tracking = provider.read(searched["resources"][0]["uri"])
+        [schedule_item] = schedule["context_items"]
+        [tracking_item] = tracking["context_items"]
+
+        self.assertIsNotNone(listed["next_cursor"])
+        self.assertTrue(schedule_item["source_revision"].startswith("snapshot:"))
+        self.assertEqual(
+            schedule_item["source_revision"], tracking_item["source_revision"]
+        )
+        self.assertEqual("declared_intent", schedule_item["authority"])
+        self.assertEqual("observed", schedule_item["source_trust"])
+        self.assertEqual(0, schedule["provider_reported"]["internal_requests"])
+        self.assertEqual("not_observable", provider.metrics()["provider_internal_network"])
+
+        unchanged = provider.list_changed(schedule_item["source_revision"])
+        changed = provider.list_changed("snapshot:" + "a" * 64, limit=1)
+        unknown = provider.list_changed("snapshot:" + "b" * 64)
+        self.assertEqual("empty", unchanged["status"])
+        self.assertEqual("success", changed["status"])
+        self.assertEqual("context_gap", unknown["status"])
+        self.assertIn("PROVIDER_CAPABILITY_UNSUPPORTED", unknown["reason_codes"])
+
+    def test_feishu_declared_intent_pack_cannot_support_confirmation(self) -> None:
+        provider = FeishuFixtureContextProvider(feishu_fixture())
+        bindings = feishu_bindings()
+        requirement = bindings["requirements"]["context://fixture/schedule-intent@1"]
+        provider_artifact = bindings["providers"][
+            "context-provider://gravity/feishu-fixture@1"
+        ]
+        pack, called = assemble_external_context_pack(
+            requirement,
+            provider_artifact,
+            {"provider": provider, "digest": provider_artifact["digest"]},
+            aliases={},
+            requested_time={
+                "current": {"start": "2026-08-18", "end": "2026-08-20"}
+            },
+        )
+
+        self.assertTrue(called)
+        self.assertEqual("available", pack["status"])
+        self.assertEqual("declared_intent", pack["claims"]["authority_ceiling"])
+        self.assertFalse(pack["claims"]["confirmed_claims_allowed"])
+        self.assertEqual("declared_intent", pack["items"][0]["authority"])
+        self.assertFalse(pack["provider_internal_io_controlled"])
 
     def test_subprocess_descriptor_requires_absolute_fixed_binding(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

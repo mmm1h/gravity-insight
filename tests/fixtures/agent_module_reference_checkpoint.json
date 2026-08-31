@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "c85974bc174b94d01eac1a98bacb41ea16a42f7845d98bc9dadc73ea30033dcf",
-    "manual_review_sha256": "054b157cbe9638807c4df1b60199ec16af67caf03e533511805c7fadc99c055e",
+    "reference_evidence_sha256": "a1b61c3e40adf20623a4f2cd56a25df77dc8545e3fb5c1b64a6602c96b23ac74",
+    "manual_review_sha256": "8efcb9b79101d8c21d143a18fc7816bfac55fbd7c3cb2391143e8bd0c86127a9",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3110,
     "scanned_file_count": 3103,
@@ -687,7 +687,7 @@
     "dispositions": {
       "no_migration_effect": 299
     },
-    "sites_sha256": "169c8dab504251d6654b0f4b4e48c4f728d7516b5a455ed120013cbce37ac960"
+    "sites_sha256": "c752371b5297d61c10070077827557f2fa0c2b8ba48e73b935ed2a13c0f76987"
   },
   "blockers": [],
   "site_fields": [
@@ -4665,7 +4665,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:257:14:patch.object",
+      "tests/test_provider_subprocess.py:261:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "SubprocessProviderTransport",
@@ -4680,7 +4680,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:262:12:patch.object",
+      "tests/test_provider_subprocess.py:266:12:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module",
@@ -4695,7 +4695,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:357:13:patch.object",
+      "tests/test_provider_subprocess.py:361:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module.os",
@@ -4710,7 +4710,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:358:13:patch.object",
+      "tests/test_provider_subprocess.py:362:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module",
@@ -4725,7 +4725,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:363:13:patch.object",
+      "tests/test_provider_subprocess.py:367:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module.subprocess",

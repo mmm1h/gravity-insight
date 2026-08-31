@@ -629,6 +629,20 @@
       "path": "/report/api/v3/dataanalysis/user/detail/list/",
       "reviewed_at": "2026-09-01",
       "reviewer": "codex/production-certification"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In complete hash-matched index-B29DNP9s.js (sha256 f2be62987ce651cab00ac8959f5613013582893f18c094c0f8e7959f0f30e9d8), the SQL-page handler constructs only sql and tabId for POST /api/sql/execute under the fixed /custom_sql API base, then consumes a tabular result for the query table. Cancellation, formatting, export, history, and template writes use separate paths. Runtime authorization for this route is further narrowed to a locally parsed single SELECT/WITH statement with exact allowlists and output budgets.",
+          "source": "src/gravity_insight/contracts/routes/registry.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "sql.explorer.execute",
+      "path": "/custom_sql/api/sql/execute",
+      "reviewed_at": "2026-08-31",
+      "reviewer": "mmm1h"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"

@@ -4,6 +4,12 @@ name: SDK Release
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to recover (for example v0.3.2)
+        required: true
+        type: string
 
 env:
   PYTHONUTF8: "1"
@@ -11,6 +17,7 @@ env:
 
 jobs:
   build:
+    if: github.event_name == 'push'
     runs-on: windows-latest
     timeout-minutes: 30
     permissions:
@@ -47,7 +54,7 @@ jobs:
           Write-Output "PASS agent-usability development eval"
       - name: Check all CLI namespaces offline
         env:
-          GRAVITY_SDK_AUTO_UPGRADE: "0"
+          GRAVITY_INSIGHT_AUTO_UPGRADE: "0"
         shell: pwsh
         run: |
           gravity --help
@@ -72,23 +79,42 @@ jobs:
           if-no-files-found: error
 
   publish:
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
+      contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
       - name: Download checked distributions
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: python-distributions
           path: dist/
-      - name: Publish distributions to PyPI
+      - name: Plan idempotent PyPI publish
+        id: pypi-plan
+        run: >-
+          python scripts/verify_release_provenance.py pypi-plan
+          --project gravity-insight
+          --version "${GITHUB_REF_NAME#v}"
+          --dist-dir dist
+          --stage-dir "$RUNNER_TEMP/pypi-upload"
+      - name: Publish missing distributions to PyPI
+        if: steps.pypi-plan.outputs.upload_required == 'true'
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
         with:
           attestations: true
+          packages-dir: ${{ runner.temp }}/pypi-upload/
 
   release-provenance:
+    if: github.event_name == 'push'
     needs: publish
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -103,20 +129,54 @@ jobs:
         run: python scripts/verify_release_provenance.py gravity-insight "${GITHUB_REF_NAME#v}"
 
   github-release:
-    needs: publish
+    if: github.event_name == 'push'
+    needs: [publish, release-provenance]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
-      - name: Download published distributions
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
-          name: python-distributions
-          path: dist/
-      - name: Create GitHub Release
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Reconcile GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          assets=(dist/*)
-          gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
-            --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+        run: >-
+          python scripts/verify_release_provenance.py recover
+          --project gravity-insight
+          --version "${GITHUB_REF_NAME#v}"
+          --tag "$GITHUB_REF_NAME"
+          --repository "$GITHUB_REPOSITORY"
+
+  recover-github-release:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+          path: release-source
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Recover GitHub Release from published PyPI files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          python scripts/verify_release_provenance.py recover
+          --project gravity-insight
+          --version "${RELEASE_TAG#v}"
+          --tag "$RELEASE_TAG"
+          --repository "$GITHUB_REPOSITORY"
+          --repository-root release-source

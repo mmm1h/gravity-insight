@@ -38,7 +38,7 @@
         "entity_refs": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
         "valid_time": {"type": "object"},
         "effective_range": {"type": "object"},
-        "authority": {"enum": ["canonical", "supporting", "unverified"]},
+        "authority": {"enum": ["project_authoritative", "canonical", "supporting", "declared_intent", "unverified"]},
         "freshness": {"enum": ["current", "stale", "unknown"]},
         "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]}
       }
