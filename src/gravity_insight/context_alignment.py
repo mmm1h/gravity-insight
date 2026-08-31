@@ -99,10 +99,12 @@ def context_freshness(
 
 
 def authority_allowed(authority: str, policy: Mapping[str, Any]) -> bool:
-    if authority == "canonical":
+    if authority in {"project_authoritative", "canonical"}:
         return True
     if authority == "supporting":
         return bool(policy["allow_supporting"])
+    if authority == "declared_intent":
+        return bool(policy.get("allow_declared_intent", False))
     return bool(policy["allow_unverified"])
 
 
