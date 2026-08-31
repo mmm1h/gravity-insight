@@ -54,7 +54,7 @@ jobs:
           Write-Output "PASS agent-usability development eval"
       - name: Check all CLI namespaces offline
         env:
-          GRAVITY_SDK_AUTO_UPGRADE: "0"
+          GRAVITY_INSIGHT_AUTO_UPGRADE: "0"
         shell: pwsh
         run: |
           gravity --help

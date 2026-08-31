@@ -300,7 +300,7 @@ def _worker_environment(manifest: Path, capture: Path) -> dict[str, str]:
             "PYTHONNOUSERSITE": "1",
             "PYTHONUTF8": "1",
             "PYTHONIOENCODING": "utf-8",
-            "GRAVITY_SDK_AUTO_UPGRADE": "0",
+            "GRAVITY_INSIGHT_AUTO_UPGRADE": "0",
             "HTTP_PROXY": "http://127.0.0.1:9",
             "HTTPS_PROXY": "http://127.0.0.1:9",
             "ALL_PROXY": "http://127.0.0.1:9",

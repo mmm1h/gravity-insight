@@ -187,11 +187,13 @@ def _stale_commands(root: Path, sources: Iterable[Path]) -> list[str]:
 
 
 def _navigation_errors(root: Path) -> list[str]:
+    # docs/archive/ was retired: its 102 files were dispositioned and removed, and a
+    # separate check now fails if any docs/archive/**/*.md reappears. Requiring an
+    # index for a directory that must not exist would make this gate permanently red.
     required = (
         root / "docs/index.md",
         root / "docs/maintainers/index.md",
         root / "docs/agent-skills/index.md",
-        root / "docs/archive/index.md",
     )
     errors = [
         f"missing navigation owner {path.relative_to(root).as_posix()}"
