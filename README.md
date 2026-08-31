@@ -1,4 +1,4 @@
-# Gravity SDK
+# Gravity Agent Runtime
 
 Gravity Agent Runtime 的实现仓库，当前稳定内核是面向数据分析团队的 Agent-first Python SDK 与 CLI。仓库把 Gravity 的发现、读取、导出和受治理写入收敛为版本化合同，并按已批准路线扩展版本化 Skill、业务语义、确定性分析方法和有界 Context，让分析任务无需打开 Gravity Web 也能完成。
 
@@ -7,8 +7,7 @@ Gravity Agent Runtime 的实现仓库，当前稳定内核是面向数据分析�
 - **使用 SDK 取数或分析**：读 [团队上手包](docs/team-onboarding.md)，然后运行：
 
   ```powershell
-  $env:PYTHONPATH='src'
-  python -m gravity_insight agent-catalog categories
+  gravity agent-catalog categories
   ```
 
 - **修改本仓库**：先读 [AGENTS.md](AGENTS.md)，再从 [维护者入口](docs/maintainers/index.md) 选择当前任务。
@@ -32,7 +31,7 @@ Gravity Agent Runtime 计划已整体发布到 `main`；当前可执行能力仍
 核心门禁，并在 Linux 3.12 上构建 wheel、以非 editable 方式隔离安装后验证公共 surface。
 
 ```powershell
-python -m pip install -e .
+python -m pip install gravity-insight
 gravity --help
 gravity agent-catalog categories
 ```
@@ -48,6 +47,4 @@ result = gravity.read("app.list", {"page": 1, "page_size": 20})
 
 ## 文档
 
-[文档导航](docs/index.md)按任务给出最短阅读路径。调用方式见 [CLI](docs/reference/cli.md)、[SDK](docs/reference/sdk.md) 和 [Plan](docs/reference/plan.md)；精确字段、错误和 fail-closed 行为从[机器契约索引](docs/reference/cli.md#machine-contract-index)进入当前 catalog 与合同。完整目标以 [canonical architecture source](specs/agent-runtime/architecture-source.md) 为准。
-
-历史归档的拆仓来源见 [2026-08-10 拆仓记录](docs/archive/repository-migration-2026-08-10.md)。
+[文档导航](docs/index.md)按任务给出最短阅读路径。调用方式见 [CLI](docs/reference/cli.md)、[SDK](docs/reference/sdk.md) 和 [Plan](docs/reference/plan.md)；精确字段、错误和 fail-closed 行为从[机器契约索引](docs/reference/cli.md#machine-contract-index)进入当前 catalog 与合同。完整目标以 [Canonical Architecture](docs/architecture.md) 为准。

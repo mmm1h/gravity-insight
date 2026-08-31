@@ -26,6 +26,10 @@ _RETIRED_REFERENCE = re.compile(
 _PARALLEL_VERSION = re.compile(
     r"(?i)(?:-v\d+|-final)\.md$|^\d{4}-\d{2}-\d{2}.*报告.*\.md$"
 )
+_OBSOLETE_COMMAND = re.compile(
+    r"(?im)^[ \t]*(?:python(?:\.exe)?\s+-m\s+gravity_sdk\b|"
+    r"(?:python(?:\.exe)?\s+-m\s+)?pip3?\s+install[^\r\n`]*\bgravity-sdk\b)"
+)
 _LOG_PATTERNS = {
     "dated heading": re.compile(r"(?m)^#{1,6}\s+20\d{2}-\d{2}-\d{2}(?:\s|$)"),
     "round log": re.compile(r"第\s*[一二三四五六七八九十0-9]+\s*轮"),
@@ -125,11 +129,9 @@ def _local_targets(path: Path) -> list[Path]:
 
 def _reachable_docs(root: Path) -> set[Path]:
     docs = (root / "docs").resolve()
-    archive = (docs / "archive").resolve()
     allowed = {
         path.resolve()
         for path in docs.rglob("*.md")
-        if archive not in path.resolve().parents
     }
     queue: deque[Path] = deque([(docs / "index.md").resolve()])
     reached: set[Path] = set()
@@ -142,6 +144,39 @@ def _reachable_docs(root: Path) -> set[Path]:
             target for target in _local_targets(current) if target in allowed
         )
     return reached
+
+
+def documentation_tree_errors(root: Path) -> list[str]:
+    """Validate the navigable docs tree independently of architecture binding."""
+
+    root = root.resolve()
+    docs = (root / "docs").resolve()
+    doc_files = {path.resolve() for path in docs.rglob("*.md")}
+    sources = sorted(doc_files)
+    sources.extend(
+        (root / name).resolve()
+        for name in ("README.md", "AGENTS.md", "SECURITY.md", "CODE_OF_CONDUCT.md")
+        if (root / name).is_file()
+    )
+    errors: list[str] = []
+    for path in sources:
+        relative = path.relative_to(root).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if relative.startswith("docs/archive/"):
+            errors.append(f"historical archive document is forbidden: {relative}")
+        for match in _OBSOLETE_COMMAND.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            errors.append(f"obsolete gravity-sdk command: {relative}:{line}")
+        for target in _local_targets(path):
+            if not target.exists():
+                errors.append(f"broken local link: {relative} -> {target}")
+
+    reached = _reachable_docs(root)
+    for path in sorted(doc_files - reached):
+        errors.append(
+            f"orphan documentation: {path.relative_to(root).as_posix()}"
+        )
+    return errors
 
 
 def current_markdown_files(root: Path) -> list[Path]:
@@ -281,10 +316,11 @@ def documentation_errors(root: Path) -> list[str]:
         UnicodeError,
     ) as exc:
         errors.append(str(exc))
+    errors.extend(documentation_tree_errors(root))
     for path in current_markdown_files(root):
         errors.extend(_current_file_errors(root, path))
     competing = root / "specs/agent-runtime/architecture-source.md"
     if competing.exists():
         relative = competing.relative_to(root).as_posix()
         errors.append(f"parallel canonical owner exists: {relative}")
-    return errors
+    return sorted(set(errors))
