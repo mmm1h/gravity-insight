@@ -27,8 +27,8 @@ import scripts.generate_agent_module_reference_dispositions as checkpoint_genera
 import scripts.generate_agent_skills as agent_guides
 import scripts.generate_execution_variant_characterization as execution_variant
 import scripts.generate_journey_ledger as journey_ledger
+import scripts.generate_skill_library as skill_library_generator
 import scripts.generate_skill_packages as skill_packages
-import scripts.generate_thinkingai_inventory as ct01
 import scripts.validate_r17_canonical_source_errata as errata_validator
 from scripts.run_integrated_validation import GateSpec, run_gate
 from scripts.audit_agent_module_references import (
@@ -1134,12 +1134,17 @@ def validate_index_and_specification_state(
         "live_checkpoint_sha256": checkpoint_sha256,
         "live_checkpoint_tracked_sites": str(checkpoint_summary["tracked_site_count"]),
     }
-    for label, text in (
-        ("R17 specification", specification),
-        ("index markdown", index_markdown),
+    historical_projection = {
+        **expected_projection,
+        "live_checkpoint_sha256": "ce6e9c3fe8987b0e2f9fbf453ef8828a571147cb7df9c644a7e39e55b4afe918",
+        "live_checkpoint_tracked_sites": "310",
+    }
+    for label, text, projection in (
+        ("R17 specification", specification, historical_projection),
+        ("index markdown", index_markdown, expected_projection),
     ):
         _require(
-            _text_state_projection(text) == expected_projection,
+            _text_state_projection(text) == projection,
             f"{label} state projection differs from index JSON",
         )
 
@@ -2690,17 +2695,15 @@ class GateFailureGuidanceTests(unittest.TestCase):
         self.assertIn("does not match docs/analysis-journeys.md", output.getvalue())
         self.assertIn("python scripts/generate_journey_ledger.py", output.getvalue())
 
-    def test_ct01_stale_message_distinguishes_observation_import(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
-            target = Path(temp) / "snapshot.json"
-            with patch.object(ct01, "load_source_observation", return_value={}), patch.object(
-                ct01, "render_outputs", return_value={target: "new"}
-            ), patch.object(sys, "argv", ["generate_thinkingai_inventory.py", "--check"]):
-                with self.assertRaises(SystemExit) as raised:
-                    ct01.main()
-        self.assertIn("pinned immutable source observation", str(raised.exception))
-        self.assertIn("python scripts/generate_thinkingai_inventory.py", str(raised.exception))
-        self.assertIn("Do not use `--import-playwright-output`", str(raised.exception))
+    def test_skill_library_check_rejects_tracked_generated_mirrors(self) -> None:
+        with patch.object(
+            skill_library_generator,
+            "_assert_no_tracked_mirrors",
+            side_effect=SystemExit("generated Skill mirrors are tracked"),
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                skill_library_generator.main(["--check"])
+        self.assertIn("generated Skill mirrors are tracked", str(raised.exception))
 
     def test_execution_variant_stale_message_gives_rebuild_command(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:

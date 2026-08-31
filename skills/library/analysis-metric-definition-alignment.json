@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [
+      "returned-event-metric-observation"
+    ],
+    "forbidden": [
+      "inferred-metric-definition",
+      "causality"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [
+    "analysis.gravity.core.project-metric-contract-check"
+  ],
+  "description": "在允许受治理的事件查询支持分析结果前，解析项目指标的定义、绑定、单位、聚合方式、时间粒度和生效范围。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "当解读任何观测值前必须把项目指标解析为确切定义和物理绑定时使用。",
+    "context_boundary": "项目 Semantic 来源是权威数据契约；自然语言描述和字段名不能替代缺失的定义或绑定。",
+    "steps": [
+      "解析所请求 App 和日期时间窗对应的确切项目指标 URI。",
+      "检查负责人、单位、聚合方式、时间粒度、公式依赖、绑定和生效范围。",
+      "定义或绑定缺失、冲突或超出生效范围时，在选择产品前停止。",
+      "解析完成后，使用现有的事件分析产品，并且仅报告该契约下返回的观测结果。"
+    ],
+    "title": "项目指标契约检查"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.core",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/dbb7e929817cc816",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "executable",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/primary-analysis-metric@1"
+  ],
+  "skill_id": "analysis-metric-definition-alignment",
+  "specification": "specified",
+  "summary": "读取观测结果前，验证项目自有的指标契约。",
+  "validation": "validated",
+  "version": "1.0.0"
+}

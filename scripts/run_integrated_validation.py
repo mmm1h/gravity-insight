@@ -141,16 +141,8 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             (py, "scripts/generate_journey_ledger.py", "--check"),
         ),
         GateSpec(
-            "generator_ct01",
-            (py, "scripts/generate_thinkingai_inventory.py", "--check"),
-        ),
-        GateSpec(
-            "generator_ct02",
-            (py, "scripts/generate_thinkingai_representatives.py", "--check"),
-        ),
-        GateSpec(
-            "generator_ct03",
-            (py, "scripts/generate_thinkingai_full_specifications.py", "--check"),
+            "generator_skill_library",
+            (py, "scripts/generate_skill_library.py", "--check"),
         ),
         GateSpec(
             "generator_execution_variant",
