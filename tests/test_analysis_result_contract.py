@@ -58,6 +58,7 @@ def context_pack():
         "authority_policy": {
             "required": ["canonical"],
             "allow_supporting": True,
+            "allow_declared_intent": False,
             "allow_unverified": False,
         },
         "items": [item],

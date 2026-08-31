@@ -64,6 +64,7 @@ def context_requirement(
     *,
     subject_entities: list[str] | None = None,
     allow_supporting: bool = True,
+    allow_declared_intent: bool = False,
     allow_unverified: bool = False,
     allowed_sensitivity: list[str] | None = None,
     as_of: str | None = None,
@@ -82,6 +83,7 @@ def context_requirement(
         "authority_policy": {
             "required": ["canonical"],
             "allow_supporting": allow_supporting,
+            "allow_declared_intent": allow_declared_intent,
             "allow_unverified": allow_unverified,
         },
         "allowed_sensitivity": allowed_sensitivity or ["internal"],
@@ -234,6 +236,34 @@ class RepoContextProviderTests(unittest.TestCase):
         self.assertNotIn("content", public["items"][0])
         self.assertEqual(pack["pack_digest"], public["pack_digest"])
         self.assertEqual(pack["items"][0]["citation"], public["items"][0]["citation"])
+
+    def test_project_authoritative_authority_preserves_git_snapshot_guarantees(self) -> None:
+        selected = context_requirement(
+            [
+                context_item(
+                    "authoritative",
+                    "docs/context.md",
+                    authority="project_authoritative",
+                )
+            ]
+        )
+        selected["authority_policy"]["required"] = ["project_authoritative"]
+
+        pack = self.provider.pack(
+            selected,
+            requested_time=WINDOWS,
+            entity_aliases=ALIASES,
+        )
+
+        [item] = pack["items"]
+        self.assertEqual("project_authoritative", item["authority"])
+        self.assertEqual(
+            "project_authoritative",
+            self.provider.describe()["provider"]["contract"]["authority_ceiling"],
+        )
+        self.assertEqual(self.repo.git("rev-parse", "HEAD"), item["source_revision"])
+        self.assertTrue(pack["claims"]["confirmed_claims_allowed"])
+        self.assertTrue(self.provider.verify(pack)["ok"])
 
     def test_required_and_optional_gaps_have_distinct_readiness(self) -> None:
         required = self.pack([context_item("missing", "docs/missing.md")])

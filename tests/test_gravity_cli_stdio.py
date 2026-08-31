@@ -65,7 +65,8 @@ raise SystemExit(code)
     def test_missing_profile_roots_is_structured_local_error(self):
         env = {**os.environ, "PYTHONIOENCODING": "gbk", "PYTHONUTF8": "0", "LC_ALL": "C"}
         for name in ("HOME", "APPDATA", "LOCALAPPDATA", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "XDG_CACHE_HOME", "GRAVITY_CACHE_HOME"): env.pop(name, None)
-        commands = ([sys.executable, "-m", "gravity_insight", "--dry-run"], [sys.executable, "-c", "from gravity_insight.cli_stdio import insight_main;raise SystemExit(insight_main())"], [sys.executable, "-c", "from gravity_insight.cli_stdio import sql_main;raise SystemExit(sql_main())"])
+        missing_home = "from unittest.mock import patch;patch('pathlib.Path.home',side_effect=RuntimeError('Could not determine home directory.')).start();"
+        commands = ([sys.executable, "-c", missing_home + "import runpy;runpy.run_module('gravity_insight',run_name='__main__')", "--dry-run"], [sys.executable, "-c", missing_home + "from gravity_insight.cli_stdio import insight_main;raise SystemExit(insight_main())"], [sys.executable, "-c", missing_home + "from gravity_insight.cli_stdio import sql_main;raise SystemExit(sql_main())"])
         for command in commands:
             run = subprocess.run(command, env=env, capture_output=True); payload = json.loads(run.stderr.decode("utf-8"))
             self.assertEqual((4, "LOCAL_IO_ERROR", "local"), (run.returncode, payload["error"]["code"], payload["error"]["category"])); self.assertIn("GRAVITY_CACHE_HOME", payload["error"]["next_action"])

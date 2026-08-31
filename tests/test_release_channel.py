@@ -15,11 +15,17 @@ from pathlib import Path
 import gravity_insight
 from gravity_insight.auto_upgrade import AUTO_UPGRADE_ENV, startup_update_enabled
 from scripts.verify_release_provenance import (
+    Distribution,
     MAX_ATTEMPTS,
     PUBLISH_PREDICATE_TYPE,
     RETRY_DELAY_SECONDS,
     ProvenanceVerificationError,
+    ReleaseRecoveryError,
+    local_release_assets,
+    plan_pypi_publish,
+    sync_github_release,
     validate_release_provenance,
+    verify_checked_out_tag,
     verify_pypi_release,
 )
 
@@ -167,7 +173,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 self.assertTrue(_workflow_action_uses(workflow))
                 self.assertEqual([], _unpinned_action_uses(workflow))
 
-    def test_release_pin_scan_includes_all_six_named_step_actions(self) -> None:
+    def test_release_pin_scan_includes_all_named_step_actions(self) -> None:
         indented = re.findall(r"(?m)^\s+uses:\s*([^\s#]+)", self.workflow)
         self.assertEqual(
             [
@@ -175,7 +181,6 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 "actions/upload-artifact",
                 "actions/download-artifact",
                 "pypa/gh-action-pypi-publish",
-                "actions/download-artifact",
                 "actions/download-artifact",
             ],
             [value.rsplit("@", 1)[0] for value in indented],
@@ -237,27 +242,95 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("gh release create", build)
 
-    def test_oidc_publish_precedes_the_only_github_release_job(self) -> None:
+    def test_oidc_publish_and_provenance_precede_github_release(self) -> None:
         publish = self._job("publish")
         release_provenance = self._job("release-provenance")
         github_release = self._job("github-release")
         self.assertIn("needs: build", publish)
         self.assertIn("id-token: write", publish)
         self.assertIn("name: python-distributions", publish)
+        self.assertIn("scripts/verify_release_provenance.py pypi-plan", publish)
+        self.assertIn("upload_required == 'true'", publish)
         self.assertIn("gh-action-pypi-publish@", publish)
         self.assertIn("attestations: true", publish)
-        self.assertNotIn("gh release create", publish)
+        self.assertIn("packages-dir: ${{ runner.temp }}/pypi-upload/", publish)
         self.assertIn("needs: publish", release_provenance)
         self.assertIn("timeout-minutes: 10", release_provenance)
         self.assertIn("scripts/verify_release_provenance.py", release_provenance)
         self.assertNotRegex(release_provenance, r"\b(?:delete|yank)\b")
         self.assertIn("needs: [publish, release-provenance]", github_release)
         self.assertIn("contents: write", github_release)
-        self.assertIn("name: python-distributions", github_release)
+        self.assertIn("actions/checkout@", github_release)
         self.assertIn("name: release-supply-chain", github_release)
-        self.assertIn("release-evidence/*", github_release)
-        self.assertIn("gh release create", github_release)
-        self.assertEqual(1, self.workflow.count("gh release create"))
+        self.assertIn("path: release-evidence/", github_release)
+        self.assertIn("scripts/verify_release_provenance.py recover", github_release)
+        self.assertIn("--extra-asset-dir release-evidence", github_release)
+        self.assertNotIn("gh release create", self.workflow)
+
+    def test_manual_recovery_is_standalone_and_checks_out_requested_tag(self) -> None:
+        recovery = self._job("recover-github-release")
+        self.assertNotIn("needs:", recovery)
+        self.assertIn("github.event_name == 'workflow_dispatch'", recovery)
+        self.assertEqual(2, recovery.count("actions/checkout@"))
+        self.assertIn("ref: ${{ inputs.tag }}", recovery)
+        self.assertIn("path: release-source", recovery)
+        self.assertIn("contents: write", recovery)
+        self.assertIn("scripts/verify_release_provenance.py recover", recovery)
+        self.assertIn("--repository-root release-source", recovery)
+        self.assertNotIn("gh-action-pypi-publish", recovery)
+        self.assertNotIn("python -m build", recovery)
+
+    def test_public_python_support_is_exercised_by_ci(self) -> None:
+        ci = self.workflows[CI_WORKFLOW.name]
+
+        def ci_job(name: str) -> str:
+            matched = re.search(
+                rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z][a-z0-9-]*:\n|\Z)",
+                ci,
+            )
+            self.assertIsNotNone(matched, name)
+            return matched.group(0) if matched is not None else ""
+
+        classifiers = {
+            match.group(1)
+            for value in PROJECT["project"]["classifiers"]
+            if (match := re.fullmatch(r"Programming Language :: Python :: (\d+\.\d+)", value))
+        }
+        tested = set(
+            re.findall(
+                r'(?m)^\s+python-version:\s*["\']?(3\.\d+)', ci
+            )
+        )
+        self.assertEqual({"3.11", "3.12"}, classifiers)
+        self.assertEqual(classifiers, tested)
+        # requires-python is an install gate, not a support claim. Pin its floor to the
+        # lowest tested version, but never add an upper cap: a cap blocks installation on
+        # newer interpreters that work fine, including the maintainer's own. Claims about
+        # which versions are supported live in classifiers, bound to the CI matrix above.
+        floor = min(tested, key=lambda value: tuple(int(part) for part in value.split(".")))
+        self.assertEqual(f">={floor}", PROJECT["project"]["requires-python"])
+
+        windows = ci_job("test")
+        linux311 = ci_job("core-linux-python311")
+        linux312 = ci_job("core-linux-python312")
+        wheel312 = ci_job("installed-wheel-linux-python312")
+        self.assertIn("runs-on: windows-latest", windows)
+        self.assertIn('python-version: "3.11"', windows)
+        self.assertIn("Run tests with duration budget gate", windows)
+        for job, version in ((linux311, "3.11"), (linux312, "3.12")):
+            self.assertIn("runs-on: ubuntu-latest", job)
+            self.assertIn(f'python-version: "{version}"', job)
+            self.assertIn("python -m pytest -q", job)
+        self.assertIn("runs-on: ubuntu-latest", wheel312)
+        self.assertIn('python-version: "3.12"', wheel312)
+        self.assertIn("Build, install, and test an isolated wheel", wheel312)
+        self.assertNotIn(' -e ".[dev]"', wheel312)
+
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("Python 3.11 和 3.12", readme)
+        self.assertIn("Windows 3.11", readme)
+        self.assertIn("Linux 3.11 / 3.12", readme)
+        self.assertNotRegex(readme, r"Python 3\.(?:13|14)")
 
 
 class ReleaseProvenanceTests(unittest.TestCase):
@@ -412,6 +485,157 @@ class ReleaseProvenanceTests(unittest.TestCase):
         self.assertEqual([RETRY_DELAY_SECONDS] * (MAX_ATTEMPTS - 1), sleeps)
         self.assertEqual(1 + (2 * MAX_ATTEMPTS), len(fetches))
 
+
+SHA_A = "a" * 64
+SHA_B = "b" * 64
+WHEEL = "gravity_insight-0.3.2-py3-none-any.whl"
+SDIST = "gravity_insight-0.3.2.tar.gz"
+
+
+class FakeGitHubGateway:
+    def __init__(self, release: dict[str, object] | None, remote_commit: str = ""):
+        self.release = release
+        self.remote_commit = remote_commit
+        self.created: list[str] = []
+        self.uploaded: list[str] = []
+
+    def remote_tag_commit(self, tag: str) -> str:
+        return self.remote_commit
+
+    def get_release(self, tag: str) -> dict[str, object] | None:
+        return self.release
+
+    def create_release(self, tag: str) -> None:
+        self.created.append(tag)
+        self.release = {"tag_name": tag, "assets": []}
+
+    def asset_sha256(self, asset: dict[str, object]) -> str:
+        return str(asset["sha256"])
+
+    def upload_asset(self, tag: str, distribution: Distribution) -> None:
+        self.uploaded.append(distribution.filename)
+        assert self.release is not None
+        assets = self.release["assets"]
+        assert isinstance(assets, list)
+        assets.append({"name": distribution.filename, "sha256": distribution.sha256})
+
+
+class ReleaseRecoveryStateTests(unittest.TestCase):
+    def _distributions(self, root: Path) -> tuple[Distribution, Distribution]:
+        wheel = root / WHEEL
+        sdist = root / SDIST
+        wheel.write_bytes(b"wheel")
+        sdist.write_bytes(b"sdist")
+        return (
+            Distribution(WHEEL, SHA_A, path=wheel),
+            Distribution(SDIST, SHA_B, path=sdist),
+        )
+
+    def test_pypi_identical_hashes_skip_upload(self) -> None:
+        local = (Distribution(WHEEL, SHA_A), Distribution(SDIST, SHA_B))
+        remote = (Distribution(WHEEL, SHA_A), Distribution(SDIST, SHA_B))
+
+        plan = plan_pypi_publish(local, remote)
+
+        self.assertFalse(plan.upload_required)
+        self.assertEqual((), plan.missing)
+        self.assertEqual({WHEEL, SDIST}, {item.filename for item in plan.identical})
+
+    def test_pypi_hash_mismatch_hard_fails_before_upload(self) -> None:
+        local = (Distribution(WHEEL, SHA_A), Distribution(SDIST, SHA_B))
+        remote = (Distribution(WHEEL, SHA_B), Distribution(SDIST, SHA_B))
+
+        with self.assertRaisesRegex(
+            ReleaseRecoveryError, rf"PyPI SHA-256 mismatch for {WHEEL}.*refusing upload"
+        ):
+            plan_pypi_publish(local, remote)
+
+    def test_missing_github_release_is_created_from_verified_tag(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gravity-release-state-") as raw:
+            root = Path(raw)
+            for command in (
+                ["git", "init", "--quiet"],
+                ["git", "config", "user.name", "Release Tests"],
+                ["git", "config", "user.email", "release@example.invalid"],
+                ["git", "commit", "--allow-empty", "--quiet", "-m", "release"],
+                ["git", "tag", "v0.3.2"],
+            ):
+                completed = subprocess.run(
+                    command, cwd=root, text=True, capture_output=True, check=False
+                )
+                self.assertEqual(0, completed.returncode, completed.stderr)
+            commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=root,
+                text=True,
+                capture_output=True,
+                check=True,
+            ).stdout.strip()
+            gateway = FakeGitHubGateway(None, remote_commit=commit)
+            distributions = self._distributions(root)
+
+            verified = verify_checked_out_tag("v0.3.2", "0.3.2", root, gateway)
+            actions = sync_github_release("v0.3.2", distributions, gateway)
+
+        self.assertEqual(commit, verified)
+        self.assertEqual(["v0.3.2"], gateway.created)
+        self.assertEqual([WHEEL, SDIST], gateway.uploaded)
+        self.assertIn("created-release", actions)
+
+    def test_existing_release_uploads_only_missing_assets(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gravity-release-state-") as raw:
+            distributions = self._distributions(Path(raw))
+            gateway = FakeGitHubGateway(
+                {"assets": [{"name": WHEEL, "sha256": SHA_A}]}
+            )
+
+            first = sync_github_release("v0.3.2", distributions, gateway)
+            second = sync_github_release("v0.3.2", distributions, gateway)
+
+        self.assertEqual([], gateway.created)
+        self.assertEqual([SDIST], gateway.uploaded)
+        self.assertIn(f"uploaded-asset:{SDIST}", first)
+        self.assertEqual(
+            {f"verified-asset:{WHEEL}", f"verified-asset:{SDIST}"}, set(second)
+        )
+
+    def test_existing_asset_hash_mismatch_hard_fails_without_uploads(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gravity-release-state-") as raw:
+            distributions = self._distributions(Path(raw))
+            gateway = FakeGitHubGateway(
+                {"assets": [{"name": WHEEL, "sha256": SHA_B}]}
+            )
+
+            with self.assertRaisesRegex(
+                ReleaseRecoveryError,
+                rf"GitHub asset SHA-256 mismatch for {WHEEL}.*refusing upload",
+            ):
+                sync_github_release("v0.3.2", distributions, gateway)
+
+        self.assertEqual([], gateway.created)
+        self.assertEqual([], gateway.uploaded)
+
+    def test_local_release_evidence_uses_the_idempotent_asset_reconciler(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gravity-release-evidence-") as raw:
+            root = Path(raw)
+            evidence = root / "dependency-audit.json"
+            evidence.write_text('{"status":"passed"}\n', encoding="utf-8")
+            distributions = local_release_assets((root,))
+            gateway = FakeGitHubGateway({"assets": []})
+
+            first = sync_github_release("v0.3.2", distributions, gateway)
+            second = sync_github_release("v0.3.2", distributions, gateway)
+
+        self.assertEqual([evidence.name], gateway.uploaded)
+        self.assertIn(f"uploaded-asset:{evidence.name}", first)
+        self.assertEqual((f"verified-asset:{evidence.name}",), second)
+
+    def test_empty_local_release_evidence_directory_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gravity-release-evidence-") as raw:
+            with self.assertRaisesRegex(
+                ReleaseRecoveryError, "extra release asset directory is empty"
+            ):
+                local_release_assets((Path(raw),))
 
 if __name__ == "__main__":
     unittest.main()

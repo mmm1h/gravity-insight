@@ -32,13 +32,23 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
   `mmm1h/gravity-insight`, workflow `release.yml`, and environment `pypi`. Releases use
   OIDC, so `PYPI_API_TOKEN` remains unset. Artifact signing stays undecided and
   unsigned. `owner_review: confirmed` for publishing; `owner_review: pending` for signing.
+- A failed GitHub Release can be recovered without rebuilding or republishing:
+  `gh workflow run release.yml --ref main -f tag=v0.3.2`. The dispatch job verifies
+  that the remote tag resolves to the checked-out commit, downloads the wheel and
+  sdist named by PyPI JSON, verifies their `digests.sha256`, and reconciles only
+  missing GitHub assets. Repeating the command is idempotent. A PyPI or GitHub
+  same-name digest conflict fails closed and is never overwritten.
 
 ## Repository controls
 
 - `main` is protected: no direct pushes or force pushes; changes merge through PRs.
-- The required status check is the existing Windows `test` job. Do not weaken it.
-- `.github/CODEOWNERS` assigns `* @mmm1h`; the placeholder was closed in
-  `e3fd462f`.
+- The required status check is currently the Windows `test` job. Owner should add
+  `core-linux-python311`, `core-linux-python312`, and
+  `installed-wheel-linux-python312` after their first green run; do not remove or
+  weaken `test`.
+- Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
+  ownership. This prerequisite is now satisfied: `.github/CODEOWNERS` assigns
+  `* @mmm1h`, and the placeholder was closed in `e3fd462f`.
 
 ## Governance contacts — completed
 
@@ -52,6 +62,13 @@ hard failures in CI, Integrated Validation and the pre-publication release job.
 The generated SBOMs and value-free scan/audit receipts are attached to GitHub
 Release. See [Release Gate](releasing.md) for commands, failure semantics and
 the evidence-based status of the remaining section 5.9 items.
+
+## Release and CI evidence
+
+CI now treats public compatibility claims as gates: Windows 3.11 runs the complete
+gate, Linux 3.11 and 3.12 run core tests, and Linux 3.12 builds and installs an
+isolated non-editable wheel. A contract test keeps those jobs aligned with
+`requires-python`, Python classifiers, and the README support statement.
 
 ## Historical findings measured before enforcement
 
