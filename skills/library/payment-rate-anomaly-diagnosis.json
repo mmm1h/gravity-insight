@@ -11,37 +11,319 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-payment-rate-change",
+      "qualified-anomaly-hypothesis",
+      "returned-dimension-contribution"
+    ],
     "forbidden": [
       "causality",
       "complete-payment-population",
       "inferred-metric-definition"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "observed-payment-rate-change",
+      "qualified-anomaly-hypothesis",
+      "returned-dimension-contribution"
+    ]
   },
   "context_dependencies": {
     "optional": [],
-    "required": []
+    "required": [
+      "context://project/payment-metric-contract@1"
+    ]
   },
   "covers_journeys": [],
-  "description": "分解变化前，必须具备项目支付分子、合格分母、时区和归因定义。",
+  "description": "在项目支付口径已绑定后，确认付费率异常，分解分子、分母与返回维度贡献，并沿两层诊断树排除口径漂移和数据质量问题。",
   "effects": [
     "read"
   ],
   "guide": {
-    "applicability": "当分子和分母语义相互兼容且已经评审时，用于两个有界时间窗。",
-    "context_boundary": "名为支付率的字段并不构成定义；返回的维度变化不能证明根因或完整覆盖。",
+    "applicability": "适用于已评审支付成功、合格用户、业务时区和归因窗口，且当前窗与基准窗可比的付费率异常定位。",
+    "context_boundary": "本方法只报告有证据的观测变化和候选解释；项目未绑定支付口径、返回行不完整或排除项未通过时，不得声称完整总体、根因或因果关系。",
     "steps": [
-      "解析支付分子、合格分母、时区、队列和归因语义。",
-      "使用已注册的异常分析产品，比较相互兼容的返回时间窗和维度。",
-      "在允许的断言范围内，报告观测到的指标与贡献变化、已排除因素和假设。"
+      "锁定支付成功事件、合格用户、去重键、业务时区、队列和归因窗口；任一项缺失即返回 Gap。",
+      "分别计算当前窗与基准窗的去重付费用户数、去重合格用户数和付费率，并保留分子分母证据。",
+      "检查分页完整性、迟到数据、重复用户、口径版本和两个时间窗的可比性。",
+      "用项目校准阈值确认异常；阈值未提供时只报告差值，不标记异常。",
+      "沿分子变化和分母变化两条一级分支执行诊断，每个叶子逐项核对排除条件。",
+      "按渠道、平台、地区等互斥返回维度计算贡献值、排序并保留未返回残差。",
+      "输出结构化结果、Allowed 与 Forbidden Claims；任何必需依赖未满足时保持 blocked。"
     ],
-    "title": "支付率异常定位"
+    "title": "付费率异常诊断"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "支付归因窗口、触点规则和跨端合并规则在当前窗与基准窗保持一致。"
+      ],
+      "cohort": [
+        "分子用户必须属于同一合格用户队列，两个时间窗使用同一入组和剔除规则。"
+      ],
+      "inputs": [
+        "输入至少包含支付成功记录、合格用户记录、稳定用户去重键、时间戳和待扫描维度。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "payment-success-state",
+          "subject": "哪些支付状态计入成功，以及退款、撤销和补单如何处理。"
+        },
+        {
+          "calibration_id": "eligible-population",
+          "subject": "合格用户的入组、排除、机器人和测试账号规则。"
+        },
+        {
+          "calibration_id": "business-timezone",
+          "subject": "业务日时区、日界线和迟到数据封账时间。"
+        },
+        {
+          "calibration_id": "payment-attribution-window",
+          "subject": "支付相对获客或触达的归因窗口与跨端合并规则。"
+        },
+        {
+          "calibration_id": "payment-anomaly-threshold",
+          "subject": "绝对变化、相对变化、最小样本量和连续窗口异常阈值。"
+        }
+      ],
+      "time": [
+        "当前窗与基准窗按同一业务时区闭合，窗口长度、星期结构和数据成熟度可比。"
+      ],
+      "unit": [
+        "分子和分母都按稳定用户键去重，付费率单位为无量纲比例，展示百分比不得改变计算精度。"
+      ]
+    },
+    "business_question": "付费率相对可比基准是否真的异常；变化主要来自付费用户分子、合格用户分母还是特定返回维度，哪些解释已被排除？",
+    "data_checks": {
+      "completeness": [
+        "核对所有分页完成且当前窗、基准窗都达到项目封账时间；未返回行单独记为未知残差。",
+        "核对每个窗口的分子用户均能连接到合格用户队列，并报告无法连接与被剔除的数量。"
+      ],
+      "data_quality": [
+        "检查用户键为空、重复支付状态、未来时间戳、迟到写入和跨窗重复计数。",
+        "检查支付口径版本、时区、过滤条件和维度枚举在两个窗口是否漂移。"
+      ],
+      "failure_behavior": "任一必需完整性或质量检查失败时停止异常归因，按 Partial、Error 或 Gap 输出空结论和原因码。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "Runtime 已登记稳定产品 metric-anomaly-localization@1。",
+        "identity": "metric-anomaly-localization@1",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 是调用方拥有的项目业务口径；Runtime 内置 Semantic registry 不提供项目定义或绑定。",
+        "identity": "metric://project/payment-rate@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 已登记确定性 returned-dimension-change Operator，只比较显式返回行。",
+        "identity": "operator://gravity/returned-dimension-change@1",
+        "kind": "operator",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "支付口径、时区和归因事实必须由调用项目的 Context Provider 提供，本仓库未绑定。",
+        "identity": "context://project/payment-metric-contract@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "numerator-change",
+          "checks": [
+            "比较当前窗与基准窗的去重付费用户数，并以当前合格用户分母折算影响。",
+            "确认支付成功状态、退款回冲和支付事件上报在两个窗口未发生版本漂移。"
+          ],
+          "condition": "付费率越过项目阈值，且分子折算影响的绝对值不小于分母折算影响。",
+          "leaves": [
+            {
+              "conclusion": "付费用户变化在多个大样本维度同向出现，可列为广泛分子变化假设。",
+              "condition": "至少两个主要互斥切片的分子贡献同向，且合计覆盖已返回分子变化的项目门槛。",
+              "exclusions": [
+                "若支付状态映射、退款回冲或事件去重规则发生变化，该假设不成立。",
+                "若当前窗尚未封账或支付存在显著迟到写入，该假设不成立。"
+              ],
+              "leaf_id": "broad-numerator-shift"
+            },
+            {
+              "conclusion": "付费用户变化集中于少数返回切片，可列为局部支付链路假设。",
+              "condition": "排序后的少数切片达到项目贡献门槛，其余返回切片影响接近零或方向相反。",
+              "exclusions": [
+                "若切片样本量低于项目最小门槛或维度枚举发生合并拆分，该假设不成立。",
+                "若未返回残差足以改变排序或方向，不得称主要贡献已完整覆盖。"
+              ],
+              "leaf_id": "concentrated-numerator-shift"
+            }
+          ]
+        },
+        {
+          "branch_id": "denominator-change",
+          "checks": [
+            "比较去重合格用户数及其队列入组来源，量化分母变化对当前付费率的折算影响。",
+            "核对登录、活跃或其他合格条件的采集覆盖和资格过滤是否漂移。"
+          ],
+          "condition": "付费率越过项目阈值，且分母折算影响的绝对值大于分子折算影响。",
+          "leaves": [
+            {
+              "conclusion": "合格用户结构变化与付费率变化同时出现，可列为队列结构假设。",
+              "condition": "主要来源切片的合格用户占比变化超过项目门槛，且切片内付费率相对稳定。",
+              "exclusions": [
+                "若渠道、平台或地区归因规则在窗口间改变，该结构假设不成立。",
+                "若同一用户跨切片重复计入，贡献度不能解释总体变化。"
+              ],
+              "leaf_id": "cohort-mix-shift"
+            },
+            {
+              "conclusion": "合格用户分母出现采集或资格过滤异常，可列为数据口径假设。",
+              "condition": "分母与独立流量或活跃校验量不一致，且差异集中在特定采集版本或平台。",
+              "exclusions": [
+                "若独立校验量与合格用户使用不同实体、时区或过滤条件，不得据此认定采集异常。",
+                "若项目确认资格策略在窗口间真实变更，应改为口径变更而非异常。"
+              ],
+              "leaf_id": "eligibility-instrumentation-shift"
+            }
+          ]
+        }
+      ],
+      "root_question": "当前窗与基准窗的付费率差异是否越过项目阈值，且数据与口径检查允许继续分解？"
+    },
+    "dimension_scan": {
+      "baseline": "每个维度分别使用同一当前窗、基准窗和付费率 Semantic；只在互斥切片内求和，不跨维度重复相加。",
+      "contribution_formula": "impact_s = payer_current_s - rate_reference * eligible_current_s; contribution_s = impact_s / sum(impact_returned_s)，分母为零时不输出占比。",
+      "dimensions": [
+        {"dimension_id": "acquisition-channel", "label": "获客渠道"},
+        {"dimension_id": "client-platform", "label": "客户端平台"},
+        {"dimension_id": "region", "label": "地区"},
+        {"dimension_id": "cohort-age-band", "label": "队列年龄段"}
+      ],
+      "minimum_volume_rule": "切片的合格用户数低于项目最小样本量时只并入低样本桶，不单独排名或下结论。",
+      "ranking_rule": "先按贡献绝对值降序，再报告方向、分子变化、分母变化和返回覆盖；不得仅按切片付费率高低排序。",
+      "residual_policy": "未返回、无法归类和低样本切片统一作为残差；残差足以改变主要贡献排序时，结论降级为 Partial。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "numerator-drop",
+          "expected_sections": ["metric-definition", "anomaly-confirmation", "dimension-contribution", "exclusions"],
+          "forbidden_claims": ["causality", "complete-payment-population"],
+          "question": "最近一个已封账窗口付费率下降，帮我判断主要是付费用户减少还是合格用户增加，并列出贡献最大的返回切片。"
+        },
+        {
+          "eval_id": "denominator-spike",
+          "expected_sections": ["data-readiness", "diagnostic-path", "exclusions"],
+          "forbidden_claims": ["causality", "inferred-metric-definition"],
+          "question": "合格用户数突然上升但付费人数接近不变，这次付费率异常应沿哪条诊断分支继续？"
+        },
+        {
+          "eval_id": "definition-gap",
+          "expected_sections": ["metric-definition", "data-readiness", "claims"],
+          "forbidden_claims": ["inferred-metric-definition"],
+          "question": "项目还没确认哪些支付状态算成功，能否先按字段名算一个付费率并判断根因？"
+        }
+      ],
+      "questions": [
+        "付费率下降主要来自付费人数还是合格用户数变化？",
+        "哪些返回渠道或平台对本次付费率差异贡献最大，未覆盖残差有多少？",
+        "支付状态或合格用户口径变更时，这次异常诊断还能成立吗？"
+      ]
+    },
+    "exclusions": [
+      "支付成功状态、退款回冲、用户去重键或合格用户定义在两个窗口不一致时，不得比较付费率。",
+      "当前窗未封账、迟到支付尚未稳定或分页未完成时，不得确认异常方向和贡献排序。",
+      "返回维度不互斥、存在跨切片重复用户或未返回残差过大时，不得声称贡献度覆盖完整总体。",
+      "仅凭时间同步、渠道集中或链路错误日志，不得声称它导致付费率变化。"
+    ],
+    "formulas": [
+      {
+        "denominator": "在窗口 W、队列 C 内满足项目合格条件的去重用户数；同一用户在一个窗口只计一次。",
+        "expression": "payment_rate(W,C) = distinct_payers(W,C) / distinct_eligible_users(W,C)",
+        "formula_id": "payment-rate",
+        "interpretation": "结果是指定窗口与队列内的观测比例；分母为零时状态为 Empty，不定义为零百分比。",
+        "numerator": "在窗口 W、队列 C 和项目归因规则内至少有一笔成功支付的去重用户数；退款或撤销是否回冲由项目校准。",
+        "requires_project_calibration": ["payment-success-state", "eligible-population", "business-timezone", "payment-attribution-window"],
+        "unit": "无量纲比例",
+        "variables": [
+          {"aggregation": "窗口内按用户去重计数", "definition": "满足项目支付成功状态和归因窗口的付费用户集合。", "distinct_by": "stable-user-id", "symbol": "distinct_payers"},
+          {"aggregation": "窗口内按用户去重计数", "definition": "满足项目合格用户入组且未命中排除规则的用户集合。", "distinct_by": "stable-user-id", "symbol": "distinct_eligible_users"}
+        ],
+        "window": "当前窗和基准窗必须使用相同业务时区、长度、封账成熟度与队列规则。"
+      },
+      {
+        "denominator": "项目确认的绝对变化、相对变化、样本量和连续窗口阈值。",
+        "expression": "anomaly = abs(rate_current - rate_reference) >= absolute_threshold AND abs(rate_current / rate_reference - 1) >= relative_threshold",
+        "formula_id": "payment-rate-anomaly",
+        "interpretation": "只有绝对与相对阈值、最小样本量和数据成熟度同时通过才标记异常；基准为零时不计算相对变化。",
+        "numerator": "当前窗付费率与可比基准付费率的绝对差及相对差。",
+        "requires_project_calibration": ["payment-anomaly-threshold"],
+        "unit": "比例点与相对比例",
+        "variables": [
+          {"aggregation": "按 payment-rate 公式计算", "definition": "当前窗观测付费率。", "distinct_by": "stable-user-id", "symbol": "rate_current"},
+          {"aggregation": "按 payment-rate 公式计算", "definition": "基准窗观测付费率。", "distinct_by": "stable-user-id", "symbol": "rate_reference"}
+        ],
+        "window": "基准可以是相邻可比窗或项目批准的同周期基准，但必须显式记录选择理由。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法不自动修改支付配置、用户分群或监控阈值；后续动作必须由调用方在受治理 Action 中单独授权。",
+      "automatic_execution": false,
+      "conditions": ["只有依赖满足、异常确认、排除项通过且结果包含证据引用时，才可由调用方另行提出调查或实验建议。"],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {"depends_on": [], "instruction": "解析并锁定支付率 Semantic、项目 Context、当前窗、基准窗、队列、去重键、单位与归因规则。", "on_failure": "METHOD_INPUT_GAP", "step_id": "resolve-contracts"},
+      {"depends_on": ["resolve-contracts"], "instruction": "运行 Capability 获取两个窗口的分子、分母和返回维度，保留请求范围、分页与取数时间证据。", "on_failure": "METHOD_QUERY_ERROR", "step_id": "run-observations"},
+      {"depends_on": ["run-observations"], "instruction": "执行完整性与数据质量检查；失败时映射为 Empty、Partial、Error 或 Gap 并停止结论。", "on_failure": "METHOD_DATA_INVALID", "step_id": "validate-data"},
+      {"depends_on": ["validate-data"], "instruction": "按明确分子、分母、去重和窗口公式计算两个付费率，并用项目阈值确认是否异常。", "on_failure": "METHOD_FORMULA_INVALID", "step_id": "confirm-anomaly"},
+      {"depends_on": ["confirm-anomaly"], "instruction": "比较分子与分母折算影响，选择诊断树一级分支，再逐个叶子验证条件和排除项。", "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE", "step_id": "traverse-diagnostic-tree"},
+      {"depends_on": ["traverse-diagnostic-tree"], "instruction": "用已登记 Operator 对互斥返回行计算变化，并按贡献公式、样本门槛和残差规则排序。", "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE", "step_id": "scan-dimensions"},
+      {"depends_on": ["scan-dimensions"], "instruction": "生成结构化 Result，列出证据、诊断路径、排除项、依赖缺口和允许或禁止的断言。", "on_failure": "METHOD_RESULT_INVALID", "step_id": "assemble-result"}
+    ],
+    "result": {
+      "required_fields": ["status", "reason-codes", "scope", "evidence", "conclusion", "allowed-claims", "forbidden-claims"],
+      "sections": [
+        {"section_id": "scope", "title": "分析范围与前提"},
+        {"section_id": "metric-definition", "title": "付费率口径与公式"},
+        {"section_id": "data-readiness", "title": "完整性与数据质量"},
+        {"section_id": "anomaly-confirmation", "title": "异常确认"},
+        {"section_id": "diagnostic-path", "title": "诊断路径与判定条件"},
+        {"section_id": "dimension-contribution", "title": "维度扫描与贡献度"},
+        {"section_id": "exclusions", "title": "排除项与失效条件"},
+        {"section_id": "claims", "title": "允许与禁止的断言"}
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "支付成功和合格用户口径已有项目 Definition、Binding 与 Context，且两个有界窗口可比。",
+        "需要区分分子、分母和互斥返回维度对观测付费率变化的贡献。"
+      ],
+      "not_applicable": [
+        "需要证明某次发布、活动或渠道策略导致付费率变化的因果问题。",
+        "支付口径未评审、用户无法稳定去重、窗口未封账或只拿到汇总百分比而没有分子分母。"
+      ]
+    },
+    "states": {
+      "empty": {"allowed_claims": [], "behavior": "分母为零或窗口内没有合格用户时返回 Empty；付费率为未定义，不写成零。", "reason_code": "METHOD_EMPTY"},
+      "error": {"allowed_claims": [], "behavior": "上游请求、解析、公式或 Operator 失败时返回 Error，保留错误分类且不复用半成品结论。", "reason_code": "METHOD_ERROR"},
+      "gap": {"allowed_claims": [], "behavior": "Semantic、Context、阈值或必需口径未绑定时返回 Gap，并列出调用方需要补齐的对象。", "reason_code": "METHOD_GAP"},
+      "partial": {"allowed_claims": [], "behavior": "分页、返回维度或交叉校验不完整时返回 Partial，只保留逐条观测证据，不输出总体异常结论。", "reason_code": "METHOD_PARTIAL"}
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
-  "operator_dependencies": [],
+  "operator_dependencies": [
+    "operator://gravity/returned-dimension-change@1"
+  ],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {
     "authorship": "independently_authored",
@@ -51,23 +333,9 @@
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
   "readiness": "blocked",
-  "request_budget": {
-    "known_requests_max": 3,
-    "known_requests_min": 2,
-    "runtime_additional_requests": 0,
-    "unknown_discovery_max": 3
-  },
-  "requirements": {
-    "completeness": "unknown",
-    "data_quality": "pass"
-  },
-  "routing": {
-    "host_catalog_required": true,
-    "product_hints": [
-      "metric-anomaly-localization@1"
-    ],
-    "recognizer_fallback_allowed": true
-  },
+  "request_budget": {"known_requests_max": 3, "known_requests_min": 2, "runtime_additional_requests": 0, "unknown_discovery_max": 3},
+  "requirements": {"completeness": "unknown", "data_quality": "pass"},
+  "routing": {"host_catalog_required": true, "product_hints": ["metric-anomaly-localization@1"], "recognizer_fallback_allowed": true},
   "runtime_requires": ">=0.3,<0.4",
   "schema_version": "gravity.skill.v1",
   "semantic_dependencies": [
@@ -75,7 +343,7 @@
   ],
   "skill_id": "payment-rate-anomaly-diagnosis",
   "specification": "specified",
-  "summary": "依据一个可加总分母契约，定位返回的支付率变化。",
+  "summary": "以明确分子分母确认付费率异常，并用两层诊断树和返回维度贡献定位候选解释。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

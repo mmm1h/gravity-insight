@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "c85974bc174b94d01eac1a98bacb41ea16a42f7845d98bc9dadc73ea30033dcf",
+    "reference_evidence_sha256": "5b5fffd8555620495be4698f808c2e443b181503ad41f5cb8278eb3b1efff637",
     "manual_review_sha256": "054b157cbe9638807c4df1b60199ec16af67caf03e533511805c7fadc99c055e",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3109,
-    "scanned_file_count": 3102,
+    "version_controlled_file_count": 3111,
+    "scanned_file_count": 3104,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -659,12 +659,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 299,
-    "reference_site_count": 297,
+    "tracked_site_count": 300,
+    "reference_site_count": 298,
     "manual_review_site_count": 220,
     "reference_manual_overlap_count": 218,
     "manual_only_site_count": 2,
-    "unique_source_keys": 299,
+    "unique_source_keys": 300,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -674,7 +674,7 @@
       "dynamic_import": 11,
       "manual_patch_expression": 118,
       "module_qualname_dependency": 7,
-      "static_import": 68,
+      "static_import": 69,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -685,9 +685,9 @@
       "non_string_patch_expression": 118
     },
     "dispositions": {
-      "no_migration_effect": 299
+      "no_migration_effect": 300
     },
-    "sites_sha256": "169c8dab504251d6654b0f4b4e48c4f728d7516b5a455ed120013cbce37ac960"
+    "sites_sha256": "0f3fa9d6871ec8e30d38e03e1f1114314eee7973b1d51f73e35dfd6065a819fb"
   },
   "blockers": [],
   "site_fields": [
@@ -2050,6 +2050,21 @@
       "no_migration_effect",
       "direct_object_patch",
       16,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "scripts/generate_method_gap_report.py:104:5:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
       {
         "kind": "none"
       }
