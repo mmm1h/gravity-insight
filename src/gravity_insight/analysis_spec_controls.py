@@ -10,6 +10,34 @@ from .actionable_error_values import actual_value, allowed_values
 from .errors import InputValidationError
 
 
+def validate_time_grain(
+    kind: str, value: Any, allowed: frozenset[str]
+) -> None:
+    """Reject compact grains that lack evidence for the selected kind."""
+
+    if value is None:
+        return
+    if isinstance(value, str) and value in allowed:
+        return
+    next_action = None
+    if kind == "event" and value in {"hour", "minute"}:
+        next_action = (
+            "Change only `time_grain` to `day` and rerun `gravity analysis query "
+            "--kind event --app <authorized-alias> --spec <day-spec>` to keep the "
+            "verified calendar-day boundary. No SDK path has verified the exact "
+            "first-traffic hour or minute; do not retry this request or substitute "
+            "`analysis.user_event.list`, which requires user-level ClientID. "
+            f"Re-enable `{value}` only after a sanitized `analysis.event.query` "
+            f"with `create_time/{value}` succeeds."
+        )
+    raise InputValidationError(
+        f"actual value: {actual_value(value)}; {kind} time_grain is not supported "
+        f"by current upstream evidence; allowed values: {allowed_values(allowed)}",
+        field="time_grain",
+        next_action=next_action,
+    )
+
+
 def retention_controls(spec: Mapping[str, Any]) -> dict[str, Any]:
     _reject_unsupported_retention_cohorts(spec)
     offset = spec.get("offset")
@@ -169,4 +197,9 @@ def _integer_range(value: Any, minimum: int, maximum: int, field: str) -> int:
     return value
 
 
-__all__ = ["apply_scatter_zone", "funnel_window", "retention_controls"]
+__all__ = [
+    "apply_scatter_zone",
+    "funnel_window",
+    "retention_controls",
+    "validate_time_grain",
+]

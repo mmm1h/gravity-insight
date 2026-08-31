@@ -20,6 +20,12 @@ SPEC_SCHEMA_VERSION = "gravity-insight.analysis-query-spec.v1"
 ANALYSIS_SPEC_KINDS = frozenset(
     {"event", "funnel", "retention", "property", "scatter"}
 )
+ANALYSIS_TIME_GROUPS_BY_KIND = {
+    "event": ANALYSIS_TIME_GROUPS - {"hour", "minute"},
+    "funnel": ANALYSIS_TIME_GROUPS,
+    "retention": ANALYSIS_TIME_GROUPS,
+    "scatter": ANALYSIS_TIME_GROUPS,
+}
 FUNNEL_RESULT_NOTES = {
     "returns_conversion_rate": False,
     "count_meaning": (
@@ -65,6 +71,7 @@ def analysis_query_spec_schema() -> dict[str, Any]:
 def _kind_schemas() -> dict[str, Any]:
     return {
             "event": _dated_spec(
+                "event",
                 required=("start", "end", "steps"),
                 properties={
                     "steps": _array_ref("event_step", 1, 50),
@@ -76,6 +83,7 @@ def _kind_schemas() -> dict[str, Any]:
                 },
             ),
             "funnel": _dated_spec(
+                "funnel",
                 required=("start", "end", "steps", "window"),
                 properties={
                     "steps": _array_ref("event_step", 2, 20),
@@ -87,6 +95,7 @@ def _kind_schemas() -> dict[str, Any]:
                 notes=FUNNEL_RESULT_NOTES,
             ),
             "retention": _dated_spec(
+                "retention",
                 required=(
                     "start",
                     "end",
@@ -120,6 +129,7 @@ def _kind_schemas() -> dict[str, Any]:
             ),
             "property": _property_schema(),
             "scatter": _dated_spec(
+                "scatter",
                 required=("start", "end", "steps"),
                 properties={
                     "steps": _array_ref("event_step", 1, 1),
@@ -404,6 +414,7 @@ def _base_spec(*, required: tuple[str, ...], properties: dict[str, Any]) -> dict
 
 
 def _dated_spec(
+    kind: str,
     *,
     required: tuple[str, ...],
     properties: dict[str, Any],
@@ -414,7 +425,10 @@ def _dated_spec(
         properties={
             "start": {"type": "string", "format": "date"},
             "end": {"type": "string", "format": "date"},
-            "time_grain": {"type": "string", "enum": sorted(ANALYSIS_TIME_GROUPS)},
+            "time_grain": {
+                "type": "string",
+                "enum": sorted(ANALYSIS_TIME_GROUPS_BY_KIND[kind]),
+            },
             **properties,
         },
     )

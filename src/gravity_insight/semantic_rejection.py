@@ -80,6 +80,18 @@ _RETENTION_PROPERTY_CONDITION_UNRESOLVED = (
 _FALLBACK_MESSAGE = "Gravity rejected the read operation"
 _RETENTION_QUERY = ANALYSIS_QUERY_OPERATIONS["retention"]
 _ANALYSIS_QUERIES = frozenset(ANALYSIS_QUERY_OPERATIONS.values())
+_ANALYSIS_KIND_BY_QUERY = {
+    operation_id: kind for kind, operation_id in ANALYSIS_QUERY_OPERATIONS.items()
+}
+# This means only that at least one governed production query was accepted. It
+# does not promise non-empty output for every tenant, event, or window;
+# Event/total was accepted but returned an empty object.
+_TIME_GRAINS_WITH_PRODUCTION_ACCEPTANCE_BY_KIND = {
+    "event": frozenset({"day", "total"}),
+    "funnel": frozenset({"day"}),
+    "retention": frozenset({"day"}),
+    "scatter": frozenset({"day"}),
+}
 _GROUP_TYPE_HINT = (
     "compact group_by.source=user compiles to wire type=user; "
     "type=user_property is rejected on event, funnel, and retention"
@@ -115,6 +127,15 @@ def classify_read_rejection(
             f"Gravity rejected the read operation; classified extra.error={field}",
             next_action,
         )
+    unverified_grain = _unverified_time_grain(operation_id, request_inputs)
+    if unverified_grain is not None:
+        kind, grain = unverified_grain
+        return (
+            "time_grain",
+            "Gravity rejected an Analysis request carrying a time grain without "
+            "production acceptance evidence",
+            _unverified_time_grain_next_action(operation_id, kind, grain),
+        )
     field = _inferred_field(operation_id, request_inputs)
     return (
         field,
@@ -137,7 +158,12 @@ def raise_read_rejection(
         operation_id in _ANALYSIS_QUERIES
         and _reviewed_remedy(_extra_error_text(payload)) is None
     ):
-        raise _UnclassifiedReadRejectionError(
+        error_type = (
+            _UnverifiedTimeGrainRejectionError
+            if _unverified_time_grain(operation_id, request_inputs) is not None
+            else _UnclassifiedReadRejectionError
+        )
+        raise error_type(
             f"actual value: {actual_value(field)}; {message}",
             field=field,
             next_action=next_action,
@@ -209,6 +235,54 @@ def _carries_property_condition(
         return False
     conditions = request_inputs.get("property_condition")
     return isinstance(conditions, (list, tuple)) and bool(conditions)
+
+
+def _unverified_time_grain(
+    operation_id: str | None,
+    request_inputs: Mapping[str, Any] | None,
+) -> tuple[str, str] | None:
+    kind = _ANALYSIS_KIND_BY_QUERY.get(operation_id)
+    if (
+        kind is None
+        or kind not in _TIME_GRAINS_WITH_PRODUCTION_ACCEPTANCE_BY_KIND
+        or not request_inputs
+        or _carries_custom_before(request_inputs)
+        or _carries_property_condition(request_inputs)
+    ):
+        return None
+    groups = request_inputs.get("group_by_list")
+    if not isinstance(groups, (list, tuple)):
+        return None
+    for item in groups:
+        if not isinstance(item, Mapping) or item.get("field") != "create_time":
+            continue
+        grain = item.get("group_by")
+        if (
+            isinstance(grain, str)
+            and grain
+            and grain
+            not in _TIME_GRAINS_WITH_PRODUCTION_ACCEPTANCE_BY_KIND[kind]
+        ):
+            return kind, grain
+    return None
+
+
+def _unverified_time_grain_next_action(
+    operation_id: str | None,
+    kind: str,
+    grain: str,
+) -> str:
+    operation = operation_id or "<operation-id>"
+    return (
+        f"actual value: operation={actual_value(operation)} "
+        f"kind={actual_value(kind)} time_grain={actual_value(grain)}; allowed next "
+        "action: do not auto-retry unchanged. No successful production query is "
+        "stored for this locally valid grain; the rejection does not prove it "
+        "unsupported. Change only `time_grain` to `day` once. If day succeeds, "
+        "report the grain, operation, sanitized extra.error and HTTP status; if day "
+        "fails, inspect other inputs or upstream. `window.unit` limits are not "
+        "`time_grain` evidence."
+    )
 
 
 def _extra_error_text(payload: Mapping[str, Any]) -> str:
@@ -305,6 +379,12 @@ def _sent_shape(request_inputs: Mapping[str, Any] | None) -> list[str]:
 
 class _UnclassifiedReadRejectionError(UpstreamContradictedRequestError):
     """An unreviewed upstream sentence cannot safely assign caller blame."""
+
+
+class _UnverifiedTimeGrainRejectionError(UpstreamContradictedRequestError):
+    """An unverified grain rejection is upstream-owned but not safe to auto-retry."""
+
+    retryable = False
 
 
 __all__ = [
