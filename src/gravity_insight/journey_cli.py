@@ -14,6 +14,9 @@ def add_journey_commands(commands: Any, add_input: Callable[..., None]) -> Any:
     listed.set_defaults(network_required=False, _gravity_handler=dispatch)
     verify = actions.add_parser("verify")
     verify.set_defaults(network_required=False, _gravity_handler=dispatch)
+    certifications = actions.add_parser("certifications")
+    certifications.add_argument("--json", action="store_true")
+    certifications.set_defaults(network_required=False, _gravity_handler=dispatch)
     describe = actions.add_parser("describe")
     describe.add_argument("journey_id")
     describe.set_defaults(network_required=False, _gravity_handler=dispatch)
@@ -34,6 +37,11 @@ def add_journey_commands(commands: Any, add_input: Callable[..., None]) -> Any:
 def dispatch(
     args: Any, object_input: Callable[[Any], Mapping[str, Any]]
 ) -> dict[str, Any]:
+    if args.journey_command == "certifications":
+        from .journey_certification import journey_certifications
+
+        return journey_certifications()
+
     from .sdk import GravitySDK
     from .workspace import load_workspace
 

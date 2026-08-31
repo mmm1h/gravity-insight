@@ -1,6 +1,6 @@
 # 技术债清单
 只登记当前源码或质量门禁能证明、且有明确退出条件的结构债务；产品缺口、上游无数据、历史事故和一次性工作不登记。
-每轮仅更新受影响条目：满足退出条件即删除正文并在末尾留一行历史，完整旧内容见归档快照。
+每轮仅更新受影响条目：满足退出条件即删除正文并在末尾留一行历史，完整旧内容从 Git 查看。
 
 ## 当前条目
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
@@ -88,7 +88,7 @@
   静默返回错误类型；`child-first`/`export-first`/`cross-order` 三种导入顺序均由隔离子进程
   测试锁定，碰撞集合本身有新增探测，未靠改名或「不要导入同名子模块」的约定规避。
 - 2026-08-25：#8 Title Package 已从编译合同派生 opaque JSON 字段，复用有界深度、元素和大小投影；未登记和非 opaque 标量规则仍 fail-closed。
-2026-08-19 以前关闭项见[清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)。
+- 2026-08-19 以前的关闭项仅保留在 Git 历史中。
 - 2026-08-20：Census POST 读词元债关闭，`uncovered_read` 仅保留安全方法/exact 静态确认，其余为
   `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
 - 2026-08-20：Agent 有界无 spec 路由改用 `NO_SPEC_PRODUCTS`，`REPORT_PRODUCTS` 保留同对象兼容别名。
@@ -106,6 +106,6 @@
 <!-- MODULE_GRAPH_DEFINITION_V1_END -->
 <!-- MODULE_GRAPH_BASELINE_V1_START -->
 ```json
-{"definition_id":"gravity-insight-runtime-possible-module-dependency-graph.v1","definition_sha256":"b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326","edge_kind_counts":{"ast_delayed_import":475,"ast_eager_import":2503,"lazy_export_owner":63,"package_parent":664},"node_count":665,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"bc87d4a94185bfbc94f205cabc341046fad272f1dfba702f70a646b97c045295","cyclic_scc_sizes":[428,3,2],"edge_count":3018,"graph_sha256":"5fba52eb3f27d09b737b820cac4f050c3ef2fd1545399fdf1ab62c37be3c4e4d","largest_cyclic_scc_size":428,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":15,"cyclic_scc_sha256":"6933694537fa61fd0fac83b43262ceb8aafc655ca631c80f8cccd9abee4af6e0","cyclic_scc_sizes":[41,11,8,6,3,3,3,2,2,2,2,2,2,2,1],"edge_count":2955,"graph_sha256":"dc8d36cec4f5ca07e8c4d056d791d93717c0d4b6080e04019220ff09ba61ba75","largest_cyclic_scc_size":41,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":6,"cyclic_scc_sha256":"03fde3d6c52e1c8facdeb42dee31b6a9e0ba37f022ce476d82fabc236fdcf0f5","cyclic_scc_sizes":[533,15,8,3,2,2],"edge_count":3601,"graph_sha256":"06144cdd37d84e229b021d42489f2d85812b150ec9fb74ce71c337e269c40b9f","largest_cyclic_scc_size":533,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"44030b75772ec96099606525c5adf31176fb58f6d27626721ece46d20ce0f7b0","cyclic_scc_sizes":[5],"edge_count":2503,"graph_sha256":"15f9cbbd24bd8f0a73e2fec1098ce7f732aa734e154e134254cbc2b93534d7f7","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
+{"definition_id":"gravity-insight-runtime-possible-module-dependency-graph.v1","definition_sha256":"b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326","edge_kind_counts":{"ast_delayed_import":481,"ast_eager_import":2542,"lazy_export_owner":63,"package_parent":673},"node_count":674,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"bc87d4a94185bfbc94f205cabc341046fad272f1dfba702f70a646b97c045295","cyclic_scc_sizes":[428,3,2],"edge_count":3063,"graph_sha256":"0e49586b1bf2ca20423964a715f7b1d36bd1956c5bb505a7ad4f9aadb8be29ba","largest_cyclic_scc_size":428,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":15,"cyclic_scc_sha256":"6933694537fa61fd0fac83b43262ceb8aafc655ca631c80f8cccd9abee4af6e0","cyclic_scc_sizes":[41,11,8,6,3,3,3,2,2,2,2,2,2,2,1],"edge_count":3000,"graph_sha256":"ab097655c635320ca863b57f3a990a724121a828fa0b9d97a62fdbded4b3bd7b","largest_cyclic_scc_size":41,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":6,"cyclic_scc_sha256":"03fde3d6c52e1c8facdeb42dee31b6a9e0ba37f022ce476d82fabc236fdcf0f5","cyclic_scc_sizes":[533,15,8,3,2,2],"edge_count":3655,"graph_sha256":"51a5ed4fcdbabe9eb351e6d850f8fba51796cdbc8e3fcd269f33e69033b8f99b","largest_cyclic_scc_size":533,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"44030b75772ec96099606525c5adf31176fb58f6d27626721ece46d20ce0f7b0","cyclic_scc_sizes":[5],"edge_count":2542,"graph_sha256":"e2c93be8f4be0e728c81636979facd11392a4e08146daac2d9d90d63bdd373d6","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
 ```
 <!-- MODULE_GRAPH_BASELINE_V1_END -->

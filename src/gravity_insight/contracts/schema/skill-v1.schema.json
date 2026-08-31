@@ -122,7 +122,8 @@
         "steps": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
         "context_boundary": {"type": "string", "minLength": 1, "maxLength": 512}
       }
-    }
+    },
+    "method": {"$ref": "#/$defs/method"}
   },
   "$defs": {
     "capability_requirement": {
@@ -139,6 +140,264 @@
       }
     },
     "uri_array": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
-    "claim_array": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9-]*$"}}
+    "claim_array": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9-]*$"}},
+    "stable_id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9-]*$"},
+    "reason_code": {"type": "string", "minLength": 3, "maxLength": 128, "pattern": "^[A-Z][A-Z0-9_]*$"},
+    "text_array": {"type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+    "text_array_two": {"type": "array", "minItems": 2, "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+    "method": {
+      "type": "object",
+      "required": [
+        "method_revision", "business_question", "scope", "assumptions",
+        "procedure", "formulas", "dimension_scan", "diagnostic_tree",
+        "exclusions", "data_checks", "states", "result", "handoff",
+        "examples", "dependency_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "method_revision": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "business_question": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "scope": {
+          "type": "object",
+          "required": ["applicable", "not_applicable"],
+          "additionalProperties": false,
+          "properties": {
+            "applicable": {"$ref": "#/$defs/text_array_two"},
+            "not_applicable": {"$ref": "#/$defs/text_array_two"}
+          }
+        },
+        "assumptions": {
+          "type": "object",
+          "required": ["inputs", "time", "cohort", "unit", "attribution", "requires_project_calibration"],
+          "additionalProperties": false,
+          "properties": {
+            "inputs": {"$ref": "#/$defs/text_array"},
+            "time": {"$ref": "#/$defs/text_array"},
+            "cohort": {"$ref": "#/$defs/text_array"},
+            "unit": {"$ref": "#/$defs/text_array"},
+            "attribution": {"$ref": "#/$defs/text_array"},
+            "requires_project_calibration": {
+              "type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/calibration"}
+            }
+          }
+        },
+        "procedure": {
+          "type": "array", "minItems": 5, "maxItems": 32, "items": {"$ref": "#/$defs/procedure_step"}
+        },
+        "formulas": {
+          "type": "array", "minItems": 1, "maxItems": 32, "items": {"$ref": "#/$defs/formula"}
+        },
+        "dimension_scan": {"$ref": "#/$defs/dimension_scan"},
+        "diagnostic_tree": {"$ref": "#/$defs/diagnostic_tree"},
+        "exclusions": {
+          "type": "array", "minItems": 3, "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        },
+        "data_checks": {"$ref": "#/$defs/data_checks"},
+        "states": {"$ref": "#/$defs/states"},
+        "result": {"$ref": "#/$defs/result"},
+        "handoff": {"$ref": "#/$defs/handoff"},
+        "examples": {"$ref": "#/$defs/examples"},
+        "dependency_status": {
+          "type": "array", "minItems": 1, "maxItems": 256, "items": {"$ref": "#/$defs/dependency_status"}
+        }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "required": ["calibration_id", "subject"],
+      "additionalProperties": false,
+      "properties": {
+        "calibration_id": {"$ref": "#/$defs/stable_id"},
+        "subject": {"type": "string", "minLength": 1, "maxLength": 512}
+      }
+    },
+    "procedure_step": {
+      "type": "object",
+      "required": ["step_id", "instruction", "depends_on", "on_failure"],
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {"$ref": "#/$defs/stable_id"},
+        "instruction": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "depends_on": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/stable_id"}},
+        "on_failure": {"$ref": "#/$defs/reason_code"}
+      }
+    },
+    "formula": {
+      "type": "object",
+      "required": [
+        "formula_id", "expression", "numerator", "denominator", "window",
+        "unit", "variables", "interpretation", "requires_project_calibration"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "formula_id": {"$ref": "#/$defs/stable_id"},
+        "expression": {"type": "string", "minLength": 3, "maxLength": 2048},
+        "numerator": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "denominator": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "window": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "unit": {"type": "string", "minLength": 1, "maxLength": 256},
+        "variables": {"type": "array", "minItems": 2, "maxItems": 32, "items": {"$ref": "#/$defs/formula_variable"}},
+        "interpretation": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "requires_project_calibration": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/stable_id"}}
+      }
+    },
+    "formula_variable": {
+      "type": "object",
+      "required": ["symbol", "definition", "aggregation", "distinct_by"],
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {"type": "string", "minLength": 1, "maxLength": 64},
+        "definition": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "aggregation": {"type": "string", "minLength": 1, "maxLength": 256},
+        "distinct_by": {"type": ["string", "null"], "maxLength": 256}
+      }
+    },
+    "dimension_scan": {
+      "type": "object",
+      "required": ["dimensions", "baseline", "contribution_formula", "ranking_rule", "minimum_volume_rule", "residual_policy"],
+      "additionalProperties": false,
+      "properties": {
+        "dimensions": {"type": "array", "minItems": 3, "maxItems": 32, "items": {"$ref": "#/$defs/dimension"}},
+        "baseline": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "contribution_formula": {"type": "string", "minLength": 3, "maxLength": 2048},
+        "ranking_rule": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "minimum_volume_rule": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "residual_policy": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "required": ["dimension_id", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "dimension_id": {"$ref": "#/$defs/stable_id"},
+        "label": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "diagnostic_tree": {
+      "type": "object",
+      "required": ["root_question", "branches"],
+      "additionalProperties": false,
+      "properties": {
+        "root_question": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "branches": {"type": "array", "minItems": 2, "maxItems": 16, "items": {"$ref": "#/$defs/diagnostic_branch"}}
+      }
+    },
+    "diagnostic_branch": {
+      "type": "object",
+      "required": ["branch_id", "condition", "checks", "leaves"],
+      "additionalProperties": false,
+      "properties": {
+        "branch_id": {"$ref": "#/$defs/stable_id"},
+        "condition": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "checks": {"$ref": "#/$defs/text_array"},
+        "leaves": {"type": "array", "minItems": 2, "maxItems": 16, "items": {"$ref": "#/$defs/diagnostic_leaf"}}
+      }
+    },
+    "diagnostic_leaf": {
+      "type": "object",
+      "required": ["leaf_id", "condition", "conclusion", "exclusions"],
+      "additionalProperties": false,
+      "properties": {
+        "leaf_id": {"$ref": "#/$defs/stable_id"},
+        "condition": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "conclusion": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "exclusions": {"$ref": "#/$defs/text_array"}
+      }
+    },
+    "data_checks": {
+      "type": "object",
+      "required": ["completeness", "data_quality", "failure_behavior"],
+      "additionalProperties": false,
+      "properties": {
+        "completeness": {"$ref": "#/$defs/text_array_two"},
+        "data_quality": {"$ref": "#/$defs/text_array_two"},
+        "failure_behavior": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "states": {
+      "type": "object",
+      "required": ["empty", "partial", "error", "gap"],
+      "additionalProperties": false,
+      "properties": {
+        "empty": {"$ref": "#/$defs/state_behavior"},
+        "partial": {"$ref": "#/$defs/state_behavior"},
+        "error": {"$ref": "#/$defs/state_behavior"},
+        "gap": {"$ref": "#/$defs/state_behavior"}
+      }
+    },
+    "state_behavior": {
+      "type": "object",
+      "required": ["reason_code", "behavior", "allowed_claims"],
+      "additionalProperties": false,
+      "properties": {
+        "reason_code": {"$ref": "#/$defs/reason_code"},
+        "behavior": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "allowed_claims": {"$ref": "#/$defs/claim_array"}
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": ["sections", "required_fields"],
+      "additionalProperties": false,
+      "properties": {
+        "sections": {"type": "array", "minItems": 6, "maxItems": 32, "items": {"$ref": "#/$defs/result_section"}},
+        "required_fields": {"type": "array", "minItems": 5, "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/stable_id"}}
+      }
+    },
+    "result_section": {
+      "type": "object",
+      "required": ["section_id", "title"],
+      "additionalProperties": false,
+      "properties": {
+        "section_id": {"$ref": "#/$defs/stable_id"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "required": ["kind", "target", "conditions", "authorization_boundary", "automatic_execution"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["none", "action", "experiment"]},
+        "target": {"type": ["string", "null"], "maxLength": 256},
+        "conditions": {"$ref": "#/$defs/text_array"},
+        "authorization_boundary": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "automatic_execution": {"const": false}
+      }
+    },
+    "examples": {
+      "type": "object",
+      "required": ["questions", "eval_cases"],
+      "additionalProperties": false,
+      "properties": {
+        "questions": {"type": "array", "minItems": 3, "maxItems": 32, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+        "eval_cases": {"type": "array", "minItems": 3, "maxItems": 32, "items": {"$ref": "#/$defs/eval_case"}}
+      }
+    },
+    "eval_case": {
+      "type": "object",
+      "required": ["eval_id", "question", "expected_sections", "forbidden_claims"],
+      "additionalProperties": false,
+      "properties": {
+        "eval_id": {"$ref": "#/$defs/stable_id"},
+        "question": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "expected_sections": {"type": "array", "minItems": 2, "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/stable_id"}},
+        "forbidden_claims": {"type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/stable_id"}}
+      }
+    },
+    "dependency_status": {
+      "type": "object",
+      "required": ["kind", "identity", "status", "reason_code", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["capability", "semantic", "operator", "model", "context"]},
+        "identity": {"type": "string", "minLength": 1, "maxLength": 256},
+        "status": {"enum": ["available", "unavailable", "requires_project_binding", "requires_project_context", "optional"]},
+        "reason_code": {"$ref": "#/$defs/reason_code"},
+        "evidence": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    }
   }
 }
