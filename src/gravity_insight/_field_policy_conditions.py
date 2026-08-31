@@ -59,6 +59,17 @@ def validate_analysis_target(
             field="target.field",
             next_action="Run `gravity metadata properties \"\"` and retry with a listed field.",
         )
+    if field == "$device_id" and method == "Count":
+        raise InputValidationError(
+            "actual value: field=$device_id, aggregation=Count; this built-in "
+            "string identifier does not accept Count; request was not sent",
+            field="target.name",
+            next_action=(
+                "Use `$device_id` with `DistinctCount` to count distinct devices, "
+                "or use `PresetAllCount` for both field and aggregation to count "
+                "event occurrences; do not retry the unchanged request."
+            ),
+        )
     reject_sensitive_analysis_field(field)
     field_references.add(field)
     _validate_target_quantile(value.get("quantile_level"))
