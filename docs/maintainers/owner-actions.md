@@ -32,11 +32,20 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
   `mmm1h/gravity-insight`, workflow `release.yml`, and environment `pypi`. Releases use
   OIDC, so `PYPI_API_TOKEN` remains unset. Artifact signing stays undecided and
   unsigned. `owner_review: confirmed` for publishing; `owner_review: pending` for signing.
+- A failed GitHub Release can be recovered without rebuilding or republishing:
+  `gh workflow run release.yml --ref main -f tag=v0.3.2`. The dispatch job verifies
+  that the remote tag resolves to the checked-out commit, downloads the wheel and
+  sdist named by PyPI JSON, verifies their `digests.sha256`, and reconciles only
+  missing GitHub assets. Repeating the command is idempotent. A PyPI or GitHub
+  same-name digest conflict fails closed and is never overwritten.
 
 ## Repository controls
 
 - `main` is protected: no direct pushes or force pushes; changes merge through PRs.
-- The required status check is the existing Windows `test` job. Do not weaken it.
+- The required status check is currently the Windows `test` job. Owner should add
+  `core-linux-python311`, `core-linux-python312`, and
+  `installed-wheel-linux-python312` after their first green run; do not remove or
+  weaken `test`.
 - Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
   ownership.
 
@@ -47,12 +56,14 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 - Replace `<CONDUCT_CONTACT>` in `CODE_OF_CONDUCT.md` with an approved private
   conduct reporting channel.
 
-## Findings measured once, not yet wired into CI
+## Release and CI evidence
 
-CI gained no new jobs — Linux runners were declined and every candidate job (wheel
-smoke, Ruff, dependency audit, secret scan) targeted `ubuntu-latest`. These ran
-locally on 2026-08-20 instead, so the facts are known but nothing enforces them.
-The `pip-audit` finding was independently re-measured; the other counts are leads.
+CI now treats public compatibility claims as gates: Windows 3.11 runs the complete
+gate, Linux 3.11 and 3.12 run core tests, and Linux 3.12 builds and installs an
+isolated non-editable wheel. A contract test keeps those jobs aligned with
+`requires-python`, Python classifiers, and the README support statement. The
+remaining Ruff and dependency-audit measurements below are historical leads,
+not new required checks.
 
 | Check | Result | Follow-up |
 |---|---|---|

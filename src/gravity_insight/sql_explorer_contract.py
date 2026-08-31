@@ -187,7 +187,10 @@ def validate_promotion_source(value: Mapping[str, Any]) -> dict[str, Any]:
     if set(selected) != _SOURCE_FIELDS:
         _promotion_invalid("promotion source shape changed")
     valid = selected["schema_version"] == PROMOTION_SOURCE_SCHEMA_VERSION
-    valid = valid and selected["dialect"] == DIALECT
+    # A reviewed Gravity Fast Lane exploration may be promoted even while the
+    # upstream engine dialect remains explicitly unknown. Promotion does not
+    # grant stable identity or stable-dependency status.
+    valid = valid and selected["dialect"] in {DIALECT, "unknown"}
     valid = valid and all(
         _is_sha256(selected.get(field))
         for field in ("statement_sha256", "policy_sha256", "session_sha256")

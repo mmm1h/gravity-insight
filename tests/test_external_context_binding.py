@@ -53,6 +53,7 @@ def requirement(**changes: object) -> dict:
         "authority_policy": {
             "required": ["canonical"],
             "allow_supporting": True,
+            "allow_declared_intent": False,
             "allow_unverified": False,
         },
         "allowed_sensitivity": ["internal"],

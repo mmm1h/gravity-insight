@@ -208,9 +208,10 @@ class _ContextFixture:
                 "subject_entities": ["app://project/demo"],
                 "required_windows": ["current"],
                 "authority_policy": {
-                    "required": ["canonical"],
-                    "allow_supporting": True,
-                    "allow_unverified": False,
+            "required": ["canonical"],
+            "allow_supporting": True,
+            "allow_declared_intent": False,
+            "allow_unverified": False,
                 },
                 "allowed_sensitivity": ["internal"],
                 "freshness_policy": {"as_of": None, "max_age_days": None},
