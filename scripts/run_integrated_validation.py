@@ -83,6 +83,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
         ),
         GateSpec("compiler_check", (py, "-m", "gravity_insight.compiler", "check")),
         GateSpec("quality_check", (py, "-m", "gravity_insight.quality", "check")),
+        GateSpec("changelog", (py, "scripts/check_changelog.py")),
         GateSpec(
             "agent_usability_development",
             (

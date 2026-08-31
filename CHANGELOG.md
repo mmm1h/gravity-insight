@@ -1,0 +1,100 @@
+# Changelog
+
+本文件记录 Gravity Insight 面向消费方的显著变更。格式采用
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 的分类方式，版本采用
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的三段格式；即使在
+`0.x` 阶段，每个破坏性变更仍必须单独标成 Hard break 或 Soft break。
+
+维护规则由 `scripts/check_changelog.py` 强制执行：`pyproject.toml` 的当前版本必须
+有 Unreleased target 或已发布条目；每个版本必须显式声明 breaking changes；有破坏性
+变更时必须链接迁移说明；带日期的已发布条目必须匹配
+`scripts/changelog_release_lock.json` 中的 SHA-256。
+具体维护步骤见[迁移说明维护约定](docs/migration/README.md)。
+
+## [Unreleased]
+
+Target release: `0.3.3`
+
+Migration guide: [0.3.3](docs/migration/0.3.3.md)
+
+### Breaking changes
+
+- **Hard break:** Python 导入根从 `gravity_sdk` 改为 `gravity_insight`。PyPI 分发名在
+  0.3.2 已经是 `gravity-insight`，`gravity` CLI 名也没有改变；只用 CLI 的消费方不受
+  影响，但 Python import 没有兼容 shim。
+- **Soft break:** auto-upgrade 的三个主环境变量从 `GRAVITY_SDK_*` 改为
+  `GRAVITY_INSIGHT_*`。0.3.3 仍读取旧名作为 fallback，新名与旧名并存时新名优先；
+  fallback 的移除版本尚未确定。
+- **Hard break:** 安装诊断 JSON 的 `schema_version` 从
+  `gravity-sdk.doctor.v1` / `gravity-sdk.install-consistency.v1` 改为
+  `gravity-insight.doctor.v2` / `gravity-insight.install-consistency.v2`。解析这些值做
+  分支的消费方必须同步更新；`gravity.*` 工具与门禁命名空间没有改变。
+
+### Added
+
+- 增加 user-detail aggregate 的 Direct、Plan 与 Agent 交付面，并补齐请求约束、分页
+  完整性和错误分类（#43、#53）。
+- 增加受治理的素材文件获取、留存替代路线、批量分析闭环，以及 event analysis 的
+  `hour` 时间粒度（#38、#40、#41、#42、#47）。
+- 增加 Context authority 分层及外部 context provider 的约束与测试（#56）。
+- 登记 Gravity SQL 探索快车道，并增加 schema/plan、分页、proof obligation 与晋级
+  校验（#57）。
+- 用仓库内 canonical skill library 和 source registry 取代 vendor mirror，并把确定性
+  生成检查接入集成验证（#54）。
+
+### Changed
+
+- Python 包、console entry point、文档与安装 wheel 检查统一使用 `gravity_insight`
+  import root；分发名和 `gravity` CLI 保持不变（#44）。
+- 收敛 Agent Runtime 的当前架构来源，增加 canonical architecture 文档门禁并移除已
+  退休的逐需求历史副本（#58）。
+- 强化 release provenance、离线 wheel surface、canonical consumer ancestry 与恢复
+  路径验证（#52）。
+- 补齐 CODEOWNERS、安全报告与行为准则中的治理联系信息（#51）。
+
+### Fixed
+
+- Direct/Plan 的 user-detail aggregate 结果与分页完整性现在由同一 parity 约束校验，
+  避免 Plan 丢失 Direct surface 字段（#53）。
+- Census 把 HTTP、payload、写盘和 drift failure 分成稳定的失败类别，并保留 last-known-
+  good 行为；相应分类进入 adaptive governor（#55）。
+- 并发测试改用同步 rendezvous/隔离输出，降低把竞态当成通过或随机失败的风险（#35）。
+
+## [0.3.2] - 2026-08-29
+
+### Breaking changes
+
+- 未记录。现存 tag 注释与 `v0.3.1..v0.3.2` 提交历史没有给出可可靠复原的破坏性变更清单。
+
+### Added
+
+- 增加 control-plane Ed25519 信任根校验；缺少可选校验依赖时 fail closed。
+- 增加 plan-only 的显式 opt-in auto-upgrade 生命周期；Runtime 只生成外部 Installer plan，
+  不自行安装或重启。
+- 增加绑定 exact HEAD 的 integrated validation receipt，以及单测耗时预算门禁。
+
+### Changed
+
+- 并行化 pytest、分片 unittest，并缓存离线 wheel 与仓库级分析输入。
+
+### Fixed
+
+- malformed credential expiry 不再形成无界或静默延长的凭据有效期。
+- canonical consumer revision 改为 main 可达的固定提交，并增加 ancestry fail-closed 检查。
+
+> 历史完整性：本条由 annotated tag `v0.3.2`、`git log v0.3.1..v0.3.2` 和 PyPI
+> 首次上传时间反推；无法由这些来源确认的变化均视为“未记录”。
+
+## [0.3.1] - 2026-08-27
+
+### Breaking changes
+
+- 未记录。首个 tag 之前没有可用的维护型 changelog，不能可靠复原破坏性变更清单。
+
+### Added
+
+- 首个带 tag 的 `gravity-insight` 分发版本。该版本安装的 Python import root 仍是
+  `gravity_sdk`，console entry point 为 `gravity = gravity_sdk.__main__:main`。
+
+> 历史完整性：本条只记录 annotated tag `v0.3.1` 与 PyPI 首次上传能够证明的事实；
+> 更早的功能明细未记录。
