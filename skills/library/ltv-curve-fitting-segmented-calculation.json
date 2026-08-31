@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "invented-confidence",
+      "unsupported-segment-extrapolation"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "在分群定义、净价值语义、观测周期和 Model 评估均准确之前，不拟合任何曲线。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "用于评估可比的项目队列能否支持有界的分群价值模型。",
+    "context_boundary": "分群标签、稀疏尾部和供应商示例无法补足缺失的队列覆盖或提供经过验证的参数。",
+    "steps": [
+      "解析分群、队列、净价值、币种、删失和观测周期语义。",
+      "验证样本与覆盖假设，以及确切获批的曲线 Model 和校准证据。",
+      "单位不兼容或预测周期不受支持时停止；否则报告估算及各分群特有的限制。"
+    ],
+    "title": "分群价值曲线拟合就绪性"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [
+    "model://gravity/segmented-ltv-curve@1"
+  ],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/b2366dd1b039eee9",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "analysis.query.spec:event"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/segmented-lifetime-value@1"
+  ],
+  "skill_id": "ltv-curve-fitting-segmented-calculation",
+  "specification": "specified",
+  "summary": "仅允许对兼容的队列与单位使用经过验证的 Model 拟合分群价值曲线。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}
