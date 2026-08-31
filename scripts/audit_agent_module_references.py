@@ -11,7 +11,7 @@ import re
 import subprocess
 import sys
 import tokenize
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1050,9 +1050,219 @@ def scan_repository(root: Path = ROOT) -> AuditResult:
     )
 
 
-def main() -> None:
+# Reporting remains in this repository audit adapter; graph construction and
+# boundary policy live in the installable governance owners.
+import argparse as _module_graph_argparse
+from collections import Counter as _ModuleGraphCounter
+from typing import Any as _ModuleGraphAny
+from typing import Mapping as _ModuleGraphMapping
+from typing import Sequence as _ModuleGraphSequence
+
+from gravity_insight.governance.module_graph import (
+    MODULE_GRAPH_BASELINE_END,
+    MODULE_GRAPH_BASELINE_START,
+    MODULE_GRAPH_CURRENT_DEFINITION_ID,
+    MODULE_GRAPH_CURRENT_PACKAGE_ROOT,
+    MODULE_GRAPH_DEBT_PATH,
+    MODULE_GRAPH_DEFINITION_END,
+    MODULE_GRAPH_DEFINITION_START,
+    MODULE_GRAPH_EDGE_KINDS,
+    MODULE_GRAPH_PROFILE_ORDER,
+    module_graph_adjacency,
+    module_graph_baseline,
+    module_graph_canonical_sha256,
+    module_graph_cyclic_sccs,
+    module_graph_current_definition,
+    module_graph_definition,
+    module_graph_edge_kinds,
+    module_graph_for_profile,
+    module_graph_measurement,
+)
+from gravity_insight.governance.domain_boundary import (
+    DOMAIN_BOUNDARY_BASELINE_PATH,
+    DOMAIN_BOUNDARY_SCHEMA_VERSION,
+    DOMAIN_LAYER_ORDER,
+    DOMAIN_MODULE_LAYER_OVERRIDES,
+    DOMAIN_PACKAGE_LAYER_DEFAULTS,
+    DOMAIN_UNCLASSIFIED,
+    _domain_boundary_cli,
+    domain_boundary_baseline_document,
+    domain_boundary_errors,
+    domain_boundary_measurement,
+    domain_boundary_policy,
+    evaluate_domain_boundary,
+)
+
+def _replace_module_graph_document(
+    source: str,
+    start_marker: str,
+    end_marker: str,
+    value: _ModuleGraphAny,
+) -> str:
+    start = source.index(start_marker)
+    end = source.index(end_marker, start) + len(end_marker)
+    payload = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    replacement = f"{start_marker}\n```json\n{payload}\n```\n{end_marker}"
+    return source[:start] + replacement + source[end:]
+
+
+def refresh_module_graph_baseline(path: Path = MODULE_GRAPH_DEBT_PATH) -> dict[str, _ModuleGraphAny]:
+    definition = module_graph_current_definition(path)
+    package_root = ROOT / definition["scope"]["package_root"]
+    baseline = module_graph_measurement(package_root, definition)
+    source = path.read_text(encoding="utf-8")
+    source = _replace_module_graph_document(
+        source,
+        MODULE_GRAPH_DEFINITION_START,
+        MODULE_GRAPH_DEFINITION_END,
+        definition,
+    )
+    source = _replace_module_graph_document(
+        source,
+        MODULE_GRAPH_BASELINE_START,
+        MODULE_GRAPH_BASELINE_END,
+        baseline,
+    )
+    path.write_text(source, encoding="utf-8")
+    return baseline
+
+
+def _module_graph_family(module: str, package_name: str) -> str:
+    relative = module.removeprefix(package_name).lstrip(".")
+    if not relative:
+        return "<root-package>"
+    head, separator, _tail = relative.partition(".")
+    if separator:
+        return head
+    public_head = head.lstrip("_")
+    prefix = public_head.split("_", 1)[0]
+    return f"_{prefix}" if head.startswith("_") else prefix
+
+
+def module_graph_render_text(
+    report: _ModuleGraphMapping[str, _ModuleGraphAny],
+    definition: _ModuleGraphMapping[str, _ModuleGraphAny],
+    *,
+    include_members: bool = False,
+) -> str:
+    package_name = Path(definition["scope"]["package_root"]).name
+    lines = [
+        f"definition: {report['definition_id']}",
+        f"definition_sha256: {report['definition_sha256']}",
+        f"package_root: {definition['scope']['package_root']}",
+        f"nodes: {report['node_count']}",
+        "edge_kinds: " + ", ".join(
+            f"{kind}={count}" for kind, count in report["edge_kind_counts"].items()
+        ),
+    ]
+    for profile in MODULE_GRAPH_PROFILE_ORDER:
+        summary = report["profiles"][profile]
+        lines.extend(
+            (
+                "",
+                f"profile: {profile}",
+                f"edges: {summary['edge_count']}",
+                f"cyclic_sccs: {summary['cyclic_scc_count']}",
+                f"self_loop_sccs: {summary['self_loop_scc_count']}",
+                f"largest_cyclic_scc: {summary['largest_cyclic_scc_size']}",
+                f"graph_sha256: {summary['graph_sha256']}",
+            )
+        )
+        for index, component in enumerate(summary["cyclic_sccs"], start=1):
+            families = _ModuleGraphCounter(
+                _module_graph_family(module, package_name) for module in component
+            )
+            family_text = ", ".join(
+                f"{family}={count}"
+                for family, count in sorted(
+                    families.items(), key=lambda item: (-item[1], item[0])
+                )
+            )
+            lines.append(f"scc[{index}]: size={len(component)}; families={family_text}")
+            if include_members:
+                lines.append("  members: " + ", ".join(component))
+    return "\n".join(lines) + "\n"
+
+
+def module_graph_main(argv: _ModuleGraphSequence[str] | None = None) -> int:
+    parser = _module_graph_argparse.ArgumentParser(
+        description="Build the governed Gravity Insight module graph and SCC report."
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    report_parser = subparsers.add_parser("report", help="print the SCC report")
+    report_parser.add_argument("--json", action="store_true")
+    report_parser.add_argument("--members", action="store_true")
+    graph_parser = subparsers.add_parser("graph", help="print JSON adjacency")
+    graph_parser.add_argument("--profile")
+    subparsers.add_parser("check", help="compare with the embedded baseline")
+    subparsers.add_parser("refresh", help="regenerate the embedded definition and baseline")
+    args = parser.parse_args(argv)
+    if args.command == "refresh":
+        report = refresh_module_graph_baseline()
+        eager = report["profiles"]["eager-ast-only"]
+        print(
+            "PASS regenerated module dependency graph: "
+            f"nodes={report['node_count']} "
+            f"eager_largest={eager['largest_cyclic_scc_size']}"
+        )
+        return 0
+    definition = module_graph_definition()
+    package_root = ROOT / definition["scope"]["package_root"]
+    if args.command == "graph":
+        profile = args.profile or definition["canonical_profile"]
+        try:
+            graph = module_graph_adjacency(package_root, definition, profile)
+        except ValueError as exc:
+            parser.error(str(exc))
+        print(json.dumps(graph, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if args.command == "report":
+        report = module_graph_measurement(
+            package_root,
+            definition,
+            include_members=True,
+        )
+        if args.json:
+            print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+        else:
+            print(
+                module_graph_render_text(
+                    report,
+                    definition,
+                    include_members=args.members,
+                ),
+                end="",
+            )
+        return 0
+    observed = module_graph_measurement(package_root, definition)
+    expected = module_graph_baseline()
+    if observed != expected:
+        print("FAIL module dependency graph baseline drift")
+        return 1
+    canonical = observed["profiles"][definition["canonical_profile"]]
+    print(
+        "PASS module dependency graph: "
+        f"nodes={observed['node_count']} "
+        f"cyclic_sccs={canonical['cyclic_scc_count']} "
+        f"largest={canonical['largest_cyclic_scc_size']}"
+    )
+    return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if args and args[0] == "domain-boundary":
+        return _domain_boundary_cli(args[1:])
+    if args:
+        raise SystemExit("usage: audit_agent_module_references.py [domain-boundary ...]")
     print(json.dumps(scan_repository().summary(), indent=2, ensure_ascii=False))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

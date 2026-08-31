@@ -47,9 +47,8 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 SCANNER = ROOT / "scripts/audit_agent_module_references.py"
 GENERATOR = ROOT / "scripts/generate_agent_module_reference_dispositions.py"
-PUBLIC_EXPORTS = ROOT / "tests/fixtures/public_api_exports.json"
-PUBLIC_EXPORT_OWNER_MIGRATIONS = (
-    ROOT / "tests/fixtures/public_api_owner_migrations.json"
+PUBLIC_API_MANIFEST = (
+    ROOT / "src/gravity_insight/governance/public-api-manifest.json"
 )
 BASELINE_LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 OUTPUT = ROOT / "tests/fixtures/agent_module_reference_checkpoint.json"
@@ -221,25 +220,18 @@ def _reference_snippets(references: tuple[Finding, ...]) -> dict[tuple[str, ...]
 
 
 def _projected_public_exports() -> dict[str, Any]:
-    exports = json.loads(PUBLIC_EXPORTS.read_text(encoding="utf-8"))
-    migrations = json.loads(
-        PUBLIC_EXPORT_OWNER_MIGRATIONS.read_text(encoding="utf-8")
-    )
-    if not isinstance(migrations, list):
-        raise ValueError("public export owner migrations must be a list")
-    for index, migration in enumerate(migrations):
-        if not isinstance(migration, dict) or set(migration) != {
-            "symbol",
-            "from",
-            "to",
-        }:
-            raise ValueError(f"public export owner migration {index} is invalid")
-        symbol = migration["symbol"]
-        if symbol not in exports or exports[symbol][0] != migration["from"]:
-            raise ValueError(
-                f"public export owner migration {index} does not match the baseline"
-            )
-        exports[symbol][0] = migration["to"]
+    document = json.loads(PUBLIC_API_MANIFEST.read_text(encoding="utf-8"))
+    rows = document.get("exports") if isinstance(document, dict) else None
+    if not isinstance(rows, list):
+        raise ValueError("stable public API manifest exports must be a list")
+    exports: dict[str, list[str]] = {}
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or set(row) != {"name", "module", "attribute"}:
+            raise ValueError(f"stable public API manifest export {index} is invalid")
+        symbol = row["name"]
+        if symbol in exports:
+            raise ValueError(f"stable public API manifest repeats {symbol!r}")
+        exports[symbol] = [row["module"], row["attribute"]]
     return exports
 
 

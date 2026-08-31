@@ -162,6 +162,10 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             600,
         ),
         GateSpec(
+            "public_api_export_manifest",
+            (py, "scripts/generate_public_api_exports.py"),
+        ),
+        GateSpec(
             "release_provenance_offline_fixture",
             (
                 py,

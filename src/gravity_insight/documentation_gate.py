@@ -9,6 +9,8 @@ from pathlib import Path, PurePosixPath
 import re
 from typing import Any
 
+from .governance.domain_boundary import domain_boundary_errors
+
 
 CANONICAL_ARCHITECTURE = "docs/architecture.md"
 CANONICAL_MAX_LINES = 400
@@ -265,7 +267,7 @@ def _current_file_errors(root: Path, path: Path) -> list[str]:
 
 
 def documentation_errors(root: Path) -> list[str]:
-    """Return all current documentation violations without short-circuiting."""
+    """Return current repository-governance violations without short-circuiting."""
 
     root = root.resolve()
     errors: list[str] = []
@@ -287,4 +289,12 @@ def documentation_errors(root: Path) -> list[str]:
     if competing.exists():
         relative = competing.relative_to(root).as_posix()
         errors.append(f"parallel canonical owner exists: {relative}")
+    try:
+        boundary, _measurement = domain_boundary_errors(root)
+    except (OSError, SyntaxError, TypeError, ValueError) as exc:
+        errors.append(
+            f"domain boundary measurement failed: {type(exc).__name__}: {exc}"
+        )
+    else:
+        errors.extend(boundary)
     return errors
