@@ -453,5 +453,124 @@ class GravityCensusDiffTests(unittest.TestCase):
         self.assertEqual("/api/v1/team/a/items/", result["path_changes"][0]["old_path"])
 
 
+class GravityCensusCircuitFailureTests(unittest.TestCase):
+    def test_fetch_parser_accepts_sanitized_failure_output(self) -> None:
+        args = build_parser().parse_args(
+            ["fetch", "--failure-output", "tmp/census-failure.json"]
+        )
+        self.assertEqual(
+            REPO_ROOT / "tmp" / "census-failure.json", args.failure_output
+        )
+
+    def test_rate_limit_response_consumes_the_three_attempt_retry_budget(self) -> None:
+        request_globals = StaticFetcher.__dict__["_get"].__globals__
+        requests_module = request_globals["requests"]
+        response = SimpleNamespace(status_code=429)
+
+        def reject() -> None:
+            raise requests_module.HTTPError("rate limited", response=response)
+
+        response.raise_for_status = reject
+        calls: list[int] = []
+        sleeps: list[float] = []
+
+        def fake_request(*_args, **_kwargs):
+            calls.append(1)
+            return response
+
+        original_request = request_globals["perform_http_request"]
+        original_time = request_globals["time"]
+        fetcher = StaticFetcher(max_attempts=3, max_requests=3)
+        fetcher._session = lambda: SimpleNamespace(get=fake_request)
+        try:
+            request_globals["perform_http_request"] = fake_request
+            request_globals["time"] = SimpleNamespace(sleep=sleeps.append)
+            with self.assertRaises(_FetchError) as raised:
+                fetcher._get("https://example.test/bundle.js?signature=private")
+        finally:
+            request_globals["perform_http_request"] = original_request
+            request_globals["time"] = original_time
+
+        self.assertEqual(3, len(calls))
+        self.assertEqual([0.25, 0.5], sleeps)
+        self.assertEqual("rate_limited", raised.exception.status_class)
+        self.assertEqual(429, raised.exception.status_code)
+        self.assertNotIn("signature=private", str(raised.exception))
+
+    def test_incomplete_failure_classification_is_capacity_only_when_all_causes_are(self) -> None:
+        private_query = "QUERY_VALUE_SENTINEL_81"
+        result = {
+            "summary": {
+                "complete": False,
+                "request_attempts": 3,
+                "pending_js": 1,
+                "failed_js": 1,
+            },
+            "discovery": {
+                "failures": [
+                    {
+                        "url": f"https://example.test/a.js?token={private_query}",
+                        "host": "example.test",
+                        "status_class": "server_error",
+                        "status_code": 503,
+                        "exception_type": None,
+                        "error": private_query,
+                    }
+                ]
+            },
+        }
+        classify = run.__globals__["_incomplete_fetch_failure"]
+        capacity = classify(result)
+        self.assertEqual("upstream_capacity", capacity["failure_class"])
+        self.assertEqual("CENSUS_UPSTREAM_CAPACITY", capacity["code"])
+        self.assertTrue(capacity["retryable"])
+        self.assertNotIn(private_query, str(capacity))
+
+        result["discovery"]["failures"].append(
+            {
+                "host": "example.test",
+                "status_class": "client_error",
+                "status_code": 404,
+            }
+        )
+        incomplete = classify(result)
+        self.assertEqual("incomplete_graph", incomplete["failure_class"])
+        self.assertFalse(incomplete["retryable"])
+
+    def test_governor_exception_renders_machine_decidable_census_error(self) -> None:
+        error = RuntimeError("safe circuit error")
+        error.code = "GOVERNOR_CIRCUIT_OPEN"
+        error.next_action = "Wait 30000 ms, then retry the same host once."
+        error.diagnostics = {
+            "failure_class": "upstream_capacity",
+            "lane": {"host": "example.test"},
+            "failures": [
+                {"status_class": "server_error", "http_status": 503}
+            ],
+            "cooldown_remaining_ms": 30_000,
+        }
+        payload = run.__globals__["_exception_failure"](error)
+        self.assertEqual("GOVERNOR_CIRCUIT_OPEN", payload["code"])
+        self.assertEqual("upstream_capacity", payload["failure_class"])
+        self.assertEqual("example.test", payload["lane"]["host"])
+        self.assertEqual(503, payload["failures"][0]["http_status"])
+        self.assertIn("retry the same host once", payload["next_action"])
+
+    def test_hourly_workflow_retries_capacity_and_fails_closed_other_causes(self) -> None:
+        workflow = (
+            REPO_ROOT / ".github" / "workflows" / "upstream-census.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("$attemptLimit = 3", workflow)
+        self.assertIn("--max-attempts 1 --failure-output $failure", workflow)
+        self.assertIn("Start-Sleep -Seconds $delaySeconds", workflow)
+        self.assertIn(
+            "steps.fetch.outputs.failure_class == 'upstream_capacity'", workflow
+        )
+        self.assertIn(
+            "steps.fetch.outputs.failure_class != 'upstream_capacity'", workflow
+        )
+        self.assertIn("No route-drift conclusion was made", workflow)
+
+
 if __name__ == "__main__":
     unittest.main()

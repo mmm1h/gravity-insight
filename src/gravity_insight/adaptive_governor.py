@@ -13,6 +13,7 @@ from typing import Any
 from .adaptive_governor_contract import (
     ADAPTIVE,
     BUSINESS_CAPACITY,
+    CIRCUIT_FAILURE_THRESHOLD,
     MAX_LANES,
     MAX_QUEUE,
     MAX_SCOPES,
@@ -32,7 +33,12 @@ from .adaptive_governor_contract import (
     response_status_class,
     validate_configuration,
 )
-from .adaptive_governor_policy import record_lane_outcome, reset_lane_circuits
+from .adaptive_governor_policy import (
+    capacity_failure_observation,
+    circuit_rejection,
+    record_lane_outcome,
+    reset_lane_circuits,
+)
 from .adaptive_governor_snapshot import (
     AdaptiveGovernorContractError,
     render_adaptive_governor_snapshot,
@@ -51,6 +57,8 @@ class _Lane:
     consecutive_failures: int = 0
     success_window: int = 0
     ewma_latency_ms: int = 0
+    failure_history: deque[dict[str, Any]] = field(
+        default_factory=lambda: deque(maxlen=CIRCUIT_FAILURE_THRESHOLD))
     counters: dict[str, int] = field(
         default_factory=lambda: {
             "success": 0,
@@ -197,7 +205,7 @@ class AdaptiveRequestGovernor:
             raise
         finally:
             if lease is not None:
-                self._complete(lease, status_class, error)
+                self._complete(lease, status_class, error, result)
             if flight is not None:
                 self._finish_flight(request, flight, result, error, status_class)
 
@@ -245,9 +253,8 @@ class AdaptiveRequestGovernor:
         self._last_journey = request.journey_key
         return _Lease(request, lane, self._clock())
 
-    def _complete(
-        self, lease: _Lease, status_class: str, error: BaseException | None
-    ) -> None:
+    def _complete(self, lease: _Lease, status_class: str,
+                  error: BaseException | None, result: Any) -> None:
         with self._condition:
             if lease.released:
                 return
@@ -262,7 +269,19 @@ class AdaptiveRequestGovernor:
                 self._sql_active -= 1
             self._scope_locked(request.scope_key).active -= 1
             observed = "transport_error" if error is not None else status_class
-            record_lane_outcome(self._mode, lane, observed, latency, self._clock)
+            failure = capacity_failure_observation(
+                observed, result, error, request.attempt
+            ) if observed in {
+                "rate_limited", "server_error", "transport_error"
+            } else None
+            record_lane_outcome(
+                self._mode,
+                lane,
+                observed,
+                latency,
+                self._clock,
+                failure,
+            )
             self._condition.notify_all()
 
     def _circuit_gate_locked(
@@ -280,7 +299,14 @@ class AdaptiveRequestGovernor:
         if blocked:
             if waiter is not None:
                 self._remove_waiter_locked(waiter)
-            self._reject_locked(request, "GOVERNOR_CIRCUIT_OPEN", "lane circuit is open")
+            reason, diagnostics, next_action = circuit_rejection(lane, request, now)
+            self._reject_locked(
+                request,
+                "GOVERNOR_CIRCUIT_OPEN",
+                reason,
+                diagnostics=diagnostics,
+                next_action=next_action,
+            )
 
     def _can_grant_locked(self, request: GovernorRequest, lane: _Lane) -> bool:
         lane_limit = lane.max_limit if self._mode == STATIC else lane.limit
@@ -466,20 +492,26 @@ class AdaptiveRequestGovernor:
         if len(self._waiters) + self._flight_waiters >= self.max_queue:
             self._reject_locked(request, "GOVERNOR_BACKPRESSURE", "queue is full")
 
-    def _reject_locked(self, request: GovernorRequest, code: str, reason: str) -> None:
+    def _reject_locked(self, request: GovernorRequest, code: str, reason: str, *,
+                       diagnostics: dict[str, Any] | None = None,
+                       next_action: str | None = None) -> None:
         stats = self._scopes.get(request.scope_key)
         if stats is not None:
             stats.rejected += 1
-        self._raise_request_error(code, reason)
+        self._raise_request_error(
+            code, reason, diagnostics=diagnostics, next_action=next_action
+        )
 
     @staticmethod
-    def _raise_request_error(code: str, reason: str) -> None:
+    def _raise_request_error(code: str, reason: str, *,
+                             diagnostics: dict[str, Any] | None = None,
+                             next_action: str | None = None) -> None:
         raise GovernorRequestError(
             f"Adaptive Governor stopped HTTP before network ({code}: {reason}).",
             code=code,
-            next_action=(
-                "Wait for governed capacity or circuit cooldown, then retry the same request once."
-            ),
+            next_action=next_action
+            or "Wait for governed capacity or circuit cooldown, then retry the same request once.",
+            diagnostics=diagnostics,
         )
 
     def _reset_circuits_locked(self) -> None:

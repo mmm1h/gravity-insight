@@ -21,7 +21,7 @@ from gravity_insight.receipt import (
     request_receipt_context,
 )
 
-from .io import sha256_bytes, stable_bundle_id, write_json
+from .io import http_status_class, safe_url_host, sha256_bytes, stable_bundle_id, write_json
 
 
 DEFAULT_SITE = "https://web.gravity-engine.com/"
@@ -37,10 +37,21 @@ _VITE_CHUNK_NAME = re.compile(
 
 
 class _FetchError(RuntimeError):
-    def __init__(self, message: str, *, url: str, status_code: int | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        url: str,
+        status_code: int | None = None,
+        status_class: str = "unknown",
+        exception_type: str | None = None,
+    ) -> None:
         super().__init__(message)
         self.url = url
         self.status_code = status_code
+        self.status_class = status_class
+        self.exception_type = exception_type
+        self.host = safe_url_host(url)
 
 
 class _EntryHTMLParser(HTMLParser):
@@ -159,9 +170,14 @@ class StaticFetcher:
 
     def _get(self, url: str) -> requests.Response:
         last_error: Exception | None = None
+        last_status: int | None = None
         for attempt in range(self.max_attempts):
             if not self._reserve_attempt():
-                raise _FetchError("request budget exhausted", url=url)
+                raise _FetchError(
+                    f"request budget exhausted for host={safe_url_host(url)}",
+                    url=url,
+                    status_class="request_budget_exhausted",
+                )
             try:
                 response = perform_http_request(
                     self._session().get,
@@ -180,21 +196,43 @@ class StaticFetcher:
                         "retry": attempt > 0,
                     },
                     receipt_root=STATE_ROOT,
+                    governor_context={
+                        "profile": "census",
+                        "attempt_budget": self.max_attempts,
+                        "timeout_seconds": self.timeout,
+                    },
                 )
-                if 400 <= response.status_code < 500:
+                last_status = response.status_code
+                if 400 <= response.status_code < 500 and response.status_code != 429:
                     raise _FetchError(
-                        f"GET returned non-retryable HTTP {response.status_code}: {url}",
+                        "GET returned non-retryable "
+                        f"HTTP {response.status_code} for host={safe_url_host(url)}",
                         url=url,
                         status_code=response.status_code,
+                        status_class="client_error",
                     )
                 response.raise_for_status()
                 return response
             except requests.RequestException as exc:
                 last_error = exc
+                response = getattr(exc, "response", None)
+                status = getattr(response, "status_code", None)
+                if type(status) is int:
+                    last_status = status
                 if attempt + 1 < self.max_attempts and self.attempts < self.max_requests:
                     time.sleep(0.25 * (2**attempt))
+        status_class = http_status_class(last_status)
         raise _FetchError(
-            f"GET failed after {self.max_attempts} attempts: {url}: {last_error}", url=url
+            f"GET failed after {self.max_attempts} attempts for host={safe_url_host(url)}; "
+            f"status_class={status_class}",
+            url=url,
+            status_code=last_status,
+            status_class=(
+                status_class if status_class != "unknown" else "transport_error"
+            ),
+            exception_type=(
+                type(last_error).__name__ if status_class == "unknown" else None
+            ),
         )
 
     def _fetch_js(self, url: str, raw_dir: Path) -> dict[str, Any]:
@@ -292,7 +330,14 @@ class StaticFetcher:
                         fetched.add(url)
                     else:
                         failures.append(
-                            {"url": url, "status_code": exc.status_code, "error": str(exc)}
+                            {
+                                "url": url,
+                                "host": exc.host,
+                                "status_class": exc.status_class,
+                                "status_code": exc.status_code,
+                                "exception_type": exc.exception_type,
+                                "error": str(exc),
+                            }
                         )
         return sorted(results, key=lambda item: item["requested_url"])
 
@@ -381,10 +426,16 @@ class StaticFetcher:
                 "non-resources; entry HTML remained stable"
             )
         elif pending:
-            reason = f"{len(pending)} recursively discovered JS URLs remain pending: " + "; ".join(pending)
+            hosts = sorted({safe_url_host(url) for url in pending})
+            reason = (
+                f"{len(pending)} recursively discovered JS URLs remain pending "
+                f"across hosts: {', '.join(hosts)}"
+            )
         else:
             reason = f"{len(failures)} static resource failures: " + "; ".join(
-                f"{item['url']} ({item['error']})" for item in failures
+                f"host={item.get('host', safe_url_host(str(item.get('url', ''))))} "
+                f"status_class={item.get('status_class', 'unknown')}"
+                for item in failures
             )
         parser = entry["parser"]
         return {

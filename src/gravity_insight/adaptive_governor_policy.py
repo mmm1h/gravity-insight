@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Iterable
 from typing import Any
 
@@ -16,18 +17,72 @@ from .adaptive_governor_contract import (
 CAPACITY_FAILURES = frozenset({"rate_limited", "server_error", "transport_error"})
 
 
+def capacity_failure_observation(
+    status_class: str,
+    result: Any,
+    error: BaseException | None,
+    attempt: int,
+) -> dict[str, Any]:
+    status = getattr(result, "status_code", None)
+    return {
+        "attempt": attempt,
+        "status_class": status_class,
+        "http_status": status if type(status) is int else None,
+        "exception_type": _safe_exception_type(error),
+    }
+
+
+def circuit_rejection(
+    lane: Any, request: Any, now: float
+) -> tuple[str, dict[str, Any], str]:
+    cooldown_remaining_ms = max(
+        0, math.ceil((lane.opened_until - now) * 1_000)
+    )
+    failures = [
+        {"failure_index": index, **dict(failure)}
+        for index, failure in enumerate(lane.failure_history, start=1)
+    ]
+    identity = {
+        "host": _safe_host(request.target_host),
+        "host_key": _safe_hash(request.host_key),
+        "operation_class": _safe_label(request.operation_class),
+        "profile": _safe_label(request.profile),
+    }
+    diagnostics = {
+        "failure_class": "upstream_capacity",
+        "lane": identity,
+        "failures": failures,
+        "cooldown_remaining_ms": cooldown_remaining_ms,
+    }
+    reason = (
+        f"lane circuit is open after {len(failures)} consecutive capacity failures; "
+        f"host={identity['host']}; operation={identity['operation_class']}; "
+        f"profile={identity['profile']}; cooldown_remaining_ms={cooldown_remaining_ms}"
+    )
+    next_action = (
+        f"Wait at least {cooldown_remaining_ms} ms for circuit cooldown, then retry "
+        "the same host once. If the circuit opens again, stop the crawl and inspect "
+        "the reported status classes and upstream service health."
+    )
+    return reason, diagnostics, next_action
+
+
 def record_lane_outcome(
     mode: str,
     lane: Any,
     status_class: str,
     latency: float,
     clock: Callable[[], float],
+    failure: dict[str, Any] | None = None,
 ) -> None:
     _record_latency(lane, latency)
     _record_status_counter(lane, status_class)
     if mode != ADAPTIVE:
         return
     if status_class in CAPACITY_FAILURES:
+        lane.failure_history.append(
+            dict(failure or {"status_class": status_class})
+        )
         lane.consecutive_failures += 1
         _decrease(lane, halve=True)
         if lane.consecutive_failures >= CIRCUIT_FAILURE_THRESHOLD:
@@ -35,6 +90,7 @@ def record_lane_outcome(
         return
     if status_class in {"success", "client_error", "redirect"}:
         lane.consecutive_failures = 0
+        lane.failure_history.clear()
         if lane.state == "half_open":
             lane.state = "closed"
             lane.opened_until = 0.0
@@ -56,6 +112,7 @@ def reset_lane_circuits(lanes: Iterable[Any]) -> None:
         lane.opened_until = 0.0
         lane.consecutive_failures = 0
         lane.success_window = 0
+        lane.failure_history.clear()
 
 
 def _record_latency(lane: Any, latency: float) -> None:
@@ -91,4 +148,49 @@ def _open_circuit(lane: Any, clock: Callable[[], float]) -> None:
     lane.opened_until = clock() + CIRCUIT_COOLDOWN_SECONDS
 
 
-__all__ = ["CAPACITY_FAILURES", "record_lane_outcome", "reset_lane_circuits"]
+def _safe_exception_type(error: BaseException | None) -> str | None:
+    if error is None:
+        return None
+    selected = type(error).__name__
+    if 1 <= len(selected) <= 128 and selected[0].isalpha() and all(
+        character.isascii() and (character.isalnum() or character == "_")
+        for character in selected
+    ):
+        return selected
+    return "Exception"
+
+
+def _safe_host(value: Any) -> str:
+    selected = str(value).casefold()
+    if 1 <= len(selected) <= 253 and all(
+        character in "abcdefghijklmnopqrstuvwxyz0123456789.:-"
+        for character in selected
+    ):
+        return selected
+    return "unknown"
+
+
+def _safe_hash(value: Any) -> str:
+    selected = str(value).casefold()
+    return selected if len(selected) == 64 and all(
+        character in "0123456789abcdef" for character in selected
+    ) else "unknown"
+
+
+def _safe_label(value: Any) -> str:
+    selected = str(value)
+    if 1 <= len(selected) <= 128 and all(
+        character.isascii() and (character.isalnum() or character in "._:-")
+        for character in selected
+    ):
+        return selected
+    return "unknown"
+
+
+__all__ = [
+    "CAPACITY_FAILURES",
+    "capacity_failure_observation",
+    "circuit_rejection",
+    "record_lane_outcome",
+    "reset_lane_circuits",
+]

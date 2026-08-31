@@ -71,6 +71,21 @@ attempts for transient network failures. It records the HTML digest, hashed entr
 Last-Modified; no JavaScript or business endpoint is fetched in this phase. A changed HTML digest
 or entry URL triggers the complete static crawl.
 
+The changed-entry crawl writes a sanitized `fetch-failure.json` containing a stable code,
+`failure_class`, lane host/hashed host key/operation/profile, the three bounded triggering
+failures with status class, optional HTTP status or transport exception type, cooldown remaining,
+and `next_action`. It never includes URL paths, userinfo, query values, headers, exception messages,
+credentials, or response values. `upstream_capacity` is emitted only when every causal failure is
+`transport_error`, `rate_limited`, or `server_error`.
+
+The schedule performs at most three one-attempt crawl rounds, reusing already downloaded raw
+bundles so outer retries do not multiply the existing three-attempt resource budget. It waits at
+least the 30-second circuit cooldown, capped at 60 seconds per backoff. Exhausted capacity rounds
+produce a GitHub warning and no route-drift conclusion. Mixed, budget, entry-stability, parsing, or
+other completeness failures remain hard failures. The governor threshold remains three actual HTTP
+attempts per scope/host/operation/profile lane; increasing it for a large bundle count would let one
+capacity-constrained host absorb more traffic without adding evidence.
+
 The reviewed baseline crawl used 504 request attempts to fetch 375 deployed chunks, reject 122
 lexical non-resource candidates, probe public manifests, and verify that the entry HTML remained
 stable. This is the observed cost of the current graph, not a fixed budget: the hard request cap is

@@ -37,6 +37,9 @@ DEFAULT_ROUTE_REGISTRY = DEFAULT_CONTRACTS / "routes" / "registry.json"
 _CALLER_EXIT = exit_code_for_category(ErrorCategory.CALLER)
 _UPSTREAM_EXIT = exit_code_for_category(ErrorCategory.UPSTREAM)
 _LOCAL_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
+_CAPACITY_STATUS_CLASSES = frozenset(
+    {"rate_limited", "server_error", "transport_error"}
+)
 
 
 def _path(value: str) -> Path:
@@ -94,6 +97,8 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument("--timeout", type=float, default=45.0)
     fetch.add_argument("--no-manifest-probes", action="store_true")
     fetch.add_argument("--require-complete", action="store_true")
+    fetch.add_argument("--failure-output", type=_path,
+                       help="write a sanitized machine-readable failure classification")
 
     parse = subparsers.add_parser("parse", help="parse downloaded bundles into routes.json")
     parse.add_argument("--snapshot", type=_path, default=DEFAULT_SNAPSHOT)
@@ -197,7 +202,123 @@ def _run_fetch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         probe_manifests=not args.no_manifest_probes,
     )
     incomplete = args.require_complete and not result["summary"]["complete"]
+    if incomplete and args.failure_output:
+        write_json(args.failure_output, _incomplete_fetch_failure(result))
     return result["summary"], _UPSTREAM_EXIT if incomplete else 0
+
+
+def _safe_fetch_failures(result: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    for failure in result.get("discovery", {}).get("failures", []):
+        if not isinstance(failure, dict):
+            continue
+        status = failure.get("status_code")
+        exception_type = failure.get("exception_type")
+        rows.append(
+            {
+                "host": str(failure.get("host", "unknown")),
+                "status_class": str(failure.get("status_class", "unknown")),
+                "http_status": status if type(status) is int else None,
+                "exception_type": (
+                    str(exception_type) if exception_type is not None else None
+                ),
+            }
+        )
+    return rows
+
+
+def _incomplete_fetch_failure(result: dict[str, Any]) -> dict[str, Any]:
+    failures = _safe_fetch_failures(result)
+    capacity = bool(failures) and all(
+        failure["status_class"] in _CAPACITY_STATUS_CLASSES
+        for failure in failures
+    )
+    failure_class = "upstream_capacity" if capacity else "incomplete_graph"
+    next_action = (
+        "Wait at least 30000 ms, then retry `gravity census fetch --require-complete` "
+        "once. If capacity failures persist, inspect upstream rate-limit and service "
+        "health before another crawl."
+        if capacity
+        else "Inspect the snapshot completeness_reason and discovery failures; do not "
+        "promote route or contract changes until a complete graph is proven."
+    )
+    summary = result.get("summary", {})
+    return {
+        "status": "error",
+        "error": "The public static graph could not be proven complete.",
+        "code": (
+            "CENSUS_UPSTREAM_CAPACITY"
+            if capacity
+            else "CENSUS_INCOMPLETE_GRAPH"
+        ),
+        "category": "upstream",
+        "retryable": capacity,
+        "failure_class": failure_class,
+        "failures": failures,
+        "cooldown_remaining_ms": 30_000 if capacity else 0,
+        "summary": {
+            "complete": bool(summary.get("complete", False)),
+            "request_attempts": int(summary.get("request_attempts", 0)),
+            "pending_js": int(summary.get("pending_js", 0)),
+            "failed_js": int(summary.get("failed_js", 0)),
+        },
+        "next_action": next_action,
+    }
+
+
+def _exception_failure(error: BaseException) -> dict[str, Any]:
+    error_code = str(getattr(error, "code", ""))
+    diagnostics = getattr(error, "diagnostics", None)
+    if error_code.startswith("GOVERNOR_") and isinstance(diagnostics, dict):
+        return {
+            "status": "error",
+            "error": str(error),
+            "code": error_code,
+            "category": "upstream",
+            "retryable": True,
+            **diagnostics,
+            "next_action": str(getattr(error, "next_action", "") or ""),
+        }
+    status_class = str(getattr(error, "status_class", "unknown"))
+    capacity = status_class in _CAPACITY_STATUS_CLASSES
+    status = getattr(error, "status_code", None)
+    exception_type = getattr(error, "exception_type", None)
+    return {
+        "status": "error",
+        "error": str(error),
+        "code": (
+            "CENSUS_UPSTREAM_CAPACITY" if capacity else "CENSUS_FETCH_FAILED"
+        ),
+        "category": "upstream" if hasattr(error, "status_class") else "local",
+        "retryable": capacity,
+        "failure_class": "upstream_capacity" if capacity else "unclassified",
+        "failures": (
+            [
+                {
+                    "host": str(getattr(error, "host", "unknown")),
+                    "status_class": status_class,
+                    "http_status": status if type(status) is int else None,
+                    "exception_type": (
+                        str(exception_type) if exception_type is not None else None
+                    ),
+                }
+            ]
+            if hasattr(error, "status_class")
+            else []
+        ),
+        "cooldown_remaining_ms": 30_000 if capacity else 0,
+        "next_action": (
+            "Wait at least 30000 ms, then retry the same census fetch once."
+            if capacity
+            else "Inspect this local failure and retry only after correcting it."
+        ),
+    }
+
+
+def _write_failure(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    target = getattr(args, "failure_output", None)
+    if target:
+        write_json(target, payload)
 
 
 def _run_parse(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
@@ -304,8 +425,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         result, exit_code = run(args)
     except (OSError, UnicodeEncodeError, RuntimeError) as exc:
-        sys.stderr.buffer.write(json_bytes({"status": "error", "error": str(exc)}))
-        return _LOCAL_EXIT
+        payload = _exception_failure(exc)
+        _write_failure(args, payload)
+        sys.stderr.buffer.write(json_bytes(payload))
+        return (
+            _UPSTREAM_EXIT
+            if payload.get("category") == "upstream"
+            else _LOCAL_EXIT
+        )
     except (ValueError, json.JSONDecodeError) as exc:
         sys.stderr.buffer.write(json_bytes({"status": "error", "error": str(exc)}))
         return _CALLER_EXIT

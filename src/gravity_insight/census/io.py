@@ -6,8 +6,31 @@ from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from gravity_insight import json_output
+
+
+def safe_url_host(url: str) -> str:
+    try:
+        host = (urlsplit(url).hostname or "unknown").casefold()
+    except ValueError:
+        return "unknown"
+    if len(host) <= 253 and all(
+        character in "abcdefghijklmnopqrstuvwxyz0123456789.:-" for character in host
+    ):
+        return host
+    return "unknown"
+
+
+def http_status_class(status: int | None) -> str:
+    if status == 429:
+        return "rate_limited"
+    if type(status) is int and 500 <= status < 600:
+        return "server_error"
+    if type(status) is int and 400 <= status < 500:
+        return "client_error"
+    return "unknown"
 
 
 def json_bytes(value: Any) -> bytes:

@@ -76,6 +76,8 @@ def _request(
     coalesce_safe: bool = False,
     timeout: float = 5.0,
     cancellation: threading.Event | None = None,
+    target_host: str = "example.invalid",
+    attempt: int = 1,
 ) -> GovernorRequest:
     return GovernorRequest(
         scope_key=private_scope_key(scope),
@@ -87,6 +89,8 @@ def _request(
         coalesce_safe=coalesce_safe,
         timeout_seconds=timeout,
         cancellation=cancellation,
+        target_host=target_host,
+        attempt=attempt,
     )
 
 
@@ -218,6 +222,20 @@ class AdaptiveGovernorCapacityTests(unittest.TestCase):
         self.assertEqual("GOVERNOR_CIRCUIT_OPEN", raised.exception.code)
         self.assertFalse(called)
 
+        diagnostics = raised.exception.diagnostics
+        self.assertEqual("upstream_capacity", diagnostics["failure_class"])
+        self.assertEqual("example.invalid", diagnostics["lane"]["host"])
+        self.assertEqual(30_000, diagnostics["cooldown_remaining_ms"])
+        self.assertEqual(
+            ["server_error", "server_error", "server_error"],
+            [item["status_class"] for item in diagnostics["failures"]],
+        )
+        self.assertEqual(
+            [503, 503, 503],
+            [item["http_status"] for item in diagnostics["failures"]],
+        )
+        self.assertIn("retry the same host once", raised.exception.next_action)
+
         clock.advance(30.0)
         self.assertEqual(200, governor.execute(request, lambda: _Response()).status_code)
         lane = governor.snapshot("scope")["lanes"][0]
@@ -230,6 +248,97 @@ class AdaptiveGovernorCapacityTests(unittest.TestCase):
         for _ in range(3):
             static.execute(request, lambda: _Response(503))
         self.assertEqual(200, static.execute(request, lambda: _Response()).status_code)
+
+    def test_circuit_diagnostics_preserve_each_capacity_failure_kind(self) -> None:
+        def transport_failure() -> _Response:
+            raise TimeoutError("transport detail must not be rendered")
+
+        cases = (
+            ("transport_error", transport_failure, None, "TimeoutError"),
+            ("rate_limited", lambda: _Response(429), 429, None),
+            ("server_error", lambda: _Response(503), 503, None),
+        )
+        for status_class, fake_transport, http_status, exception_type in cases:
+            with self.subTest(status_class=status_class):
+                governor = AdaptiveRequestGovernor(mode=ADAPTIVE, clock=_FakeClock())
+                for attempt in range(1, 4):
+                    request = _request(attempt=attempt)
+                    if status_class == "transport_error":
+                        with self.assertRaises(TimeoutError):
+                            governor.execute(request, fake_transport)
+                    else:
+                        governor.execute(request, fake_transport)
+
+                with self.assertRaises(GovernorRequestError) as raised:
+                    governor.execute(_request(attempt=4), lambda: _Response())
+
+                error = raised.exception
+                failures = error.diagnostics["failures"]
+                self.assertEqual(
+                    [1, 2, 3], [item["failure_index"] for item in failures]
+                )
+                self.assertEqual(
+                    [1, 2, 3], [item["attempt"] for item in failures]
+                )
+                self.assertEqual(
+                    [status_class] * 3,
+                    [item["status_class"] for item in failures],
+                )
+                self.assertEqual(
+                    [http_status] * 3,
+                    [item["http_status"] for item in failures],
+                )
+                self.assertEqual(
+                    [exception_type] * 3,
+                    [item["exception_type"] for item in failures],
+                )
+                self.assertEqual(30_000, error.diagnostics["cooldown_remaining_ms"])
+
+    def test_circuit_error_exposes_safe_host_but_no_credentials_or_query(self) -> None:
+        sentinels = (
+            "CREDENTIAL_SENTINEL_71",
+            "PASSWORD_SENTINEL_72",
+            "QUERY_SENTINEL_73",
+            "AUTHORIZATION_SENTINEL_74",
+            "TRANSPORT_SENTINEL_75",
+        )
+        receipt = request_receipt_context(
+            operation_id="census_fetch",
+            method="GET",
+            path="/assets/private.js",
+            effect="read",
+        )
+        descriptor = build_governor_request(
+            (
+                "https://CREDENTIAL_SENTINEL_71:PASSWORD_SENTINEL_72@"
+                "static.example/assets/private.js?signature=QUERY_SENTINEL_73",
+            ),
+            {"headers": {"Authorization": "AUTHORIZATION_SENTINEL_74"}},
+            receipt_context=receipt,
+            governor_context={"profile": "census"},
+        )
+        governor = AdaptiveRequestGovernor(mode=ADAPTIVE, clock=_FakeClock())
+
+        def failed_transport() -> _Response:
+            raise TimeoutError("TRANSPORT_SENTINEL_75")
+
+        for _ in range(3):
+            with self.assertRaises(TimeoutError):
+                governor.execute(descriptor, failed_transport)
+        with self.assertRaises(GovernorRequestError) as raised:
+            governor.execute(descriptor, lambda: _Response())
+
+        rendered = json.dumps(
+            {
+                "error": str(raised.exception),
+                "diagnostics": raised.exception.diagnostics,
+                "next_action": raised.exception.next_action,
+            },
+            sort_keys=True,
+        )
+        self.assertIn("static.example", rendered)
+        for sentinel in sentinels:
+            self.assertNotIn(sentinel, rendered)
 
 
 class AdaptiveGovernorWaitingTests(unittest.TestCase):

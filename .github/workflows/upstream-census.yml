@@ -53,7 +53,47 @@ jobs:
         run: |
           $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
           $raw = Join-Path $env:RUNNER_TEMP "gravity-census-raw"
-          gravity census fetch --raw-dir $raw --output (Join-Path $evidence "current-snapshot.json") --require-complete
+          $snapshot = Join-Path $evidence "current-snapshot.json"
+          $failure = Join-Path $evidence "fetch-failure.json"
+          $attemptLimit = 3
+          for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
+            if (Test-Path -LiteralPath $failure) {
+              Remove-Item -LiteralPath $failure
+            }
+            Write-Host "Complete crawl attempt $attempt of $attemptLimit"
+            gravity census fetch --raw-dir $raw --output $snapshot --require-complete --max-attempts 1 --failure-output $failure
+            $fetchExit = $LASTEXITCODE
+            if ($fetchExit -eq 0) {
+              "failure_class=none" >> $env:GITHUB_OUTPUT
+              "crawl_attempts=$attempt" >> $env:GITHUB_OUTPUT
+              exit 0
+            }
+
+            $failureClass = "unclassified"
+            $cooldownMs = 30000
+            if (Test-Path -LiteralPath $failure) {
+              $diagnostic = Get-Content -Raw -LiteralPath $failure | ConvertFrom-Json
+              $failureClass = [string]$diagnostic.failure_class
+              if ($diagnostic.cooldown_remaining_ms -is [int64] -or $diagnostic.cooldown_remaining_ms -is [int32]) {
+                $cooldownMs = [int64]$diagnostic.cooldown_remaining_ms
+              }
+            }
+            if ($failureClass -ne "upstream_capacity") {
+              "failure_class=$failureClass" >> $env:GITHUB_OUTPUT
+              "crawl_attempts=$attempt" >> $env:GITHUB_OUTPUT
+              exit $fetchExit
+            }
+            if ($attempt -lt $attemptLimit) {
+              $reportedCooldown = [Math]::Ceiling($cooldownMs / 1000)
+              $exponentialBackoff = 30 * [Math]::Pow(2, $attempt - 1)
+              $delaySeconds = [Math]::Min(60, [Math]::Max($reportedCooldown, $exponentialBackoff))
+              Write-Warning "Upstream capacity blocked the crawl; retrying after $delaySeconds seconds."
+              Start-Sleep -Seconds $delaySeconds
+            }
+          }
+          "failure_class=upstream_capacity" >> $env:GITHUB_OUTPUT
+          "crawl_attempts=$attemptLimit" >> $env:GITHUB_OUTPUT
+          exit 3
 
       - name: Parse routes and reconcile manifest coverage
         if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome == 'success'
@@ -86,7 +126,18 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Reject an incomplete changed bundle crawl
-        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome != 'success'
+      - name: Warn when upstream capacity prevents a complete crawl
+        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class == 'upstream_capacity'
         shell: pwsh
-        run: throw "The entry changed, but a complete public static graph could not be proven."
+        run: |
+          $failure = Join-Path $env:RUNNER_TEMP "gravity-drift/fetch-failure.json"
+          $diagnostic = Get-Content -Raw -LiteralPath $failure | ConvertFrom-Json
+          $classes = @($diagnostic.failures | ForEach-Object { $_.status_class } | Sort-Object -Unique) -join ", "
+          Write-Output "::warning title=Gravity upstream census capacity blocked::Entry HTML changed, but the complete crawl remained blocked after ${{ steps.fetch.outputs.crawl_attempts }} attempts. Failure classes: $classes. No route-drift conclusion was made; inspect the uploaded fetch-failure.json before retrying."
+          "### Gravity upstream census capacity warning" >> $env:GITHUB_STEP_SUMMARY
+          "Entry HTML changed, but upstream capacity prevented a complete graph after ${{ steps.fetch.outputs.crawl_attempts }} bounded attempts. No route-drift conclusion was made. Inspect the uploaded sanitized diagnostic artifact before retrying." >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Reject an incomplete changed bundle crawl
+        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class != 'upstream_capacity'
+        shell: pwsh
+        run: throw "The entry changed, but a complete public static graph could not be proven for a non-capacity reason. Inspect the uploaded snapshot and fetch-failure.json, correct that cause, and rerun the workflow."

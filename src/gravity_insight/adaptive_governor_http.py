@@ -56,6 +56,8 @@ def build_governor_request(
         coalesce_safe=request_key is not None,
         timeout_seconds=_wait_timeout(governor, request_kwargs),
         cancellation=cancellation,
+        target_host=_hostname(request_args),
+        attempt=_attempt(receipt.get("attempt")),
     )
 
 
@@ -119,8 +121,17 @@ def _hostname(arguments: Sequence[Any]) -> str:
             continue
         parsed = urlsplit(argument)
         if parsed.scheme in {"http", "https"} and parsed.hostname:
-            return parsed.hostname
+            selected = parsed.hostname.casefold()
+            if len(selected) <= 253 and all(
+                character in "abcdefghijklmnopqrstuvwxyz0123456789.:-"
+                for character in selected
+            ):
+                return selected
     return "unknown"
+
+
+def _attempt(value: Any) -> int:
+    return value if type(value) is int and 1 <= value <= 100 else 1
 
 
 def _profile(value: Any, operation: str, effect: str) -> str:
