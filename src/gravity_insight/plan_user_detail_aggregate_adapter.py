@@ -6,7 +6,7 @@ import copy
 import json
 import math
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 from .errors import ContractChangedError, PaginationError
@@ -23,7 +23,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
-from .result_audit import project_result_audit, result_receipt_references
+from .result_audit import project_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
 from .user_detail_aggregate_contract import (
     INPUT_SCHEMA_VERSION,
@@ -205,7 +205,7 @@ def sanitize_user_detail_aggregate_result(
         "pagination": pagination,
         "source": _safe_source(result.get("source")),
         "pagination_audit": _safe_pagination_audit(
-            pagination, result_receipt_references(result)
+            result.get("pagination_audit"), pagination
         ),
     }
     selected = project_result_audit(selected, result)
@@ -331,29 +331,80 @@ def _safe_source(value: Any) -> dict[str, Any]:
 
 
 def _safe_pagination_audit(
-    pagination: Mapping[str, Any], receipts: Sequence[Mapping[str, Any]]
+    value: Any, pagination: Mapping[str, Any]
 ) -> dict[str, Any]:
-    completeness = str(pagination["completeness"])
-    criterion = {
-        "complete": "source contract reports the consumed collection complete",
-        "prefix": "source contract reports only a collection prefix",
-        "unknown": "source contract does not prove collection completeness",
-    }[completeness]
+    if not isinstance(value, Mapping):
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    criterion, has_more = _audit_completeness(value.get("completeness"), pagination)
+    requested_size, effective_size, clamped = _audit_page_sizes(value)
     return {
-        "mode": "all_pages",
-        "operation_requests_made": pagination["consumed_pages"],
-        "http_requests_made": len(receipts),
-        "requested_page_size": 100,
-        "effective_page_size": None,
-        "page_size_clamped": False,
+        "mode": _audit_mode(value.get("mode")),
+        "operation_requests_made": _audit_count(
+            value.get("operation_requests_made"), "operation requests"
+        ),
+        "http_requests_made": _audit_count(
+            value.get("http_requests_made"), "HTTP requests"
+        ),
+        "requested_page_size": requested_size,
+        "effective_page_size": effective_size,
+        "page_size_clamped": clamped,
         "completeness": {
             "criterion": criterion,
-            "status": completeness,
-            "has_more": False if completeness == "complete" else None,
+            "status": pagination["completeness"],
+            "has_more": has_more,
             "returned_items": pagination["consumed_items"],
             "total_items": pagination["source_total_items"],
         },
     }
+
+
+def _audit_completeness(
+    value: Any, pagination: Mapping[str, Any]
+) -> tuple[str, bool | None]:
+    audit_completeness = value
+    if not isinstance(audit_completeness, Mapping):
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    completeness = str(pagination["completeness"])
+    if audit_completeness.get("status") != completeness:
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    criterion = audit_completeness.get("criterion")
+    if not isinstance(criterion, str) or not criterion or len(criterion) > 512:
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    has_more = audit_completeness.get("has_more")
+    if has_more is not None and not isinstance(has_more, bool):
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    if audit_completeness.get("returned_items") != pagination["consumed_items"]:
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    if audit_completeness.get("total_items") != pagination["source_total_items"]:
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    return criterion, has_more
+
+
+def _audit_page_sizes(value: Mapping[str, Any]) -> tuple[int, int | None, bool]:
+    effective_size = value.get("effective_page_size")
+    if effective_size is not None and (
+        type(effective_size) is not int or not 1 <= effective_size <= 100_000
+    ):
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    requested_size = value.get("requested_page_size")
+    if requested_size != 100:
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    clamped = value.get("page_size_clamped")
+    if not isinstance(clamped, bool):
+        raise ContractChangedError("user-detail aggregate pagination audit changed")
+    return requested_size, effective_size, clamped
+
+
+def _audit_mode(value: Any) -> str:
+    if value != "all_pages":
+        raise ContractChangedError("user-detail aggregate pagination audit mode changed")
+    return str(value)
+
+
+def _audit_count(value: Any, label: str) -> int:
+    if type(value) is not int or value < 0:
+        raise ContractChangedError(f"user-detail aggregate pagination audit {label} changed")
+    return value
 
 
 def _safe_scalar(value: Any) -> Any:

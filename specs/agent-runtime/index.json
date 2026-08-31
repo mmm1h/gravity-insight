@@ -42,6 +42,22 @@
       "reference": "../../docs/reference/cli.md"
     },
     {
+      "id": "external-method-library",
+      "maturity": "stable",
+      "owner": "vendor-neutral Skill library and isolated external method Source Registry",
+      "machine_sources": [
+        "../../skills/library",
+        "../../skills/sources/registry.json",
+        "../../src/gravity_insight/contracts/schema/external-method-source-registry-v1.schema.json"
+      ],
+      "reference": "CT03-skill-library-specification.md",
+      "governance_references": [
+        "CT01-external-method-inventory.md",
+        "CT02-skill-library-validation.md",
+        "CT03-skill-library-specification.md"
+      ]
+    },
+    {
       "id": "semantic-registry",
       "maturity": "stable",
       "owner": "Semantic definitions, bindings, composition and validation",

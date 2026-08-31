@@ -21,7 +21,7 @@ _DIRECTIVE_KEYS = {"path", "digest", "version", "approval"}
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 _RETIRED_REFERENCE = re.compile(
     r"(?:architecture-source\.md|requirement-template\.md|"
-    r"(?:R(?:0[0-9]|1[0-7])(?:[A-C])?|CT0[1-3])-[^\s)`\]\"']+\.md)"
+    r"R(?:0[0-9]|1[0-7])(?:[A-C])?-[^\s)`\]\"']+\.md)"
 )
 _PARALLEL_VERSION = re.compile(
     r"(?i)(?:-v\d+|-final)\.md$|^\d{4}-\d{2}-\d{2}.*报告.*\.md$"

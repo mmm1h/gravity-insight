@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from collections import deque
@@ -247,7 +248,7 @@ class DocumentationArchitectureTests(unittest.TestCase):
             1,
         )
 
-    def test_released_program_ledgers_are_not_current_documents(self) -> None:
+    def test_released_requirement_ledgers_are_not_current_documents(self) -> None:
         current = {
             path.relative_to(ROOT).as_posix()
             for path in current_markdown_files(ROOT)
@@ -255,9 +256,26 @@ class DocumentationArchitectureTests(unittest.TestCase):
         self.assertFalse(
             any(path.startswith("specs/agent-runtime/R") for path in current)
         )
-        self.assertFalse(
-            any(path.startswith("specs/agent-runtime/CT") for path in current)
+
+    def test_vendor_neutral_ct_references_are_current_and_exact(self) -> None:
+        names = (
+            "CT01-external-method-inventory.md",
+            "CT02-skill-library-validation.md",
+            "CT03-skill-library-specification.md",
         )
+        markdown = (ROOT / "specs/agent-runtime/index.md").read_text(encoding="utf-8")
+        index = json.loads(
+            (ROOT / "specs/agent-runtime/index.json").read_text(encoding="utf-8")
+        )
+        library = next(
+            component
+            for component in index["components"]
+            if component["id"] == "external-method-library"
+        )
+        self.assertEqual(list(names), library["governance_references"])
+        for name in names:
+            self.assertTrue((ROOT / "specs/agent-runtime" / name).is_file())
+            self.assertIn(f"]({name})", markdown)
 
 
 if __name__ == "__main__":

@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "56271e8b18a848e74ba87de1c61406a91b599b97026b4ecb4f4af44d4501be8e",
+    "reference_evidence_sha256": "c85974bc174b94d01eac1a98bacb41ea16a42f7845d98bc9dadc73ea30033dcf",
     "manual_review_sha256": "054b157cbe9638807c4df1b60199ec16af67caf03e533511805c7fadc99c055e",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3180,
-    "scanned_file_count": 3173,
+    "version_controlled_file_count": 3109,
+    "scanned_file_count": 3102,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -659,12 +659,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 308,
-    "reference_site_count": 306,
+    "tracked_site_count": 299,
+    "reference_site_count": 297,
     "manual_review_site_count": 220,
     "reference_manual_overlap_count": 218,
     "manual_only_site_count": 2,
-    "unique_source_keys": 308,
+    "unique_source_keys": 299,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -674,7 +674,7 @@
       "dynamic_import": 11,
       "manual_patch_expression": 118,
       "module_qualname_dependency": 7,
-      "static_import": 77,
+      "static_import": 68,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -685,9 +685,9 @@
       "non_string_patch_expression": 118
     },
     "dispositions": {
-      "no_migration_effect": 308
+      "no_migration_effect": 299
     },
-    "sites_sha256": "9e52e46ec11f773e91afed90e1896a81798e45ac59fc620450b1a2b1f3f919d6"
+    "sites_sha256": "169c8dab504251d6654b0f4b4e48c4f728d7516b5a455ed120013cbce37ac960"
   },
   "blockers": [],
   "site_fields": [
@@ -2055,37 +2055,7 @@
       }
     ],
     [
-      "scripts/generate_thinkingai_full_specifications.py:17:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "scripts/generate_thinkingai_full_specifications.py:34:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "scripts/generate_thinkingai_representatives.py:16:1:from import",
+      "scripts/generate_skill_library.py:16:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2491,6 +2461,21 @@
     ],
     [
       "src/gravity_insight/external_context_contract.py:13:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/external_method_registry.py:11:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3105,96 +3090,6 @@
       }
     ],
     [
-      "src/gravity_insight/thinkingai_full_eval.py:8:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_insight/thinkingai_full_shared.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_insight/thinkingai_full_specification.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_insight/thinkingai_inventory_contract.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_insight/thinkingai_inventory_diff.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "src/gravity_insight/thinkingai_representative.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
       "src/gravity_insight/trusted_pack_contract.py:8:1:from import",
       "r",
       "exact_reference",
@@ -3571,6 +3466,21 @@
     ],
     [
       "tests/test_experiment_handoff.py:12:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      61,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_external_method_registry.py:7:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -5275,51 +5185,6 @@
       "no_migration_effect",
       "direct_object_patch",
       34,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_thinkingai_full_specification.py:9:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_thinkingai_inventory.py:10:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_thinkingai_representative.py:13:1:from import",
-      "r",
-      "exact_reference",
-      "gravity_insight.agent_runtime_contracts",
-      "gravity_insight.agent_runtime_contracts",
-      "static_import",
-      "exact",
-      "no_migration_effect",
-      "retained_module_reference",
-      61,
       {
         "kind": "none"
       }

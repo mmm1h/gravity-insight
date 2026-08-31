@@ -23,6 +23,15 @@ def safe_url_host(url: str) -> str:
     return "unknown"
 
 
+class CensusFetchError(RuntimeError):
+    def __init__(self, message: str, *, url: str, **details: Any) -> None:
+        super().__init__(message)
+        self.url, self.host = url, safe_url_host(url)
+        defaults = {"status_code": None, "status_class": "unknown", "exception_type": None, "request_attempts": None, "request_limit": None, "local_capacity_retries_used": None}
+        for field, default in defaults.items():
+            setattr(self, field, details.get(field, default))
+
+
 def http_status_class(status: int | None) -> str:
     if status == 429:
         return "rate_limited"
@@ -31,6 +40,38 @@ def http_status_class(status: int | None) -> str:
     if type(status) is int and 400 <= status < 500:
         return "client_error"
     return "unknown"
+
+
+def census_local_relative(url: str, default_name: str = "index.html") -> Path:
+    parsed = urlsplit(url)
+    relative = parsed.path.lstrip("/") or default_name
+    path = Path("raw") / parsed.netloc / relative
+    return path.with_name(path.name + ".q-" + sha256_bytes(parsed.query.encode())[:12]) if parsed.query else path
+
+
+def census_manifest_assets(value: Any) -> Iterable[str]:
+    if isinstance(value, str) and value.split("?", 1)[0].endswith(".js"):
+        yield value
+    elif isinstance(value, (dict, list)):
+        nested_values = value.values() if isinstance(value, dict) else value
+        for nested in nested_values:
+            yield from census_manifest_assets(nested)
+
+
+def census_entry_build_info(html_text: str, pattern: Any) -> dict[str, Any]:
+    match = pattern.search(html_text)
+    if not match:
+        return {}
+    try:
+        parsed = json.loads(match.group(1))
+        return parsed if isinstance(parsed, dict) else {}
+    except json.JSONDecodeError:
+        return {"raw": match.group(1)}
+
+
+def census_looks_like_vite_chunk(url: str, pattern: Any) -> bool:
+    parsed = urlsplit(url)
+    return parsed.path.startswith("/assets/") and bool(pattern.fullmatch(Path(parsed.path).name))
 
 
 def json_bytes(value: Any) -> bytes:

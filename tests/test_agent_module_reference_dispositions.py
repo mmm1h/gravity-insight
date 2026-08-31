@@ -27,8 +27,8 @@ import scripts.generate_agent_module_reference_dispositions as checkpoint_genera
 import scripts.generate_agent_skills as agent_guides
 import scripts.generate_execution_variant_characterization as execution_variant
 import scripts.generate_journey_ledger as journey_ledger
+import scripts.generate_skill_library as skill_library_generator
 import scripts.generate_skill_packages as skill_packages
-import scripts.generate_thinkingai_inventory as ct01
 from gravity_insight.documentation_gate import (
     DocumentationGateError,
     validate_architecture_binding,
@@ -1957,17 +1957,15 @@ class GateFailureGuidanceTests(unittest.TestCase):
         self.assertIn("does not match docs/analysis-journeys.md", output.getvalue())
         self.assertIn("python scripts/generate_journey_ledger.py", output.getvalue())
 
-    def test_ct01_stale_message_distinguishes_observation_import(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
-            target = Path(temp) / "snapshot.json"
-            with patch.object(ct01, "load_source_observation", return_value={}), patch.object(
-                ct01, "render_outputs", return_value={target: "new"}
-            ), patch.object(sys, "argv", ["generate_thinkingai_inventory.py", "--check"]):
-                with self.assertRaises(SystemExit) as raised:
-                    ct01.main()
-        self.assertIn("pinned immutable source observation", str(raised.exception))
-        self.assertIn("python scripts/generate_thinkingai_inventory.py", str(raised.exception))
-        self.assertIn("Do not use `--import-playwright-output`", str(raised.exception))
+    def test_skill_library_check_rejects_tracked_generated_mirrors(self) -> None:
+        with patch.object(
+            skill_library_generator,
+            "_assert_no_tracked_mirrors",
+            side_effect=SystemExit("generated Skill mirrors are tracked"),
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                skill_library_generator.main(["--check"])
+        self.assertIn("generated Skill mirrors are tracked", str(raised.exception))
 
     def test_execution_variant_stale_message_gives_rebuild_command(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
