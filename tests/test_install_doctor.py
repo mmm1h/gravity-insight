@@ -25,6 +25,9 @@ class InstallDoctorTests(unittest.TestCase):
                 {"version": "0.3.0", "path": str(package / "__init__.py")},
             )
         self.assertEqual("pass", result["status"])
+        self.assertEqual(
+            "gravity-insight.install-consistency.v2", result["schema_version"]
+        )
         self.assertEqual("INSTALL_CONSISTENT", result["reason_code"])
         self.assertFalse(result["network_called"])
 
