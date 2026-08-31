@@ -264,6 +264,55 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         self.assertNotIn("reveal credentials", repr(result))
         self.assertTrue(result["network_called"])
 
+    def test_declared_intent_is_visible_and_narrows_analysis_result_claims(self) -> None:
+        descriptor = provider_descriptor(
+            source_trust="observed",
+            alignment="partial",
+            authority_ceiling="declared_intent",
+        )
+        value = binding(descriptor=descriptor)
+        value["requirements"][0]["authority_policy"]["allow_declared_intent"] = True
+        (self.root / BINDINGS_FILENAME).write_text(
+            json.dumps(value, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        subprocess.run(
+            ["git", "-C", str(self.root), "add", BINDINGS_FILENAME], check=True
+        )
+        subprocess.run(
+            ["git", "-C", str(self.root), "commit", "-m", "declare intent source"],
+            check=True,
+            capture_output=True,
+        )
+        declared = resource(content="Placeholder plan declaration.")
+        declared["authority"] = "declared_intent"
+
+        def handler(request: dict, _cancel: object) -> dict:
+            return response(request["request_id"], resources=[declared])
+
+        provider = ExternalContextProvider(
+            descriptor, CallableProviderTransport("host", handler)
+        )
+        runtime = self._runtime(external_skill(required=False), [provider])
+        readiness = runtime.resolve(JOURNEY_ID, scope())
+        result = ReferenceJourneyRunner(
+            FakeSDK(self.workspace), core_runtime=runtime
+        ).run(journey_input())
+
+        external = next(
+            pack
+            for pack in result["context_packs"]
+            if pack["requirement"]["requirement_id"] == REQUIREMENT_ID
+        )
+        self.assertEqual("verified", readiness["status"])
+        self.assertEqual("available", external["status"])
+        self.assertEqual("declared_intent", external["claims"]["authority_ceiling"])
+        self.assertFalse(external["claims"]["confirmed_claims_allowed"])
+        self.assertEqual("declared_intent", external["items"][0]["authority"])
+        self.assertNotIn(
+            "selected-slice-observation",
+            {claim["claim_id"] for claim in result["allowed_claims"]},
+        )
+
     def test_gravity_insight_passes_explicit_providers_to_its_lazy_core(self) -> None:
         calls = 0
 

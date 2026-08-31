@@ -137,12 +137,26 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
             for item in self.coverage["routes"]
             if item.get("route_classification") is not None
         }
-        registered = {(item["method"], item["path"]) for item in self.classifications}
+        registered = {
+            (item["method"], item["path"])
+            for item in self.classifications
+            if item["source_status"] in {"uncovered_auth_or_proxy", "unclassified"}
+        }
+        supplemental = [
+            item
+            for item in self.classifications
+            if item["source_status"] == "supplemental_bi_census"
+        ]
         self.assertEqual(110, len(source_targets))
         self.assertEqual(source_targets, registered)
+        self.assertEqual(
+            [("POST", "/custom_sql/api/sql/execute")],
+            [(item["method"], item["path"]) for item in supplemental],
+        )
         counts = Counter(item["source_status"] for item in self.classifications)
         self.assertEqual(30, counts["uncovered_auth_or_proxy"])
         self.assertEqual(80, counts["unclassified"])
+        self.assertEqual(1, counts["supplemental_bi_census"])
         self.assertTrue(
             all(
                 item["disposition"] == "unsupported"

@@ -35,9 +35,9 @@ from .receipt import DISTRIBUTION_HTTP_KIND, perform_http_request
 from .runtime_scope import gravity_insight_cache_root
 
 
-AUTO_UPGRADE_ENV = "GRAVITY_SDK_AUTO_UPGRADE"
-PINNED_VERSION_ENV = "GRAVITY_SDK_PINNED_VERSION"
-TARGET_PYTHON_ENV = "GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON"
+AUTO_UPGRADE_ENV = "GRAVITY_INSIGHT_AUTO_UPGRADE"
+PINNED_VERSION_ENV = "GRAVITY_INSIGHT_PINNED_VERSION"
+TARGET_PYTHON_ENV = "GRAVITY_INSIGHT_AUTO_UPGRADE_TARGET_PYTHON"
 UPDATE_CHECK_INTERVAL = timedelta(hours=24)
 UPDATE_STATE_FILENAME = "update-check.json"
 UPDATE_POLICY_EXIT_CODE = 75
@@ -47,6 +47,9 @@ TERMINAL_UPGRADE_STATUSES = frozenset(
 
 _DISTRIBUTION_NAME = "gravity-insight"
 _PYPI_JSON_URL = "https://pypi.org/pypi/gravity-insight/json"
+_LEGACY_AUTO_UPGRADE_ENV = "GRAVITY_SDK_AUTO_UPGRADE"
+_LEGACY_PINNED_VERSION_ENV = "GRAVITY_SDK_PINNED_VERSION"
+_LEGACY_TARGET_PYTHON_ENV = "GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON"
 
 
 @dataclass(frozen=True)
@@ -56,6 +59,21 @@ class UpdateCheck:
     detail: str | None = None
     state: Mapping[str, Any] | None = None
     plan: UpdatePlanRequest | None = None
+
+
+def _environment_value(
+    environ: Mapping[str, str], primary_name: str, legacy_name: str
+) -> str | None:
+    if primary_name in environ:
+        return environ[primary_name]
+    return environ.get(legacy_name)
+
+
+def _target_python_from_environment(
+    environ: Mapping[str, str] | None = None,
+) -> str | None:
+    env = os.environ if environ is None else environ
+    return _environment_value(env, TARGET_PYTHON_ENV, _LEGACY_TARGET_PYTHON_ENV)
 
 
 def update_state_path() -> Path:
@@ -83,10 +101,14 @@ def startup_update_enabled(
     args = list(argv)
     if args[:1] == ["doctor"] or args[:2] == ["insight", "doctor"]:
         return False
-    pinned = str(env.get(PINNED_VERSION_ENV, "")).strip()
+    pinned = str(
+        _environment_value(env, PINNED_VERSION_ENV, _LEGACY_PINNED_VERSION_ENV) or ""
+    ).strip()
     if version_tuple(pinned) is not None and pinned == __version__:
         return False
-    return str(env.get(AUTO_UPGRADE_ENV, "")).strip().casefold() in {
+    return str(
+        _environment_value(env, AUTO_UPGRADE_ENV, _LEGACY_AUTO_UPGRADE_ENV) or ""
+    ).strip().casefold() in {
         "1",
         "true",
         "yes",

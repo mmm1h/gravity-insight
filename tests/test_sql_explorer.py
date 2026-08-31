@@ -28,9 +28,9 @@ from gravity_insight.sql.__main__ import build_parser
 from gravity_insight.sql.products import build_sql, day_window
 from gravity_insight.sql_explorer_contract import (
     SqlExplorerContractError,
-    promotion_digest,
-    result_digest,
-    session_digest,
+    promotion_digest, promotion_source_digest,
+    result_digest, session_digest,
+    validate_promotion_source,
 )
 from gravity_insight.sql_explorer_policy import compile_sql_explorer_statement
 from gravity_insight.sql_explorer_sqlite import _SqliteReadOnlySession
@@ -640,6 +640,14 @@ class SqlExplorerTests(unittest.TestCase):
                 artifact["trust"]["stable_identity_granted"],
             ),
         )
+
+    def test_unknown_gravity_dialect_source_requires_reviewed_promotion_path(self) -> None:
+        source = self.service.execute(_request(self.database))["promotion_source"]
+        source["dialect"] = "unknown"
+        source["source_sha256"] = promotion_source_digest(source)
+
+        self.assertEqual(source, validate_promotion_source(source))
+        self.assertEqual("unknown", source["dialect"])
 
 
 if __name__ == "__main__":
