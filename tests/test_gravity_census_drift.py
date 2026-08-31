@@ -182,6 +182,8 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
     def test_unmapped_added_route_is_kept_for_contract_triage(self) -> None:
         route_diff = {
             "kind": "route_diff",
+            "drift_conclusion_available": True,
+            "old_bundle_complete": True,
             "new_bundle_complete": True,
             "added": [{"method": "GET", "path": "/api/v99/new-surface/"}],
             "removed": [],
@@ -198,6 +200,8 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
     def test_path_change_maps_through_the_old_registered_route(self) -> None:
         route_diff = {
             "kind": "route_diff",
+            "drift_conclusion_available": True,
+            "old_bundle_complete": True,
             "new_bundle_complete": True,
             "added": [],
             "removed": [],

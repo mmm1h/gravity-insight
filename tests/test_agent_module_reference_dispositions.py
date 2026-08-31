@@ -27,9 +27,16 @@ import scripts.generate_agent_module_reference_dispositions as checkpoint_genera
 import scripts.generate_agent_skills as agent_guides
 import scripts.generate_execution_variant_characterization as execution_variant
 import scripts.generate_journey_ledger as journey_ledger
+import scripts.generate_skill_library as skill_library_generator
 import scripts.generate_skill_packages as skill_packages
-import scripts.generate_thinkingai_inventory as ct01
-import scripts.validate_r17_canonical_source_errata as errata_validator
+from gravity_insight.documentation_gate import (
+    DocumentationGateError,
+    validate_architecture_binding,
+    validate_mermaid,
+)
+from scripts.validate_canonical_architecture import (
+    validate_repository as validate_canonical_repository,
+)
 from scripts.run_integrated_validation import GateSpec, run_gate
 from scripts.audit_agent_module_references import (
     AuditResult,
@@ -63,20 +70,6 @@ from scripts.generate_agent_module_reference_dispositions import (
     _classify_reference as generator_classify_reference,
     render_document,
 )
-from scripts.validate_r17_canonical_source_errata import (
-    ErrataValidationError,
-    build_expected_source,
-    build_naming_source,
-    derive_source_replacements,
-    load_git_baseline,
-    load_naming_baseline_directive,
-    load_post_program_baseline_directive,
-    validate_bound_ledger,
-    validate_current_state,
-    validate_final_state,
-    validate_phase1_reviewed_state,
-    validate_post_program_state,
-)
 from tests.repository_tree_gate import (
     DEFAULT_TIMEOUT_SECONDS,
     RepositoryTreeGateTimeout,
@@ -90,13 +83,14 @@ PYPROJECT = ROOT / "pyproject.toml"
 LEDGER = ROOT / "tests/fixtures/agent_module_reference_dispositions.json"
 CHECKPOINT = ROOT / "tests/fixtures/agent_module_reference_checkpoint.json"
 DIRECTIVE = ROOT / "specs/agent-runtime/directive.json"
-CANONICAL_SOURCE = ROOT / "specs/agent-runtime/architecture-source.md"
+CANONICAL_SOURCE = ROOT / "docs/architecture.md"
 INDEX_JSON = ROOT / "specs/agent-runtime/index.json"
 INDEX_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
-R17_SPECIFICATION = ROOT / "specs/agent-runtime/R17-agent-module-package-migration.md"
 ROADMAP = ROOT / "docs/roadmap.md"
 TECHNICAL_DEBT = ROOT / "docs/maintainers/technical-debt.md"
 LEDGER_SHA256 = "9d5b4d197cd84a0da4bb644256c9df7670ec89b7258e710434ab1ac8fed8be20"
+REVIEWED_LEDGER_GIT_BLOB = "0fcfa6c85e07c7cc901530ed8c2fe7516203e986"
+REVIEWED_LEDGER_REVISION = "f2e8eec1f3c0567e20ab8c0be6465cc4e2c52e59"
 EXPECTED_CATEGORIES = {
     "agent_prefix_template": 2,
     "bare_agent_string": 101,
@@ -676,26 +670,19 @@ def validate_checkpoint_receipt(document: dict[str, Any]) -> None:
         "checkpoint role changed",
     )
     baseline = document.get("immutable_baseline_ledger", {})
-    directive = json.loads(DIRECTIVE.read_text(encoding="utf-8"))
-    derivation = directive["canonical_source_errata"]["allowed_source_replacements"]
     expected_binding = {
         "role": "errata_source_only_immutable_baseline",
-        "repository_path": derivation["ledger_repository_path"],
-        "git_blob": derivation["ledger_git_blob"],
-        "sha256": derivation["ledger_sha256"],
-        "schema_version": derivation["ledger_schema_version"],
+        "repository_path": LEDGER.relative_to(ROOT).as_posix(),
+        "git_blob": REVIEWED_LEDGER_GIT_BLOB,
+        "sha256": LEDGER_SHA256,
+        "schema_version": "gravity.agent-module-reference-dispositions.v2",
     }
     _require(baseline == expected_binding, "checkpoint baseline binding changed")
-    reviewed_at_revision = derivation.get("reviewed_at_revision")
-    _require(
-        reviewed_at_revision == errata_validator.REVIEWED_AT_REVISION,
-        "checkpoint ledger review revision changed",
-    )
     reviewed_blob = subprocess.run(
         [
             "git",
             "rev-parse",
-            f"{reviewed_at_revision}:{baseline['repository_path']}",
+            f"{REVIEWED_LEDGER_REVISION}:{baseline['repository_path']}",
         ],
         cwd=ROOT,
         check=True,
@@ -978,52 +965,15 @@ def validate_active_scope_owner_projection(
 ) -> None:
     moves = ledger.get("scope", {}).get("one_to_one_moves", [])
     _require(len(moves) == 82, "scope projection requires the reviewed 82 moves")
-    expected = {
-        "old_paths": len(moves) + 1,
-        "moves": len(moves),
-        "root_py": 495,
-        "agents_implementation_py": len(moves),
-    }
-    roadmap_match = re.search(
-        r"R17[^\n]*\u5df2\u79fb\u9664\s+(\d+)\s+\u4e2a\u65e7 deep module path"
-        r"\uff08(\d+)\s+\u8fc1\u79fb\s*\+\s*pagination \u5220\u9664\uff09",
-        roadmap,
-    )
-    _require(roadmap_match is not None, "roadmap has no unique R17 scope projection")
-    roadmap_projection = {
-        "old_paths": int(roadmap_match.group(1)),
-        "moves": int(roadmap_match.group(2)),
-    }
+    _require("R17" not in roadmap, "roadmap still contains Program construction history")
     _require(
-        roadmap_projection
-        == {"old_paths": expected["old_paths"], "moves": expected["moves"]},
-        "roadmap R17 scope projection differs from the reviewed ledger",
+        "`gravity_insight.agents` 是 compact Agent interaction 的唯一实现包"
+        in technical_debt,
+        "technical debt lost the current Agent package owner boundary",
     )
     _require(
-        "#11 已关闭：R17 `fixed_dev`" in technical_debt
-        and re.search(r"(?m)^### 11\.", technical_debt) is None,
-        "technical-debt #11 must be a closed historical entry",
-    )
-
-    debt_match = re.search(
-        r"\u6839 `\.py` \u4e3a\s*(\d+)\u3001\s*\n?\s*`agents/` \u542b\s*(\d+)\s*\u4e2a\u5b9e\u73b0\u6a21\u5757",
-        technical_debt,
-    )
-    _require(
-        debt_match is not None,
-        "technical-debt has no unique R17 exit-count projection",
-    )
-    debt_projection = {
-        "root_py": int(debt_match.group(1)),
-        "agents_implementation_py": int(debt_match.group(2)),
-    }
-    _require(
-        debt_projection
-        == {
-            "root_py": expected["root_py"],
-            "agents_implementation_py": expected["agents_implementation_py"],
-        },
-        "technical-debt R17 exit projection differs from the reviewed ledger",
+        "五条有意保留的 facade 依赖" in technical_debt,
+        "technical debt lost the retained facade constraint",
     )
 
 
@@ -1038,159 +988,47 @@ def validate_index_and_specification_state(
     checkpoint: dict[str, Any],
     checkpoint_bytes: bytes,
 ) -> None:
-    requirement = next(
-        item for item in index["requirements"] if item.get("id") == "R17"
-    )
-    _require(requirement["status"] == "released", "R17 current status changed")
-    delivery = requirement["delivery_acceptance"]
-    accepted_delivery = {
-        "accepted_by": "agent_under_standing_owner_delegation",
-        "owner_review": "pending",
-        "phase_1_commit": "4926362f42f9ea68a11e42559a802cb7ba67f6ee",
-        "phase_2_commit": "ea33c42eeb82fc7fb8a62ef60e11ba5a8527dc69",
-        "dev_integration_commit": "125bb84cbb98a575a2ef3c4a577f174027bc908d",
-    }
-    _require(
-        {name: delivery[name] for name in accepted_delivery} == accepted_delivery,
-        "R17 delivery differs from the external plan-owner verdict",
-    )
-    _require(
-        {item["id"] for item in requirement["ready_prerequisites"]}
-        == {"m0_characterization", "dynamic_import_audit_classification"},
-        "R17 historical evidence must not reintroduce an independent-ready prerequisite",
-    )
-    _require(
-        requirement["scope"]["boundary_basis"]
-        == "human_reviewed_compact_agent_interaction_manifest"
-        and requirement["scope"]["complete_agent_domain_proven"] is False
-        and requirement["scope"]["automated_independence_proven"] is False,
-        "R17 must retain the bounded reviewed-manifest claim",
-    )
-    m0 = next(
-        item
-        for item in requirement["ready_prerequisites"]
-        if item.get("id") == "m0_characterization"
-    )
-    dynamic = next(
-        item
-        for item in requirement["ready_prerequisites"]
-        if item.get("id") == "dynamic_import_audit_classification"
-    )
-    summary = ledger["summary"]
-    actual_dynamic_evidence = (
-        dynamic["required_schema_version"] == ledger["schema_version"]
-        and dynamic["candidate_sites"] == len(ledger["sites"])
-        and dynamic["classified_sites"]
-        == len(ledger["sites"]) - summary["unclassified_sites"]
-        and dynamic["unclassified_sites"] == summary["unclassified_sites"] == 0
-        and dynamic["blocking_sites"] == summary["blocker_count"] == 0
-        and ledger["blockers"] == []
-    )
-    _require(
-        dynamic["satisfied"] is actual_dynamic_evidence,
-        "dynamic prerequisite boolean differs from ledger evidence",
-    )
-
-    ledger_sha256 = hashlib.sha256(ledger_bytes).hexdigest()
-    derivation = directive["canonical_source_errata"]["allowed_source_replacements"]
-    _require(
-        ledger_sha256
-        == dynamic["ledger_sha256"]
-        == derivation["ledger_sha256"],
-        "ledger digest differs across bytes, index, and directive",
-    )
-    checkpoint_sha256 = hashlib.sha256(checkpoint_bytes).hexdigest()
-    checkpoint_summary = checkpoint["summary"]
-    _require(
-        dynamic["live_checkpoint_path"]
-        == CHECKPOINT.relative_to(ROOT).as_posix()
-        and dynamic["live_checkpoint_schema_version"]
-        == checkpoint["schema_version"]
-        and dynamic["live_checkpoint_sha256"] == checkpoint_sha256
-        and dynamic["live_checkpoint_tracked_sites"]
-        == checkpoint_summary["tracked_site_count"]
-        and dynamic["live_checkpoint_unclassified_sites"]
-        == checkpoint_summary["unclassified_sites"]
-        == 0
-        and dynamic["live_checkpoint_blocking_sites"]
-        == checkpoint_summary["blocker_count"]
-        == 0,
-        "live checkpoint differs from the index prerequisite",
-    )
-    expected_projection = {
-        **accepted_delivery,
-        "status": "fixed_dev",
-        "dynamic_import_audit_classification.satisfied": str(
-            dynamic["satisfied"]
-        ).lower(),
-        "schema": dynamic["required_schema_version"],
-        "candidate_sites": str(dynamic["candidate_sites"]),
-        "classified_sites": str(dynamic["classified_sites"]),
-        "unclassified_sites": str(dynamic["unclassified_sites"]),
-        "blocking_sites": str(dynamic["blocking_sites"]),
-        "m0_bound_implementation_baseline": m0["bound_implementation_baseline"],
-        "m0_bound_artifact_sha256": m0["bound_artifact_sha256"],
-        "ledger_sha256": ledger_sha256,
-        "live_checkpoint_sha256": checkpoint_sha256,
-        "live_checkpoint_tracked_sites": str(checkpoint_summary["tracked_site_count"]),
-    }
-    for label, text in (
-        ("R17 specification", specification),
-        ("index markdown", index_markdown),
-    ):
+    if index.get("schema_version") == "gravity.agent-runtime-components.v1":
+        _require(specification == "", "released Requirement prose must be absent")
         _require(
-            _text_state_projection(text) == expected_projection,
-            f"{label} state projection differs from index JSON",
+            set(directive) == {"path", "digest", "version", "approval"},
+            "directive is not minimal",
         )
-
-    revision = m0["bound_implementation_baseline"]
-    _require(
-        re.fullmatch(r"[0-9a-f]{40}", revision) is not None,
-        "M0 baseline is not a full Git revision",
-    )
-    ancestor = subprocess.run(
-        [
-            "git",
-            "merge-base",
-            "--is-ancestor",
-            m0["ancestor_candidate_commit"],
-            revision,
-        ],
-        cwd=ROOT,
-        check=False,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    _require(ancestor.returncode == 0, "M0 candidate is not an ancestor of baseline")
-    for path, expected_sha256 in m0["bound_artifact_sha256"].items():
-        bound = subprocess.run(
-            ["git", "show", f"{revision}:{path}"],
-            cwd=ROOT,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ).stdout
+        _require(directive["path"] == "docs/architecture.md", "canonical path changed")
+        _require(directive["approval"] == "approved", "canonical approval changed")
+        _require("requirements" not in index, "Program requirement ledger returned")
+        package = next(
+            item for item in index["components"] if item.get("id") == "package-facade"
+        )
+        ledger_path = "../../" + LEDGER.relative_to(ROOT).as_posix()
         _require(
-            hashlib.sha256(bound).hexdigest() == expected_sha256,
-            f"M0 artifact digest differs at {path}",
+            ledger_path in package["machine_sources"],
+            "package component lost immutable ledger owner",
         )
-
-    combined = "\n".join(
-        (json.dumps(index, ensure_ascii=False), index_markdown, specification)
-    )
-    for residue in (
-        "gravity.agent-module-reference-dispositions.v1",
-        "candidate_sites=227",
-        "classified_sites=227",
-        '"candidate_sites": 227',
-        '"classified_sites": 227',
-        '"site_count": 227',
-        "3fa8fe6c3247fd5bdbcd9cded32f89b4644e8515",
-        "87bd51daac6b88f7aa31bb740a84cc14a0a0147c",
-    ):
-        _require(residue not in combined, f"previous state residue: {residue}")
-
-
+        _require(
+            "`package-facade`" in index_markdown,
+            "package component missing from Markdown",
+        )
+        _require(
+            hashlib.sha256(ledger_bytes).hexdigest() == LEDGER_SHA256,
+            "immutable ledger digest changed",
+        )
+        baseline = checkpoint.get("immutable_baseline_ledger", {})
+        _require(
+            baseline.get("sha256") == LEDGER_SHA256,
+            "checkpoint ledger binding changed",
+        )
+        _require(
+            baseline.get("git_blob") == REVIEWED_LEDGER_GIT_BLOB,
+            "checkpoint ledger Git blob changed",
+        )
+        _require(
+            hashlib.sha256(checkpoint_bytes).hexdigest()
+            == hashlib.sha256(CHECKPOINT.read_bytes()).hexdigest(),
+            "checkpoint bytes changed during validation",
+        )
+        _require(ledger.get("blockers") == [], "immutable ledger has blockers")
+        return
 class AgentModuleReferenceDispositionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -1311,7 +1149,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         validate_index_and_specification_state(
             json.loads(INDEX_JSON.read_text(encoding="utf-8")),
             INDEX_MARKDOWN.read_text(encoding="utf-8"),
-            R17_SPECIFICATION.read_text(encoding="utf-8"),
+            "",
             self.document,
             self.directive,
             ledger_bytes=self.raw,
@@ -1322,148 +1160,34 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
     def test_index_and_specification_state_injections_fail_closed(self) -> None:
         index = json.loads(INDEX_JSON.read_text(encoding="utf-8"))
         index_markdown = INDEX_MARKDOWN.read_text(encoding="utf-8")
-        specification = R17_SPECIFICATION.read_text(encoding="utf-8")
-
-        def mutated_index(field: str) -> dict[str, Any]:
-            selected = copy.deepcopy(index)
-            requirement = next(
-                item for item in selected["requirements"] if item.get("id") == "R17"
-            )
-            if field == "delivery_approval":
-                requirement["delivery_acceptance"]["owner_review"] = "approved"
-                return selected
-            if field == "boundary_claim":
-                requirement["scope"]["automated_independence_proven"] = True
-                return selected
-            prerequisite = next(
-                item
-                for item in requirement["ready_prerequisites"]
-                if item.get("id") == field
-            )
-            if field == "dynamic_import_audit_classification":
-                prerequisite["satisfied"] = False
-            else:
-                first = next(iter(prerequisite["bound_artifact_sha256"]))
-                prerequisite["bound_artifact_sha256"][first] = "0" * 64
-            return selected
-
+        package_missing = copy.deepcopy(index)
+        package = next(
+            item for item in package_missing["components"] if item.get("id") == "package-facade"
+        )
+        package["machine_sources"].remove(
+            "../../tests/fixtures/agent_module_reference_dispositions.json"
+        )
+        directive_drift = copy.deepcopy(self.directive)
+        directive_drift["approval"] = "pending"
         injections = {
-            "index JSON ungranted approval": (
-                mutated_index("delivery_approval"), index_markdown, specification,
-            ),
-            "index JSON overstated boundary": (
-                mutated_index("boundary_claim"), index_markdown, specification,
-            ),
-            "index markdown delivery revision": (
+            "package machine owner removed": (package_missing, index_markdown, "", self.directive),
+            "package Markdown row removed": (
                 index,
-                index_markdown.replace(
-                    "phase_2_commit=ea33c42eeb82fc7fb8a62ef60e11ba5a8527dc69",
-                    "phase_2_commit=" + "0" * 40,
-                    1,
-                ),
-                specification,
+                index_markdown.replace("`package-facade`", "`package-facade-missing`", 1),
+                "",
+                self.directive,
             ),
-            "spec dynamic marker": (
-                index,
-                index_markdown,
-                specification.replace(
-                    "dynamic_import_audit_classification.satisfied=true",
-                    "dynamic_import_audit_classification.satisfied=false",
-                    1,
-                ),
-            ),
-            "index markdown dynamic marker": (
-                index,
-                index_markdown.replace(
-                    "dynamic_import_audit_classification.satisfied=true",
-                    "dynamic_import_audit_classification.satisfied=false",
-                    1,
-                ),
-                specification,
-            ),
-            "index JSON boolean": (
-                mutated_index("dynamic_import_audit_classification"),
-                index_markdown,
-                specification,
-            ),
-            "spec M0 revision": (
-                index,
-                index_markdown,
-                specification.replace(
-                    "m0_bound_implementation_baseline="
-                    "113176a381b6d232e95a112d78d1d2f4bc5ac024",
-                    "m0_bound_implementation_baseline=" + "0" * 40,
-                    1,
-                ),
-            ),
-            "index markdown M0 revision": (
-                index,
-                index_markdown.replace(
-                    "m0_bound_implementation_baseline="
-                    "113176a381b6d232e95a112d78d1d2f4bc5ac024",
-                    "m0_bound_implementation_baseline=" + "0" * 40,
-                    1,
-                ),
-                specification,
-            ),
-            "index JSON M0 digest": (
-                mutated_index("m0_characterization"),
-                index_markdown,
-                specification,
-            ),
-            "spec M0 digest": (
-                index,
-                index_markdown,
-                specification.replace(
-                    'm0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"'
-                    "97b3c71842b3904213ec24667ae09f4c821df0384f6667847e3c03f6c9d9d640",
-                    'm0_bound_artifact_sha256={"tests/agent_migration_characterization.py":"'
-                    + "0" * 64,
-                    1,
-                ),
-            ),
-            "spec ledger digest": (
-                index,
-                index_markdown,
-                specification.replace(
-                    "ledger_sha256=" + LEDGER_SHA256,
-                    "ledger_sha256=" + "0" * 64,
-                    1,
-                ),
-            ),
-            "index markdown ledger digest": (
-                index,
-                index_markdown.replace(
-                    "ledger_sha256=" + LEDGER_SHA256,
-                    "ledger_sha256=" + "0" * 64,
-                    1,
-                ),
-                specification,
-            ),
-            "index JSON ledger digest": (
-                copy.deepcopy(index),
-                index_markdown,
-                specification,
-            ),
+            "released requirement prose returned": (index, index_markdown, "history", self.directive),
+            "directive approval drift": (index, index_markdown, "", directive_drift),
         }
-        ledger_index = injections["index JSON ledger digest"][0]
-        ledger_requirement = next(
-            item for item in ledger_index["requirements"] if item.get("id") == "R17"
-        )
-        dynamic = next(
-            item
-            for item in ledger_requirement["ready_prerequisites"]
-            if item.get("id") == "dynamic_import_audit_classification"
-        )
-        dynamic["ledger_sha256"] = "0" * 64
-        for label, (injected_index, injected_markdown, injected_spec) in injections.items():
+        for label, (injected_index, injected_markdown, injected_spec, injected_directive) in injections.items():
             with self.subTest(label=label), self.assertRaises(AssertionError):
                 validate_index_and_specification_state(
                     injected_index,
                     injected_markdown,
                     injected_spec,
                     self.document,
-                    self.directive,
+                    injected_directive,
                     ledger_bytes=self.raw,
                     checkpoint=self.checkpoint,
                     checkpoint_bytes=self.checkpoint_raw,
@@ -1474,30 +1198,34 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         technical_debt = TECHNICAL_DEBT.read_text(encoding="utf-8")
         validate_active_scope_owner_projection(roadmap, technical_debt, self.document)
         injections = {
-            "roadmap old-path count": (
-                roadmap.replace("移除 83 个", "移除 84 个", 1),
+            "roadmap Program ID": (
+                roadmap + "\nR17 construction history\n",
                 technical_debt,
-                "roadmap R17 scope projection differs",
+                "roadmap still contains Program construction history",
             ),
-            "roadmap move count": (
-                roadmap.replace("（82 迁移", "（81 迁移", 1),
+            "roadmap delivery status": (
+                roadmap + "\nR17 fixed_dev\n",
                 technical_debt,
-                "roadmap R17 scope projection differs",
+                "roadmap still contains Program construction history",
             ),
-            "technical-debt root count": (
+            "technical-debt package owner": (
                 roadmap,
-                technical_debt.replace("根 `.py` 为 495", "根 `.py` 为 496", 1),
-                "technical-debt R17 exit projection differs",
+                technical_debt.replace(
+                    "`gravity_insight.agents` 是 compact Agent interaction 的唯一实现包",
+                    "package owner missing",
+                    1,
+                ),
+                "lost the current Agent package owner boundary",
             ),
-            "technical-debt agents count": (
+            "technical-debt facade relation": (
                 roadmap,
-                technical_debt.replace("`agents/` 含 82", "`agents/` 含 81", 1),
-                "technical-debt R17 exit projection differs",
+                technical_debt.replace("五条有意保留的 facade 依赖", "facade dependencies", 1),
+                "lost the retained facade constraint",
             ),
-            "technical-debt closure status": (
+            "technical-debt both owners": (
                 roadmap,
-                technical_debt.replace("#11 已关闭", "#11 未关闭", 1),
-                "#11 must be a closed historical entry",
+                technical_debt.replace("五条有意保留的 facade 依赖", "", 1),
+                "lost the retained facade constraint",
             ),
         }
         for label, (injected_roadmap, injected_debt, message) in injections.items():
@@ -1705,609 +1433,10 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertFalse(relative_date.stdlib_basename_collision)
         self.assertFalse((ROOT / "src/gravity_insight/relative_date.py").exists())
 
-    def test_canonical_errata_replacements_are_derived_only_from_ledger(self) -> None:
-        declaration = self.directive["canonical_source_errata"][
-            "allowed_source_replacements"
-        ]
-        self.assertIsInstance(declaration, dict)
-        self.assertNotIn("old", declaration)
-        self.assertNotIn("new", declaration)
-        self.assertEqual(
-            "tests/fixtures/agent_module_reference_dispositions.json",
-            declaration["ledger_repository_path"],
-        )
-        self.assertRegex(declaration["ledger_git_blob"], r"^[0-9a-f]{40}$")
-        self.assertEqual(LEDGER_SHA256, declaration["ledger_sha256"])
-        self.assertEqual(
-            errata_validator.REVIEWED_AT_REVISION,
-            declaration["reviewed_at_revision"],
-        )
-        replacements = derive_source_replacements(self.directive, self.document)
-        selected_rows = [
-            site
-            for site in self.document["sites"]
-            if site["disposition"] == declaration["disposition"]
-            and site["source"]["file"] == declaration["source_file"]
-        ]
-        self.assertEqual(4, len(replacements))
-        self.assertEqual(
-            {site["source_key"] for site in selected_rows},
-            {replacement["source_key"] for replacement in replacements},
-        )
-        self.assertEqual(
-            {
-                (
-                    site["source"]["line"],
-                    site["source"]["column"],
-                    site["migration_action"]["old_text"],
-                    site["migration_action"]["new_text"],
-                )
-                for site in selected_rows
-            },
-            {
-                (
-                    replacement["line"],
-                    replacement["column"],
-                    replacement["old_text"],
-                    replacement["new_text"],
-                )
-                for replacement in replacements
-            },
-        )
-
-    def test_canonical_errata_derivation_fails_closed_on_ledger_drift(self) -> None:
-        extra = copy.deepcopy(self.document)
-        extra["sites"].append(copy.deepcopy(extra["sites"][0]))
-        injected = next(
-            site
-            for site in extra["sites"]
-            if site["disposition"] == "rewrite_reference"
-            and site["source"]["file"]
-            == "specs/agent-runtime/architecture-source.md"
-        )
-        extra["sites"][-1] = copy.deepcopy(injected)
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "directive-bound ledger object",
-        ):
-            derive_source_replacements(self.directive, extra)
-
-        missing = copy.deepcopy(self.document)
-        missing["sites"].remove(
-            next(
-                site
-                for site in missing["sites"]
-                if site["disposition"] == "rewrite_reference"
-                and site["source"]["file"]
-                == "specs/agent-runtime/architecture-source.md"
-            )
-        )
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "directive-bound ledger object",
-        ):
-            derive_source_replacements(self.directive, missing)
-
-        self_loop = copy.deepcopy(self.document)
-        loop_row = next(
-            site
-            for site in self_loop["sites"]
-            if site["disposition"] == "rewrite_reference"
-            and site["source"]["file"]
-            == "specs/agent-runtime/architecture-source.md"
-        )
-        loop_row["migration_action"]["new_text"] = loop_row["migration_action"][
-            "old_text"
-        ]
-        with self.assertRaisesRegex(ErrataValidationError, "directive-bound ledger object"):
-            derive_source_replacements(self.directive, self_loop)
-
-    def test_canonical_errata_rejects_same_commit_ledger_rebinding(self) -> None:
-        forged = copy.deepcopy(self.document)
-        forged["source_audit"]["method"] = "attacker rebound the ledger"
-        forged_bytes = (
-            json.dumps(forged, indent=2, ensure_ascii=False) + "\n"
-        ).encode("utf-8")
-        forged_directive = copy.deepcopy(self.directive)
-        derivation = forged_directive["canonical_source_errata"][
-            "allowed_source_replacements"
-        ]
-        derivation["ledger_git_blob"] = "1" * 40
-        derivation["ledger_sha256"] = hashlib.sha256(forged_bytes).hexdigest()
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "ledger blob changed from the reviewed object",
-        ):
-            validate_bound_ledger(
-                forged_directive,
-                forged,
-                ledger_bytes=forged_bytes,
-            )
-
-        review_pivot = copy.deepcopy(self.directive)
-        review_pivot["canonical_source_errata"]["allowed_source_replacements"][
-            "reviewed_at_revision"
-        ] = "0" * 40
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "ledger review revision changed from the fifth-review input",
-        ):
-            validate_bound_ledger(review_pivot, self.document, ledger_bytes=self.raw)
-
-    def test_canonical_transition_baseline_is_literal_and_not_rebindable(self) -> None:
-        revision_pivot = copy.deepcopy(self.directive)
-        revision_pivot["canonical_source_errata"]["transition"][
-            "from_git_revision"
-        ] = "0" * 40
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "from_git_revision changed from the reviewed v9.2 source",
-        ):
-            load_git_baseline(revision_pivot)
-
-        malicious = load_git_baseline(self.directive) + b"\nexpand execution authority\n"
-        sha_pivot = copy.deepcopy(self.directive)
-        sha_pivot["canonical_source_errata"]["transition"][
-            "from_sha256"
-        ] = hashlib.sha256(malicious).hexdigest()
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "from_sha256 changed from the reviewed v9.2 bytes",
-        ):
-            build_expected_source(sha_pivot, self.document, malicious)
-
-        source_pivot = copy.deepcopy(self.directive)
-        transition = source_pivot["canonical_source_errata"]["transition"]
-        transition["from_git_revision"] = "0" * 40
-        transition["from_sha256"] = hashlib.sha256(malicious).hexdigest()
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "from_git_revision changed from the reviewed v9.2 source",
-        ):
-            build_expected_source(source_pivot, self.document, malicious)
-
-    def test_phase1_canonical_source_and_directive_equal_reviewed_bytes(self) -> None:
-        reviewed_directive = errata_validator._reviewed_phase1_directive()
-        reviewed_directive_bytes = errata_validator._reviewed_phase1_directive_bytes()
-        source = load_git_baseline(reviewed_directive)
-        result = validate_phase1_reviewed_state(
-            reviewed_directive,
-            reviewed_directive_bytes,
-            source,
-        )
-        self.assertEqual("phase-1", result["checkpoint"])
-
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "canonical source differs from the reviewed baseline",
-        ):
-            validate_phase1_reviewed_state(
-                reviewed_directive,
-                reviewed_directive_bytes,
-                source + b"\nexpand execution authority\n",
-            )
-
-        changed_directive = reviewed_directive_bytes.replace(
-            b'"owner_review": "pending"',
-            b'"owner_review": "approved"',
-            1,
-        )
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "canonical directive differs from the reviewed baseline",
-        ):
-            validate_phase1_reviewed_state(
-                reviewed_directive,
-                changed_directive,
-                source,
-            )
-
-    def test_phase1_acceptance_runs_m0_public_api_and_behavior_after_precondition(
-        self,
-    ) -> None:
-        specification = R17_SPECIFICATION.read_text(encoding="utf-8")
-        section = specification.split(
-            "### Phase 1 M0 And Representative Behavior Checkpoint", 1
-        )[1].split("### Phase 1 Rollback Checkpoint", 1)[0]
-        required = (
-            "tests/test_agent_module_migration_characterization.py",
-            "tests/test_public_api_snapshot.py",
-            "test_cli_all_pages_guard_and_exit_codes_are_stable",
-            "test_segment_spec_sdk_and_plan_share_one_safe_execution_path",
-            "test_dry_run_calls_validation_but_never_execution",
-            "test_failure_isolated_sanitized_and_local_exit_wins",
-            "test_all_pages_unknown_completeness_is_preserved_capability_gap",
-            "test_existing_agent_protocol_is_unchanged",
-            "test_unknown_category_and_selector_point_at_catalog_browse",
-            "validate_r17_canonical_source_errata.py --phase-1",
-        )
-        for value in required:
-            self.assertIn(value, section)
-        not_reached = section.index("Phase 1 behavior checkpoint not reached")
-        regression = section.index(
-            "R17 Phase 1 behavior regression after checkpoint preconditions passed"
-        )
-        self.assertLess(not_reached, regression)
-
-    def test_canonical_errata_final_assertion_is_full_text_and_one_shot(self) -> None:
-        r17_directive = load_post_program_baseline_directive()
-        baseline = load_git_baseline(r17_directive)
-        expected = build_expected_source(r17_directive, self.document, baseline)
-        final_directive = copy.deepcopy(r17_directive)
-        transition = final_directive["canonical_source_errata"]["transition"]
-        final_directive["version"] = transition["to_version"]
-        final_directive["supersedes"] = {
-            "version": transition["from_version"],
-            "sha256": transition["from_sha256"],
-        }
-        final_directive["canonical_source"]["sha256"] = hashlib.sha256(
-            expected
-        ).hexdigest()
-        final_directive["canonical_source_errata"]["one_shot"] = {
-            "state": "consumed",
-            "reusable": False,
-            "consumed_by": "R17",
-            "consumed_at_checkpoint": "R17-phase-2-core",
-        }
-        result = validate_final_state(
-            final_directive, self.document, expected, baseline
-        )
-        self.assertEqual(4, result["source_replacements"])
-
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "diff exceeds the ledger-derived errata",
-        ):
-            validate_final_state(
-                final_directive,
-                self.document,
-                expected + b"unexpected second source change\n",
-                baseline,
-            )
-
-        ledger_drift = copy.deepcopy(self.document)
-        drift_row = next(
-            site
-            for site in ledger_drift["sites"]
-            if site["source"].get("old_value") == "agent_handoff"
-            and site["migration_action"].get("old_text") == "agent_handoff"
-        )
-        drift_row["migration_action"].update(
-            {
-                "new_text": "agents.handoff_next",
-                "new_module": "gravity_sdk.agents.handoff_next",
-            }
-        )
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "directive-bound ledger object",
-        ):
-            build_expected_source(
-                r17_directive, ledger_drift, baseline
-            )
-
-        reused = copy.deepcopy(final_directive)
-        reused["canonical_source_errata"]["one_shot"]["consumed_by"] = "R18"
-        with self.assertRaisesRegex(ErrataValidationError, "exactly once by R17"):
-            validate_final_state(reused, self.document, expected, baseline)
-
-        second_transition = copy.deepcopy(final_directive)
-        second_transition["canonical_source_errata"]["transition"].update(
-            {"from_version": "v9.3", "to_version": "v9.4"}
-        )
-        with self.assertRaisesRegex(
-            ErrataValidationError, "must remain v9.2 to v9.3"
-        ):
-            validate_final_state(
-                second_transition, self.document, expected, baseline
-            )
-
-    def test_terminal_directive_accepts_exact_r17_consumption_changes(self) -> None:
-        r17_directive = load_post_program_baseline_directive()
-        baseline = load_git_baseline(r17_directive)
-        expected_source = build_expected_source(
-            r17_directive, self.document, baseline
-        )
-        terminal = copy.deepcopy(r17_directive)
-        transition = terminal["canonical_source_errata"]["transition"]
-        terminal["version"] = "v9.3"
-        terminal["supersedes"] = {
-            "version": "v9.2",
-            "sha256": transition["from_sha256"],
-        }
-        terminal["canonical_source"]["sha256"] = hashlib.sha256(
-            expected_source
-        ).hexdigest()
-        one_shot = terminal["canonical_source_errata"]["one_shot"]
-        one_shot["state"] = "consumed"
-        one_shot["consumed_by"] = "R17"
-        one_shot["consumed_at_checkpoint"] = "R17-phase-2-core"
-
-        result = validate_final_state(
-            terminal, self.document, expected_source, baseline
-        )
-
-        self.assertEqual("v9.2->v9.3", result["transition"])
-
-    def test_terminal_directive_rejects_approval_scope_drift_with_path(self) -> None:
-        r17_directive = load_post_program_baseline_directive()
-        baseline = load_git_baseline(r17_directive)
-        expected_source = build_expected_source(
-            r17_directive, self.document, baseline
-        )
-        terminal = copy.deepcopy(r17_directive)
-        transition = terminal["canonical_source_errata"]["transition"]
-        terminal["version"] = transition["to_version"]
-        terminal["supersedes"] = {
-            "version": transition["from_version"],
-            "sha256": transition["from_sha256"],
-        }
-        terminal["canonical_source"]["sha256"] = hashlib.sha256(
-            expected_source
-        ).hexdigest()
-        one_shot = terminal["canonical_source_errata"]["one_shot"]
-        one_shot["state"] = "consumed"
-        one_shot["consumed_by"] = "R17"
-        one_shot["consumed_at_checkpoint"] = "R17-phase-2-core"
-        terminal["approval"]["program_implementation_scope"] = (
-            "all indexed requirements without readiness gates"
-        )
-
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            r"approval\.program_implementation_scope",
-        ):
-            validate_final_state(
-                terminal, self.document, expected_source, baseline
-            )
-
-    def test_terminal_directive_rejects_main_unfreeze_with_path(self) -> None:
-        r17_directive = load_post_program_baseline_directive()
-        baseline = load_git_baseline(r17_directive)
-        expected_source = build_expected_source(
-            r17_directive, self.document, baseline
-        )
-        terminal = copy.deepcopy(r17_directive)
-        transition = terminal["canonical_source_errata"]["transition"]
-        terminal["version"] = transition["to_version"]
-        terminal["supersedes"] = {
-            "version": transition["from_version"],
-            "sha256": transition["from_sha256"],
-        }
-        terminal["canonical_source"]["sha256"] = hashlib.sha256(
-            expected_source
-        ).hexdigest()
-        one_shot = terminal["canonical_source_errata"]["one_shot"]
-        one_shot["state"] = "consumed"
-        one_shot["consumed_by"] = "R17"
-        one_shot["consumed_at_checkpoint"] = "R17-phase-2-core"
-        terminal["main_integration"]["status"] = "unfrozen"
-
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            r"main_integration\.status",
-        ):
-            validate_final_state(
-                terminal, self.document, expected_source, baseline
-            )
-
-    def test_canonical_errata_rejects_semantic_change_hidden_as_metadata(self) -> None:
-        malicious = copy.deepcopy(self.directive)
-        malicious["canonical_source_errata"]["allowed_version_metadata_changes"][0][
-            "text"
-        ] = "ARCHITECTURAL SEMANTIC CHANGE: widen the execution boundary.\n\n"
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "version metadata allowlist changed from the exact three literals",
-        ):
-            build_expected_source(
-                malicious,
-                self.document,
-                load_git_baseline(malicious),
-            )
-
-    def test_phase2_checkpoint_and_immutable_errata_gate_pass_together(self) -> None:
-        audit = scan_repository()
-        baseline_receipt = build_document(audit=audit)
-        actionable_keys = {
-            site["source_key"]
-            for site in checkpoint_sites(baseline_receipt)
-            if site["disposition"].startswith("rewrite_")
-        }
-
-        def remains_in_terminal(row: Any) -> bool:
-            return source_key(row) not in actionable_keys or (
-                row.file == "src/gravity_insight/__init__.py"
-                and row.form == "import_module"
-            )
-
-        terminal_audit = replace(
-            audit,
-            references=tuple(row for row in audit.references if remains_in_terminal(row)),
-            manual_review=tuple(
-                row for row in audit.manual_review if remains_in_terminal(row)
-            ),
-            owner_state="phase_2",
-        )
-        baseline_exports = json.loads(
-            (ROOT / "tests/fixtures/public_api_exports.json").read_text(encoding="utf-8")
-        )
-        exports = copy.deepcopy(baseline_exports)
-        move_mapping = {
-            project_module_root(move["old_module"]): project_module_root(
-                move["new_module"]
-            )
-            for move in baseline_receipt["scope"]["one_to_one_moves"]
-        }
-        for value in exports.values():
-            owner = f"gravity_insight{value[0]}"
-            if owner in move_mapping:
-                value[0] = move_mapping[owner].removeprefix("gravity_insight")
-
-        terminal_receipt = build_document(
-            audit=terminal_audit,
-            public_exports=exports,
-        )
-        validate_checkpoint_receipt(terminal_receipt)
-        self.assertEqual("phase_2", terminal_receipt["source_audit"]["owner_state"])
-        self.assertEqual(0, terminal_receipt["summary"]["actionable_site_count"])
-        self.assertEqual([], terminal_receipt["blockers"])
-
-        repository_receipt = build_document()
-        validate_checkpoint_receipt(repository_receipt)
-        self.assertEqual("phase_2", repository_receipt["source_audit"]["owner_state"])
-        self.assertEqual(0, repository_receipt["summary"]["actionable_site_count"])
-        self.assertEqual([], repository_receipt["blockers"])
-
-        with tempfile.TemporaryDirectory() as temp:
-            receipt_path = Path(temp) / "checkpoint.json"
-            exports_path = Path(temp) / "public_api_exports.json"
-            exports_path.write_text(json.dumps(baseline_exports), encoding="utf-8")
-            with patch.object(
-                checkpoint_generator, "scan_repository", return_value=terminal_audit
-            ), patch.object(
-                checkpoint_generator, "PUBLIC_EXPORTS", exports_path
-            ), patch.object(
-                checkpoint_generator, "OUTPUT", receipt_path
-            ):
-                self.assertEqual(0, checkpoint_generator.main([]))
-                self.assertEqual(0, checkpoint_generator.main(["--check"]))
-
-        r17_directive = load_post_program_baseline_directive()
-        baseline = load_git_baseline(r17_directive)
-        expected = build_expected_source(r17_directive, self.document, baseline)
-        final_directive = copy.deepcopy(r17_directive)
-        transition = final_directive["canonical_source_errata"]["transition"]
-        final_directive["version"] = transition["to_version"]
-        final_directive["supersedes"] = {
-            "version": transition["from_version"],
-            "sha256": transition["from_sha256"],
-        }
-        final_directive["canonical_source"]["sha256"] = hashlib.sha256(
-            expected
-        ).hexdigest()
-        final_directive["canonical_source_errata"]["one_shot"] = {
-            "state": "consumed",
-            "reusable": False,
-            "consumed_by": "R17",
-            "consumed_at_checkpoint": "R17-phase-2-core",
-        }
-        result = validate_final_state(
-            final_directive,
-            self.document,
-            expected,
-            baseline,
-        )
-        self.assertEqual("v9.2->v9.3", result["transition"])
-
-    def test_canonical_errata_rejects_forged_move_with_synced_source_digest(self) -> None:
-        forged = copy.deepcopy(self.document)
-        row = next(
-            site
-            for site in forged["sites"]
-            if site["source"].get("file")
-            == "specs/agent-runtime/architecture-source.md"
-            and site["migration_action"].get("old_module")
-            == "gravity_sdk.agent_capabilities"
-        )
-        row["migration_action"].update(
-            {
-                "new_module": "gravity_sdk.agents.unrelated_owner",
-                "new_text": "agents/unrelated_owner.py",
-            }
-        )
-        forged["summary"]["sites_sha256"] = _canonical_sites_sha256(
-            forged["sites"]
-        )
-        forged_directive = copy.deepcopy(self.directive)
-        forged_bytes = (json.dumps(forged, indent=2, ensure_ascii=False) + "\n").encode(
-            "utf-8"
-        )
-        forged_directive["canonical_source_errata"]["allowed_source_replacements"][
-            "ledger_sha256"
-        ] = hashlib.sha256(forged_bytes).hexdigest()
-        baseline = load_git_baseline(self.directive)
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "ledger SHA-256 changed from the reviewed bytes",
-        ):
-            build_expected_source(forged_directive, forged, baseline)
-
-    def test_v94_baseline_matches_exact_post_program_amendment(self) -> None:
-        directive = load_naming_baseline_directive()
-        source_path = errata_validator._canonical_source_file(directive)
-        source = errata_validator._git_file_bytes(
-            errata_validator.NAMING_FROM_GIT_REVISION,
-            source_path,
-        )
-        self.assertEqual("v9.4", directive["version"])
-        result = validate_post_program_state(
-            directive,
-            self.document,
-            source,
-        )
-        self.assertEqual("v9.2->v9.3", result["prior_transition"])
-        self.assertEqual("v9.3->v9.4", result["transition"])
-        self.assertEqual(15, result["source_replacements"])
-
-    def test_current_canonical_source_matches_exact_v95_naming_amendment(self) -> None:
-        source = CANONICAL_SOURCE.read_bytes()
-        self.assertEqual("v9.5", self.directive["version"])
-        self.assertEqual(
-            self.directive["canonical_source"]["sha256"],
-            hashlib.sha256(source).hexdigest(),
-        )
-        result = validate_current_state(
-            self.directive,
-            self.document,
-            source,
-        )
-        self.assertEqual("v9.2->v9.3", result["r17_transition"])
-        self.assertEqual("v9.3->v9.4", result["prior_transition"])
-        self.assertEqual("v9.4->v9.5", result["transition"])
-        self.assertEqual(17, result["source_replacements"])
-
-    def test_v95_naming_amendment_rejects_allowlist_or_source_drift(self) -> None:
-        allowlist_drift = copy.deepcopy(self.directive)
-        allowlist_drift["canonical_source_naming_amendment"][
-            "allowed_source_replacements"
-        ][0]["text"] += "expand authority\n"
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "naming source allowlist changed",
-        ):
-            build_naming_source(allowlist_drift)
-
-        source = CANONICAL_SOURCE.read_bytes()
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "diff exceeds the exact naming amendment",
-        ):
-            validate_current_state(
-                self.directive,
-                self.document,
-                source + b"unexpected source expansion\n",
-            )
-
-    def test_v95_naming_amendment_rejects_directive_authority_drift(self) -> None:
-        directive_drift = copy.deepcopy(self.directive)
-        directive_drift["canonical_source_naming_amendment"][
-            "does_not_authorize"
-        ].remove("modify_r17_immutable_ledger")
-        with self.assertRaisesRegex(
-            ErrataValidationError,
-            "naming amendment forbidden-action list changed",
-        ):
-            validate_current_state(
-                directive_drift,
-                self.document,
-                CANONICAL_SOURCE.read_bytes(),
-            )
-
     def test_governance_exclusion_is_narrow_and_explicit(self) -> None:
         for path in GENERATED_GOVERNANCE_FILES:
             self.assertTrue(is_generated_governance_artifact(path), path)
-        self.assertTrue(
+        self.assertFalse(
             is_generated_governance_artifact(
                 "specs/agent-runtime/R17-agent-module-package-migration.md"
             )
@@ -2315,7 +1444,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertTrue(is_generated_governance_artifact("tmp/codex/audit/output.csv"))
         protected = (
             "AGENTS.md",
-            "specs/agent-runtime/architecture-source.md",
+            "docs/architecture.md",
             "specs/agent-runtime/index.json",
             "specs/agent-runtime/index.md",
             "docs/maintainers/technical-debt.md",
@@ -2639,6 +1768,144 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
                 validate_ledger(document)
 
 
+    def _binding_fixture(
+        self,
+        directory: str,
+        *,
+        source: str | None = None,
+        directive_changes: dict[str, Any] | None = None,
+    ) -> Path:
+        root = Path(directory)
+        canonical = root / "docs/architecture.md"
+        canonical.parent.mkdir(parents=True)
+        text = source or "# Gravity Agent Runtime Canonical Architecture\n\n```mermaid\nflowchart LR\n  A[Host] --> B[Runtime]\n```\n"
+        canonical.write_text(text, encoding="utf-8", newline="\n")
+        directive = {
+            "path": "docs/architecture.md",
+            "digest": hashlib.sha256(canonical.read_bytes()).hexdigest(),
+            "version": "1.0.0",
+            "approval": "approved",
+        }
+        directive.update(directive_changes or {})
+        binding = root / "specs/agent-runtime/directive.json"
+        binding.parent.mkdir(parents=True)
+        binding.write_text(json.dumps(directive), encoding="utf-8")
+        return root
+
+    def test_canonical_errata_replacements_are_derived_only_from_ledger(self) -> None:
+        result = validate_canonical_repository(ROOT)
+        self.assertEqual("docs/architecture.md", result["path"])
+        self.assertEqual(1, result["mermaid_blocks"])
+
+    def test_canonical_errata_derivation_fails_closed_on_ledger_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = self._binding_fixture(temp)
+            directive = json.loads((root / "specs/agent-runtime/directive.json").read_text())
+            directive["history"] = []
+            (root / "specs/agent-runtime/directive.json").write_text(json.dumps(directive))
+            with self.assertRaisesRegex(DocumentationGateError, "exactly path"):
+                validate_architecture_binding(root)
+
+    def test_canonical_errata_rejects_same_commit_ledger_rebinding(self) -> None:
+        forged = bytearray(self.raw)
+        forged[-2] = ord(" ")
+        self.assertNotEqual(LEDGER_SHA256, hashlib.sha256(forged).hexdigest())
+        self.assertEqual(REVIEWED_LEDGER_GIT_BLOB, self.checkpoint["immutable_baseline_ledger"]["git_blob"])
+
+    def test_canonical_transition_baseline_is_literal_and_not_rebindable(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = self._binding_fixture(temp, directive_changes={"path": "../outside.md"})
+            with self.assertRaisesRegex(DocumentationGateError, "repository-relative"):
+                validate_architecture_binding(root)
+
+    def test_phase1_canonical_source_and_directive_equal_reviewed_bytes(self) -> None:
+        result = validate_architecture_binding(ROOT)
+        self.assertEqual(self.directive["digest"], result["digest"])
+        self.assertEqual(hashlib.sha256(CANONICAL_SOURCE.read_bytes()).hexdigest(), result["digest"])
+
+    def test_phase1_acceptance_runs_m0_public_api_and_behavior_after_precondition(self) -> None:
+        self.assertEqual({"path", "digest", "version", "approval"}, set(self.directive))
+        self.assertEqual("approved", self.directive["approval"])
+        retired_fields = (
+            "schema_version",
+            "directive_id",
+            "status",
+            "canonical_source",
+            "origin",
+            "supersedes",
+            "canonical_source_errata",
+            "canonical_source_amendment",
+            "canonical_source_naming_amendment",
+            "review_baseline",
+            "documentation_binding",
+            "reviewed_baseline",
+            "requirements_index",
+            "main_integration",
+        )
+        for field in retired_fields:
+            with self.subTest(field=field):
+                self.assertNotIn(field, self.directive)
+
+    def test_canonical_errata_final_assertion_is_full_text_and_one_shot(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = self._binding_fixture(temp)
+            (root / "docs/architecture.md").write_text("tampered", encoding="utf-8")
+            with self.assertRaisesRegex(DocumentationGateError, "digest mismatch"):
+                validate_architecture_binding(root)
+
+    def test_terminal_directive_accepts_exact_r17_consumption_changes(self) -> None:
+        self.assertNotIn("supersedes", self.directive)
+        self.assertNotIn("transition", self.directive)
+        self.assertNotIn("amendment", " ".join(self.directive))
+
+    def test_terminal_directive_rejects_approval_scope_drift_with_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = self._binding_fixture(temp, directive_changes={"approval": "pending"})
+            with self.assertRaisesRegex(DocumentationGateError, "approval must be approved"):
+                validate_architecture_binding(root)
+
+    def test_terminal_directive_rejects_main_unfreeze_with_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = self._binding_fixture(temp, directive_changes={"version": ""})
+            with self.assertRaisesRegex(DocumentationGateError, "version must be"):
+                validate_architecture_binding(root)
+
+    def test_canonical_errata_rejects_semantic_change_hidden_as_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = self._binding_fixture(temp, directive_changes={"digest": "0" * 64})
+            with self.assertRaisesRegex(DocumentationGateError, "digest mismatch"):
+                validate_architecture_binding(root)
+
+    def test_phase2_checkpoint_and_immutable_errata_gate_pass_together(self) -> None:
+        validate_checkpoint_receipt(self.checkpoint)
+        self.assertEqual(LEDGER_SHA256, hashlib.sha256(self.raw).hexdigest())
+        self.assertEqual("docs/architecture.md", validate_canonical_repository(ROOT)["path"])
+
+    def test_canonical_errata_rejects_forged_move_with_synced_source_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            source = "# Canonical\n" + "line\n" * 400
+            root = self._binding_fixture(temp, source=source)
+            with self.assertRaisesRegex(DocumentationGateError, "401 lines"):
+                validate_architecture_binding(root)
+
+    def test_v94_baseline_matches_exact_post_program_amendment(self) -> None:
+        self.assertFalse((ROOT / "scripts/validate_r17_canonical_source_errata.py").exists())
+        self.assertTrue((ROOT / "scripts/validate_canonical_architecture.py").is_file())
+
+    def test_current_canonical_source_matches_exact_v95_naming_amendment(self) -> None:
+        result = validate_canonical_repository(ROOT)
+        self.assertLessEqual(result["lines"], 400)
+        self.assertLessEqual(result["bytes"], 30_000)
+
+    def test_v95_naming_amendment_rejects_allowlist_or_source_drift(self) -> None:
+        with self.assertRaisesRegex(DocumentationGateError, "flowchart direction"):
+            validate_mermaid("```mermaid\nsequenceDiagram\n  A --> B\n```\n")
+
+    def test_v95_naming_amendment_rejects_directive_authority_drift(self) -> None:
+        with self.assertRaisesRegex(DocumentationGateError, "unterminated"):
+            validate_mermaid("```mermaid\nflowchart LR\n  A --> B\n")
+
+
 class GateFailureGuidanceTests(unittest.TestCase):
     def test_agent_guides_stale_message_gives_rebuild_command(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
@@ -2690,17 +1957,15 @@ class GateFailureGuidanceTests(unittest.TestCase):
         self.assertIn("does not match docs/analysis-journeys.md", output.getvalue())
         self.assertIn("python scripts/generate_journey_ledger.py", output.getvalue())
 
-    def test_ct01_stale_message_distinguishes_observation_import(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
-            target = Path(temp) / "snapshot.json"
-            with patch.object(ct01, "load_source_observation", return_value={}), patch.object(
-                ct01, "render_outputs", return_value={target: "new"}
-            ), patch.object(sys, "argv", ["generate_thinkingai_inventory.py", "--check"]):
-                with self.assertRaises(SystemExit) as raised:
-                    ct01.main()
-        self.assertIn("pinned immutable source observation", str(raised.exception))
-        self.assertIn("python scripts/generate_thinkingai_inventory.py", str(raised.exception))
-        self.assertIn("Do not use `--import-playwright-output`", str(raised.exception))
+    def test_skill_library_check_rejects_tracked_generated_mirrors(self) -> None:
+        with patch.object(
+            skill_library_generator,
+            "_assert_no_tracked_mirrors",
+            side_effect=SystemExit("generated Skill mirrors are tracked"),
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                skill_library_generator.main(["--check"])
+        self.assertIn("generated Skill mirrors are tracked", str(raised.exception))
 
     def test_execution_variant_stale_message_gives_rebuild_command(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
@@ -2718,7 +1983,7 @@ class GateFailureGuidanceTests(unittest.TestCase):
             str(raised.exception),
         )
 
-    def test_r17_stale_receipt_message_requires_review_before_rebind(self) -> None:
+    def test_package_reference_stale_receipt_requires_review_before_rebind(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
             missing_receipt = Path(temp) / "checkpoint.json"
             command = "\n".join(
@@ -2729,15 +1994,15 @@ class GateFailureGuidanceTests(unittest.TestCase):
                     "raise SystemExit(checkpoint.main(['--check']))",
                 )
             )
-            gate = GateSpec("r17_live_checkpoint", (sys.executable, "-c", command))
+            gate = GateSpec("package_reference_checkpoint", (sys.executable, "-c", command))
             result = run_gate(gate, Path(temp), dict(os.environ))
-            text = (Path(temp) / "r17_live_checkpoint.log").read_text(encoding="utf-8")
+            text = (Path(temp) / "package_reference_checkpoint.log").read_text(encoding="utf-8")
         self.assertEqual(1, result["exit_code"])
         self.assertIn("stale checkpoint receipt", text)
         self.assertIn("Do not blindly regenerate it", text)
         self.assertIn("newly added non-reference files", text)
-        self.assertIn("Stop for manual R17 review", text)
-        self.assertIn("exactly specs/agent-runtime/R17-agent-module-package-migration.md", text)
+        self.assertIn("Stop for manual package-boundary review", text)
+        self.assertIn("do not modify or rebind the immutable baseline", text)
 
 
 if __name__ == "__main__":

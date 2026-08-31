@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-player-progression",
+      "player-intent"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "仅在关卡身份、进入、完成和流失时间窗均已明确后，评估有序的进度观测结果。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "用于事件和队列语义已经评审的有界进度范围。",
+    "context_boundary": "返回完成数较少的关卡不一定更难，也不自动构成因果关系；缺少曝光和资格数据时不得作出这类断言。",
+    "steps": [
+      "解析关卡身份、曝光、进入、完成、重试和流失时间窗语义。",
+      "对受治理的返回进度步骤应用已评审的漏斗诊断 Operator。",
+      "报告返回的流失点、已排除队列和假设，不归因于玩家意图或设计因果关系。"
+    ],
+    "title": "关卡进度流失诊断"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [
+    "operator://gravity/funnel-diagnosis@1"
+  ],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/5de5c887426e65d3",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "analysis.query.spec:event"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/level-progression@1"
+  ],
+  "skill_id": "level-churn-diagnosis",
+  "specification": "specified",
+  "summary": "依据项目定义的关卡与流失契约，定位返回进度中的流失。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

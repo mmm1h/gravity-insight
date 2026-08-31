@@ -223,7 +223,7 @@ class AdaptiveGovernorCapacityTests(unittest.TestCase):
         self.assertFalse(called)
 
         diagnostics = raised.exception.diagnostics
-        self.assertEqual("upstream_capacity", diagnostics["failure_class"])
+        self.assertEqual("http_server_error", diagnostics["failure_class"])
         self.assertEqual("example.invalid", diagnostics["lane"]["host"])
         self.assertEqual(30_000, diagnostics["cooldown_remaining_ms"])
         self.assertEqual(
@@ -254,11 +254,35 @@ class AdaptiveGovernorCapacityTests(unittest.TestCase):
             raise TimeoutError("transport detail must not be rendered")
 
         cases = (
-            ("transport_error", transport_failure, None, "TimeoutError"),
-            ("rate_limited", lambda: _Response(429), 429, None),
-            ("server_error", lambda: _Response(503), 503, None),
+            (
+                "transport_error",
+                transport_failure,
+                None,
+                "TimeoutError",
+                "transport_failure",
+            ),
+            (
+                "rate_limited",
+                lambda: _Response(429),
+                429,
+                None,
+                "upstream_capacity",
+            ),
+            (
+                "server_error",
+                lambda: _Response(503),
+                503,
+                None,
+                "http_server_error",
+            ),
         )
-        for status_class, fake_transport, http_status, exception_type in cases:
+        for (
+            status_class,
+            fake_transport,
+            http_status,
+            exception_type,
+            failure_class,
+        ) in cases:
             with self.subTest(status_class=status_class):
                 governor = AdaptiveRequestGovernor(mode=ADAPTIVE, clock=_FakeClock())
                 for attempt in range(1, 4):
@@ -273,6 +297,7 @@ class AdaptiveGovernorCapacityTests(unittest.TestCase):
                     governor.execute(_request(attempt=4), lambda: _Response())
 
                 error = raised.exception
+                self.assertEqual(failure_class, error.diagnostics["failure_class"])
                 failures = error.diagnostics["failures"]
                 self.assertEqual(
                     [1, 2, 3], [item["failure_index"] for item in failures]
@@ -342,7 +367,7 @@ class AdaptiveGovernorCapacityTests(unittest.TestCase):
 
 
 class AdaptiveGovernorWaitingTests(unittest.TestCase):
-    def test_queue_full_timeout_and_cancellation_leave_no_leaked_lease(self) -> None:
+    def test_backpressure_is_local_governor_capacity_not_upstream_capacity_and_leaks_no_lease(self) -> None:
         governor = AdaptiveRequestGovernor(
             mode=STATIC,
             total_capacity=2,
@@ -371,6 +396,15 @@ class AdaptiveGovernorWaitingTests(unittest.TestCase):
             with self.assertRaises(GovernorRequestError) as full:
                 governor.execute(_request(), lambda: _Response())
             self.assertEqual("GOVERNOR_BACKPRESSURE", full.exception.code)
+            self.assertEqual(
+                "local_governor_capacity",
+                full.exception.diagnostics["failure_class"],
+            )
+            self.assertNotEqual(
+                "upstream_capacity", full.exception.diagnostics["failure_class"]
+            )
+            self.assertEqual("local", full.exception.to_error_detail().category)
+            self.assertTrue(full.exception.to_error_detail().retryable)
             cancellation.set()
             with self.assertRaises(GovernorRequestError) as stopped:
                 cancelled.result(timeout=5)

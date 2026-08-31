@@ -107,8 +107,7 @@ Draft selector 只消费 `uncovered_read`，因此不会再把弱 POST 变成 re
 `static_read_candidate`。总路由和 accounted 均保持 987，没有逐条手改或静态升级证据。
 
 2026-08-14 的历史 12 条静态抽样仍为 2 写 / 10 真读 / 0 不确定；它只证明路径词元不能裁决 POST，
-不证明多数条目是写。逐项工作记录仍位于忽略目录 `tmp/codex/probe-read-gate/sampling.md`，不作为当前
-分类台账。
+不证明多数条目是写。逐项采样记录是可丢弃的临时工件，不作为当前分类台账。
 
 ## 更新仓库数据
 

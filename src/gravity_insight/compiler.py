@@ -16,6 +16,7 @@ from gravity_insight.models import (
     OperationSpec,
     load_operation_manifest,
 )
+from gravity_insight.governance.vendor_neutrality import check_compilation_products
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -519,19 +520,13 @@ class ContractCompiler:
         self.provenance_path.write_bytes(result.provenance)
 
     def _check_result(self, result: CompilationResult) -> None:
-        drift: list[str] = []
-        expected_names = set(result.manifests)
-        actual_names = {path.name for path in self.manifest_root.glob("*.json")}
-        for name, payload in result.manifests.items():
-            path = self.manifest_root / name
-            if not path.is_file() or path.read_bytes() != payload:
-                drift.append(str(path))
-        for name in sorted(actual_names - expected_names):
-            drift.append(f"unexpected:{self.manifest_root / name}")
-        if not self.provenance_path.is_file() or self.provenance_path.read_bytes() != result.provenance:
-            drift.append(str(self.provenance_path))
-        if drift:
-            raise ContractDriftError("compiled products are stale: " + ", ".join(drift))
+        check_compilation_products(
+            self.manifest_root,
+            self.provenance_path,
+            result,
+            ROOT,
+            ContractDriftError,
+        )
 
     def _direct_provenance(
         self, source_path: Path, operation: Mapping[str, Any]

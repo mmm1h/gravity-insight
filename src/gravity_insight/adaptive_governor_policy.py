@@ -48,8 +48,10 @@ def circuit_rejection(
         "operation_class": _safe_label(request.operation_class),
         "profile": _safe_label(request.profile),
     }
+    failure_class, classification_reason = _circuit_failure_class(failures)
     diagnostics = {
-        "failure_class": "upstream_capacity",
+        "failure_class": failure_class,
+        "classification_reason": classification_reason,
         "lane": identity,
         "failures": failures,
         "cooldown_remaining_ms": cooldown_remaining_ms,
@@ -65,6 +67,49 @@ def circuit_rejection(
         "the reported status classes and upstream service health."
     )
     return reason, diagnostics, next_action
+
+
+def local_governor_rejection(
+    request: Any, code: str, reason: str
+) -> dict[str, Any]:
+    failure_class = (
+        "local_governor_capacity"
+        if code == "GOVERNOR_BACKPRESSURE"
+        else "unclassified"
+    )
+    diagnostics = {
+        "failure_class": failure_class,
+        "classification_reason": (
+            "process_governor_capacity_denied_before_network"
+            if failure_class == "local_governor_capacity"
+            else "non_capacity_governor_rejection"
+        ),
+        "source_code": _safe_label(code),
+        "denial_reason": _safe_label(reason.replace(" ", "_")),
+        "lane": {
+            "host": _safe_host(request.target_host),
+            "host_key": _safe_hash(request.host_key),
+            "operation_class": _safe_label(request.operation_class),
+            "profile": _safe_label(request.profile),
+        },
+    }
+    return diagnostics
+
+
+def _circuit_failure_class(
+    failures: list[dict[str, Any]],
+) -> tuple[str, str]:
+    observed = {str(item.get("status_class", "unknown")) for item in failures}
+    if observed == {"rate_limited"}:
+        return "upstream_capacity", "circuit_opened_by_http_429"
+    if observed == {"server_error"}:
+        return "http_server_error", "circuit_opened_by_http_5xx"
+    if observed == {"transport_error"}:
+        return "transport_failure", "circuit_opened_by_transport_failures"
+    return "unclassified", (
+        "circuit_opened_by_mixed_or_unknown_signals:"
+        + ",".join(sorted(observed))
+    )
 
 
 def record_lane_outcome(
@@ -191,6 +236,7 @@ __all__ = [
     "CAPACITY_FAILURES",
     "capacity_failure_observation",
     "circuit_rejection",
+    "local_governor_rejection",
     "record_lane_outcome",
     "reset_lane_circuits",
 ]
