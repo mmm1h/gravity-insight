@@ -265,21 +265,19 @@ def check_installed_wheel_consumer(
         site.mkdir(parents=True)
         consumer.mkdir()
         wheel = build_or_reuse_offline_wheel(ROOT, wheelhouse)
-        installed = _run(
-            [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--disable-pip-version-check",
-                "--no-index",
-                "--no-deps",
-                "--target",
-                str(site),
-                str(wheel),
-            ],
-            cwd=temporary,
-        )
+        install_command = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--disable-pip-version-check",
+            "--no-index",
+            "--no-deps",
+        ]
+        if sys.version_info >= (3, 13):
+            install_command.append("--ignore-requires-python")
+        install_command.extend(["--target", str(site), str(wheel)])
+        installed = _run(install_command, cwd=temporary)
         if installed.returncode != 0:
             raise ConsumerCheckError(
                 f"offline wheel install failed: {installed.stdout}\n{installed.stderr}"
