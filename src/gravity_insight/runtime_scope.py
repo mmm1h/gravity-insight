@@ -64,6 +64,23 @@ class RuntimeScopeKey:
             "location", self.resolved_env_path_hash, self.workspace_fingerprint
         )
 
+    @property
+    def storage_fingerprint(self) -> str:
+        """Stable private-storage key for one configured account.
+
+        Runtime and receipt isolation includes the authenticated principal and
+        credential generation. Persistent metadata must survive the first login
+        discovering those values, while still changing when the configured
+        account changes.
+        """
+
+        return _digest(
+            "storage",
+            self.resolved_env_path_hash,
+            self.account_fingerprint,
+            self.workspace_fingerprint,
+        )
+
     def __repr__(self) -> str:
         return "<RuntimeScopeKey redacted>"
 
@@ -106,6 +123,8 @@ def runtime_scope_key(
     ambient_values = {} if resolved_isolated else _credential_values(ambient)
     file_values = _credential_values(read_env_file(selected))
     account_values = {**file_values, **ambient_values}
+    file_username = file_values.get("GRAVITY_USERNAME", "").strip()
+    ambient_username = ambient_values.get("GRAVITY_USERNAME", "").strip()
     username = account_values.get("GRAVITY_USERNAME", "").strip()
     session_values = _bound_session_values(selected, username)
     principal = _first_value(
@@ -114,7 +133,9 @@ def runtime_scope_key(
         file_values.get(PRINCIPAL_ID_KEY),
     )
     path_hash = _digest("env-path", selected.as_posix().casefold())
-    account = _digest("account", path_hash, username)
+    account = _digest(
+        "account", path_hash, file_username, ambient_username
+    )
     workspace = _digest(
         "workspace",
         Path(workspace_root).expanduser().resolve().as_posix().casefold()
@@ -134,9 +155,9 @@ def runtime_scope_key(
 
 
 def env_isolation_key(env_path: str | Path) -> str:
-    """Return the identity and generation digest used by disk caches."""
+    """Return the stable account digest used by persistent disk caches."""
 
-    return runtime_scope_key(env_path).fingerprint
+    return runtime_scope_key(env_path).storage_fingerprint
 
 
 def gravity_insight_cache_root() -> Path:
@@ -218,7 +239,7 @@ def public_scoped_path(path: str | Path, *, explicit: bool) -> str:
 
 
 def _required_scope(value: str | None) -> str:
-    return str(value).strip() if value else runtime_scope_key().fingerprint
+    return str(value).strip() if value else runtime_scope_key().storage_fingerprint
 
 
 def _credential_values(values: Mapping[str, str]) -> dict[str, str]:

@@ -125,6 +125,27 @@ class SharedRuntimeIsolationTests(unittest.TestCase):
         self.assertNotEqual(first_scope.credential_generation, second_scope.credential_generation)
         self.assertIsNot(first, second)
 
+    def test_first_login_does_not_move_persistent_account_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            path = _write_account(Path(raw), "account.env", "fixture-account")
+            before_scope = runtime_scope_key(path)
+            before_key = env_isolation_key(path)
+            session_path(path).write_text(
+                "GRAVITY_AUTH_TOKEN=fixture-token\n"
+                "GRAVITY_AUTH_UPDATED_AT=fixture-generation\n"
+                "GRAVITY_PRINCIPAL_ID=fixture-principal\n"
+                "GRAVITY_SESSION_USERNAME=fixture-account\n",
+                encoding="utf-8",
+            )
+            after_scope = runtime_scope_key(path)
+            after_key = env_isolation_key(path)
+
+        self.assertNotEqual(before_scope.fingerprint, after_scope.fingerprint)
+        self.assertEqual(before_key, after_key)
+        self.assertEqual(
+            metadata_catalog_path(before_key), metadata_catalog_path(after_key)
+        )
+
     def test_scope_material_and_fingerprint_stay_out_of_public_output(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
