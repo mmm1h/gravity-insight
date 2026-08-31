@@ -19,6 +19,7 @@ from .operator_model_cli import add_operator_model_commands
 from .trusted_pack_cli import add_trusted_pack_commands
 from .action_cli import add_action_commands
 from .experiment_cli import add_experiment_commands
+from .evidence_cli import add_evidence_commands
 
 
 def add_root_commands(
@@ -42,6 +43,7 @@ def add_root_commands(
     add_trusted_pack_commands(commands)
     add_action_commands(commands, add_input)
     add_experiment_commands(commands, add_input)
+    add_evidence_commands(commands)
 
 
 def dispatch_root_command(args: Any) -> Any:
