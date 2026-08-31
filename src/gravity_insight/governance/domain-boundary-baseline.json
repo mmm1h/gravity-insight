@@ -507,6 +507,39 @@
     "gravity_insight.workspace_semantic_context",
     "gravity_insight.workspace_sql_product_install"
   ],
-  "root_module_exemptions": [],
+  "root_module_exemptions": [
+    {
+      "module": "gravity_insight.documentation_status",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.evidence_cli",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.evidence_common",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.journey_certification",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.maturity",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.maturity_dimensions_core",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.maturity_dimensions_ops",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.runtime_health",
+      "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    }
+  ],
   "schema_version": "gravity.domain-boundary-baseline.v1"
 }
