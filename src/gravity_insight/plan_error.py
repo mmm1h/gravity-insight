@@ -80,6 +80,38 @@ def safe_detail(
     )
 
 
+def exception_detail(exc: Exception, *, stage: str, cause: str) -> ErrorDetail:
+    """Classify deterministic post-execution incompatibilities without values."""
+
+    contract_stages = {
+        "output_projection",
+        "output_validation",
+        "output_budget",
+        "partial_result_validation",
+        "result_envelope",
+    }
+    if stage in contract_stages and isinstance(exc, (KeyError, TypeError, ValueError)):
+        selected_cause = (
+            "key_error"
+            if isinstance(exc, KeyError)
+            else "type_error"
+            if isinstance(exc, TypeError)
+            else "value_error"
+        )
+        return safe_detail(
+            "PLAN_ADAPTER_CONTRACT_INCOMPATIBLE",
+            ErrorCategory.LOCAL.value,
+            stage=stage,
+            cause=selected_cause,
+        )
+    return safe_detail(
+        "PLAN_ADAPTER_EXCEPTION",
+        ErrorCategory.LOCAL.value,
+        stage=stage,
+        cause=cause,
+    )
+
+
 def item_limit_detail() -> ErrorDetail:
     return safe_detail(
         ErrorCode.PAGINATION_LIMIT.value,
@@ -135,6 +167,7 @@ def normalized_category(value: Any) -> str:
 __all__ = [
     "category_action",
     "detail_exit_code",
+    "exception_detail",
     "item_limit_detail",
     "normalized_category",
     "safe_detail",
