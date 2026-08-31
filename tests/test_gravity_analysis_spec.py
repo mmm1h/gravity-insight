@@ -4,6 +4,7 @@ import unittest
 from typing import Any, Mapping
 from unittest.mock import patch
 
+from gravity_insight._field_policy_shared import ANALYSIS_TIME_GROUPS
 from gravity_insight.analysis_spec import analysis_query_spec_schema, compile_query_spec
 from gravity_insight.errors import InputValidationError
 from gravity_insight.sdk import GravitySDK
@@ -70,6 +71,13 @@ class AnalysisQuerySpecTests(unittest.TestCase):
         self.assertTrue(
             schema["kind_schemas"]["event"]["properties"]["query_id"]["pattern"]
         )
+        grains_by_kind = {
+            kind: set(schema["kind_schemas"][kind]["properties"]["time_grain"]["enum"])
+            for kind in ("event", "funnel", "retention", "scatter")
+        }
+        self.assertEqual(ANALYSIS_TIME_GROUPS - {"hour"}, grains_by_kind["event"])
+        for kind in ("funnel", "retention", "scatter"):
+            self.assertEqual(ANALYSIS_TIME_GROUPS, grains_by_kind[kind])
         funnel_notes = schema["kind_schemas"]["funnel"]["notes"]
         self.assertFalse(funnel_notes["returns_conversion_rate"])
         self.assertIn("step_n / step_1", funnel_notes["rate_denominators"]["first_step"])
@@ -182,6 +190,62 @@ class AnalysisQuerySpecTests(unittest.TestCase):
                 },
             )
         self.assertEqual([], sdk.insight.validated)
+
+    def test_event_hour_fails_before_dispatch_and_daily_control_still_succeeds(self) -> None:
+        insight = FakeInsight()
+        sdk = GravitySDK(insight=insight)
+        spec = {
+            "app": "101",
+            "start": "2026-08-01",
+            "end": "2026-08-01",
+            "time_grain": "hour",
+            "return_hierarchy_list": True,
+            "steps": [
+                {
+                    "event": "$MPLaunch",
+                    "metric": {
+                        "field": "PresetUserCount",
+                        "aggregation": "PresetUserCount",
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaises(InputValidationError) as caught:
+            sdk.analysis_query("event", spec)
+
+        detail = caught.exception.to_error_detail(
+            operation_id="analysis.event.query"
+        ).to_dict()
+        self.assertEqual(
+            ("INPUT_INVALID", "caller", "time_grain", False),
+            (
+                detail["code"],
+                detail["category"],
+                detail["field"],
+                detail["retryable"],
+            ),
+        )
+        self.assertIn("allowed values", detail["message"])
+        self.assertIn("Change only `time_grain` to `day`", detail["next_action"])
+        self.assertIn("No SDK path has verified", detail["next_action"])
+        self.assertIn("do not retry", detail["next_action"])
+        self.assertNotIn("concurrency", detail["next_action"])
+        self.assertNotIn("$MPLaunch", repr(detail))
+        self.assertNotIn("101", repr(detail))
+        self.assertEqual(([], []), (insight.validated, insight.reads))
+
+        daily = {**spec, "time_grain": "day"}
+        result = sdk.analysis_query("event", daily)
+        self.assertEqual((True, "success"), (result["ok"], result["status"]))
+        self.assertEqual(1, len(insight.validated))
+        self.assertEqual(1, len(insight.reads))
+        operation_id, inputs = insight.reads[0]
+        self.assertEqual("analysis.event.query", operation_id)
+        self.assertEqual(
+            [{"type": "default_event", "field": "create_time", "group_by": "day"}],
+            inputs["group_by_list"],
+        )
 
     def test_property_acquisition_id_group_fails_before_client_validation(self) -> None:
         sdk = GravitySDK(insight=FakeInsight())

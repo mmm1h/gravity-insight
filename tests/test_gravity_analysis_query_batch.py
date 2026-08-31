@@ -483,6 +483,37 @@ class CountingInsight:
             raise AssertionError(message) from exc
 
 class AnalysisQueryBatchTests(unittest.TestCase):
+    def test_event_hour_batch_fails_before_transport_or_adaptive_retry(self) -> None:
+        spec = _issue_24_spec(0)
+        spec["time_grain"] = "hour"
+        payload = {
+            "schema_version": BATCH_SCHEMA_VERSION,
+            "queries": [
+                {
+                    "id": "hourly_event",
+                    "kind": "event",
+                    "app": "demo",
+                    "spec": spec,
+                    "limits": {"max_items": 200},
+                }
+            ],
+        }
+        sdk, transport = _transport_sdk(_event_result())
+
+        with (
+            patch("gravity_insight.analysis_query_batch_retry.time.sleep") as sleeper,
+            self.assertRaises(InputValidationError) as caught,
+        ):
+            sdk.analysis_queries(payload, max_workers=4)
+
+        detail = caught.exception.to_error_detail().to_dict()
+        self.assertEqual(
+            ("INPUT_INVALID", "time_grain", False),
+            (detail["code"], detail["field"], detail["retryable"]),
+        )
+        self.assertEqual([], transport.calls)
+        sleeper.assert_not_called()
+
     def test_31_component_batch_matches_scalar_wire_shape_and_global_budget(self) -> None:
         scalar_sdk, scalar_transport = _transport_sdk(_event_result())
         scalar_sdk.analysis_query("event", _issue_24_spec(0), app="demo")

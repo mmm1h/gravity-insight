@@ -15,8 +15,15 @@ from ._field_policy_analysis import validate_analysis_shape
 from .actionable_error_values import actual_value, allowed_values
 from .analysis_spec_preview import redact_analysis_values
 from .analysis_execution_support import reject_unsupported_property_groups
-from .analysis_spec_schema import ANALYSIS_SPEC_KINDS, analysis_query_spec_schema
-from .analysis_spec_controls import apply_scatter_zone, funnel_window, retention_controls
+from .analysis_spec_schema import (
+    ANALYSIS_SPEC_KINDS, ANALYSIS_TIME_GROUPS_BY_KIND, analysis_query_spec_schema,
+)
+from .analysis_spec_controls import (
+    apply_scatter_zone,
+    funnel_window,
+    retention_controls,
+    validate_time_grain,
+)
 from .analysis_spec_validation import (
     boolean as _boolean,
     bounded_string as _bounded_string,
@@ -140,6 +147,12 @@ def compile_query_spec(
     _validate_date_overrides(selected_kind, start, end)
     values = _mapping(spec, "spec")
     _reject_unknown_fields(selected_kind, values)
+    if selected_kind != "property":
+        validate_time_grain(
+            selected_kind,
+            values.get("time_grain"),
+            ANALYSIS_TIME_GROUPS_BY_KIND[selected_kind],
+        )
     selected_workspace = _workspace(workspace)
     app_id = _resolve_app(selected_workspace, app if app is not None else values.get("app"))
     query_id = _bounded_string(values.get("query_id") or new_analysis_query_id(), "query_id")
