@@ -33,6 +33,13 @@ _PROVIDER_ROOT = Path(__file__).resolve().parent / "contracts" / "context-provid
 _PROVIDER_URI = re.compile(
     r"^context-provider://[a-z0-9.-]+/[a-z0-9./-]+@(?P<version>[1-9][0-9]*)$"
 )
+AUTHORITY_ORDER = (
+    "project_authoritative",
+    "canonical",
+    "supporting",
+    "declared_intent",
+    "unverified",
+)
 
 
 class ContextContractError(AgentRuntimeContractError):
@@ -41,6 +48,14 @@ class ContextContractError(AgentRuntimeContractError):
     def __init__(self, reason_code: str, message: str) -> None:
         self.reason_code = reason_code
         super().__init__(f"{reason_code}: {message}")
+
+
+def clamp_context_authority(authority: str, ceiling: str) -> str:
+    """Return the weaker of an Item's claim and its locked Provider ceiling."""
+
+    return AUTHORITY_ORDER[
+        max(AUTHORITY_ORDER.index(authority), AUTHORITY_ORDER.index(ceiling))
+    ]
 
 
 def compile_context_provider(value: Mapping[str, Any]) -> dict[str, Any]:
@@ -85,10 +100,10 @@ def compile_context_requirement(value: Mapping[str, Any]) -> dict[str, Any]:
         _normalized_path(item["path"])
         _time_range(item["valid_time"], "valid_time")
         _date_range(item["effective_range"], "effective_range")
-        if item["authority"] == "unverified" and item["required"]:
+        if item["authority"] in {"declared_intent", "unverified"} and item["required"]:
             raise ContextContractError(
                 "CONTEXT_REQUIREMENT_INVALID",
-                "Required Context cannot use unverified authority",
+                "Required Context cannot use hypothesis-only or unverified authority",
             )
     freshness = contract["freshness_policy"]
     if freshness["as_of"] is not None:
@@ -234,7 +249,11 @@ def _expected_pack_readiness(
     )
     authorities = {item["authority"] for item in items}
     ceiling = next(
-        (name for name in ("canonical", "supporting", "unverified") if name in authorities),
+        (
+            name
+            for name in AUTHORITY_ORDER
+            if name in authorities
+        ),
         "none",
     )
     required = set(pack["authority_policy"]["required"])
@@ -530,6 +549,7 @@ def _object(value: Any, reason: str, label: str) -> dict[str, Any]:
 
 
 __all__ = [
+    "AUTHORITY_ORDER",
     "ContextContractError",
     "ITEM_SCHEMA_VERSION",
     "PACK_SCHEMA_VERSION",
@@ -538,6 +558,7 @@ __all__ = [
     "REQUIREMENT_SCHEMA_VERSION",
     "compile_context_provider",
     "compile_context_requirement",
+    "clamp_context_authority",
     "context_item_reference",
     "context_pack_digest",
     "date_range_contains",
