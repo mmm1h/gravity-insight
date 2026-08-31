@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import unittest
 from collections import Counter
 from copy import deepcopy
@@ -28,6 +29,21 @@ def _planned_production_evidence_targets() -> set[str]:
     plan = PAGINATION_EVIDENCE_PLAN.read_text(encoding="utf-8")
     collectable = plan.split("## 永久 unknown", maxsplit=1)[0]
     return set(re.findall(r"^\| `([^`]+)` \|", collectable, re.MULTILINE))
+
+
+def _reproducible_evidence_source(root: Path, source: str) -> bool:
+    path = source.split("#", 1)[0]
+    if not path.startswith("git:"):
+        return (root / path).is_file()
+    match = re.fullmatch(r"git:([0-9a-f]{40}):([^:]+)", path)
+    if match is None or ".." in Path(match.group(2)).parts:
+        return False
+    return subprocess.run(
+        ["git", "cat-file", "-e", f"{match.group(1)}:{match.group(2)}"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    ).returncode == 0
 
 
 class PaginationContractAuditTests(unittest.TestCase):
@@ -230,10 +246,12 @@ class PaginationContractAuditTests(unittest.TestCase):
                 in {"no_page_info_in_observed_response", "shape_verified"}
             ):
                 self.assertEqual("production", item["evidence_level"])
-                self.assertTrue(all(
-                    (root / source.split("#", 1)[0]).is_file()
-                    for source in item["evidence_sources"]
-                ))
+                self.assertTrue(
+                    all(
+                        _reproducible_evidence_source(root, source)
+                        for source in item["evidence_sources"]
+                    )
+                )
 
         weakened_audit = deepcopy(audit)
         default_value = next(

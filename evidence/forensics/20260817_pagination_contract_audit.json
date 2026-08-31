@@ -746,7 +746,7 @@
       "declared_pagination": "none",
       "evidence_level": "production",
       "evidence_sources": [
-        "docs/archive/decisions/2026-08/realtime-event-profile-shape.md"
+        "git:5895d927f1504cb54d97027b1a1753612c2b70d8:docs/archive/decisions/2026-08/realtime-event-profile-shape.md"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.realtime_event.list",
