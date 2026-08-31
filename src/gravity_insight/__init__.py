@@ -14,6 +14,7 @@ from typing import Any
 
 from ._version import __version__
 
+# PUBLIC_API_EXPORTS_GENERATED_START
 _EXPORTS = {
     "DEFAULT_METADATA_TTL_SECONDS": (".cache", "DEFAULT_METADATA_TTL_SECONDS"),
     "MetadataCache": (".cache", "MetadataCache"),
@@ -30,88 +31,79 @@ _EXPORTS = {
     "CoreSkillRuntime": (".core_skill_runtime", "CoreSkillRuntime"),
     "RuntimeSkillResolver": (".runtime_skill_resolver", "RuntimeSkillResolver"),
     "PreparedAnalysisPlanService": (
-        ".prepared_analysis_plan", "PreparedAnalysisPlanService"
+        ".prepared_analysis_plan",
+        "PreparedAnalysisPlanService",
     ),
     "ActionPlanService": (".action_plan", "ActionPlanService"),
-    "ExperimentHandoffService": (
-        ".experiment_handoff", "ExperimentHandoffService"
-    ),
-    "AnalysisArtifactService": (
-        ".analysis_artifact", "AnalysisArtifactService"
-    ),
+    "ExperimentHandoffService": (".experiment_handoff", "ExperimentHandoffService"),
+    "AnalysisArtifactService": (".analysis_artifact", "AnalysisArtifactService"),
     "GovernorObservationService": (
-        ".governor_observation", "GovernorObservationService"
+        ".governor_observation",
+        "GovernorObservationService",
     ),
     "validate_governor_observation": (
-        ".governor_observation", "validate_governor_observation"
+        ".governor_observation",
+        "validate_governor_observation",
     ),
     "validate_governor_observation_snapshot": (
-        ".governor_observation", "validate_governor_observation_snapshot"
+        ".governor_observation",
+        "validate_governor_observation_snapshot",
     ),
     "validate_adaptive_governor_snapshot": (
-        ".adaptive_governor", "validate_adaptive_governor_snapshot"
+        ".adaptive_governor",
+        "validate_adaptive_governor_snapshot",
     ),
-    "ExecutionVariantService": (
-        ".execution_variant", "ExecutionVariantService"
-    ),
-    "SqlExplorerService": (
-        ".sql_explorer", "SqlExplorerService"
-    ),
-    "validate_execution_variant": (
-        ".execution_variant", "validate_execution_variant"
-    ),
+    "ExecutionVariantService": (".execution_variant", "ExecutionVariantService"),
+    "SqlExplorerService": (".sql_explorer", "SqlExplorerService"),
+    "validate_execution_variant": (".execution_variant", "validate_execution_variant"),
     "validate_execution_variant_characterization": (
-        ".execution_variant", "validate_execution_variant_characterization"
+        ".execution_variant",
+        "validate_execution_variant_characterization",
     ),
     "validate_execution_variant_selection": (
-        ".execution_variant", "validate_execution_variant_selection"
+        ".execution_variant",
+        "validate_execution_variant_selection",
     ),
-    "validate_sql_explorer_request": (
-        ".sql_explorer", "validate_sql_explorer_request"
-    ),
-    "validate_sql_explorer_result": (
-        ".sql_explorer", "validate_sql_explorer_result"
-    ),
+    "validate_sql_explorer_request": (".sql_explorer", "validate_sql_explorer_request"),
+    "validate_sql_explorer_result": (".sql_explorer", "validate_sql_explorer_result"),
     "validate_sql_explorer_promotion": (
-        ".sql_explorer", "validate_sql_explorer_promotion"
+        ".sql_explorer",
+        "validate_sql_explorer_promotion",
     ),
-    "compile_analysis_artifact": (
-        ".analysis_artifact", "compile_analysis_artifact"
-    ),
+    "compile_analysis_artifact": (".analysis_artifact", "compile_analysis_artifact"),
     "render_analysis_artifact_markdown": (
-        ".analysis_artifact_markdown", "render_analysis_artifact_markdown"
+        ".analysis_artifact_markdown",
+        "render_analysis_artifact_markdown",
     ),
-    "validate_analysis_artifact": (
-        ".analysis_artifact", "validate_analysis_artifact"
-    ),
+    "validate_analysis_artifact": (".analysis_artifact", "validate_analysis_artifact"),
     "verify_analysis_artifact_source": (
-        ".analysis_artifact", "verify_analysis_artifact_source"
+        ".analysis_artifact",
+        "verify_analysis_artifact_source",
     ),
-    "compile_analysis_result": (
-        ".analysis_result_contract", "compile_analysis_result"
-    ),
-    "compile_execution_snapshot": (
-        ".execution_snapshot", "compile_execution_snapshot"
-    ),
+    "compile_analysis_result": (".analysis_result_contract", "compile_analysis_result"),
+    "compile_execution_snapshot": (".execution_snapshot", "compile_execution_snapshot"),
     "compile_project_skill_overlay": (
-        ".project_skill_overlay", "compile_project_skill_overlay"
+        ".project_skill_overlay",
+        "compile_project_skill_overlay",
     ),
-    "CapabilityTrustService": (
-        ".capability_trust", "CapabilityTrustService"
-    ),
+    "CapabilityTrustService": (".capability_trust", "CapabilityTrustService"),
     "LocalSkillResolver": (".skill_package", "LocalSkillResolver"),
     "CallableProviderTransport": (
-        ".provider_rpc_transport", "CallableProviderTransport"
+        ".provider_rpc_transport",
+        "CallableProviderTransport",
     ),
     "ExternalContextProvider": (
-        ".external_context_provider", "ExternalContextProvider"
+        ".external_context_provider",
+        "ExternalContextProvider",
     ),
     "ExternalContextBindingResolver": (
-        ".external_context_binding", "ExternalContextBindingResolver"
+        ".external_context_binding",
+        "ExternalContextBindingResolver",
     ),
     "ProviderRpcGuard": (".provider_rpc_guard", "ProviderRpcGuard"),
     "subprocess_context_provider": (
-        ".external_context_provider", "subprocess_context_provider"
+        ".external_context_provider",
+        "subprocess_context_provider",
     ),
     "SkillHubClient": (".skill_hub_client", "SkillHubClient"),
     "TrustedPackHubClient": (".trusted_pack_hub", "TrustedPackHubClient"),
@@ -150,21 +142,23 @@ _EXPORTS = {
     "execute_host_plan": (".host_plan_execution", "execute_host_plan"),
     "host_source": (".host_effects", "host_source"),
     "host_effect_schema": (".host_effects", "host_effect_schema"),
-    "normalized_host_plan_request": (
-        ".host_effects", "normalized_host_plan_request"
-    ),
+    "normalized_host_plan_request": (".host_effects", "normalized_host_plan_request"),
     "host_product_catalog": (".agents.host_catalog", "host_product_catalog"),
     "host_product_selection_schema": (
-        ".agents.host_catalog", "host_product_selection_schema"
+        ".agents.host_catalog",
+        "host_product_selection_schema",
     ),
     "assess_host_product_selection": (
-        ".agents.host_selection", "assess_host_product_selection"
+        ".agents.host_selection",
+        "assess_host_product_selection",
     ),
     "compile_host_product_selection": (
-        ".agents.host_selection", "compile_host_product_selection"
+        ".agents.host_selection",
+        "compile_host_product_selection",
     ),
     "resolve_host_product_selection": (
-        ".agents.host_selection", "resolve_host_product_selection"
+        ".agents.host_selection",
+        "resolve_host_product_selection",
     ),
     "PlanRecipe": (".workspace_plan_recipe", "PlanRecipe"),
     "PlanRecipeError": (".workspace_plan_recipe", "PlanRecipeError"),
@@ -179,19 +173,21 @@ _EXPORTS = {
     "AnalysisSpec": (".analysis_primitives", "AnalysisSpec"),
     "AnalysisStep": (".analysis_primitives", "AnalysisStep"),
     "analysis_query_batch_schema": (
-        ".analysis_query_batch", "analysis_query_batch_schema"
+        ".analysis_query_batch",
+        "analysis_query_batch_schema",
     ),
     "analysis_query_multi_app_schema": (
-        ".analysis_query_multi_app", "analysis_query_multi_app_schema"
+        ".analysis_query_multi_app",
+        "analysis_query_multi_app_schema",
     ),
     "execute_analysis_query_batch": (
-        ".analysis_query_batch", "execute_analysis_query_batch"
+        ".analysis_query_batch",
+        "execute_analysis_query_batch",
     ),
-    "run_analysis_query_batch": (
-        ".analysis_query_batch", "run_analysis_query_batch"
-    ),
+    "run_analysis_query_batch": (".analysis_query_batch", "run_analysis_query_batch"),
     "validate_analysis_query_batch": (
-        ".analysis_query_batch", "validate_analysis_query_batch"
+        ".analysis_query_batch",
+        "validate_analysis_query_batch",
     ),
     "CompiledSegmentSpec": (".segment_spec", "CompiledSegmentSpec"),
     "compile_segment_spec": (".segment_spec", "compile_segment_spec"),
@@ -204,63 +200,64 @@ _EXPORTS = {
     "fetch_material_asset": (".material_asset", "fetch_material_asset"),
     "custom_audiences": (".custom_audience", "custom_audiences"),
     "dashboard_snapshot": (".dashboard_snapshot", "dashboard_snapshot"),
-    "promotion_performance": (
-        ".promotion_performance", "promotion_performance"
-    ),
+    "promotion_performance": (".promotion_performance", "promotion_performance"),
     "promotion_performance_input_schema": (
-        ".promotion_performance", "promotion_performance_input_schema"
+        ".promotion_performance",
+        "promotion_performance_input_schema",
     ),
     "bilibili_account_performance": (
-        ".bilibili_account_performance", "bilibili_account_performance"
+        ".bilibili_account_performance",
+        "bilibili_account_performance",
     ),
     "validate_bilibili_account_request": (
-        ".bilibili_account_performance", "validate_bilibili_account_request"
+        ".bilibili_account_performance",
+        "validate_bilibili_account_request",
     ),
     "order_split_trace": (".order_trace", "order_split_trace"),
     "validate_order_split_trace_request": (
-        ".order_trace", "validate_order_split_trace_request"
+        ".order_trace",
+        "validate_order_split_trace_request",
     ),
     "order_directory": (".order_directory", "order_directory"),
     "validate_order_directory_request": (
-        ".order_directory", "validate_order_directory_request"
+        ".order_directory",
+        "validate_order_directory_request",
     ),
     "monetization_detail": (".monetization_detail", "monetization_detail"),
     "validate_monetization_detail_request": (
-        ".monetization_detail", "validate_monetization_detail_request"
+        ".monetization_detail",
+        "validate_monetization_detail_request",
     ),
     "compile_saved_analysis_definition": (
-        ".saved_analysis", "compile_saved_analysis_definition"
+        ".saved_analysis",
+        "compile_saved_analysis_definition",
     ),
     "execute_saved_analysis": (".saved_analysis", "execute_saved_analysis"),
     "inspect_saved_analysis": (".saved_analysis", "inspect_saved_analysis"),
     "list_saved_analyses": (".saved_analysis", "list_saved_analyses"),
     "prepare_saved_analysis": (".saved_analysis", "prepare_saved_analysis"),
     "resolve_saved_analysis": (".saved_analysis", "resolve_saved_analysis"),
+    "AuthenticationError": (".error_types", "AuthenticationError"),
+    "CredentialError": (".error_types", "CredentialError"),
+    "InputValidationError": (".error_types", "InputValidationError"),
+    "ManifestError": (".error_types", "ManifestError"),
+    "PaginationError": (".error_types", "PaginationError"),
+    "ParentRequiredError": (".error_types", "ParentRequiredError"),
+    "PermissionUnavailableError": (".error_types", "PermissionUnavailableError"),
+    "PolicyViolation": (".error_types", "PolicyViolation"),
+    "SemanticRejectedError": (".error_types", "SemanticRejectedError"),
+    "TransportError": (".error_types", "TransportError"),
+    "UnknownOperationError": (".error_types", "UnknownOperationError"),
+    "UpstreamContradictedRequestError": (
+        ".error_types",
+        "UpstreamContradictedRequestError",
+    ),
+    "UpstreamError": (".error_types", "UpstreamError"),
+    "GravityExportError": (".error_sql", "GravityExportError"),
+    "SqlResponseError": (".error_sql", "SqlResponseError"),
+    "SqlValidationError": (".error_sql", "SqlValidationError"),
 }
-
-for _sdk_error_name in (
-    "AuthenticationError",
-    "CredentialError",
-    "InputValidationError",
-    "ManifestError",
-    "PaginationError",
-    "ParentRequiredError",
-    "PermissionUnavailableError",
-    "PolicyViolation",
-    "SemanticRejectedError",
-    "TransportError",
-    "UnknownOperationError",
-    "UpstreamContradictedRequestError",
-    "UpstreamError",
-):
-    _EXPORTS[_sdk_error_name] = (".error_types", _sdk_error_name)
-
-for _sql_error_name in (
-    "GravityExportError",
-    "SqlResponseError",
-    "SqlValidationError",
-):
-    _EXPORTS[_sql_error_name] = (".error_sql", _sql_error_name)
+# PUBLIC_API_EXPORTS_GENERATED_END
 
 
 _MISSING_EXPORT = object()

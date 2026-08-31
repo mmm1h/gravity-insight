@@ -12,7 +12,7 @@ from collections.abc import Mapping, Sequence
 import re
 from typing import Any
 
-from ..find import query_match
+from .query_match import query_match
 from .business_pulse import BUSINESS_PULSE_NAME
 from .company_usage import COMPANY_USAGE_NAME
 from . import report_directory as report_agent

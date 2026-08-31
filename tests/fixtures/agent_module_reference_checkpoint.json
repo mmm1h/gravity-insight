@@ -22,15 +22,15 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "3dc668f980633567993affa7bfe4c67b90902b6f7ff3d31f45689dc4a60dd03b",
+    "scanner_sha256": "7318121cee15feb0d9cdf7a22daf1698818060e2d805d685a5adda035a56f9af",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "3d6bd162799643af6a1093f283bc4941d359467249b12de3ee7168c45ad6fec0",
-    "manual_review_sha256": "005c7e4beaf7dcbba337bba36db47c61dde465118e78b2762ecf97fa8e2d6435",
+    "reference_evidence_sha256": "02eda248c558743a6e719ed8ac2f6b252928cf704540566406814649a19055e5",
+    "manual_review_sha256": "d067892e2c9d862d2f17b4b3758122c2b9fc3187fa22aeed6995ae095389a227",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3020,
-    "scanned_file_count": 3013,
+    "version_controlled_file_count": 3025,
+    "scanned_file_count": 3018,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -651,12 +651,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 214,
-    "reference_site_count": 212,
+    "tracked_site_count": 215,
+    "reference_site_count": 213,
     "manual_review_site_count": 140,
     "reference_manual_overlap_count": 138,
     "manual_only_site_count": 2,
-    "unique_source_keys": 214,
+    "unique_source_keys": 215,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -664,6 +664,7 @@
     "reference_categories": {
       "documentation_spec": 2,
       "dynamic_import": 11,
+      "entrypoint_config": 1,
       "manual_patch_expression": 118,
       "module_qualname_dependency": 7,
       "static_import": 69,
@@ -677,9 +678,9 @@
       "non_string_patch_expression": 118
     },
     "dispositions": {
-      "no_migration_effect": 214
+      "no_migration_effect": 215
     },
-    "sites_sha256": "886afd9ac6bd86d11827ef7682ac3317f2bcdf9d3bdce348e2d673fcc6735143"
+    "sites_sha256": "ec4f296dfd3bf3cd22f764b8b238ed0d9063b91cadd1105271d6f75a6a841e25"
   },
   "blockers": [],
   "site_fields": [
@@ -712,7 +713,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:69:113:bare text module string",
+      "docs/maintainers/technical-debt.md:72:113:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -787,7 +788,7 @@
       }
     ],
     [
-      "src/gravity_insight/__init__.py:278:21:import_module",
+      "src/gravity_insight/__init__.py:275:21:import_module",
       "rm",
       "dynamic_import",
       "module_name",
@@ -1198,6 +1199,21 @@
       "gravity_insight.agent_runtime_contracts",
       "gravity_insight.agent_runtime_contracts",
       "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      59,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/governance/domain-boundary-baseline.json:40:6:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
       "exact",
       "no_migration_effect",
       "retained_module_reference",
@@ -1822,7 +1838,7 @@
       }
     ],
     [
-      "tests/agent_migration_characterization.py:20:28:python string literal",
+      "tests/agent_migration_characterization.py:21:28:python string literal",
       "m",
       "agent_prefix_template",
       "gravity_insight.agent_",
@@ -1837,7 +1853,7 @@
       }
     ],
     [
-      "tests/agent_migration_characterization.py:22:34:python string literal",
+      "tests/agent_migration_characterization.py:23:34:python string literal",
       "m",
       "agent_prefix_template",
       "gravity_sdk.agent_",
