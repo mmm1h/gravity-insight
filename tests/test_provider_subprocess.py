@@ -408,7 +408,10 @@ class ProviderSubprocessTests(unittest.TestCase):
             return object()
 
         with (
-            patch("gravity_insight.provider_rpc_transport.os.name", "nt"),
+            patch(
+                "gravity_insight.provider_rpc_transport.os",
+                type("WindowsOs", (), {"name": "nt", "environ": os.environ})(),
+            ),
             patch(
                 "gravity_insight.provider_rpc_transport.subprocess.Popen",
                 return_value=process,
