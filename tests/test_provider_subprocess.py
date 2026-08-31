@@ -16,6 +16,10 @@ from gravity_insight import provider_rpc_transport as transport_module
 from gravity_insight.provider_rpc_transport import SubprocessProviderTransport
 from tests.test_external_context_contracts import provider_descriptor
 
+# Win32 CREATE_SUSPENDED. Named here because subprocess does not define the
+# Windows creation flags on POSIX, so tests cannot read it off the module.
+CREATE_SUSPENDED = 0x00000004
+
 
 PROVIDER_SCRIPT = r'''
 import hashlib
@@ -419,6 +423,13 @@ class ProviderSubprocessTests(unittest.TestCase):
             patch(
                 "gravity_insight.provider_rpc_transport.subprocess.run",
                 side_effect=terminate,
+            ),
+            # windows_job_creation_flags() reads provider_windows_job's own os.name,
+            # which the WindowsOs proxy above does not reach, so on POSIX it would
+            # return 0 and the creationflags assertion below would be vacuous.
+            patch(
+                "gravity_insight.provider_rpc_transport.windows_job_creation_flags",
+                return_value=CREATE_SUSPENDED,
             ),
             patch(
                 "gravity_insight.provider_rpc_transport.attach_windows_job",
