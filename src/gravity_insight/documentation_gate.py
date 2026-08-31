@@ -287,4 +287,8 @@ def documentation_errors(root: Path) -> list[str]:
     if competing.exists():
         relative = competing.relative_to(root).as_posix()
         errors.append(f"parallel canonical owner exists: {relative}")
+    if (root / ".git").exists():
+        from .runtime_health import runtime_health_errors
+
+        errors.extend(runtime_health_errors(root, include_compiler=False))
     return errors

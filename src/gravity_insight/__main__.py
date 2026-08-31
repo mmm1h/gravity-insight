@@ -16,7 +16,10 @@ Usage:
   gravity agent-catalog categories|category <domain>|describe <selector>|host
   gravity plan schema
   gravity plan run --input <plan.json>
-  gravity journey list|verify|describe|can-run|impact|run
+  gravity journey list|verify|certifications|describe|can-run|impact|run
+  gravity maturity score
+  gravity runtime health
+  gravity docs check
   gravity capabilities trust|validate|impact
   gravity skills list|show|export-agent
   gravity skills sync|search|resolve|lock|fetch|install|update|verify|audit
