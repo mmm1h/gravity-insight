@@ -163,6 +163,25 @@ class GravityInsightAnalysisSegmentRuleTests(unittest.TestCase):
         serialized = json.dumps(operation, ensure_ascii=False)
         self.assertNotIn("raw_body", serialized)
 
+        probe_inputs = json.loads(json.dumps(operation["live_probe"]["input"]))
+        probe_inputs["app_id"] = "101"
+        probe_inputs["date_range"] = {
+            "start_date": "2026-08-08",
+            "end_date": "2026-08-08",
+        }
+        client, transport = client_for(
+            "analysis.segment.evaluate_percent",
+            handler=lambda *_args, **_kwargs: self.fail("validation sent a request"),
+        )
+        validation = client.validate(
+            "analysis.segment.evaluate_percent", probe_inputs
+        )
+        self.assertEqual(
+            (True, "valid_offline"),
+            (validation["ok"], validation["status"]),
+        )
+        self.assertEqual([], transport.calls)
+
     def test_empty_rule_evaluation_derives_exact_frontend_body(self) -> None:
         def handler(method: str, path: str, kwargs: Mapping[str, Any]):
             if path == TARGET_PATH:

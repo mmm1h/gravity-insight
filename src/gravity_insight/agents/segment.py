@@ -7,7 +7,7 @@ from copy import deepcopy
 import re
 from typing import Any
 
-from ..find import query_match
+from .query_match import query_match
 from .export import is_authoritative_export_card
 from .intent_text import affirmative_intent_text
 from ..segment_mutation_contracts import (
