@@ -79,8 +79,7 @@ pending/failure，且抓取期间入口 HTML 稳定；它不表示平台、租�
 - “未出现”只能解释为“该范围内未观察到”，范围外未知。
 
 覆盖率可用于同一 snapshot 内的合同对账和漂移比较，不能用于声称“平台只有这些路由”或
-“某能力不存在”。完整审计与推荐措辞见归档的
-[Census 完整性与分母审计](../archive/research/census-completeness-audit.md)。
+“某能力不存在”。任何结论都必须保留上面的 snapshot、入口、同源静态图和 parser 边界。
 
 - `covered`：已登记 stable，仍需关注响应字段和上游 hash 漂移；
 - `uncovered_read`：安全 HTTP 方法，或 exact POST 已有带 reviewer/日期/控制流的 read confirmation；

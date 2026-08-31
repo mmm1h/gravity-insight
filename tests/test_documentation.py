@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import tempfile
 import unittest
 from collections import deque
 from pathlib import Path
@@ -11,6 +12,7 @@ from gravity_insight.documentation_gate import (
     CANONICAL_MAX_LINES,
     current_markdown_files,
     documentation_errors,
+    documentation_tree_errors,
     validate_architecture_binding,
     validate_mermaid,
 )
@@ -78,23 +80,17 @@ class DocumentationArchitectureTests(unittest.TestCase):
         unreachable = sorted(str(path.relative_to(ROOT)) for path in expected - reachable)
         self.assertEqual([], unreachable)
 
-    def test_every_archived_doc_is_reachable_from_the_archive_index(self) -> None:
-        expected = {path.resolve() for path in ARCHIVE.rglob("*.md")}
-        reachable = reachable_markdown(ARCHIVE / "index.md", expected)
-        unreachable = sorted(str(path.relative_to(ROOT)) for path in expected - reachable)
-        self.assertEqual([], unreachable)
+    def test_historical_archive_is_absent(self) -> None:
+        self.assertEqual([], [path for path in ARCHIVE.rglob("*.md")])
 
     def test_entry_documents_stay_small(self) -> None:
         budgets = {
             ROOT / "README.md": 100,
             DOCS / "index.md": 100,
-            DOCS / "getting-started.md": 160,
             DOCS / "team-onboarding.md": 120,
             DOCS / "agent-workflow.md": 220,
             DOCS / "roadmap.md": 80,
             DOCS / "maintainers/index.md": 100,
-            DOCS / "research.md": 80,
-            ARCHIVE / "index.md": 80,
         }
         excess = {
             str(path.relative_to(ROOT)): len(path.read_text(encoding="utf-8").splitlines())
@@ -120,7 +116,6 @@ class DocumentationArchitectureTests(unittest.TestCase):
         sources = [
             ROOT / "README.md",
             DOCS / "index.md",
-            DOCS / "getting-started.md",
             DOCS / "team-onboarding.md",
             DOCS / "agent-workflow.md",
             DOCS / "roadmap.md",
@@ -158,6 +153,8 @@ class DocumentationArchitectureTests(unittest.TestCase):
 
     def test_retired_document_paths_are_absent(self) -> None:
         retired = [
+            DOCS / "getting-started.md",
+            DOCS / "research.md",
             DOCS / "roadmap.d",
             DOCS / "research",
             DOCS / "mcp-feasibility.md",
@@ -236,6 +233,27 @@ class DocumentationArchitectureTests(unittest.TestCase):
 
     def test_current_documentation_governance_gate_passes(self) -> None:
         self.assertEqual([], documentation_errors(ROOT))
+
+    def test_tree_gate_reports_links_orphans_and_obsolete_commands(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            docs = root / "docs"
+            docs.mkdir()
+            (docs / "index.md").write_text(
+                "# Index\n\n[Missing](missing.md)\n", encoding="utf-8"
+            )
+            (docs / "orphan.md").write_text(
+                "# Orphan\n\npython -m gravity_sdk --help\n", encoding="utf-8"
+            )
+
+            errors = documentation_tree_errors(root)
+
+        self.assertIn(
+            f"broken local link: docs/index.md -> {(docs / 'missing.md').resolve()}",
+            errors,
+        )
+        self.assertIn("orphan documentation: docs/orphan.md", errors)
+        self.assertIn("obsolete gravity-sdk command: docs/orphan.md:3", errors)
 
     def test_canonical_architecture_uses_upper_bounds_not_exact_sizes(self) -> None:
         result = validate_architecture_binding(ROOT)

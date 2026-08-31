@@ -15,7 +15,7 @@ from urllib.request import url2pathname
 
 _DISTRIBUTION_NAME = "gravity-insight"
 _PACKAGE_DIRECTORY = Path("src") / "gravity_insight"
-_SCHEMA_VERSION = "gravity-sdk.install-consistency.v1"
+_SCHEMA_VERSION = "gravity-insight.install-consistency.v2"
 
 
 def inspect_install_consistency() -> dict[str, Any]:
