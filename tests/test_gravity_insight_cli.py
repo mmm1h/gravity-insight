@@ -1753,6 +1753,7 @@ class GravityInsightCliTests(unittest.TestCase):
         ):
             self.assertEqual(4, cli.main(["doctor", "--live"]))
         result = json.loads(stderr.getvalue())
+        self.assertEqual("gravity-insight.doctor.v2", result["schema_version"])
         self.assertEqual(
             "INSTALL_METADATA_VERSION_MISMATCH", result["reason_code"]
         )
