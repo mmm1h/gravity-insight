@@ -1,0 +1,71 @@
+{
+  "schema_version": "gravity-insight.pagination-evidence.v1",
+  "operation_id": "analysis.event.query",
+  "observed_at": "2026-08-31T18:43:20Z",
+  "evidence_type": "production",
+  "capture_mode": "governed_analysis_query",
+  "successful": true,
+  "route": {
+    "method": "POST",
+    "path": "/report/api/v3/dataanalysis/query_sql/",
+    "registered_effect": "read",
+    "static_read_confirmation": true
+  },
+  "request_shape": {
+    "app_context": "approved_evidence_app",
+    "date_window_days": 7,
+    "event_step_count": 1,
+    "metric_count": 1,
+    "page_fields_sent": false
+  },
+  "response_observation": {
+    "sdk_status": "success",
+    "runtime_completeness": "unknown",
+    "runtime_page": null,
+    "collection_path": "data.list",
+    "collection_top_level_item_count": 1,
+    "date_bucket_count": 7,
+    "projected_data_keys": [
+      "date_list",
+      "default_limit",
+      "list",
+      "target_list"
+    ],
+    "termination_field_presence": {
+      "has_more": "absent",
+      "item_count": "absent",
+      "total_items": "absent"
+    },
+    "termination_field_locations_checked": [
+      "$",
+      "$.data"
+    ],
+    "projected_schema_fingerprint": "3b5e5ccc38d7d6e7463bca1269d3590ad7ec6a9fa5a80d0e46c5f1384c809311",
+    "additive_unregistered_paths": [
+      "/data/filter_agg_type"
+    ],
+    "http_receipt_count": 1,
+    "http_receipt_storage_status": "stored"
+  },
+  "contract_at_capture": {
+    "contract_version": "1",
+    "contract_fingerprint": "105868f84f8ffd36a947189fee58fef5fa62ebdbf6ff463e50649a9768ba86e8",
+    "pagination_kind": "none",
+    "completeness": "unknown",
+    "pagination_evidence": "template"
+  },
+  "verdict": {
+    "completeness": "unknown",
+    "reason": "The production response exposed no has_more, item_count, or total_items signal, so the returned collection cannot be falsifiably proven complete.",
+    "complete_claim_permitted": false,
+    "full_page_replay_applicable": false
+  },
+  "privacy": {
+    "credentials_persisted": false,
+    "app_id_persisted": false,
+    "event_name_persisted": false,
+    "metric_field_persisted": false,
+    "business_metric_values_persisted": false,
+    "user_identifiers_persisted": false
+  }
+}

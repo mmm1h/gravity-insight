@@ -966,7 +966,7 @@
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
-        "pagination_evidence": "template",
+        "pagination_evidence": "production",
         "total_page_field": ""
       },
       "path_template": "/report/api/v3/dataanalysis/query_sql/",

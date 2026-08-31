@@ -124,7 +124,7 @@
     "pagination": {
       "kind": "none",
       "completeness": "unknown",
-      "pagination_evidence": "template",
+      "pagination_evidence": "production",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",
