@@ -2003,6 +2003,8 @@ class GateFailureGuidanceTests(unittest.TestCase):
         self.assertIn("newly added non-reference files", text)
         self.assertIn("Stop for manual package-boundary review", text)
         self.assertIn("do not modify or rebind the immutable baseline", text)
+        self.assertIn("refresh_validation_harnesses.py", text)
+        self.assertIn("do not run the two generators in reverse order", text)
 
 
 if __name__ == "__main__":

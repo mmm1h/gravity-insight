@@ -600,7 +600,7 @@ def run():
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
         expected = module_graph_baseline()
         self.assertEqual(
-            "3f4cb8bea6e6164cd7b3989323ed7d284ee728717a78c261c11e718277621445",
+            "f6b7f79bb2401611afc41b537e644f837096aae90c7f80caf32b044aebc033bd",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(

@@ -52,16 +52,10 @@ manifest 编译、投影/隐私审核与 fail-closed 漂移。业务词、App al
 
 ## 验证节奏
 
-开发内循环跑受影响的目标测试和确定性检查；提交前运行完整门禁：
-
-```powershell
-python -m unittest discover -s tests
-python -m pytest -q
-python -m gravity_insight.compiler check
-python -m gravity_insight.quality check
-$env:PYTHONPATH='src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1; if ($LASTEXITCODE) { exit $LASTEXITCODE }
-python -m gravity_insight --help
-git diff --check
-```
+先用 `scripts/task_context.py` 的 `risk_assessment` 分档，再执行其 `selected_commands`：低风险
+Self-review + Focused；中风险 Independent Review + Surface/Consumer；高风险 Adversarial Review +
+Full/Integrated/Canary。Full Gate 只用于高风险与 Release；其六条命令仍由根目录
+`AGENTS.md` 唯一维护。成本、消融方法、11 项开发体验指标和生成顺序见
+[验证 Harness](validation-harnesses.md)。
 
 在线探针或 Evidence 发布还必须遵循对应运行手册；普通测试不得访问生产 Gravity。

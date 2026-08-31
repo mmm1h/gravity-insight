@@ -346,10 +346,12 @@ class IntegratedValidationTests(unittest.TestCase):
                 "compiler_check",
                 "quality_check",
                 "runtime_component_index",
+                "repository_map",
                 "package_reference_checkpoint",
                 "release_provenance_offline_fixture",
             }.issubset(names)
         )
+        self.assertLess(names.index("repository_map"), names.index("package_reference_checkpoint"))
 
     def test_green_requires_clean_main_same_head_complete_zero_exit_set(self) -> None:
         before = {

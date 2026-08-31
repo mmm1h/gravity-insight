@@ -10,6 +10,7 @@ from scripts.repository_map import (
     build_repository_map,
     build_task_context,
     canonical_json_bytes,
+    classify_change_risk,
     load_repository_map,
     validate_contract,
 )
@@ -73,6 +74,8 @@ class RepositoryMapTests(unittest.TestCase):
                 self.assertTrue(pack["minimal_references"])
                 self.assertTrue(pack["focused_gate"])
                 self.assertEqual(6, len(pack["full_gate"]))
+                self.assertIn(pack["risk_assessment"]["level"], {"low", "medium", "high"})
+                self.assertTrue(pack["risk_assessment"]["selected_commands"])
                 self.assertFalse(any("PYTHONPATH" in command for command in pack["full_gate"]))
                 self.assertFalse(
                     any(
@@ -113,6 +116,71 @@ class RepositoryMapTests(unittest.TestCase):
         self.assertIn("tests/test_agent_module_migration_characterization.py", commands)
         self.assertEqual(["debt:14"], pack["matched_entries"])
         self.assertLess(pack["size_comparison"]["pack_bytes"], 100_000)
+
+    def test_risk_classification_uses_the_highest_match_and_fails_closed(self) -> None:
+        cases = (
+            (["tests/test_provider_subprocess.py"], "low", "self_review"),
+            (["scripts/check_installed_wheel_consumer.py"], "medium", "independent_review"),
+            (
+                [
+                    "docs/reference/cli.md",
+                    "src/gravity_insight/contracts/routes/registry.json",
+                ],
+                "high",
+                "adversarial_review",
+            ),
+            (
+                ["src/gravity_insight/sql/failures.py"],
+                "high",
+                "adversarial_review",
+            ),
+            (["unknown/top-level.file"], "high", "adversarial_review"),
+        )
+        for paths, level, review in cases:
+            with self.subTest(paths=paths):
+                result = classify_change_risk(
+                    paths,
+                    focused_gate=["focused"],
+                    full_gate=["full"],
+                    python="python",
+                )
+                self.assertEqual(level, result["level"])
+                self.assertEqual(review, result["review_mode"])
+        high = classify_change_risk(
+            ["src/gravity_insight/contracts/routes/registry.json"],
+            focused_gate=["focused"],
+            full_gate=["full"],
+            python="python",
+        )
+        self.assertEqual("full", high["selected_commands"][0])
+        self.assertTrue(any("run_integrated_validation.py" in item for item in high["selected_commands"]))
+        self.assertTrue(any("test_control_plane_lifecycle.py" in item for item in high["selected_commands"]))
+
+    def test_task_context_exposes_risk_specific_command_sets(self) -> None:
+        low = build_task_context(
+            "changed_files",
+            "tests/test_provider_subprocess.py",
+            root=ROOT,
+            map_document=self.document,
+        )
+        medium = build_task_context(
+            "changed_files",
+            "scripts/check_installed_wheel_consumer.py",
+            root=ROOT,
+            map_document=self.document,
+        )
+        high = build_task_context(
+            "changed_files",
+            "src/gravity_insight/contracts/routes/registry.json",
+            root=ROOT,
+            map_document=self.document,
+        )
+        self.assertEqual("low", low["risk_assessment"]["level"])
+        self.assertEqual("medium", medium["risk_assessment"]["level"])
+        self.assertTrue(
+            any("check_installed_wheel_consumer.py" in item for item in medium["risk_assessment"]["selected_commands"])
+        )
+        self.assertEqual("high", high["risk_assessment"]["level"])
 
     def test_machine_projection_is_compact_and_directly_consumed(self) -> None:
         payload = MAP_PATH.read_bytes()

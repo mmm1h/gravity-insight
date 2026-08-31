@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schema_version", "input", "history_policy", "matched_entries",
-    "minimal_references", "reading_order", "impact_scope", "focused_gate",
+    "minimal_references", "reading_order", "impact_scope", "risk_assessment", "focused_gate",
     "full_gate", "size_comparison", "unresolved"
   ],
   "properties": {
@@ -44,6 +44,32 @@
         "direct_dependents": {"type": "array", "items": {"type": "string"}},
         "transitive_dependents": {"$ref": "#/$defs/bounded_set"},
         "impacted_test_files": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "risk_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "review_mode", "validation_profile", "matched_rules", "selected_commands", "selection_policy"],
+      "properties": {
+        "level": {"enum": ["low", "medium", "high"]},
+        "review_mode": {"enum": ["self_review", "independent_review", "adversarial_review"]},
+        "validation_profile": {"enum": ["focused", "surface_consumer", "integrated_canary"]},
+        "matched_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["subject", "level", "rule"],
+            "properties": {
+              "subject": {"type": "string", "minLength": 1},
+              "level": {"enum": ["low", "medium", "high"]},
+              "rule": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "selected_commands": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "selection_policy": {"const": "highest_match_wins; unclassified paths fail closed to high"}
       }
     },
     "focused_gate": {"type": "array", "minItems": 1, "items": {"type": "string"}},

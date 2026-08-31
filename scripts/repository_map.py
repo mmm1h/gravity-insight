@@ -22,6 +22,53 @@ COMPONENT_INDEX = ROOT / "specs/agent-runtime/index.json"
 DEBT_PATH = ROOT / "docs/maintainers/technical-debt.md"
 ARCHITECTURE_PATH = ROOT / "docs/architecture.md"
 HISTORY_PREFIXES = ("docs/archive/", "archive/", "history/")
+RISK_LEVELS = {"low": 0, "medium": 1, "high": 2}
+RISK_REVIEW_MODES = {
+    "low": "self_review",
+    "medium": "independent_review",
+    "high": "adversarial_review",
+}
+_HIGH_RISK_PREFIXES = (
+    ".github/workflows/",
+    "specs/agent-runtime/",
+    "src/gravity_insight/agents/",
+    "src/gravity_insight/contracts/",
+)
+_HIGH_RISK_EXACT_PATHS = {
+    "AGENTS.md",
+    "docs/architecture.md",
+    "pyproject.toml",
+    "scripts/run_integrated_validation.py",
+    "src/gravity_insight/plan_adapters.py",
+}
+_HIGH_RISK_PATH_TERMS = (
+    "auth",
+    "concurr",
+    "control_plane",
+    "credential",
+    "degrad",
+    "error",
+    "failure",
+    "fallback",
+    "http_",
+    "mutation",
+    "pagination",
+    "permission",
+    "privacy",
+    "provenance",
+    "retry",
+    "route",
+    "security",
+    "transport",
+)
+_LOW_RISK_PREFIXES = (
+    "content/",
+    "docs/",
+    "skills/",
+    "src/gravity_insight/skills/",
+    "tests/",
+)
+_LOW_RISK_EXACT_PATHS = {"README.md", "SECURITY.md"}
 REQUIRED_MAP_FIELDS = (
     "domain",
     "capability",
@@ -927,9 +974,101 @@ def _full_gate(root: Path) -> list[str]:
             continue
         if command.startswith("python "):
             commands.append(f'& "{python}" {command.removeprefix("python ")}')
+        elif command.startswith('& ".venv/Scripts/python.exe" '):
+            commands.append(
+                f'& "{python}" '
+                + command.removeprefix('& ".venv/Scripts/python.exe" ')
+            )
         elif command == "git diff --check":
             commands.append(command)
     return commands
+
+
+def _surface_consumer_gate(python: str) -> list[str]:
+    """Return the existing installed-artifact surface and consumer checks."""
+
+    return [
+        f'& "{python}" -m pytest -q tests/test_public_api_snapshot.py '
+        "tests/test_installed_wheel_surface_matrix.py "
+        "tests/test_installed_wheel_consumer_check.py",
+        f'& "{python}" scripts/check_installed_wheel_surface_matrix.py',
+        f'& "{python}" scripts/check_installed_wheel_consumer.py',
+    ]
+
+
+def _integrated_canary_gate(python: str) -> list[str]:
+    """Return clean-commit integrated validation and the offline canary contract."""
+
+    return [
+        f'& "{python}" scripts/run_integrated_validation.py --trial',
+        f'& "{python}" -m pytest -q tests/test_control_plane_lifecycle.py',
+    ]
+
+
+def _risk_rule_for_path(path: str) -> tuple[str, str]:
+    normalized = PurePosixPath(path.replace("\\", "/")).as_posix()
+    lowered = normalized.casefold()
+    if normalized in _HIGH_RISK_EXACT_PATHS:
+        return "high", "high:governance-or-shared-spine"
+    if any(normalized.startswith(prefix) for prefix in _HIGH_RISK_PREFIXES):
+        return "high", "high:contract-agent-route-or-release-control"
+    if any(term in lowered for term in _HIGH_RISK_PATH_TERMS):
+        return "high", "high:safety-concurrency-degradation-or-provenance"
+    if normalized in _LOW_RISK_EXACT_PATHS or any(
+        normalized.startswith(prefix) for prefix in _LOW_RISK_PREFIXES
+    ):
+        return "low", "low:content-doc-or-test-only"
+    if normalized.startswith("src/gravity_insight/") or normalized.startswith("scripts/"):
+        return "medium", "medium:runtime-surface-or-maintainer-tool"
+    return "high", "high:unclassified-path-fails-closed"
+
+
+def classify_change_risk(
+    paths: Sequence[str],
+    *,
+    entity_ids: Sequence[str] = (),
+    focused_gate: Sequence[str] = (),
+    full_gate: Sequence[str] = (),
+    python: str | None = None,
+) -> dict[str, Any]:
+    """Classify a change once, taking the highest matching risk conservatively."""
+
+    if not paths and not entity_ids:
+        raise RepositoryMapError("risk classification requires changed paths or entities")
+    executable = python or sys.executable.replace("\\", "/")
+    matches: list[dict[str, str]] = []
+    for path in sorted(set(paths)):
+        level, rule = _risk_rule_for_path(path)
+        matches.append({"subject": path, "level": level, "rule": rule})
+    for entity_id in sorted(set(entity_ids)):
+        if entity_id.startswith("component:"):
+            level, rule = "high", "high:runtime-component-entity"
+        elif entity_id.startswith(("capability:", "journey:")):
+            level, rule = "medium", "medium:consumer-visible-entity"
+        elif entity_id.startswith(("skill:", "debt:")):
+            level, rule = "low", "low:content-entity"
+        else:
+            level, rule = "high", "high:unresolved-entity-fails-closed"
+        matches.append({"subject": entity_id, "level": level, "rule": rule})
+    level = max((item["level"] for item in matches), key=RISK_LEVELS.__getitem__)
+    commands = list(focused_gate)
+    if level == "medium":
+        commands.extend(_surface_consumer_gate(executable))
+    elif level == "high":
+        commands = [*full_gate, *_integrated_canary_gate(executable)]
+    commands = list(dict.fromkeys(commands))
+    return {
+        "level": level,
+        "review_mode": RISK_REVIEW_MODES[level],
+        "validation_profile": {
+            "low": "focused",
+            "medium": "surface_consumer",
+            "high": "integrated_canary",
+        }[level],
+        "matched_rules": matches,
+        "selected_commands": commands,
+        "selection_policy": "highest_match_wins; unclassified paths fail closed to high",
+    }
 
 
 def _reverse_graph(edges: Mapping[str, Sequence[str]]) -> dict[str, set[str]]:
@@ -1266,6 +1405,29 @@ def build_task_context(
     pack_bytes = sum(item["bytes"] for item in minimal)
     pack_tokens = sum(item["estimated_tokens"] for item in minimal)
     architecture = ARCHITECTURE_PATH.read_bytes()
+    risk_paths = (
+        [_normalize_input_path(value, root) for value in normalized_values]
+        if kind == "changed_files"
+        else sorted(
+            {
+                path
+                for entry in primary_entries
+                for path in [*entry["source_files"], *(entry["schema"] or [])]
+            }
+        )
+    )
+    risk = classify_change_risk(
+        risk_paths,
+        entity_ids=(
+            []
+            if kind == "changed_files"
+            else [entry["id"] for entry in primary_entries]
+            or [f"unresolved:{kind}:{','.join(normalized_values)}"]
+        ),
+        focused_gate=focused_gate,
+        full_gate=_full_gate(root),
+        python=python,
+    )
     result = {
         "schema_version": "gravity.task-context-pack.v1",
         "input": {"kind": kind, "values": normalized_values},
@@ -1293,6 +1455,7 @@ def build_task_context(
             "transitive_dependents": _bounded_set(transitive),
             "impacted_test_files": impacted_tests,
         },
+        "risk_assessment": risk,
         "focused_gate": focused_gate,
         "full_gate": _full_gate(root),
         "size_comparison": {
@@ -1315,6 +1478,7 @@ __all__ = [
     "build_task_context",
     "canonical_json_bytes",
     "canonical_sha256",
+    "classify_change_risk",
     "estimate_tokens",
     "load_repository_map",
     "validate_contract",

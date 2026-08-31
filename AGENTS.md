@@ -147,22 +147,36 @@ Do not let the list become an archive.
 
 ## Validation
 
-Run before committing:
+`python scripts/task_context.py ...` 返回的 `risk_assessment` 是唯一分级入口；命中多条规则时取
+最高风险，未知路径按高风险处理。验证节奏如下：
+
+- 低风险：Self-review + `focused_gate`。
+- 中风险：Independent Review + `risk_assessment.selected_commands` 中的 Surface/Consumer 门禁。
+- 高风险：Adversarial Review + 下列 Full Gate；干净提交再跑 selected commands 中的 Integrated
+  Validation 与离线 canary contract。Release 无论 changed files 都按高风险处理。
+
+Full Gate 只用于高风险或 Release，不作为低/中风险提交的默认前置条件：
 
 ```powershell
-python -m unittest discover -s tests
-python -m pytest -q
-python -m gravity_insight.compiler check
-python -m gravity_insight.quality check
-$env:PYTHONPATH='src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1; if ($LASTEXITCODE) { exit $LASTEXITCODE }
-python -m gravity_insight --help
+& ".venv/Scripts/python.exe" -m unittest discover -s tests
+& ".venv/Scripts/python.exe" -m pytest -q
+& ".venv/Scripts/python.exe" -m gravity_insight.compiler check
+& ".venv/Scripts/python.exe" -m gravity_insight.quality check
+& ".venv/Scripts/python.exe" -m gravity_insight --help
 git diff --check
 ```
 
-CI runs `pytest`, not `unittest discover`. The `946 vs 715` counts at `8fd278e`
-are a historical example, not the current baseline. Re-derive test and subtest
-counts each round from the latest fully green dual-collector gate, and run both
-collectors — CI gates on `pytest` alone.
+Repository Map 与 package-reference checkpoint 有显式生成顺序；只运行编排入口，禁止倒序手工重建：
+
+```powershell
+& ".venv/Scripts/python.exe" scripts/refresh_validation_harnesses.py
+& ".venv/Scripts/python.exe" scripts/refresh_validation_harnesses.py --check
+```
+
+CI runs `pytest`, not `unittest discover`. Re-derive test and subtest counts on
+high-risk/Release rounds from the latest fully green dual-collector gate. The
+separate unittest collector is an ablation candidate because pytest already
+collects unittest cases; retain it until repeated receipts resolve its net value.
 
 Tests isolate the developer's private cache in `tests/__init__.py`; without it a
 machine holding a real metadata cache fails discovery-ordering tests that pass
