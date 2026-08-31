@@ -475,6 +475,21 @@ class GravitySqlClientTests(unittest.TestCase):
         self.assertIs(first, second)
         factory.assert_called_once_with(env_path=None)
 
+    def test_fast_lane_structured_failures_preserve_all_five_sql_stages(self):
+        class StagedFailure(Exception):
+            code = "SQL_FAST_LANE_FIXTURE"
+            safe_message = "safe staged fixture"
+            sql_category = "contract"
+            retryable = False
+            reached_sql_engine = "unknown"
+            next_action = "Use the stage to correct the request."
+
+        for stage in ("bind", "compile", "plan", "execute", "shape"):
+            error = StagedFailure()
+            error.sql_stage = stage
+            with self.subTest(stage=stage):
+                self.assertEqual(stage, classify_sql_failure(error).stage)
+
 
 if __name__ == "__main__":
     unittest.main()

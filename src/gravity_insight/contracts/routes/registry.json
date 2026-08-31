@@ -1430,8 +1430,71 @@
       "route_sha256": "0a60b3e5e9fd8131b37602ee63cfd3d55676d16914b16c929d2b3cefb831a59f",
       "source_status": "unclassified",
       "subtype": "conservative_mutation"
+    },
+    {
+      "classification": "read",
+      "disposition": "governed_sql_fast_lane",
+      "dialect": "unknown",
+      "host": "api-insight.gravity-engine.com",
+      "method": "POST",
+      "operation_id": "sql.explorer.execute",
+      "path": "/custom_sql/api/sql/execute",
+      "reason": "The SQL workbench uses this route to return a tabular query result. Runtime callability is narrower than the upstream endpoint: only a locally parsed, single SELECT/WITH statement with exact relation, function, output, and resource policy may reach the route.",
+      "reason_code": "governed_select_only_sql",
+      "route_index": 0,
+      "route_sha256": "6702150651b7057173eb034783a52397640e1bc34c3773052e9f8d2cd363d169",
+      "source_status": "supplemental_bi_census",
+      "static_source": {
+        "bundle_id": "8f9574737cde267e1cfd4bed7822ac9a41d82e99875a2a9205af6031895bfc37",
+        "complete_same_origin_js_graph": true,
+        "entry_sha256": "f2be62987ce651cab00ac8959f5613013582893f18c094c0f8e7959f0f30e9d8",
+        "entry_url": "https://bi.gravity-engine.com/assets/index-B29DNP9s.js",
+        "fetched_at": "2026-08-31T11:05:33+00:00",
+        "site_url": "https://bi.gravity-engine.com/#/sql"
+      },
+      "static_control_flow": [
+        {
+          "detail": "The production base builder selects https://api-insight.gravity-engine.com and appends /custom_sql. The query function then calls the shared fetch wrapper with /api/sql/execute, method POST, and JSON.stringify(request).",
+          "offset": 1024882
+        },
+        {
+          "detail": "The SQL-page execution handler constructs exactly {sql, tabId}, passes it to the query function, and renders the returned tabular result. Cancellation, formatting, history, export, and template persistence use separate paths.",
+          "offset": 2177681
+        },
+        {
+          "detail": "The response normalizer consumes result.columns and result.rows; column objects may expose name or columnName and optional type, dataType, or columnType. The caller separately consumes status/state/error plus rowCount and elapsedMs.",
+          "offset": 1026240
+        }
+      ],
+      "route_contract": {
+        "api_origin": "https://api-insight.gravity-engine.com",
+        "method": "POST",
+        "path": "/custom_sql/api/sql/execute",
+        "request_body": {
+          "additional_properties": false,
+          "properties": {
+            "sql": {"type": "string"},
+            "tabId": {"type": "string"}
+          },
+          "required": ["sql", "tabId"]
+        },
+        "response_projection": {
+          "protocol": ["code", "msg"],
+          "query": ["data.status", "data.state", "data.error", "data.rowCount", "data.elapsedMs"],
+          "tabular": [
+            "data.result.columns[]", "data.result.columns[].name",
+            "data.result.columns[].columnName", "data.result.columns[].type",
+            "data.result.columns[].dataType", "data.result.columns[].columnType",
+            "data.result.rows[]"
+          ]
+        }
+      },
+      "subtype": "governed_sql_query"
     }
   ],
   "schema_version": "gravity-insight.route-classification.v1",
-  "source": "src/gravity_insight/census/data/coverage.json"
+  "source": "src/gravity_insight/census/data/coverage.json",
+  "supplemental_sources": [
+    "https://bi.gravity-engine.com/assets/index-B29DNP9s.js"
+  ]
 }

@@ -135,6 +135,9 @@ def sql_protocol_status(
 def classify_sql_failure(error: BaseException, *, request_count: int = 0) -> SqlFailure:
     """Map all SQL client and batch failures through one stable taxonomy."""
 
+    structured = _structured_stage_failure(error)
+    if structured is not None:
+        return structured
     context = getattr(error, _CONTEXT_ATTRIBUTE, None)
     kind = context.get("kind") if isinstance(context, Mapping) else None
     if isinstance(error, AuthenticationError):
@@ -160,6 +163,37 @@ def classify_sql_failure(error: BaseException, *, request_count: int = 0) -> Sql
             "Inspect the registered product placeholders and local contract; do not retry unchanged.",
         )
     return _with_context(selected, context)
+
+
+def _structured_stage_failure(error: BaseException) -> SqlFailure | None:
+    """Preserve explicit bind/compile/plan/execute/shape failures from SQL adapters."""
+
+    stage = getattr(error, "sql_stage", None)
+    if stage not in {"bind", "compile", "plan", "execute", "shape"}:
+        return None
+    category = str(getattr(error, "sql_category", "runtime"))
+    code = str(getattr(error, "code", "SQL_UNEXPECTED_FAILURE"))
+    message = str(getattr(error, "safe_message", "Gravity SQL request failed"))
+    next_action = str(
+        getattr(
+            error,
+            "next_action",
+            "Use the stable SQL failure stage to correct the request before retrying.",
+        )
+    )
+    reached = str(getattr(error, "reached_sql_engine", "unknown"))
+    if reached not in {"yes", "no", "unknown"}:
+        reached = "unknown"
+    return SqlFailure(
+        kind=f"{stage}_failure",
+        stage=stage,
+        upstream_category=category,
+        code=code,
+        message=message,
+        retryable=bool(getattr(error, "retryable", False)),
+        reached_sql_engine=reached,
+        next_action=next_action,
+    )
 
 
 def diagnostic_fields(
