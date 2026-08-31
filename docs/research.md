@@ -10,7 +10,7 @@
 | 安全治理 | 上游身份、最小投影和写前确认留在确定性边界；工具输出一律作为不可信数据 | [Agent 安全治理](archive/research/agent-security-governance.md) |
 | 协议与交付面 | CLI、SDK、Plan 仍是当前权威面；本地 MCP 只有出现第二个真实消费者和冻结验收题集后才重新评估 | [MCP 可行性](archive/research/mcp-feasibility.md)、[MCP 实现调研](archive/research/mcp-protocol-and-servers.md) |
 | 上游与 Census | 官方开放面和静态 route census 只能证明各自观察范围，不能当作平台能力全集 | [官方 API 面](archive/research/official-api-surface.md)、[Census 完整性](archive/research/census-completeness-audit.md) |
-| ThinkingAI 内容 | 公开主题只保留 metadata/hash；当前 snapshot 每项均有独立标准 Skill 规格或安全替代并由 Team Hub exact lock/阻断证据约束，正文、案例、图表和营销数字不得进入分发工件 | [CT01](../specs/agent-runtime/CT01-thinkingai-inventory.md)、[CT02](../specs/agent-runtime/CT02-thinkingai-representative-skills.md)、[CT03](../specs/agent-runtime/CT03-thinkingai-full-specification.md) |
+| ThinkingAI 内容 | 公开主题只保留 metadata/hash；独立 Skill 规格或安全替代由 Source、representative、full-specification machines schemas 与 Hub exact lock/阻断证据约束，正文、案例、图表和营销数字不得进入分发工件 | [Inventory schema](../src/gravity_insight/contracts/schema/thinkingai-inventory-snapshot-v1.schema.json)、[Representative schema](../src/gravity_insight/contracts/schema/thinkingai-representative-set-v1.schema.json)、[Full schema](../src/gravity_insight/contracts/schema/thinkingai-full-specification-v1.schema.json) |
 
 ## 使用边界
 

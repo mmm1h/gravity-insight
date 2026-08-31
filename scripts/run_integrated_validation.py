@@ -30,9 +30,9 @@ POST_RELEASE_GATES = (
         ),
     },
 )
-R17_STALE_RECEIPT_GUIDANCE = "\n".join(
+PACKAGE_REFERENCE_STALE_GUIDANCE = "\n".join(
     (
-        "R17 checkpoint receipt is stale. It binds the repository scan's file "
+        "Package-reference checkpoint receipt is stale. It binds the repository scan's file "
         "universe and counts, scanner and generator hashes, every "
         "coordinate-bound disposition and its evidence, and the "
         "actionable/blocker summary. Do not blindly regenerate it.",
@@ -40,15 +40,14 @@ R17_STALE_RECEIPT_GUIDANCE = "\n".join(
         "limited to newly added non-reference files: no existing source_key "
         "disappeared or changed; sites_sha256, tracked-site/disposition counts, "
         "classifications, actionable count, and blocker count are unchanged.",
-        "Stop for manual R17 review if any disposition count changes, any site "
+        "Stop for manual package-boundary review if any disposition count changes, any site "
         "disappears or changes classification, any blocker/actionable count "
         "changes, or scanner/generator logic changed.",
         "After that review approves a rebind: run `python "
         "scripts/generate_agent_module_reference_dispositions.py`; inspect the "
-        "candidate receipt diff and copy its printed SHA-256 into exactly "
-        "specs/agent-runtime/R17-agent-module-package-migration.md, "
-        "specs/agent-runtime/index.json, and specs/agent-runtime/index.md; run "
-        "the generator once more to confirm the fixed point; then run `python "
+        "candidate receipt diff; do not modify or rebind the immutable baseline "
+        "fixture, Canonical Architecture directive, or component index. Run the "
+        "generator once more to confirm the fixed point; then run `python "
         "scripts/generate_agent_module_reference_dispositions.py --check` and "
         "require exit 0.",
     )
@@ -119,7 +118,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
         ),
         GateSpec("git_diff_check", ("git", "diff", "--check")),
         GateSpec(
-            "r00_requirement_graph",
+            "runtime_component_index",
             (
                 py,
                 "-m",
@@ -166,7 +165,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             600,
         ),
         GateSpec(
-            "r17_live_checkpoint",
+            "package_reference_checkpoint",
             (py, "scripts/generate_agent_module_reference_dispositions.py", "--check"),
             600,
         ),
@@ -359,8 +358,8 @@ def run_gate(
                 f"\nTIMEOUT after {gate.timeout_seconds} seconds; process terminated\n"
             )
     output = log.read_text(encoding="utf-8", errors="replace")
-    if gate.name == "r17_live_checkpoint" and "stale checkpoint receipt:" in output:
-        output += "\n" + R17_STALE_RECEIPT_GUIDANCE + "\n"
+    if gate.name == "package_reference_checkpoint" and "stale checkpoint receipt:" in output:
+        output += "\n" + PACKAGE_REFERENCE_STALE_GUIDANCE + "\n"
         log.write_text(output, encoding="utf-8", newline="\n")
     return {
         "name": gate.name,
