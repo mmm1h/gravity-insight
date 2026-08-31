@@ -112,6 +112,32 @@ class EvidenceCollectorTests(unittest.TestCase):
             errors,
         )
 
+    def test_supplemental_checks_accept_an_unresolved_root(self) -> None:
+        # The checks relative_to() each discovered path against root, and
+        # relative_to compares text. On CI the temp dir arrives as a Windows 8.3
+        # short name (RUNNER~1) while the walk yields the long name, so every
+        # comparison raised ValueError. A path routed through a subdirectory
+        # reproduces the same mismatch on any platform without needing a short
+        # name, which this developer's own home directory is too short to produce.
+        with tempfile.TemporaryDirectory() as temporary:
+            resolved = Path(temporary).resolve()
+            (resolved / ".git").mkdir()
+            (resolved / "docs").mkdir()
+            (resolved / "docs/index.md").write_text("# Index\n", encoding="utf-8")
+            (resolved / "docs/orphan.md").write_text("# Orphan\n", encoding="utf-8")
+            (resolved / "sub").mkdir()
+            unresolved = resolved / "sub" / ".."
+            self.assertNotEqual(str(unresolved), str(resolved))
+            with patch(
+                "gravity_insight.runtime_health.runtime_health_errors",
+                return_value=[],
+            ):
+                errors = integrated_documentation_errors(unresolved)
+        self.assertIn(
+            "docs check orphan_documents: docs/orphan.md",
+            errors,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

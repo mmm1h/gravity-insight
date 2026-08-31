@@ -233,6 +233,12 @@ def _existing_governance_errors(root: Path) -> list[str]:
 
 
 def supplemental_documentation_errors(root: Path) -> list[str]:
+    # Resolve before walking: the checks below relative_to() each discovered path
+    # against root, and Path.relative_to compares text, not identity. A caller can
+    # hand us an unresolved root (a Windows 8.3 short name like RUNNER~1, or a
+    # symlinked temp dir) while the walk yields resolved long names, and every
+    # comparison then raises ValueError. documentation_report() already resolves.
+    root = root.resolve()
     sources = _active_sources(root)
     checks = (
         ("broken_links", _broken_links(root, sources)),
@@ -248,6 +254,7 @@ def supplemental_documentation_errors(root: Path) -> list[str]:
 
 
 def integrated_documentation_errors(root: Path) -> list[str]:
+    root = root.resolve()
     errors = documentation_errors(root)
     if (root / ".git").exists():
         errors.extend(supplemental_documentation_errors(root))
