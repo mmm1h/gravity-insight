@@ -11,6 +11,72 @@ from gravity_insight.errors import SemanticRejectedError, UpstreamContradictedRe
 
 
 class SemanticRejectionTests(unittest.TestCase):
+    def test_unverified_grain_rejection_is_diagnostic_and_not_auto_retryable(self) -> None:
+        cases = (
+            ("event", "week"),
+            ("funnel", "total"),
+            ("retention", "hour"),
+            ("scatter", "month"),
+        )
+        for kind, grain in cases:
+            with self.subTest(kind=kind, grain=grain), self.assertRaises(
+                UpstreamContradictedRequestError
+            ) as caught:
+                raise_read_rejection(
+                    {"extra": {"error": "private upstream rejection"}},
+                    operation_id=ANALYSIS_QUERY_OPERATIONS[kind],
+                    request_inputs={
+                        "app_id": "private-app",
+                        "group_by_list": [{
+                            "type": "default_event",
+                            "field": "create_time",
+                            "group_by": grain,
+                        }],
+                    },
+                )
+
+            error = caught.exception
+            detail = error.to_error_detail(
+                operation_id=ANALYSIS_QUERY_OPERATIONS[kind]
+            ).to_dict()
+            self.assertEqual(
+                ("UPSTREAM_UNAVAILABLE", "upstream", "time_grain", False),
+                (
+                    detail["code"],
+                    detail["category"],
+                    detail["field"],
+                    detail["retryable"],
+                ),
+            )
+            self.assertIn(grain, detail["next_action"])
+            self.assertIn("Change only `time_grain` to `day`", detail["next_action"])
+            self.assertIn("does not prove", detail["next_action"])
+            self.assertIn("`window.unit` limits", detail["next_action"])
+            self.assertNotIn("--concurrency 1", detail["next_action"])
+            self.assertNotIn("private upstream rejection", repr(detail))
+            self.assertNotIn("private-app", repr(detail))
+
+    def test_production_accepted_grain_keeps_transient_upstream_retry_path(self) -> None:
+        for kind, grain in (("event", "total"), ("funnel", "day")):
+            with self.subTest(kind=kind, grain=grain), self.assertRaises(
+                UpstreamContradictedRequestError
+            ) as caught:
+                raise_read_rejection(
+                    {"extra": {"error": "private upstream rejection"}},
+                    operation_id=ANALYSIS_QUERY_OPERATIONS[kind],
+                    request_inputs={
+                        "group_by_list": [{
+                            "type": "default_event",
+                            "field": "create_time",
+                            "group_by": grain,
+                        }],
+                    },
+                )
+
+            self.assertTrue(caught.exception.retryable)
+            self.assertEqual("input", caught.exception.field)
+            self.assertIn("--concurrency 1", caught.exception.next_action)
+
     def test_unreviewed_upstream_text_stays_out_of_caller_fields(self) -> None:
         payload = {"code": 0, "extra": {"error": "private upstream detail"}}
         field, message, next_action = classify_read_rejection(

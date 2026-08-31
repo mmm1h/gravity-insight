@@ -3,7 +3,7 @@
   "row_count": 69,
   "rows": [
     {
-      "blocker_note": "2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=[\"/app\"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。2026-08-19 #222：组/身份不变量按响应形状生效，新同形 route 不再靠手写 operation_id。2026-08-19 #226：host `boundaries` 改为卡上 owner 字段，加载缺字段即红；不改状态、不改冻结 case。2026-08-19 #227：带 UV 的分维结果信封现有 `interpretation.metrics[].additivity=non_additive`；投放中 App `29034827` 同窗生产确认声明与响应一致。2026-08-19 #229：`NO_CANDIDATE` 信封另带 8 条已登记可执行问法；2026-08-19 #228：跨进程磁盘命中后冷启动 metadata HTTP 不再每进程重打；十人合计 metadata 从 20 降到 2。不改状态、不改冻结 case。2026-08-20 #22：条件 `type=user_property` 改为离线拒绝，`global_filters` 与 `steps[].conditions` 两处都在发请求前失败，错误指向条件路径而不是上游误报的 `group_by_list`；`type=user` 行为不变。`spec-schema` 的 `type` 枚举跨 kind 共用，未收窄，限制只加在编译期的 event/funnel 上。不改状态、不改冻结 case。2026-08-20 #23：上游反报编译器自己生成的 `create_time/day` 分组\"缺失\"时，不再让调用方重加已发的分组，改判 `upstream` + `retryable`（同一请求实测可在另一次执行成功）；未分类的 analysis 拒绝也不再默认把 `field` 说成 `group_by_list`。`SemanticRejectedError` 的\"确定性\"前提对这类自相矛盾的拒绝不成立。不改状态、不改冻结 case。2026-08-31 #45：compact Event `time_grain=hour` 已按四次失败且同形 `day` 成功的消费证据从 event enum 移除，并在 workspace/validator/transport 前以 `INPUT_INVALID`、`retryable=false` 拒绝；其余 kind 与 operation 的 `hour` 合同不变。当前 compiler 原本已发送 `create_time/hour`，仓库无已验证的等价小时聚合替代；单用户 `analysis.user_event.list` 不是全量首流量小时。调用方可改 `day` 保留日期边界，精确小时保持未验证，取得脱敏成功 production shape 后才重开。",
+      "blocker_note": "2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=[\"/app\"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。2026-08-19 #222：组/身份不变量按响应形状生效，新同形 route 不再靠手写 operation_id。2026-08-19 #226：host `boundaries` 改为卡上 owner 字段，加载缺字段即红；不改状态、不改冻结 case。2026-08-19 #227：带 UV 的分维结果信封现有 `interpretation.metrics[].additivity=non_additive`；投放中 App `29034827` 同窗生产确认声明与响应一致。2026-08-19 #229：`NO_CANDIDATE` 信封另带 8 条已登记可执行问法；2026-08-19 #228：跨进程磁盘命中后冷启动 metadata HTTP 不再每进程重打；十人合计 metadata 从 20 降到 2。不改状态、不改冻结 case。2026-08-20 #22：条件 `type=user_property` 改为离线拒绝，`global_filters` 与 `steps[].conditions` 两处都在发请求前失败，错误指向条件路径而不是上游误报的 `group_by_list`；`type=user` 行为不变。`spec-schema` 的 `type` 枚举跨 kind 共用，未收窄，限制只加在编译期的 event/funnel 上。不改状态、不改冻结 case。2026-08-20 #23：上游反报编译器自己生成的 `create_time/day` 分组\"缺失\"时，不再让调用方重加已发的分组，改判 `upstream` + `retryable`（同一请求实测可在另一次执行成功）；未分类的 analysis 拒绝也不再默认把 `field` 说成 `group_by_list`。`SemanticRejectedError` 的\"确定性\"前提对这类自相矛盾的拒绝不成立。不改状态、不改冻结 case。2026-08-31 #45：compact Event `time_grain=hour` 已按四次失败且同形 `day` 成功的消费证据从 event enum 移除，并在 workspace/validator/transport 前以 `INPUT_INVALID`、`retryable=false` 拒绝；后续审计确认 `minute` 没有成功证据且会被错误主动推荐给 sub-day 消费者，现同样离线拒绝。Event `total` 保留，因为生产请求曾被接受但返回空对象；`month/week` 与 Funnel/Retention/Scatter 的非日粒度均无成功证据但不据此断言不支持，保留 enum，并在其上游语义拒绝时返回 `field=time_grain`、`retryable=false`、day 对照和证据采集动作。生产已接受的粒度与 #23/#24 同形瞬态拒绝继续走 retryable upstream。单用户 `analysis.user_event.list` 仍不是全量首流量替代。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "看某事件随时间、分组和条件的变化",
@@ -12,7 +12,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "850ebd937b68710a7e9eac6f8e38c3939c0e7c98605cdae7eafc71934124e639",
+      "row_digest": "ef9d7bb5b7d33a5dd4e5044e51158adc2d2de2f838df5739fc4030e3f8b34e12",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "6d7fa9b7268df229a5f0f93e7b9306573c54e355d149e71fd7fe99deb917f103",
+  "snapshot_digest": "b50bade496af7eb75d72e71b4624f491aa6e30c81c9d758c79b1723992c61e2c",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "5c6fd91bc90d0b90a71a3dd2781792ae19e5fb79bc619334283fcfa0d0ea1dae"
+  "source_sha256": "67fbcca9a7a1ddb6227918efecf4eb0a4f83386e00d8d2fdc7c18a4af1448fba"
 }

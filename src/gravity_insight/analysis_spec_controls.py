@@ -20,15 +20,15 @@ def validate_time_grain(
     if isinstance(value, str) and value in allowed:
         return
     next_action = None
-    if kind == "event" and value == "hour":
+    if kind == "event" and value in {"hour", "minute"}:
         next_action = (
             "Change only `time_grain` to `day` and rerun `gravity analysis query "
             "--kind event --app <authorized-alias> --spec <day-spec>` to keep the "
             "verified calendar-day boundary. No SDK path has verified the exact "
-            "first-traffic hour; do not retry this request or substitute "
+            "first-traffic hour or minute; do not retry this request or substitute "
             "`analysis.user_event.list`, which requires user-level ClientID. "
-            "Re-enable `hour` only after a sanitized `analysis.event.query` with "
-            "`create_time/hour` succeeds."
+            f"Re-enable `{value}` only after a sanitized `analysis.event.query` "
+            f"with `create_time/{value}` succeeds."
         )
     raise InputValidationError(
         f"actual value: {actual_value(value)}; {kind} time_grain is not supported "

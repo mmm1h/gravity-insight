@@ -21,7 +21,7 @@ ANALYSIS_SPEC_KINDS = frozenset(
     {"event", "funnel", "retention", "property", "scatter"}
 )
 ANALYSIS_TIME_GROUPS_BY_KIND = {
-    "event": ANALYSIS_TIME_GROUPS - {"hour"},
+    "event": ANALYSIS_TIME_GROUPS - {"hour", "minute"},
     "funnel": ANALYSIS_TIME_GROUPS,
     "retention": ANALYSIS_TIME_GROUPS,
     "scatter": ANALYSIS_TIME_GROUPS,

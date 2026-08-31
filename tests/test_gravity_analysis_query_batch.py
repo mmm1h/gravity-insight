@@ -483,36 +483,84 @@ class CountingInsight:
             raise AssertionError(message) from exc
 
 class AnalysisQueryBatchTests(unittest.TestCase):
-    def test_event_hour_batch_fails_before_transport_or_adaptive_retry(self) -> None:
+    def test_event_subday_batch_fails_before_transport_or_adaptive_retry(self) -> None:
+        for grain in ("hour", "minute"):
+            with self.subTest(grain=grain):
+                spec = _issue_24_spec(0)
+                spec["time_grain"] = grain
+                payload = {
+                    "schema_version": BATCH_SCHEMA_VERSION,
+                    "queries": [
+                        {
+                            "id": f"{grain}_event",
+                            "kind": "event",
+                            "app": "demo",
+                            "spec": spec,
+                            "limits": {"max_items": 200},
+                        }
+                    ],
+                }
+                sdk, transport = _transport_sdk(_event_result())
+
+                with (
+                    patch("gravity_insight.analysis_query_batch_retry.time.sleep") as sleeper,
+                    self.assertRaises(InputValidationError) as caught,
+                ):
+                    sdk.analysis_queries(payload, max_workers=4)
+
+                detail = caught.exception.to_error_detail().to_dict()
+                self.assertEqual(
+                    ("INPUT_INVALID", "time_grain", False),
+                    (detail["code"], detail["field"], detail["retryable"]),
+                )
+                self.assertEqual([], transport.calls)
+                sleeper.assert_not_called()
+
+    def test_unverified_grain_semantic_rejection_stops_before_adaptive_retry(self) -> None:
         spec = _issue_24_spec(0)
-        spec["time_grain"] = "hour"
+        spec["time_grain"] = "week"
         payload = {
             "schema_version": BATCH_SCHEMA_VERSION,
-            "queries": [
-                {
-                    "id": "hourly_event",
-                    "kind": "event",
-                    "app": "demo",
-                    "spec": spec,
-                    "limits": {"max_items": 200},
-                }
-            ],
+            "queries": [{
+                "id": "weekly_event",
+                "kind": "event",
+                "app": "demo",
+                "spec": spec,
+                "limits": {"max_items": 200},
+            }],
         }
-        sdk, transport = _transport_sdk(_event_result())
-
-        with (
-            patch("gravity_insight.analysis_query_batch_retry.time.sleep") as sleeper,
-            self.assertRaises(InputValidationError) as caught,
-        ):
-            sdk.analysis_queries(payload, max_workers=4)
-
-        detail = caught.exception.to_error_detail().to_dict()
-        self.assertEqual(
-            ("INPUT_INVALID", "time_grain", False),
-            (detail["code"], detail["field"], detail["retryable"]),
+        sdk, transport = _transport_sdk(
+            {"code": 0, "extra": {"error": "private semantic rejection"}}
         )
-        self.assertEqual([], transport.calls)
+
+        with patch(
+            "gravity_insight.analysis_query_batch_retry.time.sleep"
+        ) as sleeper:
+            result = sdk.analysis_queries(payload, max_workers=4)
+
+        self.assertEqual(1, len(transport.calls))
         sleeper.assert_not_called()
+        error = result["results"][0]["error"]
+        self.assertEqual(
+            ("UPSTREAM_UNAVAILABLE", "upstream", "time_grain", False),
+            (
+                error["code"],
+                error["category"],
+                error["field"],
+                error["retryable"],
+            ),
+        )
+        self.assertIn("`time_grain` to `day`", error["next_action"])
+        self.assertEqual(
+            (False, 0, 1, "non_retryable_failure"),
+            (
+                result["adaptive_execution"]["degraded"],
+                result["adaptive_execution"]["retry_count"],
+                result["adaptive_execution"]["total_component_attempts"],
+                result["adaptive_execution"]["terminal_reason"],
+            ),
+        )
+        self.assertNotIn("private semantic rejection", repr(result))
 
     def test_31_component_batch_matches_scalar_wire_shape_and_global_budget(self) -> None:
         scalar_sdk, scalar_transport = _transport_sdk(_event_result())
