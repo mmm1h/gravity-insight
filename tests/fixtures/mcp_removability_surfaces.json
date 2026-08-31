@@ -8,10 +8,10 @@
     "analysis.ltv-curve-fit": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
     "analysis.merge2.ap-cost-anomaly-localization": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.readable-app-catalog": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
-    "analysis.thinkingai.community-context-correlation": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
-    "analysis.thinkingai.device-segment-event-review": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
-    "analysis.thinkingai.project-metric-contract-check": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
-    "analysis.thinkingai.returned-filter-comparison": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
-    "analysis.thinkingai.revenue-forecast-readiness": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"}
+    "analysis.gravity.game.community-context-correlation": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
+    "analysis.gravity.game.device-segment-event-review": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.gravity.core.project-metric-contract-check": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
+    "analysis.gravity.core.returned-filter-comparison": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
+    "analysis.gravity.game.revenue-forecast-readiness": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"}
   }
 }

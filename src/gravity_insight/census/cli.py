@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .coverage import coverage_files
-from .diffing import diff_files
+from .diffing import (
+    diff_files,
+    exception_failure as _exception_failure,
+    incomplete_fetch_failure as _incomplete_fetch_failure,
+    write_failure as _write_failure,
+    write_fetch_step as _write_fetch_step,
+)
 from .fetcher import DEFAULT_SITE, StaticFetcher, check_upstream
 from .impact import impact_files
 from .io import json_bytes, read_json, write_json
@@ -34,14 +40,8 @@ DEFAULT_DRAFTS = DEFAULT_CONTRACTS / "drafts"
 DEFAULT_BATCH_RESULTS = TMP_ROOT / "codex" / "gi-batch-probe" / "final-results.json"
 DEFAULT_RESERVATIONS = DEFAULT_CONTRACTS / "reservations"
 DEFAULT_ROUTE_REGISTRY = DEFAULT_CONTRACTS / "routes" / "registry.json"
-_CALLER_EXIT = exit_code_for_category(ErrorCategory.CALLER)
 _UPSTREAM_EXIT = exit_code_for_category(ErrorCategory.UPSTREAM)
 _LOCAL_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
-_CAPACITY_STATUS_CLASSES = frozenset(
-    {"rate_limited", "server_error", "transport_error"}
-)
-
-
 def _path(value: str) -> Path:
     return Path(value).resolve()
 
@@ -83,11 +83,10 @@ def _root_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = _root_parser()
-    subparsers = parser.add_subparsers(dest="command")
-
-    fetch = subparsers.add_parser("fetch", help="discover and GET public frontend bundles")
+def _add_fetch_parser(subparsers: Any) -> None:
+    fetch = subparsers.add_parser(
+        "fetch", help="discover and GET public frontend bundles"
+    )
     fetch.add_argument("--site", default=DEFAULT_SITE)
     fetch.add_argument("--raw-dir", type=_path, default=DEFAULT_RAW_DIR)
     fetch.add_argument("--output", type=_path, default=DEFAULT_SNAPSHOT)
@@ -95,10 +94,26 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument("--max-attempts", type=int, default=3)
     fetch.add_argument("--concurrency", type=int, default=4)
     fetch.add_argument("--timeout", type=float, default=45.0)
+    fetch.add_argument("--local-capacity-retries", type=int, default=2)
     fetch.add_argument("--no-manifest-probes", action="store_true")
     fetch.add_argument("--require-complete", action="store_true")
-    fetch.add_argument("--failure-output", type=_path,
-                       help="write a sanitized machine-readable failure classification")
+    fetch.add_argument(
+        "--failure-output",
+        type=_path,
+        help="write a sanitized machine-readable failure classification",
+    )
+    fetch.add_argument(
+        "--step-output",
+        type=_path,
+        help="always write a machine-readable fetch step result on success or failure",
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = _root_parser()
+    subparsers = parser.add_subparsers(dest="command")
+
+    _add_fetch_parser(subparsers)
 
     parse = subparsers.add_parser("parse", help="parse downloaded bundles into routes.json")
     parse.add_argument("--snapshot", type=_path, default=DEFAULT_SNAPSHOT)
@@ -194,6 +209,7 @@ def _run_fetch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         max_requests=args.max_requests,
         concurrency=args.concurrency,
         timeout=args.timeout,
+        local_capacity_retries=args.local_capacity_retries,
     )
     result = fetcher.fetch(
         site_url=args.site,
@@ -201,124 +217,13 @@ def _run_fetch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         snapshot_path=args.output,
         probe_manifests=not args.no_manifest_probes,
     )
-    incomplete = args.require_complete and not result["summary"]["complete"]
-    if incomplete and args.failure_output:
-        write_json(args.failure_output, _incomplete_fetch_failure(result))
+    graph_incomplete = not result["summary"]["complete"]
+    incomplete = args.require_complete and graph_incomplete
+    failure = _incomplete_fetch_failure(result) if graph_incomplete else None
+    if failure is not None:
+        _write_failure(args, failure)
+    _write_fetch_step(args, result["summary"], failure)
     return result["summary"], _UPSTREAM_EXIT if incomplete else 0
-
-
-def _safe_fetch_failures(result: dict[str, Any]) -> list[dict[str, Any]]:
-    rows = []
-    for failure in result.get("discovery", {}).get("failures", []):
-        if not isinstance(failure, dict):
-            continue
-        status = failure.get("status_code")
-        exception_type = failure.get("exception_type")
-        rows.append(
-            {
-                "host": str(failure.get("host", "unknown")),
-                "status_class": str(failure.get("status_class", "unknown")),
-                "http_status": status if type(status) is int else None,
-                "exception_type": (
-                    str(exception_type) if exception_type is not None else None
-                ),
-            }
-        )
-    return rows
-
-
-def _incomplete_fetch_failure(result: dict[str, Any]) -> dict[str, Any]:
-    failures = _safe_fetch_failures(result)
-    capacity = bool(failures) and all(
-        failure["status_class"] in _CAPACITY_STATUS_CLASSES
-        for failure in failures
-    )
-    failure_class = "upstream_capacity" if capacity else "incomplete_graph"
-    next_action = (
-        "Wait at least 30000 ms, then retry `gravity census fetch --require-complete` "
-        "once. If capacity failures persist, inspect upstream rate-limit and service "
-        "health before another crawl."
-        if capacity
-        else "Inspect the snapshot completeness_reason and discovery failures; do not "
-        "promote route or contract changes until a complete graph is proven."
-    )
-    summary = result.get("summary", {})
-    return {
-        "status": "error",
-        "error": "The public static graph could not be proven complete.",
-        "code": (
-            "CENSUS_UPSTREAM_CAPACITY"
-            if capacity
-            else "CENSUS_INCOMPLETE_GRAPH"
-        ),
-        "category": "upstream",
-        "retryable": capacity,
-        "failure_class": failure_class,
-        "failures": failures,
-        "cooldown_remaining_ms": 30_000 if capacity else 0,
-        "summary": {
-            "complete": bool(summary.get("complete", False)),
-            "request_attempts": int(summary.get("request_attempts", 0)),
-            "pending_js": int(summary.get("pending_js", 0)),
-            "failed_js": int(summary.get("failed_js", 0)),
-        },
-        "next_action": next_action,
-    }
-
-
-def _exception_failure(error: BaseException) -> dict[str, Any]:
-    error_code = str(getattr(error, "code", ""))
-    diagnostics = getattr(error, "diagnostics", None)
-    if error_code.startswith("GOVERNOR_") and isinstance(diagnostics, dict):
-        return {
-            "status": "error",
-            "error": str(error),
-            "code": error_code,
-            "category": "upstream",
-            "retryable": True,
-            **diagnostics,
-            "next_action": str(getattr(error, "next_action", "") or ""),
-        }
-    status_class = str(getattr(error, "status_class", "unknown"))
-    capacity = status_class in _CAPACITY_STATUS_CLASSES
-    status = getattr(error, "status_code", None)
-    exception_type = getattr(error, "exception_type", None)
-    return {
-        "status": "error",
-        "error": str(error),
-        "code": (
-            "CENSUS_UPSTREAM_CAPACITY" if capacity else "CENSUS_FETCH_FAILED"
-        ),
-        "category": "upstream" if hasattr(error, "status_class") else "local",
-        "retryable": capacity,
-        "failure_class": "upstream_capacity" if capacity else "unclassified",
-        "failures": (
-            [
-                {
-                    "host": str(getattr(error, "host", "unknown")),
-                    "status_class": status_class,
-                    "http_status": status if type(status) is int else None,
-                    "exception_type": (
-                        str(exception_type) if exception_type is not None else None
-                    ),
-                }
-            ]
-            if hasattr(error, "status_class")
-            else []
-        ),
-        "cooldown_remaining_ms": 30_000 if capacity else 0,
-        "next_action": (
-            "Wait at least 30000 ms, then retry the same census fetch once."
-            if capacity
-            else "Inspect this local failure and retry only after correcting it."
-        ),
-    }
-
-
-def _write_failure(args: argparse.Namespace, payload: dict[str, Any]) -> None:
-    target = getattr(args, "failure_output", None)
-    if target:
-        write_json(target, payload)
 
 
 def _run_parse(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
@@ -361,7 +266,17 @@ def _run_diff(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     result = diff_files(args.old, args.new)
     if args.output:
         write_json(args.output, result)
-    changed = any(int(value) for value in result.get("summary", {}).values())
+    if result.get("drift_conclusion_available") is not True:
+        return result, _UPSTREAM_EXIT
+    changed = any(
+        int(result.get("summary", {}).get(key, 0))
+        for key in ("added", "removed", "method_changed", "path_changed")
+        if key in result.get("summary", {})
+    ) or any(
+        int(result.get("summary", {}).get(key, 0))
+        for key in ("added_files", "removed_files", "changed_files")
+        if key in result.get("summary", {})
+    )
     return result, 5 if args.fail_on_change and changed else 0
 
 
@@ -424,17 +339,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         result, exit_code = run(args)
-    except (OSError, UnicodeEncodeError, RuntimeError) as exc:
+    except Exception as exc:
         payload = _exception_failure(exc)
         _write_failure(args, payload)
+        _write_fetch_step(args, None, payload)
         sys.stderr.buffer.write(json_bytes(payload))
-        return (
-            _UPSTREAM_EXIT
-            if payload.get("category") == "upstream"
-            else _LOCAL_EXIT
+        return exit_code_for_category(
+            str(payload.get("category", "local")),
+            default=ErrorCategory.LOCAL,
         )
-    except (ValueError, json.JSONDecodeError) as exc:
-        sys.stderr.buffer.write(json_bytes({"status": "error", "error": str(exc)}))
-        return _CALLER_EXIT
     sys.stdout.buffer.write(json_bytes(result))
     return exit_code

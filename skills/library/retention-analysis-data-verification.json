@@ -1,0 +1,83 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-cohort-population",
+      "inferred-retention-definition"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "验证前，必须具备队列进入、回访活动、观测周期、时区和延迟数据语义。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "当项目为有界周期提供已经评审的队列和回访事件定义时使用。",
+    "context_boundary": "返回的类似留存字段无法定义分母、删失或延迟到达行为。",
+    "steps": [
+      "解析队列进入、回访活动、身份、时区、观测周期和延迟数据规则。",
+      "对受治理的观测结果应用已评审的留存曲线 Operator，并执行连续性和样本检查。",
+      "报告已验证的时间窗、缺失日期、删失限制和不受支持的解读。"
+    ],
+    "title": "留存契约与数据检查"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [
+    "operator://gravity/retention-curve@1"
+  ],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/32e2a1916eaf04e8",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "analysis.query.spec:event"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/retention@1"
+  ],
+  "skill_id": "retention-analysis-data-verification",
+  "specification": "specified",
+  "summary": "解读留存曲线前，验证队列和活动证据。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

@@ -55,25 +55,72 @@ jobs:
           $raw = Join-Path $env:RUNNER_TEMP "gravity-census-raw"
           $snapshot = Join-Path $evidence "current-snapshot.json"
           $failure = Join-Path $evidence "fetch-failure.json"
+          $stepResult = Join-Path $evidence "census-step-output.json"
           $attemptLimit = 3
           for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
             if (Test-Path -LiteralPath $failure) {
               Remove-Item -LiteralPath $failure
             }
+            $fallback = [ordered]@{
+              schema_version = "gravity-census.step-output.v1"
+              operation = "fetch_public_static_graph"
+              status = "error"
+              complete = $false
+              drift_conclusion_available = $false
+              failure_class = "unclassified"
+              request_budget = [ordered]@{ used = 0; limit = 800; remaining = 800 }
+              summary = [ordered]@{}
+              failure = [ordered]@{
+                schema_version = "gravity-census.failure.v1"
+                status = "error"
+                complete = $false
+                drift_conclusion_available = $false
+                code = "CENSUS_UNCLASSIFIED"
+                category = "local"
+                retryable = $false
+                failure_class = "unclassified"
+                classification = [ordered]@{
+                  reason = "workflow_attempt_started_without_terminal_cli_output"
+                  source_code = $null
+                  source_status_class = $null
+                  exception_type = $null
+                }
+                request_budget = [ordered]@{ used = 0; limit = 800; remaining = 800 }
+                next_action = "Inspect the workflow process exit before deciding whether a retry is appropriate."
+              }
+              workflow_attempt = $attempt
+            }
+            $fallback | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $stepResult
             Write-Host "Complete crawl attempt $attempt of $attemptLimit"
-            gravity census fetch --raw-dir $raw --output $snapshot --require-complete --max-attempts 1 --failure-output $failure
+            gravity census fetch --raw-dir $raw --output $snapshot --require-complete --max-attempts 1 --local-capacity-retries 2 --failure-output $failure --step-output $stepResult
             $fetchExit = $LASTEXITCODE
-            if ($fetchExit -eq 0) {
+            try {
+              $step = Get-Content -Raw -LiteralPath $stepResult | ConvertFrom-Json -ErrorAction Stop
+              if ([string]$step.schema_version -ne "gravity-census.step-output.v1") {
+                throw "unexpected Census step-output schema"
+              }
+            } catch {
+              $step = $fallback | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+              $step.failure.classification.reason = "workflow_could_not_parse_cli_step_output"
+              $step | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $stepResult
+            }
+            if ($fetchExit -eq 0 -and $step.complete -eq $true) {
               "failure_class=none" >> $env:GITHUB_OUTPUT
               "crawl_attempts=$attempt" >> $env:GITHUB_OUTPUT
+              "step_output=$stepResult" >> $env:GITHUB_OUTPUT
               exit 0
             }
+            if ($fetchExit -eq 0) {
+              $fetchExit = 4
+              $step.failure_class = "unclassified"
+              $step.failure.classification.reason = "cli_exit_zero_without_complete_step_output"
+              $step | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $stepResult
+            }
 
-            $failureClass = "unclassified"
+            $failureClass = [string]$step.failure_class
             $cooldownMs = 30000
             if (Test-Path -LiteralPath $failure) {
               $diagnostic = Get-Content -Raw -LiteralPath $failure | ConvertFrom-Json
-              $failureClass = [string]$diagnostic.failure_class
               if ($diagnostic.cooldown_remaining_ms -is [int64] -or $diagnostic.cooldown_remaining_ms -is [int32]) {
                 $cooldownMs = [int64]$diagnostic.cooldown_remaining_ms
               }
@@ -81,6 +128,7 @@ jobs:
             if ($failureClass -ne "upstream_capacity") {
               "failure_class=$failureClass" >> $env:GITHUB_OUTPUT
               "crawl_attempts=$attempt" >> $env:GITHUB_OUTPUT
+              "step_output=$stepResult" >> $env:GITHUB_OUTPUT
               exit $fetchExit
             }
             if ($attempt -lt $attemptLimit) {
@@ -93,6 +141,7 @@ jobs:
           }
           "failure_class=upstream_capacity" >> $env:GITHUB_OUTPUT
           "crawl_attempts=$attemptLimit" >> $env:GITHUB_OUTPUT
+          "step_output=$stepResult" >> $env:GITHUB_OUTPUT
           exit 3
 
       - name: Parse routes and reconcile manifest coverage
@@ -130,9 +179,9 @@ jobs:
         if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class == 'upstream_capacity'
         shell: pwsh
         run: |
-          $failure = Join-Path $env:RUNNER_TEMP "gravity-drift/fetch-failure.json"
-          $diagnostic = Get-Content -Raw -LiteralPath $failure | ConvertFrom-Json
-          $classes = @($diagnostic.failures | ForEach-Object { $_.status_class } | Sort-Object -Unique) -join ", "
+          $stepResult = Join-Path $env:RUNNER_TEMP "gravity-drift/census-step-output.json"
+          $step = Get-Content -Raw -LiteralPath $stepResult | ConvertFrom-Json
+          $classes = @($step.failure.failures | ForEach-Object { $_.status_class } | Sort-Object -Unique) -join ", "
           Write-Output "::warning title=Gravity upstream census capacity blocked::Entry HTML changed, but the complete crawl remained blocked after ${{ steps.fetch.outputs.crawl_attempts }} attempts. Failure classes: $classes. No route-drift conclusion was made; inspect the uploaded fetch-failure.json before retrying."
           "### Gravity upstream census capacity warning" >> $env:GITHUB_STEP_SUMMARY
           "Entry HTML changed, but upstream capacity prevented a complete graph after ${{ steps.fetch.outputs.crawl_attempts }} bounded attempts. No route-drift conclusion was made. Inspect the uploaded sanitized diagnostic artifact before retrying." >> $env:GITHUB_STEP_SUMMARY

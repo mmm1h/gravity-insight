@@ -123,6 +123,17 @@ Mutation preview 绑定规范化 Plan/request digest；execute 还需用户确�
 模型不能创建或改写来源表。可选 prepared-plan 只为 `from_env()` 的 read-only stable `run` host Plan
 保存私有限时绑定，执行仍重入同一来源边界。
 
+### Prepared Analysis Plan
+
+Prepared Analysis Plan 是 Plan-backed 路径可选的私有、不可变 Artifact，不适用于 Direct Composite，
+也不建立新 executor、binder 或 scheduler。其字段真相由
+`gravity.prepared-analysis-plan.v1` schema 拥有；公开面只暴露 opaque ID 与安全摘要。
+
+prepare 必须绑定 source authority、identity、输入、合同 fingerprint、digest、expiry 与 stale 条件；
+execute 重新进入原 `execute_host_plan` 或同等 source-aware owner。tamper、expiry、identity、contract
+或 catalog 漂移必须在目标调用前失败。PAP 不改变现有请求数、完整性、错误、隐私或输出形状，禁用
+后直接回到原 source-aware 路径，不留下第二条公开路由。
+
 ## metric-anomaly-localization@1
 
 ```powershell

@@ -1,23 +1,29 @@
+"""Validate the current Agent Runtime component index and Markdown projection."""
+
 from __future__ import annotations
 
-import argparse
 import json
+from pathlib import Path, PurePosixPath
 import re
 import sys
-from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INDEX = ROOT / "specs/agent-runtime/index.json"
 DEFAULT_MARKDOWN = ROOT / "specs/agent-runtime/index.md"
-_TABLE_LINK = re.compile(r"^\[(?P<id>[A-Z0-9-]+)\]\((?P<path>[^)]+)\)$")
-_CODE_VALUE = re.compile(r"`([^`]+)`")
-_STATUS_ROW = re.compile(r"^\|\s*Status\s*\|(?P<value>.*)\|\s*$")
+EXPECTED_SCHEMA = "gravity.agent-runtime-components.v1"
+EXPECTED_MATURITY = {"stable", "bounded", "experimental"}
+EXPECTED_KEYS = {
+    "schema_version",
+    "canonical_architecture",
+    "maturity_model",
+    "components",
+}
 
 
 class RequirementGraphError(ValueError):
-    pass
+    """Retained public error name for callers of the former graph validator."""
 
 
 def _require(condition: bool, message: str) -> None:
@@ -25,323 +31,177 @@ def _require(condition: bool, message: str) -> None:
         raise RequirementGraphError(message)
 
 
-def _references(item: dict[str, Any], field: str, owner: str) -> list[str]:
-    values = item.get(field, [])
-    _require(isinstance(values, list), f"{owner}.{field} must be an array")
+def _path(value: Any, *, field: str) -> str:
+    _require(isinstance(value, str) and bool(value), f"{field} must be a path")
+    path = PurePosixPath(value)
     _require(
-        all(isinstance(value, str) and value for value in values),
-        f"{owner}.{field} must contain non-empty IDs",
+        not path.is_absolute(),
+        f"{field} must be relative to specs/agent-runtime",
     )
-    return values
+    return path.as_posix()
+
+
+def _validate_target(index_path: Path, value: Any, *, field: str) -> str:
+    relative = _path(value, field=field)
+    target = (index_path.parent / relative).resolve()
+    _require(
+        target == ROOT or ROOT in target.parents,
+        f"{field} escapes the repository: {relative}",
+    )
+    _require(target.exists(), f"{field} path does not exist: {relative}")
+    return relative
 
 
 def validate_requirement_graph(
-    document: dict[str, Any], *, index_path: Path = DEFAULT_INDEX
-) -> dict[str, int]:
-    requirements = document.get("requirements")
-    _require(isinstance(requirements, list), "requirements must be an array")
-    status_model = document.get("status_model")
-    _require(
-        isinstance(status_model, list)
-        and all(isinstance(status, str) and status for status in status_model)
-        and len(status_model) == len(set(status_model)),
-        "status_model must contain unique non-empty tokens",
+    document: Mapping[str, Any], *, index_path: Path = DEFAULT_INDEX
+) -> dict[str, Mapping[str, Any]]:
+    """Validate the component index; the historical function name remains callable."""
+
+    _require(set(document) == EXPECTED_KEYS, "component index keys are invalid")
+    _require(document.get("schema_version") == EXPECTED_SCHEMA, "schema_version is invalid")
+    _validate_target(
+        index_path,
+        document.get("canonical_architecture"),
+        field="canonical_architecture",
     )
-
-    nodes: dict[str, dict[str, Any]] = {}
-    edges: dict[str, list[str]] = {}
-    requirement_ids: list[str] = []
-    index_root = index_path.resolve().parent
-
-    for position, requirement in enumerate(requirements):
-        _require(isinstance(requirement, dict), f"requirements[{position}] must be an object")
-        requirement_id = requirement.get("id")
+    model = document.get("maturity_model")
+    _require(isinstance(model, Mapping), "maturity_model must be an object")
+    _require(set(model) == EXPECTED_MATURITY, "maturity_model tokens are invalid")
+    _require(
+        all(isinstance(value, str) and value for value in model.values()),
+        "maturity_model descriptions must be non-empty strings",
+    )
+    components = document.get("components")
+    _require(isinstance(components, list) and components, "components must be non-empty")
+    by_id: dict[str, Mapping[str, Any]] = {}
+    for position, component in enumerate(components):
+        _require(isinstance(component, Mapping), f"components[{position}] must be an object")
+        component_id = component.get("id")
         _require(
-            isinstance(requirement_id, str) and requirement_id,
-            f"requirements[{position}].id must be a non-empty string",
+            isinstance(component_id, str)
+            and re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", component_id) is not None,
+            f"components[{position}].id is invalid",
         )
-        _require(requirement_id not in nodes, f"duplicate requirement ID: {requirement_id}")
-        nodes[requirement_id] = requirement
-        requirement_ids.append(requirement_id)
+        _require(component_id not in by_id, f"duplicate component ID: {component_id}")
         _require(
-            requirement.get("status") in status_model,
-            f"{requirement_id}.status is outside status_model: {requirement.get('status')}",
+            component.get("maturity") in EXPECTED_MATURITY,
+            f"{component_id}.maturity is invalid",
         )
-
-        path_value = requirement.get("path")
         _require(
-            isinstance(path_value, str) and path_value,
-            f"{requirement_id}.path must be a non-empty string",
+            isinstance(component.get("owner"), str) and bool(component["owner"]),
+            f"{component_id}.owner must be non-empty",
         )
-        path = (index_root / path_value).resolve()
+        sources = component.get("machine_sources")
         _require(
-            path == index_root or index_root in path.parents,
-            f"{requirement_id}.path escapes the requirement directory: {path_value}",
+            isinstance(sources, list)
+            and bool(sources)
+            and len(sources) == len(set(sources)),
+            f"{component_id}.machine_sources must be non-empty and unique",
         )
-        _require(path.is_file(), f"{requirement_id}.path does not exist: {path_value}")
-
-        milestones = requirement.get("milestones", [])
-        _require(isinstance(milestones, list), f"{requirement_id}.milestones must be an array")
-        for milestone_position, milestone in enumerate(milestones):
+        for source_position, source in enumerate(sources):
+            _validate_target(
+                index_path,
+                source,
+                field=f"{component_id}.machine_sources[{source_position}]",
+            )
+        _validate_target(
+            index_path,
+            component.get("reference"),
+            field=f"{component_id}.reference",
+        )
+        if component["maturity"] != "stable":
+            limits = component.get("limits")
             _require(
-                isinstance(milestone, dict),
-                f"{requirement_id}.milestones[{milestone_position}] must be an object",
+                isinstance(limits, list)
+                and bool(limits)
+                and all(isinstance(value, str) and value for value in limits),
+                f"{component_id}.limits must state every bounded/experimental limit",
             )
-            milestone_id = milestone.get("id")
-            _require(
-                isinstance(milestone_id, str) and milestone_id,
-                f"{requirement_id}.milestones[{milestone_position}].id must be non-empty",
-            )
-            _require(milestone_id not in nodes, f"duplicate requirement ID: {milestone_id}")
-            nodes[milestone_id] = milestone
-            _require(
-                milestone.get("status") in status_model,
-                f"{milestone_id}.status is outside status_model: {milestone.get('status')}",
-            )
-
-    for requirement in requirements:
-        requirement_id = requirement["id"]
-        edges[requirement_id] = [
-            *_references(requirement, "dependencies", requirement_id),
-            *_references(requirement, "milestone_dependencies", requirement_id),
-        ]
-        for milestone in requirement.get("milestones", []):
-            milestone_id = milestone["id"]
-            edges[milestone_id] = [
-                *_references(milestone, "dependencies", milestone_id),
-                *_references(milestone, "milestone_dependencies", milestone_id),
-            ]
-
-    for owner, dependencies in edges.items():
-        for dependency in dependencies:
-            _require(
-                dependency in nodes,
-                f"{owner} references unknown dependency: {dependency}",
-            )
-
-    state: dict[str, int] = {}
-    stack: list[str] = []
-
-    def visit(node: str) -> None:
-        if state.get(node) == 2:
-            return
-        if state.get(node) == 1:
-            start = stack.index(node)
-            cycle = [*stack[start:], node]
-            raise RequirementGraphError(
-                "requirement graph contains a cycle: " + " -> ".join(cycle)
-            )
-        state[node] = 1
-        stack.append(node)
-        for dependency in edges[node]:
-            visit(dependency)
-        stack.pop()
-        state[node] = 2
-
-    for node in nodes:
-        visit(node)
-
-    return {
-        "requirement_count": len(requirement_ids),
-        "graph_node_count": len(nodes),
-        "dependency_edge_count": sum(len(values) for values in edges.values()),
-    }
+        by_id[component_id] = component
+    return by_id
 
 
 def parse_markdown_requirement_table(markdown: str) -> dict[str, dict[str, str]]:
-    lines = markdown.splitlines()
-    try:
-        start = lines.index("## Requirements") + 1
-    except ValueError as exc:
-        raise RequirementGraphError("index.md has no Requirements section") from exc
+    """Parse the component table; retained name avoids a second projection API."""
 
     rows: dict[str, dict[str, str]] = {}
-    for line in lines[start:]:
-        if line.startswith("## "):
-            break
-        if not line.startswith("| ["):
+    for line in markdown.splitlines():
+        match = re.match(r"^\| `([^`]+)` \| `([^`]+)` \| (.+) \| (.+) \|$", line)
+        if match is None:
             continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        _require(len(cells) == 5, f"malformed requirement table row: {line}")
-        link = _TABLE_LINK.fullmatch(cells[0])
-        _require(link is not None, f"malformed requirement table link: {cells[0]}")
-        state_match = _CODE_VALUE.search(cells[3])
-        _require(state_match is not None, f"missing requirement state: {line}")
-        requirement_id = link.group("id")
-        _require(
-            requirement_id not in rows,
-            f"duplicate index.md requirement ID: {requirement_id}",
-        )
-        rows[requirement_id] = {
-            "path": link.group("path"),
-            "status": state_match.group(1),
+        component_id, maturity, owner, detail = match.groups()
+        _require(component_id not in rows, f"duplicate Markdown component ID: {component_id}")
+        rows[component_id] = {
+            "maturity": maturity,
+            "owner": owner.strip(),
+            "detail": detail.strip(),
         }
-    _require(rows, "index.md Requirements table has no requirement rows")
+    _require(rows, "index.md has no Component table")
     return rows
 
 
-def parse_markdown_milestone_table(markdown: str) -> dict[str, dict[str, Any]]:
-    lines = markdown.splitlines()
-    try:
-        start = lines.index("## Milestones") + 1
-    except ValueError as exc:
-        raise RequirementGraphError("index.md has no Milestones section") from exc
+def parse_markdown_milestone_table(markdown: str) -> dict[str, dict[str, str]]:
+    """The current component projection has no delivery milestones."""
 
-    rows: dict[str, dict[str, Any]] = {}
-    for line in lines[start:]:
-        if line.startswith("## "):
-            break
-        if not line.startswith("| R"):
-            continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        _require(len(cells) == 4, f"malformed milestone table row: {line}")
-        milestone_id, parent_id, dependencies_cell, status_cell = cells
-        status_match = _CODE_VALUE.search(status_cell)
-        _require(status_match is not None, f"missing milestone state: {line}")
-        _require(
-            milestone_id not in rows,
-            f"duplicate index.md milestone ID: {milestone_id}",
-        )
-        dependencies = (
-            []
-            if dependencies_cell == "-"
-            else [value.strip() for value in dependencies_cell.split(",")]
-        )
-        _require(
-            all(dependencies),
-            f"malformed milestone dependencies: {line}",
-        )
-        rows[milestone_id] = {
-            "parent_id": parent_id,
-            "dependencies": dependencies,
-            "status": status_match.group(1),
-        }
-    return rows
-
-
-def parse_spec_status(markdown: str, requirement_id: str) -> str:
-    rows = [match for line in markdown.splitlines() if (match := _STATUS_ROW.match(line))]
-    _require(
-        len(rows) == 1,
-        f"{requirement_id} spec must contain exactly one Status row; found={len(rows)}",
-    )
-    status_match = _CODE_VALUE.search(rows[0].group("value"))
-    _require(status_match is not None, f"{requirement_id} spec Status row has no code value")
-    return status_match.group(1)
+    _require("## Milestones" not in markdown, "retired Milestones section is present")
+    return {}
 
 
 def validate_markdown_projection(
-    document: dict[str, Any], markdown: str
-) -> dict[str, int]:
-    requirements = document.get("requirements")
-    _require(isinstance(requirements, list), "requirements must be an array")
-    expected = {item["id"]: item for item in requirements}
-    actual = parse_markdown_requirement_table(markdown)
+    document: Mapping[str, Any], markdown: str
+) -> dict[str, dict[str, str]]:
+    components = validate_requirement_graph(document)
+    rows = parse_markdown_requirement_table(markdown)
     _require(
-        set(actual) == set(expected),
-        "index.md requirement IDs differ from index.json: "
-        f"missing={sorted(set(expected) - set(actual))}, "
-        f"extra={sorted(set(actual) - set(expected))}",
+        set(rows) == set(components),
+        "Markdown component IDs differ from index.json",
     )
-    for requirement_id, requirement in expected.items():
-        row = actual[requirement_id]
+    for component_id, component in components.items():
         _require(
-            row["path"] == requirement["path"],
-            f"{requirement_id} path differs: json={requirement['path']} markdown={row['path']}",
+            rows[component_id]["maturity"] == component["maturity"],
+            f"{component_id} maturity differs between JSON and Markdown",
         )
-        _require(
-            row["status"] == requirement["status"],
-            f"{requirement_id} status differs: "
-            f"json={requirement['status']} markdown={row['status']}",
-        )
-
-    expected_milestones = {
-        milestone["id"]: {
-            "parent_id": requirement["id"],
-            "dependencies": [
-                *_references(milestone, "dependencies", milestone["id"]),
-                *_references(
-                    milestone,
-                    "milestone_dependencies",
-                    milestone["id"],
-                ),
-            ],
-            "status": milestone["status"],
-        }
-        for requirement in requirements
-        for milestone in requirement.get("milestones", [])
-    }
-    actual_milestones = parse_markdown_milestone_table(markdown)
-    _require(
-        set(actual_milestones) == set(expected_milestones),
-        "index.md milestone IDs differ from index.json: "
-        f"missing={sorted(set(expected_milestones) - set(actual_milestones))}, "
-        f"extra={sorted(set(actual_milestones) - set(expected_milestones))}",
-    )
-    for milestone_id, expected_row in expected_milestones.items():
-        _require(
-            actual_milestones[milestone_id] == expected_row,
-            f"{milestone_id} milestone projection differs: "
-            f"json={expected_row} markdown={actual_milestones[milestone_id]}",
-        )
-    return {
-        "markdown_requirement_count": len(actual),
-        "markdown_milestone_count": len(actual_milestones),
-    }
+    parse_markdown_milestone_table(markdown)
+    return rows
 
 
 def validate_spec_status_projection(
-    document: dict[str, Any], *, index_path: Path = DEFAULT_INDEX
-) -> dict[str, int]:
-    requirements = document.get("requirements")
-    _require(isinstance(requirements, list), "requirements must be an array")
-    historical = document.get("historical_status_tokens", {})
-    historical_delivery = "fixed_dev" if "fixed_dev" in historical else None
-    index_root = index_path.resolve().parent
-    for requirement in requirements:
-        requirement_id = requirement["id"]
-        spec_path = (index_root / requirement["path"]).resolve()
-        spec_status = parse_spec_status(
-            spec_path.read_text(encoding="utf-8"), requirement_id
-        )
-        current_status = requirement["status"]
-        expected_spec_status = (
-            historical_delivery
-            if current_status in {"merged_main", "released"}
-            else current_status
-        )
-        _require(
-            spec_status == expected_spec_status,
-            f"{requirement_id} spec delivery status differs: "
-            f"current={current_status} expected_historical={expected_spec_status} "
-            f"spec={spec_status}",
-        )
-    return {"spec_status_count": len(requirements)}
+    document: Mapping[str, Any], *, index_path: Path = DEFAULT_INDEX
+) -> dict[str, Mapping[str, Any]]:
+    """Released Requirement prose no longer exists; validate machine owners instead."""
+
+    return validate_requirement_graph(document, index_path=index_path)
 
 
 def validate_repository(
     index_path: Path = DEFAULT_INDEX, markdown_path: Path = DEFAULT_MARKDOWN
-) -> dict[str, int]:
+) -> dict[str, Any]:
     document = json.loads(index_path.read_text(encoding="utf-8"))
-    graph = validate_requirement_graph(document, index_path=index_path)
-    projection = validate_markdown_projection(
+    _require(isinstance(document, dict), "index.json must contain an object")
+    components = validate_requirement_graph(document, index_path=index_path)
+    rows = validate_markdown_projection(
         document, markdown_path.read_text(encoding="utf-8")
     )
-    spec_projection = validate_spec_status_projection(document, index_path=index_path)
-    return {**graph, **projection, **spec_projection}
+    counts = {
+        maturity: sum(
+            component["maturity"] == maturity for component in components.values()
+        )
+        for maturity in sorted(EXPECTED_MATURITY)
+    }
+    return {
+        "component_count": len(components),
+        "markdown_component_count": len(rows),
+        "maturity_counts": counts,
+    }
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
-    parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
-    args = parser.parse_args(argv)
+def main() -> int:
     try:
-        summary = validate_repository(args.index, args.markdown)
+        result = validate_repository()
     except (json.JSONDecodeError, OSError, RequirementGraphError) as exc:
-        print(f"requirement graph validation failed: {exc}", file=sys.stderr)
+        print(f"Agent Runtime component index validation failed: {exc}", file=sys.stderr)
         return 1
-    print(json.dumps(summary, sort_keys=True))
+    print(json.dumps(result, sort_keys=True))
     return 0
 
 
