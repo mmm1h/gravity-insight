@@ -11,17 +11,13 @@
 3. **只推进有新证据的候选。** 精确 blocker 与下一步最小证据见[候选矩阵](candidate-capability-matrix.md)；租户数据和权限未变化时不重复空探测。
 4. **控制结构增长。** 共享 spine 串行接线；领域 core 可并行；生成 compiler、provenance、coverage 产物时串行。
 
-## Gravity Agent Runtime program
+## 当前架构范围
 
-用户已批准将本仓库从当前 Gravity SDK 内核演进为 Gravity Agent Runtime。目标范围包括同层 Capability Trust/Data Quality、版本化 Skill、Business Semantic、确定性 Operator/Model、有界 Context、受治理 Action/Artifact 和按触发条件建设的 MCP、隔离 SQL Explorer 与 External Control Plane。
-
-目标架构与当前能力必须分开：当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；未实现的目标面不得写成已交付。完整批准总纲位于 [architecture source](../specs/agent-runtime/architecture-source.md)，通过 `directive.json` 绑定 digest；串并行依赖和状态以 [Requirement Index](../specs/agent-runtime/index.md) 为准。
-
-当前程序状态：
-
-1. **计划已完成并整体发布**：原 `dev` 集成层按总纲在全部节点完成、整体验收通过和用户明确批准后推广到 `main`；除 R10 外，Requirement 与 milestone 均随 v0.3.2 达到 `released`。
-2. **R10（merged-main bounded stdio pilot）**：代码已进入 `main`，但盲测、真实 Host 和第二独立采用方仍是 `released`/永久第五产品面的门禁，不因整体发布而取消。
-3. **受保护 main 主干**：`main` 是唯一长期分支；日常开发从短命分支经必需的 `test` 状态检查和 PR 合入，不直接 commit/push，也不削弱保护。
+[Canonical Architecture](architecture.md) 只规定跨组件不变量，并由
+[`directive.json`](../specs/agent-runtime/directive.json) 绑定 digest。当前接口仍以 CLI/SDK/Plan、
+catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
+[Runtime Component Index](../specs/agent-runtime/index.md)。`main` 是唯一长期分支，日常变更从短命分支
+经必需状态检查和 PR 合入。
 
 ## 已定决策
 
@@ -40,8 +36,6 @@
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
-- R17（`released`；历史验收为 `fixed_dev`）已移除 83 个旧 deep module path（82 迁移 + pagination 删除）且无 shim；人工审阅 compact Agent interaction manifest，固定 consumer census、M0/回归/wheel 已证明 root facade、CLI/SDK/Plan/Agent 读取能力、147 lazy owner/148 `__all__` 与请求行为无损；legacy/v4 脚手架退役后 #11 关闭，不声称完整 Agent domain 或自动独立证明。
-  五条依赖有意保留：`agents.batch`、`agents.input_resolution` → `agent.discover_capabilities`；`agents.batch_questions` → `agent.DEFAULT_LIMIT`；`agents.host_selection`、`agents.output` → `agent.SCHEMA_VERSION`。只有真实职责变化、第二 owner 或 eager cycle 才触发另行批准的拆分；零反向边不再作为 #11 退出目标。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、
   聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。
 - 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。

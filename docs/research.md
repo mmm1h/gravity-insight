@@ -10,7 +10,7 @@
 | 安全治理 | 上游身份、最小投影和写前确认留在确定性边界；工具输出一律作为不可信数据 | [Agent 安全治理](archive/research/agent-security-governance.md) |
 | 协议与交付面 | CLI、SDK、Plan 仍是当前权威面；本地 MCP 只有出现第二个真实消费者和冻结验收题集后才重新评估 | [MCP 可行性](archive/research/mcp-feasibility.md)、[MCP 实现调研](archive/research/mcp-protocol-and-servers.md) |
 | 上游与 Census | 官方开放面和静态 route census 只能证明各自观察范围，不能当作平台能力全集 | [官方 API 面](archive/research/official-api-surface.md)、[Census 完整性](archive/research/census-completeness-audit.md) |
-| 外部方法来源 | 来源 URL、法律审查、版本和独立创作证明只保留在默认不可见 Registry；中立 Skill 只提交一份 canonical manifest，Hub 工件按需确定性生成 | [CT01](../specs/agent-runtime/CT01-external-method-inventory.md)、[CT02](../specs/agent-runtime/CT02-skill-library-validation.md)、[CT03](../specs/agent-runtime/CT03-skill-library-specification.md) |
+| 外部方法来源 | 来源 URL、法律审查、版本、独立创作证明和 metadata/hash 只保留在默认不可见 Registry；中立 Skill 只提交一份 canonical manifest，Hub 工件按需确定性生成，来源正文、案例、图表和营销数字不得进入分发工件 | [CT01](../specs/agent-runtime/CT01-external-method-inventory.md)、[CT02](../specs/agent-runtime/CT02-skill-library-validation.md)、[CT03](../specs/agent-runtime/CT03-skill-library-specification.md) |
 
 ## 使用边界
 

@@ -14,6 +14,7 @@ import sys
 import tokenize
 from typing import Any, Iterable, Mapping, Sequence
 
+from .documentation_gate import documentation_errors, load_json_object
 from .paths import CONTRACT_ROOT as PACKAGE_CONTRACT_ROOT
 from .paths import MANIFEST_ROOT as PACKAGE_MANIFEST_ROOT
 from .paths import PROJECT_ROOT
@@ -878,13 +879,6 @@ def evaluate_slope(profile: QualityProfile, root: Path, base_ref: str | None) ->
     ]
 
 
-def _read_json(path: Path) -> dict[str, Any]:
-    document = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(document, dict):
-        raise ValueError("JSON root must be an object")
-    return document
-
-
 def _baseline_at_ref(root: Path, ref: str | None) -> dict[str, Any] | None:
     if not ref or not ref.strip("0"):
         return None
@@ -906,7 +900,7 @@ def validate(root: Path, *, base_ref: str | None = None) -> list[str]:
     if not path.is_file():
         return [f"missing quality baseline {BASELINE_PATH.as_posix()}; run `{_baseline_command()}`"]
     try:
-        baseline = _read_json(path)
+        baseline = load_json_object(path)
     except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
         return [f"invalid quality baseline {BASELINE_PATH.as_posix()}: {exc}"]
     resolved_ref = base_ref if base_ref is not None else os.environ.get(BASE_REF_ENV)
@@ -936,6 +930,7 @@ def validate(root: Path, *, base_ref: str | None = None) -> list[str]:
                     errors.extend(migration_source_errors(baseline, sources))
             except (TypeError, ValueError, UnicodeError, subprocess.CalledProcessError) as exc:
                 errors.append(f"invalid quality baseline at {resolved_ref!r}: {exc}")
+    errors.extend(documentation_errors(root))
     return errors
 
 
@@ -1093,7 +1088,7 @@ def _run_check(root: Path, base_ref: str | None) -> int:
 def _run_baseline(root: Path, profile: QualityProfile, write: bool) -> int:
     path = root / BASELINE_PATH
     try:
-        prior = _read_json(path) if path.is_file() else None
+        prior = load_json_object(path) if path.is_file() else None
         document = debt_snapshot(profile, prior)
     except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
         print(f"FAIL P1 gravity-insight-quality: cannot update baseline: {exc}", file=sys.stderr)

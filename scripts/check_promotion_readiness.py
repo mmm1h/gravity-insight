@@ -1,9 +1,11 @@
+"""Audit current Agent Runtime component ownership and maturity projection."""
+
 from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import sys
 from typing import Any, Mapping
 
 try:
@@ -11,246 +13,88 @@ try:
         DEFAULT_INDEX,
         DEFAULT_MARKDOWN,
         RequirementGraphError,
-        parse_markdown_milestone_table,
         parse_markdown_requirement_table,
-        parse_spec_status,
+        validate_markdown_projection,
         validate_requirement_graph,
     )
 except ModuleNotFoundError:
-    from validate_agent_runtime_requirement_graph import (
+    from validate_agent_runtime_requirement_graph import (  # type: ignore[no-redef]
         DEFAULT_INDEX,
         DEFAULT_MARKDOWN,
         RequirementGraphError,
-        parse_markdown_milestone_table,
         parse_markdown_requirement_table,
-        parse_spec_status,
+        validate_markdown_projection,
         validate_requirement_graph,
     )
 
 
-def _dependencies(item: Mapping[str, Any]) -> list[str]:
-    return [
-        *[str(value) for value in item.get("dependencies", [])],
-        *[str(value) for value in item.get("milestone_dependencies", [])],
-    ]
-
-
-MAIN_INTEGRATED_STATUSES = frozenset({"merged_main", "released"})
-HISTORICAL_DELIVERY_STATUS = "fixed_dev"
 REMEDIATION_BY_CODE = {
-    "requirement_not_main_integrated": (
-        "Complete and merge the requirement to main, then record its actual "
-        "index status as `merged_main` or `released`."
-    ),
-    "milestone_not_main_integrated": (
-        "Complete and merge the milestone to main, then record its actual index "
-        "status as `merged_main` or `released`."
-    ),
-    "index_markdown_status_mismatch": (
-        "Set the Status cell in specs/agent-runtime/index.md to the exact status "
-        "recorded for this ID in specs/agent-runtime/index.json."
-    ),
-    "historical_spec_delivery_status_mismatch": (
-        "Restore this requirement's approved historical delivery status to "
-        "`fixed_dev` in its requirement specification; do not invent a new "
-        "delivery state to satisfy the audit."
-    ),
-    "undeclared_release_exception": (
-        "For a `merged_main` requirement, add its ID and the same status to "
-        "main_integration.release_exceptions, or record `released` only after "
-        "release has actually occurred."
-    ),
-    "release_exception_status_mismatch": (
-        "Make the declared release exception status exactly match this ID's "
-        "index.json status, after verifying that the exception is still needed."
-    ),
-    "dependency_not_main_integrated": (
-        "First complete every ID listed in dependencies and record each as "
-        "`merged_main` or `released`; then rerun this audit."
-    ),
-    "milestone_parent_mismatch": (
-        "Set this milestone's Parent requirement cell in index.md to the exact "
-        "requirement ID that owns it in index.json."
-    ),
-    "milestone_dependencies_mismatch": (
-        "Set this milestone's Dependencies cell in index.md to the exact ordered "
-        "dependency list recorded for it in index.json."
-    ),
+    "machine_owner_missing": "Assign at least one existing machine source and owner.",
+    "bounded_limits_missing": "State the current bounded or experimental limits in index.json.",
+    "index_markdown_maturity_mismatch": "Regenerate the Markdown maturity from index.json.",
+    "experimental_not_declared": "Use experimental maturity and state graduation evidence; do not claim stable.",
 }
 
 
 def build_promotion_readiness(
     document: Mapping[str, Any],
-    requirement_rows: Mapping[str, Mapping[str, Any]],
-    milestone_rows: Mapping[str, Mapping[str, Any]],
-    spec_statuses: Mapping[str, str],
+    component_rows: Mapping[str, Mapping[str, Any]],
     *,
     structural_errors: list[str] | None = None,
 ) -> dict[str, Any]:
-    requirements = list(document.get("requirements", []))
-    main_integration = document.get("main_integration", {})
-    release_exceptions = list(main_integration.get("release_exceptions", []))
-    exception_by_id = {
-        str(exception.get("id")): exception
-        for exception in release_exceptions
-        if isinstance(exception, Mapping)
-    }
-    status_by_id = {
-        str(requirement["id"]): str(requirement["status"])
-        for requirement in requirements
-    }
-    for requirement in requirements:
-        for milestone in requirement.get("milestones", []):
-            status_by_id[str(milestone["id"])] = str(milestone["status"])
-
-    requirement_results: list[dict[str, Any]] = []
-    milestone_results: list[dict[str, Any]] = []
-    blockers: list[dict[str, Any]] = []
-
-    for requirement in requirements:
-        requirement_id = str(requirement["id"])
-        index_status = str(requirement["status"])
-        markdown_status = requirement_rows.get(requirement_id, {}).get("status")
-        spec_status = spec_statuses.get(requirement_id)
+    blockers: list[dict[str, str]] = []
+    results: list[dict[str, Any]] = []
+    for component in document.get("components", []):
+        component_id = str(component.get("id"))
+        maturity = str(component.get("maturity"))
         reasons: list[str] = []
-        if index_status not in MAIN_INTEGRATED_STATUSES:
-            reasons.append("requirement_not_main_integrated")
-        if markdown_status != index_status:
-            reasons.append("index_markdown_status_mismatch")
-        if spec_status != HISTORICAL_DELIVERY_STATUS:
-            reasons.append("historical_spec_delivery_status_mismatch")
-        exception = exception_by_id.get(requirement_id)
-        if index_status == "merged_main" and exception is None:
-            reasons.append("undeclared_release_exception")
-        if exception is not None and exception.get("status") != index_status:
-            reasons.append("release_exception_status_mismatch")
-        dependencies = _dependencies(requirement)
-        dependency_statuses = {
-            dependency: status_by_id.get(dependency, "missing")
-            for dependency in dependencies
-        }
-        if any(
-            status not in MAIN_INTEGRATED_STATUSES
-            for status in dependency_statuses.values()
-        ):
-            reasons.append("dependency_not_main_integrated")
-        result = {
-            "id": requirement_id,
-            "kind": "requirement",
-            "statuses": {
-                "index_json": index_status,
-                "index_markdown": markdown_status,
-                "spec": spec_status,
-            },
-            "dependencies": dependency_statuses,
-            "main_integrated": not reasons,
-            "blockers": reasons,
-        }
-        requirement_results.append(result)
+        if not component.get("owner") or not component.get("machine_sources"):
+            reasons.append("machine_owner_missing")
+        if maturity in {"bounded", "experimental"} and not component.get("limits"):
+            reasons.append("bounded_limits_missing")
+        row = component_rows.get(component_id, {})
+        if row.get("maturity") != maturity:
+            reasons.append("index_markdown_maturity_mismatch")
+        if component_id == "mcp-stdio" and maturity != "experimental":
+            reasons.append("experimental_not_declared")
+        results.append(
+            {
+                "id": component_id,
+                "maturity": maturity,
+                "owned": not reasons,
+                "blockers": reasons,
+            }
+        )
         blockers.extend(
             {
-                "id": requirement_id,
-                "kind": "requirement",
+                "id": component_id,
                 "code": reason,
                 "remediation": REMEDIATION_BY_CODE[reason],
             }
             for reason in reasons
         )
-
-        for milestone in requirement.get("milestones", []):
-            milestone_id = str(milestone["id"])
-            index_milestone_status = str(milestone["status"])
-            markdown_row = milestone_rows.get(milestone_id, {})
-            markdown_milestone_status = markdown_row.get("status")
-            milestone_reasons: list[str] = []
-            if index_milestone_status not in MAIN_INTEGRATED_STATUSES:
-                milestone_reasons.append("milestone_not_main_integrated")
-            if markdown_milestone_status != index_milestone_status:
-                milestone_reasons.append("index_markdown_status_mismatch")
-            if markdown_row.get("parent_id") != requirement_id:
-                milestone_reasons.append("milestone_parent_mismatch")
-            milestone_dependencies = _dependencies(milestone)
-            if list(markdown_row.get("dependencies", [])) != milestone_dependencies:
-                milestone_reasons.append("milestone_dependencies_mismatch")
-            milestone_dependency_statuses = {
-                dependency: status_by_id.get(dependency, "missing")
-                for dependency in milestone_dependencies
-            }
-            if any(
-                status not in MAIN_INTEGRATED_STATUSES
-                for status in milestone_dependency_statuses.values()
-            ):
-                milestone_reasons.append("dependency_not_main_integrated")
-            milestone_result = {
-                "id": milestone_id,
-                "kind": "milestone",
-                "parent_id": requirement_id,
-                "statuses": {
-                    "index_json": index_milestone_status,
-                    "index_markdown": markdown_milestone_status,
-                    "parent_spec": spec_status,
-                },
-                "dependencies": milestone_dependency_statuses,
-                "main_integrated": not milestone_reasons,
-                "blockers": milestone_reasons,
-            }
-            milestone_results.append(milestone_result)
-            blockers.extend(
-                {
-                    "id": milestone_id,
-                    "kind": "milestone",
-                    "code": reason,
-                    "remediation": REMEDIATION_BY_CODE[reason],
-                }
-                for reason in milestone_reasons
-            )
-
     errors = list(structural_errors or [])
-    declared_exception_ids = set(exception_by_id)
-    if len(exception_by_id) != len(release_exceptions):
-        errors.append("release exceptions must have unique non-empty IDs")
-    unknown_exceptions = sorted(declared_exception_ids - set(status_by_id))
-    if unknown_exceptions:
-        errors.append(f"unknown release exceptions: {unknown_exceptions}")
-    all_main_integrated = all(
-        status in MAIN_INTEGRATED_STATUSES for status in status_by_id.values()
+    experimental = sorted(
+        item["id"] for item in results if item["maturity"] == "experimental"
     )
     projection_parity = not any(
-        blocker["code"]
-        in {
-            "index_markdown_status_mismatch",
-            "historical_spec_delivery_status_mismatch",
-            "milestone_parent_mismatch",
-            "milestone_dependencies_mismatch",
-            "undeclared_release_exception",
-            "release_exception_status_mismatch",
-        }
-        for blocker in blockers
+        item["code"] == "index_markdown_maturity_mismatch" for item in blockers
     )
-    promotion_complete = (
-        all_main_integrated and projection_parity and not blockers and not errors
-    )
+    complete = bool(results) and not blockers and not errors
     return {
-        "schema_version": "gravity.agent-runtime-promotion-audit.v2",
-        "promotion_complete": promotion_complete,
-        "all_index_requirements_main_integrated": all_main_integrated,
+        "schema_version": "gravity.agent-runtime-component-audit.v1",
+        "promotion_complete": complete,
+        "all_components_owned": all(item["owned"] for item in results),
         "projection_parity": projection_parity,
-        "release_exceptions": sorted(declared_exception_ids),
+        "release_exceptions": experimental,
         "structural_errors": errors,
         "summary": {
-            "requirement_count": len(requirement_results),
-            "milestone_count": len(milestone_results),
-            "main_integrated_requirement_count": sum(
-                1 for item in requirement_results if item["main_integrated"]
-            ),
-            "main_integrated_milestone_count": sum(
-                1 for item in milestone_results if item["main_integrated"]
-            ),
+            "component_count": len(results),
+            "owned_component_count": sum(item["owned"] for item in results),
             "blocker_count": len(blockers) + len(errors),
         },
         "blockers": blockers,
-        "requirements": requirement_results,
-        "milestones": milestone_results,
+        "components": results,
     }
 
 
@@ -260,40 +104,17 @@ def evaluate_promotion_readiness(
 ) -> dict[str, Any]:
     document = json.loads(index_path.read_text(encoding="utf-8"))
     markdown = markdown_path.read_text(encoding="utf-8")
-    structural_errors: list[str] = []
+    errors: list[str] = []
     try:
         validate_requirement_graph(document, index_path=index_path)
+        rows = validate_markdown_projection(document, markdown)
     except RequirementGraphError as exc:
-        structural_errors.append(str(exc))
-    try:
-        requirement_rows = parse_markdown_requirement_table(markdown)
-    except RequirementGraphError as exc:
-        structural_errors.append(str(exc))
-        requirement_rows = {}
-    try:
-        milestone_rows = parse_markdown_milestone_table(markdown)
-    except RequirementGraphError as exc:
-        structural_errors.append(str(exc))
-        milestone_rows = {}
-
-    spec_statuses: dict[str, str] = {}
-    index_root = index_path.resolve().parent
-    for requirement in document.get("requirements", []):
-        requirement_id = str(requirement["id"])
+        errors.append(str(exc))
         try:
-            spec_statuses[requirement_id] = parse_spec_status(
-                (index_root / requirement["path"]).read_text(encoding="utf-8"),
-                requirement_id,
-            )
-        except (OSError, RequirementGraphError) as exc:
-            structural_errors.append(str(exc))
-    return build_promotion_readiness(
-        document,
-        requirement_rows,
-        milestone_rows,
-        spec_statuses,
-        structural_errors=structural_errors,
-    )
+            rows = parse_markdown_requirement_table(markdown)
+        except RequirementGraphError:
+            rows = {}
+    return build_promotion_readiness(document, rows, structural_errors=errors)
 
 
 def _write_json(path: Path, value: Mapping[str, Any]) -> None:
@@ -305,7 +126,7 @@ def _write_json(path: Path, value: Mapping[str, Any]) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Audit the completed Agent Runtime main promotion and blockers."
+        description="Audit current Agent Runtime component ownership and maturity."
     )
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
@@ -314,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         result = evaluate_promotion_readiness(args.index, args.markdown)
     except (json.JSONDecodeError, OSError, TypeError, ValueError) as exc:
-        print(f"promotion readiness check failed: {exc}", file=sys.stderr)
+        print(f"component readiness check failed: {exc}", file=sys.stderr)
         return 2
     if args.output is not None:
         _write_json(args.output, result)

@@ -65,32 +65,23 @@
   短页、满页启发式提级或全量生产探测。
 
 ### 14. 根包仍然扁平，跨执行核心的大环仍未解
-- **接续范围**：接续已关闭 #11 中未由 R17 处理的两部分：R17 只迁移了 `agent_*` 家族，没有解决
-  `src/gravity_insight` 根包整体扁平化；跨 plan/analysis/metadata/kanban 执行核心的大环仍未拆。
-- **可测事实（2026-08-28，改名前）**：`src/gravity_sdk/*.py` 共 496 个；按文件名前缀计数，`plan*` 48、`analysis*` 29、
-  `export*` 16、`metadata*` 12、`segment*` 12、`kanban*` 11、`saved*` 8、`report*` 6。
-- **影响边界**：当前债务不改变公开导入或运行时行为，只增加模块定位、变更归属判断和跨域审查成本；后续治理也不得
-  以整理目录为由损失调用能力或改变执行 owner。
-- **已解前置（2026-08-27）**：[模块依赖图 v1](#14-机器图合同) 把节点、四类边、动态导出排除边界与 Tarjan
-  cyclic SCC 口径写成机器定义，可重建完整图，并由测试锁住定义摘要、图摘要与 SCC 成员及规模。
-- **第一有界单元（2026-08-28）**：`to_jsonable` 从 `runtime` 下沉至叶模块 `json_output` 并保持直接再导出；credential sanitizer 改依赖叶 owner。eager AST-only 仍为 `5`，AST-only `96`→`44`（完整序列 `44,41,3,3,3,2,2,2,2,2,2,1`），加 `_EXPORTS` 仍为 `422`。
-  canonical `521`→`522`：`json_output` 原本不在该 SCC 内，`runtime` 的 AST 边使其经 package-parent 并入；canonical 包含 lazy export/package-parent，因此上涨不表示拆环工作量回退，拆环仍按 AST-only `44`。
-- **第二有界单元（2026-08-28）**：Plan analysis 三个不可变合同常量下沉至零包内导入的叶模块 `plan_analysis_contract`；adapter 顶层再导出同一对象，`plan_schema()` 保持函数内延迟导入，仅改 owner。eager AST-only 仍为 `5`，AST-only `44`→`41`，原 44 环拆为 `11` 和 `8`（完整序列 `41,11,8,3,3,3,2,2,2,2,2,2,2,1`），加 `_EXPORTS` 仍为 `422`。
-  canonical `522`→`523`：新叶模块经 adapter/plan 的 AST 边与 package-parent 边并入既有 canonical SCC；canonical 包含 lazy export/package-parent，因此上涨不表示拆环工作量回退，真实拆环收益仍按 AST-only 的 `44` 拆为 `11` 和 `8` 判断。
-  R10 的八模块 MCP 协议叶包新增独立 canonical `8` 环；eager/AST-only 既有环规模不变，且未并入 `523` 大环。
-  2026-08-30 #24 新增 `analysis_query_batch_retry` 作为 Analysis batch 唯一重试 owner：节点 `662`→`663`，eager edge `2489`→`2491`、AST edge `2935`→`2939`；eager/AST-only 环仍为 `5` 与 `41`，完整 AST-only 序列不变。因 package-parent/lazy 边，ast+lazy `422`→`423`、canonical `523`→`524`；这不是拆环单元，不改变退出条件。
-  2026-08-30 #39 新增六个 user-detail aggregate 产品/CLI/Plan 模块：节点 `665`→`671`，eager edge `2499`→`2528`、AST edge `2970`→`3003`；eager/AST-only 环仍为 `5` 与 `41`，完整 AST-only 序列不变。因 package-parent/lazy 边，ast+lazy `424`→`428`、canonical `526`→`531`；这不是拆环单元，不改变退出条件。
-  仍无可靠门禁识别不带 `agent_` 前缀却被误放根目录的未来 Agent owner；明确不恢复 v4 职责契约判据：其成员集合由预选 `included_layers` 决定，回答不了未来模块是否属于该域。
-- **退出条件**：以该定义批准有界迁移单元，使上述家族迁入明确 owner 或留可机器验证的根级保留理由，消除大环，
-  建立非前缀 Agent owner 判据；全程保持公开导入、运行时行为、执行 owner 与调用能力不变，并以门禁锁住结果。
-- **委托决策**：`agent_under_standing_owner_delegation`；`owner_review: pending`。
+- **当前证据**：[模块依赖图 v1](#14-机器图合同) 定义可重建的节点、四类边、动态导出边界与 Tarjan SCC 口径；测试锁住定义、图与 SCC 摘要。根包仍聚合 plan/analysis/metadata/kanban 等多个执行域。
+- **Agent 包边界**：`gravity_insight.agents` 是 compact Agent interaction 的唯一实现包，`gravity_insight.agent` 是稳定 facade，`agent_runtime_contracts` 保留独立根级合同职责。五条有意保留的 facade 依赖由 bounded module/symbol-set gate 锁定；只有真实职责变化、第二 owner 或 eager cycle 才触发另行批准的拆分。
+- **影响**：不改变公开导入或运行行为，但增加定位、归属判断和跨域审查成本。目录治理不得损失调用能力、改变执行 owner 或添加 deep-path shim。
+- **退出条件**：按机器图批准有界迁移单元，使根级家族迁入明确 owner 或留下机器可验证的保留理由，消除大环并建立不依赖文件名前缀的 Agent owner 判据；公开 facade、请求行为和能力保持不变。
+
+### 15. Governor 与 Execution Variant 的当前范围仍是进程内有界实现
+- **当前证据**：adaptive state、队列、metrics、single-flight 成功结果和 kill switch 均是进程环境/内存状态，重启会清空；不声明跨进程或分布式协调。固定 Host Rate Limiter 与 bounded requester 继续拥有 pacing、Retry-After、retry 和 auth refresh。
+- **选择边界**：只有已登记、已 Characterize 的 event Analysis Direct/Plan variant 可参与；当前 Trust 仍可强制 Direct fallback，延迟或请求成本不能代替 Trust。选择结果不增加第二执行 owner。
+- **影响**：调用方不能把观测指标解释为持久 SLO，也不能把未登记 Product 当成自动 variant candidate。
+- **退出条件**：为新增候选逐一提供同层语义/完整性/DQ/claims/隐私/请求等价证据和 Journey regression；若需要持久或跨进程调度，先批准新的状态与隔离合同。
 
 ## 已关闭
 
 - 2026-08-31：#48 Direct/Plan result-envelope 结构债关闭：稳定产品 surface 由单一机器 registry 生成
   Empty/Partial/Error 六维 parity 矩阵，Plan preflight 离线执行该门禁；递归 completeness 只消费字符串状态，
   producer pagination/source/result audit 与 unknown claims 由 request-bound projector 保留。
-- 2026-08-27：#11 已关闭：R17 `fixed_dev`，82 项精确移动与 concept/owner/SCC/consumer/wheel 门禁已验收，根 `.py` 为 495、`agents/` 含 82 个实现模块；legacy/v4 脚手架退役，五条 facade 依赖按单一 owner 设计保留；`agent_under_standing_owner_delegation`，`owner_review: pending`。
+- Compact Agent package migration 已关闭；当前 facade/owner 约束保留在公开 API、module disposition 与 wheel 门禁，施工证据由 Git 保存。
 - 2026-08-26：#13 公开符号遮蔽债关闭：`gravity_sdk.__init__` 把模块 `__class__` 换装为
   `_ExportAwareModule`，`__getattribute__` 对 8 个碰撞符号每次访问都重查 `_EXPORTS`，
   子模块导入把包属性覆写为 module 时按 `_is_shadowing_module` fail-closed 重新解析而非
@@ -115,6 +106,6 @@
 <!-- MODULE_GRAPH_DEFINITION_V1_END -->
 <!-- MODULE_GRAPH_BASELINE_V1_START -->
 ```json
-{"definition_id":"gravity-insight-runtime-possible-module-dependency-graph.v1","definition_sha256":"b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326","edge_kind_counts":{"ast_delayed_import":475,"ast_eager_import":2502,"lazy_export_owner":63,"package_parent":663},"node_count":664,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"bc87d4a94185bfbc94f205cabc341046fad272f1dfba702f70a646b97c045295","cyclic_scc_sizes":[428,3,2],"edge_count":3017,"graph_sha256":"8fb16922dfe260f88185e11368380d13f843d8d7662a01f3e6949c2966c58b3e","largest_cyclic_scc_size":428,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":15,"cyclic_scc_sha256":"6933694537fa61fd0fac83b43262ceb8aafc655ca631c80f8cccd9abee4af6e0","cyclic_scc_sizes":[41,11,8,6,3,3,3,2,2,2,2,2,2,2,1],"edge_count":2954,"graph_sha256":"7c7e78ba1554434ba3c935e31642628095da191cf222769511b64e797f7f22f9","largest_cyclic_scc_size":41,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":6,"cyclic_scc_sha256":"03fde3d6c52e1c8facdeb42dee31b6a9e0ba37f022ce476d82fabc236fdcf0f5","cyclic_scc_sizes":[533,15,8,3,2,2],"edge_count":3599,"graph_sha256":"09cf525cc75f406023b3503ef3f0e9249152efb1b565725c4e4fa85fdd13ec08","largest_cyclic_scc_size":533,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"44030b75772ec96099606525c5adf31176fb58f6d27626721ece46d20ce0f7b0","cyclic_scc_sizes":[5],"edge_count":2502,"graph_sha256":"c7f0b634ce0c1896c3c39074c192abdcace686e4d50ed4d8bda5f8c5a57d03ba","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
+{"definition_id":"gravity-insight-runtime-possible-module-dependency-graph.v1","definition_sha256":"b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326","edge_kind_counts":{"ast_delayed_import":475,"ast_eager_import":2503,"lazy_export_owner":63,"package_parent":664},"node_count":665,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"bc87d4a94185bfbc94f205cabc341046fad272f1dfba702f70a646b97c045295","cyclic_scc_sizes":[428,3,2],"edge_count":3018,"graph_sha256":"5fba52eb3f27d09b737b820cac4f050c3ef2fd1545399fdf1ab62c37be3c4e4d","largest_cyclic_scc_size":428,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":15,"cyclic_scc_sha256":"6933694537fa61fd0fac83b43262ceb8aafc655ca631c80f8cccd9abee4af6e0","cyclic_scc_sizes":[41,11,8,6,3,3,3,2,2,2,2,2,2,2,1],"edge_count":2955,"graph_sha256":"dc8d36cec4f5ca07e8c4d056d791d93717c0d4b6080e04019220ff09ba61ba75","largest_cyclic_scc_size":41,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":6,"cyclic_scc_sha256":"03fde3d6c52e1c8facdeb42dee31b6a9e0ba37f022ce476d82fabc236fdcf0f5","cyclic_scc_sizes":[533,15,8,3,2,2],"edge_count":3601,"graph_sha256":"06144cdd37d84e229b021d42489f2d85812b150ec9fb74ce71c337e269c40b9f","largest_cyclic_scc_size":533,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"44030b75772ec96099606525c5adf31176fb58f6d27626721ece46d20ce0f7b0","cyclic_scc_sizes":[5],"edge_count":2503,"graph_sha256":"15f9cbbd24bd8f0a73e2fec1098ce7f732aa734e154e134254cbc2b93534d7f7","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
 ```
 <!-- MODULE_GRAPH_BASELINE_V1_END -->
