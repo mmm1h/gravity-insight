@@ -407,6 +407,81 @@ class UpdateStateTests(unittest.TestCase):
 
 
 class StartupPlanOnlyTests(unittest.TestCase):
+    def test_new_environment_names_take_effect_for_all_inputs(self) -> None:
+        self.assertEqual(
+            (
+                "GRAVITY_INSIGHT_AUTO_UPGRADE",
+                "GRAVITY_INSIGHT_PINNED_VERSION",
+                "GRAVITY_INSIGHT_AUTO_UPGRADE_TARGET_PYTHON",
+            ),
+            (AUTO_UPGRADE_ENV, PINNED_VERSION_ENV, TARGET_PYTHON_ENV),
+        )
+        self.assertTrue(startup_update_enabled(["agent"], environ={AUTO_UPGRADE_ENV: "1"}))
+        self.assertFalse(
+            startup_update_enabled(
+                ["agent"],
+                environ={AUTO_UPGRADE_ENV: "1", PINNED_VERSION_ENV: __version__},
+            )
+        )
+        self.assertEqual(
+            "C:/new/python.exe",
+            upgrade._target_python_from_environment(
+                {TARGET_PYTHON_ENV: "C:/new/python.exe"}
+            ),
+        )
+
+    def test_legacy_environment_names_remain_effective_for_all_inputs(self) -> None:
+        self.assertTrue(
+            startup_update_enabled(
+                ["agent"], environ={"GRAVITY_SDK_AUTO_UPGRADE": "1"}
+            )
+        )
+        self.assertFalse(
+            startup_update_enabled(
+                ["agent"],
+                environ={
+                    "GRAVITY_SDK_AUTO_UPGRADE": "1",
+                    "GRAVITY_SDK_PINNED_VERSION": __version__,
+                },
+            )
+        )
+        self.assertEqual(
+            "C:/legacy/python.exe",
+            upgrade._target_python_from_environment(
+                {"GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON": "C:/legacy/python.exe"}
+            ),
+        )
+
+    def test_new_environment_names_win_when_both_names_are_set(self) -> None:
+        self.assertFalse(
+            startup_update_enabled(
+                ["agent"],
+                environ={
+                    AUTO_UPGRADE_ENV: "0",
+                    "GRAVITY_SDK_AUTO_UPGRADE": "1",
+                },
+            )
+        )
+        self.assertTrue(
+            startup_update_enabled(
+                ["agent"],
+                environ={
+                    AUTO_UPGRADE_ENV: "1",
+                    PINNED_VERSION_ENV: "99.0.0",
+                    "GRAVITY_SDK_PINNED_VERSION": __version__,
+                },
+            )
+        )
+        self.assertEqual(
+            "C:/new/python.exe",
+            upgrade._target_python_from_environment(
+                {
+                    TARGET_PYTHON_ENV: "C:/new/python.exe",
+                    "GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON": "C:/legacy/python.exe",
+                }
+            ),
+        )
+
     def test_doctor_pin_and_off_switch_paths_disable_the_check(self) -> None:
         enabled = {AUTO_UPGRADE_ENV: "1"}
         self.assertFalse(startup_update_enabled(["agent"], environ={}))
@@ -612,10 +687,10 @@ class StartupPlanOnlyTests(unittest.TestCase):
 
     def test_test_and_evaluation_entrypoints_set_the_off_switch(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        self.assertIn('"GRAVITY_SDK_AUTO_UPGRADE": "0"', (
+        self.assertIn('"GRAVITY_INSIGHT_AUTO_UPGRADE": "0"', (
             root / "tests" / "__init__.py"
         ).read_text(encoding="utf-8"))
-        self.assertIn('os.environ["GRAVITY_SDK_AUTO_UPGRADE"] = "0"', (
+        self.assertIn('os.environ["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"', (
             root / "scripts" / "agent_usability_eval.py"
         ).read_text(encoding="utf-8"))
 

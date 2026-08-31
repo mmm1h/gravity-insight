@@ -16,8 +16,9 @@ from typing import Any, Mapping, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFINITION = (
-    "Every included gate exits 0 on one clean main commit using this worktree's "
-    "independent .venv, and one JSON receipt binds the result to that exact HEAD."
+    "Every applicable included gate passes on one clean main commit using this "
+    "worktree's independent .venv; optional prerequisite skips remain explicit, "
+    "and one JSON receipt binds the result to that exact HEAD."
 )
 POST_RELEASE_GATES = (
     {
@@ -253,7 +254,7 @@ def _gate_environment() -> dict[str, str]:
     environment["PYTHONNOUSERSITE"] = "1"
     environment["PYTHONUTF8"] = "1"
     environment["PYTHONIOENCODING"] = "utf-8"
-    environment["GRAVITY_SDK_AUTO_UPGRADE"] = "0"
+    environment["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"
     # pip's negative boolean option uses "0" to activate --no-build-isolation.
     environment["PIP_NO_BUILD_ISOLATION"] = "0"
     environment["HTTP_PROXY"] = "http://127.0.0.1:9"
@@ -310,6 +311,10 @@ def _summary(output: str) -> dict[str, Any]:
         if isinstance(value, Mapping):
             for key in (
                 "passed",
+                "status",
+                "reason_code",
+                "reason",
+                "strict_prerequisites",
                 "promotion_complete",
                 "all_index_requirements_main_integrated",
                 "case_count",
@@ -322,7 +327,28 @@ def _summary(output: str) -> dict[str, Any]:
                     summary[key] = value[key]
             if isinstance(value.get("summary"), Mapping):
                 summary["tool_summary"] = dict(value["summary"])
+            check = value.get("check")
+            if isinstance(check, Mapping):
+                for key in ("consumer_commit", "network_calls"):
+                    if key in check:
+                        summary[key] = check[key]
+                if isinstance(check.get("summary"), Mapping):
+                    summary["tool_summary"] = dict(check["summary"])
     return summary
+
+
+def _gate_status(exit_code: int, summary: Mapping[str, Any]) -> str:
+    reported = summary.get("status")
+    if reported == "pass":
+        return "pass" if exit_code == 0 else "fail"
+    if reported == "skipped":
+        reason = summary.get("reason")
+        if exit_code == 0 and isinstance(reason, str) and reason.strip():
+            return "skipped"
+        return "fail"
+    if reported == "fail":
+        return "fail"
+    return "pass" if exit_code == 0 else "fail"
 
 
 def run_gate(
@@ -357,6 +383,17 @@ def run_gate(
     if gate.name == "package_reference_checkpoint" and "stale checkpoint receipt:" in output:
         output += "\n" + PACKAGE_REFERENCE_STALE_GUIDANCE + "\n"
         log.write_text(output, encoding="utf-8", newline="\n")
+    summary = _summary(output)
+    status = _gate_status(exit_code, summary)
+    reason = summary.get("reason")
+    if not isinstance(reason, str) or not reason.strip():
+        reason = None
+    if status == "fail" and reason is None:
+        reason = (
+            f"gate timed out after {gate.timeout_seconds} seconds"
+            if timed_out
+            else f"gate exited with code {exit_code}"
+        )
     return {
         "name": gate.name,
         "command": list(gate.command),
@@ -366,10 +403,13 @@ def run_gate(
         "timeout_seconds": gate.timeout_seconds,
         "timed_out": timed_out,
         "exit_code": exit_code,
-        "passed": exit_code == 0,
+        "status": status,
+        "passed": status == "pass",
+        "reason_code": summary.get("reason_code"),
+        "reason": reason,
         "log_path": log.relative_to(ROOT).as_posix(),
         "log_sha256": hashlib.sha256(log.read_bytes()).hexdigest(),
-        "summary": _summary(output),
+        "summary": summary,
     }
 
 
@@ -387,8 +427,37 @@ def integrated_green(
         and before.get("independent_venv") is True
         and after.get("clean") is True
         and after.get("head") == before.get("head")
-        and all(gate.get("exit_code") == 0 for gate in gates)
+        and all(
+            gate.get("exit_code") == 0
+            and gate.get("status", "pass") in {"pass", "skipped"}
+            for gate in gates
+        )
     )
+
+
+def summarize_gate_results(gates: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    counts = {status: 0 for status in ("pass", "skipped", "fail")}
+    skipped: list[dict[str, Any]] = []
+    failed: list[dict[str, Any]] = []
+    for gate in gates:
+        status = str(gate.get("status", "fail"))
+        if status not in counts:
+            status = "fail"
+        counts[status] += 1
+        if status not in {"skipped", "fail"}:
+            continue
+        detail = {
+            "name": gate.get("name"),
+            "reason_code": gate.get("reason_code"),
+            "reason": gate.get("reason"),
+        }
+        (skipped if status == "skipped" else failed).append(detail)
+    return {
+        "gate_status_counts": counts,
+        "skipped_gates": skipped,
+        "failed_gates": [item["name"] for item in failed],
+        "failed_gate_details": failed,
+    }
 
 
 def _write_receipt(path: Path, receipt: Mapping[str, Any]) -> None:
@@ -489,16 +558,18 @@ def main(argv: list[str] | None = None) -> int:
         result = run_gate(gate, logs, environment)
         results.append(result)
         print(
-            f"DONE {gate.name} exit={result['exit_code']} "
-            f"duration={result['duration_seconds']}s",
+            f"DONE {gate.name} status={result['status']} "
+            f"exit={result['exit_code']} duration={result['duration_seconds']}s",
             flush=True,
         )
     after = preconditions()
     green = integrated_green(
         before, after, results, complete_gate_set=complete_gate_set
     )
+    gate_summary = summarize_gate_results(results)
+    has_skips = bool(gate_summary["skipped_gates"])
     receipt = {
-        "schema_version": "gravity.integrated-validation-receipt.v1",
+        "schema_version": "gravity.integrated-validation-receipt.v2",
         "definition": DEFINITION,
         "commit_sha": before["head"],
         "branch": before["branch"],
@@ -509,9 +580,12 @@ def main(argv: list[str] | None = None) -> int:
         "preconditions_before": before,
         "preconditions_after": after,
         "gates": results,
+        **gate_summary,
         "excluded_post_release_gates": list(POST_RELEASE_GATES),
         "integrated_validation_green": green,
-        "overall": "passed" if green else "failed",
+        "overall": (
+            "passed_with_skips" if green and has_skips else "passed" if green else "failed"
+        ),
     }
     receipt_path = args.receipt or run_root / "receipt.json"
     _write_receipt(receipt_path, receipt)
@@ -521,9 +595,7 @@ def main(argv: list[str] | None = None) -> int:
                 "receipt": _display_path(receipt_path),
                 "commit_sha": before["head"],
                 "gate_count": len(results),
-                "failed_gates": [
-                    result["name"] for result in results if not result["passed"]
-                ],
+                **gate_summary,
                 "integrated_validation_green": green,
             },
             ensure_ascii=False,

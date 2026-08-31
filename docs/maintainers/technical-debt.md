@@ -1,6 +1,6 @@
 # 技术债清单
 只登记当前源码或质量门禁能证明、且有明确退出条件的结构债务；产品缺口、上游无数据、历史事故和一次性工作不登记。
-每轮仅更新受影响条目：满足退出条件即删除正文并在末尾留一行历史，完整旧内容见归档快照。
+每轮仅更新受影响条目：满足退出条件即删除正文并在末尾留一行历史，完整旧内容从 Git 查看。
 
 ## 当前条目
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
@@ -91,7 +91,7 @@
   静默返回错误类型；`child-first`/`export-first`/`cross-order` 三种导入顺序均由隔离子进程
   测试锁定，碰撞集合本身有新增探测，未靠改名或「不要导入同名子模块」的约定规避。
 - 2026-08-25：#8 Title Package 已从编译合同派生 opaque JSON 字段，复用有界深度、元素和大小投影；未登记和非 opaque 标量规则仍 fail-closed。
-2026-08-19 以前关闭项见[清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)。
+- 2026-08-19 以前的关闭项仅保留在 Git 历史中。
 - 2026-08-20：Census POST 读词元债关闭，`uncovered_read` 仅保留安全方法/exact 静态确认，其余为
   `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
 - 2026-08-20：Agent 有界无 spec 路由改用 `NO_SPEC_PRODUCTS`，`REPORT_PRODUCTS` 保留同对象兼容别名。
