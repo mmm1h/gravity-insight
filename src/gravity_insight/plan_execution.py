@@ -19,13 +19,13 @@ from .plan_budget import PlanConcurrencyBudget
 from .plan_error import (
     category_action,
     detail_exit_code,
+    exception_detail,
     item_limit_detail,
-    safe_detail,
     safe_native_error,
 )
 from .result_source import aggregate_result_sources, plan_result_source
 from .plan_validation import bounded_int, validate_plan
-from .pagination_completeness import aggregate_completeness
+from .pagination_completeness import aggregate_completeness, validate_surface_registry
 
 
 def execute_plan(
@@ -273,6 +273,7 @@ def preflight_adapters(
 ) -> None:
     """Validate every declared request before any execution may begin."""
 
+    validate_surface_registry()
     for index, node in enumerate(plan.nodes):
         context = AdapterContext(
             node_id=node.node_id,
@@ -370,12 +371,7 @@ def exception_item(
             next_action=native.next_action or category_action(native.category, native.code),
         )
     else:
-        detail = safe_detail(
-            "PLAN_ADAPTER_EXCEPTION",
-            ErrorCategory.LOCAL.value,
-            stage=stage,
-            cause=cause,
-        )
+        detail = exception_detail(exc, stage=stage, cause=cause)
     return result_item(
         node, execution_id, foreach_index, False, "error", detail_exit_code(detail),
         None, detail.to_dict(), [],
