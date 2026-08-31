@@ -87,6 +87,9 @@
 
 ## 已关闭
 
+- 2026-08-31：#48 Direct/Plan result-envelope 结构债关闭：稳定产品 surface 由单一机器 registry 生成
+  Empty/Partial/Error 六维 parity 矩阵，Plan preflight 离线执行该门禁；递归 completeness 只消费字符串状态，
+  producer pagination/source/result audit 与 unknown claims 由 request-bound projector 保留。
 - 2026-08-27：#11 已关闭：R17 `fixed_dev`，82 项精确移动与 concept/owner/SCC/consumer/wheel 门禁已验收，根 `.py` 为 495、`agents/` 含 82 个实现模块；legacy/v4 脚手架退役，五条 facade 依赖按单一 owner 设计保留；`agent_under_standing_owner_delegation`，`owner_review: pending`。
 - 2026-08-26：#13 公开符号遮蔽债关闭：`gravity_sdk.__init__` 把模块 `__class__` 换装为
   `_ExportAwareModule`，`__getattribute__` 对 8 个碰撞符号每次访问都重查 `_EXPORTS`，
