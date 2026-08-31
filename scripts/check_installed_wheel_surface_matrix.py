@@ -304,21 +304,20 @@ def run_surface_matrix() -> dict[str, Any]:
         wheelhouse.mkdir()
         site.mkdir()
         wheel = build_or_reuse_offline_wheel(ROOT, wheelhouse)
-        _run(
-            [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--disable-pip-version-check",
-                "--no-index",
-                "--no-deps",
-                "--target",
-                str(site),
-                str(wheel),
-            ],
-            cwd=temporary,
-        )
+        install_command = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--disable-pip-version-check",
+            "--no-index",
+            "--no-deps",
+        ]
+        # Maintainer gates may run above the public <3.13 compatibility range.
+        if sys.version_info >= (3, 13):
+            install_command.append("--ignore-requires-python")
+        install_command.extend(["--target", str(site), str(wheel)])
+        _run(install_command, cwd=temporary)
         output = _run(
             [sys.executable, "-I", "-c", _PROBE, str(site)],
             cwd=temporary,

@@ -18,8 +18,9 @@
       "required": ["required", "allow_supporting", "allow_unverified"],
       "additionalProperties": false,
       "properties": {
-        "required": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["canonical", "supporting"]}},
+        "required": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["project_authoritative", "canonical", "supporting"]}},
         "allow_supporting": {"type": "boolean"},
+        "allow_declared_intent": {"type": "boolean"},
         "allow_unverified": {"type": "boolean"}
       }
     },
@@ -57,7 +58,7 @@
         "entity_refs": {"$ref": "#/$defs/string_array"},
         "valid_time": {"$ref": "#/$defs/time_range"},
         "effective_range": {"$ref": "#/$defs/date_range"},
-        "authority": {"enum": ["canonical", "supporting", "unverified"]},
+        "authority": {"enum": ["project_authoritative", "canonical", "supporting", "declared_intent", "unverified"]},
         "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]},
         "supersedes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 8, "maxLength": 2048}},
         "max_age_days": {"type": ["integer", "null"], "minimum": 0, "maximum": 36500}

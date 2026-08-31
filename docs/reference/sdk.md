@@ -265,9 +265,24 @@ rows = sql.execute_sql("SELECT count(*) AS total FROM governed_source")
 Evidence、聚合隐私或输出投影。团队产品和 Agent 使用 `query_sql_products()` 或 `gravity sql query`；
 不要把 `execute_sql()` 暴露为任意 SQL 工具。
 
-`gravity.sql_explorer` 与 Gravity SQL client 隔离，仅处理显式 SQLite request，使用 AST、只读数据库
-身份、authorizer 和资源预算。Explorer 的 promote 只编译 reviewed product definition，不自动安装、
-路由或授予 Trust。
+`gravity.sql_explorer.inspect()` / `execute()` 保留为显式本地 SQLite 合同测试路径，使用 AST、只读数据库
+身份、authorizer 和资源预算。联网 SQL Fast Lane 的 owner 是
+`gravity_insight.sql.verification.GravitySqlExplorerAdapter`；调用方用 `runtime_factory` 延迟提供既有
+governed HTTP Runtime。Adapter 在调用该 factory、读取凭据或创建 session 前校验已登记的精确
+`POST /custom_sql/api/sql/execute` 路由与人工 read
+confirmation，再用固定版本 sqlglot 对单条 `SELECT` / `WITH ... SELECT` 执行关系、函数、输出列和
+字面量 `LIMIT` 检查。请求 schema 是 `gravity.sql-fast-lane-request.v1`；结果固定为
+`trust=exploratory`、`completeness=unknown`、`allowed_claims=[]`，不能成为 Stable Journey 依赖。
+
+上游 bundle 没有公开数据库方言，Fast Lane 因而明确报告 `dialect=unknown`，generic AST 只作为保守
+语法门。当前 Web session 也不是独立只读身份；上游没有可验证的只读事务、scan row/byte budget 或
+在途取消合同。这些项在结果 `safety` 中保持 `unavailable_*`，由精确 AST/allowlist、一次请求、timeout
+和输出 row/byte/cell/column budget 补偿，但补偿控制不等同于身份或服务端资源隔离。
+
+两种 Explorer 的成功执行都只生成 reviewed promotion source；把 Fast Lane source 交给
+`SqlExplorerService.promote()` 时仍要求显式 approval，并复用现有 Registered SQL Product 安装器。
+Promotion 不会授予 stable identity 或
+`stable_dependency_allowed`，登记产品继续从 `query_sql_products()` 进入，不会回退到 Explorer。
 
 ## 错误与输出
 
