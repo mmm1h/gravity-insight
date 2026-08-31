@@ -205,6 +205,9 @@ class IntegratedValidationTests(unittest.TestCase):
                 "runtime_component_index",
                 "package_reference_checkpoint",
                 "release_provenance_offline_fixture",
+                "secret_scan",
+                "release_sbom",
+                "dependency_audit",
             }.issubset(names)
         )
 

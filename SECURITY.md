@@ -38,3 +38,12 @@ necessary but do not establish source identity; untrusted transport,
 cross-organization distribution, central revocation or compliance requirements
 also require organizational signature, provenance, trust-root and rollback
 policy. Those real identities and keys must be supplied by their owners.
+
+Release candidates are fail-closed on complete-history secret scanning,
+artifact-bound wheel and sdist SBOM generation, and isolated runtime dependency
+audit. Advisory-service unavailability means the dependency set could not be
+audited and blocks release; it never means that no vulnerabilities exist.
+Secret scanning reads Git-tracked content and Git history, not ignored local
+credential files. A local `.env.gravity.local` remains private and ignored, but
+committing it would place it in the blocking scan scope and is a credential
+incident requiring rotation and history remediation.

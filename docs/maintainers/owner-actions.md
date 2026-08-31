@@ -37,22 +37,27 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 - `main` is protected: no direct pushes or force pushes; changes merge through PRs.
 - The required status check is the existing Windows `test` job. Do not weaken it.
-- Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
-  ownership.
+- `.github/CODEOWNERS` assigns `* @mmm1h`; the placeholder was closed in
+  `e3fd462f`.
 
-## Governance contacts
+## Governance contacts — completed
 
-- Replace `<SECURITY_CONTACT>` in `SECURITY.md` with an approved private
-  security reporting channel.
-- Replace `<CONDUCT_CONTACT>` in `CODE_OF_CONDUCT.md` with an approved private
-  conduct reporting channel.
+- `SECURITY.md` and `CODE_OF_CONDUCT.md` use the Owner-approved private contact;
+  the placeholders were closed in `e3fd462f`.
 
-## Findings measured once, not yet wired into CI
+## Supply-chain enforcement (2026-08-31)
 
-CI gained no new jobs — Linux runners were declined and every candidate job (wheel
-smoke, Ruff, dependency audit, secret scan) targeted `ubuntu-latest`. These ran
-locally on 2026-08-20 instead, so the facts are known but nothing enforces them.
-The `pip-audit` finding was independently re-measured; the other counts are leads.
+Secret scan, dependency audit and artifact-bound wheel/sdist SBOM generation are
+hard failures in CI, Integrated Validation and the pre-publication release job.
+The generated SBOMs and value-free scan/audit receipts are attached to GitHub
+Release. See [Release Gate](releasing.md) for commands, failure semantics and
+the evidence-based status of the remaining section 5.9 items.
+
+## Historical findings measured before enforcement
+
+These checks ran locally on 2026-08-20 before supply-chain enforcement existed.
+The `pip-audit` finding was independently re-measured; the Ruff counts remain
+historical leads and are not part of the current supply-chain gate.
 
 | Check | Result | Follow-up |
 |---|---|---|

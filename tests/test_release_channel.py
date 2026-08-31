@@ -167,13 +167,15 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 self.assertTrue(_workflow_action_uses(workflow))
                 self.assertEqual([], _unpinned_action_uses(workflow))
 
-    def test_release_pin_scan_includes_all_four_named_step_actions(self) -> None:
+    def test_release_pin_scan_includes_all_six_named_step_actions(self) -> None:
         indented = re.findall(r"(?m)^\s+uses:\s*([^\s#]+)", self.workflow)
         self.assertEqual(
             [
                 "actions/upload-artifact",
+                "actions/upload-artifact",
                 "actions/download-artifact",
                 "pypa/gh-action-pypi-publish",
+                "actions/download-artifact",
                 "actions/download-artifact",
             ],
             [value.rsplit("@", 1)[0] for value in indented],
@@ -218,12 +220,21 @@ class ReleaseWorkflowTests(unittest.TestCase):
                     )
                 )
 
-    def test_build_is_read_only_and_publishes_one_checked_artifact(self) -> None:
+    def test_build_is_read_only_and_publishes_checked_artifacts_and_evidence(self) -> None:
         build = self._job("build")
         self.assertIn("contents: read", build)
         self.assertNotIn("contents: write", build)
         self.assertIn("name: python-distributions", build)
         self.assertIn("path: dist/", build)
+        self.assertIn("name: release-supply-chain", build)
+        self.assertIn("path: release-evidence/", build)
+        self.assertIn("scripts/scan_repository_secrets.py --history", build)
+        self.assertIn("scripts/generate_release_sbom.py", build)
+        self.assertIn("scripts/audit_release_dependencies.py", build)
+        self.assertLess(
+            build.index("scripts/audit_release_dependencies.py"),
+            self.workflow.index("  publish:"),
+        )
         self.assertNotIn("gh release create", build)
 
     def test_oidc_publish_precedes_the_only_github_release_job(self) -> None:
@@ -240,9 +251,11 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("timeout-minutes: 10", release_provenance)
         self.assertIn("scripts/verify_release_provenance.py", release_provenance)
         self.assertNotRegex(release_provenance, r"\b(?:delete|yank)\b")
-        self.assertIn("needs: publish", github_release)
+        self.assertIn("needs: [publish, release-provenance]", github_release)
         self.assertIn("contents: write", github_release)
         self.assertIn("name: python-distributions", github_release)
+        self.assertIn("name: release-supply-chain", github_release)
+        self.assertIn("release-evidence/*", github_release)
         self.assertIn("gh release create", github_release)
         self.assertEqual(1, self.workflow.count("gh release create"))
 

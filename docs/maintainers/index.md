@@ -9,6 +9,7 @@
 | --- | --- |
 | 领取、推进或关闭 GitHub Issue | [Issue 状态管理](issues.md) |
 | 完成发布治理中的人工决策或占位符 | [负责人操作清单](owner-actions.md) |
+| 执行或核对发布门禁与供应链证据 | [Release Gate](releasing.md) |
 | 查看或清理结构性技术债 | [技术债清单](technical-debt.md) |
 | 修改 Gravity Agent Runtime 架构 | [Canonical Architecture](../architecture.md) → [Runtime Component Index](../../specs/agent-runtime/index.md) → 对应机器 Schema/Registry 与 owner reference |
 | 定位已交付 composite / CLI / SDK / Plan owner | [产品面总览](product-surfaces.md) |
