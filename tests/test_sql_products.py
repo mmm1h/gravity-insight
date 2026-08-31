@@ -1065,5 +1065,174 @@ class GravityProductTests(unittest.TestCase):
             client.execute_sql("SELECT 1")
 
 
+class GravitySqlFastLaneTests(unittest.TestCase):
+    Adapter = verify_all.GravitySqlExplorerAdapter
+
+    @staticmethod
+    def request(sql="SELECT 1 AS probe_value LIMIT 1"):
+        return {
+            "schema_version": "gravity.sql-fast-lane-request.v1",
+            "sql": sql,
+            "policy": {
+                "allowed_relations": [],
+                "allowed_functions": [],
+                "output_columns": ["probe_value"],
+                "budgets": {
+                    "statement_timeout_ms": 5000,
+                    "max_rows": 1,
+                    "max_output_bytes": 1024,
+                    "max_cell_bytes": 128,
+                    "max_columns": 1,
+                },
+            },
+        }
+
+    @staticmethod
+    def response(status="SUCCESS", result=None):
+        response = mock.Mock()
+        response.status_code = 200
+        response.payload = {
+            "code": 200,
+            "data": {
+                "status": status,
+                "result": result
+                if result is not None
+                else {"columns": [{"name": "probe_value"}], "rows": [[1]]},
+            },
+        }
+        return response
+
+    def test_registered_sql_fast_lane_route_has_exact_static_evidence(self):
+        route_root = ROOT / "src/gravity_insight/contracts/routes"
+        registry = json.loads((route_root / "registry.json").read_text(encoding="utf-8"))
+        confirmations = json.loads(
+            (route_root / "probe-read-confirmations.json").read_text(encoding="utf-8")
+        )["confirmations"]
+        routes = [
+            item
+            for item in registry["routes"]
+            if (item["method"], item["path"])
+            == ("POST", "/custom_sql/api/sql/execute")
+        ]
+        reviewed = [
+            item
+            for item in confirmations
+            if (item["method"], item["path"])
+            == ("POST", "/custom_sql/api/sql/execute")
+        ]
+        self.assertEqual(1, len(routes))
+        self.assertEqual(1, len(reviewed))
+        self.assertEqual(("mmm1h", "2026-08-31"), (
+            reviewed[0]["reviewer"], reviewed[0]["reviewed_at"]
+        ))
+        self.assertEqual(3, len(routes[0]["static_control_flow"]))
+        self.assertTrue(routes[0]["static_source"]["complete_same_origin_js_graph"])
+
+    def test_fast_lane_inspect_is_offline_and_reports_control_gaps(self):
+        factory = mock.Mock(side_effect=AssertionError("inspection constructed runtime"))
+        result = self.Adapter(runtime_factory=factory).inspect(self.request())
+        self.assertTrue(result["ok"])
+        self.assertFalse(result["network_called"])
+        factory.assert_not_called()
+        self.assertEqual(("exploratory", "unknown", []), (
+            result["trust"], result["completeness"], result["allowed_claims"]
+        ))
+        self.assertEqual("unknown", result["dialect"])
+        self.assertEqual(
+            "unavailable_shared_web_session",
+            result["safety"]["independent_read_only_identity"],
+        )
+        self.assertEqual(
+            "unavailable_upstream_contract", result["safety"]["scan_budget"]
+        )
+
+    def test_fast_lane_ast_allowlists_and_literal_limit_are_enforced(self):
+        allowed = self.request(
+            "WITH bounded AS (SELECT 1 AS value) "
+            "SELECT value AS probe_value FROM bounded LIMIT 1"
+        )
+        self.assertTrue(self.Adapter().inspect(allowed)["ok"])
+        for sql in (
+            "SELECT 1 AS probe_value",
+            "SELECT 1 AS probe_value LIMIT 1; SELECT 2 AS probe_value LIMIT 1",
+            "DELETE FROM safe_table",
+            "INSERT INTO safe_table VALUES (1)",
+            "UPDATE safe_table SET value = 1",
+            "CREATE TABLE safe_table(value INTEGER)",
+            "SET x = 1",
+        ):
+            with self.subTest(sql_kind=sql.split()[0]):
+                result = self.Adapter().inspect(self.request(sql))
+                self.assertEqual("compile", result["error"]["stage"])
+                self.assertFalse(result["network_called"])
+
+    def test_fast_lane_success_is_bounded_exploratory_and_single_request(self):
+        runtime = mock.Mock()
+        runtime.request.return_value = self.response()
+        result = self.Adapter(runtime).execute(self.request())
+        self.assertTrue(result["ok"])
+        self.assertEqual((1, 1), (
+            result["row_count"], result["execution"]["request_count"]
+        ))
+        self.assertEqual("unknown", result["promotion_source"]["dialect"])
+        self.assertFalse(result["stable_dependency_allowed"])
+        runtime.request.assert_called_once()
+        self.assertEqual(1, runtime.request.call_args.kwargs["attempts"])
+
+    def test_fast_lane_output_budgets_fail_closed_without_partial_rows(self):
+        cases = (
+            {"columns": [{"name": "probe_value"}], "rows": [[1], [2]]},
+            {"columns": [{"name": "probe_value"}, {"name": "extra"}], "rows": [[1, 2]]},
+            {"columns": [{"name": "probe_value"}], "rows": [["x" * 256]]},
+        )
+        for response_result in cases:
+            runtime = mock.Mock()
+            runtime.request.return_value = self.response(result=response_result)
+            with self.subTest(shape=len(response_result["columns"])):
+                result = self.Adapter(runtime).execute(self.request())
+                self.assertEqual("shape", result["error"]["stage"])
+                self.assertEqual([], result["rows"])
+
+    def test_bind_failure_is_classified_before_network(self):
+        invalid = self.request()
+        del invalid["policy"]["budgets"]
+        result = self.Adapter(mock.Mock()).execute(invalid)
+        self.assertEqual("bind", result["error"]["stage"])
+        self.assertEqual((0, False), (
+            result["execution"]["request_count"], result["network_called"]
+        ))
+
+    def test_compile_failure_is_classified_before_network(self):
+        result = self.Adapter(mock.Mock()).execute(self.request("DELETE FROM safe_table"))
+        self.assertEqual("compile", result["error"]["stage"])
+        self.assertEqual("SQL_FAST_LANE_STATEMENT_FORBIDDEN", result["error"]["code"])
+        self.assertFalse(result["network_called"])
+
+    def test_plan_failure_is_classified_from_engine_rejection(self):
+        runtime = mock.Mock()
+        runtime.request.return_value = self.response(status="FAILED")
+        result = self.Adapter(runtime).execute(self.request())
+        self.assertEqual(("plan", "yes"), (
+            result["error"]["stage"], result["error"]["reached_sql_engine"]
+        ))
+
+    def test_execute_failure_is_classified_from_transport(self):
+        runtime = mock.Mock()
+        runtime.request.side_effect = RuntimeError("transport fixture")
+        result = self.Adapter(runtime).execute(self.request())
+        self.assertEqual("execute", result["error"]["stage"])
+        self.assertEqual(1, result["execution"]["request_count"])
+        self.assertNotIn("transport fixture", str(result))
+
+    def test_shape_failure_is_classified_from_projection_drift(self):
+        runtime = mock.Mock()
+        runtime.request.return_value = self.response(result={"columns": [], "rows": []})
+        result = self.Adapter(runtime).execute(self.request())
+        self.assertEqual(("shape", "contract"), (
+            result["error"]["stage"], result["error"]["category"]
+        ))
+        self.assertEqual([], result["rows"])
+
+
 if __name__ == "__main__":
     unittest.main()

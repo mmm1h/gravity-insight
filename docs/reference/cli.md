@@ -463,6 +463,11 @@ relation/function allowlist、timeout、VM step、row 与 byte budget 共同失�
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
 前进入稳定 Journey、Skill、Dashboard 或 Action。
 
+CLI 的 `sql explorer inspect|execute` 仍是离线 SQLite 路径。联网 Gravity SQL Fast Lane 目前只由 SDK
+模块 `gravity_insight.sql.verification.GravitySqlExplorerAdapter` 显式暴露；它不会被 Agent、Plan 或
+Registered Product 自动选中，方言与上游身份/事务/scan/cancel 缺口见
+[SDK SQL 专用底层 facade](sdk.md#sql-专用底层-facade)。
+
 ## Census
 
 `gravity census` 只用于静态路由盘点、diff、coverage 和 drift 检查。生产使用遵循
