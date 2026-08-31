@@ -20,6 +20,7 @@ except ModuleNotFoundError:
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONSUMER = ROOT.parent / "work-dashboard"
 DEFAULT_REVISION = "64c08582690ac4bb2b04d3c3cd22a5716b1dc0f0"
+STRICT_PREREQUISITES_ENV = "GRAVITY_REQUIRE_CANONICAL_CONSUMER"
 CONSUMER_TESTS = (
     "tests.test_gravity_insight_adoption",
     "tests.test_r01_reference_journey_consumer",
@@ -70,6 +71,12 @@ class ConsumerCheckError(RuntimeError):
     pass
 
 
+class ConsumerPrerequisiteError(ConsumerCheckError):
+    def __init__(self, reason_code: str, message: str) -> None:
+        super().__init__(message)
+        self.reason_code = reason_code
+
+
 def _run(
     command: list[str],
     *,
@@ -88,6 +95,47 @@ def _run(
         timeout=timeout,
         check=False,
     )
+
+
+def _resolve_consumer_revision(consumer_repository: Path, revision: str) -> str:
+    if not consumer_repository.is_dir():
+        raise ConsumerPrerequisiteError(
+            "consumer_repository_missing",
+            "canonical consumer repository directory is unavailable: "
+            f"{consumer_repository}",
+        )
+    repository_root = _run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=consumer_repository,
+    )
+    if repository_root.returncode != 0:
+        detail = repository_root.stderr.strip() or (
+            f"git exited {repository_root.returncode}"
+        )
+        raise ConsumerPrerequisiteError(
+            "consumer_repository_not_git",
+            "canonical consumer path is not a Git repository: "
+            f"path={consumer_repository}; git_error={detail}",
+        )
+    discovered_root = Path(repository_root.stdout.strip()).resolve()
+    if discovered_root != consumer_repository:
+        raise ConsumerPrerequisiteError(
+            "consumer_repository_not_git",
+            "canonical consumer path is not a Git repository root: "
+            f"path={consumer_repository}; discovered_root={discovered_root}",
+        )
+    resolved = _run(
+        ["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
+        cwd=consumer_repository,
+    )
+    if resolved.returncode != 0:
+        detail = resolved.stderr.strip() or f"git exited {resolved.returncode}"
+        raise ConsumerPrerequisiteError(
+            "consumer_revision_unavailable",
+            "canonical consumer revision is unavailable: "
+            f"revision={revision}; git_error={detail}",
+        )
+    return resolved.stdout.strip()
 
 
 def parse_unittest_summary(output: str) -> dict[str, int | bool | None]:
@@ -245,15 +293,7 @@ def check_installed_wheel_consumer(
     revision: str = DEFAULT_REVISION,
 ) -> dict[str, Any]:
     consumer_repository = consumer_repository.resolve()
-    resolved = _run(
-        ["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
-        cwd=consumer_repository,
-    )
-    if resolved.returncode != 0:
-        raise ConsumerCheckError(
-            f"canonical consumer revision is unavailable: {resolved.stderr.strip()}"
-        )
-    commit = resolved.stdout.strip()
+    commit = _resolve_consumer_revision(consumer_repository, revision)
     _require_revision_on_main(consumer_repository, commit)
     with tempfile.TemporaryDirectory(prefix="gravity-canonical-consumer-") as raw:
         temporary = Path(raw).resolve()
@@ -319,7 +359,7 @@ def check_installed_wheel_consumer(
         environment = os.environ.copy()
         environment.pop("PYTHONPATH", None)
         environment["PYTHONNOUSERSITE"] = "1"
-        environment["GRAVITY_SDK_AUTO_UPGRADE"] = "0"
+        environment["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"
         environment["WORK_DASHBOARD_GRAVITY_INSIGHT_ROOT"] = str(sdk_root)
         probe = _run(
             [
@@ -367,6 +407,77 @@ def check_installed_wheel_consumer(
         }
 
 
+def _strict_prerequisites_from_environment() -> bool:
+    raw = os.environ.get(STRICT_PREREQUISITES_ENV, "").strip().casefold()
+    if raw in {"", "0", "false", "no", "off"}:
+        return False
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    raise ConsumerCheckError(
+        f"{STRICT_PREREQUISITES_ENV} must be one of 1/0, true/false, "
+        "yes/no, or on/off"
+    )
+
+
+def run_consumer_gate(
+    consumer_repository: Path = DEFAULT_CONSUMER,
+    revision: str = DEFAULT_REVISION,
+    *,
+    strict_prerequisites: bool | None = None,
+) -> dict[str, Any]:
+    strict = (
+        _strict_prerequisites_from_environment()
+        if strict_prerequisites is None
+        else strict_prerequisites
+    )
+    try:
+        check = check_installed_wheel_consumer(consumer_repository, revision)
+    except ConsumerPrerequisiteError as exc:
+        status = "fail" if strict else "skipped"
+        return {
+            "schema_version": "gravity.installed-wheel-consumer-gate.v1",
+            "status": status,
+            "passed": False,
+            "exit_code": 2 if strict else 0,
+            "strict_prerequisites": strict,
+            "reason_code": exc.reason_code,
+            "reason": str(exc),
+            "consumer_repository": str(consumer_repository.resolve()),
+            "revision": revision,
+        }
+    except (ConsumerCheckError, OSError, subprocess.SubprocessError) as exc:
+        return {
+            "schema_version": "gravity.installed-wheel-consumer-gate.v1",
+            "status": "fail",
+            "passed": False,
+            "exit_code": 2,
+            "strict_prerequisites": strict,
+            "reason_code": "consumer_check_failed",
+            "reason": str(exc),
+            "consumer_repository": str(consumer_repository.resolve()),
+            "revision": revision,
+        }
+    passed = check.get("passed") is True
+    result = {
+        "schema_version": "gravity.installed-wheel-consumer-gate.v1",
+        "status": "pass" if passed else "fail",
+        "passed": passed,
+        "exit_code": 0 if passed else max(1, int(check.get("exit_code", 1))),
+        "strict_prerequisites": strict,
+        "consumer_repository": str(consumer_repository.resolve()),
+        "revision": revision,
+        "check": check,
+    }
+    if not passed:
+        result.update(
+            {
+                "reason_code": "consumer_tests_failed",
+                "reason": "canonical consumer tests did not pass",
+            }
+        )
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run the bound canonical consumer against an installed wheel."
@@ -375,14 +486,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--revision", default=DEFAULT_REVISION)
     args = parser.parse_args(argv)
     try:
-        result = check_installed_wheel_consumer(
+        result = run_consumer_gate(
             args.consumer_repository, args.revision
         )
-    except (ConsumerCheckError, OSError, subprocess.SubprocessError) as exc:
-        print(f"installed wheel consumer check failed: {exc}", file=sys.stderr)
-        return 2
+    except ConsumerCheckError as exc:
+        result = {
+            "schema_version": "gravity.installed-wheel-consumer-gate.v1",
+            "status": "fail",
+            "passed": False,
+            "exit_code": 2,
+            "strict_prerequisites": True,
+            "reason_code": "invalid_strict_prerequisites_setting",
+            "reason": str(exc),
+        }
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-    return 0 if result["passed"] else 1
+    return int(result["exit_code"])
 
 
 if __name__ == "__main__":
