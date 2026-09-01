@@ -48,13 +48,15 @@
       "machine_sources": [
         "../../skills/library",
         "../../skills/sources/registry.json",
-        "../../src/gravity_insight/contracts/schema/external-method-source-registry-v1.schema.json"
+        "../../src/gravity_insight/contracts/schema/external-method-source-registry-v1.schema.json",
+        "../../src/gravity_insight/contracts/schema/agent-skill-index-v1.schema.json"
       ],
       "reference": "CT03-skill-library-specification.md",
       "governance_references": [
         "CT01-external-method-inventory.md",
         "CT02-skill-library-validation.md",
-        "CT03-skill-library-specification.md"
+        "CT03-skill-library-specification.md",
+        "CT04-agent-skill-distribution.md"
       ]
     },
     {

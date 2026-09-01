@@ -48,12 +48,19 @@ class SkillRenderTests(unittest.TestCase):
         lines = files["SKILL.md"].splitlines()
         name = lines[1].split(":", 1)[1].strip()
         description = json.loads(lines[2].split(":", 1)[1].strip())
+        frontmatter_keys = {
+            line.split(":", 1)[0]
+            for line in lines[1:lines[1:].index("---") + 1]
+            if line and not line.startswith(" ")
+        }
 
         self.assertEqual(export["directory"], name)
         self.assertRegex(name, r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
         self.assertLessEqual(len(name), 64)
         self.assertTrue(1 <= len(description) <= 1024)
         self.assertLess(len(lines), 500)
+        self.assertEqual({"name", "description", "metadata"}, frontmatter_keys)
+        self.assertIn("  gravity-runtime-requires: ", files["SKILL.md"])
         self.assertEqual(
             {"SKILL.md", "references/GUIDE.md", "references/SCHEMA.json", "references/CLAIMS.md"},
             set(files),

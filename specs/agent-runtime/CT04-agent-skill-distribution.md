@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | `ready` |
+| Status | `implementation_validated` |
 | Owner | `scripts/generate_skill_library.py` |
 | Canonical input | `skills/library/*.json` |
 | Architecture | `docs/architecture.md` |
@@ -11,6 +11,7 @@
 | Directive approval | `approved` |
 | External approval | Owner approved in the 2026-09-01 Agent Skill productization directive |
 | Publication target | GitHub Release `skill-library-v1` |
+| Publication state | `pending_main_merge` |
 
 ## Requirement
 

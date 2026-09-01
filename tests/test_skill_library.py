@@ -87,6 +87,17 @@ class SkillLibraryTests(unittest.TestCase):
                 self.assertIn(manifest["provenance"]["source_ref"], refs)
                 self.assertEqual("independently_authored", manifest["provenance"]["authorship"])
 
+    def test_every_applicable_source_has_one_canonical_manifest(self) -> None:
+        expected = {
+            item["future_skill_uri"]
+            for item in self.registry["items"]
+            if item["mapping_kind"] == "future_skill"
+        }
+        self.assertEqual(
+            expected,
+            {skill_uri(manifest) for manifest in self.manifests},
+        )
+
     def test_five_library_journeys_use_neutral_ids(self) -> None:
         actual = {
             journey for manifest in self.manifests for journey in manifest["covers_journeys"]

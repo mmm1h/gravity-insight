@@ -437,6 +437,30 @@ gravity plan run --input plan.json --dry-run
 Journey readiness、Skill lock/trust、playbook checkpoint 和 Plan DAG 是不同合同；不得因某一层可发现
 就跳过其他层的 Trust、完整性、Context 或 effect 门禁。Plan 细节见 [Plan 参考](plan.md)。
 
+### Skill Hub 与 Agent Skill
+
+`skill-library-v1` Release 同时发布两种相互隔离的静态产物：`index.json` 和
+`runtime-skill-*.zip` 属于 Runtime Hub；`agent-index.json` 和 `agent-skill-*.zip` 属于 Codex、
+Claude Code 等宿主的 Agent Skill 投影。GitHub Release 资产使用全局唯一的扁平名称，两个 index
+不引用 Release 无法寻址的目录路径。普通 Runtime 包不含 `SKILL.md`，Agent Skill 也不携带执行代码、
+凭据或依赖实现。
+
+Runtime Hub 先由调用方取得并核验明确的 `source.json`，再走显式状态根：
+
+```powershell
+gravity skills sync --source source.json --state-root <state-root>
+gravity skills search <query> --state-root <state-root>
+gravity skills lock --skill <exact-skill-uri> --output gravity.skills.lock.json --state-root <state-root>
+gravity skills fetch --source source.json --lock gravity.skills.lock.json --state-root <state-root>
+gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
+```
+
+宿主先用同一 Release 的 `agent-skill-index-v1.schema.json` 验证 `agent-index.json`，按 exact
+`skill_uri` 选择 archive，核验 `sha256` 和 `size_bytes`，再把 ZIP 中唯一同名根目录交给宿主自己的
+Skill 安装机制。Runtime 不写宿主 Skill 目录。Agent Skill 可安装不代表可执行；入口必须读取
+`SCHEMA.json` 的声明和 Runtime 当前 readiness，在 `blocked`、`unvalidated` 或依赖未解析时停止。
+Model Artifact 的 `gravity models ... --source` 是模型诊断面，不是 Skill 安装方式。
+
 ## Metadata
 
 ```powershell

@@ -6,10 +6,11 @@
 
 ## 当前优先级
 
-1. **闭合可回答动线。** 优先修复已有产品的合同、结果可信度和调用成本，不用新增 raw operation 代替产品闭环。
-2. **消除调用方猜测。** Schema、错误、owner、effect、日期窗和 allowed claims 必须随机器合同交付。
-3. **只推进有新证据的候选。** 精确 blocker 与下一步最小证据见[候选矩阵](candidate-capability-matrix.md)；租户数据和权限未变化时不重复空探测。
-4. **控制结构增长。** 共享 spine 串行接线；领域 core 可并行；生成 compiler、provenance、coverage 产物时串行。
+1. **把 Skill Hub 交付为统一方法入口。** 所有已裁定适用于当前产品的外部方法先进入唯一 canonical Skill manifest，再同时生成 Runtime Hub 包和标准 Agent Skill 投影；分发不能伪造 readiness、validation、项目口径或依赖已满足。
+2. **闭合可回答动线。** 优先修复已有产品的合同、结果可信度和调用成本，不用新增 raw operation 代替产品闭环。
+3. **消除调用方猜测。** Schema、错误、owner、effect、日期窗和 allowed claims 必须随机器合同交付。
+4. **只推进有新证据的候选。** 精确 blocker 与下一步最小证据见[候选矩阵](candidate-capability-matrix.md)；租户数据和权限未变化时不重复空探测。
+5. **控制结构增长。** 共享 spine 串行接线；领域 core 可并行；生成 compiler、provenance、coverage 产物时串行。
 
 ## 当前架构范围
 
@@ -29,6 +30,9 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - recognizer 只对显式协调结构拆分多意图；中文成对 `既…也/又…`、保留右侧名词的 `和其他` 及 `和…一起/一并` 可由各子句独立 owner 组成精确 selector 集，已登记 unavailable gap 仍作为同次交接附件返回。
 - `report.get.query` 的 Agent owner card 暴露合同派生的顶层 raw 输入模板与完整 compact input schema，并优先于同 selector 的 generic operation card。
 - Runtime 拥有可复用 Semantic 类型/Schema、通用指标/方法定义、版本化 URI，以及单位、可加性、时间粒度、依赖、冲突和公式结构校验；调用项目拥有具体活动名称、SKU 实值、App/埋点绑定、项目专属公式参数与生效窗口和部门口径。
+- Skill Hub 的 canonical manifest 是统一方法与口径边界；Runtime Hub package 与 Host Agent `SKILL.md` 是同一 manifest 的两个确定性分发投影。Agent Skill 可安装不提升静态或运行时 readiness，外部来源只有先完成适用性、独立创作和许可裁决后才能进入 manifest。
+- Agent Skill 分发完成不等于 Method Complete；`generate_method_gap_report.py` 的逐项机器结果继续作为方法完整度 Owner，未完整 manifest 是后续 Skill Hub 内容深化的首要输入，不由 ZIP 数量或可安装状态掩盖。
+- Skill Library build receipt 直接升级到 v2，将完整本地 QA tree 与 GitHub Release 的扁平 `release_assets` 分开；v1 从未发布且没有当前消费者，因此该破坏性升级不损失读取或安装能力。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。

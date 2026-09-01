@@ -44,6 +44,9 @@ gravity skills show <skill_uri>
 ```
 
 Skill 不替代选路、Journey、权限或执行合同；`blocked` 必须停止，`validated` 不代表当前可执行。
+`skills list/show` 默认展示 wheel 内置项；团队 Skill 先通过明确的 Hub Source 完成
+`sync → search → lock → fetch → verify`。供 Codex、Claude Code 等宿主安装的 `SKILL.md` 包是同一
+canonical manifest 的独立 Agent 投影，按 `agent-index.json` 摘要核验，不使用 `gravity models --source`。
 
 ## 3. 补参并执行
 

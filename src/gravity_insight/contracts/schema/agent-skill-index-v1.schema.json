@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.agent-skill-index.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "index_version",
+    "canonical_source_sha256",
+    "skills"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "agent_skill_index"},
+    "schema_version": {"const": "gravity.agent-skill-index.v1"},
+    "index_version": {"const": 1},
+    "canonical_source_sha256": {"$ref": "#/$defs/digest"},
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/skill"}
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {
+      "type": "object",
+      "required": ["path", "size_bytes", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "enum": [
+            "SKILL.md",
+            "references/GUIDE.md",
+            "references/SCHEMA.json",
+            "references/CLAIMS.md"
+          ]
+        },
+        "size_bytes": {"type": "integer", "minimum": 1, "maximum": 262144},
+        "sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "archive": {
+      "type": "object",
+      "required": ["path", "sha256", "size_bytes", "media_type"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^agent-skill-[a-z0-9]+(?:-[a-z0-9]+)*\\.zip$",
+          "maxLength": 256
+        },
+        "sha256": {"$ref": "#/$defs/digest"},
+        "size_bytes": {"type": "integer", "minimum": 1, "maximum": 4194304},
+        "media_type": {"const": "application/vnd.gravity.agent-skill.v1+zip"}
+      }
+    },
+    "skill": {
+      "type": "object",
+      "required": [
+        "skill_uri",
+        "name",
+        "directory",
+        "namespace",
+        "skill_id",
+        "version",
+        "title",
+        "summary",
+        "lifecycle",
+        "readiness",
+        "validation",
+        "runtime_requires",
+        "manifest_digest",
+        "package_digest",
+        "files",
+        "archive"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "skill_uri": {
+          "type": "string",
+          "pattern": "^skill://[a-z][a-z0-9.-]*/[a-z0-9-]+@[0-9A-Za-z.-]+$",
+          "maxLength": 256
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "directory": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "namespace": {"type": "string", "minLength": 1, "maxLength": 128},
+        "skill_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "title": {"type": "string", "minLength": 1, "maxLength": 256},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 256},
+        "lifecycle": {"enum": ["draft", "reviewed", "stable", "deprecated", "revoked"]},
+        "readiness": {"enum": ["blocked", "executable"]},
+        "validation": {"enum": ["unvalidated", "validated"]},
+        "runtime_requires": {"type": "string", "minLength": 1, "maxLength": 128},
+        "manifest_digest": {"$ref": "#/$defs/digest"},
+        "package_digest": {"$ref": "#/$defs/digest"},
+        "files": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/file"}
+        },
+        "archive": {"$ref": "#/$defs/archive"}
+      }
+    }
+  }
+}
