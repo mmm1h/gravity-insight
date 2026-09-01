@@ -32,6 +32,8 @@ Migration guide: [0.3.3](docs/migration/0.3.3.md)
 
 ### Added
 
+- 增加随 wheel 分发的 `gravity.release-compatibility.v1` 机器契约、稳定读取 API 与
+  CHANGELOG 派生门禁，离线消费方可区分硬破坏、软破坏和历史未知状态。
 - 增加 user-detail aggregate 的 Direct、Plan 与 Agent 交付面，并补齐请求约束、分页
   完整性和错误分类（#43、#53）。
 - 增加受治理的素材文件获取、留存替代路线、批量分析闭环，以及 event analysis 的

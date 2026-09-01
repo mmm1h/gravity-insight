@@ -346,6 +346,7 @@ class IntegratedValidationTests(unittest.TestCase):
                 "compiler_check",
                 "quality_check",
                 "changelog",
+                "generator_release_compatibility",
                 "runtime_component_index",
                 "package_reference_checkpoint",
                 "release_provenance_offline_fixture",
