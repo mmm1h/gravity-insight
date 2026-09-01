@@ -1,4 +1,4 @@
-"""Test-side contracts for the agent module move."""
+"""Test-side contracts and graph forwarding for technical debt #14."""
 
 from __future__ import annotations
 
@@ -354,6 +354,7 @@ from scripts.audit_agent_module_references import (
     module_graph_adjacency,
     module_graph_baseline,
     module_graph_canonical_sha256,
+    module_graph_current_definition,
     module_graph_cyclic_sccs,
     module_graph_definition,
     module_graph_edge_kinds,

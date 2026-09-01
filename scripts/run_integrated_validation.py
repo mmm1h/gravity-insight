@@ -45,12 +45,12 @@ PACKAGE_REFERENCE_STALE_GUIDANCE = "\n".join(
         "disappears or changes classification, any blocker/actionable count "
         "changes, or scanner/generator logic changed.",
         "After that review approves a rebind: run `python "
-        "scripts/generate_agent_module_reference_dispositions.py`; inspect the "
+        "scripts/refresh_validation_harnesses.py`; this refreshes Repository Map first, "
+        "then the package-reference checkpoint. Inspect the "
         "candidate receipt diff; do not modify or rebind the immutable baseline "
         "fixture, Canonical Architecture directive, or component index. Run the "
-        "generator once more to confirm the fixed point; then run `python "
-        "scripts/generate_agent_module_reference_dispositions.py --check` and "
-        "require exit 0.",
+        "orchestrator once more with `--check` to confirm both fixed points; "
+        "do not run the two generators in reverse order. Require exit 0.",
     )
 )
 
@@ -160,6 +160,11 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
         GateSpec(
             "r12_three_stage_rollback",
             (py, "scripts/validate_r12_stage_rollbacks.py"),
+            600,
+        ),
+        GateSpec(
+            "repository_map",
+            (py, "scripts/generate_repository_map.py", "--check"),
             600,
         ),
         GateSpec(
