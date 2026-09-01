@@ -242,6 +242,43 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("gh release create", build)
 
+    def test_release_workspace_outputs_are_excluded_from_checkpoint_file_universe(
+        self,
+    ) -> None:
+        build = self._job("build")
+        outputs = (
+            (
+                "--receipt release-evidence/secret-scan.json",
+                "release-evidence/secret-scan.json",
+            ),
+            (
+                "--output-dir tmp/agent-usability-gate",
+                "tmp/agent-usability-gate/probe.json",
+            ),
+            ("> tmp/agent-usability-gate.log", "tmp/agent-usability-gate.log"),
+            ("python -m build", "build/probe"),
+            ("path: dist/", "dist/probe"),
+            ("--output-dir release-evidence", "release-evidence/probe.cdx.json"),
+            (
+                "--receipt release-evidence/dependency-audit.json",
+                "release-evidence/dependency-audit.json",
+            ),
+        )
+        for workflow_fragment, output in outputs:
+            with self.subTest(output=output):
+                self.assertIn(workflow_fragment, build)
+                ignored = _run(
+                    ["git", "check-ignore", "--verbose", "--", output], cwd=ROOT
+                )
+                self.assertEqual(
+                    0,
+                    ignored.returncode,
+                    f"{output} is a release workspace output but is not ignored; "
+                    "it can enter the checkpoint file universe from "
+                    "git ls-files --cached --others --exclude-standard",
+                )
+                self.assertRegex(ignored.stdout, r"^\.gitignore:\d+:")
+
     def test_oidc_publish_and_provenance_precede_github_release(self) -> None:
         publish = self._job("publish")
         release_provenance = self._job("release-provenance")

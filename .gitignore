@@ -17,6 +17,7 @@ __pycache__/
 venv/
 build/
 dist/
+release-evidence/
 *.zip
 tmp/*
 !tmp/.gitkeep
