@@ -1,0 +1,100 @@
+{
+  "artifact_kind": "external_context_provider",
+  "schema_version": "gravity.external-context-provider.v1",
+  "uri": "context-provider://gravity/gh-issues@1",
+  "version": 1,
+  "provider_id": "gh-issues",
+  "owner": "gravity-runtime/context",
+  "transport": "subprocess",
+  "effects": ["read"],
+  "auth_scope": "user",
+  "resource_types": ["document"],
+  "allowed_resource_prefixes": ["gh-cli://issues/repository/"],
+  "capabilities": {
+    "operations": ["read"],
+    "supports_cancellation": true,
+    "supports_cache": false,
+    "output_formats": ["json"],
+    "freshness_model": "content_hash",
+    "entity_time_alignment": "partial"
+  },
+  "rpc": {
+    "max_concurrency": 2,
+    "max_calls_per_session": 32,
+    "timeout_ms": 30000,
+    "cancellation_grace_ms": 1000,
+    "max_attempts": 1,
+    "max_output_bytes": 262144,
+    "max_output_tokens": 262144,
+    "circuit_failure_threshold": 2,
+    "circuit_cooldown_ms": 30000
+  },
+  "deployment": {
+    "sandbox_owner": "gravity-runtime/context-command",
+    "declared_egress_hosts": ["api.github.com:443"],
+    "inherits_gravity_credentials": false,
+    "subprocess": {
+      "executable": "C:/Program Files/GitHub CLI/gh.exe",
+      "arguments": [],
+      "working_directory": "D:/git-pjt/_wt_context",
+      "protocol": "command",
+      "command": {
+        "routes": [
+          {
+            "route_id": "github-issue",
+            "resource_prefix": "gh-cli://issues/repository/",
+            "path_segment_count": 3,
+            "arguments": [
+              {"literal": "issue"},
+              {"literal": "view"},
+              {"uri_path_segment": 2},
+              {"literal": "--repo"},
+              {"uri_path_segments": [0, 1], "separator": "/"},
+              {"literal": "--json"},
+              {"literal": "number,title,body,state,updatedAt,url"}
+            ],
+            "resource": {
+              "item_id": "github-issue",
+              "fact_id": "fact.github-issue",
+              "title": "GitHub issue",
+              "resource_type": "document",
+              "entity_refs": ["entity://gravity/project@1"],
+              "valid_time": {"start": null, "end": null, "timezone": "UTC"},
+              "effective_range": {"start": null, "end": null},
+              "sensitivity": "internal",
+              "citation_path": "gh/issue/view"
+            },
+            "failure_rules": [],
+            "freshness": null
+          }
+        ],
+        "guidance": {
+          "source_unavailable": {
+            "missing": "gh executable, login, or network access",
+            "message": "The external command source is currently unavailable; no empty-data claim was produced.",
+            "user_actions": [
+              "Install GitHub CLI and run `gh auth status`."
+            ]
+          },
+          "resource_unavailable": {
+            "missing": "the requested GitHub issue",
+            "message": "The requested external resource is missing or inaccessible; no empty-data claim was produced.",
+            "user_actions": [
+              "Check the owner, repository, issue number, and current GitHub access."
+            ]
+          },
+          "content_stale": {
+            "missing": "current GitHub issue content",
+            "message": "The external content did not satisfy the declared freshness model.",
+            "user_actions": [
+              "Refresh the issue source or its project binding, then retry the read."
+            ]
+          }
+        }
+      }
+    }
+  },
+  "source_trust": "observed",
+  "authority_ceiling": "declared_intent",
+  "role": "data"
+}

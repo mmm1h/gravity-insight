@@ -1,0 +1,143 @@
+{
+  "artifact_kind": "external_context_provider",
+  "schema_version": "gravity.external-context-provider.v1",
+  "uri": "context-provider://gravity/lark-cli@1",
+  "version": 1,
+  "provider_id": "lark-cli",
+  "owner": "gravity-runtime/context",
+  "transport": "subprocess",
+  "effects": ["read"],
+  "auth_scope": "user",
+  "resource_types": ["document", "project_semantic"],
+  "allowed_resource_prefixes": [
+    "lark-cli://base/records/",
+    "lark-cli://docs/documents/"
+  ],
+  "capabilities": {
+    "operations": ["read"],
+    "supports_cancellation": true,
+    "supports_cache": false,
+    "output_formats": ["json"],
+    "freshness_model": "content_hash",
+    "entity_time_alignment": "partial"
+  },
+  "rpc": {
+    "max_concurrency": 2,
+    "max_calls_per_session": 32,
+    "timeout_ms": 30000,
+    "cancellation_grace_ms": 1000,
+    "max_attempts": 1,
+    "max_output_bytes": 1048576,
+    "max_output_tokens": 1048576,
+    "circuit_failure_threshold": 2,
+    "circuit_cooldown_ms": 30000
+  },
+  "deployment": {
+    "sandbox_owner": "gravity-runtime/context-command",
+    "declared_egress_hosts": ["open.feishu.cn:443"],
+    "inherits_gravity_credentials": false,
+    "subprocess": {
+      "executable": "C:/Users/PC/AppData/Roaming/npm/lark-cli.cmd",
+      "arguments": [],
+      "working_directory": "D:/git-pjt/_wt_context",
+      "protocol": "command",
+      "command": {
+        "routes": [
+          {
+            "route_id": "schedule-records",
+            "resource_prefix": "lark-cli://base/records/",
+            "path_segment_count": 2,
+            "arguments": [
+              {"literal": "base"},
+              {"literal": "+record-list"},
+              {"literal": "--base-token"},
+              {"uri_path_segment": 0},
+              {"literal": "--table-id"},
+              {"uri_path_segment": 1},
+              {"literal": "--limit"},
+              {"literal": "200"},
+              {"literal": "--offset"},
+              {"literal": "0"},
+              {"literal": "--format"},
+              {"literal": "json"},
+              {"literal": "--as"},
+              {"literal": "user"}
+            ],
+            "resource": {
+              "item_id": "schedule-records-page-0",
+              "fact_id": "fact.schedule-records-page-0",
+              "title": "Schedule Base records page 0",
+              "resource_type": "document",
+              "entity_refs": ["entity://gravity/project@1"],
+              "valid_time": {"start": null, "end": null, "timezone": "Asia/Shanghai"},
+              "effective_range": {"start": null, "end": null},
+              "sensitivity": "internal",
+              "citation_path": "lark-cli/base/record-list"
+            },
+            "failure_rules": [],
+            "freshness": null
+          },
+          {
+            "route_id": "tracking-document",
+            "resource_prefix": "lark-cli://docs/documents/",
+            "path_segment_count": 1,
+            "arguments": [
+              {"literal": "docs"},
+              {"literal": "+fetch"},
+              {"literal": "--doc"},
+              {"uri_path_segment": 0},
+              {"literal": "--detail"},
+              {"literal": "simple"},
+              {"literal": "--doc-format"},
+              {"literal": "xml"},
+              {"literal": "--format"},
+              {"literal": "json"},
+              {"literal": "--as"},
+              {"literal": "user"}
+            ],
+            "resource": {
+              "item_id": "tracking-document",
+              "fact_id": "fact.tracking-document",
+              "title": "Tracking specification document",
+              "resource_type": "project_semantic",
+              "entity_refs": ["entity://gravity/project@1"],
+              "valid_time": {"start": null, "end": null, "timezone": "Asia/Shanghai"},
+              "effective_range": {"start": null, "end": null},
+              "sensitivity": "internal",
+              "citation_path": "lark-cli/docs/fetch"
+            },
+            "failure_rules": [],
+            "freshness": null
+          }
+        ],
+        "guidance": {
+          "source_unavailable": {
+            "missing": "lark-cli executable, login, or network access",
+            "message": "The external command source is currently unavailable; no empty-data claim was produced.",
+            "user_actions": [
+              "Install lark-cli and run `lark-cli doctor`.",
+              "Run `lark-cli auth status --json --verify`; if needed, use `lark-cli auth login` with the domain or exact scope reported by lark-cli."
+            ]
+          },
+          "resource_unavailable": {
+            "missing": "the requested Base table or document",
+            "message": "The requested external resource is missing or inaccessible; no empty-data claim was produced.",
+            "user_actions": [
+              "Check the resource URI identifiers and confirm the current user can open the resource."
+            ]
+          },
+          "content_stale": {
+            "missing": "current external source content",
+            "message": "The external content did not satisfy the declared freshness model.",
+            "user_actions": [
+              "Refresh the source or its project binding, then retry the read."
+            ]
+          }
+        }
+      }
+    }
+  },
+  "source_trust": "observed",
+  "authority_ceiling": "declared_intent",
+  "role": "data"
+}

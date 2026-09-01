@@ -49,6 +49,19 @@ class ProviderTransportError(RuntimeError):
         super().__init__(f"{reason_code}: {message}")
 
 
+def _json_pointer(value: Any, pointer: str) -> Any:
+    selected = value
+    for encoded in pointer.split("/")[1:]:
+        part = encoded.replace("~1", "/").replace("~0", "~")
+        if isinstance(selected, Mapping):
+            selected = selected[part]
+        elif isinstance(selected, list) and part.isdigit():
+            selected = selected[int(part)]
+        else:
+            raise TypeError("JSON Pointer does not match command output")
+    return selected
+
+
 class ProviderTransport(Protocol):
     kind: str
 
@@ -156,6 +169,8 @@ class SubprocessProviderTransport:
         binding = contract["deployment"]["subprocess"]
         if not isinstance(binding, Mapping):
             raise ValueError("Subprocess Provider binding is missing")
+        if binding.get("protocol", "provider_rpc") != "provider_rpc":
+            raise ValueError("Command Provider requires the command transport")
         root = _real_directory(Path(work_root), "Provider work root")
         working = _real_directory(Path(binding["working_directory"]), "Provider cwd")
         try:
@@ -216,41 +231,29 @@ class SubprocessProviderTransport:
             _close_process_streams(process)
 
     def _launch(self, cancellation_grace_ms: int) -> subprocess.Popen[bytes]:
-        flags: dict[str, Any] = {"start_new_session": True}
-        if os.name == "nt":
-            flags = {
-                "creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-                | windows_job_creation_flags()
-            }
-        try:
-            process = subprocess.Popen(
-                self._command,
-                cwd=self._working_directory,
-                env=self._environment,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=False,
-                **flags,
-            )
-            if os.name == "nt" and not _bind_windows_isolation(
-                process, cancellation_grace_ms
-            ):
-                raise ProviderTransportError(
-                    "PROVIDER_RPC_ISOLATION_FAILED",
-                    "Provider process isolation could not be established",
-                )
-            return process
-        except OSError as exc:
-            raise ProviderTransportError(
-                "PROVIDER_RPC_UNAVAILABLE", "Provider process could not start"
-            ) from exc
+        return _launch_subprocess(
+            self._command, self._working_directory, self._environment,
+            cancellation_grace_ms,
+        )
 
     def cancel(self, request_id: str, *, grace_ms: int) -> None:
         with self._guard:
             process = self._processes.get(request_id)
         if process is not None:
             _terminate_process_tree(process, grace_ms)
+
+
+def _launch_subprocess(command: list[str], working_directory: Path, environment: Mapping[str, str], grace_ms: int) -> subprocess.Popen[bytes]:
+    flags: dict[str, Any] = {"start_new_session": True}
+    if os.name == "nt":
+        flags = {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | windows_job_creation_flags()}
+    try:
+        process = subprocess.Popen(command, cwd=working_directory, env=environment, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, **flags)
+        if os.name == "nt" and not _bind_windows_isolation(process, grace_ms):
+            raise ProviderTransportError("PROVIDER_RPC_ISOLATION_FAILED", "Provider process isolation could not be established")
+        return process
+    except OSError as exc:
+        raise ProviderTransportError("PROVIDER_RPC_UNAVAILABLE", "Provider process could not start") from exc
 
 
 def _start_capture(
