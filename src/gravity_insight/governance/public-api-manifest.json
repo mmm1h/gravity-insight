@@ -1,0 +1,740 @@
+{
+  "schema_version": "gravity.public-api-manifest.v1",
+  "exports": [
+    {
+      "name": "DEFAULT_METADATA_TTL_SECONDS",
+      "module": ".cache",
+      "attribute": "DEFAULT_METADATA_TTL_SECONDS"
+    },
+    {
+      "name": "MetadataCache",
+      "module": ".cache",
+      "attribute": "MetadataCache"
+    },
+    {
+      "name": "bypass_metadata_cache",
+      "module": ".cache",
+      "attribute": "bypass_metadata_cache"
+    },
+    {
+      "name": "clear_metadata_cache",
+      "module": ".cache",
+      "attribute": "clear_metadata_cache"
+    },
+    {
+      "name": "is_metadata_operation",
+      "module": ".cache",
+      "attribute": "is_metadata_operation"
+    },
+    {
+      "name": "metadata_cache_stats",
+      "module": ".cache",
+      "attribute": "metadata_cache_stats"
+    },
+    {
+      "name": "OperationCatalog",
+      "module": ".catalog",
+      "attribute": "OperationCatalog"
+    },
+    {
+      "name": "OperationProbe",
+      "module": ".catalog",
+      "attribute": "OperationProbe"
+    },
+    {
+      "name": "GravityInsightClient",
+      "module": ".client",
+      "attribute": "GravityInsightClient"
+    },
+    {
+      "name": "GravitySDK",
+      "module": ".sdk",
+      "attribute": "GravitySDK"
+    },
+    {
+      "name": "connect",
+      "module": ".sdk",
+      "attribute": "connect"
+    },
+    {
+      "name": "JourneyService",
+      "module": ".journey_service",
+      "attribute": "JourneyService"
+    },
+    {
+      "name": "CoreSkillRuntime",
+      "module": ".core_skill_runtime",
+      "attribute": "CoreSkillRuntime"
+    },
+    {
+      "name": "RuntimeSkillResolver",
+      "module": ".runtime_skill_resolver",
+      "attribute": "RuntimeSkillResolver"
+    },
+    {
+      "name": "PreparedAnalysisPlanService",
+      "module": ".prepared_analysis_plan",
+      "attribute": "PreparedAnalysisPlanService"
+    },
+    {
+      "name": "ActionPlanService",
+      "module": ".action_plan",
+      "attribute": "ActionPlanService"
+    },
+    {
+      "name": "ExperimentHandoffService",
+      "module": ".experiment_handoff",
+      "attribute": "ExperimentHandoffService"
+    },
+    {
+      "name": "AnalysisArtifactService",
+      "module": ".analysis_artifact",
+      "attribute": "AnalysisArtifactService"
+    },
+    {
+      "name": "GovernorObservationService",
+      "module": ".governor_observation",
+      "attribute": "GovernorObservationService"
+    },
+    {
+      "name": "validate_governor_observation",
+      "module": ".governor_observation",
+      "attribute": "validate_governor_observation"
+    },
+    {
+      "name": "validate_governor_observation_snapshot",
+      "module": ".governor_observation",
+      "attribute": "validate_governor_observation_snapshot"
+    },
+    {
+      "name": "validate_adaptive_governor_snapshot",
+      "module": ".adaptive_governor",
+      "attribute": "validate_adaptive_governor_snapshot"
+    },
+    {
+      "name": "ExecutionVariantService",
+      "module": ".execution_variant",
+      "attribute": "ExecutionVariantService"
+    },
+    {
+      "name": "SqlExplorerService",
+      "module": ".sql_explorer",
+      "attribute": "SqlExplorerService"
+    },
+    {
+      "name": "validate_execution_variant",
+      "module": ".execution_variant",
+      "attribute": "validate_execution_variant"
+    },
+    {
+      "name": "validate_execution_variant_characterization",
+      "module": ".execution_variant",
+      "attribute": "validate_execution_variant_characterization"
+    },
+    {
+      "name": "validate_execution_variant_selection",
+      "module": ".execution_variant",
+      "attribute": "validate_execution_variant_selection"
+    },
+    {
+      "name": "validate_sql_explorer_request",
+      "module": ".sql_explorer",
+      "attribute": "validate_sql_explorer_request"
+    },
+    {
+      "name": "validate_sql_explorer_result",
+      "module": ".sql_explorer",
+      "attribute": "validate_sql_explorer_result"
+    },
+    {
+      "name": "validate_sql_explorer_promotion",
+      "module": ".sql_explorer",
+      "attribute": "validate_sql_explorer_promotion"
+    },
+    {
+      "name": "compile_analysis_artifact",
+      "module": ".analysis_artifact",
+      "attribute": "compile_analysis_artifact"
+    },
+    {
+      "name": "render_analysis_artifact_markdown",
+      "module": ".analysis_artifact_markdown",
+      "attribute": "render_analysis_artifact_markdown"
+    },
+    {
+      "name": "validate_analysis_artifact",
+      "module": ".analysis_artifact",
+      "attribute": "validate_analysis_artifact"
+    },
+    {
+      "name": "verify_analysis_artifact_source",
+      "module": ".analysis_artifact",
+      "attribute": "verify_analysis_artifact_source"
+    },
+    {
+      "name": "compile_analysis_result",
+      "module": ".analysis_result_contract",
+      "attribute": "compile_analysis_result"
+    },
+    {
+      "name": "compile_execution_snapshot",
+      "module": ".execution_snapshot",
+      "attribute": "compile_execution_snapshot"
+    },
+    {
+      "name": "compile_project_skill_overlay",
+      "module": ".project_skill_overlay",
+      "attribute": "compile_project_skill_overlay"
+    },
+    {
+      "name": "CapabilityTrustService",
+      "module": ".capability_trust",
+      "attribute": "CapabilityTrustService"
+    },
+    {
+      "name": "LocalSkillResolver",
+      "module": ".skill_package",
+      "attribute": "LocalSkillResolver"
+    },
+    {
+      "name": "CallableProviderTransport",
+      "module": ".provider_rpc_transport",
+      "attribute": "CallableProviderTransport"
+    },
+    {
+      "name": "ExternalContextProvider",
+      "module": ".external_context_provider",
+      "attribute": "ExternalContextProvider"
+    },
+    {
+      "name": "ExternalContextBindingResolver",
+      "module": ".external_context_binding",
+      "attribute": "ExternalContextBindingResolver"
+    },
+    {
+      "name": "ProviderRpcGuard",
+      "module": ".provider_rpc_guard",
+      "attribute": "ProviderRpcGuard"
+    },
+    {
+      "name": "subprocess_context_provider",
+      "module": ".external_context_provider",
+      "attribute": "subprocess_context_provider"
+    },
+    {
+      "name": "SkillHubClient",
+      "module": ".skill_hub_client",
+      "attribute": "SkillHubClient"
+    },
+    {
+      "name": "TrustedPackHubClient",
+      "module": ".trusted_pack_hub",
+      "attribute": "TrustedPackHubClient"
+    },
+    {
+      "name": "SemanticRegistry",
+      "module": ".semantic_registry",
+      "attribute": "SemanticRegistry"
+    },
+    {
+      "name": "OperatorRegistry",
+      "module": ".operator_registry",
+      "attribute": "OperatorRegistry"
+    },
+    {
+      "name": "ModelRegistry",
+      "module": ".model_registry",
+      "attribute": "ModelRegistry"
+    },
+    {
+      "name": "RepoContextProvider",
+      "module": ".repo_context_provider",
+      "attribute": "RepoContextProvider"
+    },
+    {
+      "name": "CompositeService",
+      "module": ".composite",
+      "attribute": "CompositeService"
+    },
+    {
+      "name": "Credential",
+      "module": ".credentials",
+      "attribute": "Credential"
+    },
+    {
+      "name": "CredentialConfig",
+      "module": ".credentials",
+      "attribute": "CredentialConfig"
+    },
+    {
+      "name": "CredentialProvider",
+      "module": ".credentials",
+      "attribute": "CredentialProvider"
+    },
+    {
+      "name": "ExportContractRegistry",
+      "module": ".export_contracts",
+      "attribute": "ExportContractRegistry"
+    },
+    {
+      "name": "ExportRouteContract",
+      "module": ".export_contracts",
+      "attribute": "ExportRouteContract"
+    },
+    {
+      "name": "ExportCreationRequest",
+      "module": ".export_runtime",
+      "attribute": "ExportCreationRequest"
+    },
+    {
+      "name": "ExportJobSnapshot",
+      "module": ".export_runtime",
+      "attribute": "ExportJobSnapshot"
+    },
+    {
+      "name": "ExportOrchestrator",
+      "module": ".export_runtime",
+      "attribute": "ExportOrchestrator"
+    },
+    {
+      "name": "ExportPollingPolicy",
+      "module": ".export_runtime",
+      "attribute": "ExportPollingPolicy"
+    },
+    {
+      "name": "ExportPrivacyContract",
+      "module": ".export_runtime",
+      "attribute": "ExportPrivacyContract"
+    },
+    {
+      "name": "ExportResult",
+      "module": ".export_runtime",
+      "attribute": "ExportResult"
+    },
+    {
+      "name": "ExportRuntimeError",
+      "module": ".export_runtime",
+      "attribute": "ExportRuntimeError"
+    },
+    {
+      "name": "ExportState",
+      "module": ".export_runtime",
+      "attribute": "ExportState"
+    },
+    {
+      "name": "GravityClient",
+      "module": ".sql",
+      "attribute": "GravityClient"
+    },
+    {
+      "name": "GravityInsightError",
+      "module": ".error_models",
+      "attribute": "GravityInsightError"
+    },
+    {
+      "name": "SqlBatchRequest",
+      "module": ".sql",
+      "attribute": "SqlBatchRequest"
+    },
+    {
+      "name": "SqlBatchResult",
+      "module": ".sql",
+      "attribute": "SqlBatchResult"
+    },
+    {
+      "name": "build_sql_client",
+      "module": ".sql",
+      "attribute": "build_sql_client"
+    },
+    {
+      "name": "PlanAdapter",
+      "module": ".plan",
+      "attribute": "PlanAdapter"
+    },
+    {
+      "name": "PlanAdapters",
+      "module": ".plan",
+      "attribute": "PlanAdapters"
+    },
+    {
+      "name": "PlanValidationError",
+      "module": ".plan",
+      "attribute": "PlanValidationError"
+    },
+    {
+      "name": "execute_plan",
+      "module": ".plan",
+      "attribute": "execute_plan"
+    },
+    {
+      "name": "plan_schema",
+      "module": ".plan",
+      "attribute": "plan_schema"
+    },
+    {
+      "name": "validate_plan",
+      "module": ".plan",
+      "attribute": "validate_plan"
+    },
+    {
+      "name": "assess_host_action",
+      "module": ".host_effects",
+      "attribute": "assess_host_action"
+    },
+    {
+      "name": "assess_host_plan",
+      "module": ".host_effects",
+      "attribute": "assess_host_plan"
+    },
+    {
+      "name": "compile_host_plan",
+      "module": ".host_effects",
+      "attribute": "compile_host_plan"
+    },
+    {
+      "name": "execute_host_plan",
+      "module": ".host_plan_execution",
+      "attribute": "execute_host_plan"
+    },
+    {
+      "name": "host_source",
+      "module": ".host_effects",
+      "attribute": "host_source"
+    },
+    {
+      "name": "host_effect_schema",
+      "module": ".host_effects",
+      "attribute": "host_effect_schema"
+    },
+    {
+      "name": "normalized_host_plan_request",
+      "module": ".host_effects",
+      "attribute": "normalized_host_plan_request"
+    },
+    {
+      "name": "host_product_catalog",
+      "module": ".agents.host_catalog",
+      "attribute": "host_product_catalog"
+    },
+    {
+      "name": "host_product_selection_schema",
+      "module": ".agents.host_catalog",
+      "attribute": "host_product_selection_schema"
+    },
+    {
+      "name": "assess_host_product_selection",
+      "module": ".agents.host_selection",
+      "attribute": "assess_host_product_selection"
+    },
+    {
+      "name": "compile_host_product_selection",
+      "module": ".agents.host_selection",
+      "attribute": "compile_host_product_selection"
+    },
+    {
+      "name": "resolve_host_product_selection",
+      "module": ".agents.host_selection",
+      "attribute": "resolve_host_product_selection"
+    },
+    {
+      "name": "PlanRecipe",
+      "module": ".workspace_plan_recipe",
+      "attribute": "PlanRecipe"
+    },
+    {
+      "name": "PlanRecipeError",
+      "module": ".workspace_plan_recipe",
+      "attribute": "PlanRecipeError"
+    },
+    {
+      "name": "expand_plan_recipe",
+      "module": ".workspace_plan_recipe",
+      "attribute": "expand_plan_recipe"
+    },
+    {
+      "name": "capabilities_many",
+      "module": ".agents.batch",
+      "attribute": "capabilities_many"
+    },
+    {
+      "name": "CompiledAnalysisQuery",
+      "module": ".analysis_spec",
+      "attribute": "CompiledAnalysisQuery"
+    },
+    {
+      "name": "analysis_query_spec_schema",
+      "module": ".analysis_spec",
+      "attribute": "analysis_query_spec_schema"
+    },
+    {
+      "name": "compile_query_spec",
+      "module": ".analysis_spec",
+      "attribute": "compile_query_spec"
+    },
+    {
+      "name": "AnalysisCohort",
+      "module": ".analysis_primitives",
+      "attribute": "AnalysisCohort"
+    },
+    {
+      "name": "AnalysisFilter",
+      "module": ".analysis_primitives",
+      "attribute": "AnalysisFilter"
+    },
+    {
+      "name": "AnalysisMetric",
+      "module": ".analysis_primitives",
+      "attribute": "AnalysisMetric"
+    },
+    {
+      "name": "AnalysisSpec",
+      "module": ".analysis_primitives",
+      "attribute": "AnalysisSpec"
+    },
+    {
+      "name": "AnalysisStep",
+      "module": ".analysis_primitives",
+      "attribute": "AnalysisStep"
+    },
+    {
+      "name": "analysis_query_batch_schema",
+      "module": ".analysis_query_batch",
+      "attribute": "analysis_query_batch_schema"
+    },
+    {
+      "name": "analysis_query_multi_app_schema",
+      "module": ".analysis_query_multi_app",
+      "attribute": "analysis_query_multi_app_schema"
+    },
+    {
+      "name": "execute_analysis_query_batch",
+      "module": ".analysis_query_batch",
+      "attribute": "execute_analysis_query_batch"
+    },
+    {
+      "name": "run_analysis_query_batch",
+      "module": ".analysis_query_batch",
+      "attribute": "run_analysis_query_batch"
+    },
+    {
+      "name": "validate_analysis_query_batch",
+      "module": ".analysis_query_batch",
+      "attribute": "validate_analysis_query_batch"
+    },
+    {
+      "name": "CompiledSegmentSpec",
+      "module": ".segment_spec",
+      "attribute": "CompiledSegmentSpec"
+    },
+    {
+      "name": "compile_segment_spec",
+      "module": ".segment_spec",
+      "attribute": "compile_segment_spec"
+    },
+    {
+      "name": "prepare_segment_spec",
+      "module": ".segment_spec",
+      "attribute": "prepare_segment_spec"
+    },
+    {
+      "name": "segment_rule_spec_schema",
+      "module": ".segment_spec",
+      "attribute": "segment_rule_spec_schema"
+    },
+    {
+      "name": "validate_segment_spec",
+      "module": ".segment_spec",
+      "attribute": "validate_segment_spec"
+    },
+    {
+      "name": "business_pulse",
+      "module": ".business_pulse",
+      "attribute": "business_pulse"
+    },
+    {
+      "name": "company_usage",
+      "module": ".company_usage",
+      "attribute": "company_usage"
+    },
+    {
+      "name": "title_packages",
+      "module": ".title_package",
+      "attribute": "title_packages"
+    },
+    {
+      "name": "fetch_material_asset",
+      "module": ".material_asset",
+      "attribute": "fetch_material_asset"
+    },
+    {
+      "name": "custom_audiences",
+      "module": ".custom_audience",
+      "attribute": "custom_audiences"
+    },
+    {
+      "name": "dashboard_snapshot",
+      "module": ".dashboard_snapshot",
+      "attribute": "dashboard_snapshot"
+    },
+    {
+      "name": "promotion_performance",
+      "module": ".promotion_performance",
+      "attribute": "promotion_performance"
+    },
+    {
+      "name": "promotion_performance_input_schema",
+      "module": ".promotion_performance",
+      "attribute": "promotion_performance_input_schema"
+    },
+    {
+      "name": "bilibili_account_performance",
+      "module": ".bilibili_account_performance",
+      "attribute": "bilibili_account_performance"
+    },
+    {
+      "name": "validate_bilibili_account_request",
+      "module": ".bilibili_account_performance",
+      "attribute": "validate_bilibili_account_request"
+    },
+    {
+      "name": "order_split_trace",
+      "module": ".order_trace",
+      "attribute": "order_split_trace"
+    },
+    {
+      "name": "validate_order_split_trace_request",
+      "module": ".order_trace",
+      "attribute": "validate_order_split_trace_request"
+    },
+    {
+      "name": "order_directory",
+      "module": ".order_directory",
+      "attribute": "order_directory"
+    },
+    {
+      "name": "validate_order_directory_request",
+      "module": ".order_directory",
+      "attribute": "validate_order_directory_request"
+    },
+    {
+      "name": "monetization_detail",
+      "module": ".monetization_detail",
+      "attribute": "monetization_detail"
+    },
+    {
+      "name": "validate_monetization_detail_request",
+      "module": ".monetization_detail",
+      "attribute": "validate_monetization_detail_request"
+    },
+    {
+      "name": "compile_saved_analysis_definition",
+      "module": ".saved_analysis",
+      "attribute": "compile_saved_analysis_definition"
+    },
+    {
+      "name": "execute_saved_analysis",
+      "module": ".saved_analysis",
+      "attribute": "execute_saved_analysis"
+    },
+    {
+      "name": "inspect_saved_analysis",
+      "module": ".saved_analysis",
+      "attribute": "inspect_saved_analysis"
+    },
+    {
+      "name": "list_saved_analyses",
+      "module": ".saved_analysis",
+      "attribute": "list_saved_analyses"
+    },
+    {
+      "name": "prepare_saved_analysis",
+      "module": ".saved_analysis",
+      "attribute": "prepare_saved_analysis"
+    },
+    {
+      "name": "resolve_saved_analysis",
+      "module": ".saved_analysis",
+      "attribute": "resolve_saved_analysis"
+    },
+    {
+      "name": "AuthenticationError",
+      "module": ".error_types",
+      "attribute": "AuthenticationError"
+    },
+    {
+      "name": "CredentialError",
+      "module": ".error_types",
+      "attribute": "CredentialError"
+    },
+    {
+      "name": "InputValidationError",
+      "module": ".error_types",
+      "attribute": "InputValidationError"
+    },
+    {
+      "name": "ManifestError",
+      "module": ".error_types",
+      "attribute": "ManifestError"
+    },
+    {
+      "name": "PaginationError",
+      "module": ".error_types",
+      "attribute": "PaginationError"
+    },
+    {
+      "name": "ParentRequiredError",
+      "module": ".error_types",
+      "attribute": "ParentRequiredError"
+    },
+    {
+      "name": "PermissionUnavailableError",
+      "module": ".error_types",
+      "attribute": "PermissionUnavailableError"
+    },
+    {
+      "name": "PolicyViolation",
+      "module": ".error_types",
+      "attribute": "PolicyViolation"
+    },
+    {
+      "name": "SemanticRejectedError",
+      "module": ".error_types",
+      "attribute": "SemanticRejectedError"
+    },
+    {
+      "name": "TransportError",
+      "module": ".error_types",
+      "attribute": "TransportError"
+    },
+    {
+      "name": "UnknownOperationError",
+      "module": ".error_types",
+      "attribute": "UnknownOperationError"
+    },
+    {
+      "name": "UpstreamContradictedRequestError",
+      "module": ".error_types",
+      "attribute": "UpstreamContradictedRequestError"
+    },
+    {
+      "name": "UpstreamError",
+      "module": ".error_types",
+      "attribute": "UpstreamError"
+    },
+    {
+      "name": "GravityExportError",
+      "module": ".error_sql",
+      "attribute": "GravityExportError"
+    },
+    {
+      "name": "SqlResponseError",
+      "module": ".error_sql",
+      "attribute": "SqlResponseError"
+    },
+    {
+      "name": "SqlValidationError",
+      "module": ".error_sql",
+      "attribute": "SqlValidationError"
+    }
+  ]
+}

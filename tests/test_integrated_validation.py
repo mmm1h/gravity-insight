@@ -349,6 +349,7 @@ class IntegratedValidationTests(unittest.TestCase):
                 "generator_release_compatibility",
                 "runtime_component_index",
                 "package_reference_checkpoint",
+                "public_api_export_manifest",
                 "release_provenance_offline_fixture",
             }.issubset(names)
         )
