@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-churn-cohort-size",
+      "returned-churn-feature-lift",
+      "qualified-churn-segment"
+    ],
     "forbidden": [
       "causality",
       "complete-user-population",
@@ -39,6 +43,504 @@
     "title": "受治理的流失分群画像"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "画像差异是观测关联，不解释为个人动机或流失原因。"
+      ],
+      "cohort": [
+        "新用户、回流、测试账号和不可观测用户按项目规则分层或排除。"
+      ],
+      "inputs": [
+        "输入含稳定用户键、合格状态、最近有效活动、注册或回流时间及允许画像维度。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "churn-definition",
+          "subject": "合格用户、无活动阈值、回流和成熟规则。"
+        },
+        {
+          "calibration_id": "profile-policy",
+          "subject": "允许维度、隐私阈值和未知值处理。"
+        },
+        {
+          "calibration_id": "comparison-cohort",
+          "subject": "活跃对照、队列年龄和可比窗口。"
+        }
+      ],
+      "time": [
+        "流失观察窗和结果成熟窗闭合，迟到事件与回流单独处理。"
+      ],
+      "unit": [
+        "流失率按去重合格用户计算，画像占比与对照提升使用同一分母口径。"
+      ]
+    },
+    "business_question": "在项目批准的流失定义和观察成熟度下，哪些合格用户进入流失队列；返回特征与活跃对照有何差异，哪些差异仅是关联或数据偏差？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "cohort://project/churn-eligible@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/churn-state@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/churn-segment-profile@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "definition-or-observation-gap",
+          "checks": [
+            "重算资格与成熟窗口。",
+            "核对身份和活动事件覆盖。"
+          ],
+          "condition": "队列规模异常与阈值、成熟、身份或事件覆盖变化重合。",
+          "leaves": [
+            {
+              "conclusion": "降级为未成熟队列。",
+              "condition": "部分用户尚未获得完整流失观察机会。",
+              "exclusions": [
+                "不得把未回访暂态当作最终流失。"
+              ],
+              "leaf_id": "immature-outcome"
+            },
+            {
+              "conclusion": "报告测量缺口。",
+              "condition": "异常集中在身份或关键活动缺失。",
+              "exclusions": [
+                "不得把缺事件解释为无活动。"
+              ],
+              "leaf_id": "identity-or-activity-gap"
+            }
+          ]
+        },
+        {
+          "branch_id": "returned-feature-concentration",
+          "checks": [
+            "计算对照提升与置信范围。",
+            "跨窗口验证方向一致性。"
+          ],
+          "condition": "定义稳定且若干聚合特征相对对照持续集中。",
+          "leaves": [
+            {
+              "conclusion": "报告为关联画像候选。",
+              "condition": "特征提升跨窗稳定且样本充分。",
+              "exclusions": [
+                "不得声称该特征导致流失。"
+              ],
+              "leaf_id": "stable-associated-feature"
+            },
+            {
+              "conclusion": "分层后重新评估。",
+              "condition": "差异可由资历、渠道或版本组成解释。",
+              "exclusions": [
+                "不得把混杂差异用于个人标签。"
+              ],
+              "leaf_id": "composition-confounding"
+            }
+          ]
+        }
+      ],
+      "root_question": "流失队列和画像差异能否在锁定定义、成熟度与可比对照下复算？"
+    },
+    "dimension_scan": {
+      "baseline": "以同龄、同成熟度的活跃或未流失用户为对照。",
+      "contribution_formula": "feature_lift_k = share_churned_k / share_comparison_k",
+      "dimensions": [
+        {
+          "dimension_id": "tenure",
+          "label": "用户资历"
+        },
+        {
+          "dimension_id": "progress-stage",
+          "label": "进度阶段"
+        },
+        {
+          "dimension_id": "engagement-band",
+          "label": "活跃深度"
+        },
+        {
+          "dimension_id": "payment-segment",
+          "label": "付费分层"
+        }
+      ],
+      "minimum_volume_rule": "低于隐私或最小样本门槛的特征合并为低样本桶。",
+      "ranking_rule": "按流失队列覆盖、对照提升、样本量和跨窗稳定性排序。",
+      "residual_policy": "未知身份、未成熟结果、回流和缺失特征单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-user-population",
+            "sensitive-trait-inference"
+          ],
+          "question": "按项目流失定义识别成熟队列，并与可比活跃用户做聚合画像。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-user-population",
+            "sensitive-trait-inference"
+          ],
+          "question": "部分队列尚未走完流失窗时如何限制规模和画像？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-user-population",
+            "sensitive-trait-inference"
+          ],
+          "question": "没有流失阈值和身份合同，能否按最近未登录直接创建召回名单？"
+        }
+      ],
+      "questions": [
+        "按项目流失定义识别成熟队列，并与可比活跃用户做聚合画像。",
+        "部分队列尚未走完流失窗时如何限制规模和画像？",
+        "没有流失阈值和身份合同，能否按最近未登录直接创建召回名单？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-churn-cohort-size",
+              "returned-churn-feature-lift",
+              "qualified-churn-segment"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-user-population",
+              "sensitive-trait-inference"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "按项目流失定义识别成熟队列，并与可比活跃用户做聚合画像。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-churn-cohort-size"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-user-population",
+              "sensitive-trait-inference"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分队列尚未走完流失窗时如何限制规模和画像？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-user-population",
+              "sensitive-trait-inference"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有流失阈值和身份合同，能否按最近未登录直接创建召回名单？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "流失阈值不是永久离开事实。",
+      "聚合画像不等于个体意图或因果根因。",
+      "不得输出可逆用户身份或低于隐私门槛的切片。",
+      "本方法不创建召回人群、不发送消息、不预测个人必然流失。"
+    ],
+    "formulas": [
+      {
+        "denominator": "同一资格窗内可被完整观察的去重合格用户数。",
+        "expression": "churn_rate = distinct_mature_churned_users / distinct_eligible_users",
+        "formula_id": "observed-churn-rate",
+        "interpretation": "该比率由项目流失定义决定，不代表永久离开或个人未来行为。",
+        "numerator": "达到项目流失条件且结果已成熟的去重用户数。",
+        "requires_project_calibration": [
+          "churn-definition",
+          "profile-policy",
+          "comparison-cohort"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "用户去重计数",
+            "definition": "达到流失阈值且未在成熟窗回访的用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "mature_churned_users"
+          },
+          {
+            "aggregation": "用户去重计数",
+            "definition": "具有完整可观测机会的合格用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "eligible_users"
+          }
+        ],
+        "window": "资格窗加项目流失阈值和成熟缓冲。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定流失定义、身份、成熟和隐私合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集流失队列、活跃对照和允许特征返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算流失率、特征占比与对照提升，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿定义或成熟偏差与真实特征集中两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成流失队列规模、聚合画像、残差和限制，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "已有合格用户、活跃或流失状态、观察窗和可比对照的项目定义。",
+        "需要形成可复算的流失队列和聚合画像，而不是输出个人名单。"
+      ],
+      "not_applicable": [
+        "流失阈值、回流处理、成熟窗口或身份口径尚未锁定。",
+        "要求预测个人必然流失、读取未授权用户级数据或直接创建召回人群。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-churn-cohort-size"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [

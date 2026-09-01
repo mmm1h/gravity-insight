@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-first-purchase-rate",
+      "returned-first-purchase-stage-gap",
+      "qualified-first-purchase-hypothesis"
+    ],
     "forbidden": [
       "causality",
       "complete-lifetime-history",
@@ -39,6 +43,490 @@
     "title": "首购队列观测"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "步骤差异与首购只构成关联，商品或引导效果需要实验。"
+      ],
+      "cohort": [
+        "回流、重装、测试账号、历史付费和赠送订单按项目规则排除。"
+      ],
+      "inputs": [
+        "输入含稳定用户键、注册、商品触达、点击、订单、支付成功、退款和商品分类。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "first-purchase-contract",
+          "subject": "新用户、首笔有效支付、退款和成熟窗口。"
+        },
+        {
+          "calibration_id": "purchase-path",
+          "subject": "资格、触达、浏览、下单和支付步骤。"
+        },
+        {
+          "calibration_id": "offer-policy",
+          "subject": "商品类别、价格带和允许比较范围。"
+        }
+      ],
+      "time": [
+        "注册队列拥有完整首购观察窗，支付迟到和退款回写按项目封账。"
+      ],
+      "unit": [
+        "首购率按去重首次有效付费用户除以去重新用户，金额使用同币种。"
+      ]
+    },
+    "business_question": "新用户首次付费转化发生在何时、哪个返回步骤和哪些可比人群；变化主要来自资格、商品触达、支付链路还是观察成熟度？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/first-purchase@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "reach-or-eligibility-gap",
+          "checks": [
+            "核对资格与触达覆盖。",
+            "比较版本、渠道和进度组成。"
+          ],
+          "condition": "合格新用户未进入商品触达或路径入口。",
+          "leaves": [
+            {
+              "conclusion": "报告资格或触达缺口。",
+              "condition": "主要缺口发生在触达前。",
+              "exclusions": [
+                "不得把未触达解释为不愿购买。"
+              ],
+              "leaf_id": "no-qualified-reach"
+            },
+            {
+              "conclusion": "报告队列组成贡献。",
+              "condition": "新用户组成变化解释大部分差异。",
+              "exclusions": [
+                "不得声称产品路径退化。"
+              ],
+              "leaf_id": "composition-shift"
+            }
+          ]
+        },
+        {
+          "branch_id": "decision-or-payment-gap",
+          "checks": [
+            "逐步核对商品、下单和支付状态。",
+            "检查价格带、错误和退款。"
+          ],
+          "condition": "触达和浏览充分，但下单或支付确认流失集中。",
+          "leaves": [
+            {
+              "conclusion": "提出商品适配实验候选。",
+              "condition": "浏览后下单差异集中于特定价格带或商品类。",
+              "exclusions": [
+                "不得称最优价格或商品。"
+              ],
+              "leaf_id": "offer-fit-hypothesis"
+            },
+            {
+              "conclusion": "报告支付链路候选。",
+              "condition": "下单后支付失败或状态未确认集中。",
+              "exclusions": [
+                "不得把未封账订单计为失败。"
+              ],
+              "leaf_id": "payment-friction"
+            }
+          ]
+        }
+      ],
+      "root_question": "首购缺口最早出现于资格与触达、商品选择、下单还是支付确认？"
+    },
+    "dimension_scan": {
+      "baseline": "以同龄成熟新用户和当前首购路径为基准。",
+      "contribution_formula": "loss_contribution_k = eligible_share_k * (baseline_rate_k - current_rate_k)",
+      "dimensions": [
+        {
+          "dimension_id": "time-to-first-purchase",
+          "label": "首购时延"
+        },
+        {
+          "dimension_id": "acquisition-cohort",
+          "label": "获客队列"
+        },
+        {
+          "dimension_id": "price-band",
+          "label": "价格带"
+        },
+        {
+          "dimension_id": "path-stage",
+          "label": "路径步骤"
+        }
+      ],
+      "minimum_volume_rule": "低于最小新用户或首购人数的切片并入低样本桶。",
+      "ranking_rule": "按对总体首购变化的贡献、步骤流失、样本量和成熟度排序。",
+      "residual_policy": "未触达、支付未封账、未知商品和身份缺失作为残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-lifetime-history",
+            "unreturned-user-behavior"
+          ],
+          "question": "分析成熟新用户的首购时点、步骤转化和主要分层贡献。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-lifetime-history",
+            "unreturned-user-behavior"
+          ],
+          "question": "支付和退款尚未封账时哪些首购结论必须降级？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-lifetime-history",
+            "unreturned-user-behavior"
+          ],
+          "question": "没有首购和新用户合同，能否按首笔订单直接建议商品和价格？"
+        }
+      ],
+      "questions": [
+        "分析成熟新用户的首购时点、步骤转化和主要分层贡献。",
+        "支付和退款尚未封账时哪些首购结论必须降级？",
+        "没有首购和新用户合同，能否按首笔订单直接建议商品和价格？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-first-purchase-rate",
+              "returned-first-purchase-stage-gap",
+              "qualified-first-purchase-hypothesis"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "unreturned-user-behavior"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "分析成熟新用户的首购时点、步骤转化和主要分层贡献。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-first-purchase-rate"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "unreturned-user-behavior"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "支付和退款尚未封账时哪些首购结论必须降级？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "unreturned-user-behavior"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有首购和新用户合同，能否按首笔订单直接建议商品和价格？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得把重复购买计入首购。",
+      "未触达不等于拒绝付费，支付未确认不等于失败。",
+      "观察关联不等于商品、价格或引导的因果效果。",
+      "本方法不创建礼包、不改价、不触达用户。"
+    ],
+    "formulas": [
+      {
+        "denominator": "拥有完整观察机会且满足资格的新用户数。",
+        "expression": "first_purchase_rate = distinct_first_payers / distinct_mature_new_users",
+        "formula_id": "first-purchase-rate",
+        "interpretation": "首购率描述当前路径和商品条件下的观测结果，不证明某环节导致首购。",
+        "numerator": "在观察窗内完成首笔有效付费的去重新用户数。",
+        "requires_project_calibration": [
+          "first-purchase-contract",
+          "purchase-path",
+          "offer-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "用户去重计数",
+            "definition": "观察窗内首次有效支付用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "first_payers"
+          },
+          {
+            "aggregation": "用户去重计数",
+            "definition": "拥有完整首购观察机会的新用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "mature_new_users"
+          }
+        ],
+        "window": "从注册起的项目首购观察窗，并等待支付和退款封账。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定新用户、首购、支付状态和路径合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集注册队列、步骤返回、商品与首购时点，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算首购率、步骤转化和时间分布，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿触达前缺口与支付决策或链路缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成首购时点、分层贡献、诊断和实验候选，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目定义了新用户、首笔有效支付、退款、商品、触达和成熟观察窗。",
+        "需要比较首购时点、路径步骤和分层贡献，并提出待验证假设。"
+      ],
+      "not_applicable": [
+        "无法区分首购与重复购买，或支付状态、身份和退款口径未锁定。",
+        "要求直接设计真实礼包、自动改价、触达用户或保证首购提升。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-first-purchase-rate"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],

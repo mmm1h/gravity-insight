@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "proposed-ltv-metric-contract",
+      "validated-ltv-monitoring-layout",
+      "bounded-ltv-alert-policy"
+    ],
     "forbidden": [
       "dashboard-write-authorized",
       "invented-confidence",
@@ -39,6 +43,497 @@
     "title": "LTV 仪表盘产物提案"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "告警只表示规则越界，不等同于根因、未来损失或自动处置授权。"
+      ],
+      "cohort": [
+        "筛选与分层保持队列起点一致，未知值和后验分层单独处理。"
+      ],
+      "inputs": [
+        "输入含 LTV 业务问题、固定队列、净收入、观察龄、分层、模型与责任人需求。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "ltv-metric-definition",
+          "subject": "净收入、固定队列、观察龄和退款口径。"
+        },
+        {
+          "calibration_id": "ltv-view-contract",
+          "subject": "模块、维度、筛选、刷新和责任人。"
+        },
+        {
+          "calibration_id": "ltv-alert-design",
+          "subject": "基线、阈值、持续期、成熟和抑制规则。"
+        }
+      ],
+      "time": [
+        "看板每个节点标明成熟规则、刷新 SLA、时区和封账时间。"
+      ],
+      "unit": [
+        "金额、用户、观察龄和比例单位在指标字典与展示中一致。"
+      ]
+    },
+    "business_question": "项目应如何把队列 LTV 口径、同龄曲线、分层贡献、成熟状态和告警规则组织成可复核监控定义；哪些模块因 Semantic 或模型缺口只能保留为待填设计？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "composite:business_pulse",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/lifetime-value@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚无已审批、可验证血缘且处于有效期内的该版本 Model Artifact。",
+        "identity": "model://gravity/ltv-curve@1",
+        "kind": "model",
+        "reason_code": "MODEL_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "metric-contract-gap",
+          "checks": [
+            "逐模块回溯公式。",
+            "验证固定分母与单位。"
+          ],
+          "condition": "模块使用不同队列、收入、观察龄或退款口径。",
+          "leaves": [
+            {
+              "conclusion": "阻止发布并统一定义。",
+              "condition": "同名 LTV 在模块间不可回算。",
+              "exclusions": [
+                "不得靠展示格式掩盖口径冲突。"
+              ],
+              "leaf_id": "inconsistent-ltv-definition"
+            },
+            {
+              "conclusion": "保留待填模块并给精确 remedy。",
+              "condition": "必需 Semantic 或预测模型未绑定。",
+              "exclusions": [
+                "不得用字段名或趋势线替代依赖。"
+              ],
+              "leaf_id": "missing-semantic-or-model"
+            }
+          ]
+        },
+        {
+          "branch_id": "monitoring-alert-gap",
+          "checks": [
+            "验证刷新 SLA 和成熟标签。",
+            "回放历史阈值与抑制规则。"
+          ],
+          "condition": "指标可计算，但刷新、成熟、阈值或责任链不完整。",
+          "leaves": [
+            {
+              "conclusion": "显式降级模块状态。",
+              "condition": "展示数据过期或队列未成熟。",
+              "exclusions": [
+                "不得触发正式异常结论。"
+              ],
+              "leaf_id": "stale-or-immature-view"
+            },
+            {
+              "conclusion": "标为待校准设计。",
+              "condition": "阈值无历史依据或无责任人。",
+              "exclusions": [
+                "不得发送或升级告警。"
+              ],
+              "leaf_id": "uncalibrated-alert"
+            }
+          ]
+        }
+      ],
+      "root_question": "每个看板模块是否绑定同一 LTV 合同，并能明确区分成熟观测、模型预测和告警状态？"
+    },
+    "dimension_scan": {
+      "baseline": "以项目必须回答的 LTV 问题和已注册依赖作为基线。",
+      "contribution_formula": "module_coverage = valid_modules / required_modules",
+      "dimensions": [
+        {
+          "dimension_id": "dashboard-module",
+          "label": "看板模块"
+        },
+        {
+          "dimension_id": "cohort-age",
+          "label": "队列年龄"
+        },
+        {
+          "dimension_id": "segment",
+          "label": "分层"
+        },
+        {
+          "dimension_id": "alert-state",
+          "label": "告警状态"
+        }
+      ],
+      "minimum_volume_rule": "历史样本不足的阈值只标为待校准，不进入正式告警。",
+      "ranking_rule": "先排指标口径与成熟缺口，再按决策问题覆盖、刷新可达性和告警风险排序。",
+      "residual_policy": "缺失 Semantic、模型、维度、责任人和历史基线单列待填。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "dashboard-write-authorized",
+            "invented-confidence",
+            "unvalidated-future-value"
+          ],
+          "question": "定义 LTV 指标、同龄曲线、分层贡献、成熟状态和告警模块。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "dashboard-write-authorized",
+            "invented-confidence",
+            "unvalidated-future-value"
+          ],
+          "question": "模型或历史阈值尚未就绪时如何输出可填写的看板设计？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "dashboard-write-authorized",
+            "invented-confidence",
+            "unvalidated-future-value"
+          ],
+          "question": "没有固定队列和净收入合同，能否直接创建 LTV 看板并上线告警？"
+        }
+      ],
+      "questions": [
+        "定义 LTV 指标、同龄曲线、分层贡献、成熟状态和告警模块。",
+        "模型或历史阈值尚未就绪时如何输出可填写的看板设计？",
+        "没有固定队列和净收入合同，能否直接创建 LTV 看板并上线告警？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "proposed-ltv-metric-contract",
+              "validated-ltv-monitoring-layout",
+              "bounded-ltv-alert-policy"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "定义 LTV 指标、同龄曲线、分层贡献、成熟状态和告警模块。",
+          "scenario": "success",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "proposed-ltv-metric-contract"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "模型或历史阈值尚未就绪时如何输出可填写的看板设计？",
+          "scenario": "empty_or_partial",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有固定队列和净收入合同，能否直接创建 LTV 看板并上线告警？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        }
+      ]
+    },
+    "exclusions": [
+      "设计清单不等于看板已创建或可访问。",
+      "不得猜项目字段、筛选值、阈值或负责人。",
+      "预测曲线与成熟观测必须分开。",
+      "本方法不修改看板、不发送告警、不授予访问权限。"
+    ],
+    "formulas": [
+      {
+        "denominator": "队列起点冻结的去重合格用户数。",
+        "expression": "ltv_{c,t} = cumulative_net_revenue_{c,t} / fixed_eligible_users_c",
+        "formula_id": "dashboard-ltv-metric",
+        "interpretation": "这是看板指标合同，不证明看板已创建，也不允许用动态活跃人数替代固定队列。",
+        "numerator": "队列 c 截至观察龄 t 的已封账累计净收入。",
+        "requires_project_calibration": [
+          "ltv-metric-definition",
+          "ltv-view-contract",
+          "ltv-alert-design"
+        ],
+        "unit": "项目币种/用户",
+        "variables": [
+          {
+            "aggregation": "金额求和",
+            "definition": "支付成功减批准退款的同币种累计收入。",
+            "distinct_by": "transaction-id",
+            "symbol": "cumulative_net_revenue"
+          },
+          {
+            "aggregation": "用户去重计数",
+            "definition": "队列起点冻结的合格用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "fixed_eligible_users"
+          }
+        ],
+        "window": "每个展示节点按相同观察龄和封账状态计算。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定LTV 指标、视图、模型和告警责任合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集可用 Semantic、模型评估、历史带和刷新证据，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算口径覆盖、模块依赖和告警可判定性，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿定义缺口与监控或告警设计缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成指标字典、模块清单、告警规则和待填模板，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目希望定义可持续监控的 LTV 指标、视图、筛选、成熟状态和告警合同。",
+        "已提供净收入、固定队列、观察龄以及获批曲线模型或明确不启用预测。"
+      ],
+      "not_applicable": [
+        "项目尚未确定 LTV 分子、分母、队列和退款口径。",
+        "要求直接修改厂商看板、发送告警、猜测真实字段或把设计稿声明为已上线。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "proposed-ltv-metric-contract"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [
     "model://gravity/ltv-curve@1"
   ],
