@@ -318,16 +318,40 @@ class ExternalContextContractTests(unittest.TestCase):
                 compiled["contract"]["deployment"]["subprocess"]["executable"],
             )
 
-            relative = copy.deepcopy(binding)
-            relative["working_directory"] = "relative"
-            with self.assertRaisesRegex(
-                ExternalContextContractError, "PROVIDER_DESCRIPTOR_INVALID"
+            for executable, working_directory in (
+                ("/opt/gravity/provider", "/var/lib/gravity"),
+                ("C:/Program Files/Gravity/provider.exe", "D:/gravity/project"),
+                (r"C:\Program Files\Gravity\provider.exe", r"D:\gravity\project"),
             ):
-                compile_external_provider(
-                    provider_descriptor(
-                        transport="subprocess", subprocess_binding=relative
+                with self.subTest(
+                    executable=executable, working_directory=working_directory
+                ):
+                    host_binding = copy.deepcopy(binding)
+                    host_binding["executable"] = executable
+                    host_binding["working_directory"] = working_directory
+                    compile_external_provider(
+                        provider_descriptor(
+                            transport="subprocess",
+                            subprocess_binding=host_binding,
+                        )
                     )
-                )
+
+            for field, value in (
+                ("executable", "bin/provider"),
+                ("working_directory", "relative"),
+                ("executable", "C:provider.exe"),
+                ("working_directory", r"D:gravity\project"),
+            ):
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(
+                    ExternalContextContractError, "PROVIDER_DESCRIPTOR_INVALID"
+                ):
+                    relative = copy.deepcopy(binding)
+                    relative[field] = value
+                    compile_external_provider(
+                        provider_descriptor(
+                            transport="subprocess", subprocess_binding=relative
+                        )
+                    )
 
             credentials = copy.deepcopy(binding)
             credentials["arguments"] = ["--token=must-not-be-in-descriptor"]
