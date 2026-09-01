@@ -21,6 +21,7 @@ from scripts.verify_release_provenance import (
     RETRY_DELAY_SECONDS,
     ProvenanceVerificationError,
     ReleaseRecoveryError,
+    local_release_assets,
     plan_pypi_publish,
     sync_github_release,
     validate_release_provenance,
@@ -177,8 +178,10 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertEqual(
             [
                 "actions/upload-artifact",
+                "actions/upload-artifact",
                 "actions/download-artifact",
                 "pypa/gh-action-pypi-publish",
+                "actions/download-artifact",
             ],
             [value.rsplit("@", 1)[0] for value in indented],
         )
@@ -222,12 +225,21 @@ class ReleaseWorkflowTests(unittest.TestCase):
                     )
                 )
 
-    def test_build_is_read_only_and_publishes_one_checked_artifact(self) -> None:
+    def test_build_is_read_only_and_publishes_checked_artifacts_and_evidence(self) -> None:
         build = self._job("build")
         self.assertIn("contents: read", build)
         self.assertNotIn("contents: write", build)
         self.assertIn("name: python-distributions", build)
         self.assertIn("path: dist/", build)
+        self.assertIn("name: release-supply-chain", build)
+        self.assertIn("path: release-evidence/", build)
+        self.assertIn("scripts/scan_repository_secrets.py --history", build)
+        self.assertIn("scripts/generate_release_sbom.py", build)
+        self.assertIn("scripts/audit_release_dependencies.py", build)
+        self.assertLess(
+            build.index("scripts/audit_release_dependencies.py"),
+            self.workflow.index("  publish:"),
+        )
         self.assertNotIn("gh release create", build)
 
     def test_oidc_publish_and_provenance_precede_github_release(self) -> None:
@@ -249,7 +261,11 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("needs: [publish, release-provenance]", github_release)
         self.assertIn("contents: write", github_release)
         self.assertIn("actions/checkout@", github_release)
+        self.assertIn("name: release-supply-chain", github_release)
+        self.assertIn("path: release-evidence/", github_release)
         self.assertIn("scripts/verify_release_provenance.py recover", github_release)
+        self.assertIn("--extra-asset-dir release-evidence", github_release)
+        self.assertNotIn("gh release create", self.workflow)
 
     def test_manual_recovery_is_standalone_and_checks_out_requested_tag(self) -> None:
         recovery = self._job("recover-github-release")
@@ -598,6 +614,28 @@ class ReleaseRecoveryStateTests(unittest.TestCase):
 
         self.assertEqual([], gateway.created)
         self.assertEqual([], gateway.uploaded)
+
+    def test_local_release_evidence_uses_the_idempotent_asset_reconciler(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gravity-release-evidence-") as raw:
+            root = Path(raw)
+            evidence = root / "dependency-audit.json"
+            evidence.write_text('{"status":"passed"}\n', encoding="utf-8")
+            distributions = local_release_assets((root,))
+            gateway = FakeGitHubGateway({"assets": []})
+
+            first = sync_github_release("v0.3.2", distributions, gateway)
+            second = sync_github_release("v0.3.2", distributions, gateway)
+
+        self.assertEqual([evidence.name], gateway.uploaded)
+        self.assertIn(f"uploaded-asset:{evidence.name}", first)
+        self.assertEqual((f"verified-asset:{evidence.name}",), second)
+
+    def test_empty_local_release_evidence_directory_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gravity-release-evidence-") as raw:
+            with self.assertRaisesRegex(
+                ReleaseRecoveryError, "extra release asset directory is empty"
+            ):
+                local_release_assets((Path(raw),))
 
 if __name__ == "__main__":
     unittest.main()

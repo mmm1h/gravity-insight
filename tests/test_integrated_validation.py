@@ -352,6 +352,9 @@ class IntegratedValidationTests(unittest.TestCase):
                 "package_reference_checkpoint",
                 "public_api_export_manifest",
                 "release_provenance_offline_fixture",
+                "secret_scan",
+                "release_sbom",
+                "dependency_audit",
             }.issubset(names)
         )
         self.assertLess(names.index("repository_map"), names.index("package_reference_checkpoint"))

@@ -32,6 +32,8 @@ jobs:
           cache: pip
       - name: Install SDK and test runner
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Scan tracked files and complete Git history for secrets
+        run: python scripts/scan_repository_secrets.py --history --receipt release-evidence/secret-scan.json
       - name: Run tests
         run: python -m pytest -q -n auto --dist load
       - name: Check deterministic contracts
@@ -71,11 +73,21 @@ jobs:
         run: python -m build
       - name: Check distributions
         run: python -m twine check dist/*
+      - name: Generate wheel and sdist SBOMs
+        run: python scripts/generate_release_sbom.py --dist-dir dist --output-dir release-evidence
+      - name: Audit isolated wheel runtime dependencies
+        run: python scripts/audit_release_dependencies.py --dist-dir dist --receipt release-evidence/dependency-audit.json
       - name: Upload checked distributions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-distributions
           path: dist/
+          if-no-files-found: error
+      - name: Upload release supply-chain evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-supply-chain
+          path: release-evidence/
           if-no-files-found: error
 
   publish:
@@ -140,6 +152,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
+      - name: Download supply-chain evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-supply-chain
+          path: release-evidence/
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
@@ -152,6 +169,7 @@ jobs:
           --version "${GITHUB_REF_NAME#v}"
           --tag "$GITHUB_REF_NAME"
           --repository "$GITHUB_REPOSITORY"
+          --extra-asset-dir release-evidence
 
   recover-github-release:
     if: github.event_name == 'workflow_dispatch'

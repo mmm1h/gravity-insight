@@ -404,6 +404,36 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def local_release_assets(directories: Sequence[Path]) -> tuple[Distribution, ...]:
+    assets: list[Distribution] = []
+    names: set[str] = set()
+    for raw_directory in directories:
+        directory = raw_directory.resolve()
+        if not directory.is_dir():
+            raise ReleaseRecoveryError(
+                f"extra release asset directory is missing: {directory}"
+            )
+        paths = sorted(path for path in directory.iterdir() if path.is_file())
+        if not paths:
+            raise ReleaseRecoveryError(
+                f"extra release asset directory is empty: {directory}"
+            )
+        for path in paths:
+            if path.name in names:
+                raise ReleaseRecoveryError(
+                    f"extra release asset filename is repeated: {path.name}"
+                )
+            names.add(path.name)
+            assets.append(
+                Distribution(
+                    filename=path.name,
+                    sha256=file_sha256(path),
+                    path=path,
+                )
+            )
+    return tuple(assets)
+
+
 def local_distributions(directory: Path) -> tuple[Distribution, ...]:
     if not directory.is_dir():
         raise ReleaseRecoveryError(f"distribution directory does not exist: {directory}")
@@ -845,8 +875,21 @@ def _recover(args: argparse.Namespace) -> int:
     remote = fetch_pypi_release(args.project, args.version, required=True)
     if remote is None:
         raise AssertionError("required PyPI release unexpectedly absent")
+    extra_assets = local_release_assets(args.extra_asset_dir)
+    remote_names = {distribution.filename for distribution in remote}
+    duplicate_names = sorted(
+        remote_names.intersection(asset.filename for asset in extra_assets)
+    )
+    if duplicate_names:
+        raise ReleaseRecoveryError(
+            "extra release asset duplicates PyPI distribution: "
+            + ", ".join(duplicate_names)
+        )
     with tempfile.TemporaryDirectory(prefix="gravity-release-recovery-") as raw:
-        distributions = download_pypi_distributions(remote, Path(raw))
+        distributions = (
+            *download_pypi_distributions(remote, Path(raw)),
+            *extra_assets,
+        )
         actions = sync_github_release(args.tag, distributions, gateway)
     if actions:
         for action in actions:
@@ -882,6 +925,7 @@ def release_recovery_main(argv: Sequence[str] | None = None) -> int:
     recover.add_argument("--tag", required=True)
     recover.add_argument("--repository", required=True)
     recover.add_argument("--repository-root", type=Path, default=Path.cwd())
+    recover.add_argument("--extra-asset-dir", type=Path, action="append", default=[])
     recover.set_defaults(handler=_recover)
 
     args = parser.parse_args(argv)
