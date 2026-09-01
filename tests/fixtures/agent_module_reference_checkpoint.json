@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "40b5601e839af7aaacc845a7b0f1144fdce7e79c7661d5fe4114f229ee705ebd",
-    "manual_review_sha256": "d067892e2c9d862d2f17b4b3758122c2b9fc3187fa22aeed6995ae095389a227",
+    "reference_evidence_sha256": "399558252bcfa25dc33fed64fc725566a4d53a6e9efa08e0be0822cd6d356f5e",
+    "manual_review_sha256": "04035637151ffd73d33c2a86f037f58dbfd10a15d25529c4601fa1619a77138c",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3049,
-    "scanned_file_count": 3042,
+    "version_controlled_file_count": 3050,
+    "scanned_file_count": 3043,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -680,7 +680,7 @@
     "dispositions": {
       "no_migration_effect": 272
     },
-    "sites_sha256": "94ac6562e0f7dacd3299faa1dcaf42c7c56b9debe0ca823d29832cb80d08c259"
+    "sites_sha256": "b624ad51c6e17b9f9ffb2d09c6ba61785fc25b7ce8d237dbaa8c02af7dcd0761"
   },
   "blockers": [],
   "site_fields": [
@@ -713,7 +713,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:72:113:bare text module string",
+      "docs/maintainers/technical-debt.md:74:113:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -3623,7 +3623,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:168:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:175:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3638,7 +3638,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:192:18:patch.object",
+      "tests/test_gravity_insight_pagination.py:199:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3653,7 +3653,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:211:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:218:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3668,7 +3668,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:230:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:237:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3683,7 +3683,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:241:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:248:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3698,7 +3698,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:277:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:284:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3713,7 +3713,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:300:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:307:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3728,7 +3728,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:320:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:327:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3743,7 +3743,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:381:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:388:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3758,7 +3758,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:396:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:403:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
