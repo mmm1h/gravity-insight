@@ -13,7 +13,32 @@
 
 ## [Unreleased]
 
-Target release: `0.3.3`
+Target release: `0.3.4`
+
+Migration guide: [0.3.4](docs/migration/0.3.4.md)
+
+### Breaking changes
+
+- **Hard break:** Agent Skill export 不再生成 Codex 不支持的顶层 `compatibility` frontmatter；
+  原运行时版本约束迁移到 `metadata.gravity-runtime-requires`。直接解析导出 frontmatter 的消费方
+  必须改读新位置；方法、版本约束值和 Runtime 执行能力均未丢失。
+
+### Added
+
+- Skill Library 为每个 canonical Skill 确定性生成标准 Agent Skill 目录、可复现 ZIP、
+  `gravity.agent-skill-index.v1` 及其可离线验证 schema。
+
+### Changed
+
+- Skill Library build receipt 升级为 v2，分开完整本地 QA tree 与 GitHub Release 的扁平
+  `release_assets`；Runtime 与 Agent archive 使用 Release 可直接寻址的全局唯一资产名。
+
+### Fixed
+
+- 修复 `gravity skills export-agent` 生成的 `SKILL.md` 会被当前 Codex validator 因未知
+  `compatibility` 键拒绝的问题，并补齐执行前依赖/readiness 与结论前 claim policy 的渐进披露入口。
+
+## [0.3.3] - 2026-09-01
 
 Migration guide: [0.3.3](docs/migration/0.3.3.md)
 

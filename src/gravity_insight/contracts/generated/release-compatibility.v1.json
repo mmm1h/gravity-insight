@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "dd4a512353ba72d73b34cccb4a9d5f30407704e1caaef2b59fb7469003e3dede"
+    "compatibility_sha256": "f79e9a93edcf5eaa43bc4c95ad0a977e7f53e618b735ba48a41336cd0b4135aa"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -37,8 +37,8 @@
     },
     {
       "version": "0.3.3",
-      "release_status": "unreleased",
-      "release_date": null,
+      "release_status": "released",
+      "release_date": "2026-09-01",
       "breaking_status": "breaking",
       "breaking_status_reason": "breaking_changes_recorded",
       "hard_breaks": [
@@ -61,6 +61,22 @@
         }
       ],
       "migration_guide": "docs/migration/0.3.3.md"
+    },
+    {
+      "version": "0.3.4",
+      "release_status": "unreleased",
+      "release_date": null,
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.4-hard-break-1",
+          "description": "Agent Skill export 不再生成 Codex 不支持的顶层 `compatibility` frontmatter；原运行时版本约束迁移到 `metadata.gravity-runtime-requires`。直接解析导出 frontmatter 的消费方必须改读新位置；方法、版本约束值和 Runtime 执行能力均未丢失。",
+          "migration_guide": "docs/migration/0.3.4.md"
+        }
+      ],
+      "soft_breaks": [],
+      "migration_guide": "docs/migration/0.3.4.md"
     }
   ]
 }

@@ -45,6 +45,13 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         self.assertEqual(
             "docs/migration/0.3.3.md", releases["0.3.3"]["migration_guide"]
         )
+        self.assertEqual("released", releases["0.3.3"]["release_status"])
+        self.assertEqual("breaking", releases["0.3.4"]["breaking_status"])
+        self.assertEqual(1, len(releases["0.3.4"]["hard_breaks"]))
+        self.assertEqual([], releases["0.3.4"]["soft_breaks"])
+        self.assertEqual(
+            "docs/migration/0.3.4.md", releases["0.3.4"]["migration_guide"]
+        )
         for version in ("0.3.1", "0.3.2"):
             with self.subTest(version=version):
                 self.assertEqual("unknown", releases[version]["breaking_status"])
