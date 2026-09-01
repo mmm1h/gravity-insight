@@ -16,19 +16,19 @@ class ChangelogGateTests(unittest.TestCase):
     def test_repository_changelog_contract_passes(self) -> None:
         report = validate_changelog()
 
-        self.assertEqual("0.3.3", report.project_version)
-        self.assertEqual("0.3.3", report.target_version)
-        self.assertEqual(("0.3.2", "0.3.1"), report.released_versions)
-        self.assertEqual(3, report.breaking_entries)
-        self.assertEqual(1, report.migration_guides)
+        self.assertEqual("0.3.4", report.project_version)
+        self.assertEqual("0.3.4", report.target_version)
+        self.assertEqual(("0.3.3", "0.3.2", "0.3.1"), report.released_versions)
+        self.assertEqual(4, report.breaking_entries)
+        self.assertEqual(2, report.migration_guides)
 
     def test_version_bump_without_matching_entry_fails(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             pyproject = Path(raw) / "pyproject.toml"
             source = PYPROJECT_PATH.read_text(encoding="utf-8")
-            self.assertIn('version = "0.3.3"', source)
+            self.assertIn('version = "0.3.4"', source)
             pyproject.write_text(
-                source.replace('version = "0.3.3"', 'version = "9.9.9"', 1),
+                source.replace('version = "0.3.4"', 'version = "9.9.9"', 1),
                 encoding="utf-8",
             )
 
@@ -74,7 +74,7 @@ class ChangelogGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw:
             changelog = Path(raw) / "CHANGELOG.md"
             source = CHANGELOG_PATH.read_text(encoding="utf-8")
-            guide = "Migration guide: [0.3.3](docs/migration/0.3.3.md)\n"
+            guide = "Migration guide: [0.3.4](docs/migration/0.3.4.md)\n"
             self.assertIn(guide, source)
             changelog.write_text(source.replace(guide, "", 1), encoding="utf-8")
 
@@ -94,7 +94,8 @@ class ChangelogGateTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(
-                ChangelogError, r"lock inventory mismatch: missing=\['0.3.1'\]"
+                ChangelogError,
+                r"lock inventory mismatch: missing=\['0.3.3', '0.3.1'\]",
             ):
                 validate_changelog(lock_path=lock)
 

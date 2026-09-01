@@ -3,6 +3,11 @@
 `CHANGELOG.md` 是发布事实源，`scripts/check_changelog.py` 是 Release Gate。发布说明由
 GitHub 自动生成仍可保留，但不能替代这份维护型记录。
 
+## 版本指南
+
+- [0.3.4：从 0.3.3 迁移](0.3.4.md)
+- [0.3.3：从 0.3.2 迁移](0.3.3.md)
+
 ## 日常变更
 
 1. 把尚未发布的消费方可见变化写进 `[Unreleased]`，并让 `Target release` 与计划版本
