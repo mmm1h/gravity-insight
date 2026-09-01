@@ -40,9 +40,9 @@
   token、执行前重读并比较，漂移/复用 fail-closed 后才能关闭；此前不扩大该模式。
 
 ### 7. 稳定 operation 的分页形状仍有系统性证据债
-- **债务口径**：范围仅为**可采集的 85 条**，非全部 `237-25=212` 条 unknown；83 条 permanent unknown 是机器可验证的能力边界，不计入待关闭债务。
+- **债务口径**：范围仅为**可采集的 84 条**，非全部 `237-25=212` 条 unknown；84 条 permanent unknown 是机器可验证的能力边界，不计入待关闭债务。
 - **证据**：当前 237 条编译 operation 为 `60 complete / 177 unknown`，228 条 stable 为 `60 / 168`，stable
-  `page_info` 子集为 `60 / 58`；证据为 `97 production / 9 wire / 131 template`。仅 `template_default` 的 49 条
+  `page_info` 子集为 `60 / 58`；证据为 `98 production / 9 wire / 130 template`。仅 `template_default` 的 49 条
   live `page_info` 被 `reconcile_pagination_audit` 标为 `shape_unproven`。
 - **当前缓解**：合同分别声明 `completeness`/`pagination_evidence`，无证据为 `unknown`；原子读取、audit、Plan、
   composite 均传播它，`all_pages` 遇未知/前缀返回 capability gap。已确认 A 的自动读取为 Multidim metadata、
@@ -56,12 +56,14 @@
   单次观测证不了字段跨租户/权限/灰度恒存，缓存学错后 `read_all` 会按错误 `total_page` 停止并把截断结果标为 complete，
   而 agent 不会质疑，Plan/composite 继续传播；此静默错误比现有 capability gap 更危险，据此否决，未实现。
   同轮把 `analysis.segment.evaluate_percent` 转为永久 unknown（响应严格为 `part/percent/total` 三个必需数值标量，
-  根本无集合语义；237 条中仅此 1 条通过该谓词），机器处置变为 `85 collect / 83 no-new-signal / 9 non-stable`，
-  永久 unknown 为 `47 非集合 + 36 无信号`。完整性总账仍是 `60 complete / 177 unknown`，不伪装成 complete。
-- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 精确列出这 85 条（分 59、26 两批，测试按集合相等锁定而非计数）；改 unknown 分页、
+  根本无集合语义；237 条中仅此 1 条通过该谓词）。2026-09-01 对 `analysis.event.query` 的获批 production
+  读响应未观察到 `has_more`、`item_count`、`total_items` 或 `page_info`，按计划转入永久 unknown；机器处置现为
+  `84 collect / 84 no-new-signal / 9 non-stable`，永久 unknown 为 `47 非集合 + 37 无信号`。完整性总账仍是
+  `60 complete / 177 unknown`，不伪装成 complete。
+- **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 精确列出这 84 条（分 58、26 两批，测试按集合相等锁定而非计数）；改 unknown 分页、
   新产品依赖其全集或 exact method+path 取得新 production/wire 字段证据时触发。
 - **退出条件**：逐条以同 method+path production sketch/wire 字段把 58 条 stable `page_info` unknown 归入真实形状
-  并修正合同；另 27 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
+  并修正合同；另 26 条 stable collection unknown 须取得可证伪完整性信号或转永久 unknown；不得用合同声明、
   短页、满页启发式提级或全量生产探测。
 
 ### 14. 根包仍然扁平，跨执行核心的大环仍未解
