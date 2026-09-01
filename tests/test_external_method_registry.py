@@ -92,7 +92,14 @@ class ExternalMethodRegistryTests(unittest.TestCase):
             item for item in self.registry["items"]
             if item["mapping_kind"] == "out_of_scope_alternative"
         ]
-        self.assertEqual(15, len(alternatives))
+        self.assertEqual(12, len(alternatives))
+        self.assertEqual(
+            43,
+            sum(
+                item["mapping_kind"] == "future_skill"
+                for item in self.registry["items"]
+            ),
+        )
         self.assertTrue(all(item["reason_code"] == "VENDOR_SPECIFIC_CAPABILITY" for item in alternatives))
         self.assertTrue(all(item["future_skill_uri"] is None for item in alternatives))
 

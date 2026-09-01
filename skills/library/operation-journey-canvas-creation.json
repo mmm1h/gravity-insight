@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "proposed-journey-graph",
+      "validated-journey-structure",
+      "proposed-audience-condition"
+    ],
     "forbidden": [
       "audience-write-authorized",
       "causality",
       "message-send-authorized"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "proposed-journey-graph",
+      "validated-journey-structure",
+      "proposed-audience-condition"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,490 @@
     "title": "受治理的运营旅程提案"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "旅程草案不声明动作会产生业务效果；效果只能由后续获批实验或评估验证。"
+      ],
+      "cohort": [
+        "入口队列、排除人群、重复入组和退出条件必须由项目 Semantic 定义。"
+      ],
+      "inputs": [
+        "输入包含业务目标、入口事件或队列、条件、等待、候选动作、退出目标和项目联系政策。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "journey-node-vocabulary",
+          "subject": "允许的入口、判断、分流、等待、动作和结束节点。"
+        },
+        {
+          "calibration_id": "contact-policy",
+          "subject": "渠道同意、频控、静默期和排除规则。"
+        },
+        {
+          "calibration_id": "reentry-policy",
+          "subject": "重复入组、并发旅程和退出优先级。"
+        }
+      ],
+      "time": [
+        "等待时长、观察窗口、频控和旅程有效期使用项目业务时区并显式上限。"
+      ],
+      "unit": [
+        "节点数、边数和路径覆盖是结构单位；预估人数和转化目标不作为已实现效果。"
+      ]
+    },
+    "business_question": "一段运营意图能否被无歧义地转换为有入口、条件、等待、动作候选和结束节点的完整有向图；哪些项目值和授权仍待补齐？",
+    "data_checks": {
+      "completeness": [
+        "所有可达节点和边均有稳定 ID、类型和来源条件。",
+        "每条路径都终止且所有项目占位符有缺口清单。"
+      ],
+      "data_quality": [
+        "条件表达式类型、单位和时间边界一致。",
+        "受众、渠道和退出引用无冲突或重复执行。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "cohort://project/operations-journey-entry@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/contact-policy@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "graph-structure-gap",
+          "checks": [
+            "检查入口、可达性、环和终点。",
+            "检查判断与分流的分支覆盖。"
+          ],
+          "condition": "节点边图不闭合、不可达或条件不互斥。",
+          "leaves": [
+            {
+              "conclusion": "确认图结构缺口并列出节点。",
+              "condition": "存在悬空或不可达节点。",
+              "exclusions": [
+                "不得把不可达动作算作有效路径。"
+              ],
+              "leaf_id": "dangling-or-unreachable"
+            },
+            {
+              "conclusion": "确认分支歧义。",
+              "condition": "条件重叠、遗漏 else 或顺序决定结果。",
+              "exclusions": [
+                "不得擅自选择优先级。"
+              ],
+              "leaf_id": "ambiguous-branch"
+            }
+          ]
+        },
+        {
+          "branch_id": "project-contract-gap",
+          "checks": [
+            "解析 Semantic 队列与事件。",
+            "核对联系政策、频控和授权。"
+          ],
+          "condition": "结构闭合但受众、时间、渠道或动作未绑定。",
+          "leaves": [
+            {
+              "conclusion": "报告受众绑定缺口。",
+              "condition": "入口或条件无法解析为版本化项目 Semantic。",
+              "exclusions": [
+                "不得从自然语言生成真实活动名。"
+              ],
+              "leaf_id": "audience-binding-missing"
+            },
+            {
+              "conclusion": "保留候选动作但阻止发布。",
+              "condition": "动作候选无渠道政策或执行授权。",
+              "exclusions": [
+                "本方法不得发送消息或创建线上旅程。"
+              ],
+              "leaf_id": "action-authorization-missing"
+            }
+          ]
+        }
+      ],
+      "root_question": "生成图是否有唯一入口、所有分支可达且每条路径合法终止？"
+    },
+    "dimension_scan": {
+      "baseline": "以唯一入口和所有可达路径为基准，每条边只属于一个来源节点分支。",
+      "contribution_formula": "gap_share_s = invalid_or_missing_constraints_s / total_invalid_or_missing_constraints",
+      "dimensions": [
+        {
+          "dimension_id": "node-kind",
+          "label": "节点类型"
+        },
+        {
+          "dimension_id": "branch-path",
+          "label": "分支路径"
+        },
+        {
+          "dimension_id": "audience-condition",
+          "label": "受众条件"
+        },
+        {
+          "dimension_id": "channel-policy",
+          "label": "渠道政策"
+        }
+      ],
+      "minimum_volume_rule": "没有至少一个入口和一个合法结束节点时不计算路径覆盖，直接返回 Gap。",
+      "ranking_rule": "先排导致路径不可达或无限循环的结构缺口，再排受众、时间、频控和动作授权缺口。",
+      "residual_policy": "无法绑定的自然语言条件和未授权动作保留为显式占位符，不自动删除或猜值。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "audience-write-authorized",
+            "causality",
+            "message-send-authorized"
+          ],
+          "question": "把获批运营需求转换为节点边旅程草案，并验证所有路径闭合。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "audience-write-authorized",
+            "causality",
+            "message-send-authorized"
+          ],
+          "question": "部分受众条件尚未绑定时，如何保留可评审结构而阻止执行？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "audience-write-authorized",
+            "causality",
+            "message-send-authorized"
+          ],
+          "question": "没有联系政策和渠道授权，能否直接创建并发布这条旅程？"
+        }
+      ],
+      "questions": [
+        "把获批运营需求转换为节点边旅程草案，并验证所有路径闭合。",
+        "部分受众条件尚未绑定时，如何保留可评审结构而阻止执行？",
+        "没有联系政策和渠道授权，能否直接创建并发布这条旅程？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "proposed-journey-graph",
+              "validated-journey-structure",
+              "proposed-audience-condition"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "audience-write-authorized",
+              "causality",
+              "message-send-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "把获批运营需求转换为节点边旅程草案，并验证所有路径闭合。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "proposed-journey-graph"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "audience-write-authorized",
+              "causality",
+              "message-send-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分受众条件尚未绑定时，如何保留可评审结构而阻止执行？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "audience-write-authorized",
+              "causality",
+              "message-send-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有联系政策和渠道授权，能否直接创建并发布这条旅程？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得从描述中猜测真实事件、SKU、渠道或受众值。",
+      "结构化草案不等于线上可部署配置。",
+      "不得宣称旅程会提升任何业务指标。",
+      "本方法不创建、发布、启用或修改线上旅程。"
+    ],
+    "formulas": [
+      {
+        "denominator": "从入口可达的全部分支路径数。",
+        "expression": "coverage = valid_entry_to_terminal_paths / reachable_entry_paths",
+        "formula_id": "terminal-path-coverage",
+        "interpretation": "覆盖率为一表示图结构闭合，不表示受众、动作授权或业务效果有效。",
+        "numerator": "从入口出发、条件有定义且以合法结束节点收束的可达路径数。",
+        "requires_project_calibration": [
+          "journey-node-vocabulary",
+          "contact-policy",
+          "reentry-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "图路径计数",
+            "definition": "无悬空、无未定义条件且以结束节点收束的路径。",
+            "distinct_by": "path-id",
+            "symbol": "valid_entry_to_terminal_paths"
+          },
+          {
+            "aggregation": "图路径计数",
+            "definition": "从唯一入口可达的全部路径。",
+            "distinct_by": "path-id",
+            "symbol": "reachable_entry_paths"
+          }
+        ],
+        "window": "同一旅程草案版本内静态计算，不模拟线上执行。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成可评审草案；创建、发布、发送和受众写入必须由独立受治理 Action 在调用方明确授权后执行。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "action",
+      "target": "action://project/journey-draft-review"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定入口队列、节点词汇、条件表达式、联系政策和退出规则，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集自然语言需求、版本化项目绑定和生成的节点边清单，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算路径覆盖率、悬空节点数和策略约束覆盖，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿结构不完整与项目绑定或授权缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成结构化旅程草案、图预览、缺口和发布前验收项，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "调用方需要把获批运营需求转成可评审的结构化旅程草案。",
+        "需要检查路径覆盖、分支互斥、等待语义、退出条件和联系策略。"
+      ],
+      "not_applicable": [
+        "要求直接创建、发布或启用线上旅程。",
+        "目标受众、事件、渠道、频控或同意状态没有项目契约。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "proposed-journey-graph"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.core",
   "operator_dependencies": [],

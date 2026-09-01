@@ -60,6 +60,7 @@ _AGENT_FILES = {
     "references/GUIDE.md",
     "references/SCHEMA.json",
     "references/CLAIMS.md",
+    "references/EXAMPLES.md",
 }
 
 

@@ -20,9 +20,12 @@ CORE_SKILLS = {
     "data-integration-assistant",
     "filter-result-bias-diagnosis",
     "operation-journey-canvas-creation",
+    "report-data-mismatch-diagnosis",
     "sql-performance-optimization",
     "system-field-reference-guide",
+    "tracking-plan-generation",
     "trino-metadata-query-analysis",
+    "user-id-binding-diagnosis",
     "user-tag-system-design",
 }
 JOURNEYS = {
@@ -42,9 +45,9 @@ class SkillLibraryTests(unittest.TestCase):
         cls.registry = load_source_registry()
 
     def test_library_has_one_canonical_manifest_per_skill(self) -> None:
-        self.assertEqual(40, len(self.manifests))
-        self.assertEqual(40, len(list(LIBRARY.glob("*.json"))))
-        self.assertEqual(40, len(self.by_id))
+        self.assertEqual(43, len(self.manifests))
+        self.assertEqual(43, len(list(LIBRARY.glob("*.json"))))
+        self.assertEqual(43, len(self.by_id))
 
     def test_every_canonical_manifest_matches_skill_schema(self) -> None:
         for path in sorted(LIBRARY.glob("*.json")):

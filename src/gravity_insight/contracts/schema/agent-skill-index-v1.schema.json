@@ -35,7 +35,8 @@
             "SKILL.md",
             "references/GUIDE.md",
             "references/SCHEMA.json",
-            "references/CLAIMS.md"
+            "references/CLAIMS.md",
+            "references/EXAMPLES.md"
           ]
         },
         "size_bytes": {"type": "integer", "minimum": 1, "maximum": 262144},
@@ -111,8 +112,8 @@
         "package_digest": {"$ref": "#/$defs/digest"},
         "files": {
           "type": "array",
-          "minItems": 4,
-          "maxItems": 4,
+          "minItems": 5,
+          "maxItems": 5,
           "uniqueItems": true,
           "items": {"$ref": "#/$defs/file"}
         },

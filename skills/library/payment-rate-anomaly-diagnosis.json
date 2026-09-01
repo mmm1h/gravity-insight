@@ -200,10 +200,22 @@
       "baseline": "每个维度分别使用同一当前窗、基准窗和付费率 Semantic；只在互斥切片内求和，不跨维度重复相加。",
       "contribution_formula": "impact_s = payer_current_s - rate_reference * eligible_current_s; contribution_s = impact_s / sum(impact_returned_s)，分母为零时不输出占比。",
       "dimensions": [
-        {"dimension_id": "acquisition-channel", "label": "获客渠道"},
-        {"dimension_id": "client-platform", "label": "客户端平台"},
-        {"dimension_id": "region", "label": "地区"},
-        {"dimension_id": "cohort-age-band", "label": "队列年龄段"}
+        {
+          "dimension_id": "acquisition-channel",
+          "label": "获客渠道"
+        },
+        {
+          "dimension_id": "client-platform",
+          "label": "客户端平台"
+        },
+        {
+          "dimension_id": "region",
+          "label": "地区"
+        },
+        {
+          "dimension_id": "cohort-age-band",
+          "label": "队列年龄段"
+        }
       ],
       "minimum_volume_rule": "切片的合格用户数低于项目最小样本量时只并入低样本桶，不单独排名或下结论。",
       "ranking_rule": "先按贡献绝对值降序，再报告方向、分子变化、分母变化和返回覆盖；不得仅按切片付费率高低排序。",
@@ -213,20 +225,41 @@
       "eval_cases": [
         {
           "eval_id": "numerator-drop",
-          "expected_sections": ["metric-definition", "anomaly-confirmation", "dimension-contribution", "exclusions"],
-          "forbidden_claims": ["causality", "complete-payment-population"],
+          "expected_sections": [
+            "metric-definition",
+            "anomaly-confirmation",
+            "dimension-contribution",
+            "exclusions"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-payment-population"
+          ],
           "question": "最近一个已封账窗口付费率下降，帮我判断主要是付费用户减少还是合格用户增加，并列出贡献最大的返回切片。"
         },
         {
           "eval_id": "denominator-spike",
-          "expected_sections": ["data-readiness", "diagnostic-path", "exclusions"],
-          "forbidden_claims": ["causality", "inferred-metric-definition"],
+          "expected_sections": [
+            "data-readiness",
+            "diagnostic-path",
+            "exclusions"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "inferred-metric-definition"
+          ],
           "question": "合格用户数突然上升但付费人数接近不变，这次付费率异常应沿哪条诊断分支继续？"
         },
         {
           "eval_id": "definition-gap",
-          "expected_sections": ["metric-definition", "data-readiness", "claims"],
-          "forbidden_claims": ["inferred-metric-definition"],
+          "expected_sections": [
+            "metric-definition",
+            "data-readiness",
+            "claims"
+          ],
+          "forbidden_claims": [
+            "inferred-metric-definition"
+          ],
           "question": "项目还没确认哪些支付状态算成功，能否先按字段名算一个付费率并判断根因？"
         }
       ],
@@ -234,6 +267,113 @@
         "付费率下降主要来自付费人数还是合格用户数变化？",
         "哪些返回渠道或平台对本次付费率差异贡献最大，未覆盖残差有多少？",
         "支付状态或合格用户口径变更时，这次异常诊断还能成立吗？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-payment-rate-change",
+              "qualified-anomaly-hypothesis",
+              "returned-dimension-contribution"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-payment-population",
+              "inferred-metric-definition"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope",
+              "metric-definition",
+              "data-readiness",
+              "anomaly-confirmation",
+              "diagnostic-path",
+              "dimension-contribution",
+              "exclusions",
+              "claims"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "付费率下降主要来自付费人数还是合格用户数变化？",
+          "scenario": "success",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-payment-rate-change"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-payment-population",
+              "inferred-metric-definition"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope",
+              "metric-definition",
+              "exclusions",
+              "claims"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "哪些返回渠道或平台对本次付费率差异贡献最大，未覆盖残差有多少？",
+          "scenario": "empty_or_partial",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-payment-population",
+              "inferred-metric-definition"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope",
+              "metric-definition",
+              "claims"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "支付状态或合格用户口径变更时，这次异常诊断还能成立吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        }
       ]
     },
     "exclusions": [
@@ -249,11 +389,26 @@
         "formula_id": "payment-rate",
         "interpretation": "结果是指定窗口与队列内的观测比例；分母为零时状态为 Empty，不定义为零百分比。",
         "numerator": "在窗口 W、队列 C 和项目归因规则内至少有一笔成功支付的去重用户数；退款或撤销是否回冲由项目校准。",
-        "requires_project_calibration": ["payment-success-state", "eligible-population", "business-timezone", "payment-attribution-window"],
+        "requires_project_calibration": [
+          "payment-success-state",
+          "eligible-population",
+          "business-timezone",
+          "payment-attribution-window"
+        ],
         "unit": "无量纲比例",
         "variables": [
-          {"aggregation": "窗口内按用户去重计数", "definition": "满足项目支付成功状态和归因窗口的付费用户集合。", "distinct_by": "stable-user-id", "symbol": "distinct_payers"},
-          {"aggregation": "窗口内按用户去重计数", "definition": "满足项目合格用户入组且未命中排除规则的用户集合。", "distinct_by": "stable-user-id", "symbol": "distinct_eligible_users"}
+          {
+            "aggregation": "窗口内按用户去重计数",
+            "definition": "满足项目支付成功状态和归因窗口的付费用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "distinct_payers"
+          },
+          {
+            "aggregation": "窗口内按用户去重计数",
+            "definition": "满足项目合格用户入组且未命中排除规则的用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "distinct_eligible_users"
+          }
         ],
         "window": "当前窗和基准窗必须使用相同业务时区、长度、封账成熟度与队列规则。"
       },
@@ -263,11 +418,23 @@
         "formula_id": "payment-rate-anomaly",
         "interpretation": "只有绝对与相对阈值、最小样本量和数据成熟度同时通过才标记异常；基准为零时不计算相对变化。",
         "numerator": "当前窗付费率与可比基准付费率的绝对差及相对差。",
-        "requires_project_calibration": ["payment-anomaly-threshold"],
+        "requires_project_calibration": [
+          "payment-anomaly-threshold"
+        ],
         "unit": "比例点与相对比例",
         "variables": [
-          {"aggregation": "按 payment-rate 公式计算", "definition": "当前窗观测付费率。", "distinct_by": "stable-user-id", "symbol": "rate_current"},
-          {"aggregation": "按 payment-rate 公式计算", "definition": "基准窗观测付费率。", "distinct_by": "stable-user-id", "symbol": "rate_reference"}
+          {
+            "aggregation": "按 payment-rate 公式计算",
+            "definition": "当前窗观测付费率。",
+            "distinct_by": "stable-user-id",
+            "symbol": "rate_current"
+          },
+          {
+            "aggregation": "按 payment-rate 公式计算",
+            "definition": "基准窗观测付费率。",
+            "distinct_by": "stable-user-id",
+            "symbol": "rate_reference"
+          }
         ],
         "window": "基准可以是相邻可比窗或项目批准的同周期基准，但必须显式记录选择理由。"
       }
@@ -275,31 +442,112 @@
     "handoff": {
       "authorization_boundary": "本方法不自动修改支付配置、用户分群或监控阈值；后续动作必须由调用方在受治理 Action 中单独授权。",
       "automatic_execution": false,
-      "conditions": ["只有依赖满足、异常确认、排除项通过且结果包含证据引用时，才可由调用方另行提出调查或实验建议。"],
+      "conditions": [
+        "只有依赖满足、异常确认、排除项通过且结果包含证据引用时，才可由调用方另行提出调查或实验建议。"
+      ],
       "kind": "none",
       "target": null
     },
     "method_revision": 1,
     "procedure": [
-      {"depends_on": [], "instruction": "解析并锁定支付率 Semantic、项目 Context、当前窗、基准窗、队列、去重键、单位与归因规则。", "on_failure": "METHOD_INPUT_GAP", "step_id": "resolve-contracts"},
-      {"depends_on": ["resolve-contracts"], "instruction": "运行 Capability 获取两个窗口的分子、分母和返回维度，保留请求范围、分页与取数时间证据。", "on_failure": "METHOD_QUERY_ERROR", "step_id": "run-observations"},
-      {"depends_on": ["run-observations"], "instruction": "执行完整性与数据质量检查；失败时映射为 Empty、Partial、Error 或 Gap 并停止结论。", "on_failure": "METHOD_DATA_INVALID", "step_id": "validate-data"},
-      {"depends_on": ["validate-data"], "instruction": "按明确分子、分母、去重和窗口公式计算两个付费率，并用项目阈值确认是否异常。", "on_failure": "METHOD_FORMULA_INVALID", "step_id": "confirm-anomaly"},
-      {"depends_on": ["confirm-anomaly"], "instruction": "比较分子与分母折算影响，选择诊断树一级分支，再逐个叶子验证条件和排除项。", "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE", "step_id": "traverse-diagnostic-tree"},
-      {"depends_on": ["traverse-diagnostic-tree"], "instruction": "用已登记 Operator 对互斥返回行计算变化，并按贡献公式、样本门槛和残差规则排序。", "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE", "step_id": "scan-dimensions"},
-      {"depends_on": ["scan-dimensions"], "instruction": "生成结构化 Result，列出证据、诊断路径、排除项、依赖缺口和允许或禁止的断言。", "on_failure": "METHOD_RESULT_INVALID", "step_id": "assemble-result"}
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定支付率 Semantic、项目 Context、当前窗、基准窗、队列、去重键、单位与归因规则。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "运行 Capability 获取两个窗口的分子、分母和返回维度，保留请求范围、分页与取数时间证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "run-observations"
+      },
+      {
+        "depends_on": [
+          "run-observations"
+        ],
+        "instruction": "执行完整性与数据质量检查；失败时映射为 Empty、Partial、Error 或 Gap 并停止结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-data"
+      },
+      {
+        "depends_on": [
+          "validate-data"
+        ],
+        "instruction": "按明确分子、分母、去重和窗口公式计算两个付费率，并用项目阈值确认是否异常。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "confirm-anomaly"
+      },
+      {
+        "depends_on": [
+          "confirm-anomaly"
+        ],
+        "instruction": "比较分子与分母折算影响，选择诊断树一级分支，再逐个叶子验证条件和排除项。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "用已登记 Operator 对互斥返回行计算变化，并按贡献公式、样本门槛和残差规则排序。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成结构化 Result，列出证据、诊断路径、排除项、依赖缺口和允许或禁止的断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
     ],
     "result": {
-      "required_fields": ["status", "reason-codes", "scope", "evidence", "conclusion", "allowed-claims", "forbidden-claims"],
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims"
+      ],
       "sections": [
-        {"section_id": "scope", "title": "分析范围与前提"},
-        {"section_id": "metric-definition", "title": "付费率口径与公式"},
-        {"section_id": "data-readiness", "title": "完整性与数据质量"},
-        {"section_id": "anomaly-confirmation", "title": "异常确认"},
-        {"section_id": "diagnostic-path", "title": "诊断路径与判定条件"},
-        {"section_id": "dimension-contribution", "title": "维度扫描与贡献度"},
-        {"section_id": "exclusions", "title": "排除项与失效条件"},
-        {"section_id": "claims", "title": "允许与禁止的断言"}
+        {
+          "section_id": "scope",
+          "title": "分析范围与前提"
+        },
+        {
+          "section_id": "metric-definition",
+          "title": "付费率口径与公式"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "完整性与数据质量"
+        },
+        {
+          "section_id": "anomaly-confirmation",
+          "title": "异常确认"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径与判定条件"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献度"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项与失效条件"
+        },
+        {
+          "section_id": "claims",
+          "title": "允许与禁止的断言"
+        }
       ]
     },
     "scope": {
@@ -313,10 +561,26 @@
       ]
     },
     "states": {
-      "empty": {"allowed_claims": [], "behavior": "分母为零或窗口内没有合格用户时返回 Empty；付费率为未定义，不写成零。", "reason_code": "METHOD_EMPTY"},
-      "error": {"allowed_claims": [], "behavior": "上游请求、解析、公式或 Operator 失败时返回 Error，保留错误分类且不复用半成品结论。", "reason_code": "METHOD_ERROR"},
-      "gap": {"allowed_claims": [], "behavior": "Semantic、Context、阈值或必需口径未绑定时返回 Gap，并列出调用方需要补齐的对象。", "reason_code": "METHOD_GAP"},
-      "partial": {"allowed_claims": [], "behavior": "分页、返回维度或交叉校验不完整时返回 Partial，只保留逐条观测证据，不输出总体异常结论。", "reason_code": "METHOD_PARTIAL"}
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "分母为零或窗口内没有合格用户时返回 Empty；付费率为未定义，不写成零。",
+        "reason_code": "METHOD_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "上游请求、解析、公式或 Operator 失败时返回 Error，保留错误分类且不复用半成品结论。",
+        "reason_code": "METHOD_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "Semantic、Context、阈值或必需口径未绑定时返回 Gap，并列出调用方需要补齐的对象。",
+        "reason_code": "METHOD_GAP"
+      },
+      "partial": {
+        "allowed_claims": [],
+        "behavior": "分页、返回维度或交叉校验不完整时返回 Partial，只保留逐条观测证据，不输出总体异常结论。",
+        "reason_code": "METHOD_PARTIAL"
+      }
     }
   },
   "model_dependencies": [],
@@ -333,9 +597,23 @@
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
   "readiness": "blocked",
-  "request_budget": {"known_requests_max": 3, "known_requests_min": 2, "runtime_additional_requests": 0, "unknown_discovery_max": 3},
-  "requirements": {"completeness": "unknown", "data_quality": "pass"},
-  "routing": {"host_catalog_required": true, "product_hints": ["metric-anomaly-localization@1"], "recognizer_fallback_allowed": true},
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
   "runtime_requires": ">=0.3,<0.4",
   "schema_version": "gravity.skill.v1",
   "semantic_dependencies": [

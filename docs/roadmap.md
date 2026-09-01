@@ -32,6 +32,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - Runtime 拥有可复用 Semantic 类型/Schema、通用指标/方法定义、版本化 URI，以及单位、可加性、时间粒度、依赖、冲突和公式结构校验；调用项目拥有具体活动名称、SKU 实值、App/埋点绑定、项目专属公式参数与生效窗口和部门口径。
 - Skill Hub 的 canonical manifest 是统一方法与口径边界；Runtime Hub package 与 Host Agent `SKILL.md` 是同一 manifest 的两个确定性分发投影。Agent Skill 可安装不提升静态或运行时 readiness，外部来源只有先完成适用性、独立创作和许可裁决后才能进入 manifest。
 - Agent Skill 分发完成不等于 Method Complete；`generate_method_gap_report.py` 的逐项机器结果继续作为方法完整度 Owner，未完整 manifest 是后续 Skill Hub 内容深化的首要输入，不由 ZIP 数量或可安装状态掩盖。
+- CT05 按获批 staged epic 将适用外部方法清单固定为 43 项；最终退出要求 43/43 均为 Method Complete、每项至少三类结构化运行示例、Runtime 自有依赖无缺口，项目自有 Semantic/Context 缺口有可验证模板。内容完整不自动提升 readiness。
 - Skill Library build receipt 直接升级到 v2，将完整本地 QA tree 与 GitHub Release 的扁平 `release_assets` 分开；v1 从未发布且没有当前消费者，因此该破坏性升级不损失读取或安装能力。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。

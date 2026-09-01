@@ -40,19 +40,19 @@ class SkillLibraryBuildTests(unittest.TestCase):
         self.assertEqual(self.outputs, builder.render_outputs())
 
     def test_build_contains_docs_packages_archives_and_indexes(self) -> None:
-        self.assertEqual(485, len(self.outputs))
-        self.assertEqual(40, sum(path.startswith("docs/") for path in self.outputs))
-        self.assertEqual(200, sum(path.startswith("packages/") for path in self.outputs))
+        self.assertEqual(607, len(self.outputs))
+        self.assertEqual(43, sum(path.startswith("docs/") for path in self.outputs))
+        self.assertEqual(258, sum(path.startswith("packages/") for path in self.outputs))
         self.assertEqual(
-            160,
+            215,
             sum(path.startswith("agent-skills/") for path in self.outputs),
         )
         self.assertEqual(
-            40,
+            43,
             sum(path.startswith("runtime-skill-") for path in self.outputs),
         )
         self.assertEqual(
-            40,
+            43,
             sum(
                 path.startswith("agent-skill-") and path.endswith(".zip")
                 for path in self.outputs
@@ -61,14 +61,14 @@ class SkillLibraryBuildTests(unittest.TestCase):
 
     def test_hub_index_contains_every_canonical_skill_once(self) -> None:
         identities = [item["skill_uri"] for item in self.index["skills"]]
-        self.assertEqual(40, len(identities))
+        self.assertEqual(43, len(identities))
         self.assertEqual(sorted(identities), identities)
         self.assertEqual(len(identities), len(set(identities)))
 
     def test_agent_index_contains_every_canonical_skill_once(self) -> None:
         identities = [item["skill_uri"] for item in self.agent_index["skills"]]
         names = [item["name"] for item in self.agent_index["skills"]]
-        self.assertEqual(40, len(identities))
+        self.assertEqual(43, len(identities))
         self.assertEqual(sorted(identities), identities)
         self.assertEqual(len(identities), len(set(identities)))
         self.assertEqual(len(names), len(set(names)))
@@ -98,7 +98,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             if path.startswith("runtime-skill-")
         )
         with zipfile.ZipFile(io.BytesIO(archive)) as selected:
-            self.assertEqual(5, len(selected.infolist()))
+            self.assertEqual(6, len(selected.infolist()))
             for item in selected.infolist():
                 self.assertEqual((1980, 1, 1, 0, 0, 0), item.date_time)
                 self.assertEqual(zipfile.ZIP_STORED, item.compress_type)
@@ -131,6 +131,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             "references/GUIDE.md",
             "references/SCHEMA.json",
             "references/CLAIMS.md",
+            "references/EXAMPLES.md",
         }
         for entry in self.agent_index["skills"]:
             with self.subTest(skill=entry["skill_uri"]):
@@ -237,7 +238,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             if builder._is_release_asset(path)
         }
         self.assertEqual(expected, set(rows))
-        self.assertEqual(84, len(rows))
+        self.assertEqual(90, len(rows))
         self.assertTrue(all("/" not in path for path in rows))
         for path, row in rows.items():
             content = self.outputs[path]

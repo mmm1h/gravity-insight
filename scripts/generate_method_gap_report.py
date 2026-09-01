@@ -38,7 +38,7 @@ CRITERIA = (
     Criterion(5, "semantic", "Semantic", "structural", 3),
     Criterion(6, "context", "Context", "structural", 3),
     Criterion(7, "deterministic_steps", "确定性分析步骤", "proxy", 5, "至少五个有稳定 ID、前向依赖和失败码的步骤", "步骤是否足以回答所有真实变体"),
-    Criterion(8, "formula_operator_model", "公式、Operator 或 Model", "proxy", 5, "显式公式变量、分子分母、窗口、单位及计算依赖", "行业公式是否等于具体项目口径或模型是否有效"),
+    Criterion(8, "formula_operator_model", "公式、Operator 或 Model", "proxy", 5, "显式公式变量、分子分母、窗口和单位；声明的 Operator/Model 必须逐项覆盖", "行业公式是否等于具体项目口径或模型是否有效"),
     Criterion(9, "dimension_contribution", "维度扫描和贡献度", "proxy", 5, "至少三个维度与显式贡献公式、排序、门槛和残差规则", "维度集合是否覆盖真实业务中的全部驱动因素"),
     Criterion(10, "diagnosis_exclusions", "异常确认与排除项", "proxy", 5, "两层诊断树、每个一级分支至少两个叶子且每个叶子有排除项", "诊断因果链是否完备或结论是否真实"),
     Criterion(11, "completeness_dq", "Completeness 与 DQ", "proxy", 3, "至少两项完整性检查、两项质量检查及失败行为", "本次运行的数据是否实际完整且正确"),
@@ -57,11 +57,15 @@ def evaluate_manifest(manifest: Mapping[str, Any]) -> dict[str, Any]:
         "business_question": lambda: _zh(method, "business_question"),
         "scope": lambda: _scope_complete(method),
         "assumptions": lambda: _assumptions_complete(method),
-        "capability": lambda: bool(manifest["capability_dependencies"]) and _dependency_kind_complete(manifest, "capability"),
-        "semantic": lambda: bool(manifest["semantic_dependencies"]) and _dependency_kind_complete(manifest, "semantic"),
-        "context": lambda: bool(manifest["context_dependencies"]["required"] or manifest["context_dependencies"]["optional"]) and _dependency_kind_complete(manifest, "context"),
+        "capability": lambda: _dependency_kind_complete(manifest, "capability"),
+        "semantic": lambda: _dependency_kind_complete(manifest, "semantic"),
+        "context": lambda: _dependency_kind_complete(manifest, "context"),
         "deterministic_steps": lambda: bool(method and len(method["procedure"]) >= 5),
-        "formula_operator_model": lambda: bool(method and method["formulas"] and (manifest["operator_dependencies"] or manifest["model_dependencies"]) and _dependency_kinds_complete(manifest, ("operator", "model"))),
+        "formula_operator_model": lambda: bool(
+            method
+            and method["formulas"]
+            and _declared_compute_dependencies_complete(manifest)
+        ),
         "dimension_contribution": lambda: _dimension_scan_complete(method),
         "diagnosis_exclusions": lambda: _diagnostic_tree_complete(method),
         "completeness_dq": lambda: _data_checks_complete(method),
@@ -204,13 +208,24 @@ def _dependency_kind_complete(manifest: Mapping[str, Any], kind: str) -> bool:
         for item in method["dependency_status"]
         if item["kind"] == kind
     }
-    return bool(expected) and expected == actual
+    return expected == actual
 
 
 def _dependency_kinds_complete(manifest: Mapping[str, Any], kinds: Sequence[str]) -> bool:
     declared = _declared_dependencies(manifest)
     selected = [kind for kind in kinds if any(item_kind == kind for item_kind, _ in declared)]
     return bool(selected) and all(_dependency_kind_complete(manifest, kind) for kind in selected)
+
+
+def _declared_compute_dependencies_complete(manifest: Mapping[str, Any]) -> bool:
+    kinds = ("operator", "model")
+    declared = _declared_dependencies(manifest)
+    selected = [
+        kind
+        for kind in kinds
+        if any(item_kind == kind for item_kind, _ in declared)
+    ]
+    return all(_dependency_kind_complete(manifest, kind) for kind in selected)
 
 
 def _dependency_gaps(method: Mapping[str, Any] | None) -> list[dict[str, str]]:
@@ -273,7 +288,30 @@ def _handoff_complete(method: Mapping[str, Any] | None) -> bool:
 
 
 def _examples_complete(method: Mapping[str, Any] | None) -> bool:
-    return bool(method and _zh_values(method["examples"]["questions"], 3) and len(method["examples"]["eval_cases"]) >= 3 and all(_ZH_CN.search(item["question"]) and item["expected_sections"] and item["forbidden_claims"] for item in method["examples"]["eval_cases"]))
+    if not method:
+        return False
+    examples = method["examples"]
+    run_examples = examples["run_examples"]
+    return bool(
+        _zh_values(examples["questions"], 3)
+        and len(examples["eval_cases"]) >= 3
+        and all(
+            _ZH_CN.search(item["question"])
+            and item["expected_sections"]
+            and item["forbidden_claims"]
+            for item in examples["eval_cases"]
+        )
+        and len(run_examples) >= 3
+        and {item["scenario"] for item in run_examples}
+        == {"success", "empty_or_partial", "blocked_or_gap"}
+        and all(
+            _ZH_CN.search(item["question"])
+            and item["input_template"]
+            and item["expected"]["sections"]
+            and item["expected"]["forbidden_claims"]
+            for item in run_examples
+        )
+    )
 
 
 def _provenance_complete(manifest: Mapping[str, Any], method: Mapping[str, Any] | None) -> bool:

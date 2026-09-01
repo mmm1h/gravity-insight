@@ -11,9 +11,23 @@ from scripts.generate_skill_library import load_canonical_skills
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPLETE_SKILLS = {
+    "analysis-metric-definition-alignment",
+    "app-device-performance-analysis",
+    "community-hot-topic-analysis",
+    "dashboard-no-data-diagnosis",
+    "data-access-assistant",
+    "data-integration-assistant",
+    "filter-result-bias-diagnosis",
     "game-campaign-effect-evaluation",
     "ltv-payback-period-prediction",
+    "operation-journey-canvas-creation",
     "payment-rate-anomaly-diagnosis",
+    "report-data-mismatch-diagnosis",
+    "sql-performance-optimization",
+    "system-field-reference-guide",
+    "tracking-plan-generation",
+    "trino-metadata-query-analysis",
+    "user-id-binding-diagnosis",
 }
 
 
@@ -32,8 +46,8 @@ class SkillMethodCompleteTests(unittest.TestCase):
                 self.assertEqual(item.evaluation == "proxy", item.cannot_prove is not None)
 
     def test_report_covers_every_canonical_skill_and_every_item(self) -> None:
-        self.assertEqual(40, self.report["summary"]["skill_count"])
-        self.assertEqual(40, len(self.report["skills"]))
+        self.assertEqual(43, self.report["summary"]["skill_count"])
+        self.assertEqual(43, len(self.report["skills"]))
         for row in self.report["skills"]:
             with self.subTest(skill=row["skill_uri"]):
                 self.assertEqual(17, len(row["items"]))
@@ -45,19 +59,19 @@ class SkillMethodCompleteTests(unittest.TestCase):
         self.assertEqual(self.report["summary"], compact["summary"])
         self.assertTrue(all(len(row["items"]) == 17 for row in compact["skills"]))
 
-    def test_exactly_three_sample_methods_are_complete(self) -> None:
+    def test_exactly_seventeen_m1_methods_are_complete(self) -> None:
         complete = {
             row["skill_id"] for row in self.report["skills"]
             if row["method_complete"]
         }
         self.assertEqual(COMPLETE_SKILLS, complete)
-        self.assertEqual(3, self.report["summary"]["method_complete_true"])
-        self.assertEqual(37, self.report["summary"]["method_complete_false"])
+        self.assertEqual(17, self.report["summary"]["method_complete_true"])
+        self.assertEqual(26, self.report["summary"]["method_complete_false"])
         for row in self.report["skills"]:
             if row["skill_id"] in COMPLETE_SKILLS:
                 with self.subTest(skill=row["skill_id"]):
                     self.assertEqual(17, row["achieved_count"])
-                    self.assertTrue(row["dependency_gaps"])
+                    self.assertEqual(17, row["achieved_count"])
 
     def test_incomplete_skills_are_sorted_by_completion_cost(self) -> None:
         costs = [
@@ -100,15 +114,29 @@ class SkillMethodCompleteTests(unittest.TestCase):
         with self.assertRaisesRegex(SkillContractError, "not registered"):
             compile_skill_manifest(invalid)
 
-    def test_unresolved_dependencies_require_blocked_readiness(self) -> None:
+    def test_unavailable_runtime_dependencies_require_blocked_readiness(self) -> None:
         complete = next(
             item for item in load_canonical_skills()
-            if item["skill_id"] == "payment-rate-anomaly-diagnosis"
+            if item["skill_id"] == "ltv-payback-period-prediction"
         )
         invalid = copy.deepcopy(complete)
         invalid["readiness"] = "executable"
         with self.assertRaisesRegex(SkillContractError, "blocked readiness"):
             compile_skill_manifest(invalid)
+
+    def test_project_owned_dependencies_are_resolved_at_runtime(self) -> None:
+        complete = next(
+            item for item in load_canonical_skills()
+            if item["skill_id"] == "analysis-metric-definition-alignment"
+        )
+        self.assertEqual("executable", complete["readiness"])
+        self.assertTrue(
+            any(
+                item["status"] == "requires_project_binding"
+                for item in complete["method"]["dependency_status"]
+            )
+        )
+        self.assertEqual(complete, compile_skill_manifest(complete))
 
 
 if __name__ == "__main__":

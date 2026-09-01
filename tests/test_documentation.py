@@ -281,6 +281,7 @@ class DocumentationArchitectureTests(unittest.TestCase):
             "CT02-skill-library-validation.md",
             "CT03-skill-library-specification.md",
             "CT04-agent-skill-distribution.md",
+            "CT05-skill-content-completion.md",
         )
         markdown = (ROOT / "specs/agent-runtime/index.md").read_text(encoding="utf-8")
         index = json.loads(
