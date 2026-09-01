@@ -1,9 +1,9 @@
 # 分页生产证据采集计划
 
 本页是生产证据的执行清单，不是执行记录，也不授权登录、Probe 或 HTTP。当前基线为
-`dev@b7c15ed`：237 个 operation 中 177 个 `completeness=unknown`，其中 stable 为 168 个；stable
-`page_info` unknown 实际为 58 个，不是 59 个。机器复核将 unknown 分为 `85 collect / 83 no-new-signal`
-与 `9 non-stable`；83 条是 47 个非集合与 36 个当前无可证伪信号。输入来自
+`main@9287d89`：237 个 operation 中 177 个 `completeness=unknown`，其中 stable 为 168 个；stable
+`page_info` unknown 实际为 58 个，不是 59 个。机器复核将 unknown 分为 `84 collect / 84 no-new-signal`
+与 `9 non-stable`；84 条是 47 个非集合与 37 个当前无可证伪信号。输入来自
 `D:/git-pjt/tmp/arch-batch-2026-08-20/contract-audit.json`，并逐条与当前
 `src/gravity_insight/contracts/operations/` 对账。
 
@@ -11,11 +11,11 @@
 
 | 顺序 | 采集动作 | 同一上下文内的目标 | 最多可降低 | 最少目标 HTTP |
 | --- | --- | ---: | ---: | ---: |
-| P0 | 一个具备合法父项的 evidence App，先父后子采集分析、素材、报表、归因和 App 读 | 59 | 59 | 59 |
+| P0 | 一个具备合法父项的 evidence App，先父后子采集分析、素材、报表、归因和 App 读 | 58 | 58 | 58 |
 | P1 | 同一 evidence App 的已绑定推广平台，按平台复用日期窗和账号上下文 | 26 | 26 | 26 |
-| 不采 | 非集合语义或已证实没有可用终止信号 | 83 | 0 | 0 |
+| 不采 | 非集合语义或已证实没有可用终止信号 | 84 | 0 | 0 |
 
-85 个待采 operation 的 exact `method + path` 全部唯一，所以一个目标响应不能同时证明两个合同；上表的
+84 个待采 operation 的 exact `method + path` 全部唯一，所以一个目标响应不能同时证明两个合同；上表的
 “一次”是一次受控采集批次，不是一条 HTTP。可以复用的是 App、日期窗和父项发现：例如
 `analysis.segment.list` 自己的响应既是分页证据，也可提供后续 segment operation 的合法父项。父项调用
 只有在它本身列于目标表时才计入降低数。
@@ -47,7 +47,7 @@
 同时给出可证伪的全集信号才另行修正合同；短页、空页、HTTP 200 和 `returned_items=reported_total` 本身
 都不能证明完整。没有终止信号时将该 operation 转入永久 `unknown`。
 
-## P0：App 内核心批次（最多 59）
+## P0：App 内核心批次（最多 58）
 
 需要一个获批的只读 evidence App，并预先确认表中 parent source 能返回合法父项。含敏感输入的
 `client_id`、`device_id`、订单 trace 等只在内存中绑定，证据仅记“由哪个 parent 字段取得”。
@@ -60,7 +60,6 @@
 | `analysis.event_property_group.list` | `none` / `template` | app_id | app.list |
 | `analysis.event_property_value.list` | `none` / `template` | app_id, event_name_list, property_name | analysis.event.info, analysis.event.list, app.list |
 | `analysis.event_property.list` | `page_info` / `template` | app_id | app.list |
-| `analysis.event.query` | `none` / `template` | app_id, date_list, query_id, query_item_list | analysis.event.list |
 | `analysis.funnel.query` | `none` / `template` | app_id, date_list, query_id, query_item_list, stat_time_window | analysis.event.list |
 | `analysis.monetization_detail.list` | `page_info` / `wire` | app_id, date, fields | app.list |
 | `analysis.order_detail.list` | `page_info` / `template` | app_id | app.list |
@@ -178,9 +177,9 @@ wire/production 合同出现总数或终止信号时才重开；重复采短页�
   `report.confmetric.custom.metric.8ef6d12d.delete`, `report.confmetric.custom.metric.update`,
   `report.multidim.template.preset.get`, `report.report.update`, `report.subscribe.create`,
   `report.subscribe.delete`, `report.template.create`, `report.template.update`。
-- `no_falsifiable_completeness_signal`（36）：`analysis.dashboard.tree` 的静态 list 合同无页输入/终止输出；以下 34 条
+- `no_falsifiable_completeness_signal`（37）：`analysis.dashboard.tree` 的静态 list 合同无页输入/终止输出；以下 35 条
   有 exact production observation，但重复一次不能证明服务端不截断，且 `report.get.query` 仅有 `page_info.total`：
-  `analysis.dashboard.event_list_info.get`, `analysis.default_val.list`, `analysis.event.info`,
+  `analysis.dashboard.event_list_info.get`, `analysis.default_val.list`, `analysis.event.info`, `analysis.event.query`,
   `analysis.realtime_event.list`, `app.app_info.get`, `app.capacity.get`, `app.permission_menu.list`,
   `app.realtime_event.list`, `app.role.detail`, `attribution.attribution.query`, `material.album.tree`,
   `material.bytedance.project_material.list`, `material.bytedance.promotion_material.list`,
