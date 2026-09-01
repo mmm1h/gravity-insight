@@ -1,0 +1,8 @@
+{
+  "algorithm": "sha256",
+  "schema_version": "gravity.changelog-release-lock.v1",
+  "sections": {
+    "0.3.1": "2002d71bbe9e7b04bbb5c4d2b9ec6006d93b2d45bfc7f634946227c03edd1629",
+    "0.3.2": "12dfd5e1fac242768d04092a70e9cc871130ef32135a64cb8f93a9f617415d81"
+  }
+}

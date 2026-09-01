@@ -345,6 +345,8 @@ class IntegratedValidationTests(unittest.TestCase):
                 "pytest_collector",
                 "compiler_check",
                 "quality_check",
+                "changelog",
+                "generator_release_compatibility",
                 "runtime_component_index",
                 "repository_map",
                 "package_reference_checkpoint",
