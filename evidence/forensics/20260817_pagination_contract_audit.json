@@ -489,15 +489,15 @@
     {
       "declared_kind": "none",
       "declared_pagination": "none",
-      "evidence_level": "template_default",
+      "evidence_level": "production",
       "evidence_sources": [
-        "src/gravity_insight/contracts/operations/analysis.event.query.json#/operation/pagination"
+        "evidence/probe/20260831T184320Z_analysis.event.query.pagination.json"
       ],
       "observed_shape": "not_page_info",
       "operation_id": "analysis.event.query",
-      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
-      "review_status": "collection_completeness_unknown",
-      "risk": "silent_completeness_risk",
+      "review_reason": "the persisted production response observation contained no has_more, item_count, total_items, or page_info signal",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
       "selected_for_production_validation": false,
       "selection_reason": null
     },

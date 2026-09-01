@@ -163,27 +163,27 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual({"complete": 60, "unknown": 177}, reconciled["current_completeness"])
         self.assertEqual(
             {
-                "collect_production_or_wire": 85,
+                "collect_production_or_wire": 84,
                 "not_scheduled_non_stable": 9,
-                "not_scheduled_without_new_signal": 83,
+                "not_scheduled_without_new_signal": 84,
             },
             reconciled["unknown_evidence_actions"],
         )
         # Set equality against the plan, not a bare count: swapping one target
-        # for another keeps len() at 85 while silently changing the debt scope.
+        # for another keeps len() at 84 while silently changing the debt scope.
         planned_targets = _planned_production_evidence_targets()
-        self.assertEqual(85, len(planned_targets))
+        self.assertEqual(84, len(planned_targets))
         self.assertEqual(planned_targets, set(reconciled["production_evidence_targets"]))
-        self.assertEqual(83, len(reconciled["permanent_unknown"]))
+        self.assertEqual(84, len(reconciled["permanent_unknown"]))
         self.assertEqual(
             {
-                "no_falsifiable_completeness_signal": 36,
+                "no_falsifiable_completeness_signal": 37,
                 "not_collection_semantics": 47,
             },
             reconciled["permanent_unknown_dispositions"],
         )
         self.assertEqual(
-            {"production": 97, "template": 131, "wire": 9},
+            {"production": 98, "template": 130, "wire": 9},
             reconciled["current_pagination_evidence"],
         )
         self.assertEqual(
@@ -236,6 +236,14 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual(
             "no_falsifiable_completeness_signal",
             by_id["analysis.default_val.list"]["unknown_evidence_disposition"],
+        )
+        self.assertEqual(
+            "no_falsifiable_completeness_signal",
+            by_id["analysis.event.query"]["unknown_evidence_disposition"],
+        )
+        self.assertEqual(
+            "production",
+            current["analysis.event.query"]["pagination_evidence"],
         )
         root = Path(__file__).resolve().parents[1]
         for item in by_id.values():

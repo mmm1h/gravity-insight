@@ -78,7 +78,7 @@ def page_completeness(
     """Classify one returned collection without promoting contract evidence."""
 
     if page is None:
-        return COMPLETE if contract == COMPLETE else UNKNOWN
+        return UNKNOWN
     has_more = page.get("has_more")
     number = page.get("number")
     if has_more is True and (all_pages or number in (None, 1)):
