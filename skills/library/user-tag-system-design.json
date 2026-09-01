@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "proposed-governed-tag-taxonomy",
+      "returned-tag-coverage-gap",
+      "bounded-tag-refresh-design"
+    ],
     "forbidden": [
       "membership-write-authorized",
       "sensitive-trait-inference",
       "tag-population-complete"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "proposed-governed-tag-taxonomy",
+      "returned-tag-coverage-gap",
+      "bounded-tag-refresh-design"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,490 @@
     "title": "用户标签契约提案"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "标签只描述经批准的观测或规则结果，不推断心理、健康、未成年人或其他敏感状态。"
+      ],
+      "cohort": [
+        "标签主体、互斥分层、未知值和多身份合并规则来自项目合同。"
+      ],
+      "inputs": [
+        "输入包含标签主体、业务问题、允许的数据域、候选事实和现有标签目录。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "tag-purpose",
+          "subject": "标签用途、允许受众和禁止推断。"
+        },
+        {
+          "calibration_id": "tag-taxonomy",
+          "subject": "层级、命名、互斥、冲突和继承规则。"
+        },
+        {
+          "calibration_id": "tag-refresh",
+          "subject": "计算窗口、刷新 SLA、有效期和责任人。"
+        }
+      ],
+      "time": [
+        "计算窗口、刷新频率、迟到数据和失效时间由项目逐标签声明。"
+      ],
+      "unit": [
+        "布尔、枚举、数值和时间标签保持类型与单位稳定，不以展示文案代替定义。"
+      ]
+    },
+    "business_question": "在项目实体、业务目标、数据可得性和治理责任均明确后，应建立哪些互斥且可维护的标签层，哪些候选标签因口径、刷新或责任缺口暂不能进入生产？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "entity://project/tag-subject@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/tag-governance@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "taxonomy-conflict",
+          "checks": [
+            "比较定义与取值域。",
+            "验证继承、冲突和未知值规则。"
+          ],
+          "condition": "多个标签重复表达、边界交叉或无法形成互斥分层。",
+          "leaves": [
+            {
+              "conclusion": "合并或重画边界并保留版本迁移说明。",
+              "condition": "标签定义或人群范围高度重叠。",
+              "exclusions": [
+                "不得仅按名称相似判定重复。"
+              ],
+              "leaf_id": "duplicate-or-overlap"
+            },
+            {
+              "conclusion": "增加显式残差并重新验证互斥完备性。",
+              "condition": "分层无法覆盖未知或其他状态。",
+              "exclusions": [
+                "不得把未知值并入最接近业务类别。"
+              ],
+              "leaf_id": "missing-residual"
+            }
+          ]
+        },
+        {
+          "branch_id": "implementation-governance-gap",
+          "checks": [
+            "追溯物理来源和有效期。",
+            "核对责任人、用途和删除政策。"
+          ],
+          "condition": "业务含义成立，但来源、刷新、责任或授权字段不完整。",
+          "leaves": [
+            {
+              "conclusion": "报告项目绑定缺口。",
+              "condition": "必需事实或实体绑定缺失。",
+              "exclusions": [
+                "不得从字段名猜计算式。"
+              ],
+              "leaf_id": "uncomputable-tag"
+            },
+            {
+              "conclusion": "阻止进入可发布目录。",
+              "condition": "无责任人、用途越界或涉及禁止推断。",
+              "exclusions": [
+                "不得用业务价值覆盖治理要求。"
+              ],
+              "leaf_id": "unowned-or-unauthorized"
+            }
+          ]
+        }
+      ],
+      "root_question": "候选标签是否同时具备明确用途、可计算定义、稳定来源、刷新责任和授权边界？"
+    },
+    "dimension_scan": {
+      "baseline": "以项目业务问题和现有标签目录作为共同基线。",
+      "contribution_formula": "gap_share_l = missing_or_invalid_slots_l / total_missing_or_invalid_slots",
+      "dimensions": [
+        {
+          "dimension_id": "tag-layer",
+          "label": "标签层"
+        },
+        {
+          "dimension_id": "subject",
+          "label": "标签主体"
+        },
+        {
+          "dimension_id": "refresh-cadence",
+          "label": "刷新频率"
+        },
+        {
+          "dimension_id": "owner",
+          "label": "责任域"
+        }
+      ],
+      "minimum_volume_rule": "无稳定来源或样本门槛的候选只保留为设计假设。",
+      "ranking_rule": "先排授权和敏感风险，再按必需覆盖、数据可得性和维护成本排序。",
+      "residual_policy": "未知主体、未映射事实、无责任人和不可验证标签单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "membership-write-authorized",
+            "sensitive-trait-inference",
+            "tag-population-complete"
+          ],
+          "question": "为一个已绑定主体和数据域设计可计算、可刷新、可治理的标签体系。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "membership-write-authorized",
+            "sensitive-trait-inference",
+            "tag-population-complete"
+          ],
+          "question": "部分标签没有稳定来源或责任人时，如何输出可评审目录和缺口？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "membership-write-authorized",
+            "sensitive-trait-inference",
+            "tag-population-complete"
+          ],
+          "question": "没有标签主体和用途合同，能否直接套用行业标签模板并上线？"
+        }
+      ],
+      "questions": [
+        "为一个已绑定主体和数据域设计可计算、可刷新、可治理的标签体系。",
+        "部分标签没有稳定来源或责任人时，如何输出可评审目录和缺口？",
+        "没有标签主体和用途合同，能否直接套用行业标签模板并上线？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "proposed-governed-tag-taxonomy",
+              "returned-tag-coverage-gap",
+              "bounded-tag-refresh-design"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "membership-write-authorized",
+              "sensitive-trait-inference",
+              "tag-population-complete"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "为一个已绑定主体和数据域设计可计算、可刷新、可治理的标签体系。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "proposed-governed-tag-taxonomy"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "membership-write-authorized",
+              "sensitive-trait-inference",
+              "tag-population-complete"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分标签没有稳定来源或责任人时，如何输出可评审目录和缺口？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "membership-write-authorized",
+              "sensitive-trait-inference",
+              "tag-population-complete"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有标签主体和用途合同，能否直接套用行业标签模板并上线？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得发明项目标签名、真实字段、阈值或人群规模。",
+      "不得推断敏感属性、心理状态或个人意图。",
+      "标签目录完整不等于标签值准确或产生业务效果。",
+      "本方法不创建标签、不写入人群、不触发运营动作。"
+    ],
+    "formulas": [
+      {
+        "denominator": "项目业务问题要求覆盖的标签槽位总数。",
+        "expression": "coverage = governed_tag_slots / required_tag_slots",
+        "formula_id": "governed-tag-coverage",
+        "interpretation": "覆盖率衡量设计完整性，不代表标签准确率、业务效果或可直接投产。",
+        "numerator": "同时具备定义、来源、计算、刷新、责任和授权边界的标签槽位数。",
+        "requires_project_calibration": [
+          "tag-purpose",
+          "tag-taxonomy",
+          "tag-refresh"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "槽位计数",
+            "definition": "通过全部治理字段检查的标签槽位。",
+            "distinct_by": "tag-id",
+            "symbol": "governed_tag_slots"
+          },
+          {
+            "aggregation": "槽位计数",
+            "definition": "经项目批准必须覆盖的标签槽位。",
+            "distinct_by": "tag-id",
+            "symbol": "required_tag_slots"
+          }
+        ],
+        "window": "同一标签体系修订和治理评审周期。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定标签主体、用途、数据域和治理合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集现有标签、可观测事实、来源与刷新证据，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算标签覆盖率、冲突率和不可计算残差，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿分类重叠与数据或治理不可落地两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成分层目录、计算卡、缺口与上线前检查，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "需要从已登记的项目实体与可观测事实设计标签分类、计算口径、刷新频率和治理清单。",
+        "需要发现标签重叠、不可计算、无责任人或超出授权用途的候选。"
+      ],
+      "not_applicable": [
+        "项目尚未定义标签主体、用途、数据来源或治理责任。",
+        "要求直接写入用户标签、创建人群、推断敏感属性或复制行业模板。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "proposed-governed-tag-taxonomy"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.core",
   "operator_dependencies": [],

@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-segmented-value-curve",
+      "validated-ltv-fit",
+      "bounded-segment-ltv-projection"
+    ],
     "forbidden": [
       "causality",
       "invented-confidence",
@@ -39,6 +43,503 @@
     "title": "分群价值曲线拟合就绪性"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "拟合与外推是模型条件结果，不代表分层个体价值或策略效果。"
+      ],
+      "cohort": [
+        "分层在队列起点冻结；后验付费分层不得回写造成未来信息泄漏。"
+      ],
+      "inputs": [
+        "输入含固定队列、累计净收入、观察龄、互斥分层、模型版本和评估证据。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "segmented-ltv-contract",
+          "subject": "固定队列、净收入、冻结分层和加权规则。"
+        },
+        {
+          "calibration_id": "segmented-curve-model",
+          "subject": "模型形式、版本、评估、有效域和参数约束。"
+        },
+        {
+          "calibration_id": "segment-tail-policy",
+          "subject": "最小样本、尾部占比和停止预测门槛。"
+        }
+      ],
+      "time": [
+        "各分层节点标明成熟队列数，拟合窗与预测安全窗分别锁定。"
+      ],
+      "unit": [
+        "金额统一币种，曲线参数单位与观察龄一致，分层加权可回算总体。"
+      ]
+    },
+    "business_question": "在获批曲线模型和互斥分层下，各分层的观测 LTV 曲线、拟合参数和安全窗口预测如何；哪些分层因样本、选择偏差或模型失配不能外推？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/segmented-lifetime-value@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚无已审批、可验证血缘且处于有效期内的该版本 Model Artifact。",
+        "identity": "model://gravity/segmented-ltv-curve@1",
+        "kind": "model",
+        "reason_code": "MODEL_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "segment-or-sample-gap",
+          "checks": [
+            "验证分层冻结时间和互斥性。",
+            "逐节点列成熟样本。"
+          ],
+          "condition": "分层重叠、未来信息泄漏或尾部样本不足。",
+          "leaves": [
+            {
+              "conclusion": "拒绝该分层拟合。",
+              "condition": "分层使用观察期后的付费结果。",
+              "exclusions": [
+                "不得把后验分层解释为预测能力。"
+              ],
+              "leaf_id": "post-outcome-leakage"
+            },
+            {
+              "conclusion": "并桶或截断安全窗。",
+              "condition": "分层尾部样本低于门槛。",
+              "exclusions": [
+                "不得用总体参数无条件填充。"
+              ],
+              "leaf_id": "sparse-segment-tail"
+            }
+          ]
+        },
+        {
+          "branch_id": "curve-model-gap",
+          "checks": [
+            "检查残差形态和留出误差。",
+            "比较模型批准域与请求窗口。"
+          ],
+          "condition": "数据结构有效但残差、参数边界或留出集误差不合格。",
+          "leaves": [
+            {
+              "conclusion": "拒绝当前曲线形式。",
+              "condition": "残差在多个龄期系统性同向。",
+              "exclusions": [
+                "不得只用高拟合优度掩盖偏差。"
+              ],
+              "leaf_id": "misspecified-curve"
+            },
+            {
+              "conclusion": "只返回观测与安全窗。",
+              "condition": "预测尾部占比或参数不确定性越界。",
+              "exclusions": [
+                "不得给长期点估计。"
+              ],
+              "leaf_id": "unsafe-segment-projection"
+            }
+          ]
+        }
+      ],
+      "root_question": "分层曲线是否保持互斥完备、可回算总体，并在各自模型有效域内通过拟合检查？"
+    },
+    "dimension_scan": {
+      "baseline": "以分层加权可回算总体的观测曲线作为基线。",
+      "contribution_formula": "segment_contribution_s = frozen_user_share_s * (ltv_s - overall_ltv)",
+      "dimensions": [
+        {
+          "dimension_id": "frozen-segment",
+          "label": "冻结分层"
+        },
+        {
+          "dimension_id": "cohort-age",
+          "label": "队列年龄"
+        },
+        {
+          "dimension_id": "model-version",
+          "label": "模型版本"
+        },
+        {
+          "dimension_id": "acquisition-cohort",
+          "label": "获客队列"
+        }
+      ],
+      "minimum_volume_rule": "低于最小用户或成熟节点门槛的分层合并或停止拟合。",
+      "ranking_rule": "先按总体价值贡献，再按拟合误差、样本量和尾部预测占比排序。",
+      "residual_policy": "未分层用户、未成熟节点、拟合残差和预测尾部单列。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "invented-confidence",
+            "unsupported-segment-extrapolation"
+          ],
+          "question": "对互斥冻结分层拟合 LTV 曲线，回算总体并给安全窗预测。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "invented-confidence",
+            "unsupported-segment-extrapolation"
+          ],
+          "question": "某分层尾部样本不足或参数触边时如何拒绝外推？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "invented-confidence",
+            "unsupported-segment-extrapolation"
+          ],
+          "question": "没有获批模型和冻结分层合同，能否直接拟合并输出长期 LTV？"
+        }
+      ],
+      "questions": [
+        "对互斥冻结分层拟合 LTV 曲线，回算总体并给安全窗预测。",
+        "某分层尾部样本不足或参数触边时如何拒绝外推？",
+        "没有获批模型和冻结分层合同，能否直接拟合并输出长期 LTV？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-segmented-value-curve",
+              "validated-ltv-fit",
+              "bounded-segment-ltv-projection"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unsupported-segment-extrapolation"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "对互斥冻结分层拟合 LTV 曲线，回算总体并给安全窗预测。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-segmented-value-curve"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unsupported-segment-extrapolation"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "某分层尾部样本不足或参数触边时如何拒绝外推？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unsupported-segment-extrapolation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有获批模型和冻结分层合同，能否直接拟合并输出长期 LTV？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "后验分层不得用于声称预测或因果。",
+      "低样本分层不得通过无说明参数借用获得点预测。",
+      "拟合曲线不等于真实未来或策略效果。",
+      "本方法不自动选择、安装或信任模型。"
+    ],
+    "formulas": [
+      {
+        "denominator": "公式无额外分母；观测输入本身按固定分层队列用户归一。",
+        "expression": "ltv_s(t) = ltv_limit_s * (1 - exp(-decay_s * t))",
+        "formula_id": "bounded-segment-ltv-curve",
+        "interpretation": "该公式仅适用于声明该形式的已验证模型；参数不是永久真值，安全窗外不输出。",
+        "numerator": "分层 s 的获批渐近价值参数与时间衰减项组合。",
+        "requires_project_calibration": [
+          "segmented-ltv-contract",
+          "segmented-curve-model",
+          "segment-tail-policy"
+        ],
+        "unit": "项目币种/用户",
+        "variables": [
+          {
+            "aggregation": "拟合参数",
+            "definition": "模型约束下的分层渐近参数。",
+            "distinct_by": null,
+            "symbol": "ltv_limit"
+          },
+          {
+            "aggregation": "每时间单位",
+            "definition": "分层价值接近渐近线的速率参数。",
+            "distinct_by": null,
+            "symbol": "decay"
+          },
+          {
+            "aggregation": "时间差",
+            "definition": "从队列起点计算的观察龄。",
+            "distinct_by": null,
+            "symbol": "time"
+          }
+        ],
+        "window": "只在 Model Artifact 声明的拟合窗和安全预测窗内。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定队列、分层、收入和模型有效域合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集分层观测曲线、成熟覆盖、拟合参数与残差，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算曲线预测、分层权重和总体回算，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿样本或分层偏差与模型形式失配两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成分层曲线、参数、拟合诊断和安全预测，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目提供同龄累计 LTV、互斥分层和经评估的分层曲线 Model Artifact。",
+        "需要比较分层曲线、拟合质量、尾部贡献和有界预测。"
+      ],
+      "not_applicable": [
+        "分层不互斥、收入或队列口径不一致、模型未验证或请求超出有效域。",
+        "要求用单一曲线替代所有分层、保证长期价值或自动选择模型。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-segmented-value-curve"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [
     "model://gravity/segmented-ltv-curve@1"
   ],

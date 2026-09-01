@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-repurchase-rate",
+      "returned-repurchase-interval",
+      "qualified-repurchase-gap"
+    ],
     "forbidden": [
       "causality",
       "complete-lifetime-history",
@@ -39,6 +43,490 @@
     "title": "复购队列观测"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "分层差异是观测关联，不等于不复购原因或个人意愿。"
+      ],
+      "cohort": [
+        "订阅续费、消耗品再次购买、跨商品购买和回流按项目规则分类。"
+      ],
+      "inputs": [
+        "输入含稳定用户键、首购、后续有效购买、商品、价格、退款和资格机会。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "repurchase-contract",
+          "subject": "首购、有效复购、跨商品、退款和机会定义。"
+        },
+        {
+          "calibration_id": "repurchase-maturity",
+          "subject": "复购窗口、右删失、到期和支付封账。"
+        },
+        {
+          "calibration_id": "repurchase-segments",
+          "subject": "互斥商品、价格、资历和用户分层。"
+        }
+      ],
+      "time": [
+        "每个首购队列拥有完整复购窗口，右删失和迟到支付显式标记。"
+      ],
+      "unit": [
+        "复购率按成熟首购用户去重，间隔从首笔有效购买到下一笔有效购买。"
+      ]
+    },
+    "business_question": "在首购资格和复购成熟窗口下，复购率、复购间隔与分层变化如何；下降来自队列未成熟、商品供给、价格、触达还是返回用户组成？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/repurchase@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "maturity-or-opportunity-gap",
+          "checks": [
+            "逐队列验证完整观察机会。",
+            "核对商品可售和到期状态。"
+          ],
+          "condition": "下降与未成熟队列、到期结构或无可比复购机会重合。",
+          "leaves": [
+            {
+              "conclusion": "移出正式分母并标记未成熟。",
+              "condition": "部分首购用户尚未走完复购窗。",
+              "exclusions": [
+                "不得把尚未复购计为最终不复购。"
+              ],
+              "leaf_id": "right-censoring"
+            },
+            {
+              "conclusion": "报告机会缺口。",
+              "condition": "商品下架、库存或资格使用户无可比机会。",
+              "exclusions": [
+                "不得解释为用户拒绝。"
+              ],
+              "leaf_id": "missing-repeat-opportunity"
+            }
+          ]
+        },
+        {
+          "branch_id": "returned-repurchase-structure-gap",
+          "checks": [
+            "比较间隔分布和商品迁移。",
+            "核对触达与支付链路。"
+          ],
+          "condition": "成熟且机会可比，差异集中于商品、价格带、间隔或分层。",
+          "leaves": [
+            {
+              "conclusion": "报告节奏变化。",
+              "condition": "复购仍发生但间隔整体右移。",
+              "exclusions": [
+                "不得按固定截止日夸大流失。"
+              ],
+              "leaf_id": "interval-or-timing-shift"
+            },
+            {
+              "conclusion": "提出供给、价格或触达假设。",
+              "condition": "差异集中于特定返回商品或分层。",
+              "exclusions": [
+                "需要实验或独立证据验证原因。"
+              ],
+              "leaf_id": "product-or-segment-association"
+            }
+          ]
+        }
+      ],
+      "root_question": "复购变化在排除右删失和机会差异后，主要集中于哪些返回商品、间隔或分层？"
+    },
+    "dimension_scan": {
+      "baseline": "以相同复购机会和成熟度的首购队列为基线。",
+      "contribution_formula": "contribution_s = mature_user_share_s * (repurchase_rate_s - baseline_rate_s)",
+      "dimensions": [
+        {
+          "dimension_id": "first-product",
+          "label": "首购商品"
+        },
+        {
+          "dimension_id": "repeat-product",
+          "label": "复购商品"
+        },
+        {
+          "dimension_id": "repurchase-interval",
+          "label": "复购间隔"
+        },
+        {
+          "dimension_id": "customer-segment",
+          "label": "用户分层"
+        }
+      ],
+      "minimum_volume_rule": "低于最小成熟首购用户或复购人数的切片并入低样本桶。",
+      "ranking_rule": "按总体复购变化贡献、成熟样本和间隔分布差异排序。",
+      "residual_policy": "未成熟、未知商品、退款未封账和不可观测机会单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-lifetime-history",
+            "purchase-motivation"
+          ],
+          "question": "比较成熟首购队列的复购率、间隔和分层贡献。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-lifetime-history",
+            "purchase-motivation"
+          ],
+          "question": "大量用户尚未走完复购窗口时如何处理右删失？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-lifetime-history",
+            "purchase-motivation"
+          ],
+          "question": "没有首购和复购机会合同，能否按重复订单数直接诊断下降原因？"
+        }
+      ],
+      "questions": [
+        "比较成熟首购队列的复购率、间隔和分层贡献。",
+        "大量用户尚未走完复购窗口时如何处理右删失？",
+        "没有首购和复购机会合同，能否按重复订单数直接诊断下降原因？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-repurchase-rate",
+              "returned-repurchase-interval",
+              "qualified-repurchase-gap"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "purchase-motivation"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "比较成熟首购队列的复购率、间隔和分层贡献。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-repurchase-rate"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "purchase-motivation"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "大量用户尚未走完复购窗口时如何处理右删失？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "purchase-motivation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有首购和复购机会合同，能否按重复订单数直接诊断下降原因？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "未成熟用户不得计为未复购。",
+      "不同复购机会的商品不得直接比较。",
+      "分层差异不等于个人意愿或因果。",
+      "本方法不触达用户、不改商品、不改价格。"
+    ],
+    "formulas": [
+      {
+        "denominator": "拥有完整复购机会且首购有效的去重用户数。",
+        "expression": "repurchase_rate = distinct_users_with_valid_repeat / distinct_mature_first_purchasers",
+        "formula_id": "mature-repurchase-rate",
+        "interpretation": "复购率依赖项目机会定义；未成熟用户不进入分母，结果不表示个人未来意愿。",
+        "numerator": "在项目复购窗内完成至少一次有效再次购买的去重用户数。",
+        "requires_project_calibration": [
+          "repurchase-contract",
+          "repurchase-maturity",
+          "repurchase-segments"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "用户去重计数",
+            "definition": "成熟窗内完成符合项目定义复购的用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "users_with_valid_repeat"
+          },
+          {
+            "aggregation": "用户去重计数",
+            "definition": "拥有完整复购观察机会的首购用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "mature_first_purchasers"
+          }
+        ],
+        "window": "从首购起的项目复购窗口，并等待支付和退款封账。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定首购、复购机会、成熟和商品合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集成熟队列、复购事件、间隔、商品与分层返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算复购率、间隔分布和分层贡献，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿删失或机会缺口与商品、价格或触达差异两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成复购健康度、间隔、贡献、残差和限制，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目定义了首购、有效复购、商品、退款、到期或复购机会及成熟观察窗。",
+        "需要比较成熟队列的复购率、间隔分布和互斥分层贡献。"
+      ],
+      "not_applicable": [
+        "无法区分首购与复购，或不同商品没有共同复购机会定义。",
+        "要求推断个人续费意愿、保证复购提升或自动触达用户。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-repurchase-rate"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],

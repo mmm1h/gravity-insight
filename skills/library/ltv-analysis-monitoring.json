@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-cohort-ltv",
+      "returned-ltv-change-contribution",
+      "qualified-ltv-alert"
+    ],
     "forbidden": [
       "causality",
       "invented-confidence",
@@ -39,6 +43,497 @@
     "title": "LTV 观测与模型健康度评审"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "队列 LTV 变化是观测事实，驱动因素是分解贡献而非因果归因。"
+      ],
+      "cohort": [
+        "自然量、再营销、回流、测试账号和跨端身份按项目规则处理。"
+      ],
+      "inputs": [
+        "输入含队列资格、稳定用户键、支付、退款、币种、观察龄和允许分层。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "ltv-contract",
+          "subject": "队列资格、净收入、退款、币种和固定分母。"
+        },
+        {
+          "calibration_id": "cohort-maturity",
+          "subject": "观察龄、封账和迟到收入处理。"
+        },
+        {
+          "calibration_id": "ltv-alert-policy",
+          "subject": "同龄基线、最小样本、阈值和持续期。"
+        }
+      ],
+      "time": [
+        "每个 LTV 节点仅使用已达到相同观察龄并完成收入封账的队列。"
+      ],
+      "unit": [
+        "累计净收入使用同币种，分母为固定获客队列用户，不能随观察日变化。"
+      ]
+    },
+    "business_question": "在统一收入、队列和观察龄口径下，各成熟获客队列的累计 LTV 如何变化；下降来自付费人数、频次、客单、退款还是队列组成，哪些告警受未成熟数据影响？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "composite:business_pulse",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/lifetime-value@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚无已审批、可验证血缘且处于有效期内的该版本 Model Artifact。",
+        "identity": "model://gravity/ltv-curve@1",
+        "kind": "model",
+        "reason_code": "MODEL_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "maturity-or-accounting-gap",
+          "checks": [
+            "逐队列核对成熟状态。",
+            "重算净收入和固定分母。"
+          ],
+          "condition": "异常与队列年龄、支付封账、退款或币种处理差异重合。",
+          "leaves": [
+            {
+              "conclusion": "降级为未成熟观察。",
+              "condition": "当前队列尚未达到比较观察龄。",
+              "exclusions": [
+                "不得拿短龄值与成熟历史直接比较。"
+              ],
+              "leaf_id": "immature-cohort"
+            },
+            {
+              "conclusion": "报告收入合同缺口。",
+              "condition": "支付、退款或币种无法回算。",
+              "exclusions": [
+                "不得把未封账金额补零。"
+              ],
+              "leaf_id": "revenue-reconciliation-gap"
+            }
+          ]
+        },
+        {
+          "branch_id": "returned-value-structure-change",
+          "checks": [
+            "分解付费结构。",
+            "比较来源、版本和分层贡献。"
+          ],
+          "condition": "口径稳定且付费人数、频次、客单或退款解释主要变化。",
+          "leaves": [
+            {
+              "conclusion": "报告返回结构变化。",
+              "condition": "付费人数或频次贡献占主导。",
+              "exclusions": [
+                "不得声称某动作导致。"
+              ],
+              "leaf_id": "payer-base-or-frequency"
+            },
+            {
+              "conclusion": "定位返回商品或分层。",
+              "condition": "客单或退款贡献占主导。",
+              "exclusions": [
+                "不得由均值直接给定价结论。"
+              ],
+              "leaf_id": "ticket-or-refund-shift"
+            }
+          ]
+        }
+      ],
+      "root_question": "LTV 变化能否由固定队列分母与净收入组件完整回算，且越过项目持续告警门槛？"
+    },
+    "dimension_scan": {
+      "baseline": "以相同观察龄、封账和队列资格的历史带作为基线。",
+      "contribution_formula": "contribution_k = component_change_k / returned_total_ltv_change",
+      "dimensions": [
+        {
+          "dimension_id": "cohort-age",
+          "label": "队列年龄"
+        },
+        {
+          "dimension_id": "acquisition-source",
+          "label": "获客来源"
+        },
+        {
+          "dimension_id": "payment-segment",
+          "label": "付费分层"
+        },
+        {
+          "dimension_id": "product-version",
+          "label": "产品版本"
+        }
+      ],
+      "minimum_volume_rule": "低于最小队列人数或收入成熟度的切片不触发正式告警。",
+      "ranking_rule": "先按对 LTV 变化的绝对贡献，再按样本量、持续期和跨队列一致性排序。",
+      "residual_policy": "退款未封账、身份缺失、未归因收入和未成熟队列单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "invented-confidence",
+            "unvalidated-future-value"
+          ],
+          "question": "监控同龄成熟队列的累计 LTV，并拆解付费人数、频次、客单和退款贡献。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "invented-confidence",
+            "unvalidated-future-value"
+          ],
+          "question": "当前队列未成熟或退款未封账时告警应如何降级？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "invented-confidence",
+            "unvalidated-future-value"
+          ],
+          "question": "没有固定队列和净收入合同，能否按当日 ARPU 直接宣布 LTV 下降？"
+        }
+      ],
+      "questions": [
+        "监控同龄成熟队列的累计 LTV，并拆解付费人数、频次、客单和退款贡献。",
+        "当前队列未成熟或退款未封账时告警应如何降级？",
+        "没有固定队列和净收入合同，能否按当日 ARPU 直接宣布 LTV 下降？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-cohort-ltv",
+              "returned-ltv-change-contribution",
+              "qualified-ltv-alert"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "监控同龄成熟队列的累计 LTV，并拆解付费人数、频次、客单和退款贡献。",
+          "scenario": "success",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-cohort-ltv"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "当前队列未成熟或退款未封账时告警应如何降级？",
+          "scenario": "empty_or_partial",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有固定队列和净收入合同，能否按当日 ARPU 直接宣布 LTV 下降？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        }
+      ]
+    },
+    "exclusions": [
+      "不同观察龄或分母定义的 LTV 不得直接比较。",
+      "短龄累计值不等于终身价值或回本保证。",
+      "贡献分解不等于因果归因。",
+      "本方法不调整预算、商品、价格或告警通知。"
+    ],
+    "formulas": [
+      {
+        "denominator": "队列起点固定的去重合格用户数。",
+        "expression": "ltv_{c,t} = cumulative_net_revenue_{c,t} / fixed_eligible_users_c",
+        "formula_id": "observed-cumulative-ltv",
+        "interpretation": "该值是指定观察龄的已实现价值，不是未观测终身价值或未来保证。",
+        "numerator": "队列 c 从起点到观察龄 t 已封账的累计净收入。",
+        "requires_project_calibration": [
+          "ltv-contract",
+          "cohort-maturity",
+          "ltv-alert-policy"
+        ],
+        "unit": "项目币种/用户",
+        "variables": [
+          {
+            "aggregation": "金额求和",
+            "definition": "支付成功减批准退款后的同币种累计收入。",
+            "distinct_by": "transaction-id",
+            "symbol": "cumulative_net_revenue"
+          },
+          {
+            "aggregation": "用户去重计数",
+            "definition": "队列起点的固定合格用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "fixed_eligible_users"
+          }
+        ],
+        "window": "按队列年龄 t 对齐，收入迟到和退款按项目封账。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定队列、收入、观察龄和告警合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集同龄累计净收入、用户数、付费结构和退款返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算累计 LTV、同比差和因素贡献，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿未成熟或封账缺口与真实价值结构变化两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成同龄曲线、贡献表、告警状态和限制，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目提供合格获客队列、净收入、身份、观察龄和可比历史基线。",
+        "需要持续监控同龄 LTV、拆解变化贡献并区分业务信号与封账或成熟缺口。"
+      ],
+      "not_applicable": [
+        "收入状态、币种、队列资格或观察龄无法统一。",
+        "要求把短龄 LTV 外推为终身价值、保证回本或自动调整预算和商品。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-cohort-ltv"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [
     "model://gravity/ltv-curve@1"
   ],

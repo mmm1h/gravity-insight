@@ -15,6 +15,7 @@ COMPLETE_SKILLS = {
     "analysis-metric-definition-alignment",
     "app-device-performance-analysis",
     "channel-quality-analysis",
+    "churn-user-identification-persona",
     "community-comment-analysis",
     "community-daily-report",
     "community-hot-topic-analysis",
@@ -23,23 +24,35 @@ COMPLETE_SKILLS = {
     "data-access-assistant",
     "data-integration-assistant",
     "filter-result-bias-diagnosis",
+    "first-purchase-analysis",
     "funnel-analysis-misunderstanding-diagnosis",
     "game-campaign-effect-evaluation",
     "game-revenue-forecast",
     "gift-package-push-strategy",
     "gift-penetration-optimization",
     "level-churn-diagnosis",
+    "lt-prediction",
+    "ltv-analysis-monitoring",
+    "ltv-curve-fitting-segmented-calculation",
+    "ltv-dashboard-setup",
     "ltv-payback-period-prediction",
     "new-hero-launch-insight",
     "operation-journey-canvas-creation",
+    "payment-attribution-analysis",
+    "payment-conversion-funnel",
     "payment-funnel-setup",
     "payment-rate-anomaly-diagnosis",
+    "product-pricing-optimization",
     "pvp-win-rate-analysis",
+    "repurchase-analysis",
     "report-data-mismatch-diagnosis",
+    "retention-analysis-data-verification",
+    "single-user-behavior-analysis",
     "sql-performance-optimization",
     "system-field-reference-guide",
     "tracking-plan-generation",
     "trino-metadata-query-analysis",
+    "user-tag-system-design",
     "user-id-binding-diagnosis",
 }
 
@@ -72,14 +85,14 @@ class SkillMethodCompleteTests(unittest.TestCase):
         self.assertEqual(self.report["summary"], compact["summary"])
         self.assertTrue(all(len(row["items"]) == 17 for row in compact["skills"]))
 
-    def test_exactly_thirty_m2_methods_are_complete(self) -> None:
+    def test_all_m3_methods_are_complete(self) -> None:
         complete = {
             row["skill_id"] for row in self.report["skills"]
             if row["method_complete"]
         }
         self.assertEqual(COMPLETE_SKILLS, complete)
-        self.assertEqual(30, self.report["summary"]["method_complete_true"])
-        self.assertEqual(13, self.report["summary"]["method_complete_false"])
+        self.assertEqual(43, self.report["summary"]["method_complete_true"])
+        self.assertEqual(0, self.report["summary"]["method_complete_false"])
         manifests = {
             item["skill_id"]: item for item in load_canonical_skills()
         }

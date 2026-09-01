@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-retention-result-difference",
+      "returned-retention-rule-reconciliation",
+      "qualified-retention-data-gap"
+    ],
     "forbidden": [
       "causality",
       "complete-cohort-population",
@@ -39,6 +43,497 @@
     "title": "留存契约与数据检查"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "差异解释配置语义和返回证据，不假定某产品结果绝对正确。"
+      ],
+      "cohort": [
+        "新用户、回流、重装、跨端身份、测试账号和重复事件按各自配置复现。"
+      ],
+      "inputs": [
+        "输入含队列事件、回访事件、实体键、时间窗口、筛选、时区和两个结果。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "retention-definition",
+          "subject": "队列、回访、实体、窗口、时区和筛选规则。"
+        },
+        {
+          "calibration_id": "comparison-result-contract",
+          "subject": "两个结果的配置快照、版本和封账状态。"
+        },
+        {
+          "calibration_id": "verification-tolerance",
+          "subject": "数值容差、最小样本和不可解释残差门槛。"
+        }
+      ],
+      "time": [
+        "队列日与留存日边界、自然日或滚动窗、迟到事件和封账时间显式记录。"
+      ],
+      "unit": [
+        "分子为满足回访规则的去重实体，分母为合格队列实体，金额等衍生指标另行验证。"
+      ]
+    },
+    "business_question": "留存分析与事件或其他复算结果为何不同；差异能否由队列资格、回访定义、时间边界、实体去重、筛选或返回完整性逐项解释？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/retention@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/retention-curve@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "contract-reconciliation",
+          "checks": [
+            "逐项锁定队列和回访规则。",
+            "按同一实体与时间边界复算。"
+          ],
+          "condition": "分子、分母或配置快照存在可验证口径差异。",
+          "leaves": [
+            {
+              "conclusion": "量化分母桥接。",
+              "condition": "队列资格或实体去重不同。",
+              "exclusions": [
+                "不得只比较最终比率。"
+              ],
+              "leaf_id": "cohort-or-identity-difference"
+            },
+            {
+              "conclusion": "量化分子桥接。",
+              "condition": "时间、筛选或回访定义不同。",
+              "exclusions": [
+                "不得把正确配置差异称为数据错误。"
+              ],
+              "leaf_id": "window-filter-or-return-difference"
+            }
+          ]
+        },
+        {
+          "branch_id": "data-or-implementation-gap",
+          "checks": [
+            "检查分页、迟到、缓存和版本。",
+            "用批准聚合证据缩小范围。"
+          ],
+          "condition": "配置对齐后仍有超容差残差。",
+          "leaves": [
+            {
+              "conclusion": "报告完整性缺口。",
+              "condition": "残差与分页、封账或刷新状态重合。",
+              "exclusions": [
+                "不得用缺失返回证明产品错误。"
+              ],
+              "leaf_id": "completeness-or-freshness-gap"
+            },
+            {
+              "conclusion": "保留 Gap 并升级独立核验。",
+              "condition": "数据成熟且配置一致仍无法回算。",
+              "exclusions": [
+                "不得未经证据指定责任方。"
+              ],
+              "leaf_id": "unexplained-implementation-residual"
+            }
+          ]
+        }
+      ],
+      "root_question": "结果差额能否由一组互斥的合同差异完整桥接，还是仍存在数据或实现残差？"
+    },
+    "dimension_scan": {
+      "baseline": "以两边分子、分母和配置快照作为桥接基线。",
+      "contribution_formula": "difference_share_r = reconciled_difference_r / total_absolute_difference",
+      "dimensions": [
+        {
+          "dimension_id": "rule-kind",
+          "label": "规则类别"
+        },
+        {
+          "dimension_id": "retention-day",
+          "label": "留存日"
+        },
+        {
+          "dimension_id": "result-source",
+          "label": "结果来源"
+        },
+        {
+          "dimension_id": "difference-stage",
+          "label": "差异阶段"
+        }
+      ],
+      "minimum_volume_rule": "低于隐私或最小样本门槛时只报告聚合差额。",
+      "ranking_rule": "按队列资格、时间边界、实体去重、筛选、回访定义和完整性顺序排查。",
+      "residual_policy": "未返回分页、未知实体、迟到数据和不可解释差额单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-cohort-population",
+            "inferred-retention-definition"
+          ],
+          "question": "桥接留存分析与复算结果的分子、分母和规则差异。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-cohort-population",
+            "inferred-retention-definition"
+          ],
+          "question": "配置一致但分页或封账不完整时如何保留残差？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-cohort-population",
+            "inferred-retention-definition"
+          ],
+          "question": "只有两张截图和最终数值，能否认定某一结果错误？"
+        }
+      ],
+      "questions": [
+        "桥接留存分析与复算结果的分子、分母和规则差异。",
+        "配置一致但分页或封账不完整时如何保留残差？",
+        "只有两张截图和最终数值，能否认定某一结果错误？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-retention-result-difference",
+              "returned-retention-rule-reconciliation",
+              "qualified-retention-data-gap"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-cohort-population",
+              "inferred-retention-definition"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "桥接留存分析与复算结果的分子、分母和规则差异。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-retention-result-difference"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-cohort-population",
+              "inferred-retention-definition"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "配置一致但分页或封账不完整时如何保留残差？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-cohort-population",
+              "inferred-retention-definition"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "只有两张截图和最终数值，能否认定某一结果错误？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得预设任一报表或复算为真值。",
+      "只比较最终比率不足以验证留存。",
+      "聚合核验不得扩展为未授权用户级读取。",
+      "本方法不修改分析配置或数据。"
+    ],
+    "formulas": [
+      {
+        "denominator": "按锁定队列规则进入起始队列的去重合格实体数。",
+        "expression": "retention_d = distinct_eligible_entities_returning_on_d / distinct_eligible_cohort_entities",
+        "formula_id": "verified-retention-rate",
+        "interpretation": "只有两边使用同一合同才能比较；率相等也不证明实体集合相同。",
+        "numerator": "按锁定回访规则在留存日 d 返回的去重合格实体数。",
+        "requires_project_calibration": [
+          "retention-definition",
+          "comparison-result-contract",
+          "verification-tolerance"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "实体去重计数",
+            "definition": "满足回访事件、筛选和时间边界的实体集合。",
+            "distinct_by": "project-entity-id",
+            "symbol": "returning_entities"
+          },
+          {
+            "aggregation": "实体去重计数",
+            "definition": "满足队列事件、资格和排除规则的实体集合。",
+            "distinct_by": "project-entity-id",
+            "symbol": "cohort_entities"
+          }
+        ],
+        "window": "使用明确业务时区、队列日和第 d 日边界。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定留存、实体、时间和结果配置合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集两个结果、配置快照、聚合返回和完整性证据，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算留存率、分子分母桥接和差额残差，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿可解释口径错位与数据或产品缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成对照表、差异桥接、复算证据和限制，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "至少两个结果声称计算同一留存指标，且双方定义、配置和聚合返回可读取。",
+        "需要建立可复算对照、量化差额并定位口径或数据缺口。"
+      ],
+      "not_applicable": [
+        "只提供截图或最终数值，无法读取配置、窗口和实体规则。",
+        "要求修改报表、访问未授权用户明细或把任一结果预设为真值。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-retention-result-difference"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [

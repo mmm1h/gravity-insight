@@ -11,13 +11,21 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-price-band-response",
+      "scenario-price-revenue",
+      "bounded-pricing-experiment"
+    ],
     "forbidden": [
       "causality",
       "guaranteed-revenue-improvement",
       "price-write-authorized"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "observed-price-band-response",
+      "scenario-price-revenue",
+      "bounded-pricing-experiment"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -41,6 +49,504 @@
     "title": "价格实验就绪性评审"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "非随机价格差异只支持关联与情景，不称为价格因果效应。"
+      ],
+      "cohort": [
+        "用户分层、地区、渠道、新老用户和优惠资格按项目规则控制或分层。"
+      ],
+      "inputs": [
+        "输入含真实商品 ID、标价、成交价、币种、资格曝光、购买、退款和促销状态。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "product-catalog",
+          "subject": "真实商品、版本、标价、成交价、币种和有效期。"
+        },
+        {
+          "calibration_id": "price-exposure",
+          "subject": "资格、曝光、促销、地区和分层可比规则。"
+        },
+        {
+          "calibration_id": "pricing-experiment-policy",
+          "subject": "允许价格范围、风险、样本和决策门槛。"
+        }
+      ],
+      "time": [
+        "价格窗口覆盖相同商品有效期和购买成熟期，并记录版本与促销切换。"
+      ],
+      "unit": [
+        "数量、购买用户和净收入分别计算，价格统一币种和税费口径。"
+      ]
+    },
+    "business_question": "在真实商品目录、可比曝光和交易口径下，不同价格带的触达、购买和收入响应如何；是否有足够证据提出价格实验，而不是把用户组成或促销差异误认为价格弹性？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/price-response@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/price-elasticity@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/product-catalog@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "composition-or-offer-gap",
+          "checks": [
+            "对齐商品与促销状态。",
+            "分层比较资格曝光。"
+          ],
+          "condition": "价格带差异与商品内容、促销、地区或用户组成变化重合。",
+          "leaves": [
+            {
+              "conclusion": "报告不可识别的组合效应。",
+              "condition": "不同价格同时对应不同内容或促销。",
+              "exclusions": [
+                "不得归因于价格。"
+              ],
+              "leaf_id": "offer-content-confounding"
+            },
+            {
+              "conclusion": "分层或重新设计比较。",
+              "condition": "价格状态覆盖不同用户组成。",
+              "exclusions": [
+                "不得用大盘相关性算弹性。"
+              ],
+              "leaf_id": "customer-mix-shift"
+            }
+          ]
+        },
+        {
+          "branch_id": "qualified-price-response",
+          "checks": [
+            "计算弧弹性和不确定性。",
+            "检查跨窗与分层稳定性。"
+          ],
+          "condition": "可比条件和样本门槛满足，购买响应随实际价格有稳定方向。",
+          "leaves": [
+            {
+              "conclusion": "形成有界价格实验候选。",
+              "condition": "方向跨可比窗口稳定。",
+              "exclusions": [
+                "不得称最优价格。"
+              ],
+              "leaf_id": "stable-associated-response"
+            },
+            {
+              "conclusion": "限制实验范围。",
+              "condition": "响应只在特定分层或商品成立。",
+              "exclusions": [
+                "不得外推全部用户或商品。"
+              ],
+              "leaf_id": "heterogeneous-response"
+            }
+          ]
+        }
+      ],
+      "root_question": "价格响应是否在商品、曝光资格、促销和用户组成可比后仍然存在？"
+    },
+    "dimension_scan": {
+      "baseline": "以同商品、同资格和同促销状态的价格曝光作为基线。",
+      "contribution_formula": "scenario_revenue_delta_p = eligible_exposures_p * scenario_purchase_rate_p * price_p - observed_net_revenue",
+      "dimensions": [
+        {
+          "dimension_id": "product",
+          "label": "商品"
+        },
+        {
+          "dimension_id": "price-band",
+          "label": "价格带"
+        },
+        {
+          "dimension_id": "customer-segment",
+          "label": "用户分层"
+        },
+        {
+          "dimension_id": "promotion-state",
+          "label": "促销状态"
+        }
+      ],
+      "minimum_volume_rule": "低于最小曝光、购买或价格变化门槛时不计算正式弹性。",
+      "ranking_rule": "先按收入风险、可比曝光、样本量和混杂程度排序候选。",
+      "residual_policy": "未曝光、未知促销、退款未封账和不可比商品单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "guaranteed-revenue-improvement",
+            "price-write-authorized"
+          ],
+          "question": "在真实商品和可比曝光下评估价格带响应，并形成有界实验候选。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "guaranteed-revenue-improvement",
+            "price-write-authorized"
+          ],
+          "question": "促销和用户组成同时变化时如何限制弹性结论？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "guaranteed-revenue-improvement",
+            "price-write-authorized"
+          ],
+          "question": "没有商品目录和曝光合同，能否按成交订单直接给出最优价格？"
+        }
+      ],
+      "questions": [
+        "在真实商品和可比曝光下评估价格带响应，并形成有界实验候选。",
+        "促销和用户组成同时变化时如何限制弹性结论？",
+        "没有商品目录和曝光合同，能否按成交订单直接给出最优价格？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-price-band-response",
+              "scenario-price-revenue",
+              "bounded-pricing-experiment"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "guaranteed-revenue-improvement",
+              "price-write-authorized"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "在真实商品和可比曝光下评估价格带响应，并形成有界实验候选。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-price-band-response"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "guaranteed-revenue-improvement",
+              "price-write-authorized"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "促销和用户组成同时变化时如何限制弹性结论？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "guaranteed-revenue-improvement",
+              "price-write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有商品目录和曝光合同，能否按成交订单直接给出最优价格？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得发明 SKU、标价、促销、库存或未观测个人属性。",
+      "非随机价格差异不等于因果弹性。",
+      "情景收入不等于保证收入。",
+      "本方法不改价、不修改商品、不发起实验。"
+    ],
+    "formulas": [
+      {
+        "denominator": "两个状态的实际成交价相对变化。",
+        "expression": "elasticity = ((q_2 - q_1) / ((q_2 + q_1) / 2)) / ((p_2 - p_1) / ((p_2 + p_1) / 2))",
+        "formula_id": "observed-arc-price-elasticity",
+        "interpretation": "观测弧弹性在非随机价格下可能受组成和促销混杂，不足以证明因果或最优定价。",
+        "numerator": "两个可比价格状态下合格曝光对应的购买率或购买量相对变化。",
+        "requires_project_calibration": [
+          "product-catalog",
+          "price-exposure",
+          "pricing-experiment-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "项目锁定的数量或比例",
+            "definition": "可比曝光下的购买量或购买率。",
+            "distinct_by": null,
+            "symbol": "quantity_or_rate"
+          },
+          {
+            "aggregation": "金额",
+            "definition": "同币种同税费口径的实际成交价。",
+            "distinct_by": null,
+            "symbol": "transaction_price"
+          }
+        ],
+        "window": "仅限商品、资格、促销和成熟度均可比的已封账窗口。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定商品、价格、曝光、交易和实验合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集价格带曝光、购买、净收入、促销和组成返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算购买率、收入情景和弧弹性，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿用户或促销组成差异与真实价格响应两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成价格带证据、弹性状态、情景和实验边界，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目提供版本化商品、实际成交价、资格曝光、购买、退款和可比价格变化。",
+        "需要评估价格带覆盖、观测响应与有界实验方案。"
+      ],
+      "not_applicable": [
+        "商品目录、曝光资格、成交价或促销状态缺失，无法构造可比价格样本。",
+        "要求给出保证最优价格、推断心理价位或未经实验直接改价。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-price-band-response"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [

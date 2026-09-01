@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-authorized-subject-timeline",
+      "returned-sequence-break",
+      "qualified-subject-behavior-evidence"
+    ],
     "forbidden": [
       "complete-user-history",
       "hidden-identity-linkage",
@@ -39,6 +43,490 @@
     "title": "已授权单一主体事件评审"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "时间线只陈述返回事实和限定假设，不推断个人动机、情绪或未来行为。"
+      ],
+      "cohort": [
+        "跨端身份、匿名到登录绑定、测试账号和共享设备按项目合同处理。"
+      ],
+      "inputs": [
+        "输入只含授权主体引用、最小时间窗、允许事件域和必要投影。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "subject-access",
+          "subject": "授权主体、用途、字段、窗口和隐私投影。"
+        },
+        {
+          "calibration_id": "identity-timeline",
+          "subject": "身份绑定、事件时间、迟到和去重规则。"
+        },
+        {
+          "calibration_id": "sessionization",
+          "subject": "会话间隔、状态转移和序列中断门槛。"
+        }
+      ],
+      "time": [
+        "事件时间统一到项目时区，迟到、客户端与服务端时间和会话间隔规则显式记录。"
+      ],
+      "unit": [
+        "次数、时长、金额和资源量保持项目单位，不把缺事件补为零。"
+      ]
+    },
+    "business_question": "对一个经过授权且有界的主体，在指定窗口内可确认哪些事件顺序、会话、状态和资源变化；序列中断来自真实无行为、数据缺口还是身份断裂？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "entity://project/authorized-subject@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "verified-sequence-or-state",
+          "checks": [
+            "稳定排序并去重。",
+            "核对前置、后继和状态回算。"
+          ],
+          "condition": "授权返回完整且关键事件或状态转移可按时间复算。",
+          "leaves": [
+            {
+              "conclusion": "报告观测序列。",
+              "condition": "前后事件和状态证据闭合。",
+              "exclusions": [
+                "不得解释个人动机。"
+              ],
+              "leaf_id": "observed-transition"
+            },
+            {
+              "conclusion": "报告有界对账。",
+              "condition": "资源或金额变化在允许字段内可回算。",
+              "exclusions": [
+                "不得暴露原始敏感字段。"
+              ],
+              "leaf_id": "bounded-resource-reconciliation"
+            }
+          ]
+        },
+        {
+          "branch_id": "collection-or-identity-gap",
+          "checks": [
+            "验证分页和数据源覆盖。",
+            "核对身份绑定和时间政策。"
+          ],
+          "condition": "关键断点与分页、事件覆盖、时间漂移或身份切换重合。",
+          "leaves": [
+            {
+              "conclusion": "报告数据 Gap。",
+              "condition": "必需事件源不完整。",
+              "exclusions": [
+                "不得将缺记录解释为未发生。"
+              ],
+              "leaf_id": "instrumentation-or-pagination-gap"
+            },
+            {
+              "conclusion": "报告身份绑定缺口。",
+              "condition": "匿名、登录或跨端身份无法闭合。",
+              "exclusions": [
+                "不得搜索或拼接未授权身份。"
+              ],
+              "leaf_id": "identity-discontinuity"
+            }
+          ]
+        }
+      ],
+      "root_question": "关键序列断点是否能由已返回事件确认，还是可能由采集、分页、时间或身份缺口造成？"
+    },
+    "dimension_scan": {
+      "baseline": "以授权窗口内稳定排序、去重后的返回事件作为基线。",
+      "contribution_formula": "domain_share_k = returned_events_k / total_returned_events",
+      "dimensions": [
+        {
+          "dimension_id": "session",
+          "label": "会话"
+        },
+        {
+          "dimension_id": "event-domain",
+          "label": "事件域"
+        },
+        {
+          "dimension_id": "identity-state",
+          "label": "身份状态"
+        },
+        {
+          "dimension_id": "data-source",
+          "label": "数据来源"
+        }
+      ],
+      "minimum_volume_rule": "低于隐私投影或事件完整性门槛时不输出细粒度段落。",
+      "ranking_rule": "先按与业务问题相关的状态转移，再按时间邻近、证据来源和完整性排序。",
+      "residual_policy": "分页未完成、未知身份、迟到事件和未授权字段单列或删除。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "complete-user-history",
+            "hidden-identity-linkage",
+            "user-intent"
+          ],
+          "question": "在授权窗口内整理单一主体的有界事件时间线并核对关键状态转移。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "complete-user-history",
+            "hidden-identity-linkage",
+            "user-intent"
+          ],
+          "question": "分页或身份绑定不完整时哪些序列结论必须降级？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "complete-user-history",
+            "hidden-identity-linkage",
+            "user-intent"
+          ],
+          "question": "没有主体级授权和字段最小化合同，能否按昵称搜索并生成完整画像？"
+        }
+      ],
+      "questions": [
+        "在授权窗口内整理单一主体的有界事件时间线并核对关键状态转移。",
+        "分页或身份绑定不完整时哪些序列结论必须降级？",
+        "没有主体级授权和字段最小化合同，能否按昵称搜索并生成完整画像？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-authorized-subject-timeline",
+              "returned-sequence-break",
+              "qualified-subject-behavior-evidence"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "complete-user-history",
+              "hidden-identity-linkage",
+              "user-intent"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "在授权窗口内整理单一主体的有界事件时间线并核对关键状态转移。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-authorized-subject-timeline"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "complete-user-history",
+              "hidden-identity-linkage",
+              "user-intent"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "分页或身份绑定不完整时哪些序列结论必须降级？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-user-history",
+              "hidden-identity-linkage",
+              "user-intent"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有主体级授权和字段最小化合同，能否按昵称搜索并生成完整画像？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得搜索、枚举或反查未授权个人身份。",
+      "不得输出超出最小投影的原始用户级数据。",
+      "缺事件不等于行为未发生，时间邻近不等于因果。",
+      "不得推断心理、意图、敏感状态或未来行为。"
+    ],
+    "formulas": [
+      {
+        "denominator": "公式无数值分母；从当前时间戳减去前一去重事件时间戳。",
+        "expression": "gap_i = event_time_i - event_time_{i-1}",
+        "formula_id": "ordered-event-gap",
+        "interpretation": "间隔可用于标记会话或序列断点，但不能证明用户离开原因或缺失事件不存在。",
+        "numerator": "当前返回事件 i 的项目标准时间戳。",
+        "requires_project_calibration": [
+          "subject-access",
+          "identity-timeline",
+          "sessionization"
+        ],
+        "unit": "时间单位",
+        "variables": [
+          {
+            "aggregation": "时间戳",
+            "definition": "事件 i 经时间政策归一后的时间戳。",
+            "distinct_by": "event-id",
+            "symbol": "event_time_current"
+          },
+          {
+            "aggregation": "时间戳",
+            "definition": "前一去重事件经归一后的时间戳。",
+            "distinct_by": "event-id",
+            "symbol": "event_time_previous"
+          }
+        ],
+        "window": "仅在授权查询窗和统一项目时区内，对稳定排序后的返回事件计算。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定主体授权、身份、时间和最小投影合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集有序事件、状态、来源、分页和完整性返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算事件间隔、会话边界和状态或资源回算，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿真实序列中断与采集或身份缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成有界时间线、关键转移、证据缺口和限制，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "调用方提供已授权不可逆主体引用、明确时间窗、允许字段和业务问题。",
+        "需要对返回事件做有界时间线、状态转移和证据核对。"
+      ],
+      "not_applicable": [
+        "没有主体级读取授权、时间窗或字段最小化政策。",
+        "要求搜索身份、批量画像、推断心理或输出原始个人数据。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-authorized-subject-timeline"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],
