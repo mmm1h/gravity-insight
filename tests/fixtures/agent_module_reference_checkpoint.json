@@ -22,15 +22,15 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "3dc668f980633567993affa7bfe4c67b90902b6f7ff3d31f45689dc4a60dd03b",
+    "scanner_sha256": "7318121cee15feb0d9cdf7a22daf1698818060e2d805d685a5adda035a56f9af",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "c66e3cf109344b0fd6c9bf6fc3ee7baadf311268be5a35c980b4159a69311ca9",
-    "manual_review_sha256": "8efcb9b79101d8c21d143a18fc7816bfac55fbd7c3cb2391143e8bd0c86127a9",
+    "reference_evidence_sha256": "7d852ab4a35ef8b83eadd72fb2ddf20dcc9bb9ac94de696453c4fe0474b6b3d5",
+    "manual_review_sha256": "d067892e2c9d862d2f17b4b3758122c2b9fc3187fa22aeed6995ae095389a227",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3122,
-    "scanned_file_count": 3115,
+    "version_controlled_file_count": 3038,
+    "scanned_file_count": 3031,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -610,14 +610,6 @@
       "evidence_kind": "finite_input_dataflow"
     },
     {
-      "basis": "The occurrence is in docs/archive, which AGENTS.md defines as non-normative history rather than a current interface or consumer.",
-      "evidence_kind": "repository_policy"
-    },
-    {
-      "basis": "The exact reference is in docs/archive, which is non-normative history and must preserve the recorded path.",
-      "evidence_kind": "repository_policy"
-    },
-    {
       "basis": "Every call to this local setattr helper passes an imported module object; the string-target mock.patch branch has no agent-module input.",
       "evidence_kind": "complete_local_call_census"
     },
@@ -659,36 +651,36 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 356,
-    "reference_site_count": 354,
-    "manual_review_site_count": 220,
-    "reference_manual_overlap_count": 218,
+    "tracked_site_count": 272,
+    "reference_site_count": 270,
+    "manual_review_site_count": 140,
+    "reference_manual_overlap_count": 138,
     "manual_only_site_count": 2,
-    "unique_source_keys": 356,
+    "unique_source_keys": 272,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
     "actionable_site_count": 0,
     "reference_categories": {
-      "documentation_spec": 88,
+      "documentation_spec": 2,
       "dynamic_import": 11,
-      "entrypoint_config": 56,
+      "entrypoint_config": 57,
       "manual_patch_expression": 118,
       "module_qualname_dependency": 7,
-      "static_import": 69,
+      "static_import": 70,
       "string_reference": 5
     },
     "manual_review_categories": {
       "agent_prefix_template": 2,
-      "bare_agent_string": 82,
+      "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
       "non_string_patch_expression": 118
     },
     "dispositions": {
-      "no_migration_effect": 356
+      "no_migration_effect": 272
     },
-    "sites_sha256": "8bbbea22d4c6aa84a828c84e389e5dab240345f17c114879e98e934532d3d988"
+    "sites_sha256": "a35d5ec3f9ce9e49b180f4999316fe918f4dbc1107a1e596cc999b68e1385183"
   },
   "blockers": [],
   "site_fields": [
@@ -715,1303 +707,13 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      60,
+      58,
       {
         "kind": "none"
       }
     ],
     [
-      "docs/archive/decisions/2026-08/agent-eval-baseline.md:218:2:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_routing",
-      "intent_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/agent-eval-baseline.md:370:13:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_routing",
-      "intent_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:131:39:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_sources",
-      "sources",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:133:37:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_sources",
-      "sources",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:154:46:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_monetization_guard",
-      "monetization_guard",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:154:76:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_order_directory",
-      "order_directory",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:155:67:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "relative_date_agent",
-      "relative_date",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:399:40:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_sources",
-      "sources",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:406:110:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_report_routing",
-      "report_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:406:137:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_report_routing",
-      "report_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:54:19:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:70:4:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_text",
-      "intent_text",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:72:4:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:81:44:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_text",
-      "intent_text",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:86:22:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_report_routing",
-      "report_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:98:126:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:98:24:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:98:48:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_composite",
-      "composite",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/arch-review.md:98:69:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_handoff",
-      "handoff",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/catalog-routing-and-playbooks.md:38:20:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_app_catalog",
-      "app_catalog",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/coldstart-friction.md:39:96:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_catalog",
-      "catalog",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/coldstart-friction.md:40:100:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_catalog",
-      "catalog",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/consumer-affordances.md:19:97:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_discovery_support",
-      "discovery_support",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/goals-and-current-state.md:460:29:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_sources",
-      "sources",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/goals-and-current-state.md:463:39:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_handoff",
-      "handoff",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/governed-writes-and-analysis.md:211:2:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_segment",
-      "segment",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/governed-writes-and-analysis.md:272:54:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_caller_language",
-      "caller_language",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/lexicon.md:14:19:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_caller_language",
-      "caller_language",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/lexicon.md:18:31:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_lexical_retrieval",
-      "lexical_retrieval",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/next-pointers.md:52:5:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_selection",
-      "host_selection",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/prior-art.md:19:100:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_selection",
-      "host_selection",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/prior-art.md:19:126:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_discovery_support",
-      "discovery_support",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/prior-art.md:19:61:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_gap",
-      "gap",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/prior-art.md:19:76:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_catalog",
-      "host_catalog",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/prior-art.md:99:191:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_catalog",
-      "host_catalog",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:219:37:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:219:61:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_composite",
-      "composite",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:220:2:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_handoff",
-      "handoff",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/priorities-constraints-and-loss.md:232:22:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_routing",
-      "intent_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/recognizer-recall.md:39:102:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_text",
-      "intent_text",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-arms-paired-holdout.md:72:18:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_selection",
-      "host_selection",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-arms-paired-holdout.md:72:2:text source path",
-      "r",
-      "exact_reference",
-      "src/gravity_sdk/agent_host_selection.py",
-      "src/gravity_sdk/agents/host_selection.py",
-      "documentation_spec",
-      "exact",
-      "no_migration_effect",
-      "frozen_historical_text",
-      53,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:17:185:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_export",
-      "export",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:197:61:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_batch",
-      "batch",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:230:140:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_selection",
-      "host_selection",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:230:174:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_routing",
-      "intent_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:23:35:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_selection",
-      "host_selection",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:29:5:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_selection",
-      "host_selection",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:45:51:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_host_selection",
-      "host_selection",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:77:28:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_input_resolution",
-      "input_resolution",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:78:37:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_input_resolution",
-      "input_resolution",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:81:50:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_batch",
-      "batch",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:82:34:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_batch",
-      "batch",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-callers.md:84:61:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_input_resolution",
-      "input_resolution",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/routing-provenance.md:28:90:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_batch_questions",
-      "batch_questions",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/semantics-errors-and-discovery.md:90:51:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_routing",
-      "intent_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/team-onboarding.md:53:101:text source path",
-      "r",
-      "exact_reference",
-      "src/gravity_sdk/agent_discovery_support.py",
-      "src/gravity_sdk/agents/discovery_support.py",
-      "documentation_spec",
-      "exact",
-      "no_migration_effect",
-      "frozen_historical_text",
-      53,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/team-onboarding.md:53:117:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_discovery_support",
-      "discovery_support",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/decisions/2026-08/writes-and-nl-routing.md:184:11:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_caller_language",
-      "caller_language",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/designs/dashboard-conditions.md:49:38:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/designs/dashboard-conditions.md:50:26:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_handoff",
-      "handoff",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/designs/dashboard-conditions.md:50:4:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_composite",
-      "composite",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/designs/material-performance.md:143:4:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_material_performance",
-      "material_performance",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/designs/order-directory.md:147:36:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_order_directory",
-      "order_directory",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/designs/order-split-trace.md:147:32:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_order_trace",
-      "order_trace",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/designs/promotion-performance.md:160:4:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_promotion_performance",
-      "promotion_performance",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/agent-usability-methods.md:102:195:text source path",
-      "r",
-      "exact_reference",
-      "src/gravity_sdk/agent_intent_routing.py",
-      "src/gravity_sdk/agents/intent_routing.py",
-      "documentation_spec",
-      "exact",
-      "no_migration_effect",
-      "frozen_historical_text",
-      53,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/agent-usability-methods.md:102:211:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_routing",
-      "intent_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/agent-usability-methods.md:114:214:text source path",
-      "r",
-      "exact_reference",
-      "src/gravity_sdk/agent_call_bound.py",
-      "src/gravity_sdk/agents/call_bound.py",
-      "documentation_spec",
-      "exact",
-      "no_migration_effect",
-      "frozen_historical_text",
-      53,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/agent-usability-methods.md:114:230:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_call_bound",
-      "call_bound",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/agent-usability-methods.md:197:257:text source path",
-      "r",
-      "exact_reference",
-      "src/gravity_sdk/agent_call_bound.py",
-      "src/gravity_sdk/agents/call_bound.py",
-      "documentation_spec",
-      "exact",
-      "no_migration_effect",
-      "frozen_historical_text",
-      53,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/agent-usability-methods.md:197:273:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_call_bound",
-      "call_bound",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/borrow-roadmap.md:299:52:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/borrow-roadmap.md:299:76:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_composite",
-      "composite",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/borrow-roadmap.md:299:99:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_handoff",
-      "handoff",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/mcp-feasibility.md:248:35:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/mcp-feasibility.md:248:59:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_composite",
-      "composite",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/mcp-feasibility.md:249:2:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_handoff",
-      "handoff",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/mcp-protocol-and-servers.md:316:163:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/mcp-protocol-and-servers.md:316:195:text source path",
-      "r",
-      "exact_reference",
-      "src/gravity_sdk/agent_capabilities.py",
-      "src/gravity_sdk/agents/capabilities.py",
-      "documentation_spec",
-      "exact",
-      "no_migration_effect",
-      "frozen_historical_text",
-      53,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/research/mcp-protocol-and-servers.md:316:211:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/snapshots/technical-debt-2026-08-19.md:161:19:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_intent_routing",
-      "intent_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/snapshots/technical-debt-2026-08-19.md:264:2:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_capabilities",
-      "capabilities",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/snapshots/technical-debt-2026-08-19.md:61:30:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_input_resolution",
-      "input_resolution",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/snapshots/technical-debt-2026-08-19.md:61:58:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_input_catalogs",
-      "input_catalogs",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/archive/snapshots/technical-debt-2026-08-19.md:72:19:bare text module string",
-      "rm",
-      "bare_agent_string",
-      "agent_report_routing",
-      "report_routing",
-      "documentation_spec",
-      "context review",
-      "no_migration_effect",
-      "frozen_historical_exact_reference",
-      52,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "docs/maintainers/technical-debt.md:69:113:bare text module string",
+      "docs/maintainers/technical-debt.md:72:113:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -2020,7 +722,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      60,
+      58,
       {
         "kind": "none"
       }
@@ -2056,6 +758,21 @@
       }
     ],
     [
+      "scripts/generate_method_gap_report.py:104:5:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      59,
+      {
+        "kind": "none"
+      }
+    ],
+    [
       "scripts/generate_skill_library.py:16:1:from import",
       "r",
       "exact_reference",
@@ -2065,13 +782,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "scripts/repository_map.py:771:5:from import",
+      "scripts/repository_map.py:779:5:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2080,13 +797,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/__init__.py:278:21:import_module",
+      "src/gravity_insight/__init__.py:275:21:import_module",
       "rm",
       "dynamic_import",
       "module_name",
@@ -2095,7 +812,7 @@
       "manual",
       "no_migration_effect",
       "root_lazy_export_owner_map_migrated",
-      62,
+      60,
       {
         "kind": "none"
       }
@@ -2110,7 +827,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2125,7 +842,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2140,7 +857,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2155,7 +872,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2170,7 +887,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2185,7 +902,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2200,7 +917,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2215,7 +932,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2230,7 +947,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2245,7 +962,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -2260,13 +977,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:103697:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:105638:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2275,13 +992,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:105536:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:107477:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2290,13 +1007,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:106519:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:108460:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2305,13 +1022,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:128346:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:130393:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2320,13 +1037,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:128586:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:130633:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2335,13 +1052,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:128806:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:130853:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2350,13 +1067,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:133978:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:136025:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2365,13 +1082,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:135654:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:137701:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2380,13 +1097,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:140353:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:142400:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2395,13 +1112,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:140831:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:142878:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2410,13 +1127,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:141212:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:143259:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2425,13 +1142,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:147646:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:14956:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2440,13 +1157,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:14918:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:149906:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2455,13 +1172,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:149204:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:151464:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2470,13 +1187,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:149345:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:151605:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2485,13 +1202,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:152851:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:155111:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2500,13 +1217,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:154443:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157129:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2515,13 +1232,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:154860:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157546:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2530,13 +1247,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:155036:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157722:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2545,13 +1262,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:155182:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157868:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2560,13 +1277,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:156055:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:158741:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2575,13 +1292,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:159093:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:161779:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2590,13 +1307,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:159334:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:162020:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2605,13 +1322,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:159591:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:162277:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2620,13 +1337,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:160037:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:162723:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2635,13 +1352,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:161549:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:164548:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2650,13 +1367,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163172:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:166506:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2665,13 +1382,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163338:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:166672:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2680,13 +1397,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163476:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:166810:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2695,13 +1412,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168727:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172766:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2710,13 +1427,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168855:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172894:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2725,13 +1442,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:169086:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:173125:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2740,13 +1457,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:169409:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:173448:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2755,13 +1472,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172718:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:176757:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2770,13 +1487,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179314:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:183353:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2785,13 +1502,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179621:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:183660:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2800,13 +1517,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:181551:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:185590:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2815,13 +1532,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:201572:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:205611:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2830,13 +1547,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:206584:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:210625:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2845,13 +1562,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:207147:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:211188:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2860,13 +1577,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:209773:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:213814:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2875,13 +1592,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:213766:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:218198:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2890,13 +1607,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:226116:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:230548:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2905,13 +1622,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:226299:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:230731:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2920,13 +1637,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:227551:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:231983:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2935,13 +1652,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:227747:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:232179:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2950,13 +1667,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:228725:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233157:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2965,13 +1682,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:228965:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233397:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2980,13 +1697,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229299:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233731:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2995,13 +1712,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229492:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233924:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3010,13 +1727,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229657:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:234089:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3025,13 +1742,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:229874:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:234306:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3040,13 +1757,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:232805:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:237237:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3055,13 +1772,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233369:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:237801:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3070,13 +1787,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:233469:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:237901:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3085,13 +1802,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:235907:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240339:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3100,7 +1817,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3115,7 +1832,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3130,7 +1847,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3145,7 +1862,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3220,7 +1937,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3235,7 +1952,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3250,7 +1967,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3265,7 +1982,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3280,7 +1997,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3295,7 +2012,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3310,7 +2027,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3325,7 +2042,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3340,7 +2057,22 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/governance/domain-boundary-baseline.json:40:6:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      59,
       {
         "kind": "none"
       }
@@ -3355,7 +2087,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3370,7 +2102,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3385,7 +2117,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3400,7 +2132,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3415,7 +2147,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3430,7 +2162,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3445,7 +2177,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3460,7 +2192,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3475,7 +2207,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3490,7 +2222,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3505,7 +2237,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3520,7 +2252,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3655,7 +2387,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3670,7 +2402,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3685,7 +2417,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3700,7 +2432,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3715,7 +2447,7 @@
       "manual",
       "no_migration_effect",
       "root_package_only",
-      63,
+      61,
       {
         "kind": "none"
       }
@@ -3730,7 +2462,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3745,7 +2477,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3760,7 +2492,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3775,7 +2507,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3790,7 +2522,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3805,7 +2537,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3820,7 +2552,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3835,7 +2567,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3850,7 +2582,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3865,7 +2597,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3880,7 +2612,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3910,7 +2642,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3925,7 +2657,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3940,7 +2672,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -3955,13 +2687,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
     ],
     [
-      "tests/agent_migration_characterization.py:20:28:python string literal",
+      "tests/agent_migration_characterization.py:21:28:python string literal",
       "m",
       "agent_prefix_template",
       "gravity_insight.agent_",
@@ -3970,13 +2702,13 @@
       null,
       "no_migration_effect",
       "legacy_prefix_migration_sentinel",
-      55,
+      53,
       {
         "kind": "none"
       }
     ],
     [
-      "tests/agent_migration_characterization.py:22:34:python string literal",
+      "tests/agent_migration_characterization.py:23:34:python string literal",
       "m",
       "agent_prefix_template",
       "gravity_sdk.agent_",
@@ -3985,7 +2717,7 @@
       null,
       "no_migration_effect",
       "legacy_prefix_migration_sentinel",
-      55,
+      53,
       {
         "kind": "none"
       }
@@ -4000,7 +2732,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4015,7 +2747,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      56,
+      54,
       {
         "kind": "none"
       }
@@ -4030,7 +2762,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      56,
+      54,
       {
         "kind": "none"
       }
@@ -4045,7 +2777,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      56,
+      54,
       {
         "kind": "none"
       }
@@ -4060,7 +2792,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      56,
+      54,
       {
         "kind": "none"
       }
@@ -4075,7 +2807,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      56,
+      54,
       {
         "kind": "none"
       }
@@ -4150,7 +2882,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4180,7 +2912,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4195,7 +2927,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4225,7 +2957,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4240,7 +2972,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      57,
+      55,
       {
         "kind": "none"
       }
@@ -4255,7 +2987,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4270,7 +3002,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      58,
+      56,
       {
         "kind": "none"
       }
@@ -4330,7 +3062,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4345,7 +3077,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -4675,7 +3407,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      59,
+      57,
       {
         "kind": "none"
       }
@@ -4870,7 +3602,7 @@
       "manual",
       "no_migration_effect",
       "helper_receives_only_objects",
-      54,
+      52,
       {
         "kind": "none"
       }
@@ -5170,7 +3902,7 @@
       "manual",
       "no_migration_effect",
       "helper_receives_only_objects",
-      54,
+      52,
       {
         "kind": "none"
       }
@@ -5605,7 +4337,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -5635,7 +4367,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -5650,7 +4382,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -5665,7 +4397,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }
@@ -5680,7 +4412,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      61,
+      59,
       {
         "kind": "none"
       }

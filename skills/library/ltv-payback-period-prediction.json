@@ -11,39 +11,332 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "estimated-payback-window",
+      "observed-acquisition-cost",
+      "scenario-ltv-projection"
+    ],
     "forbidden": [
       "causality",
       "guaranteed-payback-date",
-      "invented-confidence"
+      "invented-confidence",
+      "uncalibrated-project-metric"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "estimated-payback-window",
+      "observed-acquisition-cost",
+      "scenario-ltv-projection"
+    ]
   },
   "context_dependencies": {
     "optional": [],
-    "required": []
+    "required": [
+      "context://project/ltv-calibration@1"
+    ]
   },
   "covers_journeys": [],
-  "description": "必须具备相互兼容的获客成本、净价值、队列和预测周期定义，以及获批的回本周期 Model。",
-  "effects": [
-    "read"
-  ],
+  "description": "在获客成本、净价值、队列和模型证据均明确时，区分观测值与预测值，估算批准预测周期内最早可能回收的队列年龄。",
+  "effects": ["read"],
   "guide": {
-    "applicability": "用于评估有界队列和获客渠道的就绪性。",
-    "context_boundary": "没有经过验证的预测周期和模型时，观测到的早期收入与支出无法决定未来回本情况。",
+    "applicability": "适用于按获客队列评估 CAC、累计净 LTV 和回收周期，且项目提供成本归因、净额规则及获批模型的场景。",
+    "context_boundary": "行业通用公式不是项目事实；没有项目校准、可信 Model 或安全预测周期时，只能输出观测缺口与情景，不能承诺回收日期。",
     "steps": [
-      "解析获客成本、队列、净价值、币种、归因和观测周期语义。",
-      "验证确切的回本周期 Model 血缘、校准、审批、有效期和安全预测周期。",
-      "缺少兼容性时停止；否则分别报告情景假设和估算限制。"
+      "锁定获客队列、成本归因、币种、净价值扣减项、业务时区和预测周期。",
+      "按同一队列去重人数计算 CAC，并按队列年龄计算累计净 LTV 观测曲线。",
+      "检查成本覆盖、收入成熟度、退款迟到、币种换算和队列样本量。",
+      "验证 Operator 与 Model 的登记、血缘、评估、审批、有效期和安全预测周期。",
+      "区分已观测交叉、模型预测交叉、周期内不交叉和证据不足四类诊断叶子。",
+      "按渠道、平台、地区和获客期扫描价值缺口贡献，保留未返回残差。",
+      "输出回收区间、情景假设、排除项和禁止断言，不自动触发预算或投放动作。"
     ],
-    "title": "价值回本就绪性评估"
+    "title": "LTV 回收周期预测"
   },
   "lifecycle": "reviewed",
-  "model_dependencies": [
-    "model://gravity/ltv-payback@1"
-  ],
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "获客成本只归入一个项目批准的触点窗口，后续价值与同一获客队列关联，跨渠道重复归因必须消除。"
+      ],
+      "cohort": [
+        "队列以稳定用户键和首次合格获客时间入组，预测期间不改变入组、排除和跨端合并规则。"
+      ],
+      "inputs": [
+        "输入至少包含可归因获客支出、去重获客用户、按队列年龄累计的收入与扣减项、币种和模型证据。"
+      ],
+      "requires_project_calibration": [
+        {"calibration_id": "acquisition-cost-scope", "subject": "哪些媒体费、代理费、补贴、返点和税费计入获客成本。"},
+        {"calibration_id": "net-value-scope", "subject": "收入确认、退款、平台分成、税费和可变服务成本的净额范围。"},
+        {"calibration_id": "acquisition-attribution", "subject": "获客触点、窗口、跨渠道去重和自然量处理规则。"},
+        {"calibration_id": "currency-policy", "subject": "币种、汇率来源、换算日期和金额精度。"},
+        {"calibration_id": "ltv-safe-horizon", "subject": "模型允许的最大预测周期、输出粒度和外推边界。"},
+        {"calibration_id": "payback-confidence-policy", "subject": "回收区间采用的情景、误差带或置信表达及最小样本门槛。"}
+      ],
+      "time": [
+        "所有队列用同一业务时区和队列年龄口径；成本窗闭合，价值窗按成熟度截断，预测不超过批准周期。"
+      ],
+      "unit": [
+        "CAC 与累计净 LTV 使用同一币种和每获客去重用户单位；名义金额、税口径和汇率版本必须一致。"
+      ]
+    },
+    "business_question": "指定获客队列在批准预测周期内何时可能由累计净 LTV 覆盖 CAC；结论中哪些是已观测、哪些依赖模型，哪些队列或维度驱动价值缺口？",
+    "data_checks": {
+      "completeness": [
+        "核对成本源分页和账期闭合，所有可归因支出均进入明确渠道或未归因残差。",
+        "核对每个队列从年龄零到观测截止日的价值累计序列连续，缺失年龄点不得自动补零。"
+      ],
+      "data_quality": [
+        "检查获客用户重复入组、负人数、金额币种混用、退款迟到、累计值非预期回退和未来时间戳。",
+        "检查 Model 血缘、训练截止日、评估指标、审批、有效期、输入 Semantic 与安全预测周期。"
+      ],
+      "failure_behavior": "成本或价值覆盖不完整时停止回收预测；Model 不可用时只报告观测曲线和 Gap，不用简单外推冒充预测。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "Runtime 已登记 composite:business_pulse Capability。",
+        "identity": "composite:business_pulse",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "获客成本是项目口径，Runtime 内置 Semantic registry 未提供该项目 Definition 或 Binding。",
+        "identity": "metric://project/acquisition-cost@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "生命周期价值是项目口径，Runtime 内置 Semantic registry 未提供该项目 Definition 或 Binding。",
+        "identity": "metric://project/lifetime-value@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 当前只登记 returned-dimension-change Operator，未登记 LTV 回收周期计算实现。",
+        "identity": "operator://gravity/ltv-payback-period@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      },
+      {
+        "evidence": "默认 Model registry 没有该模型的可信 artifact、血缘、评估、审批和有效期。",
+        "identity": "model://gravity/ltv-payback@1",
+        "kind": "model",
+        "reason_code": "MODEL_UNVALIDATED",
+        "status": "unavailable"
+      },
+      {
+        "evidence": "成本范围、净额、币种与预测周期必须由调用项目 Context Provider 提供，本仓库未绑定。",
+        "identity": "context://project/ltv-calibration@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "model-evidence-ready",
+          "checks": [
+            "确认成本与净价值 Semantic 已绑定且单位、队列、时间和归因兼容。",
+            "确认 Model artifact 可信、已评估和批准，输入窗口及请求周期在安全域内。"
+          ],
+          "condition": "所有必需数据检查通过，Operator 可执行，Model 在请求日期与预测周期内获批。",
+          "leaves": [
+            {
+              "conclusion": "累计净 LTV 已在成熟观测窗内覆盖 CAC，可报告最早观测回收年龄而非预测日期。",
+              "condition": "存在最小队列年龄 d，使已观测 cumulative_net_ltv(d) >= cac，且此前所有年龄均未覆盖。",
+              "exclusions": [
+                "若成本账期未闭合或后续退款可显著改变累计净值，不得称已回收。",
+                "若队列人数或币种在年龄序列中改变，不得使用该交叉点。"
+              ],
+              "leaf_id": "observed-crossing"
+            },
+            {
+              "conclusion": "观测窗尚未回收，但获批 Model 在安全周期内给出交叉，可报告情景回收区间。",
+              "condition": "观测年龄内 cumulative_net_ltv < cac，且获批预测分布在安全周期内首次覆盖 CAC。",
+              "exclusions": [
+                "若请求周期超过 Model safe horizon 或输入队列超出评估分布，不得报告预测交叉。",
+                "若只得到单点预测且项目要求误差带，不得把单点写成确定日期。"
+              ],
+              "leaf_id": "projected-crossing"
+            }
+          ]
+        },
+        {
+          "branch_id": "model-evidence-blocked",
+          "checks": [
+            "列出 Semantic、Operator、Model、Context、样本量和成熟度的逐项缺口。",
+            "保留 CAC 与累计净 LTV 的可验证观测部分，不进行未批准外推。"
+          ],
+          "condition": "任一必需依赖、数据检查、模型审批、有效期或安全周期未满足。",
+          "leaves": [
+            {
+              "conclusion": "在批准周期内没有得到可信交叉，只能报告未回收情景和剩余价值缺口。",
+              "condition": "数据与模型可用，但所有获批情景在 safe horizon 内均有 cumulative_net_ltv < cac。",
+              "exclusions": [
+                "不得外推到安全周期之外并声称最终不会回收。",
+                "若未来成本或净值口径预计改变，当前价值缺口不能代表未来策略结果。"
+              ],
+              "leaf_id": "no-crossing-in-horizon"
+            },
+            {
+              "conclusion": "证据不足，返回 Gap 或 Partial，不提供回收年龄。",
+              "condition": "Semantic、Context、Operator、Model、成本覆盖或价值成熟度至少一项缺失。",
+              "exclusions": [
+                "不得用收入趋势线、行业倍数或字段名替代缺失的项目口径和 Model。",
+                "不得从其他队列的回收时间直接推断当前队列。"
+              ],
+              "leaf_id": "prediction-not-authorized"
+            }
+          ]
+        }
+      ],
+      "root_question": "CAC 与累计净 LTV 是否使用兼容项目口径，且获批 Model 足以在安全预测周期内判断最早交叉？"
+    },
+    "dimension_scan": {
+      "baseline": "每个互斥队列切片使用同一成本范围、净价值范围、币种和队列年龄；不同获客期不直接按自然日混合。",
+      "contribution_formula": "value_gap_s(d) = acquired_users_s * (cumulative_net_ltv_s(d) - cac_s); contribution_s = value_gap_s(d) / sum(value_gap_returned_s(d))，总和为零时不输出占比。",
+      "dimensions": [
+        {"dimension_id": "acquisition-channel", "label": "获客渠道"},
+        {"dimension_id": "client-platform", "label": "客户端平台"},
+        {"dimension_id": "region", "label": "地区"},
+        {"dimension_id": "acquisition-period", "label": "获客期"}
+      ],
+      "minimum_volume_rule": "队列去重人数低于项目模型最小样本量时只作为低样本残差，不单独预测或排名。",
+      "ranking_rule": "按指定队列年龄的价值缺口绝对额排序，同时报告每用户 CAC、累计净 LTV、人数和方向。",
+      "residual_policy": "未归因成本、无法绑定价值和低样本队列单列残差；残差足以改变总体交叉时，结果降级为 Partial。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "observed-payback",
+          "expected_sections": ["formula-definition", "observed-curve", "payback-assessment", "exclusions"],
+          "forbidden_claims": ["guaranteed-payback-date", "causality"],
+          "question": "某个成熟获客队列的累计净 LTV 已超过 CAC，最早在哪个队列年龄观察到回收？"
+        },
+        {
+          "eval_id": "projected-payback",
+          "expected_sections": ["model-readiness", "scenario-projection", "claims"],
+          "forbidden_claims": ["guaranteed-payback-date", "invented-confidence"],
+          "question": "观测窗口还没回收，请在模型批准周期内给出回收区间，并区分观测与预测。"
+        },
+        {
+          "eval_id": "missing-model",
+          "expected_sections": ["dependency-gaps", "observed-curve", "claims"],
+          "forbidden_claims": ["guaranteed-payback-date", "uncalibrated-project-metric"],
+          "question": "项目没有已评审的 LTV 模型，能否用早期收入直线外推一个回收日期？"
+        }
+      ],
+      "questions": [
+        "这个获客队列的 CAC 和累计净 LTV 分别怎么计算，当前是否已观测回收？",
+        "如果尚未回收，获批模型在安全预测周期内给出的回收区间是什么？",
+        "哪些渠道或平台贡献了最大的价值缺口，未归因残差会不会改变结论？"
+      ]
+    },
+    "exclusions": [
+      "获客成本范围、净价值扣减项、币种或归因规则不兼容时，不得比较 CAC 与累计净 LTV。",
+      "成本账期未闭合、退款和收入未成熟或队列人数无法稳定去重时，不得确认回收。",
+      "Model 未登记、未评估、未批准、已过期或请求周期超出安全域时，不得输出预测回收区间。",
+      "按渠道或地区观察到回收差异不能证明渠道策略导致价值差异。"
+    ],
+    "formulas": [
+      {
+        "denominator": "队列 C 内按稳定用户键去重的合格获客用户数；一个用户只进入一个获客队列。",
+        "expression": "cac(C) = attributable_acquisition_spend(C) / distinct_acquired_users(C)",
+        "formula_id": "customer-acquisition-cost",
+        "interpretation": "CAC 是指定队列的观测每用户获客成本；分母为零时未定义，未归因成本必须作为残差。",
+        "numerator": "按项目成本范围和归因规则计入队列 C 的获客支出净额，统一换算到批准币种。",
+        "requires_project_calibration": ["acquisition-cost-scope", "acquisition-attribution", "currency-policy"],
+        "unit": "批准币种每获客用户",
+        "variables": [
+          {"aggregation": "按队列求和", "definition": "项目批准范围内、归因到队列的获客支出。", "distinct_by": null, "symbol": "attributable_acquisition_spend"},
+          {"aggregation": "按队列去重计数", "definition": "首次满足项目获客条件并归入队列的用户。", "distinct_by": "stable-user-id", "symbol": "distinct_acquired_users"}
+        ],
+        "window": "成本窗必须覆盖项目定义的完整获客归因期，并达到财务或投放账期封账条件。"
+      },
+      {
+        "denominator": "队列 C 的去重获客用户数，整个队列年龄序列保持固定。",
+        "expression": "cumulative_net_ltv(C,d) = (recognized_revenue_to_d - refunds_to_d - platform_fees_to_d - taxes_to_d - variable_service_cost_to_d) / distinct_acquired_users(C)",
+        "formula_id": "cumulative-net-ltv",
+        "interpretation": "该值是截至队列年龄 d 的累计净价值；扣减项由项目校准，观测值和模型预测值必须分栏。",
+        "numerator": "截至队列年龄 d 的已确认收入，减去项目批准的退款、平台分成、税费和可变服务成本。",
+        "requires_project_calibration": ["net-value-scope", "currency-policy"],
+        "unit": "批准币种每获客用户",
+        "variables": [
+          {"aggregation": "按队列与年龄累计求和", "definition": "收入扣除所有项目批准扣减项后的累计净价值。", "distinct_by": null, "symbol": "cumulative_net_value"},
+          {"aggregation": "按队列去重计数", "definition": "队列入组时固定的去重获客用户数。", "distinct_by": "stable-user-id", "symbol": "distinct_acquired_users"}
+        ],
+        "window": "d 是从队列入组开始的完整年龄单位；观测截止与预测起点必须连续且不重叠。"
+      },
+      {
+        "denominator": "同一队列、币种和成本范围下的 CAC 阈值。",
+        "expression": "payback_age(C) = min(d in approved_horizon where projected_cumulative_net_ltv(C,d) >= cac(C))",
+        "formula_id": "payback-age",
+        "interpretation": "若已观测曲线交叉则报告最早观测年龄；否则仅在获批 Model 和 safe horizon 内报告情景区间，找不到交叉不等于永不回收。",
+        "numerator": "按观测曲线或获批 Model 生成的队列累计净 LTV 序列。",
+        "requires_project_calibration": ["ltv-safe-horizon", "payback-confidence-policy"],
+        "unit": "队列年龄",
+        "variables": [
+          {"aggregation": "按队列年龄取累计值", "definition": "观测或获批模型输出的累计净 LTV，来源必须显式标记。", "distinct_by": "stable-user-id", "symbol": "projected_cumulative_net_ltv"},
+          {"aggregation": "按队列计算一次", "definition": "使用相同成本范围、归因和币种的 CAC。", "distinct_by": "stable-user-id", "symbol": "cac"}
+        ],
+        "window": "搜索范围从最后一个成熟观测年龄开始，到 Model 批准的最大预测年龄为止。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法不自动调整预算、出价、渠道或预测模型；任何动作或实验必须由调用方另行授权并经过独立结果评估。",
+      "automatic_execution": false,
+      "conditions": ["仅在依赖全部可用、回收区间带模型证据且排除项通过时，才可把结构化结果交给后续规划。"],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {"depends_on": [], "instruction": "解析成本、净价值、币种、队列、时间、归因和预测周期的 Semantic 与项目 Context。", "on_failure": "METHOD_INPUT_GAP", "step_id": "resolve-contracts"},
+      {"depends_on": ["resolve-contracts"], "instruction": "运行 Capability 获取成本、队列人数和按队列年龄累计的净价值观测，保留完整性证据。", "on_failure": "METHOD_QUERY_ERROR", "step_id": "run-observations"},
+      {"depends_on": ["run-observations"], "instruction": "执行成本覆盖、队列连续性、去重、币种、退款成熟度和金额质量检查。", "on_failure": "METHOD_DATA_INVALID", "step_id": "validate-data"},
+      {"depends_on": ["validate-data"], "instruction": "按明确公式计算 CAC 与累计净 LTV 观测曲线，先判断是否已发生观测交叉。", "on_failure": "METHOD_FORMULA_INVALID", "step_id": "compute-observed-curve"},
+      {"depends_on": ["compute-observed-curve"], "instruction": "验证 Operator 和 Model 的血缘、评估、审批、有效期、单位及安全预测周期。", "on_failure": "METHOD_MODEL_BLOCKED", "step_id": "validate-prediction-components"},
+      {"depends_on": ["validate-prediction-components"], "instruction": "沿模型可用或阻断分支判定观测交叉、预测交叉、周期内不交叉或证据不足。", "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE", "step_id": "traverse-diagnostic-tree"},
+      {"depends_on": ["traverse-diagnostic-tree"], "instruction": "按互斥维度计算价值缺口贡献并生成包含情景、排除项、依赖缺口和 Claims 的结构化 Result。", "on_failure": "METHOD_RESULT_INVALID", "step_id": "assemble-result"}
+    ],
+    "result": {
+      "required_fields": ["status", "reason-codes", "scope", "evidence", "observed-values", "scenario-values", "allowed-claims", "forbidden-claims"],
+      "sections": [
+        {"section_id": "scope", "title": "队列、窗口与项目前提"},
+        {"section_id": "formula-definition", "title": "CAC、累计净 LTV 与回收公式"},
+        {"section_id": "dependency-gaps", "title": "依赖与运行缺口"},
+        {"section_id": "observed-curve", "title": "观测价值曲线"},
+        {"section_id": "model-readiness", "title": "模型证据与安全周期"},
+        {"section_id": "scenario-projection", "title": "预测情景与区间"},
+        {"section_id": "payback-assessment", "title": "回收判断"},
+        {"section_id": "dimension-contribution", "title": "维度价值缺口贡献"},
+        {"section_id": "exclusions", "title": "排除项与失效条件"},
+        {"section_id": "claims", "title": "允许与禁止的断言"}
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "获客成本、净价值、队列、币种和归因口径均已由项目绑定，且请求周期在获批 Model 安全域内。",
+        "需要区分已观测回收、模型预测回收和批准周期内未回收的队列。"
+      ],
+      "not_applicable": [
+        "需要承诺确定回收日期、自动分配预算或证明渠道导致长期价值变化。",
+        "只有总收入或总成本、无法固定获客队列人数，或没有可信 Model 却要求外推未来。"
+      ]
+    },
+    "states": {
+      "empty": {"allowed_claims": [], "behavior": "队列人数为零或没有成熟价值观测时返回 Empty，不把 CAC、LTV 或回收年龄写成零。", "reason_code": "METHOD_EMPTY"},
+      "error": {"allowed_claims": [], "behavior": "查询、金额解析、Operator 或 Model 执行失败时返回 Error，不复用部分预测。", "reason_code": "METHOD_ERROR"},
+      "gap": {"allowed_claims": [], "behavior": "项目 Semantic、Context、Operator 或 Model 未满足时返回 Gap，并列出需要新增的治理对象。", "reason_code": "METHOD_GAP"},
+      "partial": {"allowed_claims": [], "behavior": "成本、价值、退款或队列年龄覆盖不完整时返回 Partial，只报告带范围的观测值。", "reason_code": "METHOD_PARTIAL"}
+    }
+  },
+  "model_dependencies": ["model://gravity/ltv-payback@1"],
   "namespace": "gravity.game",
-  "operator_dependencies": [],
+  "operator_dependencies": ["operator://gravity/ltv-payback-period@1"],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {
     "authorship": "independently_authored",
@@ -53,31 +346,18 @@
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
   "readiness": "blocked",
-  "request_budget": {
-    "known_requests_max": 3,
-    "known_requests_min": 2,
-    "runtime_additional_requests": 0,
-    "unknown_discovery_max": 3
-  },
-  "requirements": {
-    "completeness": "unknown",
-    "data_quality": "pass"
-  },
-  "routing": {
-    "host_catalog_required": true,
-    "product_hints": [
-      "composite:business_pulse"
-    ],
-    "recognizer_fallback_allowed": true
-  },
+  "request_budget": {"known_requests_max": 3, "known_requests_min": 2, "runtime_additional_requests": 0, "unknown_discovery_max": 3},
+  "requirements": {"completeness": "unknown", "data_quality": "pass"},
+  "routing": {"host_catalog_required": true, "product_hints": ["composite:business_pulse"], "recognizer_fallback_allowed": true},
   "runtime_requires": ">=0.3,<0.4",
   "schema_version": "gravity.skill.v1",
   "semantic_dependencies": [
-    "metric://project/acquisition-payback@1"
+    "metric://project/acquisition-cost@1",
+    "metric://project/lifetime-value@1"
   ],
   "skill_id": "ltv-payback-period-prediction",
   "specification": "specified",
-  "summary": "判断获客回本估算是否具备一致的成本、价值和模型证据。",
+  "summary": "以 CAC、累计净 LTV 和获批 Model 区分观测回收、预测回收与证据缺口。",
   "validation": "unvalidated",
   "version": "1.0.0"
 }

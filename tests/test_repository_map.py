@@ -117,6 +117,17 @@ class RepositoryMapTests(unittest.TestCase):
         self.assertEqual(["debt:14"], pack["matched_entries"])
         self.assertLess(pack["size_comparison"]["pack_bytes"], 100_000)
 
+    def test_current_graph_owner_change_reaches_the_graph_regression_test(self) -> None:
+        pack = build_task_context(
+            "changed_files",
+            "src/gravity_insight/governance/module_graph.py",
+            root=ROOT,
+            map_document=self.document,
+        )
+        commands = "\n".join(pack["focused_gate"])
+        self.assertIn("tests/test_agent_module_migration_characterization.py", commands)
+        self.assertEqual(["debt:14"], pack["matched_entries"])
+
     def test_risk_classification_uses_the_highest_match_and_fails_closed(self) -> None:
         cases = (
             (["tests/test_provider_subprocess.py"], "low", "self_review"),

@@ -9,6 +9,7 @@
 | --- | --- |
 | 领取、推进或关闭 GitHub Issue | [Issue 状态管理](issues.md) |
 | 完成发布治理中的人工决策或占位符 | [负责人操作清单](owner-actions.md) |
+| 查看已决事项的理由与重评条件 | [负责人已决事项](owner-decisions.md) |
 | 查看或清理结构性技术债 | [技术债清单](technical-debt.md) |
 | 修改 Gravity Agent Runtime 架构 | [Canonical Architecture](../architecture.md) → [Runtime Component Index](../../specs/agent-runtime/index.md) → 对应机器 Schema/Registry 与 owner reference |
 | 定位已交付 composite / CLI / SDK / Plan owner | [产品面总览](product-surfaces.md) |
@@ -19,14 +20,13 @@
 | 发现上游路由或评估漂移 | [路由盘点](census.md) |
 | 规划分页 production/wire 证据 | [分页证据采集计划](pagination-evidence-plan.md) |
 | 刷新和发布 Evidence | [Evidence 运行手册](evidence.md) |
-| 复核已交付设计或外部证据 | [历史归档](../archive/index.md) |
 
 ## 结论生命周期
 
 1. 提案和请求账本放 `tmp/`，不创建逐趟长期 Markdown。
 2. 当前结论原位写入唯一 owner：排期进 roadmap，能力证据进候选矩阵，动线进分析台账，结构债进技术债。
 3. 公共行为变化同步更新对应 reference；动态字段、默认值和目录规模不抄进入口页。
-4. `docs/archive` 只保存已被替代的历史证据，不作为日常追加日志，也不参与当前接口裁决。
+4. 历史证据和已替代设计只由 Git 保存，不在 `docs/` 复制归档树。
 5. `specs/agent-runtime/` 只保存四字段架构绑定与当前组件索引；草案留在 `tmp/`，施工史由 Git 保存。
 
 ## 源码真相

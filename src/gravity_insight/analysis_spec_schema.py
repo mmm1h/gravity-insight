@@ -177,6 +177,13 @@ def _target_definitions() -> dict[str, Any]:
             "type": "object",
             "required": ["field", "aggregation"],
             "additionalProperties": False,
+            "not": {
+                "required": ["field", "aggregation"],
+                "properties": {
+                    "field": {"const": "$device_id"},
+                    "aggregation": {"const": "Count"},
+                },
+            },
             "properties": {
                 "field": _bounded_string(),
                 "aggregation": {

@@ -172,7 +172,15 @@ def _load_graph_owner(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     if spec is None or spec.loader is None:
         raise RepositoryMapError(f"cannot load module graph owner: {_posix(owner_path, root)}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    root_text = str(root)
+    added_root = root_text not in sys.path
+    if added_root:
+        sys.path.insert(0, root_text)
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        if added_root:
+            sys.path.remove(root_text)
     definition = module.module_graph_current_definition(root / "docs/maintainers/technical-debt.md")
     measurement = module.module_graph_measurement(
         root / "src/gravity_insight", definition
@@ -838,6 +846,7 @@ def _matching_entries(
             for entry in entries
             if normalized.intersection(
                 set(entry["source_files"])
+                | set(entry["dependencies"] or [])
                 | set(entry["schema"] or [])
                 | set(entry["tests"] or [])
                 | set(entry["current_docs"] or [])
@@ -1157,7 +1166,9 @@ def build_task_context(
             entry
             for entry in entries
             if changed_values.intersection(
-                set(entry["source_files"]) | set(entry["schema"] or [])
+                set(entry["source_files"])
+                | set(entry["dependencies"] or [])
+                | set(entry["schema"] or [])
             )
         ]
         primary_entries = direct_entries or [
@@ -1359,8 +1370,18 @@ def build_task_context(
         for path in candidate_tests
         if Path(path).suffix == ".py" and Path(path).name.startswith("test_")
     ]
+    candidate_helpers = {
+        Path(path).stem
+        for path in candidate_tests
+        if not Path(path).name.startswith("test_")
+    }
     directly_runnable.sort(
         key=lambda path: (
+            not any(
+                f"tests.{helper}" in (text := (root / path).read_text(encoding="utf-8"))
+                or f"from {helper}" in text
+                for helper in candidate_helpers
+            ),
             not bool(_term_hits((root / path).read_text(encoding="utf-8"), terms)),
             path,
         )

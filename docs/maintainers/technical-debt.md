@@ -1,6 +1,6 @@
 # 技术债清单
 只登记当前源码或质量门禁能证明、且有明确退出条件的结构债务；产品缺口、上游无数据、历史事故和一次性工作不登记。
-每轮仅更新受影响条目：满足退出条件即删除正文并在末尾留一行历史，完整旧内容见归档快照。
+每轮仅更新受影响条目：满足退出条件即删除正文并在末尾留一行历史，完整旧内容从 Git 查看。
 
 ## 当前条目
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
@@ -65,10 +65,13 @@
   短页、满页启发式提级或全量生产探测。
 
 ### 14. 根包仍然扁平，跨执行核心的大环仍未解
-- **当前证据**：[模块依赖图 v1](#14-机器图合同) 定义可重建的节点、四类边、动态导出边界与 Tarjan SCC 口径；测试锁住定义、图与 SCC 摘要。根包仍聚合 plan/analysis/metadata/kanban 等多个执行域。
+- **状态（2026-09-01）**：未关闭，但已建立可失败的边界棘轮。现有引用审计与 `src/gravity_insight/governance/module_graph.py` 共用[模块依赖图 v1](#14-机器图合同)，`quality check` 读取
+  `governance/domain-boundary-baseline.json`，锁住 AST-only 最大 SCC 不增、已分类反向边不增，以及根包不得无理由新增模块；四层只按真实子包目录和少量精确 owner 归类，其余明确为 `unclassified`，不从文件名前缀猜。
+- **当前证据**：纯词法 `query_match` 已从跨 catalog 的 `find.py` 下沉到 `agents/query_match.py`，旧的
+  `gravity_insight.find.query_match` 保持静态再导出；三个 Agent consumer 改依赖 leaf owner 后，AST-only 最大 SCC 从 **41 降到 20**，并非靠移动文件或延迟导入。根包仍为 **501** 个直属模块，其中仅 12 个有当前明确归层，489 个保持未分类；13 条已分类反向边尚未偿还。
 - **Agent 包边界**：`gravity_insight.agents` 是 compact Agent interaction 的唯一实现包，`gravity_insight.agent` 是稳定 facade，`agent_runtime_contracts` 保留独立根级合同职责。五条有意保留的 facade 依赖由 bounded module/symbol-set gate 锁定；只有真实职责变化、第二 owner 或 eager cycle 才触发另行批准的拆分。
 - **影响**：不改变公开导入或运行行为，但增加定位、归属判断和跨域审查成本。目录治理不得损失调用能力、改变执行 owner 或添加 deep-path shim。
-- **退出条件**：按机器图批准有界迁移单元，使根级家族迁入明确 owner 或留下机器可验证的保留理由，消除大环并建立不依赖文件名前缀的 Agent owner 判据；公开 facade、请求行为和能力保持不变。
+- **退出条件**：按机器图逐个批准有界迁移单元，使根级家族迁入明确 owner 或留下机器可验证的保留理由，偿还 13 条反向边并消除剩余大环；每次必须使 SCC 或违规数真实下降，公开 facade、请求行为和能力保持不变。
 
 ### 15. Governor 与 Execution Variant 的当前范围仍是进程内有界实现
 - **当前证据**：adaptive state、队列、metrics、single-flight 成功结果和 kill switch 均是进程环境/内存状态，重启会清空；不声明跨进程或分布式协调。固定 Host Rate Limiter 与 bounded requester 继续拥有 pacing、Retry-After、retry 和 auth refresh。
@@ -88,7 +91,7 @@
   静默返回错误类型；`child-first`/`export-first`/`cross-order` 三种导入顺序均由隔离子进程
   测试锁定，碰撞集合本身有新增探测，未靠改名或「不要导入同名子模块」的约定规避。
 - 2026-08-25：#8 Title Package 已从编译合同派生 opaque JSON 字段，复用有界深度、元素和大小投影；未登记和非 opaque 标量规则仍 fail-closed。
-2026-08-19 以前关闭项见[清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)。
+- 2026-08-19 以前的关闭项仅保留在 Git 历史中。
 - 2026-08-20：Census POST 读词元债关闭，`uncovered_read` 仅保留安全方法/exact 静态确认，其余为
   `unsafe_unknown`/`static_read_candidate` 且 draft selector 不消费。
 - 2026-08-20：Agent 有界无 spec 路由改用 `NO_SPEC_PRODUCTS`，`REPORT_PRODUCTS` 保留同对象兼容别名。
@@ -106,6 +109,6 @@
 <!-- MODULE_GRAPH_DEFINITION_V1_END -->
 <!-- MODULE_GRAPH_BASELINE_V1_START -->
 ```json
-{"definition_id":"gravity-insight-runtime-possible-module-dependency-graph.v1","definition_sha256":"b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326","edge_kind_counts":{"ast_delayed_import":475,"ast_eager_import":2503,"lazy_export_owner":63,"package_parent":665},"node_count":666,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"bc87d4a94185bfbc94f205cabc341046fad272f1dfba702f70a646b97c045295","cyclic_scc_sizes":[428,3,2],"edge_count":3018,"graph_sha256":"7606238280af4830ca6628c7537d1afb20183df6b9736781daae1542cc1c53c2","largest_cyclic_scc_size":428,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":15,"cyclic_scc_sha256":"6933694537fa61fd0fac83b43262ceb8aafc655ca631c80f8cccd9abee4af6e0","cyclic_scc_sizes":[41,11,8,6,3,3,3,2,2,2,2,2,2,2,1],"edge_count":2955,"graph_sha256":"996cb22abdf695a700377b5c247cb5e105f0c4deaaf7fcf83e1ef21fafb9a5ea","largest_cyclic_scc_size":41,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":6,"cyclic_scc_sha256":"03fde3d6c52e1c8facdeb42dee31b6a9e0ba37f022ce476d82fabc236fdcf0f5","cyclic_scc_sizes":[533,15,8,3,2,2],"edge_count":3602,"graph_sha256":"a588d2efca0baa57faecc7e1d0975a794c602cd58da9d4d3126eb256fc4090ea","largest_cyclic_scc_size":533,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"44030b75772ec96099606525c5adf31176fb58f6d27626721ece46d20ce0f7b0","cyclic_scc_sizes":[5],"edge_count":2503,"graph_sha256":"9056542d68e23bd8cd84ec25ee4dbf62347905609a56d8f7187c0f98cae9f996","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
+{"definition_id":"gravity-insight-runtime-possible-module-dependency-graph.v1","definition_sha256":"b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326","edge_kind_counts":{"ast_delayed_import":481,"ast_eager_import":2545,"lazy_export_owner":63,"package_parent":677},"node_count":678,"profiles":{"ast+lazy-exports":{"cyclic_scc_count":3,"cyclic_scc_sha256":"bc87d4a94185bfbc94f205cabc341046fad272f1dfba702f70a646b97c045295","cyclic_scc_sizes":[428,3,2],"edge_count":3066,"graph_sha256":"7ddecb408ab28ce9b5ce5d567b06723f2e99b93215b2c4aa0fec8d263f32b695","largest_cyclic_scc_size":428,"self_loop_scc_count":0},"ast-only":{"cyclic_scc_count":17,"cyclic_scc_sha256":"5d79303cabf20bea4fa3afd6a9279dd39fc3d80ff53602398ac504168bc95096","cyclic_scc_sizes":[20,17,11,8,6,3,3,3,2,2,2,2,2,2,2,2,1],"edge_count":3003,"graph_sha256":"cfdabef751eeac1cc6d505390918abc940d867135012e7dade331a90c642f741","largest_cyclic_scc_size":20,"self_loop_scc_count":1},"canonical":{"cyclic_scc_count":6,"cyclic_scc_sha256":"393f07a8806946c73c5ddde63aa2041732dffd0c52618346dd58e4613eb423ea","cyclic_scc_sizes":[534,15,8,3,2,2],"edge_count":3662,"graph_sha256":"6dba9712f219acc63bc69d56149665f3dad99b4b7e91d6f601009208efdcb664","largest_cyclic_scc_size":534,"self_loop_scc_count":0},"eager-ast-only":{"cyclic_scc_count":1,"cyclic_scc_sha256":"44030b75772ec96099606525c5adf31176fb58f6d27626721ece46d20ce0f7b0","cyclic_scc_sizes":[5],"edge_count":2545,"graph_sha256":"33f421404120f1aeef28a65156253e8ab43be9754341490b83d4532d660d8f8d","largest_cyclic_scc_size":5,"self_loop_scc_count":0}}}
 ```
 <!-- MODULE_GRAPH_BASELINE_V1_END -->

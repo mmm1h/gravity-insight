@@ -185,8 +185,7 @@
       "maturity": "stable",
       "owner": "gravity_insight public facade and compact agents package",
       "machine_sources": [
-        "../../tests/fixtures/public_api_exports.json",
-        "../../tests/fixtures/public_api_owner_migrations.json",
+        "../../src/gravity_insight/governance/public-api-manifest.json",
         "../../tests/fixtures/agent_module_reference_dispositions.json"
       ],
       "reference": "../../docs/reference/sdk.md"

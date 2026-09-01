@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-from gravity_insight.validation_observability import (
+from gravity_insight.governance.validation_observability import (
     METRIC_NAMES,
     ValidationObservationError,
     append_baseline,

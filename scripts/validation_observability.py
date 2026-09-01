@@ -16,7 +16,7 @@ try:
     from .repository_map import ROOT, build_task_context, estimate_tokens
 except ImportError:
     from repository_map import ROOT, build_task_context, estimate_tokens  # type: ignore[no-redef]
-from gravity_insight.validation_observability import (
+from gravity_insight.governance.validation_observability import (
     ValidationObservationError,
     append_baseline,
     build_observation,

@@ -2,7 +2,7 @@
 
 **先选路，再往下读。**
 
-- **要用这个 SDK 取数分析** → [团队上手包](docs/team-onboarding.md)。最短命令：`$env:PYTHONPATH='src'; python -m gravity_insight agent-catalog categories`。不要通读本文。
+- **要用这个 SDK 取数分析** → [团队上手包](docs/team-onboarding.md)。最短命令：`gravity agent-catalog categories`。不要通读本文。
 - **要修改这个仓库** → 继续读下面的开发约束；已知 Issue、Journey、Skill、selector 或 changed files 时，先运行 `python scripts/task_context.py --help`，只读生成的 L1-L3 最小引用。History/Archive 默认不加载。
 
 ## Product goal
@@ -116,8 +116,9 @@ Do not let the list become an archive.
   `architecture-source.md`, the Requirement Index, and exactly one externally
   approved `ready` requirement. A specification cannot approve itself or
   silently change the parent architecture.
-- `docs/archive/` preserves non-normative history and evidence. Never use it as
-  the source of current interfaces, schedule, capability state, or debt.
+- Git preserves non-normative history and evidence. Do not recreate a
+  `docs/archive/` tree or use historical commits as current interfaces,
+  schedule, capability state, or debt.
 - Runtime owns reusable Semantic types/schemas, common metric/method definitions,
   versioned URIs and generic validation for units, additivity, time, dependencies
   and conflicts. Project-specific activity names, SKU values, tracking/App
