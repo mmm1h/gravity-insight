@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "returned-comment-theme-share",
+      "observed-comment-sentiment",
+      "traceable-comment-evidence"
+    ],
     "forbidden": [
       "causality",
       "complete-community-population",
       "instruction-authority"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "returned-comment-theme-share",
+      "observed-comment-sentiment",
+      "traceable-comment-evidence"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,490 @@
     "title": "有界社区评论综合分析"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "外部事件仅作上下文，不把时间邻近当成评论变化原因。"
+      ],
+      "cohort": [
+        "机器人、纯表情、重复刷屏和系统消息按项目规则过滤。"
+      ],
+      "inputs": [
+        "输入包含目标内容、评论 ID、时间、文本、回复关系和来源覆盖。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "comment-filter-policy",
+          "subject": "低价值、重复、删除和语言过滤规则。"
+        },
+        {
+          "calibration_id": "sentiment-taxonomy",
+          "subject": "情感类别、讽刺和无法判断处理。"
+        },
+        {
+          "calibration_id": "theme-taxonomy",
+          "subject": "观点簇合并、最小规模和人工复核规则。"
+        }
+      ],
+      "time": [
+        "观察窗覆盖发布、峰值和回落，迟到或删除评论单列。"
+      ],
+      "unit": [
+        "观点占比以有效去重评论为分母，互动量不替代评论数。"
+      ]
+    },
+    "business_question": "一个指定内容的评论区有哪些可重复的观点簇、情感结构和时间变化；过滤规则影响多大，哪些代表证据可追溯？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/sentiment-aggregation@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/community-comments@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "stable-theme-structure",
+          "checks": [
+            "检查簇内一致性。",
+            "保留可追溯代表证据。"
+          ],
+          "condition": "多个有效评论支持稳定观点簇。",
+          "leaves": [
+            {
+              "conclusion": "报告该评论区的主要返回观点。",
+              "condition": "一个观点跨时间和回复层稳定占优。",
+              "exclusions": [
+                "不得外推全社区。"
+              ],
+              "leaf_id": "broad-consensus"
+            },
+            {
+              "conclusion": "报告分歧结构。",
+              "condition": "正反观点均达到规模门槛。",
+              "exclusions": [
+                "不得抹去少数立场。"
+              ],
+              "leaf_id": "polarized-views"
+            }
+          ]
+        },
+        {
+          "branch_id": "filter-or-classification-sensitive",
+          "checks": [
+            "量化过滤占比。",
+            "抽样复核边界文本。"
+          ],
+          "condition": "结论随过滤或分类规则显著变化。",
+          "leaves": [
+            {
+              "conclusion": "报告过滤敏感性。",
+              "condition": "刷屏或重复内容放大表面情绪。",
+              "exclusions": [
+                "不得把过滤后结果称真实全貌。"
+              ],
+              "leaf_id": "low-value-amplification"
+            },
+            {
+              "conclusion": "降级情感结论。",
+              "condition": "讽刺、多语言或短文本大量未分类。",
+              "exclusions": [
+                "不得强制分类或改写语录。"
+              ],
+              "leaf_id": "ambiguous-language"
+            }
+          ]
+        }
+      ],
+      "root_question": "观察到的风向是否由稳定观点簇支持，而非刷屏或过滤选择造成？"
+    },
+    "dimension_scan": {
+      "baseline": "以目标评论区全部有效返回为基准。",
+      "contribution_formula": "contribution_k = valid_comments_k / valid_comments",
+      "dimensions": [
+        {
+          "dimension_id": "theme",
+          "label": "观点主题"
+        },
+        {
+          "dimension_id": "sentiment",
+          "label": "情感"
+        },
+        {
+          "dimension_id": "time-stage",
+          "label": "时间阶段"
+        },
+        {
+          "dimension_id": "reply-depth",
+          "label": "回复深度"
+        }
+      ],
+      "minimum_volume_rule": "低于最小评论量的簇并入其他，不生成代表结论。",
+      "ranking_rule": "先按观点份额，再按情感强度和时间持续性排序。",
+      "residual_policy": "被过滤、未分类、删除和分页未返回评论分别保留。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "分析指定评论区的观点簇、情感结构、过滤影响和可追溯证据。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "评论分页或分类只完成一部分时允许输出什么？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "没有过滤与情感规则，能否凭几条高赞评论判断社区风向？"
+        }
+      ],
+      "questions": [
+        "分析指定评论区的观点簇、情感结构、过滤影响和可追溯证据。",
+        "评论分页或分类只完成一部分时允许输出什么？",
+        "没有过滤与情感规则，能否凭几条高赞评论判断社区风向？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "returned-comment-theme-share",
+              "observed-comment-sentiment",
+              "traceable-comment-evidence"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "分析指定评论区的观点簇、情感结构、过滤影响和可追溯证据。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "returned-comment-theme-share"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "评论分页或分类只完成一部分时允许输出什么？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有过滤与情感规则，能否凭几条高赞评论判断社区风向？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得生成、润色或拼接用户语录。",
+      "不得推断个人心理、身份或意图。",
+      "单一评论区不代表完整社区人口。",
+      "过滤规则变化必须伴随版本和敏感性报告。"
+    ],
+    "formulas": [
+      {
+        "denominator": "按批准过滤和分类规则保留的有效去重评论总数。",
+        "expression": "share_k = valid_comments_k / valid_comments",
+        "formula_id": "comment-theme-share",
+        "interpretation": "份额只描述该目标评论区的返回内容。",
+        "numerator": "归入观点簇 k 的有效去重评论数。",
+        "requires_project_calibration": [
+          "comment-filter-policy",
+          "sentiment-taxonomy",
+          "theme-taxonomy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "去重计数",
+            "definition": "指定观点簇的有效评论。",
+            "distinct_by": "comment-id",
+            "symbol": "valid_comments_theme"
+          },
+          {
+            "aggregation": "去重计数",
+            "definition": "所有有效且可分类评论。",
+            "distinct_by": "comment-id",
+            "symbol": "valid_comments"
+          }
+        ],
+        "window": "同一目标内容和闭合观察窗。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定目标内容、评论来源、过滤和分类合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集去重评论、观点簇、情感标签和可追溯证据，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算主题份额、情感占比和时间段变化，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿真实观点集中与过滤或分类偏差两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成观点分布、正反证据、残差和限制，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "目标帖子或视频身份明确，评论有稳定 ID、时间戳、来源和可用文本。",
+        "需要对单一评论区做观点聚类、情感分布和有界语录证据。"
+      ],
+      "not_applicable": [
+        "只有转述、截图或无法追溯的评论摘录。",
+        "要求推断个人意图、生成用户原话或代表整个社区。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "returned-comment-theme-share"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [

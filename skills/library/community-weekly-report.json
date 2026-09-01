@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-weekly-community-change",
+      "returned-weekly-narrative",
+      "qualified-community-risk"
+    ],
     "forbidden": [
       "causality",
       "complete-community-population",
       "instruction-authority"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "observed-weekly-community-change",
+      "returned-weekly-narrative",
+      "qualified-community-risk"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,490 @@
     "title": "社区每周证据摘要"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "事件叙事只陈述时间和证据链，不宣称因果。"
+      ],
+      "cohort": [
+        "重复跨发、机器人和内部内容按项目政策统一处理。"
+      ],
+      "inputs": [
+        "输入含逐日内容、主题、情感、来源、风险与活动 Context。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "weekly-window",
+          "subject": "周起止、时区、节假日和迟到内容处理。"
+        },
+        {
+          "calibration_id": "narrative-threshold",
+          "subject": "核心事件、持续信号和慢性下滑门槛。"
+        },
+        {
+          "calibration_id": "community-risk-policy",
+          "subject": "产品预警与合规风险的不同责任链。"
+        }
+      ],
+      "time": [
+        "本周和上周按同一业务时区、星期结构和成熟度闭合。"
+      ],
+      "unit": [
+        "周量为去重内容求和，周均占比按有效内容加权而非简单平均。"
+      ]
+    },
+    "business_question": "一周社区变化可归纳为哪些跨日核心事件和情感弧线；周环比由哪些主题或来源贡献，慢性下滑与合规风险如何分开呈现？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/sentiment-aggregation@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/community-weekly@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "event-arc",
+          "checks": [
+            "合并跨日证据。",
+            "验证主题身份和时间连续性。"
+          ],
+          "condition": "同一主题有明确出现、峰值和回落或回应节点。",
+          "leaves": [
+            {
+              "conclusion": "形成闭合事件弧线。",
+              "condition": "事件热度回落且证据支持阶段结束。",
+              "exclusions": [
+                "不得称问题已解决，除非项目确认。"
+              ],
+              "leaf_id": "resolved-or-receding"
+            },
+            {
+              "conclusion": "列为持续跟进线索。",
+              "condition": "量或风险连续多日上升。",
+              "exclusions": [
+                "不得自动通知或处置。"
+              ],
+              "leaf_id": "ongoing-escalation"
+            }
+          ]
+        },
+        {
+          "branch_id": "structural-weekly-shift",
+          "checks": [
+            "检查来源和品类结构。",
+            "比较连续多周基线。"
+          ],
+          "condition": "多个日子同向变化但不属于单一事件。",
+          "leaves": [
+            {
+              "conclusion": "报告周度结构变化。",
+              "condition": "多来源多日同向。",
+              "exclusions": [
+                "一周不足以证明长期趋势。"
+              ],
+              "leaf_id": "broad-structural-change"
+            },
+            {
+              "conclusion": "列为慢性信号。",
+              "condition": "大盘向好但某主题连续数周下滑。",
+              "exclusions": [
+                "不得被大盘均值掩盖残差。"
+              ],
+              "leaf_id": "masked-slow-decline"
+            }
+          ]
+        }
+      ],
+      "root_question": "周变化是由少数跨日事件驱动，还是由持续结构变化形成？"
+    },
+    "dimension_scan": {
+      "baseline": "以可比上周和本周逐日结构为基线。",
+      "contribution_formula": "contribution_s = (weekly_metric_s - prior_week_metric_s) / sum(returned_weekly_change)",
+      "dimensions": [
+        {
+          "dimension_id": "day",
+          "label": "业务日"
+        },
+        {
+          "dimension_id": "event-thread",
+          "label": "事件线索"
+        },
+        {
+          "dimension_id": "topic",
+          "label": "主题"
+        },
+        {
+          "dimension_id": "source",
+          "label": "来源"
+        }
+      ],
+      "minimum_volume_rule": "仅出现一天且低于最小量的线索不提升为核心事件。",
+      "ranking_rule": "先按跨日持续性，再按周变化贡献和风险级别排序。",
+      "residual_policy": "缺失日、未分类和未覆盖来源单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "从七日事实中生成核心事件弧线、周环比、慢性信号和风险分表。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "中间一天数据不完整时哪些周结论还能保留？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "没有周窗口和事件门槛，能否自动把热度最高主题写成核心叙事？"
+        }
+      ],
+      "questions": [
+        "从七日事实中生成核心事件弧线、周环比、慢性信号和风险分表。",
+        "中间一天数据不完整时哪些周结论还能保留？",
+        "没有周窗口和事件门槛，能否自动把热度最高主题写成核心叙事？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-weekly-community-change",
+              "returned-weekly-narrative",
+              "qualified-community-risk"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "从七日事实中生成核心事件弧线、周环比、慢性信号和风险分表。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-weekly-community-change"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "中间一天数据不完整时哪些周结论还能保留？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有周窗口和事件门槛，能否自动把热度最高主题写成核心叙事？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得把七份日报机械拼接成周报。",
+      "不得虚构事件连接或用户语录。",
+      "一周变化不等于长期趋势或因果。",
+      "产品预警和合规风险必须分表。"
+    ],
+    "formulas": [
+      {
+        "denominator": "七个业务日全部可分类有效内容数。",
+        "expression": "weekly_share_k = sum(classified_items_{d,k}) / sum(classified_items_d)",
+        "formula_id": "weekly-weighted-share",
+        "interpretation": "加权周份额避免低量日与高量日等权，不代表完整社区。",
+        "numerator": "七个业务日中属于主题或情感 k 的有效内容总数。",
+        "requires_project_calibration": [
+          "weekly-window",
+          "narrative-threshold",
+          "community-risk-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "跨日去重求和",
+            "definition": "指定主题或情感的逐日有效内容。",
+            "distinct_by": "content-id",
+            "symbol": "classified_items_category"
+          },
+          {
+            "aggregation": "跨日去重求和",
+            "definition": "全部逐日有效分类内容。",
+            "distinct_by": "content-id",
+            "symbol": "classified_items_total"
+          }
+        ],
+        "window": "连续七个已封账日，与可比上周对齐。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定周窗口、来源、分类和风险责任合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集逐日时间线、周环比、主题贡献和风险返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算周变化、情感弧线和事件覆盖，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿短期核心事件与慢性结构变化两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成周度叙事、指标表、预警和合规分表，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "连续七个已封账业务日和可比上周使用同一来源与分类合同。",
+        "需要从逐日事实中提取有起止证据的周度叙事和风险清单。"
+      ],
+      "not_applicable": [
+        "任一关键日或来源大面积缺失，无法判断周趋势。",
+        "要求编造叙事、自动发布周报或替团队制定最终策略。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-weekly-community-change"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [

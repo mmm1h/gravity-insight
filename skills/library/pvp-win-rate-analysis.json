@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-win-rate-band",
+      "returned-outcome-association",
+      "qualified-balance-hypothesis"
+    ],
     "forbidden": [
       "causality",
       "complete-match-population",
@@ -39,6 +43,490 @@
     "title": "竞技结果观测"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "胜率区间与结果只构成关联，匹配调参效果需实验。"
+      ],
+      "cohort": [
+        "新手、机器人、组队、段位和匹配池按项目规则分层。"
+      ],
+      "inputs": [
+        "输入含对局 ID、玩家键、胜负、段位、匹配版本、观察期结果指标。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "match-contract",
+          "subject": "有效对局、胜负、机器人和组队规则。"
+        },
+        {
+          "calibration_id": "win-rate-bands",
+          "subject": "玩家胜率分桶、最小对局和收缩规则。"
+        },
+        {
+          "calibration_id": "balance-threshold",
+          "subject": "结果指标、段位和样本门槛。"
+        }
+      ],
+      "time": [
+        "胜率累计窗和结果观察窗分别闭合，赛季切换不混合。"
+      ],
+      "unit": [
+        "胜率按有效对局，留存和付费按玩家去重，不能把对局数当玩家数。"
+      ]
+    },
+    "business_question": "不同胜率区间与留存、付费或体验指标呈何种可观察关系，异常集中在哪些段位或匹配层；是否有足够证据提出待验证平衡假设？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/competitive-win-rate@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "low-win-friction",
+          "checks": [
+            "控制段位和资历。",
+            "检查连续失败和匹配版本。"
+          ],
+          "condition": "低胜率区间结果显著更差。",
+          "leaves": [
+            {
+              "conclusion": "列为低胜挫败假设。",
+              "condition": "多段位低胜率层同向。",
+              "exclusions": [
+                "不得声称因果。"
+              ],
+              "leaf_id": "broad-low-win-effect"
+            },
+            {
+              "conclusion": "列为段位匹配候选。",
+              "condition": "只在特定段位集中。",
+              "exclusions": [
+                "不得外推全服。"
+              ],
+              "leaf_id": "rank-specific-low-win"
+            }
+          ]
+        },
+        {
+          "branch_id": "high-win-low-challenge",
+          "checks": [
+            "检查机器人和新手保护。",
+            "比较匹配池与版本。"
+          ],
+          "condition": "高胜率区间结果同样下降或活跃深度降低。",
+          "leaves": [
+            {
+              "conclusion": "列为保护策略过强候选。",
+              "condition": "新手或低段位高胜集中。",
+              "exclusions": [
+                "需要实验验证。"
+              ],
+              "leaf_id": "protection-overreach"
+            },
+            {
+              "conclusion": "报告选择或测量混杂。",
+              "condition": "高胜与高资历、组队或采集差异重合。",
+              "exclusions": [
+                "不得给调参结论。"
+              ],
+              "leaf_id": "selection-or-measurement"
+            }
+          ]
+        }
+      ],
+      "root_question": "结果指标是否在胜率分布两端或特定段位稳定恶化？"
+    },
+    "dimension_scan": {
+      "baseline": "以同赛季、同匹配版本的玩家分布为基准。",
+      "contribution_formula": "contribution_s = player_share_s * (outcome_s - overall_outcome)",
+      "dimensions": [
+        {
+          "dimension_id": "win-rate-band",
+          "label": "胜率区间"
+        },
+        {
+          "dimension_id": "rank-tier",
+          "label": "段位"
+        },
+        {
+          "dimension_id": "matchmaking-version",
+          "label": "匹配版本"
+        },
+        {
+          "dimension_id": "player-tenure",
+          "label": "玩家资历"
+        }
+      ],
+      "minimum_volume_rule": "低于最小玩家或对局门槛的区间做收缩或并桶。",
+      "ranking_rule": "按对大盘结果差的贡献、样本和段位集中度排序。",
+      "residual_policy": "机器人、未知段位、未成熟结果和未返回玩家作为残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-match-population",
+            "matchmaking-fairness"
+          ],
+          "question": "按玩家胜率区间、段位和匹配版本比较留存或付费关联。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-match-population",
+            "matchmaking-fairness"
+          ],
+          "question": "高胜区间样本少时如何收缩和限制拐点结论？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-match-population",
+            "matchmaking-fairness"
+          ],
+          "question": "没有对局和段位合同，能否按大盘胜率直接建议匹配目标？"
+        }
+      ],
+      "questions": [
+        "按玩家胜率区间、段位和匹配版本比较留存或付费关联。",
+        "高胜区间样本少时如何收缩和限制拐点结论？",
+        "没有对局和段位合同，能否按大盘胜率直接建议匹配目标？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-win-rate-band",
+              "returned-outcome-association",
+              "qualified-balance-hypothesis"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-match-population",
+              "matchmaking-fairness"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "按玩家胜率区间、段位和匹配版本比较留存或付费关联。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-win-rate-band"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-match-population",
+              "matchmaking-fairness"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "高胜区间样本少时如何收缩和限制拐点结论？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-match-population",
+              "matchmaking-fairness"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有对局和段位合同，能否按大盘胜率直接建议匹配目标？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得把胜率与留存关联称为因果。",
+      "不得由平均胜率推断匹配公平。",
+      "拟合拐点不等于保证最优目标。",
+      "本方法不修改 AI、匹配或难度参数。"
+    ],
+    "formulas": [
+      {
+        "denominator": "同窗有效对局数。",
+        "expression": "win_rate_u = wins_u / valid_matches_u",
+        "formula_id": "player-win-rate",
+        "interpretation": "玩家胜率用于分桶，不代表匹配公平或因果效果。",
+        "numerator": "玩家 u 在累计窗内的有效胜场数。",
+        "requires_project_calibration": [
+          "match-contract",
+          "win-rate-bands",
+          "balance-threshold"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "对局计数",
+            "definition": "按项目胜负合同确认的胜场。",
+            "distinct_by": "match-id",
+            "symbol": "wins"
+          },
+          {
+            "aggregation": "对局计数",
+            "definition": "排除无效、机器人或异常结束后的对局。",
+            "distinct_by": "match-id",
+            "symbol": "valid_matches"
+          }
+        ],
+        "window": "同一赛季和匹配版本的累计窗。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "experiment",
+      "target": "experiment://project/pvp-balance-calibration"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定对局、胜负、段位、匹配和结果观察合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集玩家级胜率分桶、段位返回和下游结果，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算区间结果差、曲线形态和段位贡献，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿低胜率挫败与高胜率低挑战两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成胜率区间、关联曲线、分群风险和实验建议，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "对局结果、玩家段位、匹配层、留存和付费指标有项目定义。",
+        "需要按玩家胜率区间和段位比较结果关联，而非只看大盘胜率。"
+      ],
+      "not_applicable": [
+        "对局实体、胜负语义或匹配版本缺失。",
+        "要求自动调参、宣称胜率导致留存或给出保证最优区间。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-win-rate-band"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],

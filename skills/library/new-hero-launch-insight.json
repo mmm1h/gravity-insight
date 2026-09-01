@@ -11,13 +11,21 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-content-launch-change",
+      "returned-player-segment-difference",
+      "qualified-ecosystem-risk"
+    ],
     "forbidden": [
       "causality",
       "complete-player-population",
       "launch-incrementality"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "observed-content-launch-change",
+      "returned-player-segment-difference",
+      "qualified-ecosystem-risk"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -41,6 +49,497 @@
     "title": "新内容上线证据评审"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "发布同期活动和版本变化作为混杂 Context，不直接归因。"
+      ],
+      "cohort": [
+        "段位、战力、内容拥有状态和新老用户分群互斥可比。"
+      ],
+      "inputs": [
+        "输入含内容身份、获取、养成、使用、胜负、禁选、通关、付费和对照变量。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "content-release",
+          "subject": "内容身份、发布时间、灰度和同期变更。"
+        },
+        {
+          "calibration_id": "balance-bands",
+          "subject": "胜率、选用、禁用、生态集中和样本门槛。"
+        },
+        {
+          "calibration_id": "progression-contract",
+          "subject": "养成阶段、资源和可达性规则。"
+        }
+      ],
+      "time": [
+        "快速、第七日和生态观察窗分别成熟，发布首日噪声单列。"
+      ],
+      "unit": [
+        "胜率、获取率和付费率按明确实体去重，金额使用同币种。"
+      ]
+    },
+    "business_question": "新内容上线后，获取、养成、使用、表现、生态和付费的观测变化如何连接；异常来自内容强度、养成可达性、分群结构还是发布与采集差异？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "metric-anomaly-localization@1",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/content-launch-outcome@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/release-calendar@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "intrinsic-performance-risk",
+          "checks": [
+            "控制段位和战力。",
+            "检查生态集中和禁选。"
+          ],
+          "condition": "多个可比分群中的表现指标同向越界。",
+          "leaves": [
+            {
+              "conclusion": "列为广泛强度风险。",
+              "condition": "多层级胜率或效率持续超带。",
+              "exclusions": [
+                "不得自动调整数值。"
+              ],
+              "leaf_id": "broad-overperformance"
+            },
+            {
+              "conclusion": "列为顶端生态风险。",
+              "condition": "异常只在高段位或完全养成层。",
+              "exclusions": [
+                "不得外推大众玩家。"
+              ],
+              "leaf_id": "top-tier-concentration"
+            }
+          ]
+        },
+        {
+          "branch_id": "access-or-progression-split",
+          "checks": [
+            "比较养成阶段。",
+            "核对获取与付费时间线。"
+          ],
+          "condition": "表现分裂与养成停滞、获取或分群结构重合。",
+          "leaves": [
+            {
+              "conclusion": "列为养成可达性候选。",
+              "condition": "未完成养成层表现低且停滞集中。",
+              "exclusions": [
+                "不得称资源投放导致。"
+              ],
+              "leaf_id": "progression-bottleneck"
+            },
+            {
+              "conclusion": "报告分群或测量缺口。",
+              "condition": "发布初期人群或采集版本不可比。",
+              "exclusions": [
+                "不得做上线增量断言。"
+              ],
+              "leaf_id": "launch-mix-or-measurement"
+            }
+          ]
+        }
+      ],
+      "root_question": "观测异常是否在控制段位、战力、养成和版本后仍然存在？"
+    },
+    "dimension_scan": {
+      "baseline": "以同版本、同层级批准对照为基准。",
+      "contribution_formula": "contribution_s = population_share_s * metric_delta_s / sum(returned_impact)",
+      "dimensions": [
+        {
+          "dimension_id": "progression-stage",
+          "label": "养成阶段"
+        },
+        {
+          "dimension_id": "rank-tier",
+          "label": "段位"
+        },
+        {
+          "dimension_id": "power-band",
+          "label": "战力区间"
+        },
+        {
+          "dimension_id": "content-ownership",
+          "label": "内容拥有状态"
+        }
+      ],
+      "minimum_volume_rule": "低于对局或玩家门槛的分群不输出平衡等级。",
+      "ranking_rule": "先按生态和体验风险，再按分群影响、样本和付费集中排序。",
+      "residual_policy": "未拥有、未成熟、配置缺失和同期活动影响作为残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-player-population",
+            "launch-incrementality"
+          ],
+          "question": "对新内容做获取、养成、表现、生态和付费六维体检。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-player-population",
+            "launch-incrementality"
+          ],
+          "question": "顶端分群样本充分但大众养成未成熟时如何限制结论？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-player-population",
+            "launch-incrementality"
+          ],
+          "question": "没有发布日历和同层对照，能否根据大盘胜率决定削弱？"
+        }
+      ],
+      "questions": [
+        "对新内容做获取、养成、表现、生态和付费六维体检。",
+        "顶端分群样本充分但大众养成未成熟时如何限制结论？",
+        "没有发布日历和同层对照，能否根据大盘胜率决定削弱？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-content-launch-change",
+              "returned-player-segment-difference",
+              "qualified-ecosystem-risk"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-population",
+              "launch-incrementality"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "对新内容做获取、养成、表现、生态和付费六维体检。",
+          "scenario": "success",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-content-launch-change"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-population",
+              "launch-incrementality"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "顶端分群样本充分但大众养成未成熟时如何限制结论？",
+          "scenario": "empty_or_partial",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-population",
+              "launch-incrementality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有发布日历和同层对照，能否根据大盘胜率决定削弱？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得把上线前后变化称为内容增量效果。",
+      "不得用大盘胜率代替同段位同战力比较。",
+      "不得自动调整数值、商品或资源。",
+      "未成熟发布窗只给早期信号。"
+    ],
+    "formulas": [
+      {
+        "denominator": "表达式为差值而非比例分母；对照内容使用相同分群和窗口。",
+        "expression": "delta_s = metric_content_s - metric_comparator_s",
+        "formula_id": "segment-relative-performance",
+        "interpretation": "差值描述同层关联，不证明内容导致结果或上线增量。",
+        "numerator": "同分群内目标内容的观测指标。",
+        "requires_project_calibration": [
+          "content-release",
+          "balance-bands",
+          "progression-contract"
+        ],
+        "unit": "原指标单位或百分点",
+        "variables": [
+          {
+            "aggregation": "项目指标聚合",
+            "definition": "目标内容在分群 s 的观测指标。",
+            "distinct_by": "stable-player-id",
+            "symbol": "metric_content"
+          },
+          {
+            "aggregation": "项目指标聚合",
+            "definition": "批准对照在同分群的观测指标。",
+            "distinct_by": "stable-player-id",
+            "symbol": "metric_comparator"
+          }
+        ],
+        "window": "同发布阶段、段位、战力和成熟窗口。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "experiment",
+      "target": "experiment://project/content-balance-review"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定内容发布、养成、表现、生态和付费合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集六维返回、同层对照和配置版本，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算维度变化、分群差和生态集中度，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿强度异常与养成或分群可达性两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成六维体检、证据链、风险和复验计划，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "内容身份、发布日历、获取、养成、对局、生态和付费指标已由项目绑定。",
+        "需要在同段位、战力、版本或队列中做六维有界评估。"
+      ],
+      "not_applicable": [
+        "发布内容、对照或核心指标定义缺失。",
+        "要求自动削弱、增强、调整商品或声称上线增量。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-content-launch-change"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],

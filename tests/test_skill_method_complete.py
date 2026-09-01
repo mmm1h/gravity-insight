@@ -11,17 +11,30 @@ from scripts.generate_skill_library import load_canonical_skills
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPLETE_SKILLS = {
+    "ad-delivery-analysis",
     "analysis-metric-definition-alignment",
     "app-device-performance-analysis",
+    "channel-quality-analysis",
+    "community-comment-analysis",
+    "community-daily-report",
     "community-hot-topic-analysis",
+    "community-weekly-report",
     "dashboard-no-data-diagnosis",
     "data-access-assistant",
     "data-integration-assistant",
     "filter-result-bias-diagnosis",
+    "funnel-analysis-misunderstanding-diagnosis",
     "game-campaign-effect-evaluation",
+    "game-revenue-forecast",
+    "gift-package-push-strategy",
+    "gift-penetration-optimization",
+    "level-churn-diagnosis",
     "ltv-payback-period-prediction",
+    "new-hero-launch-insight",
     "operation-journey-canvas-creation",
+    "payment-funnel-setup",
     "payment-rate-anomaly-diagnosis",
+    "pvp-win-rate-analysis",
     "report-data-mismatch-diagnosis",
     "sql-performance-optimization",
     "system-field-reference-guide",
@@ -59,19 +72,29 @@ class SkillMethodCompleteTests(unittest.TestCase):
         self.assertEqual(self.report["summary"], compact["summary"])
         self.assertTrue(all(len(row["items"]) == 17 for row in compact["skills"]))
 
-    def test_exactly_seventeen_m1_methods_are_complete(self) -> None:
+    def test_exactly_thirty_m2_methods_are_complete(self) -> None:
         complete = {
             row["skill_id"] for row in self.report["skills"]
             if row["method_complete"]
         }
         self.assertEqual(COMPLETE_SKILLS, complete)
-        self.assertEqual(17, self.report["summary"]["method_complete_true"])
-        self.assertEqual(26, self.report["summary"]["method_complete_false"])
+        self.assertEqual(30, self.report["summary"]["method_complete_true"])
+        self.assertEqual(13, self.report["summary"]["method_complete_false"])
+        manifests = {
+            item["skill_id"]: item for item in load_canonical_skills()
+        }
         for row in self.report["skills"]:
             if row["skill_id"] in COMPLETE_SKILLS:
                 with self.subTest(skill=row["skill_id"]):
                     self.assertEqual(17, row["achieved_count"])
-                    self.assertEqual(17, row["achieved_count"])
+                    examples = manifests[row["skill_id"]]["method"]["examples"][
+                        "run_examples"
+                    ]
+                    self.assertGreaterEqual(len(examples), 3)
+                    self.assertEqual(
+                        {"success", "empty_or_partial", "blocked_or_gap"},
+                        {item["scenario"] for item in examples},
+                    )
 
     def test_incomplete_skills_are_sorted_by_completion_cost(self) -> None:
         costs = [

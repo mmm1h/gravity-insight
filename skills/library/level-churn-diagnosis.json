@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-level-dropoff",
+      "returned-level-contribution",
+      "qualified-level-friction"
+    ],
     "forbidden": [
       "causality",
       "complete-player-progression",
@@ -39,6 +43,497 @@
     "title": "关卡进度流失诊断"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "卡点共现不等于关卡导致流失。"
+      ],
+      "cohort": [
+        "新老、战力、付费或引导分群互斥且由项目定义。"
+      ],
+      "inputs": [
+        "输入含玩家去重键、关卡 ID、开始结束、结果、尝试和回访。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "level-order",
+          "subject": "关卡顺序、版本和机制切换点。"
+        },
+        {
+          "calibration_id": "churn-window",
+          "subject": "进度停止与回访观察窗。"
+        },
+        {
+          "calibration_id": "friction-threshold",
+          "subject": "通关、尝试、停留和样本门槛。"
+        }
+      ],
+      "time": [
+        "当前与基准版本窗、关卡配置版本和数据成熟度一致。"
+      ],
+      "unit": [
+        "通关率按进入关卡玩家为分母，尝试次数按玩家关卡聚合。"
+      ]
+    },
+    "business_question": "玩家流失或进度停止是否集中于少数关卡；候选卡点来自难度、规则切换、引导还是采集缺口，哪些分群差异支持判断？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/level-progression@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/funnel-diagnosis@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "difficulty-friction",
+          "checks": [
+            "比较相邻关卡。",
+            "检查战力与尝试分布。"
+          ],
+          "condition": "多个分群均低通关、高尝试且失败后回访低。",
+          "leaves": [
+            {
+              "conclusion": "列为关卡难度候选。",
+              "condition": "新老或多战力层都受影响。",
+              "exclusions": [
+                "不得称已证实根因。"
+              ],
+              "leaf_id": "broad-difficulty-spike"
+            },
+            {
+              "conclusion": "列为分群适配候选。",
+              "condition": "只在特定能力或资源层集中。",
+              "exclusions": [
+                "不得外推全部玩家。"
+              ],
+              "leaf_id": "segment-specific-difficulty"
+            }
+          ]
+        },
+        {
+          "branch_id": "mechanic-or-guidance-transition",
+          "checks": [
+            "核对机制版本。",
+            "比较引导完成与未完成。"
+          ],
+          "condition": "异常集中于规则切换或引导未完成分群。",
+          "leaves": [
+            {
+              "conclusion": "列为机制切换候选。",
+              "condition": "首次出现新规则且流失同步集中。",
+              "exclusions": [
+                "时间相邻不等于因果。"
+              ],
+              "leaf_id": "mechanic-transition"
+            },
+            {
+              "conclusion": "列为引导覆盖候选。",
+              "condition": "引导未完成分群显著更差。",
+              "exclusions": [
+                "需实验验证引导改动效果。"
+              ],
+              "leaf_id": "guidance-gap"
+            }
+          ]
+        }
+      ],
+      "root_question": "流失集中是否显著超过相邻和历史基准，并能在稳定分群中复现？"
+    },
+    "dimension_scan": {
+      "baseline": "以相邻关卡和历史同版本为基准。",
+      "contribution_formula": "contribution_l = last_observed_players_l / total_last_observed_players_returned",
+      "dimensions": [
+        {
+          "dimension_id": "level",
+          "label": "关卡"
+        },
+        {
+          "dimension_id": "player-segment",
+          "label": "玩家分群"
+        },
+        {
+          "dimension_id": "attempt-band",
+          "label": "尝试次数"
+        },
+        {
+          "dimension_id": "mechanic-version",
+          "label": "机制版本"
+        }
+      ],
+      "minimum_volume_rule": "低于最小进入人数的关卡不单独判定卡点。",
+      "ranking_rule": "按最后停留贡献、通关率差和样本量排序。",
+      "residual_policy": "跳关、缺失结束、未成熟回访和未返回关卡作为残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-player-progression",
+            "player-intent"
+          ],
+          "question": "扫描关卡通关、尝试和最后停留，定位返回卡点并比较分群。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-player-progression",
+            "player-intent"
+          ],
+          "question": "后续回访只成熟部分玩家时如何限制结论？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-player-progression",
+            "player-intent"
+          ],
+          "question": "没有关卡顺序和流失窗合同，能否按最低通关率直接认定根因？"
+        }
+      ],
+      "questions": [
+        "扫描关卡通关、尝试和最后停留，定位返回卡点并比较分群。",
+        "后续回访只成熟部分玩家时如何限制结论？",
+        "没有关卡顺序和流失窗合同，能否按最低通关率直接认定根因？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-level-dropoff",
+              "returned-level-contribution",
+              "qualified-level-friction"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-progression",
+              "player-intent"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "扫描关卡通关、尝试和最后停留，定位返回卡点并比较分群。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-level-dropoff"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-progression",
+              "player-intent"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "后续回访只成熟部分玩家时如何限制结论？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-progression",
+              "player-intent"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有关卡顺序和流失窗合同，能否按最低通关率直接认定根因？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "最后停留关卡不等于流失原因。",
+      "不得输出个人玩家轨迹或意图。",
+      "跨配置版本关卡不得直接比较。",
+      "本方法不修改关卡、奖励或引导。"
+    ],
+    "formulas": [
+      {
+        "denominator": "进入关卡 l 的去重合格玩家数。",
+        "expression": "pass_rate_l = distinct_players_passing_l / distinct_players_entering_l",
+        "formula_id": "level-pass-rate",
+        "interpretation": "低通关率是摩擦信号，不证明关卡导致后续流失。",
+        "numerator": "完成关卡 l 的去重合格玩家数。",
+        "requires_project_calibration": [
+          "level-order",
+          "churn-window",
+          "friction-threshold"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "玩家去重计数",
+            "definition": "按项目成功状态完成关卡的玩家。",
+            "distinct_by": "stable-player-id",
+            "symbol": "players_passing"
+          },
+          {
+            "aggregation": "玩家去重计数",
+            "definition": "触发有效开始且未命中排除的玩家。",
+            "distinct_by": "stable-player-id",
+            "symbol": "players_entering"
+          }
+        ],
+        "window": "同一关卡配置版本和成熟观察窗。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "experiment",
+      "target": "experiment://project/level-friction-remediation"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定关卡进度、结果、分群和流失观察合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集关卡通关、尝试、最后停留和回访返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算关卡流失集中度和相邻基准差，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿数值难度与规则或引导切换两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成卡点排序、分群证据、排除项和实验建议，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "关卡开始、结束、结果、尝试、进度和后续回访有项目 Semantic。",
+        "需要扫描返回关卡、定位集中卡点并比较新老或其他互斥分群。"
+      ],
+      "not_applicable": [
+        "关卡身份、顺序或完成定义缺失。",
+        "要求推断玩家意图、自动调整难度或保证留存提升。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-level-dropoff"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [

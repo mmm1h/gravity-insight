@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-revenue-driver",
+      "scenario-revenue-projection",
+      "bounded-target-path"
+    ],
     "forbidden": [
       "unvalidated-revenue-forecast",
       "invented-confidence",
@@ -42,6 +46,496 @@
     "title": "收入预测就绪性"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "参数变化是情景假设，不称为某动作的可实现效果。"
+      ],
+      "cohort": [
+        "新增与活跃实体去重一致，回流、自然量和付费人群按项目规则处理。"
+      ],
+      "inputs": [
+        "输入含活跃、新增、流失、收入、模型版本、训练或校准窗口和目标约束。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "forecast-model",
+          "subject": "模型版本、评估、有效域和安全窗口。"
+        },
+        {
+          "calibration_id": "revenue-contract",
+          "subject": "收入状态、币种、退款和封账。"
+        },
+        {
+          "calibration_id": "target-constraints",
+          "subject": "目标窗口、参数上下限和可行性边界。"
+        }
+      ],
+      "time": [
+        "参数窗口已封账，预测起点、步长和最大安全外推期显式记录。"
+      ],
+      "unit": [
+        "收入使用同币种和日/月换算，率与人数单位保持一致。"
+      ]
+    },
+    "business_question": "在获批的活跃、新增、流失和收入参数及模型有效期内，维持现状的收入情景是什么；达到目标需要哪些有界参数组合，哪些预测超出安全窗口？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "composite:business_pulse",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "Runtime 尚无已审批、可验证血缘且处于有效期内的该版本 Model Artifact。",
+        "identity": "model://gravity/game-revenue-forecast@1",
+        "kind": "model",
+        "reason_code": "MODEL_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "forward-scenario",
+          "checks": [
+            "验证模型有效期。",
+            "滚动输出参数和残差。"
+          ],
+          "condition": "当前参数在安全窗口内可用于正向预测。",
+          "leaves": [
+            {
+              "conclusion": "报告现状条件预测和缺口。",
+              "condition": "现状情景稳定或下降。",
+              "exclusions": [
+                "不得称必然发生。"
+              ],
+              "leaf_id": "stable-or-declining"
+            },
+            {
+              "conclusion": "要求缩短窗口或重新校准。",
+              "condition": "近期参数漂移超出校准范围。",
+              "exclusions": [
+                "不得继续远期外推。"
+              ],
+              "leaf_id": "parameter-drift"
+            }
+          ]
+        },
+        {
+          "branch_id": "inverse-target",
+          "checks": [
+            "应用参数上下限。",
+            "检查组合可辨识和相关性。"
+          ],
+          "condition": "调用方给定目标，需要求解参数组合。",
+          "leaves": [
+            {
+              "conclusion": "报告有界目标组合。",
+              "condition": "至少一组参数位于验证域且满足目标。",
+              "exclusions": [
+                "不得称为推荐或保证可执行。"
+              ],
+              "leaf_id": "feasible-combination"
+            },
+            {
+              "conclusion": "报告目标不可在当前合同下证明可行。",
+              "condition": "目标要求参数超界或模型不可辨识。",
+              "exclusions": [
+                "不得放宽边界凑解。"
+              ],
+              "leaf_id": "outside-feasible-domain"
+            }
+          ]
+        }
+      ],
+      "root_question": "目标是否位于已验证模型和参数约束的可行域内？"
+    },
+    "dimension_scan": {
+      "baseline": "以当前已封账参数快照为基准。",
+      "contribution_formula": "gap_contribution_p = target_sensitivity_p * feasible_parameter_change_p / target_gap",
+      "dimensions": [
+        {
+          "dimension_id": "scenario",
+          "label": "情景"
+        },
+        {
+          "dimension_id": "parameter",
+          "label": "参数"
+        },
+        {
+          "dimension_id": "cohort",
+          "label": "队列"
+        },
+        {
+          "dimension_id": "forecast-horizon",
+          "label": "预测期"
+        }
+      ],
+      "minimum_volume_rule": "参数样本不足或超出评估域时不进入可行路径。",
+      "ranking_rule": "先按目标缺口敏感性，再按参数可行域和模型不确定性排序。",
+      "residual_policy": "模型残差、参数协方差和超窗部分单列。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "unvalidated-revenue-forecast",
+            "invented-confidence",
+            "causality"
+          ],
+          "question": "用已审批模型给出现状收入情景、目标缺口和有界参数组合。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "unvalidated-revenue-forecast",
+            "invented-confidence",
+            "causality"
+          ],
+          "question": "部分参数漂移或观察窗不足时如何缩短预测？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "unvalidated-revenue-forecast",
+            "invented-confidence",
+            "causality"
+          ],
+          "question": "模型未注册和验证时能否按当前均值外推半年收入？"
+        }
+      ],
+      "questions": [
+        "用已审批模型给出现状收入情景、目标缺口和有界参数组合。",
+        "部分参数漂移或观察窗不足时如何缩短预测？",
+        "模型未注册和验证时能否按当前均值外推半年收入？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-revenue-driver",
+              "scenario-revenue-projection",
+              "bounded-target-path"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "unvalidated-revenue-forecast",
+              "invented-confidence",
+              "causality"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "用已审批模型给出现状收入情景、目标缺口和有界参数组合。",
+          "scenario": "success",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-revenue-driver"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "unvalidated-revenue-forecast",
+              "invented-confidence",
+              "causality"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分参数漂移或观察窗不足时如何缩短预测？",
+          "scenario": "empty_or_partial",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "unvalidated-revenue-forecast",
+              "invented-confidence",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "模型未注册和验证时能否按当前均值外推半年收入？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        }
+      ]
+    },
+    "exclusions": [
+      "未验证 Model 不得输出预测值或置信表述。",
+      "情景参数变化不等于运营动作效果。",
+      "不得自动安装依赖或联网获取模型。",
+      "超出安全窗口必须明确截断或 Gap。"
+    ],
+    "formulas": [
+      {
+        "denominator": "公式无额外分母；日流失率为零或超出模型域时不计算。",
+        "expression": "daily_revenue = (daily_new_users / daily_churn_rate) * revenue_per_active_user",
+        "formula_id": "steady-state-revenue",
+        "interpretation": "这是条件情景，不是收入保证；参数相关性和非稳态由模型限制说明。",
+        "numerator": "稳态活跃人数与每活跃用户收入的乘积。",
+        "requires_project_calibration": [
+          "forecast-model",
+          "revenue-contract",
+          "target-constraints"
+        ],
+        "unit": "项目收入币种/日",
+        "variables": [
+          {
+            "aggregation": "日均去重人数",
+            "definition": "同口径日新增用户。",
+            "distinct_by": "stable-user-id",
+            "symbol": "daily_new_users"
+          },
+          {
+            "aggregation": "模型参数",
+            "definition": "模型合同下的日流失比例。",
+            "distinct_by": null,
+            "symbol": "daily_churn_rate"
+          },
+          {
+            "aggregation": "收入/活跃用户",
+            "definition": "同窗每活跃用户收入。",
+            "distinct_by": "stable-user-id",
+            "symbol": "revenue_per_active_user"
+          }
+        ],
+        "window": "只在模型批准的稳态近似和安全预测窗内。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定活跃、新增、流失、收入和模型有效域合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集参数快照、模型评估和情景输出，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算稳态活跃、收入预测、目标缺口和敏感性，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿现状趋势与目标可行性两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成情景曲线、参数组合、置信边界和复算条件，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目提供成熟 DAU、DNU、流失、收入参数和已审批预测 Model Artifact。",
+        "需要区分正向情景、逆向目标约束和多参数敏感性。"
+      ],
+      "not_applicable": [
+        "模型未验证、参数口径缺失或目标窗口超出模型有效域。",
+        "要求保证收入、自动安装模型依赖或直接调整买量和运营策略。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-revenue-driver"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [
     "model://gravity/game-revenue-forecast@1"
   ],

@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-gift-penetration",
+      "returned-segment-contribution",
+      "qualified-offer-hypothesis"
+    ],
     "forbidden": [
       "causality",
       "complete-eligible-population",
@@ -39,6 +43,497 @@
     "title": "礼包优惠覆盖分解"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "触发场景只描述观测关联，不称为购买原因。"
+      ],
+      "cohort": [
+        "分层互斥，退款、赠送、测试账号和重复购买按项目规则处理。"
+      ],
+      "inputs": [
+        "输入含礼包身份、目标人群、触达、浏览、购买、价格和分层。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "gift-eligibility",
+          "subject": "目标人群、排除和商品有效期。"
+        },
+        {
+          "calibration_id": "payment-segments",
+          "subject": "互斥付费分层和历史价格带。"
+        },
+        {
+          "calibration_id": "penetration-threshold",
+          "subject": "最小样本、变化和残差门槛。"
+        }
+      ],
+      "time": [
+        "当前窗与基准窗覆盖同一商品有效期和成熟度。"
+      ],
+      "unit": [
+        "渗透率按去重购买用户除以去重合格用户，价格使用同币种。"
+      ]
+    },
+    "business_question": "礼包渗透低或下降主要来自目标人群触达、价格档位、场景时机还是商品内容；各返回分层如何贡献大盘，哪些优化仅是假设？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/gift-penetration@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/metric-decomposition@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "reach-and-timing-gap",
+          "checks": [
+            "比较触达、浏览和购买链。",
+            "核对场景事件可达性。"
+          ],
+          "condition": "合格人群大量未看到礼包或只在低意向时点看到。",
+          "leaves": [
+            {
+              "conclusion": "确认触达缺口。",
+              "condition": "主要分层触达率接近零。",
+              "exclusions": [
+                "不得把未触达解释为不感兴趣。"
+              ],
+              "leaf_id": "no-reach"
+            },
+            {
+              "conclusion": "列为时机假设。",
+              "condition": "触达存在但与需求场景无稳定关联。",
+              "exclusions": [
+                "不得宣称场景导致购买。"
+              ],
+              "leaf_id": "scene-misalignment"
+            }
+          ]
+        },
+        {
+          "branch_id": "price-or-content-gap",
+          "checks": [
+            "比较历史价格带。",
+            "比较同价位内容和有效期。"
+          ],
+          "condition": "触达充分但购买渗透仍低。",
+          "leaves": [
+            {
+              "conclusion": "列为价格档位候选。",
+              "condition": "目标层历史购买集中于不同价格带。",
+              "exclusions": [
+                "不得称最优定价。"
+              ],
+              "leaf_id": "price-band-gap"
+            },
+            {
+              "conclusion": "列为内容适配候选。",
+              "condition": "价格可比但内容与进度需求不匹配。",
+              "exclusions": [
+                "没有商品实验不得声称改版有效。"
+              ],
+              "leaf_id": "content-fit-gap"
+            }
+          ]
+        }
+      ],
+      "root_question": "大盘渗透是否能由互斥分层加权回算，主要低点发生在触达前还是购买决策后？"
+    },
+    "dimension_scan": {
+      "baseline": "以互斥分层的合格人群和当前商品为基准。",
+      "contribution_formula": "contribution_s = eligible_share_s * (penetration_s - penetration_baseline_s)",
+      "dimensions": [
+        {
+          "dimension_id": "payment-segment",
+          "label": "付费分层"
+        },
+        {
+          "dimension_id": "price-band",
+          "label": "价格带"
+        },
+        {
+          "dimension_id": "trigger-scene",
+          "label": "触发场景"
+        },
+        {
+          "dimension_id": "offer-content",
+          "label": "商品内容"
+        }
+      ],
+      "minimum_volume_rule": "低于最小合格用户数的层并入低样本桶。",
+      "ranking_rule": "按对大盘渗透变化的绝对贡献，再按样本量和触达率排序。",
+      "residual_policy": "未触达、分层缺失和无法归类购买单列残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-eligible-population",
+            "optimal-offer-design"
+          ],
+          "question": "按付费分层回算礼包渗透，并诊断触达、价格、时机和内容。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-eligible-population",
+            "optimal-offer-design"
+          ],
+          "question": "部分用户无法分层时如何保留残差？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-eligible-population",
+            "optimal-offer-design"
+          ],
+          "question": "没有礼包资格和分层合同，能否按平均购买率直接给出最优方案？"
+        }
+      ],
+      "questions": [
+        "按付费分层回算礼包渗透，并诊断触达、价格、时机和内容。",
+        "部分用户无法分层时如何保留残差？",
+        "没有礼包资格和分层合同，能否按平均购买率直接给出最优方案？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-gift-penetration",
+              "returned-segment-contribution",
+              "qualified-offer-hypothesis"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-eligible-population",
+              "optimal-offer-design"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "按付费分层回算礼包渗透，并诊断触达、价格、时机和内容。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-gift-penetration"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-eligible-population",
+              "optimal-offer-design"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分用户无法分层时如何保留残差？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-eligible-population",
+              "optimal-offer-design"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有礼包资格和分层合同，能否按平均购买率直接给出最优方案？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得用购买次数代替去重用户渗透。",
+      "未触达不等于拒绝购买。",
+      "历史价格带不等于最优价格。",
+      "本方法不改价、不改商品、不配置触达。"
+    ],
+    "formulas": [
+      {
+        "denominator": "同窗同分层内满足项目资格的去重用户数。",
+        "expression": "penetration_s = distinct_buyers_s / distinct_eligible_users_s",
+        "formula_id": "gift-penetration",
+        "interpretation": "分层加权可回算大盘，但不证明候选设计会提升渗透。",
+        "numerator": "分层 s 内至少购买一次目标礼包的去重用户数。",
+        "requires_project_calibration": [
+          "gift-eligibility",
+          "payment-segments",
+          "penetration-threshold"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "用户去重计数",
+            "definition": "购买目标礼包且满足资格的用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "distinct_buyers"
+          },
+          {
+            "aggregation": "用户去重计数",
+            "definition": "目标人群中未命中排除的用户集合。",
+            "distinct_by": "stable-user-id",
+            "symbol": "distinct_eligible_users"
+          }
+        ],
+        "window": "商品有效且数据封账的当前窗与基准窗。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "experiment",
+      "target": "experiment://project/gift-penetration-design"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定礼包、合格人群、触达、分层和价格合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集分层购买、浏览触达、价格带和场景返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算渗透率、加权回算和分层贡献，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿触达时机缺口与价格或内容适配缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成分层诊断、候选方案和验证边界，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "礼包、合格人群、浏览触达、购买和付费分层均有项目定义。",
+        "需要用加权分层和三维诊断解释渗透，而非只看大盘均值。"
+      ],
+      "not_applicable": [
+        "商品、目标人群或购买事件口径缺失。",
+        "要求自动改价、改商品或保证渗透和收入提升。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-gift-penetration"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [
