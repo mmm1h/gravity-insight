@@ -40,6 +40,8 @@ jobs:
           cache: pip
       - name: Install SDK and test runner
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Scan tracked files and complete Git history for secrets
+        run: python scripts/scan_repository_secrets.py --history --receipt tmp/supply-chain/secret-scan.json
       - name: Run tests with duration budget gate
         run: python scripts/check_test_duration_budget.py
       - name: Check deterministic contracts
@@ -73,6 +75,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity insight --dry-run
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build release distributions for supply-chain checks
+        run: python -m build
+      - name: Generate wheel and sdist SBOMs
+        run: python scripts/generate_release_sbom.py --dist-dir dist --output-dir tmp/supply-chain/sbom
+      - name: Audit isolated wheel runtime dependencies
+        run: python scripts/audit_release_dependencies.py --dist-dir dist --receipt tmp/supply-chain/dependency-audit.json
 
   core-linux-python311:
     runs-on: ubuntu-latest

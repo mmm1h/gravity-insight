@@ -181,6 +181,39 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             ),
         ),
         GateSpec(
+            "secret_scan",
+            (
+                py,
+                "scripts/scan_repository_secrets.py",
+                "--history",
+                "--receipt",
+                str(run_root / "secret-scan.json"),
+            ),
+            900,
+        ),
+        GateSpec(
+            "release_sbom",
+            (
+                py,
+                "scripts/generate_release_sbom.py",
+                "--build",
+                "--output-dir",
+                str(run_root / "sbom"),
+            ),
+            900,
+        ),
+        GateSpec(
+            "dependency_audit",
+            (
+                py,
+                "scripts/audit_release_dependencies.py",
+                "--build",
+                "--receipt",
+                str(run_root / "dependency-audit.json"),
+            ),
+            900,
+        ),
+        GateSpec(
             "installed_wheel_surface_matrix",
             (py, "scripts/check_installed_wheel_surface_matrix.py"),
             600,

@@ -47,23 +47,34 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
   `installed-wheel-linux-python312` after their first green run; do not remove or
   weaken `test`.
 - Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
-  ownership.
+  ownership. This prerequisite is now satisfied: `.github/CODEOWNERS` assigns
+  `* @mmm1h`, and the placeholder was closed in `e3fd462f`.
 
-## Governance contacts
+## Governance contacts — completed
 
-- Replace `<SECURITY_CONTACT>` in `SECURITY.md` with an approved private
-  security reporting channel.
-- Replace `<CONDUCT_CONTACT>` in `CODE_OF_CONDUCT.md` with an approved private
-  conduct reporting channel.
+- `SECURITY.md` and `CODE_OF_CONDUCT.md` use the Owner-approved private contact;
+  the placeholders were closed in `e3fd462f`.
+
+## Supply-chain enforcement (2026-08-31)
+
+Secret scan, dependency audit and artifact-bound wheel/sdist SBOM generation are
+hard failures in CI, Integrated Validation and the pre-publication release job.
+The generated SBOMs and value-free scan/audit receipts are attached to GitHub
+Release. See [Release Gate](releasing.md) for commands, failure semantics and
+the evidence-based status of the remaining section 5.9 items.
 
 ## Release and CI evidence
 
 CI now treats public compatibility claims as gates: Windows 3.11 runs the complete
 gate, Linux 3.11 and 3.12 run core tests, and Linux 3.12 builds and installs an
 isolated non-editable wheel. A contract test keeps those jobs aligned with
-`requires-python`, Python classifiers, and the README support statement. The
-remaining Ruff and dependency-audit measurements below are historical leads,
-not new required checks.
+`requires-python`, Python classifiers, and the README support statement.
+
+## Historical findings measured before enforcement
+
+These checks ran locally on 2026-08-20 before supply-chain enforcement existed.
+The `pip-audit` finding was independently re-measured; the Ruff counts remain
+historical leads and are not part of the current supply-chain gate.
 
 | Check | Result | Follow-up |
 |---|---|---|
