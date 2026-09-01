@@ -23,6 +23,7 @@ _ROLES = {
     "provenance.json": ("provenance", "application/json"),
     "references/SCHEMA.json": ("schema", "application/json"),
     "references/CLAIMS.md": ("claims", "text/markdown"),
+    "references/EXAMPLES.md": ("examples", "text/markdown"),
 }
 
 
@@ -31,14 +32,168 @@ def render_guide(contract: Mapping[str, Any]) -> str:
     lines = [
         f"# {guide['title']}",
         "",
+        "## Applicability",
+        "",
         str(guide["applicability"]),
+        "",
+        "## Quick Workflow",
         "",
     ]
     lines.extend(
         f"{index}. {step}" for index, step in enumerate(guide["steps"], 1)
     )
-    lines.extend(("", str(guide["context_boundary"]), ""))
+    lines.extend(
+        (
+            "",
+            "## Context Boundary",
+            "",
+            str(guide["context_boundary"]),
+            "",
+        )
+    )
+    method = contract.get("method")
+    if method is None:
+        lines.extend(
+            (
+                "## Method Status",
+                "",
+                "This Skill has no completed Method contract. Use its declared "
+                "readiness and dependency gaps; do not infer missing methodology.",
+                "",
+            )
+        )
+    else:
+        lines.extend(_render_method(contract, method))
     return "\n".join(lines)
+
+
+def _render_method(contract: Mapping[str, Any], method: Mapping[str, Any]) -> list[str]:
+    lines: list[str] = []
+    for renderer in (_method_intro, _method_assumptions, _method_procedure,
+                     _method_formulas, _method_dimension_scan,
+                     _method_diagnostic_tree, _method_checks_and_states,
+                     _method_dependencies):
+        lines.extend(renderer(method))
+    lines.extend(_method_handoff(contract, method))
+    return lines
+
+
+def _method_intro(method: Mapping[str, Any]) -> list[str]:
+    return [
+        "## Business Question", "", str(method["business_question"]), "",
+        "## Scope", "", "### Applicable", "",
+        *[f"- {value}" for value in method["scope"]["applicable"]], "",
+        "### Not Applicable", "",
+        *[f"- {value}" for value in method["scope"]["not_applicable"]], "",
+        "## Assumptions and Project Calibration", "",
+    ]
+
+
+def _method_assumptions(method: Mapping[str, Any]) -> list[str]:
+    lines: list[str] = []
+    for key, title in (("inputs", "Inputs"), ("time", "Time"),
+                       ("cohort", "Cohort"), ("unit", "Unit"),
+                       ("attribution", "Attribution")):
+        lines.extend((f"### {title}", ""))
+        lines.extend(f"- {value}" for value in method["assumptions"][key])
+        lines.append("")
+    lines.extend(("### Required Project Calibration", ""))
+    calibrations = method["assumptions"]["requires_project_calibration"]
+    lines.extend([f"- `{item['calibration_id']}`: {item['subject']}"
+                  for item in calibrations] or ["- None."])
+    return [*lines, ""]
+
+
+def _method_procedure(method: Mapping[str, Any]) -> list[str]:
+    lines = ["## Deterministic Procedure", ""]
+    for step in method["procedure"]:
+        dependencies = ", ".join(step["depends_on"]) or "none"
+        lines.extend((f"### `{step['step_id']}`", "", str(step["instruction"]), "",
+                      f"- Depends on: `{dependencies}`",
+                      f"- On failure: `{step['on_failure']}`", ""))
+    return lines
+
+
+def _method_formulas(method: Mapping[str, Any]) -> list[str]:
+    lines = ["## Formulas", ""]
+    for formula in method["formulas"]:
+        lines.extend((f"### `{formula['formula_id']}`", "",
+                      f"- Expression: `{formula['expression']}`",
+                      f"- Numerator: {formula['numerator']}",
+                      f"- Denominator: {formula['denominator']}",
+                      f"- Window: {formula['window']}", f"- Unit: {formula['unit']}",
+                      f"- Interpretation: {formula['interpretation']}", "- Variables:"))
+        lines.extend(f"  - `{item['symbol']}`: {item['definition']} "
+                     f"(aggregation: {item['aggregation']}; distinct by: "
+                     f"{item['distinct_by'] or 'not applicable'})"
+                     for item in formula["variables"])
+        lines.append("")
+    return lines
+
+
+def _method_dimension_scan(method: Mapping[str, Any]) -> list[str]:
+    scan = method["dimension_scan"]
+    dimensions = ", ".join(f"`{item['dimension_id']}` ({item['label']})"
+                           for item in scan["dimensions"])
+    return ["## Dimension Scan and Contribution", "", f"- Dimensions: {dimensions}",
+            f"- Baseline: {scan['baseline']}",
+            f"- Contribution formula: `{scan['contribution_formula']}`",
+            f"- Ranking rule: {scan['ranking_rule']}",
+            f"- Minimum volume: {scan['minimum_volume_rule']}",
+            f"- Residual policy: {scan['residual_policy']}", ""]
+
+
+def _method_diagnostic_tree(method: Mapping[str, Any]) -> list[str]:
+    tree = method["diagnostic_tree"]
+    lines = ["## Diagnostic Tree", "", str(tree["root_question"]), ""]
+    for branch in tree["branches"]:
+        lines.extend((f"### `{branch['branch_id']}`", "",
+                      f"- Condition: {branch['condition']}", "- Checks:",
+                      *[f"  - {value}" for value in branch["checks"]], "- Leaves:"))
+        for leaf in branch["leaves"]:
+            lines.extend((f"  - `{leaf['leaf_id']}`: {leaf['condition']}",
+                          f"    - Conclusion: {leaf['conclusion']}", "    - Exclusions:",
+                          *[f"      - {value}" for value in leaf["exclusions"]]))
+        lines.append("")
+    return lines
+
+
+def _method_checks_and_states(method: Mapping[str, Any]) -> list[str]:
+    checks = method["data_checks"]
+    lines = ["## Exclusions and Data Checks", "", "### Exclusions", ""]
+    lines.extend(f"- {value}" for value in method["exclusions"])
+    lines.extend(("", "### Completeness", ""))
+    lines.extend(f"- {value}" for value in checks["completeness"])
+    lines.extend(("", "### Data Quality", ""))
+    lines.extend(f"- {value}" for value in checks["data_quality"])
+    lines.extend(("", f"Failure behavior: {checks['failure_behavior']}", "",
+                  "## Result States and Sections", ""))
+    lines.extend(f"- `{state}` / `{value['reason_code']}`: {value['behavior']}"
+                 for state, value in method["states"].items())
+    lines.extend(("", "Result sections:", ""))
+    lines.extend(f"- `{item['section_id']}`: {item['title']}"
+                 for item in method["result"]["sections"])
+    return [*lines, ""]
+
+
+def _method_dependencies(method: Mapping[str, Any]) -> list[str]:
+    return ["## Dependency Status", "",
+            *(f"- `{item['kind']}` `{item['identity']}`: `{item['status']}` / "
+              f"`{item['reason_code']}`. {item['evidence']}"
+              for item in method["dependency_status"])]
+
+
+def _method_handoff(contract: Mapping[str, Any], method: Mapping[str, Any]) -> list[str]:
+    handoff = method["handoff"]
+    return ["", "## Handoff", "", f"- Kind: `{handoff['kind']}`",
+            f"- Target: `{handoff['target'] or 'none'}`",
+            f"- Authorization boundary: {handoff['authorization_boundary']}",
+            "- Conditions:", *[f"  - {value}" for value in handoff["conditions"]], "",
+            "## Run Examples", "",
+            "Read `references/EXAMPLES.md` for structured success, "
+            "empty/partial, and blocked/gap examples.", "",
+            f"Method revision: `{method['method_revision']}`. Skill version: "
+            f"`{contract['version']}`.", ""]
 
 
 def render_package_files(artifact: Mapping[str, Any]) -> dict[str, bytes]:
@@ -63,6 +218,7 @@ def render_package_files(artifact: Mapping[str, Any]) -> dict[str, bytes]:
         "provenance.json": _json_bytes(provenance),
         "references/SCHEMA.json": _json_bytes(schema_reference),
         "references/CLAIMS.md": render_claims(contract).encode("utf-8"),
+        "references/EXAMPLES.md": render_examples(contract).encode("utf-8"),
     }
 
 
@@ -89,6 +245,55 @@ def render_claims(contract: Mapping[str, Any]) -> str:
         else ["- None beyond the always-forbidden claims above."]
     )
     lines.append("")
+    return "\n".join(lines)
+
+
+def render_examples(contract: Mapping[str, Any]) -> str:
+    lines = ["# Run Examples", ""]
+    method = contract.get("method")
+    if method is None:
+        lines.extend(
+            (
+                "No structured run examples are available because this Skill has "
+                "no completed Method contract.",
+                "",
+                "Treat the missing method as a content gap and do not invent inputs "
+                "or expected claims.",
+                "",
+            )
+        )
+        return "\n".join(lines)
+    for example in method["examples"]["run_examples"]:
+        expected = example["expected"]
+        lines.extend(
+            (
+                f"## `{example['example_id']}`",
+                "",
+                f"- Scenario: `{example['scenario']}`",
+                f"- Question: {example['question']}",
+                f"- Selector: `{example['selector']}`",
+                "- Input template:",
+                "",
+                "```json",
+                json.dumps(
+                    example["input_template"],
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                    allow_nan=False,
+                ),
+                "```",
+                "",
+                f"- Expected status: `{expected['status']}`",
+                f"- Expected completeness: `{expected['completeness']}`",
+                f"- Expected sections: `{', '.join(expected['sections'])}`",
+                f"- Allowed claims: `{', '.join(expected['allowed_claims']) or 'none'}`",
+                f"- Forbidden claims: `{', '.join(expected['forbidden_claims'])}`",
+                f"- Reason codes: `{', '.join(expected['reason_codes']) or 'none'}`",
+                f"- Network called: `{str(expected['network_called']).lower()}`",
+                "",
+            )
+        )
     return "\n".join(lines)
 
 
@@ -156,6 +361,7 @@ def render_agent_export(
             "references/SCHEMA.json"
         ].decode("utf-8"),
         "references/CLAIMS.md": render_claims(contract),
+        "references/EXAMPLES.md": render_examples(contract),
     }
     rows = [
         {
@@ -221,6 +427,8 @@ def _agent_skill_markdown(
         "",
         "Before reporting findings, read `references/CLAIMS.md` and keep every conclusion within its allowed claim policy.",
         "",
+        "Read `references/EXAMPLES.md` before the first run. Use its input templates and expected status/claim boundaries; never substitute missing project bindings with guessed values.",
+        "",
         "This export is static workflow guidance. Gravity Journey readiness, host routing, effects, authorization, and execution contracts remain authoritative. Treat `blocked`, `unvalidated`, or unresolved dependencies as a stop for execution and business claims; report the exact gap instead.",
         "",
     ]
@@ -265,6 +473,7 @@ __all__ = [
     "render_agent_export",
     "render_claims",
     "render_docs_mirror",
+    "render_examples",
     "render_guide",
     "render_package_files",
     "skill_package_descriptor",

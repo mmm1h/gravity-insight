@@ -1,0 +1,578 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [],
+  "claim_policy": {
+    "allowed": [
+      "proposed-event-contract",
+      "proposed-property-contract",
+      "validated-tracking-plan"
+    ],
+    "forbidden": [
+      "deployment-complete",
+      "production-collection-confirmed",
+      "write-authorized"
+    ],
+    "forbidden_without_context": [
+      "proposed-event-contract",
+      "proposed-property-contract",
+      "validated-tracking-plan"
+    ]
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/product-requirements@1",
+      "context://project/privacy-classification@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "适用于新功能或新产品在开发前形成可评审的埋点合同，覆盖业务目标、核心循环、事件、属性、公共属性、用户属性、类型、隐私与验收用例。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "适用于新功能或新产品在开发前形成可评审的埋点合同，覆盖业务目标、核心循环、事件、属性、公共属性、用户属性、类型、隐私与验收用例。",
+    "context_boundary": "项目口径、物理字段、真实事件和授权边界必须来自版本化项目契约；缺失时只报告 Gap，不猜值、不改线上配置。",
+    "steps": [
+      "从项目需求锁定业务目标、核心流程、实体、状态和分析问题。",
+      "把每个可观测状态变化映射为事件、属性和唯一触发时机。",
+      "校验命名、类型、枚举、来源、隐私、去重和版本演进规则。",
+      "输出可评审方案与验收用例，不上传平台或生成生产代码。"
+    ],
+    "title": "埋点方案生成"
+  },
+  "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "来源端选择基于事实所有权和防篡改要求；方案不声明未来分析效果或数据完整性。"
+      ],
+      "cohort": [
+        "用户、账号、设备、订单、会话等实体身份明确，游客和登录后行为的归并规则由项目定义。"
+      ],
+      "inputs": [
+        "输入包含业务目标、用户流程、实体状态、收入或核心循环、分析问题、来源端和隐私分类。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "business-question-set",
+          "subject": "方案必须支持的获批分析问题。"
+        },
+        {
+          "calibration_id": "naming-and-type-policy",
+          "subject": "事件属性命名、类型、单位和枚举演进规则。"
+        },
+        {
+          "calibration_id": "privacy-classification",
+          "subject": "字段隐私级别、最小化和禁止采集项。"
+        },
+        {
+          "calibration_id": "source-of-truth-policy",
+          "subject": "客户端、服务端或离线来源责任。"
+        }
+      ],
+      "time": [
+        "触发时机使用业务动作完成或状态确认点，客户端意图时间与服务端确认时间分开。"
+      ],
+      "unit": [
+        "金额、时长、数量、比例和枚举的类型与单位在方案阶段锁定，不能用字符串占位。"
+      ]
+    },
+    "business_question": "获批产品流程中的哪些可观测状态变化必须形成事件合同，事件、属性、来源、触发时机、类型、隐私和验收规则能否完整支撑明确分析问题？",
+    "data_checks": {
+      "completeness": [
+        "每个获批分析问题映射到事件、属性、实体、时间和验收用例。",
+        "关键流程的成功、失败、取消和退出路径均有明确状态。"
+      ],
+      "data_quality": [
+        "命名、类型、单位、枚举、幂等和来源责任无冲突。",
+        "隐私分类、数据最小化和禁止采集规则逐字段通过。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "schema://project/tracking-plan@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/product-requirements@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/privacy-classification@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "observability-gap",
+          "checks": [
+            "从业务问题反推实体与状态变化。",
+            "检查入口、成功、失败和退出路径。"
+          ],
+          "condition": "业务问题或关键状态转移没有可观测事件路径。",
+          "leaves": [
+            {
+              "conclusion": "提出事件合同候选。",
+              "condition": "关键状态变化没有唯一事件。",
+              "exclusions": [
+                "不得用页面曝光代替业务成功。"
+              ],
+              "leaf_id": "missing-state-transition"
+            },
+            {
+              "conclusion": "提出最小属性候选。",
+              "condition": "问题所需分组或关联实体没有合规属性。",
+              "exclusions": [
+                "不得采集超出问题需要的个人信息。"
+              ],
+              "leaf_id": "missing-analysis-dimension"
+            }
+          ]
+        },
+        {
+          "branch_id": "contract-quality-gap",
+          "checks": [
+            "验证命名类型和枚举演进。",
+            "核对事实所有权、幂等和隐私最小化。"
+          ],
+          "condition": "事件存在但命名、类型、来源、触发或隐私合同不完整。",
+          "leaves": [
+            {
+              "conclusion": "要求在开发前锁定类型和确认点。",
+              "condition": "属性类型或事件触发时机不唯一。",
+              "exclusions": [
+                "不得用首次上报决定权威类型。"
+              ],
+              "leaf_id": "type-or-trigger-ambiguity"
+            },
+            {
+              "conclusion": "报告来源或隐私冲突并阻止交付。",
+              "condition": "来源端不拥有事实或字段违反隐私分类。",
+              "exclusions": [
+                "不得通过换名保留禁止字段。"
+              ],
+              "leaf_id": "source-or-privacy-conflict"
+            }
+          ]
+        }
+      ],
+      "root_question": "每个获批分析问题是否能追溯到一组最小、明确且合规的事件与属性合同？"
+    },
+    "dimension_scan": {
+      "baseline": "以获批分析问题和完整业务流程为基准，每个事件对应一个不可歧义的状态变化。",
+      "contribution_formula": "gap_share_s = unsupported_questions_or_conflicts_s / total_unsupported_questions_or_conflicts",
+      "dimensions": [
+        {
+          "dimension_id": "business-module",
+          "label": "业务模块"
+        },
+        {
+          "dimension_id": "lifecycle-stage",
+          "label": "生命周期阶段"
+        },
+        {
+          "dimension_id": "contract-kind",
+          "label": "合同类型"
+        },
+        {
+          "dimension_id": "source-end",
+          "label": "来源端"
+        }
+      ],
+      "minimum_volume_rule": "没有明确业务问题或触发时机的候选事件不进入正式方案，只保留待澄清项。",
+      "ranking_rule": "先排核心业务问题和不可恢复类型或隐私冲突，再排命名、枚举和便利性缺口。",
+      "residual_policy": "未决需求、项目专属枚举、真实活动名和来源责任保留为待填模板，不猜值。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "deployment-complete",
+            "production-collection-confirmed",
+            "write-authorized"
+          ],
+          "question": "从获批产品需求生成完整埋点方案，并说明每个事件支撑的分析问题。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "deployment-complete",
+            "production-collection-confirmed",
+            "write-authorized"
+          ],
+          "question": "部分业务枚举和来源责任未确认时，如何输出可评审模板并标记缺口？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "deployment-complete",
+            "production-collection-confirmed",
+            "write-authorized"
+          ],
+          "question": "没有隐私分类和项目需求合同，能否套行业模板后直接上传生产平台？"
+        }
+      ],
+      "questions": [
+        "从获批产品需求生成完整埋点方案，并说明每个事件支撑的分析问题。",
+        "部分业务枚举和来源责任未确认时，如何输出可评审模板并标记缺口？",
+        "没有隐私分类和项目需求合同，能否套行业模板后直接上传生产平台？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "proposed-event-contract",
+              "proposed-property-contract",
+              "validated-tracking-plan"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "deployment-complete",
+              "production-collection-confirmed",
+              "write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "从获批产品需求生成完整埋点方案，并说明每个事件支撑的分析问题。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "proposed-event-contract"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "deployment-complete",
+              "production-collection-confirmed",
+              "write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分业务枚举和来源责任未确认时，如何输出可评审模板并标记缺口？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "deployment-complete",
+              "production-collection-confirmed",
+              "write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有隐私分类和项目需求合同，能否套行业模板后直接上传生产平台？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得复制厂商预置活动名、SKU 或项目枚举作为真实值。",
+      "不得把方案草案称为已上传、已实现或已验证生产采集。",
+      "不得收集超出获批业务问题所需的敏感字段。",
+      "本方法不上传平台、不生成生产代码、不修改 Schema。"
+    ],
+    "formulas": [
+      {
+        "denominator": "项目明确批准并纳入本方案范围的分析问题总数。",
+        "expression": "coverage = supported_approved_questions / approved_questions",
+        "formula_id": "analysis-question-coverage",
+        "interpretation": "覆盖率为一表示静态方案能表达问题，不表示代码已实现或生产数据可用。",
+        "numerator": "能由至少一个完整事件与属性路径回答的获批分析问题数。",
+        "requires_project_calibration": [
+          "business-question-set",
+          "naming-and-type-policy",
+          "privacy-classification",
+          "source-of-truth-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "问题计数",
+            "definition": "有明确事件、属性、实体、时间和验收用例支撑的问题。",
+            "distinct_by": "question-id",
+            "symbol": "supported_approved_questions"
+          },
+          {
+            "aggregation": "问题计数",
+            "definition": "本方案承诺支持的全部获批分析问题。",
+            "distinct_by": "question-id",
+            "symbol": "approved_questions"
+          }
+        ],
+        "window": "同一产品需求和埋点方案修订版。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成和校验方案草案；上传、创建 Schema、生成代码和生产采集必须由独立受治理 Action 明确授权。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "action",
+      "target": "action://project/tracking-plan-review"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定产品需求、业务实体、分析问题、命名类型、隐私和来源责任，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集业务流程、状态转移、事件属性矩阵和验收用例，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算分析问题覆盖率、关键流程覆盖率和合同冲突数，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿业务可观测性缺口与事件属性合同质量缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成事件、属性、来源、触发时机、隐私和验收用例完整方案，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "新产品、模块或版本在开发前需要形成可评审的埋点合同。",
+        "已有方案需按业务问题、核心流程、数据类型和隐私规则补全或治理。"
+      ],
+      "not_applicable": [
+        "要求直接上传平台、生成生产代码或宣称事件已经采集。",
+        "没有项目需求、业务实体、分析问题或隐私分类。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "proposed-event-contract"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
+  "model_dependencies": [],
+  "namespace": "gravity.core",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "source://external-method/ec5160a65b2d2017",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 0,
+    "known_requests_min": 0,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 0
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": false,
+    "product_hints": [],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "schema://project/tracking-plan@1"
+  ],
+  "skill_id": "tracking-plan-generation",
+  "specification": "specified",
+  "summary": "从获批业务流程生成事件、属性、触发时机、来源与验证规则。",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

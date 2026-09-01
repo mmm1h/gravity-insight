@@ -45,6 +45,484 @@
     "title": "返回结果筛选对比"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "筛选变化只解释返回集合差异，不称为筛选导致用户行为变化。"
+      ],
+      "cohort": [
+        "队列入组、初始事件、回访条件、排除和身份键必须先可比再比较。"
+      ],
+      "inputs": [
+        "输入包含两侧分析定义、筛选表达式、时间、队列、去重键、返回行和完整性状态。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "comparison-contract",
+          "subject": "两侧共同指标、实体和队列的可比条件。"
+        },
+        {
+          "calibration_id": "sample-review-policy",
+          "subject": "差集样本的最小数量、隐私投影和复核规则。"
+        }
+      ],
+      "time": [
+        "两侧使用同一业务时区、窗口边界和数据成熟度；留存日与自然日语义显式区分。"
+      ],
+      "unit": [
+        "人数按同一稳定用户键去重，事件次数和用户数不得混比。"
+      ]
+    },
+    "business_question": "两个筛选或分析结果是否基于同一模型、指标、队列、时间和去重逻辑；观测差异由哪些返回条件解释，未返回总体还剩多少未知？",
+    "data_checks": {
+      "completeness": [
+        "两侧定义和返回均绑定同一版本快照。",
+        "差集、交集和未返回范围都有数量证据。"
+      ],
+      "data_quality": [
+        "筛选类型、空值语义、枚举和身份键一致。",
+        "Operator 输入行单位、可加性和匹配键通过验证。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "Runtime 已登记该确定性 Operator，并用 golden cases 锁定输入输出。",
+        "identity": "operator://gravity/returned-dimension-change@1",
+        "kind": "operator",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "not-comparable",
+          "checks": [
+            "逐项对比模型、指标、队列和时间。",
+            "建立可行的共同基准复算。"
+          ],
+          "condition": "至少一个核心定义要素不同。",
+          "leaves": [
+            {
+              "conclusion": "确认队列不可比。",
+              "condition": "一侧限定入组队列而另一侧覆盖全量实体。",
+              "exclusions": [
+                "不得把队列外实体称为错误数据。"
+              ],
+              "leaf_id": "cohort-mismatch"
+            },
+            {
+              "conclusion": "确认指标或时间口径不一致。",
+              "condition": "事件、回访定义或时间语义不同。",
+              "exclusions": [
+                "不得用简单过滤假装语义等价。"
+              ],
+              "leaf_id": "metric-or-time-mismatch"
+            }
+          ]
+        },
+        {
+          "branch_id": "comparable-but-divergent",
+          "checks": [
+            "逐子句复算筛选存活率。",
+            "检查字段绑定、枚举和有界差集样本。"
+          ],
+          "condition": "核心定义等价但返回仍显著不同。",
+          "leaves": [
+            {
+              "conclusion": "确认筛选实现漂移。",
+              "condition": "筛选值、空值或枚举映射在两侧不同。",
+              "exclusions": [
+                "未返回枚举不得猜测归类。"
+              ],
+              "leaf_id": "filter-domain-drift"
+            },
+            {
+              "conclusion": "确认快照或绑定差异。",
+              "condition": "筛选等价但数据快照或绑定版本不同。",
+              "exclusions": [
+                "任一侧不完整时不得声称完整根因。"
+              ],
+              "leaf_id": "data-snapshot-or-binding-drift"
+            }
+          ]
+        }
+      ],
+      "root_question": "两个结果的模型、指标、实体、队列、时间和去重是否首先可比？"
+    },
+    "dimension_scan": {
+      "baseline": "先固定共同模型、指标、实体和时间，再逐个应用筛选；不在不可比对象间计算贡献。",
+      "contribution_formula": "loss_k = returned_before_k - returned_after_k; contribution_k = loss_k / total_returned_difference",
+      "dimensions": [
+        {
+          "dimension_id": "definition-layer",
+          "label": "定义层"
+        },
+        {
+          "dimension_id": "filter-clause",
+          "label": "筛选子句"
+        },
+        {
+          "dimension_id": "cohort-membership",
+          "label": "队列归属"
+        },
+        {
+          "dimension_id": "time-semantics",
+          "label": "时间语义"
+        }
+      ],
+      "minimum_volume_rule": "低于项目最小返回或样本复核量时只报告方向，不给稳定比例。",
+      "ranking_rule": "按最早使结果分叉的定义或筛选阶段优先，再按明确差集规模排序。",
+      "residual_policy": "未返回行、未知队列归属和未获准抽验的差集保留为残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "complete-population",
+            "causality",
+            "unreturned-values"
+          ],
+          "question": "两张分析结果差异明显，先判断可比性再给出返回差异证据链。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "complete-population",
+            "causality",
+            "unreturned-values"
+          ],
+          "question": "其中一侧只有前缀结果时，允许报告哪些返回集合变化？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "complete-population",
+            "causality",
+            "unreturned-values"
+          ],
+          "question": "缺少一侧队列定义时，能否直接写 SQL 从用户差集推断完整根因？"
+        }
+      ],
+      "questions": [
+        "两张分析结果差异明显，先判断可比性再给出返回差异证据链。",
+        "其中一侧只有前缀结果时，允许报告哪些返回集合变化？",
+        "缺少一侧队列定义时，能否直接写 SQL 从用户差集推断完整根因？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "returned-event-metric-observation",
+              "returned-dimension-change"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "complete-population",
+              "causality",
+              "unreturned-values"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "两张分析结果差异明显，先判断可比性再给出返回差异证据链。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "returned-event-metric-observation"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "complete-population",
+              "causality",
+              "unreturned-values"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "其中一侧只有前缀结果时，允许报告哪些返回集合变化？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-population",
+              "causality",
+              "unreturned-values"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "缺少一侧队列定义时，能否直接写 SQL 从用户差集推断完整根因？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不可比对象不得直接计算差异贡献。",
+      "差集样本只用于证伪或支持候选，不外推总体。",
+      "不得查询未授权用户级原始输出。",
+      "本方法不修改筛选、报表或队列配置。"
+    ],
+    "formulas": [
+      {
+        "denominator": "两侧返回数较大值；两侧都为零时状态为 Empty。",
+        "expression": "difference_rate = abs(count_A - count_B) / max(count_A, count_B)",
+        "formula_id": "returned-set-difference-rate",
+        "interpretation": "差异率量化明确返回集合的规模差，不代表未返回总体或根因。",
+        "numerator": "两侧同单位、同实体去重返回数的绝对差。",
+        "requires_project_calibration": [
+          "comparison-contract",
+          "sample-review-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "去重计数",
+            "definition": "分析对象 A 的明确返回去重实体数。",
+            "distinct_by": "project-entity-id",
+            "symbol": "count_A"
+          },
+          {
+            "aggregation": "去重计数",
+            "definition": "分析对象 B 的明确返回去重实体数。",
+            "distinct_by": "project-entity-id",
+            "symbol": "count_B"
+          }
+        ],
+        "window": "同一业务时区和成熟窗口，筛选与队列定义在整个窗口有效。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定两侧分析定义、队列、筛选、时间和去重合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集规范化筛选、返回集合、差集摘要和有界样本复核，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算返回集合差异、筛选阶段损失和匹配行变化，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿定义不可比与筛选或数据实现偏差两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成可比性判定、差异贡献、证据链和修正验证，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "同一受治理指标在两个明确筛选、窗口或分析对象中返回不同结果。",
+        "需要按定义层、结果层、样本层和证据层逐步收窄差异。"
+      ],
+      "not_applicable": [
+        "比较对象的指标或实体本来就不同且无需建立共同基准。",
+        "需要读取未经授权的用户明细或从抽样结果外推完整总体。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "returned-event-metric-observation"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.core",
   "operator_dependencies": [

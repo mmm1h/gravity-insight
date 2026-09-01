@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "documented-field-contract",
+      "verified-field-binding-status",
+      "bounded-reference-guidance"
+    ],
     "forbidden": [
       "field-permission-inferred",
       "inferred-field-definition",
       "undocumented-binding"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "documented-field-contract",
+      "verified-field-binding-status",
+      "bounded-reference-guidance"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,478 @@
     "title": "项目字段契约指南"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "字段不可见按合同阶段定位，不把界面状态或权限猜测为原因。"
+      ],
+      "cohort": [
+        "事件实体和用户实体分别处理，跨表字段必须先由项目确认归属。"
+      ],
+      "inputs": [
+        "输入包含字段稳定身份、目录版本、实体归属、类型、物理绑定、分析面和当前连接状态。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "field-catalog-version",
+          "subject": "项目字段目录和系统字段版本。"
+        },
+        {
+          "calibration_id": "analysis-surface-policy",
+          "subject": "各查询或分析面对来源字段和派生字段的暴露规则。"
+        }
+      ],
+      "time": [
+        "字段定义和绑定在查询或配置日期有效，历史重命名和废弃版本单列。"
+      ],
+      "unit": [
+        "字段类型、时区和单位来自合同；字符串格式不能替代数值或时间类型。"
+      ]
+    },
+    "business_question": "一个系统字段在何种存储实体、查询面和分析面可用；若不可见，缺少定义、连接还是派生暴露步骤，调用方需要什么受治理动作？",
+    "data_checks": {
+      "completeness": [
+        "字段目录、绑定和目标分析面政策来自同一快照。",
+        "每个必需步骤都有明确状态和验证证据。"
+      ],
+      "data_quality": [
+        "字段类型、单位、时区和实体归属无冲突。",
+        "别名、废弃版本和派生依赖不存在循环或重复定义。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/field-contracts@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "definition-or-binding",
+          "checks": [
+            "解析字段目录版本和别名。",
+            "核对事件与用户实体归属。"
+          ],
+          "condition": "字段身份、实体归属或物理绑定尚未解析。",
+          "leaves": [
+            {
+              "conclusion": "报告定义缺口或冲突。",
+              "condition": "字段不存在或多个定义冲突。",
+              "exclusions": [
+                "不得按名称猜类型和含义。"
+              ],
+              "leaf_id": "definition-missing-or-ambiguous"
+            },
+            {
+              "conclusion": "报告来源绑定缺口。",
+              "condition": "定义存在但目标实体没有有效物理绑定。",
+              "exclusions": [
+                "不得自动连接相似字段。"
+              ],
+              "leaf_id": "source-binding-missing"
+            }
+          ]
+        },
+        {
+          "branch_id": "surface-exposure",
+          "checks": [
+            "读取分析面暴露政策。",
+            "核对派生引用和可见性回读。"
+          ],
+          "condition": "来源定义和绑定有效，但目标分析面不可用。",
+          "leaves": [
+            {
+              "conclusion": "列出缺失的受治理暴露步骤。",
+              "condition": "目标面要求派生或虚拟引用但尚未登记。",
+              "exclusions": [
+                "不得创建派生字段。"
+              ],
+              "leaf_id": "derived-exposure-missing"
+            },
+            {
+              "conclusion": "报告验证证据缺失。",
+              "condition": "配置看似完成但没有目标面回读证据。",
+              "exclusions": [
+                "不得推断权限或界面缓存状态。"
+              ],
+              "leaf_id": "visibility-evidence-missing"
+            }
+          ]
+        }
+      ],
+      "root_question": "字段是否有唯一有效定义，并在正确实体和目标分析面完成全部必需步骤？"
+    },
+    "dimension_scan": {
+      "baseline": "以目标分析面和项目字段目录为基准，SQL 可见性与前端分析可见性分开评估。",
+      "contribution_formula": "gap_share_s = missing_steps_s / total_missing_steps",
+      "dimensions": [
+        {
+          "dimension_id": "entity-kind",
+          "label": "实体类型"
+        },
+        {
+          "dimension_id": "analysis-surface",
+          "label": "分析面"
+        },
+        {
+          "dimension_id": "binding-stage",
+          "label": "绑定阶段"
+        },
+        {
+          "dimension_id": "field-type",
+          "label": "字段类型"
+        }
+      ],
+      "minimum_volume_rule": "字段未解析为唯一版本身份时不计算就绪率，直接返回定义 Gap。",
+      "ranking_rule": "先排定义和实体归属冲突，再排物理绑定、派生暴露和可见性回读缺口。",
+      "residual_policy": "权限、界面缓存和未登记扩展状态作为未知，不从不可见结果反推。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "field-permission-inferred",
+            "inferred-field-definition",
+            "undocumented-binding"
+          ],
+          "question": "解释一个系统字段在 SQL 与分析面中的可用性，并给出缺失步骤。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "field-permission-inferred",
+            "inferred-field-definition",
+            "undocumented-binding"
+          ],
+          "question": "只有字段目录而没有目标面回读时，哪些状态可以确认？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "field-permission-inferred",
+            "inferred-field-definition",
+            "undocumented-binding"
+          ],
+          "question": "字段未登记且当前不可见，能否按名字推断含义并自动创建连接？"
+        }
+      ],
+      "questions": [
+        "解释一个系统字段在 SQL 与分析面中的可用性，并给出缺失步骤。",
+        "只有字段目录而没有目标面回读时，哪些状态可以确认？",
+        "字段未登记且当前不可见，能否按名字推断含义并自动创建连接？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "documented-field-contract",
+              "verified-field-binding-status",
+              "bounded-reference-guidance"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "field-permission-inferred",
+              "inferred-field-definition",
+              "undocumented-binding"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "解释一个系统字段在 SQL 与分析面中的可用性，并给出缺失步骤。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "documented-field-contract"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "field-permission-inferred",
+              "inferred-field-definition",
+              "undocumented-binding"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "只有字段目录而没有目标面回读时，哪些状态可以确认？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "field-permission-inferred",
+              "inferred-field-definition",
+              "undocumented-binding"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "字段未登记且当前不可见，能否按名字推断含义并自动创建连接？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得从字段前缀或示例值推断业务定义。",
+      "SQL 可读取不等于所有分析面自动可见。",
+      "不可见不等于字段无数据或权限不足。",
+      "本方法不创建连接、派生字段或权限。"
+    ],
+    "formulas": [
+      {
+        "denominator": "由字段实体归属和目标分析面决定的全部必需步骤数。",
+        "expression": "readiness = satisfied_required_steps / required_steps",
+        "formula_id": "field-exposure-readiness",
+        "interpretation": "就绪率只描述合同步骤，不代表调用者拥有配置权限或字段值正确。",
+        "numerator": "字段在目标分析面可用前已验证通过的必需步骤数。",
+        "requires_project_calibration": [
+          "field-catalog-version",
+          "analysis-surface-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "步骤计数",
+            "definition": "定义、连接、派生暴露和可见性中已验证步骤。",
+            "distinct_by": "step-id",
+            "symbol": "satisfied_required_steps"
+          },
+          {
+            "aggregation": "步骤计数",
+            "definition": "项目暴露政策要求的全部步骤。",
+            "distinct_by": "step-id",
+            "symbol": "required_steps"
+          }
+        ],
+        "window": "同一字段目录与绑定快照。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定字段定义、实体归属、类型、物理绑定和分析面暴露规则，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集字段目录、绑定状态、派生引用和目标分析面可见性回读，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算字段暴露必需步骤覆盖率和引用冲突数，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿定义或绑定缺口与分析面暴露缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成字段速查、当前状态、缺失步骤和受治理动作边界，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目提供版本化字段目录和绑定状态，需要解释字段定义、类型、归属和可用面。",
+        "同名字段跨事件、用户或 SQL 面出现不同可见性，需要给出有界操作清单。"
+      ],
+      "not_applicable": [
+        "字段未在项目合同登记，只能凭命名约定推断含义。",
+        "要求 Runtime 创建字段、虚拟属性、权限或平台连接。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "documented-field-contract"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.core",
   "operator_dependencies": [],

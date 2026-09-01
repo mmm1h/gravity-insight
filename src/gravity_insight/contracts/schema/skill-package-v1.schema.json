@@ -37,7 +37,7 @@
         "additionalProperties": false,
         "properties": {
           "path": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9._/-]+$"},
-          "role": {"enum": ["manifest", "guide", "provenance", "schema", "claims", "asset"]},
+          "role": {"enum": ["manifest", "guide", "provenance", "schema", "claims", "examples", "asset"]},
           "media_type": {"enum": ["application/json", "text/markdown"]},
           "size_bytes": {"type": "integer", "minimum": 1, "maximum": 262144},
           "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}

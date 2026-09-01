@@ -43,6 +43,470 @@
     "title": "设备分群事件评审"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "性能事件只归于同一会话内最近页面与版本，跨会话或缺失页面不强行归因。"
+      ],
+      "cohort": [
+        "设备或会话队列采用相同活跃门槛，重装、模拟器和测试设备按项目规则排除。"
+      ],
+      "inputs": [
+        "输入至少包含会话或设备去重键、性能事件、发生时间、设备型号、系统版本、应用版本和页面。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "performance-thresholds",
+          "subject": "各指标告警阈值、最小会话量和连续窗口规则。"
+        },
+        {
+          "calibration_id": "device-tier-map",
+          "subject": "设备档位、内存档位和系统支持范围。"
+        }
+      ],
+      "time": [
+        "当前版本窗与基准版本窗按同一发布阶段和业务时区闭合，灰度占比单独记录。"
+      ],
+      "unit": [
+        "崩溃率按受影响会话除以合格会话；时长使用同一时间单位，帧率使用每秒帧数。"
+      ]
+    },
+    "business_question": "性能异常是否集中于特定设备、系统、版本或页面组合；影响范围多大，哪些堆栈或资源证据支持候选机制？",
+    "data_checks": {
+      "completeness": [
+        "当前与基准窗覆盖同一发布阶段且分页完整。",
+        "设备、系统、版本和页面字段缺失率已报告。"
+      ],
+      "data_quality": [
+        "会话键、版本号和时间戳有效且无跨窗重复。",
+        "性能事件定义与采集版本在比较窗内未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "compatibility-concentration",
+          "checks": [
+            "核对组合会话量与灰度覆盖。",
+            "聚类错误签名并检查资源档位。"
+          ],
+          "condition": "超额异常主要集中于少数设备或系统组合。",
+          "leaves": [
+            {
+              "conclusion": "列为资源压力候选并设计降级验证。",
+              "condition": "低资源档位与特定页面同时显著。",
+              "exclusions": [
+                "没有内存或资源证据时不得认定资源溢出。"
+              ],
+              "leaf_id": "resource-pressure"
+            },
+            {
+              "conclusion": "列为系统兼容候选。",
+              "condition": "特定系统版本集中且错误签名指向平台 API。",
+              "exclusions": [
+                "若应用版本或页面分布不同，先控制混杂。"
+              ],
+              "leaf_id": "platform-api-mismatch"
+            }
+          ]
+        },
+        {
+          "branch_id": "application-wide-regression",
+          "checks": [
+            "比较新旧应用版本和页面发布变更。",
+            "检查性能事件采集版本是否漂移。"
+          ],
+          "condition": "多个设备档位同向上升，集中度不足以解释大盘。",
+          "leaves": [
+            {
+              "conclusion": "列为页面级回归候选。",
+              "condition": "异常集中于同一新增或改版页面。",
+              "exclusions": [
+                "没有同页面旧版本对照时不得声称回归。"
+              ],
+              "leaf_id": "page-regression"
+            },
+            {
+              "conclusion": "列为采集口径漂移。",
+              "condition": "异常与采集版本切换同步且独立日志不支持性能恶化。",
+              "exclusions": [
+                "独立日志实体或窗口不可比时不得据此排除真实异常。"
+              ],
+              "leaf_id": "instrumentation-shift"
+            }
+          ]
+        }
+      ],
+      "root_question": "异常率是否越过项目阈值，且集中度足以从大盘收窄到稳定组合？"
+    },
+    "dimension_scan": {
+      "baseline": "每个切片使用相同事件、会话队列和版本窗口；跨维度贡献不相加。",
+      "contribution_formula": "impact_s = affected_sessions_s - baseline_rate_s * eligible_sessions_s; contribution_s = impact_s / sum(impact_returned_s)",
+      "dimensions": [
+        {
+          "dimension_id": "device-tier",
+          "label": "设备档位"
+        },
+        {
+          "dimension_id": "os-version",
+          "label": "系统版本"
+        },
+        {
+          "dimension_id": "app-version",
+          "label": "应用版本"
+        },
+        {
+          "dimension_id": "page-or-scene",
+          "label": "页面或场景"
+        }
+      ],
+      "minimum_volume_rule": "低于项目最小会话量的组合并入低样本桶，不单独给机制结论。",
+      "ranking_rule": "先按超额受影响会话贡献绝对值，再按异常率和合格会话量排序。",
+      "residual_policy": "缺设备、页面或版本字段的会话作为未知残差；残差足以改变热点排序时结果降级。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "complete-device-population",
+            "causality"
+          ],
+          "question": "新版本性能异常上升，按设备、系统、版本和页面交叉定位主要返回组合。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "complete-device-population",
+            "causality"
+          ],
+          "question": "页面字段只覆盖部分会话时，如何报告已观察热点和未知残差？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "complete-device-population",
+            "causality"
+          ],
+          "question": "项目没有设备档位映射和异常阈值，能否直接认定某型号存在兼容故障？"
+        }
+      ],
+      "questions": [
+        "新版本性能异常上升，按设备、系统、版本和页面交叉定位主要返回组合。",
+        "页面字段只覆盖部分会话时，如何报告已观察热点和未知残差？",
+        "项目没有设备档位映射和异常阈值，能否直接认定某型号存在兼容故障？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "returned-event-metric-observation"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "complete-device-population",
+              "causality"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "新版本性能异常上升，按设备、系统、版本和页面交叉定位主要返回组合。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "returned-event-metric-observation"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "complete-device-population",
+              "causality"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "页面字段只覆盖部分会话时，如何报告已观察热点和未知残差？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-device-population",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "项目没有设备档位映射和异常阈值，能否直接认定某型号存在兼容故障？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得用设备事件条数代替会话级异常率。",
+      "测试设备、模拟器和重装会话未按项目规则处理时不得外推。",
+      "错误签名共现不等于技术根因。",
+      "修复效果只能由获批灰度或版本对照验证。"
+    ],
+    "formulas": [
+      {
+        "denominator": "同切片、同窗口内满足活跃与版本条件的去重合格会话数。",
+        "expression": "rate_s = distinct_affected_sessions_s / distinct_eligible_sessions_s",
+        "formula_id": "affected-session-rate",
+        "interpretation": "比例描述返回会话内的观测异常率，不代表全部设备人口，也不证明候选机制导致异常。",
+        "numerator": "切片内至少发生一次目标性能事件的去重会话数。",
+        "requires_project_calibration": [
+          "performance-thresholds",
+          "device-tier-map"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "按会话去重计数",
+            "definition": "发生目标性能异常的会话集合。",
+            "distinct_by": "session-id",
+            "symbol": "distinct_affected_sessions"
+          },
+          {
+            "aggregation": "按会话去重计数",
+            "definition": "进入可观测页面且满足项目排除规则的会话集合。",
+            "distinct_by": "session-id",
+            "symbol": "distinct_eligible_sessions"
+          }
+        ],
+        "window": "版本当前窗与可比基准窗，灰度和全量阶段不混合。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "experiment",
+      "target": "experiment://project/device-performance-remediation"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定性能事件、设备分类、会话去重和版本发布窗口，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集性能返回行、会话量、页面路径和错误签名聚类，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算会话级异常率、相对基准变化和返回切片贡献，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿设备兼容性集中与应用范围回归两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成性能热点、影响覆盖、候选机制和验证计划，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "已存在崩溃、卡顿、帧率或加载时长的受治理事件，并需要多维定位。",
+        "新版本上线后需要比较设备兼容性和页面级性能回归。"
+      ],
+      "not_applicable": [
+        "只提供未结构化日志且无法绑定设备、版本、页面或会话。",
+        "需要直接修改客户端代码、发布版本或保证修复效果。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "returned-event-metric-observation"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],

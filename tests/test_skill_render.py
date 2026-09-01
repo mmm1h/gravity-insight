@@ -62,9 +62,16 @@ class SkillRenderTests(unittest.TestCase):
         self.assertEqual({"name", "description", "metadata"}, frontmatter_keys)
         self.assertIn("  gravity-runtime-requires: ", files["SKILL.md"])
         self.assertEqual(
-            {"SKILL.md", "references/GUIDE.md", "references/SCHEMA.json", "references/CLAIMS.md"},
+            {
+                "SKILL.md",
+                "references/GUIDE.md",
+                "references/SCHEMA.json",
+                "references/CLAIMS.md",
+                "references/EXAMPLES.md",
+            },
             set(files),
         )
+        self.assertIn("# Run Examples", files["references/EXAMPLES.md"])
         self.assertNotIn("scripts/", repr(files))
         self.assertFalse(export["network_called"])
 

@@ -27,6 +27,12 @@ _COMPACT_IDENTITY = re.compile(
     r"^(?P<namespace>[a-z][a-z0-9.-]*)/(?P<skill_id>[a-z0-9-]+)@(?P<version>[0-9A-Za-z.-]+)$"
 )
 _AVAILABLE_METHOD_DEPENDENCY_STATUSES = frozenset({"available", "optional"})
+_EXECUTION_BLOCKING_METHOD_DEPENDENCY_STATUSES = frozenset({"unavailable"})
+_RUN_EXAMPLE_STATUSES = {
+    "success": frozenset({"success"}),
+    "empty_or_partial": frozenset({"empty", "partial"}),
+    "blocked_or_gap": frozenset({"blocked", "gap"}),
+}
 
 
 class SkillContractError(AgentRuntimeContractError):
@@ -133,9 +139,16 @@ def validate_method_structure(manifest: Mapping[str, Any]) -> list[str]:
     _unique_method_ids(
         method["examples"]["eval_cases"], "eval_id", "Eval cases", errors
     )
+    _unique_method_ids(
+        method["examples"]["run_examples"],
+        "example_id",
+        "run examples",
+        errors,
+    )
     _validate_method_step_dependencies(method["procedure"], errors)
     _validate_method_formula_calibrations(method, errors)
     _validate_method_eval_references(manifest, method, errors)
+    _validate_method_run_examples(manifest, method, errors)
     _validate_method_dependency_status(manifest, method, errors)
     return errors
 
@@ -191,6 +204,110 @@ def _validate_method_eval_references(
             )
 
 
+def _validate_method_run_examples(
+    manifest: Mapping[str, Any], method: Mapping[str, Any], errors: list[str]
+) -> None:
+    sections = {item["section_id"] for item in method["result"]["sections"]}
+    allowed = set(manifest["claim_policy"]["allowed"])
+    forbidden = set(manifest["claim_policy"]["forbidden"])
+    selectors = {
+        item["selector"] for item in manifest["capability_dependencies"]
+    }
+    examples = method["examples"]["run_examples"]
+    scenarios = {item["scenario"] for item in examples}
+    if scenarios != set(_RUN_EXAMPLE_STATUSES):
+        errors.append(
+            "Method run examples must cover success, empty_or_partial, and "
+            "blocked_or_gap scenarios"
+        )
+    for example in examples:
+        _validate_method_run_example(
+            example,
+            selectors=selectors,
+            sections=sections,
+            allowed=allowed,
+            forbidden=forbidden,
+            errors=errors,
+        )
+
+
+def _validate_method_run_example(
+    example: Mapping[str, Any],
+    *,
+    selectors: set[str],
+    sections: set[str],
+    allowed: set[str],
+    forbidden: set[str],
+    errors: list[str],
+) -> None:
+    identity = example["example_id"]
+    expected = example["expected"]
+    _validate_run_example_selector(identity, example["selector"], selectors, errors)
+    _validate_run_example_references(
+        identity,
+        expected,
+        sections=sections,
+        allowed=allowed,
+        forbidden=forbidden,
+        errors=errors,
+    )
+    _validate_run_example_outcome(identity, example, errors)
+
+
+def _validate_run_example_selector(
+    identity: str,
+    selector: Any,
+    selectors: set[str],
+    errors: list[str],
+) -> None:
+    if selector is None and selectors:
+        errors.append(f"Method run example {identity} omits a declared selector")
+    elif selector is not None and selector not in selectors:
+        errors.append(
+            f"Method run example {identity} references an undeclared selector"
+        )
+
+
+def _validate_run_example_references(
+    identity: str,
+    expected: Mapping[str, Any],
+    *,
+    sections: set[str],
+    allowed: set[str],
+    forbidden: set[str],
+    errors: list[str],
+) -> None:
+    checks = (
+        ("sections", sections, "an unknown result section"),
+        ("allowed_claims", allowed, "an undeclared allowed claim"),
+        ("forbidden_claims", forbidden, "an undeclared forbidden claim"),
+    )
+    for key, declared, message in checks:
+        if not set(expected[key]).issubset(declared):
+            errors.append(f"Method run example {identity} references {message}")
+
+
+def _validate_run_example_outcome(
+    identity: str,
+    example: Mapping[str, Any],
+    errors: list[str],
+) -> None:
+    expected = example["expected"]
+    scenario = example["scenario"]
+    if expected["status"] not in _RUN_EXAMPLE_STATUSES[scenario]:
+        errors.append(
+            f"Method run example {identity} status does not match its scenario"
+        )
+    if expected["status"] != "success" and not expected["reason_codes"]:
+        errors.append(
+            f"Method run example {identity} non-success outcome needs a reason code"
+        )
+    if scenario == "blocked_or_gap" and expected["network_called"]:
+        errors.append(
+            f"Method run example {identity} blocked/gap preflight must use zero network"
+        )
+
+
 def _declared_method_dependencies(
     manifest: Mapping[str, Any],
 ) -> set[tuple[str, str]]:
@@ -230,13 +347,13 @@ def _validate_method_dependency_status(
         )
     if (
         any(
-            row["status"] not in _AVAILABLE_METHOD_DEPENDENCY_STATUSES
+            row["status"] in _EXECUTION_BLOCKING_METHOD_DEPENDENCY_STATUSES
             for row in rows
         )
         and manifest["readiness"] != "blocked"
     ):
         errors.append(
-            "Skill with unresolved Method dependencies must declare blocked readiness"
+            "Skill with unavailable Runtime Method dependencies must declare blocked readiness"
         )
 
 

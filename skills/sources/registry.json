@@ -771,14 +771,14 @@
       "source_url": "https://www.thinkingai.cn/skills/data-integration-assistant/"
     },
     {
-      "authorship_evidence": "not_applicable",
+      "authorship_evidence": "independent_rewrite_reviewed",
       "content_sha256": "7c04286c61279c00f2d3b9c9cd7a4b78d4f49d466d9a3aa948aac5e03d7a2355",
-      "future_skill_uri": null,
-      "independent_authorship": "not_applicable",
-      "license_review": "blocked",
-      "mapping_kind": "out_of_scope_alternative",
+      "future_skill_uri": "skill://gravity.core/user-id-binding-diagnosis@1.0.0",
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
       "opaque_id": "c3d9990ab57d9aab",
-      "reason_code": "VENDOR_SPECIFIC_CAPABILITY",
+      "reason_code": null,
       "source_categories": [
         "数据分析",
         "异常诊断"
@@ -824,14 +824,14 @@
       "source_url": "https://www.thinkingai.cn/skills/operation-journey-canvas-creation/"
     },
     {
-      "authorship_evidence": "not_applicable",
+      "authorship_evidence": "independent_rewrite_reviewed",
       "content_sha256": "75a5455f23bf0530f4b0cb83b9b37fe4cae92ec13b2cfd4cc68481c305b0ec39",
-      "future_skill_uri": null,
-      "independent_authorship": "not_applicable",
-      "license_review": "blocked",
-      "mapping_kind": "out_of_scope_alternative",
+      "future_skill_uri": "skill://gravity.core/report-data-mismatch-diagnosis@1.0.0",
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
       "opaque_id": "d3d17b2967002c0f",
-      "reason_code": "VENDOR_SPECIFIC_CAPABILITY",
+      "reason_code": null,
       "source_categories": [
         "数据分析",
         "异常诊断"
@@ -929,14 +929,14 @@
       "source_url": "https://www.thinkingai.cn/skills/ad-delivery-analysis/"
     },
     {
-      "authorship_evidence": "not_applicable",
+      "authorship_evidence": "independent_rewrite_reviewed",
       "content_sha256": "7123c349b38a47d8b40d26a87196568dfcdb3aabdbd2c1a0f640ff8ff55a57a7",
-      "future_skill_uri": null,
-      "independent_authorship": "not_applicable",
-      "license_review": "blocked",
-      "mapping_kind": "out_of_scope_alternative",
+      "future_skill_uri": "skill://gravity.core/tracking-plan-generation@1.0.0",
+      "independent_authorship": "required",
+      "license_review": "approved",
+      "mapping_kind": "future_skill",
       "opaque_id": "ec5160a65b2d2017",
-      "reason_code": "VENDOR_SPECIFIC_CAPABILITY",
+      "reason_code": null,
       "source_categories": [
         "数据工程",
         "数据采集"
@@ -967,7 +967,7 @@
   "legal_purpose": "URL、法律/版权审查、来源版本与独立创作证明",
   "observed_at": "2026-08-24T10:21:12.565Z",
   "registry_id": "source-registry://gravity/external-methods@1",
-  "registry_sha256": "83752636a33a13c20f32cef166eac077d83f1070d4173b2381dc8093dacecb6f",
+  "registry_sha256": "2ba415c90faa69871977393ff301af9a3c232a066b2edaf846a974ca83f3b5d8",
   "schema_version": "gravity.external-method-source-registry.v1",
   "source_owner": {
     "catalog_root_url": "https://www.thinkingai.cn/skills/",

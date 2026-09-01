@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-query-plan-risk",
+      "semantics-preserving-rewrite-proposal",
+      "validated-result-equivalence"
+    ],
     "forbidden": [
       "database-change-authorized",
       "production-performance-guarantee",
       "sql-execution-authorized"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "observed-query-plan-risk",
+      "semantics-preserving-rewrite-proposal",
+      "validated-result-equivalence"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,483 @@
     "title": "SQL 性能证据评审"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "计划节点成本只用于结构瓶颈候选；没有同环境对照不把耗时变化归因于改写。"
+      ],
+      "cohort": [
+        "结果行的过滤、去重、空值和连接基数语义必须保持，不把性能改写变成业务口径变更。"
+      ],
+      "inputs": [
+        "输入包含 SQL 摘要或文本、方言、Schema 修订、参数类型、执行计划和脱敏结果契约。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "sql-dialect",
+          "subject": "方言版本、函数语义和标识符规则。"
+        },
+        {
+          "calibration_id": "partition-contract",
+          "subject": "表分区键、裁剪规则和有效窗口。"
+        },
+        {
+          "calibration_id": "equivalence-policy",
+          "subject": "列、类型、行集合、重复、顺序和数值精度的等价标准。"
+        }
+      ],
+      "time": [
+        "执行计划、表统计和 Schema 来自同一有界快照；历史计划不代表当前成本。"
+      ],
+      "unit": [
+        "扫描量使用行或字节，耗时仅比较同环境观测；估算成本不伪装成实际秒数。"
+      ]
+    },
+    "business_question": "给定方言、Schema、参数和执行计划，查询的主要结构瓶颈在哪里，哪些语义保持的候选改写可降低扫描、交换或排序成本，如何证明结果等价？",
+    "data_checks": {
+      "completeness": [
+        "SQL、方言、Schema、参数和计划来自同一版本快照。",
+        "所有主要计划节点和未知统计范围已列出。"
+      ],
+      "data_quality": [
+        "计划成本单位、基数和节点关系内部一致。",
+        "候选改写逐项核对列、类型、行集合、重复、空值和顺序语义。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/database-query-plan@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "scan-and-filter",
+          "checks": [
+            "核对分区和谓词是否可下推。",
+            "检查投影列和时间范围。"
+          ],
+          "condition": "扫描或过滤节点占主要可比较成本。",
+          "leaves": [
+            {
+              "conclusion": "提出显式分区谓词候选。",
+              "condition": "分区条件缺失、不可解析或包在阻断函数中。",
+              "exclusions": [
+                "未知分区合同不得猜字段。"
+              ],
+              "leaf_id": "partition-pruning-gap"
+            },
+            {
+              "conclusion": "提出投影裁剪或谓词前移候选。",
+              "condition": "读取无关列或高选择性谓词过晚。",
+              "exclusions": [
+                "不得改变空值或函数语义。"
+              ],
+              "leaf_id": "projection-or-predicate-gap"
+            }
+          ]
+        },
+        {
+          "branch_id": "join-sort-repeat",
+          "checks": [
+            "核对连接基数和重复计算。",
+            "检查排序是否为结果合同所需。"
+          ],
+          "condition": "连接、排序、聚合或重复子计划占主要成本。",
+          "leaves": [
+            {
+              "conclusion": "提出预聚合或连接条件校正候选。",
+              "condition": "连接键非唯一或过滤后置导致行数放大。",
+              "exclusions": [
+                "没有唯一性合同不得假定一对一。"
+              ],
+              "leaf_id": "cardinality-amplification"
+            },
+            {
+              "conclusion": "提出公共子表达式或有界排序候选。",
+              "condition": "相同子表达式重复或排序超出结果需要。",
+              "exclusions": [
+                "顺序属于公开结果合同时不得删除。"
+              ],
+              "leaf_id": "redundant-compute-or-sort"
+            }
+          ]
+        }
+      ],
+      "root_question": "执行计划的主要成本是否由可安全改写的查询结构解释？"
+    },
+    "dimension_scan": {
+      "baseline": "以同一 SQL、参数、Schema 和计划快照为基准，成本单位不同的节点不得直接相加。",
+      "contribution_formula": "cost_share_n = comparable_node_cost_n / sum(comparable_returned_node_cost)",
+      "dimensions": [
+        {
+          "dimension_id": "plan-node-kind",
+          "label": "计划节点类型"
+        },
+        {
+          "dimension_id": "table-or-source",
+          "label": "表或数据源"
+        },
+        {
+          "dimension_id": "predicate-stage",
+          "label": "谓词阶段"
+        },
+        {
+          "dimension_id": "rewrite-candidate",
+          "label": "改写候选"
+        }
+      ],
+      "minimum_volume_rule": "计划未提供基数或成本的节点只做结构检查，不给成本贡献。",
+      "ranking_rule": "先按可比较成本占比，再按扫描规模、基数放大和语义改写风险排序。",
+      "residual_policy": "缺失统计、动态过滤、远端执行和未返回节点作为残差，不虚构收益。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "database-change-authorized",
+            "production-performance-guarantee",
+            "sql-execution-authorized"
+          ],
+          "question": "评审一份慢查询执行计划，指出结构瓶颈和语义保持的改写候选。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "database-change-authorized",
+            "production-performance-guarantee",
+            "sql-execution-authorized"
+          ],
+          "question": "计划缺少部分统计时，哪些结构风险可报告，哪些提速结论必须禁止？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "database-change-authorized",
+            "production-performance-guarantee",
+            "sql-execution-authorized"
+          ],
+          "question": "没有方言和结果等价合同，能否直接执行改写 SQL 验证性能？"
+        }
+      ],
+      "questions": [
+        "评审一份慢查询执行计划，指出结构瓶颈和语义保持的改写候选。",
+        "计划缺少部分统计时，哪些结构风险可报告，哪些提速结论必须禁止？",
+        "没有方言和结果等价合同，能否直接执行改写 SQL 验证性能？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-query-plan-risk",
+              "semantics-preserving-rewrite-proposal",
+              "validated-result-equivalence"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "database-change-authorized",
+              "production-performance-guarantee",
+              "sql-execution-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "评审一份慢查询执行计划，指出结构瓶颈和语义保持的改写候选。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-query-plan-risk"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "database-change-authorized",
+              "production-performance-guarantee",
+              "sql-execution-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "计划缺少部分统计时，哪些结构风险可报告，哪些提速结论必须禁止？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "database-change-authorized",
+              "production-performance-guarantee",
+              "sql-execution-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有方言和结果等价合同，能否直接执行改写 SQL 验证性能？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得执行输入 SQL、EXPLAIN ANALYZE 或任何数据库变更。",
+      "不得建议未获批准的索引或表结构变更为已授权动作。",
+      "没有结果等价合同不得声称改写正确。",
+      "计划估算不得转述为生产性能保证。"
+    ],
+    "formulas": [
+      {
+        "denominator": "返回计划中所有可比较节点的同类成本之和。",
+        "expression": "cost_share_n = node_cost_n / sum(node_cost_returned)",
+        "formula_id": "plan-cost-share",
+        "interpretation": "占比用于定位计划热点，不等同实际运行时间，也不保证候选改写提速。",
+        "numerator": "执行计划中节点 n 的同类估算成本或有界观测成本。",
+        "requires_project_calibration": [
+          "sql-dialect",
+          "partition-contract",
+          "equivalence-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "计划值读取",
+            "definition": "目标计划节点的成本值。",
+            "distinct_by": "plan-node-id",
+            "symbol": "node_cost"
+          },
+          {
+            "aggregation": "同类成本求和",
+            "definition": "所有可比较返回节点成本总和。",
+            "distinct_by": "plan-node-id",
+            "symbol": "total_returned_node_cost"
+          }
+        ],
+        "window": "同一计划快照、参数集和统计版本。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定SQL 方言、Schema、参数、分区和结果等价合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集原查询、执行计划节点、统计摘要和候选改写静态差异，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算计划成本占比、预计扫描缩减和等价检查覆盖，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿扫描与过滤瓶颈和连接、排序或重复计算瓶颈两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成瓶颈证据、候选改写、等价验证计划和禁止执行边界，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "提供确切 SQL、方言、Schema 版本、参数契约和有界执行计划产物。",
+        "需要离线评审分区裁剪、谓词下推、重复计算、连接和排序风险。"
+      ],
+      "not_applicable": [
+        "要求 Runtime 连接生产数据库执行 SQL、创建索引或应用改写。",
+        "缺少方言、Schema 或原查询语义，无法验证候选改写等价性。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-query-plan-risk"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.core",
   "operator_dependencies": [],

@@ -43,6 +43,481 @@
     "title": "项目指标契约检查"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "归因窗口、退款回冲、跨端合并和事件发生时间选择必须作为定义的一部分对比。"
+      ],
+      "cohort": [
+        "两侧人群的入组、排除、用户身份和去重规则必须逐项列出，不默认同名即同人群。"
+      ],
+      "inputs": [
+        "输入必须包含两个分析对象的稳定身份、实现表达式、数据实体、过滤、去重、单位和负责人证据。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "metric-owner",
+          "subject": "两个指标的业务负责人和最终裁决流程。"
+        },
+        {
+          "calibration_id": "business-timezone",
+          "subject": "业务日时区、封账时间和历史回补边界。"
+        },
+        {
+          "calibration_id": "definition-effective-window",
+          "subject": "各版本定义的生效、废止和重算窗口。"
+        }
+      ],
+      "time": [
+        "对比必须固定同一业务时区、数据成熟度和有效期；历史定义按其当时版本解释。"
+      ],
+      "unit": [
+        "比例、人数、金额和次数不得直接互比；展示换算与底层计算单位分别记录。"
+      ]
+    },
+    "business_question": "两份同名或相关指标是否使用同一个业务定义；若不是，差异来自分子、分母、人群、时间、去重、归因还是版本，哪些下游引用需要治理？",
+    "data_checks": {
+      "completeness": [
+        "两个对象的定义、绑定、版本和返回范围均有证据。",
+        "下游引用扫描覆盖所有已登记消费者并标注未知范围。"
+      ],
+      "data_quality": [
+        "规范化表达式中的字段类型、单位和空值规则一致。",
+        "共同基准复算能重复得到相同结果且残差被显式保留。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/primary-analysis-metric@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "definition-equivalent",
+          "checks": [
+            "比较规范化表达式与依赖图。",
+            "在同一小范围上复算并核对返回差。"
+          ],
+          "condition": "分子、分母、人群、时间、去重、单位和归因全部等价。",
+          "leaves": [
+            {
+              "conclusion": "列为实现漂移候选，要求按同一绑定复算。",
+              "condition": "定义等价但实现表达式或物理绑定不同。",
+              "exclusions": [
+                "若绑定版本不同，不得归为数据质量问题。"
+              ],
+              "leaf_id": "implementation-drift"
+            },
+            {
+              "conclusion": "列为数据快照差异。",
+              "condition": "定义和实现等价但快照时间、回补或完整性不同。",
+              "exclusions": [
+                "若任一侧未封账，不得比较最终值。"
+              ],
+              "leaf_id": "data-snapshot-drift"
+            }
+          ]
+        },
+        {
+          "branch_id": "definition-not-equivalent",
+          "checks": [
+            "逐项建立共同基准并复算差额。",
+            "扫描同名指标的下游引用和负责人。"
+          ],
+          "condition": "至少一个核心定义要素不等价。",
+          "leaves": [
+            {
+              "conclusion": "确认同名不同义并提出区分命名。",
+              "condition": "名称相同但分子、分母或人群不同。",
+              "exclusions": [
+                "不得选择其中一个数作为所谓正确值，除非负责人完成裁决。"
+              ],
+              "leaf_id": "same-name-different-meaning"
+            },
+            {
+              "conclusion": "确认版本窗口漂移并列出受影响消费者。",
+              "condition": "定义曾相同但生效版本或历史回算窗口不同。",
+              "exclusions": [
+                "不得用当前定义解释历史窗口。"
+              ],
+              "leaf_id": "version-window-drift"
+            }
+          ]
+        }
+      ],
+      "root_question": "两个分析对象是否在相同问题、实体、范围和版本下可比？"
+    },
+    "dimension_scan": {
+      "baseline": "以调用方确认的共同业务问题和同一时间范围为基准，定义要素必须互斥记录，避免重复解释同一差额。",
+      "contribution_formula": "contribution_i = explained_difference_i / observed_absolute_difference；差异项重叠时先按有向依赖顺序消除重复。",
+      "dimensions": [
+        {
+          "dimension_id": "definition-element",
+          "label": "定义要素"
+        },
+        {
+          "dimension_id": "artifact-type",
+          "label": "分析对象类型"
+        },
+        {
+          "dimension_id": "business-owner",
+          "label": "业务负责人"
+        },
+        {
+          "dimension_id": "effective-version",
+          "label": "生效版本"
+        }
+      ],
+      "minimum_volume_rule": "没有足够返回量或无法稳定复算的差异项只列为待验证，不给数值贡献。",
+      "ranking_rule": "先按是否改变业务语义排序，再按已解释绝对差额和下游引用数降序。",
+      "residual_policy": "未解释残差必须单列；残差不为零时不得宣称差异已完全闭环。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "inferred-metric-definition",
+            "causality"
+          ],
+          "question": "运营看板和产品报表的同名指标不同，逐项解释两种口径并给出治理建议。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "inferred-metric-definition",
+            "causality"
+          ],
+          "question": "只能拿到一侧完整定义和另一侧部分 SQL 时，哪些差异可以报告，哪些必须保留为未知？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "inferred-metric-definition",
+            "causality"
+          ],
+          "question": "项目没有登记指标负责人和生效版本，能否根据字段名替团队决定统一口径？"
+        }
+      ],
+      "questions": [
+        "运营看板和产品报表的同名指标不同，逐项解释两种口径并给出治理建议。",
+        "只能拿到一侧完整定义和另一侧部分 SQL 时，哪些差异可以报告，哪些必须保留为未知？",
+        "项目没有登记指标负责人和生效版本，能否根据字段名替团队决定统一口径？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "returned-event-metric-observation"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "inferred-metric-definition",
+              "causality"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "运营看板和产品报表的同名指标不同，逐项解释两种口径并给出治理建议。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "returned-event-metric-observation"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "inferred-metric-definition",
+              "causality"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "只能拿到一侧完整定义和另一侧部分 SQL 时，哪些差异可以报告，哪些必须保留为未知？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "inferred-metric-definition",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "项目没有登记指标负责人和生效版本，能否根据字段名替团队决定统一口径？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "未取得实现表达式和负责人证据时，不得仅凭标题、字段名或报表描述推断指标定义。",
+      "不同实体、单位或人群的值不得通过简单换算伪装为可比。",
+      "定义差异本身不等于数据质量故障，也不证明任一团队计算错误。",
+      "本方法不自动重命名指标、替换 SQL 或修改下游报表。"
+    ],
+    "formulas": [
+      {
+        "denominator": "两个可比观测值之间的绝对差额；为零时只报告定义差异，不计算覆盖率。",
+        "expression": "coverage = explained_absolute_difference / observed_absolute_difference",
+        "formula_id": "definition-difference-coverage",
+        "interpretation": "覆盖率接近一只说明返回差额可由已列口径项闭合，不说明任一口径天然正确。",
+        "numerator": "以共同基准复算后，能由已证实定义要素解释的绝对差额。",
+        "requires_project_calibration": [
+          "business-timezone",
+          "definition-effective-window"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "按互斥差异项求和",
+            "definition": "分子、分母、人群、时间、去重和归因差异逐项复算的已解释绝对差额。",
+            "distinct_by": null,
+            "symbol": "explained_absolute_difference"
+          },
+          {
+            "aggregation": "绝对差",
+            "definition": "两份分析对象在共同范围下返回值的绝对差。",
+            "distinct_by": null,
+            "symbol": "observed_absolute_difference"
+          }
+        ],
+        "window": "两侧使用同一闭合窗口、时区和数据成熟度，定义版本在该窗口有效。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定两个指标的版本化定义、物理绑定和下游引用，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集实现表达式、查询返回、引用关系和定义版本，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算定义要素差异及其对观测差额的解释覆盖率，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿同义不同名、同名不同义和版本漂移三类口径路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成逐要素口径对比、差异解释和治理清单，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "看板、报表、SQL、标签、分群或虚拟属性之间出现同名指标不同值，需要解释语义差异。",
+        "指标定义将变更，需要在生效前识别负责人、版本窗口和受影响的下游消费者。"
+      ],
+      "not_applicable": [
+        "两个对象明确回答不同业务问题且调用方只需要各自结果，不需要形成统一或区分后的指标契约。",
+        "缺少任一分析对象的实现定义、查询或版本证据，只能凭名称猜测计算逻辑。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "returned-event-metric-observation"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.core",
   "operator_dependencies": [],

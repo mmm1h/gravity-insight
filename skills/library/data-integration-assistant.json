@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-contract-mismatch",
+      "validated-integration-check",
+      "bounded-remediation-step"
+    ],
     "forbidden": [
       "access-authorized",
       "deployment-complete",
       "source-schema-compatible"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "observed-contract-mismatch",
+      "validated-integration-check",
+      "bounded-remediation-step"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,483 @@
     "title": "数据集成提案评审"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "缺失项按最早负责来源端归类；下游未见数据不自动归因于客户端漏埋。"
+      ],
+      "cohort": [
+        "测试账号、自动化流量和真实灰度样本分层，不能用少数手工样本证明全路径完整。"
+      ],
+      "inputs": [
+        "输入包含采集方案版本、候选事件与属性清单、测试返回样本、来源端、身份字段、组件版本和环境。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "tracking-plan-version",
+          "subject": "候选版本绑定的权威事件与属性合同。"
+        },
+        {
+          "calibration_id": "critical-field-threshold",
+          "subject": "关键字段空值、延迟和覆盖率门槛。"
+        },
+        {
+          "calibration_id": "release-blocking-policy",
+          "subject": "类型、身份、命名和完整性问题的发布阻断等级。"
+        }
+      ],
+      "time": [
+        "测试窗口必须覆盖候选版本的关键业务路径，延迟到达和异步回调单独设成熟窗口。"
+      ],
+      "unit": [
+        "完整性按合同项计数，空值率按合格返回记录为分母，数值类型和单位必须与方案一致。"
+      ]
+    },
+    "business_question": "候选版本的事件和属性是否完整符合批准的采集方案、类型、命名、身份和生产红线；哪些缺口必须在上线前阻断？",
+    "data_checks": {
+      "completeness": [
+        "方案中的每个必需事件和属性都有覆盖状态。",
+        "关键流程、来源端和异步成熟窗口均有测试证据。"
+      ],
+      "data_quality": [
+        "类型、命名、单位、身份和时间戳逐项符合方案。",
+        "重复、空值、未知枚举和来源回读均量化并绑定样本。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/data-integration-contracts@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "implementation-missing",
+          "checks": [
+            "核对业务路径是否实际执行。",
+            "检查来源代码或配置是否存在对应调用。"
+          ],
+          "condition": "方案项在候选返回中缺失或覆盖不足。",
+          "leaves": [
+            {
+              "conclusion": "列为漏实现或调用未触发候选。",
+              "condition": "关键路径已执行但事件零返回。",
+              "exclusions": [
+                "路径执行证据缺失时不得认定漏埋。"
+              ],
+              "leaf_id": "event-not-emitted"
+            },
+            {
+              "conclusion": "列为取值或触发时机候选。",
+              "condition": "事件有返回但必需属性持续缺失或高空值。",
+              "exclusions": [
+                "异步字段未成熟时先等待封账。"
+              ],
+              "leaf_id": "required-property-missing"
+            }
+          ]
+        },
+        {
+          "branch_id": "contract-rejection",
+          "checks": [
+            "比对原始发送与接收回读。",
+            "核对首次类型、大小写和身份字段。"
+          ],
+          "condition": "项已发送但类型、命名、身份或传输合同不符合。",
+          "leaves": [
+            {
+              "conclusion": "确认合同漂移并按发布策略阻断。",
+              "condition": "字段类型或大小写与方案版本不同。",
+              "exclusions": [
+                "不得在 Runtime 中静默强转。"
+              ],
+              "leaf_id": "type-or-name-drift"
+            },
+            {
+              "conclusion": "确认身份或传输证据缺口。",
+              "condition": "来源端缺身份键或可靠传输回执。",
+              "exclusions": [
+                "没有端到端回读时不得声称数据已落地。"
+              ],
+              "leaf_id": "identity-or-delivery-gap"
+            }
+          ]
+        }
+      ],
+      "root_question": "候选版本是否在足够测试覆盖下逐项符合唯一批准的采集方案？"
+    },
+    "dimension_scan": {
+      "baseline": "以候选发布绑定的唯一采集方案版本为基准，历史版本和生产现状只作差异证据。",
+      "contribution_formula": "gap_share_s = nonconforming_required_items_s / total_nonconforming_required_items",
+      "dimensions": [
+        {
+          "dimension_id": "module",
+          "label": "业务模块"
+        },
+        {
+          "dimension_id": "source-end",
+          "label": "来源端"
+        },
+        {
+          "dimension_id": "contract-kind",
+          "label": "合同类型"
+        },
+        {
+          "dimension_id": "severity",
+          "label": "阻断等级"
+        }
+      ],
+      "minimum_volume_rule": "没有达到项目最小触发次数的事件标记样本不足，不得判定字段分布合格。",
+      "ranking_rule": "先排会导致不可恢复数据损失的类型和身份缺口，再排漏埋、触发时机、命名和高空值。",
+      "residual_policy": "未覆盖业务路径、异步未成熟记录和无法关联来源端的项作为残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "access-authorized",
+            "deployment-complete",
+            "source-schema-compatible"
+          ],
+          "question": "按批准采集方案校验候选版本的完整性、类型、命名、身份和空值率。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "access-authorized",
+            "deployment-complete",
+            "source-schema-compatible"
+          ],
+          "question": "部分关键路径没有测试样本时，哪些检查能通过，哪些必须标记未知？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "access-authorized",
+            "deployment-complete",
+            "source-schema-compatible"
+          ],
+          "question": "项目没有版本化采集方案，能否根据当前上报自动把字段定义成看起来合理的类型？"
+        }
+      ],
+      "questions": [
+        "按批准采集方案校验候选版本的完整性、类型、命名、身份和空值率。",
+        "部分关键路径没有测试样本时，哪些检查能通过，哪些必须标记未知？",
+        "项目没有版本化采集方案，能否根据当前上报自动把字段定义成看起来合理的类型？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-contract-mismatch",
+              "validated-integration-check",
+              "bounded-remediation-step"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "access-authorized",
+              "deployment-complete",
+              "source-schema-compatible"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "按批准采集方案校验候选版本的完整性、类型、命名、身份和空值率。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-contract-mismatch"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "access-authorized",
+              "deployment-complete",
+              "source-schema-compatible"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分关键路径没有测试样本时，哪些检查能通过，哪些必须标记未知？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "access-authorized",
+              "deployment-complete",
+              "source-schema-compatible"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "项目没有版本化采集方案，能否根据当前上报自动把字段定义成看起来合理的类型？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "不得从首次错误上报反向修改权威方案以让校验通过。",
+      "测试样本不覆盖关键路径时不得宣称完整。",
+      "不得把接收端无数据直接归因于客户端漏埋。",
+      "本方法不修改代码、Schema、传输配置或历史数据。"
+    ],
+    "formulas": [
+      {
+        "denominator": "候选版本采集方案中全部必需事件和属性项。",
+        "expression": "conformance = conforming_contract_items / required_contract_items",
+        "formula_id": "contract-conformance-rate",
+        "interpretation": "符合率为一只表示观察到的候选样本满足方案，不证明生产环境或所有业务路径已经完成。",
+        "numerator": "在命名、类型、来源、触发时机和必填性上均通过的必需事件或属性项。",
+        "requires_project_calibration": [
+          "tracking-plan-version",
+          "critical-field-threshold",
+          "release-blocking-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "按合同项去重计数",
+            "definition": "所有合同检查均通过的必需项。",
+            "distinct_by": "contract-item-id",
+            "symbol": "conforming_contract_items"
+          },
+          {
+            "aggregation": "按合同项去重计数",
+            "definition": "方案声明的全部必需项。",
+            "distinct_by": "contract-item-id",
+            "symbol": "required_contract_items"
+          }
+        ],
+        "window": "候选版本测试窗口，覆盖方案声明的关键流程和异步成熟期。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定采集方案、来源端、类型、身份、命名和生产红线，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集测试返回、方案清单、组件配置、来源日志和验证回读，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算合同覆盖率、字段空值率和阻断缺口优先级，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿方案实现缺失与传输或格式拒绝两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成逐项校验矩阵、责任断点、修复要求和回归清单，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "已有版本化采集方案和测试环境返回，需要做上线前合同一致性检查。",
+        "需要在 SDK、日志代理、批处理或 API 链路中定位格式和身份合同缺口。"
+      ],
+      "not_applicable": [
+        "没有权威采集方案，只想根据现有脏数据反推应有定义。",
+        "需要自动修复代码、部署代理、写入生产 Schema 或回填历史数据。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-contract-mismatch"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.core",
   "operator_dependencies": [],
