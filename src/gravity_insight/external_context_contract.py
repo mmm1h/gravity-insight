@@ -6,7 +6,7 @@ import copy
 import hashlib
 import json
 import re
-from pathlib import Path
+from pathlib import PurePosixPath, PureWindowsPath
 from typing import Any, Mapping, Sequence
 from urllib.parse import urlparse
 
@@ -129,9 +129,11 @@ def _validate_provider_transport(normalized: Mapping[str, Any]) -> None:
             raise ExternalContextContractError(
                 "PROVIDER_DESCRIPTOR_INVALID", "Subprocess transport requires a binding"
             )
-        executable = Path(str(subprocess_binding["executable"]))
-        working_directory = Path(str(subprocess_binding["working_directory"]))
-        if not executable.is_absolute() or not working_directory.is_absolute():
+        executable = str(subprocess_binding["executable"])
+        working_directory = str(subprocess_binding["working_directory"])
+        if not _is_absolute_host_path(executable) or not _is_absolute_host_path(
+            working_directory
+        ):
             raise ExternalContextContractError(
                 "PROVIDER_DESCRIPTOR_INVALID", "Subprocess paths must be absolute"
             )
@@ -501,6 +503,10 @@ def _unsafe_argument(value: Any) -> bool:
             "api_key=",
         )
     )
+
+
+def _is_absolute_host_path(value: str) -> bool:
+    return PurePosixPath(value).is_absolute() or PureWindowsPath(value).is_absolute()
 
 
 def _unique_object(values: list[tuple[str, Any]]) -> dict[str, Any]:

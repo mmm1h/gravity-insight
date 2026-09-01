@@ -108,7 +108,7 @@ raw operation。
 | 分群、订单、用户动线 | `analysis segment`、`analysis order`、`analysis user journey` |
 | 语义与派生 | `derive`、`semantic compose`、`semantics`、`operators`、`models` |
 | 经营与投放 | `reports`、`materials`、`promotion`、`attribution`、`apps` |
-| 元数据与 Workspace | `metadata`、`recipe`、[`context project`](#context-authority-and-feishu-provider-boundary) |
+| 元数据与 Workspace | `metadata`、`recipe`、[`context project`](#context-authority-and-command-provider-boundary) |
 | DAG 与方法 | `plan`、`analysis playbook`、`journey`、`capabilities` |
 | Skill 与交付控制面 | `skills`、`trusted-packs`、`action`、`experiment` |
 | 导出与诊断收据 | `export`、`receipts` |
@@ -491,8 +491,8 @@ gap 不创建/替换目标，partial 产品写入完整 partial envelope 并保�
 CLI 退出码为成功 `0`、caller `2`、upstream `3`、local `4`；组合结果按 `4 > 3 > 2 > 0` 聚合。业务
 空结果可为成功；不要用进程退出码替代 envelope 的 completeness、组件状态或 claims。
 
-<a id="context-authority-and-feishu-provider-boundary"></a>
-## Context authority and Feishu Provider boundary
+<a id="context-authority-and-command-provider-boundary"></a>
+## Context authority and declarative command Provider boundary
 
 Context 是只读 data，不能选择 Product、改变 effect、授予权限或充当指令。Repo 与外部 Context 共用
 Item/Pack/Broker，但 Provider descriptor 有意分成两份 schema：内置
@@ -514,8 +514,8 @@ Provider descriptor 的 `authority_ceiling` 是机器上限；Runtime 取 Item �
 ceiling 中较弱者。外部 `project_authoritative|canonical` 要求 reviewed + full entity/time alignment；
 `declared_intent` 允许 reviewed/observed + partial/full；untrusted 或 unaligned 一律降为
 `unverified`。binding digest 与注入 Provider digest 必须一致，Provider 不能靠 response 自提权。
-`project-repo` ceiling 固定为 `project_authoritative`；飞书计划/规范 Provider ceiling 为
-`declared_intent`。
+`project-repo` ceiling 固定为 `project_authoritative`；声明式外部命令源默认使用
+`declared_intent`，也允许更弱的 `unverified`，不能提高到 supporting/canonical。
 
 `declared_intent` 必须显式 `allow_declared_intent=true`，且不能进入
 `authority_policy.required`。只有声明的 Pack 可用来提假设，但
@@ -538,59 +538,135 @@ Broker 会在单 Pack 内按 `fact_id`、authority、content hash 和 supersessi
 machine conflict record。Pack 有 item/file、per-item byte、total byte、line 硬边界；无 host tokenizer
 时没有精确 token 预算，RPC `max_output_tokens` 目前是保守 UTF-8 byte units，不是模型 token 数。
 
-飞书载体能力以官方 API 为准：
+### Descriptor 接入
 
-| 载体 | 排期 | 埋点规范 | change/revision | 采用方式 |
-| --- | --- | --- | --- | --- |
-| Base/Bitable | 首选结构化行 | 适合结构化字典 | App/table revision、record modified time、record/field events；无统一 pull `list_changed` | 精确表/字段投影 + 完整 snapshot；后续可加 event |
-| Docx | 叙述型可用 | 首选叙述型规范 | `revision_id`，可按指定 revision 读 blocks | 精确文档/section snapshot |
-| Sheets | 常见 legacy | legacy matrix | range read 返回递增 revision | 精确 range snapshot |
-| Calendar | 已用日程维护时适合 | 不适合 | 真正的 `sync_token` 增量 | 可选专用 carrier |
-| Approval | 只适合决策/审批证据 | 不适合 | query/detail timestamps + events；所查页面未发现内容 revision | optional supporting evidence |
+`deployment.subprocess.protocol=command` 把“命令行参数 → JSON stdout”适配到现有 Provider RPC。
+新增一个 source 只提交 descriptor JSON，不新增 Python：
 
-官方证据：[Base metadata](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app/get.md)、
-[Base table revision](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table/list.md)、
-[record modified time](https://open.feishu.cn/document/docs/bitable-v1/app-table-record/search.md)、
-[Docx revision](https://open.feishu.cn/document/server-docs/docs/docs/docx-v1/document/get.md)、
-[blocks by revision](https://open.feishu.cn/document/server-docs/docs/docs/docx-v1/document/list.md)、
-[Sheets revision](https://open.feishu.cn/document/server-docs/docs/sheets-v3/data-operation/reading-a-single-range.md)、
-[Calendar sync token](https://open.feishu.cn/document/server-docs/calendar-v4/calendar-event/list.md)、
-[Approval query](https://open.feishu.cn/document/server-docs/approval-v4/approval-search/query-2.md)。
+1. 锁定绝对 `executable`、位于 `work_root` 内的绝对 `working_directory`，并保持
+   `inherits_gravity_credentials=false`；CLI 从自己的配置目录读取认证，Runtime 不读取或转存 token。
+2. 每个 route 声明一个 exact `resource_prefix`、URI 路径段数量、argv 数组和固定 Context metadata。
+   动态值只能是单个 URI 路径段，或用 `/`、`:`、`-` 连接若干路径段；不经过 shell。
+3. `capabilities.operations` 必须只有 `read`。route 的 `item_id`/`fact_id` 是调用项目 binding 使用的
+   稳定身份；一个 route 表示一个逻辑依赖。
+4. stdout 必须是严格 UTF-8 JSON；可选 `content_pointer` 只做 JSON Pointer 选取。Runtime 计算
+   content hash/revision、观察时间并走现有 Context Item 校验。
+5. 非零退出默认是 source unavailable。只有 descriptor 中“exit code + stderr JSON Pointer + exact
+   scalar value”全部匹配时才能分类为 resource unavailable；stderr 正文不进入公开结果。
 
-九字段映射：Base 排期的 `valid_time` 来自计划起止字段，Docx 埋点规范只在正文显式给出适用期时
-填写；二者的 `entity_refs` 都来自项目 binding，不能从标题猜；`effective_range` 来自项目配置而非
-modified time；`observed_at` 来自 poll；`authority=declared_intent`；`source_revision` 使用上述
-snapshot；无 previous snapshot 时 `supersedes=[]`；`sensitivity` 来自 binding；citation 使用
-App/table/record/field 或 document/revision/block ID，默认不取人员字段。
+模板只表达 exact read，不表达 shell、环境变量插值、条件/循环、任意 jq、分页聚合、`list/search`、
+多个命令编排或业务字段到 Context metadata 的自动推断。超出这些边界时，应由外部 CLI 自己提供一个
+Agent-ready JSON 命令，或继续使用完整 Provider RPC 进程。
 
-精确预配置资源的最小只读权限点：
+### 已登记命令源
 
-| scope | 用途 |
+`lark-cli.v1.json` 覆盖两个 exact URI 形状：
+
+| Context resource URI | 无 shell argv 形状 | 用途 |
+| --- | --- | --- |
+| `lark-cli://base/records/<base_token>/<table_id>` | `lark-cli base +record-list --base-token <base_token> --table-id <table_id> --limit 200 --offset 0 --format json --as user` | 排期 Base 记录第 0 页（最多 200 条） |
+| `lark-cli://docs/documents/<document_id>` | `lark-cli docs +fetch --doc <document_id> --detail simple --doc-format xml --format json --as user` | 埋点规范文档 |
+
+本机证据是 `lark-cli version 1.0.69`。两条命令的 `--help` 均实际输出 `Risk: read`。使用占位 ID
+执行 `--dry-run`（未访问真实数据）得到以下完整 JSON 部分；CLI 在 JSON 前另输出 `=== Dry Run ===`：
+
+```json
+{
+  "api": [
+    {
+      "method": "GET",
+      "url": "/open-apis/base/v3/bases/app_fixture/tables/tbl_fixture/records?limit=200\u0026offset=0"
+    }
+  ],
+  "base_token": "app_fixture",
+  "table_id": "tbl_fixture"
+}
+```
+
+```json
+{
+  "api": [
+    {
+      "desc": "OpenAPI: fetch document",
+      "method": "POST",
+      "url": "/open-apis/docs_ai/v1/documents/doxcn_fixture/fetch",
+      "body": {
+        "export_option": {
+          "export_block_id": false,
+          "export_cite_extra_data": false,
+          "export_style_attrs": false
+        },
+        "extra_param": "{\"enable_user_cite_reference_map\":true,\"return_html5_block_data\":true}",
+        "format": "xml",
+        "lang": "zh_cn"
+      }
+    }
+  ],
+  "document_id": "doxcn_fixture"
+}
+```
+
+`docs +fetch --help` 还要求 Agent 先执行
+`lark-cli skills read lark-doc references/lark-doc-fetch.md`；本趟已读取该版本配套指南，且只在确需整篇
+时使用默认 full scope。Base shortcut 没有自动分页参数，所以当前 descriptor 不声称表级完整性；需要
+超过 200 条或按 view/field/filter 投影时，须另写边界明确的 descriptor，或由外部 CLI 提供完整聚合命令。
+
+权限清单以本机 CLI schema 为准，不沿用历史或记忆中的 scope 名：
+
+| 操作 | lark-cli 命令 | schema 查询 | 需要的 scope |
+| --- | --- | --- | --- |
+| 读取排期记录 | `lark-cli base +record-list ... --format json --as user` | `lark-cli schema bitable.app_table_record.list` | **查不到**：1.0.69 返回 `Unknown service: bitable` |
+| 读取埋点文档 | `lark-cli docs +fetch ... --format json --as user` | `lark-cli schema docs_ai.documents.fetch` | **查不到**：1.0.69 返回 `Unknown service: docs_ai` |
+
+因此 descriptor 不维护 scope 表。运行时权限错误由 CLI 的结构化 stderr 分类，Agent 应运行
+`lark-cli auth status --json --verify`，并按 CLI 返回的 exact scope/hint 提示用户。这里没有足够证据
+声明这两个 shortcut 的 scope 名；升级 CLI 后也必须重新执行 schema，而不是猜测。
+
+本趟禁止访问真实资源，因此也没有证据锁定“资源不存在/无权限”的 exact 错误码；Lark descriptor 的
+`failure_rules` 保持空数组，任一非零退出会保守降级为 `source_unavailable`，不会猜成资源缺失。只有后续
+从无敏感数据的受控探测得到“exit code + stderr JSON Pointer + exact scalar”证据后，才能把该分类写入 descriptor。
+
+第二个 descriptor `gh-issues.v1.json` 使用：
+
+```text
+gh-cli://issues/repository/<owner>/<repo>/<number>
+  -> gh issue view <number> --repo <owner>/<repo> --json number,title,body,state,updatedAt,url
+```
+
+它与 Runtime 没有 Python 绑定；加入该 source 的 Python 改动数为 **0**。本机只确认
+`gh version 2.93.0` 和 descriptor/transport 契约，未读取任何 Issue。
+
+### 降级与硬失败
+
+| 情况 | 结果 |
 | --- | --- |
-| `base:table:read` | Base table metadata/revision |
-| `base:field:read` | 字段定义与 schema drift |
-| `base:record:retrieve` | 查询计划/规范记录及 modified time |
-| `docx:document:readonly` | Docx metadata/revision/blocks |
-| `wiki:node:read` | 条件项：把 exact Wiki node 解到 Docx/Base/Sheets token |
-| `sheets:spreadsheet:readonly` | 条件项：读取 legacy range |
-| `calendar:calendar.event:read` | 条件项：读取/增量同步 schedule calendar |
-| `approval:approval.list:readonly` | 条件项：查询 approval instances |
-| `approval:approval:readonly` | 条件项：详情与 instance events |
+| CLI 未安装、未登录、网络/上游不可用、circuit open | `context_gap` + `degradation.kind=source_unavailable` |
+| exact 失败规则确认资源缺失或不可访问 | `context_gap` + `degradation.kind=resource_unavailable` |
+| TTL 时间缺失/无效/超期，或 freshness model 无法证明当前 | `context_gap` + `degradation.kind=content_stale` |
+| 未登记 Provider、URI 越出 prefix、非 read、route 形状错误 | fail-closed；不附加可继续降级 |
+| call/output/token 预算、超时、取消、隔离失败、畸形 JSON | fail-closed；不附加可继续降级 |
 
-权限依据：[Base tables](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table/list.md)、
-[fields](https://open.feishu.cn/document/server-docs/docs/bitable-v1/app-table-field/list.md)、
-[records](https://open.feishu.cn/document/docs/bitable-v1/app-table-record/search.md)、
-[Docx](https://open.feishu.cn/document/server-docs/docs/docs/docx-v1/document/list.md)、
-[Wiki](https://open.feishu.cn/document/server-docs/docs/wiki-v2/space-node/get_node.md)、
-[Sheets](https://open.feishu.cn/document/server-docs/docs/sheets-v3/data-operation/reading-a-single-range.md)、
-[Calendar](https://open.feishu.cn/document/server-docs/calendar-v4/calendar-event/list.md)、
-[Approval list](https://open.feishu.cn/document/server-docs/approval-v4/approval-search/query-2.md) 与
-[detail](https://open.feishu.cn/document/server-docs/approval-v4/instance/get.md)。不取 people 字段就不申请
-Contacts scope。API scope 之外，应用/用户仍须被授予 exact resource access；token/ID 留在调用项目
-binding，不进入 Runtime contract。
+降级不是静默空结果。实际 envelope 形状如下：
 
-生产选择现有 `subprocess` transport：隔离飞书凭据、只允许 exact prefix、声明
-`open.feishu.cn:443` egress，继续受 RPC call/concurrency/timeout/output/circuit 约束；不向外部 enum
-新增 `builtin`。`external_context_provider.FeishuFixtureContextProvider` 是现有模块内的无凭据 Host
-fixture，走同一 RPC Guard 并实现 `describe/list/search/read/list_changed/metrics`；它不调用飞书、不是
-真实 SDK，也不是 Registry。
+```json
+{
+  "status": "context_gap",
+  "ok": false,
+  "reason_codes": ["PROVIDER_RPC_UNAVAILABLE"],
+  "context_items": [],
+  "degradation": {
+    "schema_version": "gravity.command-source-degradation.v1",
+    "kind": "source_unavailable",
+    "cause": "command_not_found",
+    "missing": "lark-cli executable, login, or network access",
+    "message": "The external command source is currently unavailable; no empty-data claim was produced.",
+    "user_actions": ["Install lark-cli and run `lark-cli doctor`."],
+    "continuation": "supplemental_context_only",
+    "authority_ceiling": "declared_intent"
+  }
+}
+```
+
+`continuation=supplemental_context_only` 的安全依据是 command source 的 ceiling 不高于
+`declared_intent`：它只能补充计划/规范或形成假设，缺失不会把核心代码/受控数据查询变成相反事实。
+Agent 必须转述缺什么、原因和 `user_actions`；不能把 Context Gap 说成“没有数据”。
