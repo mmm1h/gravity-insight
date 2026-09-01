@@ -11,7 +11,11 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "proposed-payment-funnel",
+      "validated-funnel-structure",
+      "bounded-window-comparison"
+    ],
     "forbidden": [
       "dashboard-write-authorized",
       "inferred-step-definition",
@@ -39,6 +43,490 @@
     "title": "支付漏斗产物提案"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "漏斗草案用于测量，不宣称某配置会提升转化。"
+      ],
+      "cohort": [
+        "合格人群、测试账号、重复进入和首次或任意转化规则由项目定义。"
+      ],
+      "inputs": [
+        "输入含业务问题、真实事件、实体键、步骤顺序、窗口、筛选、关联属性和分组。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "payment-journey",
+          "subject": "项目付费需求与真实事件绑定。"
+        },
+        {
+          "calibration_id": "funnel-window",
+          "subject": "主窗口、影子窗口和时区。"
+        },
+        {
+          "calibration_id": "funnel-entity",
+          "subject": "实体、去重、关联属性和重复进入规则。"
+        }
+      ],
+      "time": [
+        "窗口反映项目决策周期，业务时区和边界包含关系明确。"
+      ],
+      "unit": [
+        "步骤人数按同一稳定实体去重，金额不进入转化人数分母。"
+      ]
+    },
+    "business_question": "为一个明确付费问题设计的漏斗草案是否有可观察、互斥且顺序清晰的步骤、合理窗口、关联属性、分组和验收对照，哪些项目绑定仍缺失？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "analysis.query.spec:event",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/payment-funnel@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "step-definition-gap",
+          "checks": [
+            "从业务问题反推状态变化。",
+            "核对成功和失败语义。"
+          ],
+          "condition": "步骤模糊、重复或无法唯一绑定事件。",
+          "leaves": [
+            {
+              "conclusion": "要求明确漏斗人群起点。",
+              "condition": "入口用页面浏览替代真实需求或资格。",
+              "exclusions": [
+                "不得从通用模板猜入口。"
+              ],
+              "leaf_id": "ambiguous-entry"
+            },
+            {
+              "conclusion": "要求锁定成功事实来源。",
+              "condition": "支付开始、客户端成功和服务端确认混用。",
+              "exclusions": [
+                "不得自动选择事件。"
+              ],
+              "leaf_id": "ambiguous-success"
+            }
+          ]
+        },
+        {
+          "branch_id": "window-or-correlation-gap",
+          "checks": [
+            "设计主窗口与影子窗口。",
+            "核对实体和关联属性。"
+          ],
+          "condition": "步骤有效但窗口、关联、筛选或重复进入语义不明确。",
+          "leaves": [
+            {
+              "conclusion": "保留影子漏斗做敏感性验证。",
+              "condition": "不同合理窗口显著改变业务含义。",
+              "exclusions": [
+                "不得称某窗口最优。"
+              ],
+              "leaf_id": "window-sensitive"
+            },
+            {
+              "conclusion": "报告结构冲突。",
+              "condition": "关联属性或全局筛选与问题冲突。",
+              "exclusions": [
+                "不得静默移除约束。"
+              ],
+              "leaf_id": "correlation-or-filter-conflict"
+            }
+          ]
+        }
+      ],
+      "root_question": "每个步骤是否代表一个唯一可观察状态变化，并共同回答同一业务问题？"
+    },
+    "dimension_scan": {
+      "baseline": "以获批业务问题和最小完整路径为基准。",
+      "contribution_formula": "gap_share_s = missing_or_ambiguous_contracts_s / total_missing_or_ambiguous_contracts",
+      "dimensions": [
+        {
+          "dimension_id": "step",
+          "label": "漏斗步骤"
+        },
+        {
+          "dimension_id": "window-variant",
+          "label": "窗口方案"
+        },
+        {
+          "dimension_id": "segment",
+          "label": "分组维度"
+        },
+        {
+          "dimension_id": "binding-kind",
+          "label": "绑定类型"
+        }
+      ],
+      "minimum_volume_rule": "缺少入口或成功终点时直接 Gap，不计算覆盖。",
+      "ranking_rule": "先排无法观测和成功语义冲突，再排窗口、关联和分组缺口。",
+      "residual_policy": "真实事件名、枚举和未决窗口保留为待填模板。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "dashboard-write-authorized",
+            "inferred-step-definition",
+            "saved-analysis-created"
+          ],
+          "question": "从项目付费问题生成步骤、窗口、关联、分组和影子对照漏斗草案。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "dashboard-write-authorized",
+            "inferred-step-definition",
+            "saved-analysis-created"
+          ],
+          "question": "部分事件绑定未确认时如何输出待填结构？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "dashboard-write-authorized",
+            "inferred-step-definition",
+            "saved-analysis-created"
+          ],
+          "question": "没有项目真实事件，能否按行业模板直接创建线上漏斗？"
+        }
+      ],
+      "questions": [
+        "从项目付费问题生成步骤、窗口、关联、分组和影子对照漏斗草案。",
+        "部分事件绑定未确认时如何输出待填结构？",
+        "没有项目真实事件，能否按行业模板直接创建线上漏斗？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "proposed-payment-funnel",
+              "validated-funnel-structure",
+              "bounded-window-comparison"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "inferred-step-definition",
+              "saved-analysis-created"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "从项目付费问题生成步骤、窗口、关联、分组和影子对照漏斗草案。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "proposed-payment-funnel"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "inferred-step-definition",
+              "saved-analysis-created"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分事件绑定未确认时如何输出待填结构？",
+          "scenario": "empty_or_partial",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "inferred-step-definition",
+              "saved-analysis-created"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有项目真实事件，能否按行业模板直接创建线上漏斗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得使用厂商预置事件名代替项目真实绑定。",
+      "漏斗结构完整不等于报表已创建。",
+      "不得自动保存、回填或修改线上模型。",
+      "窗口建议必须由影子对照验证。"
+    ],
+    "formulas": [
+      {
+        "denominator": "业务问题要求的全部步骤数。",
+        "expression": "coverage = valid_bound_steps / required_steps",
+        "formula_id": "funnel-structure-coverage",
+        "interpretation": "覆盖率为一表示结构可评审，不代表线上已创建或数据已回填。",
+        "numerator": "绑定唯一事件、成功状态、实体和触发时点的合法步骤数。",
+        "requires_project_calibration": [
+          "payment-journey",
+          "funnel-window",
+          "funnel-entity"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "步骤计数",
+            "definition": "所有必需合同均明确的步骤。",
+            "distinct_by": "step-id",
+            "symbol": "valid_bound_steps"
+          },
+          {
+            "aggregation": "步骤计数",
+            "definition": "获批业务问题需要的全部步骤。",
+            "distinct_by": "step-id",
+            "symbol": "required_steps"
+          }
+        ],
+        "window": "同一漏斗草案修订版。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成漏斗草案；创建、保存、回填和修改分析必须由独立受治理 Action 明确授权。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "action",
+      "target": "action://project/payment-funnel-review"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定付费问题、步骤事件、窗口、实体和筛选合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集事件目录、步骤可达性和草案图，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算路径覆盖和窗口敏感性，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿步骤定义缺口与窗口或关联语义缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成漏斗草案、影子对照、验收用例和缺口，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目已定义付费需求、商城、商品、支付开始和支付成功等真实事件。",
+        "需要生成可评审的漏斗结构和影子窗口对照，而非直接创建报表。"
+      ],
+      "not_applicable": [
+        "步骤只能用模糊状态描述，无法绑定事件和成功语义。",
+        "要求自动创建、保存、回填或修改线上分析。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "proposed-payment-funnel"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],

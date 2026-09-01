@@ -2,13 +2,21 @@
   "artifact_kind": "skill",
   "capability_dependencies": [],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-daily-community-change",
+      "returned-daily-topic",
+      "qualified-community-alert"
+    ],
     "forbidden": [
       "causality",
       "complete-community-population",
       "instruction-authority"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "observed-daily-community-change",
+      "returned-daily-topic",
+      "qualified-community-alert"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -32,6 +40,490 @@
     "title": "社区每日证据摘要"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "公告、版本和活动只作为 Context，不称为变化原因。"
+      ],
+      "cohort": [
+        "重复跨发、机器人、删除内容和内部账号按项目政策处理。"
+      ],
+      "inputs": [
+        "输入含来源、内容 ID、时间、主题、情感、互动和风险分类。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "daily-cutoff",
+          "subject": "业务日时区、封账时间和迟到内容处理。"
+        },
+        {
+          "calibration_id": "daily-alert-threshold",
+          "subject": "量、情感、主题和风险的日度变化门槛。"
+        },
+        {
+          "calibration_id": "community-risk-policy",
+          "subject": "产品预警与合规风险的分类和升级责任。"
+        }
+      ],
+      "time": [
+        "日报按项目业务日闭合，并与星期结构或活动日可比基线比较。"
+      ],
+      "unit": [
+        "数量按去重内容计数，情感和主题占比以有效分类内容为分母。"
+      ]
+    },
+    "business_question": "在一个完整业务日内，社区内容量、情感、主题和风险相对可比基线发生了哪些观测变化，哪些信号值得进入次日跟进？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "identity": "operator://gravity/sentiment-aggregation@1",
+        "kind": "operator",
+        "reason_code": "OPERATOR_UNAVAILABLE",
+        "status": "unavailable"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/community-daily@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "qualified-daily-change",
+          "checks": [
+            "定位主要来源和主题贡献。",
+            "核对可追溯内容证据。"
+          ],
+          "condition": "数据可比且量、情感或主题变化越过阈值。",
+          "leaves": [
+            {
+              "conclusion": "报告当日热点及返回贡献。",
+              "condition": "少数主题解释主要内容增量。",
+              "exclusions": [
+                "不得称全网趋势。"
+              ],
+              "leaf_id": "topic-surge"
+            },
+            {
+              "conclusion": "报告日度预警候选。",
+              "condition": "情感或风险结构显著变化。",
+              "exclusions": [
+                "不得自动升级或处置。"
+              ],
+              "leaf_id": "sentiment-or-risk-shift"
+            }
+          ]
+        },
+        {
+          "branch_id": "coverage-or-calendar-effect",
+          "checks": [
+            "比较来源覆盖。",
+            "核对活动、版本和星期结构。"
+          ],
+          "condition": "变化与来源缺失、封账或特殊日历重合。",
+          "leaves": [
+            {
+              "conclusion": "降级为 Partial。",
+              "condition": "主要来源分页或采集不完整。",
+              "exclusions": [
+                "不得输出完整排名。"
+              ],
+              "leaf_id": "source-coverage-gap"
+            },
+            {
+              "conclusion": "更换或保留多个基准。",
+              "condition": "基准日与当日事件或星期结构不可比。",
+              "exclusions": [
+                "不得按单日环比下结论。"
+              ],
+              "leaf_id": "noncomparable-day"
+            }
+          ]
+        }
+      ],
+      "root_question": "日度变化是否越过项目门槛，且不是来源覆盖或封账差异造成？"
+    },
+    "dimension_scan": {
+      "baseline": "以前一可比业务日或批准基准为基线。",
+      "contribution_formula": "contribution_s = (metric_today_s - metric_baseline_s) / sum(returned_change)",
+      "dimensions": [
+        {
+          "dimension_id": "source",
+          "label": "来源"
+        },
+        {
+          "dimension_id": "topic",
+          "label": "主题"
+        },
+        {
+          "dimension_id": "sentiment",
+          "label": "情感"
+        },
+        {
+          "dimension_id": "risk-class",
+          "label": "风险类别"
+        }
+      ],
+      "minimum_volume_rule": "低于最小内容量的主题只作观察，不触发预警。",
+      "ranking_rule": "先按越阈程度，再按内容量、持续性和责任类别排序。",
+      "residual_policy": "未封账、未分类、删除和未覆盖来源作为残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "生成已封账业务日的社区变化、热点、预警和合规分区摘要。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "某来源当天只返回前缀时日报应如何降级？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "causality",
+            "complete-community-population",
+            "instruction-authority"
+          ],
+          "question": "没有业务日和预警合同，能否按自然日自动宣布社区异常？"
+        }
+      ],
+      "questions": [
+        "生成已封账业务日的社区变化、热点、预警和合规分区摘要。",
+        "某来源当天只返回前缀时日报应如何降级？",
+        "没有业务日和预警合同，能否按自然日自动宣布社区异常？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "observed-daily-community-change",
+              "returned-daily-topic",
+              "qualified-community-alert"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "生成已封账业务日的社区变化、热点、预警和合规分区摘要。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "observed-daily-community-change"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "某来源当天只返回前缀时日报应如何降级？",
+          "scenario": "empty_or_partial",
+          "selector": null
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有业务日和预警合同，能否按自然日自动宣布社区异常？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        }
+      ]
+    },
+    "exclusions": [
+      "日报不生成用户原话或个人画像。",
+      "日环比不等于原因或长期趋势。",
+      "产品预警与合规风险必须分开。",
+      "本方法不发布、删帖或发送升级消息。"
+    ],
+    "formulas": [
+      {
+        "denominator": "可比基线绝对值；为零时只报告绝对变化。",
+        "expression": "change_m = (metric_today - metric_baseline) / abs(metric_baseline)",
+        "formula_id": "daily-relative-change",
+        "interpretation": "变化描述日度返回，不证明某事件导致。",
+        "numerator": "当日指标与可比基线的带符号差。",
+        "requires_project_calibration": [
+          "daily-cutoff",
+          "daily-alert-threshold",
+          "community-risk-policy"
+        ],
+        "unit": "相对比例",
+        "variables": [
+          {
+            "aggregation": "日聚合",
+            "definition": "当日去重内容量或分类占比。",
+            "distinct_by": null,
+            "symbol": "metric_today"
+          },
+          {
+            "aggregation": "日聚合",
+            "definition": "可比基准日的同口径指标。",
+            "distinct_by": null,
+            "symbol": "metric_baseline"
+          }
+        ],
+        "window": "一个已封账业务日与项目批准的可比日。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成分析结果或候选方案，不自动修改配置、数据、代码、受众、消息或生产系统。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "none",
+      "target": null
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定业务日、来源、分类和风险升级合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集当日与基准日的去重内容、主题、情感和风险返回，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算日环比、主题贡献和预警阈值，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿真实日度变化与来源覆盖或事件日混杂两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成热点、变化、预警、合规和证据摘要，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目提供完整单日社区 Context、前一可比日和统一分类规则。",
+        "需要生成有证据、可追溯且区分产品预警与合规风险的日度摘要。"
+      ],
+      "not_applicable": [
+        "数据未封账、来源覆盖不明或只提供人工摘要。",
+        "要求自动发布日报、删除内容或代表团队作处置决定。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "observed-daily-community-change"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [

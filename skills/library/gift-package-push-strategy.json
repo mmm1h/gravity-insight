@@ -11,13 +11,21 @@
     }
   ],
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "proposed-offer-matrix",
+      "observed-segment-need",
+      "bounded-contact-strategy"
+    ],
     "forbidden": [
       "automatic-contact-authorized",
       "causality",
       "guaranteed-offer-response"
     ],
-    "forbidden_without_context": []
+    "forbidden_without_context": [
+      "proposed-offer-matrix",
+      "observed-segment-need",
+      "bounded-contact-strategy"
+    ]
   },
   "context_dependencies": {
     "optional": [],
@@ -41,6 +49,497 @@
     "title": "礼包优惠触达提案"
   },
   "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "候选触发只基于明确行为，不把付费意愿或心理状态当作已知。"
+      ],
+      "cohort": [
+        "人群互斥规则、未成年人、退款、投诉和退出营销按项目政策处理。"
+      ],
+      "inputs": [
+        "输入含项目商品目录、价格、数值进度、触发行为、付费分层和渠道许可。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "offer-catalog",
+          "subject": "真实 SKU、价格、内容、有效期和库存。"
+        },
+        {
+          "calibration_id": "segment-policy",
+          "subject": "付费与进度分层、互斥和排除规则。"
+        },
+        {
+          "calibration_id": "contact-policy",
+          "subject": "同意、渠道、频控、静默期和退出规则。"
+        }
+      ],
+      "time": [
+        "行为触发、冷却、观察窗和策略有效期使用项目业务时区。"
+      ],
+      "unit": [
+        "价格使用同币种，进度和资源阈值使用项目单位。"
+      ]
+    },
+    "business_question": "在项目数值进度、付费分层、商品和联系政策已绑定后，哪些人群在什么可观测场景适合收到何种候选礼包，如何形成有频控和验证条件的矩阵草案？",
+    "data_checks": {
+      "completeness": [
+        "当前窗与基准窗、返回分页、项目依赖和未返回残差均有可复核状态。",
+        "所有进入公式、诊断树和排序的切片都能追溯到同一请求或输入产物。"
+      ],
+      "data_quality": [
+        "实体键、时间戳、单位、枚举、空值和重复记录符合锁定的项目合同。",
+        "比较期间 Semantic、Context、采集版本和计算方法未漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时停止诊断和建议，按 Empty、Partial、Error 或 Gap 输出空结论、原因码与精确补救动作。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "该 Capability 已由 Runtime 稳定合同登记；每次运行仍须通过 Trust、完整性与数据质量门禁。",
+        "identity": "composite:business_pulse",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该 URI 的定义、物理绑定、生效窗口与负责人由调用项目提供；Runtime 不从字段名推断。",
+        "identity": "metric://project/gift-offer-value@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      },
+      {
+        "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
+        "identity": "context://project/gift-campaign-policy@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "offer-fit-gap",
+          "checks": [
+            "比较历史购买档位。",
+            "核对当前进度所需资源。"
+          ],
+          "condition": "触发可达但商品价格、内容或进度不匹配。",
+          "leaves": [
+            {
+              "conclusion": "提出不同档位的待验证候选。",
+              "condition": "候选价格不在该层历史可接受区间。",
+              "exclusions": [
+                "不得称最优价格。"
+              ],
+              "leaf_id": "price-band-mismatch"
+            },
+            {
+              "conclusion": "报告内容适配缺口。",
+              "condition": "商品内容与当前进度需求不符。",
+              "exclusions": [
+                "不得编造 SKU 或奖励。"
+              ],
+              "leaf_id": "content-stage-mismatch"
+            }
+          ]
+        },
+        {
+          "branch_id": "timing-or-policy-gap",
+          "checks": [
+            "验证行为触发和冷却。",
+            "核对同意、频控和静默期。"
+          ],
+          "condition": "商品可适配但触发或联系政策不满足。",
+          "leaves": [
+            {
+              "conclusion": "报告触发绑定缺口。",
+              "condition": "场景无法由版本化事件或状态表达。",
+              "exclusions": [
+                "不得推断意愿。"
+              ],
+              "leaf_id": "trigger-not-observable"
+            },
+            {
+              "conclusion": "阻止该矩阵单元。",
+              "condition": "渠道、频控或同意冲突。",
+              "exclusions": [
+                "不得绕过政策或自动发送。"
+              ],
+              "leaf_id": "contact-policy-conflict"
+            }
+          ]
+        }
+      ],
+      "root_question": "矩阵单元是否同时满足人群需求证据、商品合同、触发可达性和联系政策？"
+    },
+    "dimension_scan": {
+      "baseline": "以项目要求覆盖的人群场景组合为基准。",
+      "contribution_formula": "gap_share_s = invalid_or_missing_cells_s / total_invalid_or_missing_cells",
+      "dimensions": [
+        {
+          "dimension_id": "segment",
+          "label": "用户分层"
+        },
+        {
+          "dimension_id": "progress-stage",
+          "label": "数值进度"
+        },
+        {
+          "dimension_id": "trigger",
+          "label": "触发场景"
+        },
+        {
+          "dimension_id": "offer",
+          "label": "候选商品"
+        }
+      ],
+      "minimum_volume_rule": "人群规模或场景频次不足时只保留设计假设。",
+      "ranking_rule": "先排同意与频控冲突，再排商品过期、价格不适配和无证据触发。",
+      "residual_policy": "未决 SKU、真实枚举和不可达触发保留为待填残差。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "complete-evidence",
+          "expected_sections": [
+            "scope-and-contract",
+            "method-output",
+            "diagnostic-path",
+            "evidence"
+          ],
+          "forbidden_claims": [
+            "automatic-contact-authorized",
+            "causality",
+            "guaranteed-offer-response"
+          ],
+          "question": "基于项目商品、分层、行为和联系政策生成可评审礼包矩阵。"
+        },
+        {
+          "eval_id": "partial-evidence",
+          "expected_sections": [
+            "data-readiness",
+            "exclusions",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "automatic-contact-authorized",
+            "causality",
+            "guaranteed-offer-response"
+          ],
+          "question": "部分 SKU 或触发绑定缺失时如何输出待填矩阵？"
+        },
+        {
+          "eval_id": "missing-contract",
+          "expected_sections": [
+            "scope-and-contract",
+            "data-readiness",
+            "claims-and-limitations"
+          ],
+          "forbidden_claims": [
+            "automatic-contact-authorized",
+            "causality",
+            "guaranteed-offer-response"
+          ],
+          "question": "没有联系政策和真实商品目录，能否直接生成并发布推送任务？"
+        }
+      ],
+      "questions": [
+        "基于项目商品、分层、行为和联系政策生成可评审礼包矩阵。",
+        "部分 SKU 或触发绑定缺失时如何输出待填矩阵？",
+        "没有联系政策和真实商品目录，能否直接生成并发布推送任务？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "complete-success",
+          "expected": {
+            "allowed_claims": [
+              "proposed-offer-matrix",
+              "observed-segment-need",
+              "bounded-contact-strategy"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "automatic-contact-authorized",
+              "causality",
+              "guaranteed-offer-response"
+            ],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<complete-approved-evidence-scope>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "基于项目商品、分层、行为和联系政策生成可评审礼包矩阵。",
+          "scenario": "success",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "partial-evidence",
+          "expected": {
+            "allowed_claims": [
+              "proposed-offer-matrix"
+            ],
+            "completeness": "prefix",
+            "forbidden_claims": [
+              "automatic-contact-authorized",
+              "causality",
+              "guaranteed-offer-response"
+            ],
+            "network_called": true,
+            "reason_codes": [
+              "METHOD_DATA_PARTIAL"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "partial"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "evidence_scope": "<bounded-returned-prefix>",
+            "project_binding_revision": "<tracked-project-revision>"
+          },
+          "question": "部分 SKU 或触发绑定缺失时如何输出待填矩阵？",
+          "scenario": "empty_or_partial",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "missing-project-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "automatic-contact-authorized",
+              "causality",
+              "guaranteed-offer-response"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "app_alias": "<project-app-alias>",
+            "baseline_window": "<comparable-baseline-window>",
+            "current_window": "<closed-current-window>",
+            "project_binding_revision": "<missing-or-unapproved>"
+          },
+          "question": "没有联系政策和真实商品目录，能否直接生成并发布推送任务？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        }
+      ]
+    },
+    "exclusions": [
+      "不得发明真实活动名、SKU、价格或奖励。",
+      "历史响应不等于未来转化保证。",
+      "不得把行为触发解释为个人心理或脆弱状态。",
+      "本方法不创建任务、不发送消息、不写入受众。"
+    ],
+    "formulas": [
+      {
+        "denominator": "项目要求覆盖的互斥人群与获批场景组合数。",
+        "expression": "coverage = valid_matrix_cells / required_segment_scenario_cells",
+        "formula_id": "strategy-cell-coverage",
+        "interpretation": "覆盖率描述草案完整性，不代表触达或转化效果。",
+        "numerator": "商品、人群、触发和频控均通过合同的矩阵单元数。",
+        "requires_project_calibration": [
+          "offer-catalog",
+          "segment-policy",
+          "contact-policy"
+        ],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "单元计数",
+            "definition": "合同完整且无政策冲突的候选单元。",
+            "distinct_by": "matrix-cell-id",
+            "symbol": "valid_matrix_cells"
+          },
+          {
+            "aggregation": "单元计数",
+            "definition": "必须评审的人群场景组合。",
+            "distinct_by": "matrix-cell-id",
+            "symbol": "required_segment_scenario_cells"
+          }
+        ],
+        "window": "同一策略修订和商品有效期。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成候选矩阵；任何受众写入、任务创建或消息发送均需独立受治理 Action 和明确授权。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有证据完整、排除项通过且调用方另行授权时，才可把建议交给受治理的后续 Action 或 Experiment。"
+      ],
+      "kind": "action",
+      "target": "action://project/gift-strategy-review"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析并锁定商品、人群、行为触发和联系政策合同，记录版本、负责人、生效范围、单位和禁止推断项。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-contracts"
+      },
+      {
+        "depends_on": [
+          "resolve-contracts"
+        ],
+        "instruction": "按相同范围收集分层规模、场景频次、历史响应和商品适配证据，保留请求或产物摘要、时间窗、返回范围和来源证据。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "collect-evidence"
+      },
+      {
+        "depends_on": [
+          "collect-evidence"
+        ],
+        "instruction": "执行完整性、口径一致性、实体去重、时间成熟度和数据质量检查；失败时停止业务结论。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "validate-evidence"
+      },
+      {
+        "depends_on": [
+          "validate-evidence"
+        ],
+        "instruction": "仅用已声明变量和项目校准参数计算矩阵覆盖、触发可达性和频控冲突，分母为零或单位冲突时不产出数值。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compute-indicators"
+      },
+      {
+        "depends_on": [
+          "compute-indicators"
+        ],
+        "instruction": "沿商品不适配与触达时机或政策缺口两条路径逐层验证条件、反例和排除项，未通过的叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": [
+          "traverse-diagnostic-tree"
+        ],
+        "instruction": "按互斥返回维度计算变化或覆盖贡献，应用最小样本门槛，并把未返回和无法归类部分保留为残差。",
+        "on_failure": "METHOD_CONTRIBUTION_UNAVAILABLE",
+        "step_id": "scan-dimensions"
+      },
+      {
+        "depends_on": [
+          "scan-dimensions"
+        ],
+        "instruction": "生成候选矩阵、频控、验证计划和授权边界，同时列出状态、证据、依赖快照、排除项、允许断言和禁止断言。",
+        "on_failure": "METHOD_RESULT_INVALID",
+        "step_id": "assemble-result"
+      }
+    ],
+    "result": {
+      "required_fields": [
+        "status",
+        "reason-codes",
+        "scope",
+        "evidence",
+        "conclusion",
+        "allowed-claims",
+        "forbidden-claims",
+        "dependency-snapshot"
+      ],
+      "sections": [
+        {
+          "section_id": "scope-and-contract",
+          "title": "范围与契约"
+        },
+        {
+          "section_id": "data-readiness",
+          "title": "数据与依赖就绪性"
+        },
+        {
+          "section_id": "method-output",
+          "title": "方法计算结果"
+        },
+        {
+          "section_id": "dimension-contribution",
+          "title": "维度扫描与贡献"
+        },
+        {
+          "section_id": "diagnostic-path",
+          "title": "诊断路径"
+        },
+        {
+          "section_id": "exclusions",
+          "title": "排除项"
+        },
+        {
+          "section_id": "evidence",
+          "title": "证据与完整性"
+        },
+        {
+          "section_id": "claims-and-limitations",
+          "title": "允许断言与限制"
+        }
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "项目提供真实商品、数值进度、行为触发、付费分层和联系政策。",
+        "需要生成可评审的分层、场景、商品和频控矩阵，而非直接触达。"
+      ],
+      "not_applicable": [
+        "缺少真实 SKU、价格、库存、同意或频控合同。",
+        "要求自动创建任务、发送消息或保证转化。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "已完成合法查询或检查但没有符合范围的记录；报告零返回事实，不把空结果解释为业务不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "保留失败阶段和稳定原因码，不使用缓存、猜测或外部叙述补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "在网络或执行前停止，列出缺失的版本化 Semantic、Context、Capability、Operator 或 Model 及补救字段。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": [
+          "proposed-offer-matrix"
+        ],
+        "behavior": "只报告明确返回范围内的观测，保留残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [],
