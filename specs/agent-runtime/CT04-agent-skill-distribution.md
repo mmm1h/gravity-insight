@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | `implementation_validated` |
+| Status | `released` |
 | Owner | `scripts/generate_skill_library.py` |
 | Canonical input | `skills/library/*.json` |
 | Architecture | `docs/architecture.md` |
@@ -11,7 +11,11 @@
 | Directive approval | `approved` |
 | External approval | Owner approved in the 2026-09-01 Agent Skill productization directive |
 | Publication target | GitHub Release `skill-library-v1` |
-| Publication state | `pending_main_merge` |
+| Publication state | `published` |
+| Release | [Gravity Skill Library v1](https://github.com/mmm1h/gravity-insight/releases/tag/skill-library-v1) |
+| Release commit | `a4c5845f1054d095fe946754ce6577905a24c9e0` |
+| Canonical source digest | `a0df443c968ab1800b90db79c1bfcfa5763ea30ad6a04cf5c7dd401b48b90fb7` |
+| Published assets | `85` (`build-manifest.json` plus 84 receipt-bound assets) |
 
 ## Requirement
 
