@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.release-compatibility.v1",
+  "type": "object",
+  "required": ["schema_version", "generated_from", "upgrade_policy", "releases"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.release-compatibility.v1"},
+    "generated_from": {
+      "type": "object",
+      "required": ["path", "compatibility_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"const": "CHANGELOG.md"},
+        "compatibility_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "upgrade_policy": {
+      "type": "object",
+      "required": [
+        "release_order",
+        "crossed_release_interval",
+        "hard_break_decision",
+        "unknown_decision",
+        "unlisted_version_decision",
+        "downgrade_decision",
+        "same_version_decision",
+        "known_no_hard_break_decision"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "release_order": {"const": "ascending_semver"},
+        "crossed_release_interval": {"const": "from_exclusive_to_inclusive"},
+        "hard_break_decision": {"const": "block"},
+        "unknown_decision": {"const": "manual_review"},
+        "unlisted_version_decision": {"const": "manual_review"},
+        "downgrade_decision": {"const": "manual_review"},
+        "same_version_decision": {"const": "allow"},
+        "known_no_hard_break_decision": {"const": "allow"}
+      }
+    },
+    "releases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/release"}
+    }
+  },
+  "$defs": {
+    "break_item": {
+      "type": "object",
+      "required": ["id", "description", "migration_guide"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)-(hard|soft)-break-[1-9][0-9]*$"
+        },
+        "description": {"type": "string", "minLength": 1},
+        "migration_guide": {
+          "type": "string",
+          "pattern": "^docs/migration/(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.md$"
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "version",
+        "release_status",
+        "release_date",
+        "breaking_status",
+        "breaking_status_reason",
+        "hard_breaks",
+        "soft_breaks",
+        "migration_guide"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "release_status": {"enum": ["unreleased", "released"]},
+        "release_date": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "breaking_status": {"enum": ["none", "breaking", "unknown"]},
+        "breaking_status_reason": {"type": "string", "minLength": 1},
+        "hard_breaks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/break_item"}
+        },
+        "soft_breaks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/break_item"}
+        },
+        "migration_guide": {
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "pattern": "^docs/migration/(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.md$"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

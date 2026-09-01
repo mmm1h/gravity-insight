@@ -1,0 +1,66 @@
+{
+  "schema_version": "gravity.release-compatibility.v1",
+  "generated_from": {
+    "path": "CHANGELOG.md",
+    "compatibility_sha256": "dd4a512353ba72d73b34cccb4a9d5f30407704e1caaef2b59fb7469003e3dede"
+  },
+  "upgrade_policy": {
+    "release_order": "ascending_semver",
+    "crossed_release_interval": "from_exclusive_to_inclusive",
+    "hard_break_decision": "block",
+    "unknown_decision": "manual_review",
+    "unlisted_version_decision": "manual_review",
+    "downgrade_decision": "manual_review",
+    "same_version_decision": "allow",
+    "known_no_hard_break_decision": "allow"
+  },
+  "releases": [
+    {
+      "version": "0.3.1",
+      "release_status": "released",
+      "release_date": "2026-08-27",
+      "breaking_status": "unknown",
+      "breaking_status_reason": "未记录。首个 tag 之前没有可用的维护型 changelog，不能可靠复原破坏性变更清单。",
+      "hard_breaks": [],
+      "soft_breaks": [],
+      "migration_guide": null
+    },
+    {
+      "version": "0.3.2",
+      "release_status": "released",
+      "release_date": "2026-08-29",
+      "breaking_status": "unknown",
+      "breaking_status_reason": "未记录。现存 tag 注释与 `v0.3.1..v0.3.2` 提交历史没有给出可可靠复原的破坏性变更清单。",
+      "hard_breaks": [],
+      "soft_breaks": [],
+      "migration_guide": null
+    },
+    {
+      "version": "0.3.3",
+      "release_status": "unreleased",
+      "release_date": null,
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.3-hard-break-1",
+          "description": "Python 导入根从 `gravity_sdk` 改为 `gravity_insight`。PyPI 分发名在 0.3.2 已经是 `gravity-insight`，`gravity` CLI 名也没有改变；只用 CLI 的消费方不受影响，但 Python import 没有兼容 shim。",
+          "migration_guide": "docs/migration/0.3.3.md"
+        },
+        {
+          "id": "0.3.3-hard-break-2",
+          "description": "安装诊断 JSON 的 `schema_version` 从 `gravity-sdk.doctor.v1` / `gravity-sdk.install-consistency.v1` 改为 `gravity-insight.doctor.v2` / `gravity-insight.install-consistency.v2`。解析这些值做分支的消费方必须同步更新；`gravity.*` 工具与门禁命名空间没有改变。",
+          "migration_guide": "docs/migration/0.3.3.md"
+        }
+      ],
+      "soft_breaks": [
+        {
+          "id": "0.3.3-soft-break-1",
+          "description": "auto-upgrade 的三个主环境变量从 `GRAVITY_SDK_*` 改为 `GRAVITY_INSIGHT_*`。0.3.3 仍读取旧名作为 fallback，新名与旧名并存时新名优先； fallback 的移除版本尚未确定。",
+          "migration_guide": "docs/migration/0.3.3.md"
+        }
+      ],
+      "migration_guide": "docs/migration/0.3.3.md"
+    }
+  ]
+}
