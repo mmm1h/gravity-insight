@@ -52,6 +52,9 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         self.assertEqual(
             "docs/migration/0.3.4.md", releases["0.3.4"]["migration_guide"]
         )
+        self.assertEqual("released", releases["0.3.4"]["release_status"])
+        self.assertEqual("unreleased", releases["0.3.5"]["release_status"])
+        self.assertEqual("none", releases["0.3.5"]["breaking_status"])
         for version in ("0.3.1", "0.3.2"):
             with self.subTest(version=version):
                 self.assertEqual("unknown", releases[version]["breaking_status"])
@@ -73,14 +76,22 @@ class ReleaseCompatibilityTests(unittest.TestCase):
 
     def test_new_hard_break_without_regeneration_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
-            changelog = Path(raw) / "CHANGELOG.md"
+            root = Path(raw)
+            changelog = root / "CHANGELOG.md"
+            migration_dir = root / "docs/migration"
+            migration_dir.mkdir(parents=True)
+            for version in ("0.3.3", "0.3.4", "0.3.5"):
+                (migration_dir / f"{version}.md").write_text(
+                    f"# Synthetic {version} migration\n", encoding="utf-8"
+                )
             source = CHANGELOG_PATH.read_text(encoding="utf-8")
-            marker = "### Breaking changes\n"
+            marker = "- None.\n"
             self.assertIn(marker, source)
             changelog.write_text(
                 source.replace(
                     marker,
-                    marker + "\n- **Hard break:** synthetic stale-contract proof.\n",
+                    "- **Hard break:** synthetic stale-contract proof.\n"
+                    "\nMigration guide: [0.3.5](docs/migration/0.3.5.md)\n",
                     1,
                 ),
                 encoding="utf-8",
@@ -89,7 +100,7 @@ class ReleaseCompatibilityTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 CompatibilityContractError, "generated contract is stale"
             ):
-                check_generated_contract(changelog_path=changelog)
+                check_generated_contract(root=root, changelog_path=changelog)
 
     def test_offline_wheel_contains_exact_contract(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
