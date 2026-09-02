@@ -158,21 +158,32 @@ def _ltv_payback(
     days = [_integer(row, "day") for row in ordered]
     if len(days) != len(set(days)):
         _fail("OPERATOR_INPUT_INVALID", "payback day values are duplicated")
+    cumulative_values = [
+        _nonnegative(row, "cumulative_value") for row in ordered
+    ]
+    if any(
+        right < left
+        for left, right in zip(cumulative_values, cumulative_values[1:])
+    ):
+        _fail(
+            "OPERATOR_INPUT_INVALID",
+            "payback cumulative values must not decrease",
+        )
     payback = next(
         (
-            _integer(row, "day")
-            for row in ordered
-            if _nonnegative(row, "cumulative_value") >= cost
+            day
+            for day, cumulative_value in zip(days, cumulative_values)
+            if cumulative_value >= cost
         ),
         None,
     )
     ranked = [
         _row_result(
             row,
-            value=_nonnegative(row, "cumulative_value"),
-            contribution=_nonnegative(row, "cumulative_value") - cost,
+            value=cumulative_value,
+            contribution=cumulative_value - cost,
         )
-        for row in ordered
+        for row, cumulative_value in zip(ordered, cumulative_values)
     ]
     return _result(
         "ltv-payback-period",
@@ -285,7 +296,7 @@ def _retention_curve(
 def _sentiment(
     rows: Sequence[Mapping[str, Any]], _parameters: Mapping[str, Any]
 ) -> dict[str, Any]:
-    counts = [_nonnegative(row, "count") for row in rows]
+    counts = [Decimal(_integer(row, "count")) for row in rows]
     total = sum(counts, Decimal(0))
     if total == 0:
         _fail("OPERATOR_SAMPLE_INSUFFICIENT", "sentiment counts sum to zero")
@@ -308,7 +319,7 @@ def _sentiment(
 def _scenario(
     rows: Sequence[Mapping[str, Any]], parameters: Mapping[str, Any]
 ) -> dict[str, Any]:
-    horizon = _positive_parameter(parameters, "horizon_days")
+    horizon = _positive_integer_parameter(parameters, "horizon_days")
     ranked: list[dict[str, Any]] = []
     baseline_total = Decimal(0)
     scenario_total = Decimal(0)
@@ -436,6 +447,15 @@ def _positive_parameter(parameters: Mapping[str, Any], name: str) -> Decimal:
         _fail("OPERATOR_INPUT_INVALID", f"parameter {name} is missing")
     if value <= 0:
         _fail("OPERATOR_INPUT_INVALID", f"parameter {name} must be positive")
+    return value
+
+
+def _positive_integer_parameter(
+    parameters: Mapping[str, Any], name: str
+) -> Decimal:
+    value = _positive_parameter(parameters, name)
+    if value != value.to_integral_value():
+        _fail("OPERATOR_INPUT_INVALID", f"parameter {name} must be an integer")
     return value
 
 

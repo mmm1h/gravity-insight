@@ -99,6 +99,40 @@ class OperatorRegistryTests(unittest.TestCase):
             registry.execute(uri, inputs)["reason_codes"],
         )
 
+    def test_governed_methods_reject_invalid_method_specific_numbers(self) -> None:
+        registry = OperatorRegistry()
+        cases = (
+            (
+                "scenario-projection",
+                lambda value: value["parameters"].__setitem__(
+                    "horizon_days", 1.5
+                ),
+            ),
+            (
+                "ltv-payback-period",
+                lambda value: value["rows"][1]["values"].__setitem__(
+                    "cumulative_value", 50
+                ),
+            ),
+            (
+                "sentiment-aggregation",
+                lambda value: value["rows"][0]["values"].__setitem__(
+                    "count", 1.5
+                ),
+            ),
+        )
+        for method, mutate in cases:
+            with self.subTest(method=method):
+                uri = GOVERNED_METHOD_URIS[method]
+                artifact = registry.artifact(uri)
+                inputs = copy.deepcopy(artifact["golden"]["cases"][0]["input"])
+                mutate(inputs)
+                result = registry.execute(uri, inputs)
+                self.assertFalse(result["ok"])
+                self.assertEqual(
+                    ["OPERATOR_INPUT_INVALID"], result["reason_codes"]
+                )
+
     def test_golden_result_is_deterministic_and_observational(self) -> None:
         registry = OperatorRegistry()
         first = registry.execute(RETURNED_DIMENSION_CHANGE_URI, operator_input())
