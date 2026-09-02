@@ -258,6 +258,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             )
 
     def test_static_hub_source_points_to_release_payload(self) -> None:
+        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v2"))
         self.assertEqual("static_https", self.source["transport"])
         self.assertIsNone(self.source["git"])
         self.assertTrue(self.source["https"]["index_url"].endswith("/index.json"))

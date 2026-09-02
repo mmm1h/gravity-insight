@@ -47,7 +47,7 @@ AGENT_INDEX_SCHEMA_PATH = (
 )
 DEFAULT_OUTPUT = ROOT / "build" / "skill-hub"
 PUBLISH_BASE = (
-    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v1"
+    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v2"
 )
 _NAMESPACE = re.compile(
     r"^(?:gravity\.(?:core|game)(?:\.[a-z][a-z0-9-]*)*|"
