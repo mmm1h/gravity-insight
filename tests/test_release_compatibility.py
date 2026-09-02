@@ -59,8 +59,10 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         self.assertEqual(
             "docs/migration/0.3.5.md", releases["0.3.5"]["migration_guide"]
         )
-        self.assertEqual("unreleased", releases["0.3.6"]["release_status"])
+        self.assertEqual("released", releases["0.3.6"]["release_status"])
         self.assertEqual("none", releases["0.3.6"]["breaking_status"])
+        self.assertEqual("unreleased", releases["0.3.7"]["release_status"])
+        self.assertEqual("none", releases["0.3.7"]["breaking_status"])
         for version in ("0.3.1", "0.3.2"):
             with self.subTest(version=version):
                 self.assertEqual("unknown", releases[version]["breaking_status"])
@@ -86,18 +88,18 @@ class ReleaseCompatibilityTests(unittest.TestCase):
             changelog = root / "CHANGELOG.md"
             migration_dir = root / "docs/migration"
             migration_dir.mkdir(parents=True)
-            for version in ("0.3.3", "0.3.4", "0.3.5", "0.3.6"):
+            for version in ("0.3.3", "0.3.4", "0.3.5", "0.3.6", "0.3.7"):
                 (migration_dir / f"{version}.md").write_text(
                     f"# Synthetic {version} migration\n", encoding="utf-8"
                 )
             source = CHANGELOG_PATH.read_text(encoding="utf-8")
-            marker = "Target release: `0.3.6`\n\n### Breaking changes\n\n- None."
+            marker = "Target release: `0.3.7`\n\n### Breaking changes\n\n- None."
             self.assertIn(marker, source)
             changelog.write_text(
                 source.replace(
                     marker,
-                    "Target release: `0.3.6`\n\n"
-                    "Migration guide: [0.3.6](docs/migration/0.3.6.md)\n\n"
+                    "Target release: `0.3.7`\n\n"
+                    "Migration guide: [0.3.7](docs/migration/0.3.7.md)\n\n"
                     "### Breaking changes\n\n"
                     "- **Hard break:** synthetic stale-contract proof.",
                     1,

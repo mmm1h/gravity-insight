@@ -13,11 +13,25 @@
 
 ## [Unreleased]
 
-Target release: `0.3.6`
+Target release: `0.3.7`
 
 ### Breaking changes
 
 - None.
+
+## [0.3.6] - 2026-09-03
+
+### Breaking changes
+
+- None.
+
+### Fixed
+
+- Static HTTPS Skill Hub Sources may now declare a bounded redirect-host allowlist.
+  Runtime follows at most one HTTPS redirect to an exact declared host while retaining
+  response-size and artifact-digest checks. This makes GitHub Release-backed Sources
+  usable without enabling arbitrary redirects; `skill-library-v4` is the corrected
+  immutable publication channel.
 
 ## [0.3.5] - 2026-09-02
 

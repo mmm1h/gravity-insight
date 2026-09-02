@@ -28,7 +28,17 @@
       "properties": {
         "index_url": {"type": "string", "minLength": 12, "maxLength": 2048},
         "artifact_base_url": {"type": "string", "minLength": 12, "maxLength": 2048},
-        "source_revision": {"type": "string", "pattern": "^[A-Za-z0-9._:-]+$", "maxLength": 256}
+        "source_revision": {"type": "string", "pattern": "^[A-Za-z0-9._:-]+$", "maxLength": 256},
+        "allowed_redirect_hosts": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$",
+            "maxLength": 253
+          }
+        }
       }
     },
     "limits": {

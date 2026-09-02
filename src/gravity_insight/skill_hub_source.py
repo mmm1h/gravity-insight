@@ -6,8 +6,8 @@ import json
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping
-from urllib.parse import quote
+from typing import Any, Callable, Mapping, Sequence
+from urllib.parse import quote, urlsplit
 
 from . import __version__
 from .agent_runtime_contracts import canonical_digest
@@ -69,7 +69,7 @@ def sync_hub_source(
         raise SkillHubContractError(
             "HUB_SOURCE_BINDING_INVALID", "HTTPS Hub Source cannot use a Git mirror"
         )
-    return _sync_https(compiled, http_get or _https_get, runtime_version)
+    return _sync_https(compiled, http_get, runtime_version)
 
 
 def open_locked_hub_source(
@@ -97,7 +97,7 @@ def open_locked_hub_source(
             raise SkillHubContractError(
                 "HUB_SOURCE_BINDING_INVALID", "Locked HTTPS source cannot use a mirror"
             )
-        session = _sync_https(compiled, http_get or _https_get, runtime_version)
+        session = _sync_https(compiled, http_get, runtime_version)
     session.assert_reference(reference)
     return session
 
@@ -165,12 +165,21 @@ def _open_git_revision(
 
 
 def _sync_https(
-    source: Mapping[str, Any], http_get: HttpGetter, runtime_version: str
+    source: Mapping[str, Any], http_get: HttpGetter | None, runtime_version: str
 ) -> HubSourceSession:
     selected = source["https"]
     timeout = int(source["limits"]["timeout_seconds"])
+    redirect_hosts = tuple(selected.get("allowed_redirect_hosts", ()))
+    getter = http_get or (
+        lambda url, maximum, selected_timeout: _https_get(
+            url,
+            maximum,
+            selected_timeout,
+            allowed_redirect_hosts=redirect_hosts,
+        )
+    )
     index_bytes = _http_bytes(
-        http_get,
+        getter,
         str(selected["index_url"]),
         int(source["limits"]["max_index_bytes"]),
         timeout,
@@ -180,7 +189,7 @@ def _sync_https(
 
     def read(relative: str, maximum: int) -> bytes:
         encoded = quote(relative, safe="/._-")
-        return _http_bytes(http_get, base + encoded, maximum, timeout)
+        return _http_bytes(getter, base + encoded, maximum, timeout)
 
     return HubSourceSession(
         source,
@@ -254,29 +263,52 @@ def _git(root: Path, *arguments: str, maximum: int) -> bytes:
     return result.stdout
 
 
-def _https_get(url: str, maximum: int, timeout: int) -> bytes:
+def _https_get(
+    url: str,
+    maximum: int,
+    timeout: int,
+    *,
+    allowed_redirect_hosts: Sequence[str] = (),
+) -> bytes:
     import requests
 
     from .receipt import DISTRIBUTION_HTTP_KIND, perform_http_request
 
     session = requests.Session()
     session.trust_env = False
-    try:
-        response = perform_http_request(
+    response = None
+
+    def request(selected_url: str):
+        return perform_http_request(
             session.get,
-            url,
+            selected_url,
             kind=DISTRIBUTION_HTTP_KIND,
             headers={"Accept": "application/json, application/zip"},
             stream=True,
             allow_redirects=False,
             timeout=timeout,
         )
+
+    try:
+        response = request(url)
     except requests.RequestException as exc:
         session.close()
         raise SkillHubContractError(
             "HUB_SOURCE_UNAVAILABLE", "Static HTTPS source request failed"
         ) from exc
     try:
+        if response.is_redirect or response.status_code in {301, 302, 303, 307, 308}:
+            target = _allowed_redirect_target(
+                response.headers.get("Location"), allowed_redirect_hosts
+            )
+            response.close()
+            response = None
+            try:
+                response = request(target)
+            except requests.RequestException as exc:
+                raise SkillHubContractError(
+                    "HUB_SOURCE_UNAVAILABLE", "Static HTTPS redirect request failed"
+                ) from exc
         if response.status_code != 200 or response.is_redirect:
             raise SkillHubContractError(
                 "HUB_SOURCE_UNAVAILABLE", "Static HTTPS source did not return an exact artifact"
@@ -297,8 +329,40 @@ def _https_get(url: str, maximum: int, timeout: int) -> bytes:
             chunks.append(chunk)
         return b"".join(chunks)
     finally:
-        response.close()
+        if response is not None:
+            response.close()
         session.close()
+
+
+def _allowed_redirect_target(
+    location: object, allowed_redirect_hosts: Sequence[str]
+) -> str:
+    if not isinstance(location, str) or not location or len(location) > 8192:
+        raise SkillHubContractError(
+            "HUB_SOURCE_UNAVAILABLE", "Static HTTPS redirect is missing an exact target"
+        )
+    try:
+        parsed = urlsplit(location)
+        port = parsed.port
+    except ValueError as exc:
+        raise SkillHubContractError(
+            "HUB_SOURCE_UNAVAILABLE", "Static HTTPS redirect target is invalid"
+        ) from exc
+    allowed = {str(host).casefold() for host in allowed_redirect_hosts}
+    if (
+        parsed.scheme.casefold() != "https"
+        or parsed.hostname is None
+        or parsed.hostname.casefold() not in allowed
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.fragment
+        or port not in {None, 443}
+    ):
+        raise SkillHubContractError(
+            "HUB_SOURCE_UNAVAILABLE",
+            "Static HTTPS redirect target is not explicitly trusted",
+        )
+    return location
 
 
 def _http_bytes(

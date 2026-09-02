@@ -258,11 +258,15 @@ class SkillLibraryBuildTests(unittest.TestCase):
             )
 
     def test_static_hub_source_points_to_release_payload(self) -> None:
-        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v3"))
+        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v4"))
         self.assertEqual("static_https", self.source["transport"])
         self.assertIsNone(self.source["git"])
         self.assertTrue(self.source["https"]["index_url"].endswith("/index.json"))
         self.assertEqual(builder._source_digest(), self.source["https"]["source_revision"])
+        self.assertEqual(
+            ["release-assets.githubusercontent.com"],
+            self.source["https"]["allowed_redirect_hosts"],
+        )
         remote_archives = [
             item["archive"]["path"] for item in self.index["skills"]
         ] + [
