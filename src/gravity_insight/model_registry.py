@@ -13,6 +13,7 @@ from .actionable_error_values import actual_value
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
 from .model_contract import (
     ModelContractError,
+    builtin_model_artifacts,
     compile_model_artifact,
     load_model_artifact,
 )
@@ -28,18 +29,23 @@ class ModelRegistry:
 
     def __init__(
         self,
-        artifacts: Sequence[Mapping[str, Any] | str | Path] = (),
+        artifacts: Sequence[Mapping[str, Any] | str | Path] | None = None,
         *,
         operators: OperatorRegistry | None = None,
         trusted_artifact_digests: Sequence[str] = (),
         today: Callable[[], date] = date.today,
     ) -> None:
-        compiled = [
-            compile_model_artifact(item)
-            if isinstance(item, Mapping)
-            else load_model_artifact(item)
-            for item in artifacts
-        ]
+        builtin = artifacts is None
+        compiled = (
+            list(builtin_model_artifacts())
+            if builtin
+            else [
+                compile_model_artifact(item)
+                if isinstance(item, Mapping)
+                else load_model_artifact(item)
+                for item in artifacts
+            ]
+        )
         uris = [item["contract"]["uri"] for item in compiled]
         if len(uris) != len(set(uris)):
             raise ModelContractError(
@@ -52,7 +58,10 @@ class ModelRegistry:
             )
         self._artifacts = {item["contract"]["uri"]: item for item in compiled}
         self._operators = operators or OperatorRegistry()
-        self._trusted_artifact_digests = frozenset(trusted_artifact_digests)
+        trusted = set(trusted_artifact_digests)
+        if builtin:
+            trusted.update(item["digest"] for item in compiled)
+        self._trusted_artifact_digests = frozenset(trusted)
         self._today = today
 
     def list(self) -> dict[str, Any]:

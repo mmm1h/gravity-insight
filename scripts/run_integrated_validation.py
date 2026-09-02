@@ -60,6 +60,7 @@ class GateSpec:
     name: str
     command: tuple[str, ...]
     timeout_seconds: int = 300
+    allow_network: bool = False
 
 
 def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
@@ -206,6 +207,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
                 str(run_root / "sbom"),
             ),
             900,
+            True,
         ),
         GateSpec(
             "dependency_audit",
@@ -217,6 +219,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
                 str(run_root / "dependency-audit.json"),
             ),
             900,
+            True,
         ),
         GateSpec(
             "installed_wheel_surface_matrix",
@@ -291,19 +294,22 @@ def preconditions() -> dict[str, Any]:
     }
 
 
-def _gate_environment() -> dict[str, str]:
+def _gate_environment(*, allow_network: bool = False) -> dict[str, str]:
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     environment["PYTHONNOUSERSITE"] = "1"
     environment["PYTHONUTF8"] = "1"
     environment["PYTHONIOENCODING"] = "utf-8"
     environment["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"
-    # pip's negative boolean option uses "0" to activate --no-build-isolation.
-    environment["PIP_NO_BUILD_ISOLATION"] = "0"
-    environment["HTTP_PROXY"] = "http://127.0.0.1:9"
-    environment["HTTPS_PROXY"] = "http://127.0.0.1:9"
-    environment["ALL_PROXY"] = "http://127.0.0.1:9"
-    environment["NO_PROXY"] = "127.0.0.1,localhost"
+    if allow_network:
+        environment.pop("PIP_NO_BUILD_ISOLATION", None)
+    else:
+        # pip's negative boolean option uses "0" to activate --no-build-isolation.
+        environment["PIP_NO_BUILD_ISOLATION"] = "0"
+        environment["HTTP_PROXY"] = "http://127.0.0.1:9"
+        environment["HTTPS_PROXY"] = "http://127.0.0.1:9"
+        environment["ALL_PROXY"] = "http://127.0.0.1:9"
+        environment["NO_PROXY"] = "127.0.0.1,localhost"
     return environment
 
 
@@ -446,6 +452,7 @@ def run_gate(
         "timeout_seconds": gate.timeout_seconds,
         "timed_out": timed_out,
         "exit_code": exit_code,
+        "network_policy": "allowed" if gate.allow_network else "blocked",
         "status": status,
         "passed": status == "pass",
         "reason_code": summary.get("reason_code"),
@@ -593,12 +600,17 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     selected = [gate for gate in available if gate.name in set(selected_names)]
     complete_gate_set = len(selected) == len(available)
-    environment = _gate_environment()
+    offline_environment = _gate_environment()
+    network_environment = _gate_environment(allow_network=True)
     started_at = _utc_now()
     results: list[dict[str, Any]] = []
     for gate in selected:
         print(f"RUN {gate.name}", flush=True)
-        result = run_gate(gate, logs, environment)
+        result = run_gate(
+            gate,
+            logs,
+            network_environment if gate.allow_network else offline_environment,
+        )
         results.append(result)
         print(
             f"DONE {gate.name} status={result['status']} "

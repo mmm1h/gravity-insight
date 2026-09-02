@@ -1,0 +1,80 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/funnel-diagnosis@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "funnel-diagnosis",
+        "rows": [
+          {
+            "key": "view",
+            "values": {
+              "order": 1,
+              "entered": 100,
+              "reached": 80
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "payment",
+            "values": {
+              "order": 2,
+              "entered": 80,
+              "reached": 40
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "entity_count",
+        "additivity": "non_additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "funnel-diagnosis",
+        "verdict": "returned_step_loss_observed",
+        "metrics": {
+          "first_step_entered": "100",
+          "final_step_reached": "40",
+          "cumulative_conversion": "0.4",
+          "largest_loss_step": "payment"
+        },
+        "ranked_rows": [
+          {
+            "key": "payment",
+            "value": "0.5",
+            "contribution": "40",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          },
+          {
+            "key": "view",
+            "value": "0.8",
+            "contribution": "20",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          }
+        ],
+        "limitations": [
+          "Rows must already follow the project funnel definition and eligibility rules.",
+          "A returned step loss does not identify product causality."
+        ]
+      }
+    }
+  ]
+}

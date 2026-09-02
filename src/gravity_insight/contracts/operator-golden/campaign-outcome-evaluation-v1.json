@@ -1,0 +1,77 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/campaign-outcome-evaluation@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "campaign-outcome-evaluation",
+        "rows": [
+          {
+            "key": "campaign-a",
+            "values": {
+              "current": 120,
+              "reference": 100
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "campaign-b",
+            "values": {
+              "current": 80,
+              "reference": 100
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "project_outcome_unit",
+        "additivity": "additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "campaign-outcome-evaluation",
+        "verdict": "no_returned_outcome_change_observed",
+        "metrics": {
+          "current_total": "200",
+          "reference_total": "200",
+          "absolute_change": "0"
+        },
+        "ranked_rows": [
+          {
+            "key": "campaign-a",
+            "value": "120",
+            "contribution": "20",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "campaign-b",
+            "value": "80",
+            "contribution": "-20",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Only caller-gated returned outcomes are evaluated.",
+          "Observed contribution is not incremental or causal effect."
+        ]
+      }
+    }
+  ]
+}

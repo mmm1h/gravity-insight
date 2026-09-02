@@ -23,7 +23,12 @@
       "additionalProperties": false,
       "properties": {
         "kind": {"enum": ["parameters", "file", "oci"]},
-        "digest": {"$ref": "#/$defs/sha256"}
+        "digest": {"$ref": "#/$defs/sha256"},
+        "resource": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+\\.v[1-9][0-9]*\\.json$",
+          "maxLength": 128
+        }
       }
     },
     "lineage": {

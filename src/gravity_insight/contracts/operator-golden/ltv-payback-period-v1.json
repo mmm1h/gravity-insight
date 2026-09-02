@@ -1,0 +1,79 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/ltv-payback-period@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "ltv-payback-period",
+        "rows": [
+          {
+            "key": "day-7",
+            "values": {
+              "day": 7,
+              "cumulative_value": 70
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "day-14",
+            "values": {
+              "day": 14,
+              "cumulative_value": 110
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {
+          "acquisition_cost": 100
+        },
+        "unit": "currency_per_user",
+        "additivity": "non_additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "ltv-payback-period",
+        "verdict": "observed_payback_reached",
+        "metrics": {
+          "acquisition_cost": "100",
+          "observed_payback_day": "14",
+          "latest_cumulative_value": "110"
+        },
+        "ranked_rows": [
+          {
+            "key": "day-7",
+            "value": "70",
+            "contribution": "-30",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "day-14",
+            "value": "110",
+            "contribution": "10",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Payback is reported only from supplied mature cumulative-value rows.",
+          "No missing day or future value is inferred."
+        ]
+      }
+    }
+  ]
+}

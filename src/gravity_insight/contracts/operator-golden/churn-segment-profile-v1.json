@@ -1,0 +1,76 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/churn-segment-profile@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "churn-segment-profile",
+        "rows": [
+          {
+            "key": "high-friction",
+            "values": {
+              "cohort_share": 0.4,
+              "comparison_share": 0.2
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "other",
+            "values": {
+              "cohort_share": 0.6,
+              "comparison_share": 0.8
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "share",
+        "additivity": "non_additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "churn-segment-profile",
+        "verdict": "returned_feature_difference_observed",
+        "metrics": {
+          "strongest_feature": "high-friction",
+          "strongest_share_difference": "0.2"
+        },
+        "ranked_rows": [
+          {
+            "key": "high-friction",
+            "value": "2",
+            "contribution": "0.2",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "other",
+            "value": "0.75",
+            "contribution": "-0.2",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Profile rows must use the same mature cohort and comparison scope.",
+          "Feature lift is an aggregate association, never an individual cause."
+        ]
+      }
+    }
+  ]
+}

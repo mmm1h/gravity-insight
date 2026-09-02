@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.model-parameters.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "model_uri",
+    "revision",
+    "operator_uri",
+    "mode",
+    "required_parameters",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {
+      "const": "model_parameters"
+    },
+    "schema_version": {
+      "const": "gravity.model-parameters.v1"
+    },
+    "model_uri": {
+      "type": "string",
+      "pattern": "^model://.+$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "operator_uri": {
+      "type": "string",
+      "pattern": "^operator://.+$"
+    },
+    "mode": {
+      "const": "caller_bound_parameters"
+    },
+    "required_parameters": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

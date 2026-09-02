@@ -538,7 +538,7 @@
     "source_ref": "source://external-method/9b1df62ffbe5e34e",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 3,
     "known_requests_min": 2,
@@ -564,6 +564,6 @@
   "skill_id": "payment-attribution-analysis",
   "specification": "specified",
   "summary": "仅依据一个已声明的归因契约分析返回的支付维度。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

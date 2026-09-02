@@ -40,11 +40,11 @@ class SkillLibraryBuildTests(unittest.TestCase):
         self.assertEqual(self.outputs, builder.render_outputs())
 
     def test_build_contains_docs_packages_archives_and_indexes(self) -> None:
-        self.assertEqual(607, len(self.outputs))
+        self.assertEqual(693, len(self.outputs))
         self.assertEqual(43, sum(path.startswith("docs/") for path in self.outputs))
-        self.assertEqual(258, sum(path.startswith("packages/") for path in self.outputs))
+        self.assertEqual(301, sum(path.startswith("packages/") for path in self.outputs))
         self.assertEqual(
-            215,
+            258,
             sum(path.startswith("agent-skills/") for path in self.outputs),
         )
         self.assertEqual(
@@ -98,7 +98,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             if path.startswith("runtime-skill-")
         )
         with zipfile.ZipFile(io.BytesIO(archive)) as selected:
-            self.assertEqual(6, len(selected.infolist()))
+            self.assertEqual(7, len(selected.infolist()))
             for item in selected.infolist():
                 self.assertEqual((1980, 1, 1, 0, 0, 0), item.date_time)
                 self.assertEqual(zipfile.ZIP_STORED, item.compress_type)
@@ -132,6 +132,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             "references/SCHEMA.json",
             "references/CLAIMS.md",
             "references/EXAMPLES.md",
+            "references/PROJECT_BINDINGS.json",
         }
         for entry in self.agent_index["skills"]:
             with self.subTest(skill=entry["skill_uri"]):
@@ -145,6 +146,54 @@ class SkillLibraryBuildTests(unittest.TestCase):
                     self.outputs[prefix + item["path"]] for item in entry["files"]
                 )
                 self.assertNotIn(b"https://", combined)
+
+    def test_project_binding_templates_exactly_cover_project_dependencies(self) -> None:
+        semantic_rows = []
+        required_context_rows = []
+        for entry in self.agent_index["skills"]:
+            prefix = f"agent-skills/{entry['directory']}/"
+            template = json.loads(
+                self.outputs[prefix + "references/PROJECT_BINDINGS.json"]
+            )
+            manifest = next(
+                item["manifest"]
+                for item in self.index["skills"]
+                if item["skill_uri"] == entry["skill_uri"]
+            )
+            semantics = [item["uri"] for item in template["semantic_dependencies"]]
+            source_semantics = [
+                item["uri"]
+                for item in template["semantic_source_template"]["definitions"]
+            ]
+            source_bindings = [
+                item["semantic_uri"]
+                for item in template["semantic_source_template"]["bindings"]
+            ]
+            required_context = [
+                item["uri"]
+                for item in template["context_dependencies"]
+                if item["required"]
+            ]
+            optional_context = [
+                item["uri"]
+                for item in template["context_dependencies"]
+                if not item["required"]
+            ]
+            self.assertEqual(manifest["semantic_dependencies"], semantics)
+            self.assertEqual(semantics, source_semantics)
+            self.assertEqual(semantics, source_bindings)
+            self.assertEqual(
+                manifest["context_dependencies"]["required"], required_context
+            )
+            self.assertEqual(
+                manifest["context_dependencies"]["optional"], optional_context
+            )
+            semantic_rows.extend(semantics)
+            required_context_rows.extend(required_context)
+        self.assertEqual(34, len(semantic_rows))
+        self.assertEqual(30, len(set(semantic_rows)))
+        self.assertEqual(23, len(required_context_rows))
+        self.assertEqual(23, len(set(required_context_rows)))
 
     def test_agent_archive_matches_index_and_unpacked_projection(self) -> None:
         for entry in self.agent_index["skills"]:
@@ -190,15 +239,16 @@ class SkillLibraryBuildTests(unittest.TestCase):
                 _entry_for_archive(entry, tampered),
             )
 
-    def test_exportability_does_not_promote_declared_readiness(self) -> None:
+    def test_exportability_preserves_validated_executable_declarations(self) -> None:
         runtime = {item["skill_uri"]: item for item in self.index["skills"]}
-        blocked = next(
-            item for item in self.agent_index["skills"] if item["readiness"] == "blocked"
+        self.assertTrue(
+            all(
+                item["readiness"] == "executable"
+                and item["validation"] == "validated"
+                for item in self.agent_index["skills"]
+            )
         )
-        executable = next(
-            item for item in self.agent_index["skills"] if item["readiness"] == "executable"
-        )
-        for entry in (blocked, executable):
+        for entry in self.agent_index["skills"]:
             manifest = runtime[entry["skill_uri"]]["manifest"]
             self.assertEqual(manifest["readiness"], entry["readiness"])
             self.assertEqual(manifest["validation"], entry["validation"])
@@ -206,8 +256,6 @@ class SkillLibraryBuildTests(unittest.TestCase):
                 runtime[entry["skill_uri"]]["package"]["package_digest"],
                 entry["package_digest"],
             )
-        self.assertEqual("unvalidated", blocked["validation"])
-        self.assertEqual("validated", executable["validation"])
 
     def test_static_hub_source_points_to_release_payload(self) -> None:
         self.assertEqual("static_https", self.source["transport"])

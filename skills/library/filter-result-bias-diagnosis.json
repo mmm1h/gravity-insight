@@ -94,7 +94,7 @@
         "status": "available"
       },
       {
-        "evidence": "Runtime 已登记该确定性 Operator，并用 golden cases 锁定输入输出。",
+        "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
         "identity": "operator://gravity/returned-dimension-change@1",
         "kind": "operator",
         "reason_code": "DEPENDENCY_AVAILABLE",

@@ -1,0 +1,87 @@
+{
+  "artifact_kind": "operator",
+  "schema_version": "gravity.operator.v1",
+  "uri": "operator://gravity/metric-decomposition@1",
+  "version": 1,
+  "owner": "gravity-runtime/methods",
+  "lifecycle": "active",
+  "deterministic": true,
+  "method": {
+    "method_id": "metric-decomposition",
+    "revision": 1,
+    "description": "Decompose one returned metric change into explicit caller-gated components."
+  },
+  "schemas": {
+    "input": {
+      "schema_version": "gravity.operator-input.governed-method.v1",
+      "resource": "governed-method-input-v1.schema.json"
+    },
+    "output": {
+      "schema_version": "gravity.operator-result.governed-method.v1",
+      "resource": "governed-method-output-v1.schema.json"
+    }
+  },
+  "implementation": {
+    "kind": "runtime_builtin",
+    "group": "gravity.operators"
+  },
+  "assumptions": [
+    {
+      "assumption_id": "caller-gated-input",
+      "statement": "The caller has already enforced the bound Skill Semantic, completeness, Data Quality, and privacy gates."
+    },
+    {
+      "assumption_id": "returned-facts-only",
+      "statement": "The method consumes only explicit returned facts with stable evidence references."
+    }
+  ],
+  "requirements": {
+    "minimum_rows_per_window": 1,
+    "data_quality": "caller_gated",
+    "completeness": "caller_gated"
+  },
+  "safe_domain": {
+    "max_rows_per_window": 1000,
+    "max_input_bytes": 1048576,
+    "max_output_bytes": 1048576,
+    "max_dimension_key_bytes": 256,
+    "max_decimal_digits": 38
+  },
+  "unit_policy": {
+    "mode": "same_declared_unit",
+    "allowed_additivity": [
+      "additive",
+      "semi_additive",
+      "non_additive"
+    ]
+  },
+  "claim_policy": {
+    "allowed": [
+      "returned metric component change",
+      "returned arithmetic contribution share"
+    ],
+    "forbidden": [
+      "causal claim",
+      "unreturned population",
+      "guaranteed future outcome"
+    ],
+    "limitations": [
+      "Components share one metric contract.",
+      "Arithmetic contribution is not causality."
+    ]
+  },
+  "failure_reasons": [
+    "OPERATOR_INPUT_INVALID",
+    "OPERATOR_SAMPLE_INSUFFICIENT",
+    "OPERATOR_NUMERIC_INVALID",
+    "OPERATOR_ADDITIVITY_UNSUPPORTED",
+    "OPERATOR_RESOURCE_LIMIT",
+    "OPERATOR_OUTPUT_INVALID"
+  ],
+  "golden_cases": [
+    {
+      "case_id": "bounded-conformance",
+      "resource": "metric-decomposition-v1.json"
+    }
+  ]
+}

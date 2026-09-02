@@ -410,6 +410,7 @@ def _method_dependency_available(
         )
     roots = {
         "operator": Path(__file__).resolve().parent / "contracts" / "operators",
+        "model": Path(__file__).resolve().parent / "contracts" / "models",
         "semantic": Path(__file__).resolve().parent / "contracts" / "semantics",
     }
     root = roots.get(kind)

@@ -538,7 +538,7 @@
     "source_ref": "source://external-method/973432e865044ebf",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 1,
     "known_requests_min": 1,
@@ -564,6 +564,6 @@
   "skill_id": "payment-funnel-setup",
   "specification": "specified",
   "summary": "定义受治理的支付漏斗产物，不创建已保存的分析状态。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

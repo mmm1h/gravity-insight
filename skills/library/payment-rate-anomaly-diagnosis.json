@@ -121,7 +121,7 @@
         "status": "requires_project_binding"
       },
       {
-        "evidence": "Runtime 已登记确定性 returned-dimension-change Operator，只比较显式返回行。",
+        "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
         "identity": "operator://gravity/returned-dimension-change@1",
         "kind": "operator",
         "reason_code": "DEPENDENCY_AVAILABLE",
@@ -596,7 +596,7 @@
     "source_ref": "source://external-method/b6ee555d9cfac44e",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 3,
     "known_requests_min": 2,
@@ -622,6 +622,6 @@
   "skill_id": "payment-rate-anomaly-diagnosis",
   "specification": "specified",
   "summary": "以明确分子分母确认付费率异常，并用两层诊断树和返回维度贡献定位候选解释。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

@@ -7,7 +7,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_insight.model_contract import ModelContractError, compile_model_artifact
+import gravity_insight.model_contract as model_contract_module
+from gravity_insight.model_contract import (
+    ModelContractError,
+    builtin_model_artifacts,
+    compile_model_artifact,
+)
 from gravity_insight.model_registry import ModelRegistry
 from gravity_insight.operator_ids import RETURNED_DIMENSION_CHANGE_URI
 
@@ -66,9 +71,20 @@ def trusted_registry(artifact):
 
 
 class ModelRegistryTests(unittest.TestCase):
-    def test_runtime_ships_no_model_and_missing_is_explicit(self) -> None:
+    def test_runtime_ships_exact_builtin_models_and_missing_is_explicit(self) -> None:
         registry = ModelRegistry()
-        self.assertEqual(0, registry.list()["count"])
+        expected = {
+            item["contract"]["uri"] for item in builtin_model_artifacts()
+        }
+        self.assertEqual(5, registry.list()["count"])
+        self.assertEqual(
+            expected, {item["uri"] for item in registry.list()["models"]}
+        )
+        for uri in expected:
+            with self.subTest(uri=uri):
+                result = registry.evaluate(uri, at="2026-09-02")
+                self.assertEqual("approved", result["status"])
+                self.assertTrue(result["production_claims_allowed"])
 
         result = registry.evaluate(MODEL_URI, at="2026-08-22", horizon_days=7)
         self.assertEqual("missing", result["status"])
@@ -223,6 +239,28 @@ class ModelRegistryTests(unittest.TestCase):
                 result = registry.evaluate(MODEL_URI, at="2026-08-22")
         self.assertTrue(result["ok"])
         self.assertFalse(result["network_called"])
+
+    def test_builtin_parameter_resource_digest_tamper_fails_closed(self) -> None:
+        artifact = builtin_model_artifacts()[0]
+        contract = artifact["contract"]
+        resource = contract["artifact"]["resource"]
+        source_root = Path(model_contract_module.__file__).resolve().parent
+        parameters = json.loads(
+            (source_root / "contracts" / "model-parameters" / resource).read_text(
+                encoding="utf-8"
+            )
+        )
+        parameters["limitations"].append("tampered")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model_path = root / "model.json"
+            model_path.write_text(json.dumps(contract), encoding="utf-8")
+            (root / resource).write_text(json.dumps(parameters), encoding="utf-8")
+            with (
+                patch.object(model_contract_module, "_PARAMETERS_ROOT", root),
+                self.assertRaisesRegex(ModelContractError, "MODEL_ARTIFACT_INVALID"),
+            ):
+                model_contract_module._compile_builtin_model(model_path)
 
 
 if __name__ == "__main__":

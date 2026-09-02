@@ -6,6 +6,7 @@ import copy
 import json
 import re
 from datetime import date
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -19,6 +20,10 @@ from .agent_runtime_contracts import (
 
 SCHEMA_VERSION = "gravity.model-artifact.v1"
 _SCHEMA_NAME = "model-artifact-v1.schema.json"
+_PARAMETERS_SCHEMA = "model-parameters-v1.schema.json"
+_PACKAGE_ROOT = Path(__file__).resolve().parent
+_MODEL_ROOT = _PACKAGE_ROOT / "contracts" / "models"
+_PARAMETERS_ROOT = _PACKAGE_ROOT / "contracts" / "model-parameters"
 _URI = re.compile(
     r"^model://[a-z0-9.-]+/[a-z0-9./-]+@(?P<version>[1-9][0-9]*)$"
 )
@@ -74,6 +79,55 @@ def load_model_artifact(path: str | Path) -> dict[str, Any]:
             "MODEL_CONTRACT_INVALID", "Model Artifact source must be JSON"
         )
     return compile_model_artifact(load_json_object(selected, "Model Artifact"))
+
+
+def builtin_model_artifacts() -> tuple[dict[str, Any], ...]:
+    return copy.deepcopy(_cached_builtin_model_artifacts())
+
+
+@lru_cache(maxsize=1)
+def _cached_builtin_model_artifacts() -> tuple[dict[str, Any], ...]:
+    artifacts = tuple(
+        _compile_builtin_model(path) for path in sorted(_MODEL_ROOT.glob("*.json"))
+    )
+    if not artifacts:
+        raise ModelContractError(
+            "MODEL_REGISTRY_EMPTY", "Built-in Model registry is empty"
+        )
+    uris = [artifact["contract"]["uri"] for artifact in artifacts]
+    if len(uris) != len(set(uris)):
+        raise ModelContractError(
+            "MODEL_IDENTITY_CONFLICT", "Built-in Model URI is duplicated"
+        )
+    return artifacts
+
+
+def _compile_builtin_model(path: Path) -> dict[str, Any]:
+    artifact = compile_model_artifact(load_json_object(path, f"Model {path.name}"))
+    contract = artifact["contract"]
+    resource = contract["artifact"].get("resource")
+    if not isinstance(resource, str) or Path(resource).name != resource:
+        raise ModelContractError(
+            "MODEL_ARTIFACT_INVALID",
+            "Built-in Model requires a safe parameter resource",
+        )
+    parameters = load_json_object(
+        _PARAMETERS_ROOT / resource, f"Model parameters {resource}"
+    )
+    try:
+        validate_schema(parameters, _PARAMETERS_SCHEMA, "Model parameters")
+    except AgentRuntimeContractError as exc:
+        raise ModelContractError("MODEL_ARTIFACT_INVALID", str(exc)) from exc
+    if (
+        parameters["model_uri"] != contract["uri"]
+        or parameters["operator_uri"] != contract["operator_uri"]
+        or canonical_digest(parameters) != contract["artifact"]["digest"]
+    ):
+        raise ModelContractError(
+            "MODEL_ARTIFACT_INVALID",
+            "Built-in Model parameter identity or digest changed",
+        )
+    return artifact
 
 
 def _validate_evaluation(contract: Mapping[str, Any], fitting_end: date) -> None:
@@ -196,6 +250,7 @@ def _object(value: Any) -> dict[str, Any]:
 
 
 __all__ = [
+    "builtin_model_artifacts",
     "ModelContractError",
     "SCHEMA_VERSION",
     "compile_model_artifact",

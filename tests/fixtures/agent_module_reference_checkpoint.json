@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "7c13fb5d2ac7c44eea70ce5f62ae6e3b4a2e70e0ca9137ced1f21d188045934c",
-    "manual_review_sha256": "04035637151ffd73d33c2a86f037f58dbfd10a15d25529c4601fa1619a77138c",
+    "reference_evidence_sha256": "13e3ca1aa76edb3e0cc3bfc960a1cb5e1056450f21a8eed255a973642d235466",
+    "manual_review_sha256": "c3428c0c6019e6846437ca60d64689c5fb0ed57cfbbd78484ce5cc914cdb1f6d",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3068,
-    "scanned_file_count": 3061,
+    "version_controlled_file_count": 3105,
+    "scanned_file_count": 3098,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -558,6 +558,10 @@
       "evidence_kind": "patch_api_semantics"
     },
     {
+      "basis": "patch.object receives runtime object expression 'model_contract_module'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
       "basis": "patch.object receives runtime object expression 'transport_module.os'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
@@ -651,12 +655,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 273,
-    "reference_site_count": 271,
-    "manual_review_site_count": 140,
-    "reference_manual_overlap_count": 138,
+    "tracked_site_count": 277,
+    "reference_site_count": 275,
+    "manual_review_site_count": 141,
+    "reference_manual_overlap_count": 139,
     "manual_only_site_count": 2,
-    "unique_source_keys": 273,
+    "unique_source_keys": 277,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -664,10 +668,10 @@
     "reference_categories": {
       "documentation_spec": 2,
       "dynamic_import": 11,
-      "entrypoint_config": 57,
-      "manual_patch_expression": 118,
+      "entrypoint_config": 58,
+      "manual_patch_expression": 119,
       "module_qualname_dependency": 7,
-      "static_import": 71,
+      "static_import": 73,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -675,12 +679,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 118
+      "non_string_patch_expression": 119
     },
     "dispositions": {
-      "no_migration_effect": 273
+      "no_migration_effect": 277
     },
-    "sites_sha256": "1f88b8b6944508a6231bfbaf4f9b8303c38fbfa904dd2c53cf01cc91b931250e"
+    "sites_sha256": "8d7354a9ecc09b7dfb8ab38bf6d6a1e670479557b00050e4c2d61da8f513d332"
   },
   "blockers": [],
   "site_fields": [
@@ -707,7 +711,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      58,
+      59,
       {
         "kind": "none"
       }
@@ -722,7 +726,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      58,
+      59,
       {
         "kind": "none"
       }
@@ -767,7 +771,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -782,7 +786,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -797,7 +801,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -812,7 +816,7 @@
       "manual",
       "no_migration_effect",
       "root_lazy_export_owner_map_migrated",
-      60,
+      61,
       {
         "kind": "none"
       }
@@ -827,7 +831,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -842,7 +846,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -857,7 +861,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -872,7 +876,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -887,7 +891,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -902,7 +906,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -917,7 +921,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -932,7 +936,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -947,7 +951,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -962,7 +966,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -977,13 +981,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:111620:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:111703:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -992,13 +996,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:113459:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:113542:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1007,13 +1011,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:114442:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:114525:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1022,13 +1026,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:136375:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:136458:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1037,13 +1041,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:136615:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:136698:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1052,13 +1056,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:136835:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:136918:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1067,13 +1071,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:142007:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:142090:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1082,13 +1086,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:143683:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:143766:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1097,13 +1101,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:148382:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:148465:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1112,13 +1116,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:148860:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:148943:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1127,13 +1131,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:149241:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:149324:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1142,7 +1146,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1157,13 +1161,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:155888:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:155971:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1172,13 +1176,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157494:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157577:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1187,13 +1191,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157635:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:157718:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1202,13 +1206,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:161141:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:161224:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1217,13 +1221,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163159:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163242:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1232,13 +1236,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163576:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163659:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1247,13 +1251,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163752:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163835:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1262,13 +1266,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163898:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:163981:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1277,13 +1281,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:164771:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:164854:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1292,13 +1296,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:167809:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:167892:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1307,13 +1311,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168050:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168133:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1322,13 +1326,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168307:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168390:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1337,13 +1341,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168753:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:168836:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1352,13 +1356,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:170578:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:170661:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1367,13 +1371,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172536:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172652:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1382,13 +1386,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172702:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172818:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1397,13 +1401,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172840:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:172956:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1412,13 +1416,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:178796:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:178912:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1427,13 +1431,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:178924:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179040:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1442,13 +1446,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179155:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179271:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1457,13 +1461,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179478:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179594:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1472,13 +1476,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:182787:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:182903:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1487,13 +1491,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:189383:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:189499:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1502,13 +1506,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:189690:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:189806:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1517,13 +1521,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:191620:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:191988:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1532,13 +1536,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:211641:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:212009:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1547,13 +1551,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:216655:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:217023:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1562,13 +1566,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:217218:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:217586:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1577,13 +1581,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:219844:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:220212:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1592,13 +1596,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:224228:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:224596:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1607,13 +1611,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:236578:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:236979:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1622,13 +1626,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:236761:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:237162:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1637,13 +1641,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:238013:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:238414:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1652,13 +1656,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:238209:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:238610:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1667,13 +1671,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239187:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239588:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1682,13 +1686,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239427:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239828:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1697,13 +1701,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239761:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240162:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1712,13 +1716,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239954:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240355:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1727,13 +1731,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240119:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240520:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1742,13 +1746,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240336:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240737:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1757,13 +1761,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:243267:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:241013:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1772,13 +1776,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:243831:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:243976:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1787,13 +1791,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:243931:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:244540:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1802,13 +1806,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:246369:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:244640:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1817,7 +1821,22 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:247078:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "entrypoint_config",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      60,
       {
         "kind": "none"
       }
@@ -1832,7 +1851,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1847,7 +1866,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1862,7 +1881,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1937,7 +1956,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1952,7 +1971,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1967,7 +1986,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1982,7 +2001,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -1997,7 +2016,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2012,7 +2031,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2027,7 +2046,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2042,7 +2061,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2057,7 +2076,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2072,7 +2091,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2087,7 +2106,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2102,7 +2121,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2117,7 +2136,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2132,7 +2151,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2147,7 +2166,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2162,7 +2181,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2177,7 +2196,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2192,13 +2211,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/model_contract.py:12:1:from import",
+      "src/gravity_insight/model_contract.py:13:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2207,7 +2226,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2222,7 +2241,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2237,7 +2256,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2252,7 +2271,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2267,7 +2286,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      50,
+      51,
       {
         "kind": "none"
       }
@@ -2282,7 +2301,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_call_domain",
-      43,
+      44,
       {
         "kind": "none"
       }
@@ -2297,7 +2316,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      49,
+      50,
       {
         "kind": "none"
       }
@@ -2312,7 +2331,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      49,
+      50,
       {
         "kind": "none"
       }
@@ -2327,7 +2346,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      49,
+      50,
       {
         "kind": "none"
       }
@@ -2342,7 +2361,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      49,
+      50,
       {
         "kind": "none"
       }
@@ -2357,7 +2376,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      49,
+      50,
       {
         "kind": "none"
       }
@@ -2372,7 +2391,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      49,
+      50,
       {
         "kind": "none"
       }
@@ -2387,7 +2406,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2402,7 +2421,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2417,7 +2436,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2432,7 +2451,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2447,7 +2466,7 @@
       "manual",
       "no_migration_effect",
       "root_package_only",
-      61,
+      62,
       {
         "kind": "none"
       }
@@ -2462,7 +2481,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2477,7 +2496,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2492,7 +2511,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2507,7 +2526,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2522,7 +2541,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2537,7 +2556,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2552,7 +2571,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2567,7 +2586,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2582,7 +2601,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2597,7 +2616,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2612,7 +2631,22 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/skill_support/project_bindings.py:8:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      60,
       {
         "kind": "none"
       }
@@ -2627,7 +2661,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      46,
+      47,
       {
         "kind": "none"
       }
@@ -2642,7 +2676,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2657,7 +2691,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2672,7 +2706,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2687,7 +2721,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2702,7 +2736,7 @@
       null,
       "no_migration_effect",
       "legacy_prefix_migration_sentinel",
-      53,
+      54,
       {
         "kind": "none"
       }
@@ -2717,7 +2751,7 @@
       null,
       "no_migration_effect",
       "legacy_prefix_migration_sentinel",
-      53,
+      54,
       {
         "kind": "none"
       }
@@ -2732,7 +2766,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2747,7 +2781,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      54,
+      55,
       {
         "kind": "none"
       }
@@ -2762,7 +2796,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      54,
+      55,
       {
         "kind": "none"
       }
@@ -2777,7 +2811,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      54,
+      55,
       {
         "kind": "none"
       }
@@ -2792,7 +2826,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      54,
+      55,
       {
         "kind": "none"
       }
@@ -2807,7 +2841,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      54,
+      55,
       {
         "kind": "none"
       }
@@ -2882,7 +2916,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2912,7 +2946,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2927,7 +2961,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2957,7 +2991,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -2972,7 +3006,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      55,
+      56,
       {
         "kind": "none"
       }
@@ -2987,7 +3021,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -3002,7 +3036,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      56,
+      57,
       {
         "kind": "none"
       }
@@ -3062,7 +3096,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -3077,7 +3111,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -3302,7 +3336,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      41,
+      42,
       {
         "kind": "none"
       }
@@ -3392,7 +3426,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      48,
+      49,
       {
         "kind": "none"
       }
@@ -3407,7 +3441,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      57,
+      58,
       {
         "kind": "none"
       }
@@ -3602,7 +3636,7 @@
       "manual",
       "no_migration_effect",
       "helper_receives_only_objects",
-      52,
+      53,
       {
         "kind": "none"
       }
@@ -3902,7 +3936,7 @@
       "manual",
       "no_migration_effect",
       "helper_receives_only_objects",
-      52,
+      53,
       {
         "kind": "none"
       }
@@ -4037,7 +4071,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_test_domain",
-      51,
+      52,
       {
         "kind": "none"
       }
@@ -4172,7 +4206,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      45,
+      46,
       {
         "kind": "none"
       }
@@ -4202,7 +4236,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      44,
+      45,
       {
         "kind": "none"
       }
@@ -4217,7 +4251,22 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      42,
+      43,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_model_registry.py:260:17:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "model_contract_module",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      39,
       {
         "kind": "none"
       }
@@ -4292,7 +4341,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      40,
       {
         "kind": "none"
       }
@@ -4322,7 +4371,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      40,
+      41,
       {
         "kind": "none"
       }
@@ -4337,7 +4386,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -4367,7 +4416,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -4382,7 +4431,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -4397,7 +4446,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -4412,7 +4461,22 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_skill_method_complete.py:7:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      60,
       {
         "kind": "none"
       }
@@ -4427,7 +4491,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      59,
+      60,
       {
         "kind": "none"
       }
@@ -4712,7 +4776,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      47,
+      48,
       {
         "kind": "none"
       }

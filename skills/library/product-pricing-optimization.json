@@ -109,11 +109,11 @@
         "status": "requires_project_binding"
       },
       {
-        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
         "identity": "operator://gravity/price-elasticity@1",
         "kind": "operator",
-        "reason_code": "OPERATOR_UNAVAILABLE",
-        "status": "unavailable"
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
       },
       {
         "evidence": "该业务事实由调用项目的版本化 Context Provider 提供，缺失时在查询前返回 Gap。",
@@ -560,7 +560,7 @@
     "source_ref": "source://external-method/4c13bbf4d347db86",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 1,
     "known_requests_min": 1,
@@ -586,6 +586,6 @@
   "skill_id": "product-pricing-optimization",
   "specification": "specified",
   "summary": "评估价格证据能否支持有界的实验提案。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

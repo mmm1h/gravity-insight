@@ -16,7 +16,7 @@
       "type": "string",
       "minLength": 8,
       "maxLength": 256,
-      "pattern": "^(metric|dimension|entity|cohort|event|sku|activity|release)://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"
+      "pattern": "^(metric|dimension|entity|cohort|event|sku|activity|release|schema)://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"
     },
     "project_id": {"type": "string", "minLength": 1, "maxLength": 128},
     "owner": {"type": "string", "minLength": 1, "maxLength": 128},

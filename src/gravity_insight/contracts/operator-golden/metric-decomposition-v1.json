@@ -1,0 +1,75 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/metric-decomposition@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "metric-decomposition",
+        "rows": [
+          {
+            "key": "component-a",
+            "values": {
+              "current": 70,
+              "reference": 50
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "component-b",
+            "values": {
+              "current": 30,
+              "reference": 50
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "project_metric_unit",
+        "additivity": "additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "metric-decomposition",
+        "verdict": "no_returned_metric_change_observed",
+        "metrics": {
+          "returned_total_change": "0"
+        },
+        "ranked_rows": [
+          {
+            "key": "component-a",
+            "value": "20",
+            "contribution": null,
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "component-b",
+            "value": "-20",
+            "contribution": null,
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Components must be mutually interpretable under one metric contract.",
+          "Contribution shares describe returned arithmetic, not causality."
+        ]
+      }
+    }
+  ]
+}

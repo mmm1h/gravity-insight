@@ -27,7 +27,7 @@ _BINDING_SCHEMA = "semantic-binding-v1.schema.json"
 _SOURCE_SCHEMA = "semantic-source-v1.schema.json"
 _BUILTIN_ROOT = Path(__file__).resolve().parent / "contracts" / "semantics"
 _URI = re.compile(
-    r"^(?P<kind>metric|dimension|entity|cohort|event|sku|activity|release)://"
+    r"^(?P<kind>metric|dimension|entity|cohort|event|sku|activity|release|schema)://"
     r"[a-z0-9.-]+/[a-z0-9./-]+@(?P<version>[1-9][0-9]*)$"
 )
 _MEMBER_KINDS = {

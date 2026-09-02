@@ -18,7 +18,17 @@ from gravity_insight.semantic_contract import (
 from gravity_insight.semantic_registry import SemanticRegistry
 
 
-KINDS = ("metric", "dimension", "entity", "cohort", "event", "sku", "activity", "release")
+KINDS = (
+    "metric",
+    "dimension",
+    "entity",
+    "cohort",
+    "event",
+    "sku",
+    "activity",
+    "release",
+    "schema",
+)
 
 
 def semantic_definition(
@@ -132,7 +142,7 @@ class SemanticRegistryTests(unittest.TestCase):
         self.assertNotIn("merge2", rendered)
         self.assertNotIn("://project/", rendered)
 
-    def test_all_eight_kinds_compile_and_identity_owner_fail_closed(self) -> None:
+    def test_all_nine_kinds_compile_and_identity_owner_fail_closed(self) -> None:
         definitions = [
             semantic_definition(f"{kind}://project/{kind}@1", kind) for kind in KINDS
         ]
@@ -140,7 +150,7 @@ class SemanticRegistryTests(unittest.TestCase):
 
         listed = registry.list()
         self.assertEqual(set(KINDS), {item["kind"] for item in listed["definitions"]})
-        self.assertEqual(9, listed["count"])
+        self.assertEqual(10, listed["count"])
 
         mismatched = semantic_definition("event://project/open@1", "event")
         mismatched["version"] = 2

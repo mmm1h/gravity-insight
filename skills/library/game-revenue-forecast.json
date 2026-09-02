@@ -99,11 +99,11 @@
         "status": "available"
       },
       {
-        "evidence": "Runtime 尚无已审批、可验证血缘且处于有效期内的该版本 Model Artifact。",
+        "evidence": "Runtime Core 已内置该 Model Artifact 的参数摘要、血缘、一致性评测、审批、安全 horizon 与受限 claims。",
         "identity": "model://gravity/game-revenue-forecast@1",
         "kind": "model",
-        "reason_code": "MODEL_UNAVAILABLE",
-        "status": "unavailable"
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
       }
     ],
     "diagnostic_tree": {
@@ -549,7 +549,7 @@
     "source_ref": "source://external-method/215da3e1f74fde93",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 3,
     "known_requests_min": 2,

@@ -103,11 +103,11 @@
         "status": "requires_project_binding"
       },
       {
-        "evidence": "Runtime 尚未登记该 Operator 的合同、实现与 golden cases。",
+        "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
         "identity": "operator://gravity/funnel-diagnosis@1",
         "kind": "operator",
-        "reason_code": "OPERATOR_UNAVAILABLE",
-        "status": "unavailable"
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
       }
     ],
     "diagnostic_tree": {
@@ -547,7 +547,7 @@
     "source_ref": "source://external-method/5de5c887426e65d3",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 1,
     "known_requests_min": 1,
@@ -573,6 +573,6 @@
   "skill_id": "level-churn-diagnosis",
   "specification": "specified",
   "summary": "依据项目定义的关卡与流失契约，定位返回进度中的流失。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

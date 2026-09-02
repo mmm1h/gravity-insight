@@ -11,6 +11,7 @@ from .capability_trust import CapabilityTrustService, assess_capability_requirem
 from .evidence_common import git_state, load_object, relative
 from .journey_contract import load_journey_contract, validate_journey_bindings
 from .operator_registry import OperatorRegistry
+from .model_registry import ModelRegistry
 from .paths import PROJECT_ROOT
 from .skill_contract import skill_artifact
 
@@ -53,6 +54,7 @@ def _dependency_reasons(
     *,
     trust: CapabilityTrustService,
     operators: OperatorRegistry,
+    models: ModelRegistry,
 ) -> tuple[list[str], list[dict[str, Any]]]:
     reasons: list[str] = []
     evidence: list[dict[str, Any]] = []
@@ -82,8 +84,9 @@ def _dependency_reasons(
     operator_result = operators.dependencies(contract["required_operators"])
     if not operator_result["ok"]:
         reasons.extend(operator_result["reason_codes"])
-    if contract["required_models"]:
-        reasons.append("MODEL_VALIDATION_EVIDENCE_MISSING")
+    model_result = models.dependencies(contract["required_models"])
+    if not model_result["ok"]:
+        reasons.extend(model_result["reason_codes"])
     if contract["required_semantics"]:
         reasons.append("PROJECT_SEMANTIC_BINDING_EVIDENCE_MISSING")
     if contract["required_context"]:
@@ -119,10 +122,11 @@ def journey_certifications(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     registry_errors = _registry_errors(root, contracts) if contracts else []
     trust = CapabilityTrustService()
     operators = OperatorRegistry()
+    models = ModelRegistry(operators=operators)
     rows: list[dict[str, Any]] = []
     for path, contract in contracts:
         reasons, capability_evidence = _dependency_reasons(
-            contract, trust=trust, operators=operators
+            contract, trust=trust, operators=operators, models=models
         )
         if registry_errors:
             reasons.append("JOURNEY_REGISTRY_BINDING_INVALID")

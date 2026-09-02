@@ -539,7 +539,7 @@
     "source_ref": "source://external-method/8a1676583d63cef8",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 3,
     "known_requests_min": 2,
@@ -563,6 +563,6 @@
   "skill_id": "dashboard-no-data-diagnosis",
   "specification": "specified",
   "summary": "依据受治理证据，区分仪表盘空数据、筛选、数据过期和契约漂移等原因。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

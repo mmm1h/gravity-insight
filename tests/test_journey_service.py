@@ -71,7 +71,6 @@ class JourneyServiceTests(unittest.TestCase):
             {
                 "SEMANTIC_DEFINITION_MISSING",
                 "OPERATOR_UNAVAILABLE",
-                "MODEL_UNVALIDATED",
             },
             set(ltv["reason_codes"]),
         )
@@ -80,10 +79,10 @@ class JourneyServiceTests(unittest.TestCase):
             ltv["dependencies"]["operators"][0]["reason_codes"],
         )
         self.assertEqual(
-            ["MODEL_UNVALIDATED"],
+            [],
             ltv["dependencies"]["models"][0]["reason_codes"],
         )
-        self.assertFalse(
+        self.assertTrue(
             ltv["dependencies"]["models"][0]["production_claims_allowed"]
         )
         outcome = results["analysis.experiment-outcome-evaluation"]

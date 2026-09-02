@@ -12,7 +12,7 @@
 | Directive approval | `approved` |
 | External approval | Owner required 100% complete and usable Skill content on 2026-09-02 |
 | Applicable target | `43` independently authored canonical Skills |
-| Current milestone | `M3` complete canonical method library (`43/43`) |
+| Current milestone | `M4` Runtime dependencies closed; project templates ready (`43/43` executable and validated) |
 
 ## Requirement
 

@@ -11,6 +11,11 @@ from typing import Any
 
 from .agent_runtime_contracts import canonical_digest, validate_schema
 from .skill_contract import skill_uri
+from .skill_support.project_bindings import (
+    _context_binding_template,
+    _semantic_binding_template,
+    render_project_bindings_template,
+)
 
 
 PACKAGE_SCHEMA_VERSION = "gravity.skill-package.v1"
@@ -24,6 +29,7 @@ _ROLES = {
     "references/SCHEMA.json": ("schema", "application/json"),
     "references/CLAIMS.md": ("claims", "text/markdown"),
     "references/EXAMPLES.md": ("examples", "text/markdown"),
+    "references/PROJECT_BINDINGS.json": ("asset", "application/json"),
 }
 
 
@@ -219,6 +225,9 @@ def render_package_files(artifact: Mapping[str, Any]) -> dict[str, bytes]:
         "references/SCHEMA.json": _json_bytes(schema_reference),
         "references/CLAIMS.md": render_claims(contract).encode("utf-8"),
         "references/EXAMPLES.md": render_examples(contract).encode("utf-8"),
+        "references/PROJECT_BINDINGS.json": _json_bytes(
+            render_project_bindings_template(contract)
+        ),
     }
 
 
@@ -362,6 +371,9 @@ def render_agent_export(
         ].decode("utf-8"),
         "references/CLAIMS.md": render_claims(contract),
         "references/EXAMPLES.md": render_examples(contract),
+        "references/PROJECT_BINDINGS.json": render_package_files(artifact)[
+            "references/PROJECT_BINDINGS.json"
+        ].decode("utf-8"),
     }
     rows = [
         {
@@ -429,6 +441,8 @@ def _agent_skill_markdown(
         "",
         "Read `references/EXAMPLES.md` before the first run. Use its input templates and expected status/claim boundaries; never substitute missing project bindings with guessed values.",
         "",
+        "When project dependencies are unresolved, read `references/PROJECT_BINDINGS.json`, fill the project-owned Semantic and Context fields in tracked artifacts, and retry the same exact Skill version.",
+        "",
         "This export is static workflow guidance. Gravity Journey readiness, host routing, effects, authorization, and execution contracts remain authoritative. Treat `blocked`, `unvalidated`, or unresolved dependencies as a stop for execution and business claims; report the exact gap instead.",
         "",
     ]
@@ -476,5 +490,6 @@ __all__ = [
     "render_examples",
     "render_guide",
     "render_package_files",
+    "render_project_bindings_template",
     "skill_package_descriptor",
 ]
