@@ -29,6 +29,7 @@ CORE_SKILLS = {
     "user-tag-system-design",
 }
 JOURNEYS = {
+    "analysis.merge2.ap-cost-anomaly-localization",
     "analysis.gravity.core.project-metric-contract-check",
     "analysis.gravity.core.returned-filter-comparison",
     "analysis.gravity.game.community-context-correlation",
@@ -45,9 +46,9 @@ class SkillLibraryTests(unittest.TestCase):
         cls.registry = load_source_registry()
 
     def test_library_has_one_canonical_manifest_per_skill(self) -> None:
-        self.assertEqual(43, len(self.manifests))
-        self.assertEqual(43, len(list(LIBRARY.glob("*.json"))))
-        self.assertEqual(43, len(self.by_id))
+        self.assertEqual(44, len(self.manifests))
+        self.assertEqual(44, len(list(LIBRARY.glob("*.json"))))
+        self.assertEqual(44, len(self.by_id))
 
     def test_every_canonical_manifest_matches_skill_schema(self) -> None:
         for path in sorted(LIBRARY.glob("*.json")):
@@ -64,7 +65,7 @@ class SkillLibraryTests(unittest.TestCase):
 
     def test_remaining_methods_use_cross_game_namespace(self) -> None:
         game = [item for item in self.manifests if item["namespace"] == "gravity.game"]
-        self.assertEqual(30, len(game))
+        self.assertEqual(31, len(game))
 
     def test_machine_identities_are_stable_english(self) -> None:
         for manifest in self.manifests:
@@ -87,7 +88,12 @@ class SkillLibraryTests(unittest.TestCase):
         refs = {SOURCE_REF_PREFIX + item["opaque_id"] for item in self.registry["items"]}
         for manifest in self.manifests:
             with self.subTest(skill=manifest["skill_id"]):
-                self.assertIn(manifest["provenance"]["source_ref"], refs)
+                provenance = manifest["provenance"]
+                if provenance["source_kind"] == "independent":
+                    self.assertIn(provenance["source_ref"], refs)
+                else:
+                    self.assertTrue(provenance["source_ref"].startswith("gravity-insight/"))
+                    self.assertEqual("not_required", provenance["license_review"])
                 self.assertEqual("independently_authored", manifest["provenance"]["authorship"])
 
     def test_every_applicable_source_has_one_canonical_manifest(self) -> None:
@@ -98,10 +104,14 @@ class SkillLibraryTests(unittest.TestCase):
         }
         self.assertEqual(
             expected,
-            {skill_uri(manifest) for manifest in self.manifests},
+            {
+                skill_uri(manifest)
+                for manifest in self.manifests
+                if manifest["provenance"]["source_kind"] == "independent"
+            },
         )
 
-    def test_five_library_journeys_use_neutral_ids(self) -> None:
+    def test_library_journeys_use_registered_ids(self) -> None:
         actual = {
             journey for manifest in self.manifests for journey in manifest["covers_journeys"]
         }

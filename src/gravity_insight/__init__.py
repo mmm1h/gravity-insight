@@ -87,7 +87,6 @@ _EXPORTS = {
         "compile_project_skill_overlay",
     ),
     "CapabilityTrustService": (".capability_trust", "CapabilityTrustService"),
-    "LocalSkillResolver": (".skill_package", "LocalSkillResolver"),
     "CallableProviderTransport": (
         ".provider_rpc_transport",
         "CallableProviderTransport",

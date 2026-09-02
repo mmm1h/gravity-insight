@@ -10,6 +10,7 @@ import unittest
 
 from gravity_insight.agent_runtime_contracts import (
     AgentRuntimeContractError,
+    canonical_digest,
     validate_schema,
 )
 from gravity_insight.context_contract import ContextContractError
@@ -113,6 +114,13 @@ def _snapshot(
     capability_status: str = "stable",
     snapshot_status: str = "resolved",
 ) -> dict[str, object]:
+    source = {
+        "source_id": "hub-source://org/example@1",
+        "transport": "git",
+        "source_descriptor_digest": "1" * 64,
+        "source_revision": "2" * 40,
+        "index_digest": "3" * 64,
+    }
     return build_execution_snapshot(
         status=snapshot_status,
         journey={"journey_id": "analysis.example", "version": 1, "digest": DIGEST},
@@ -121,10 +129,10 @@ def _snapshot(
             "version": skill_version,
             "manifest_digest": "6" * 64,
             "package_digest": "7" * 64,
-            "resolution": "unlocked",
-            "team_lock_digest": None,
-            "hub_source_digest": None,
-            "hub_source_reference": None,
+            "resolution": "locked",
+            "team_lock_digest": "0" * 64,
+            "hub_source_digest": canonical_digest(source),
+            "hub_source_reference": source,
             "trusted_pack_lock_digest": None,
             "trusted_pack_state_digest": None,
             "trusted_pack_verification_digest": None,

@@ -23,7 +23,7 @@ except ModuleNotFoundError:  # Imported as scripts.verify_skill_library_release.
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_TAG = "skill-library-v2"
+RELEASE_TAG = "skill-library-v3"
 MANIFEST_NAME = "build-manifest.json"
 _MANIFEST_LIMIT = 1_048_576
 _ASSET_LIMIT = 4_194_304
@@ -118,9 +118,9 @@ def _release_rows(manifest: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     ):
         raise SkillLibraryReleaseError("published build manifest is unsupported")
     raw_rows = manifest.get("release_assets")
-    if not isinstance(raw_rows, list) or len(raw_rows) != 90:
+    if not isinstance(raw_rows, list) or len(raw_rows) != 92:
         raise SkillLibraryReleaseError(
-            "published build manifest must bind exactly 90 assets"
+            "published build manifest must bind exactly 92 assets"
         )
     rows: dict[str, dict[str, Any]] = {}
     for position, raw in enumerate(raw_rows):
@@ -183,8 +183,8 @@ def _validate_downloaded(
         raise SkillLibraryReleaseError("downloaded Agent Skill index is invalid")
     source_digest = manifest["canonical_source_sha256"]
     if (
-        len(runtime_entries) != 43
-        or len(agent_entries) != 43
+        len(runtime_entries) != 44
+        or len(agent_entries) != 44
         or agent_index.get("canonical_source_sha256") != source_digest
         or source["https"]["source_revision"] != source_digest
         or source["https"]["artifact_base_url"] != f"{PUBLISH_BASE}/"
@@ -199,8 +199,8 @@ def _validate_downloaded(
         str(entry["archive"]["path"]) for entry in agent_entries
     }
     if (
-        len(runtime_archives) != 43
-        or len(agent_archives) != 43
+        len(runtime_archives) != 44
+        or len(agent_archives) != 44
         or set(downloaded) != _CORE_ASSETS | runtime_archives | agent_archives
     ):
         raise SkillLibraryReleaseError(

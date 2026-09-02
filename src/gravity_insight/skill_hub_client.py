@@ -118,6 +118,28 @@ class SkillHubClient:
             "network_called": False,
         }
 
+    def list(self, *, maximum: int = 100) -> dict[str, Any]:
+        if (
+            isinstance(maximum, bool)
+            or not isinstance(maximum, int)
+            or not 1 <= maximum <= 1000
+        ):
+            raise SkillHubContractError("HUB_LIST_INVALID", "List limit is invalid")
+        rows = [
+            _skill_summary(snapshot["source"], entry)
+            for snapshot, index in self._indexes()
+            for entry in index["skills"].values()
+        ]
+        ordered = sorted(rows, key=lambda item: (item["skill_uri"], item["source_id"]))
+        return {
+            "schema_version": "gravity.skill-hub-list.v1",
+            "status": "success",
+            "count": min(len(ordered), maximum),
+            "results": ordered[:maximum],
+            "truncated": len(ordered) > maximum,
+            "network_called": False,
+        }
+
     def show(self, identifier: str) -> dict[str, Any]:
         identity = normalize_skill_identity(identifier)
         matches = [

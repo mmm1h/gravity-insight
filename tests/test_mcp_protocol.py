@@ -103,7 +103,7 @@ class MCPProtocolTests(unittest.TestCase):
             branch["properties"]["kind"]["const"]: branch for branch in inspect_branches
         }
         self.assertIn(
-            "installed versioned workflow",
+            "synced Hub workflow",
             inspect_kinds["skill"]["properties"]["kind"]["description"],
         )
         self.assertIn(

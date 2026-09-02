@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from ..skill_package import LocalSkillResolver
+from ..skill_hub_client import SkillHubClient
 
 
 class AnalysisTools:
@@ -17,7 +17,8 @@ class AnalysisTools:
     ) -> None:
         self._sdk = sdk
         self._metadata = metadata
-        self._skills = LocalSkillResolver(capability_trust=sdk.capability_trust)
+        workspace = getattr(sdk, "workspace", None)
+        self._skill_state_root = getattr(workspace, "state_root", None)
 
     def inspect(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
         kind = arguments["kind"]
@@ -30,11 +31,8 @@ class AnalysisTools:
                 if identifier is not None
                 else self._sdk.journeys.list()
             )
-        return (
-            self._skills.describe(identifier)
-            if identifier is not None
-            else self._skills.list()
-        )
+        skills = SkillHubClient(self._skill_state_root)
+        return skills.show(identifier) if identifier is not None else skills.list()
 
     def journey_can_run(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
         return self._sdk.journeys.can_run(

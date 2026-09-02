@@ -67,6 +67,7 @@ class SkillHubClientTests(unittest.TestCase):
         self.fixture.close()
 
     def test_skill_control_plane_closes_sync_lock_fetch_install_and_audit(self) -> None:
+        self.assertEqual(0, self.client.list()["count"])
         lock_path = self.root / "project" / "gravity.skills.lock.json"
         lock_path.parent.mkdir()
         lock_path.write_text('{"sentinel":true}\n', encoding="utf-8")
@@ -77,6 +78,9 @@ class SkillHubClientTests(unittest.TestCase):
 
         searched = self.client.search("team-analysis")
         self.assertEqual([self.skill["skill_uri"]], [item["skill_uri"] for item in searched["results"]])
+        listed = self.client.list()
+        self.assertEqual("gravity.skill-hub-list.v1", listed["schema_version"])
+        self.assertEqual([self.skill["skill_uri"]], [item["skill_uri"] for item in listed["results"]])
         shown = self.client.show(self.skill["skill_uri"])
         self.assertEqual(self.skill["package"]["package_digest"], shown["package"]["package_digest"])
 

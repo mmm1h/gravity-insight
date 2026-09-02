@@ -427,8 +427,8 @@ gravity export run <operation-id> --input request.json --columns <codes> `
 gravity journey list
 gravity journey describe <journey-id>
 gravity journey can-run <journey-id> --input request.json
-gravity skills list
-gravity skills show <skill-uri>
+gravity skills list --state-root <state-root>
+gravity skills show <skill-uri> --state-root <state-root>
 gravity analysis playbook schema
 gravity plan schema
 gravity plan run --input plan.json --dry-run
@@ -439,16 +439,20 @@ Journey readiness、Skill lock/trust、playbook checkpoint 和 Plan DAG 是不�
 
 ### Skill Hub 与 Agent Skill
 
-当前 `skill-library-v2` Release 同时发布两种相互隔离的静态产物：`index.json` 和
+当前 `skill-library-v3` Release 同时发布两种相互隔离的静态产物：`index.json` 和
 `runtime-skill-*.zip` 属于 Runtime Hub；`agent-index.json` 和 `agent-skill-*.zip` 属于 Codex、
 Claude Code 等宿主的 Agent Skill 投影。GitHub Release 资产使用全局唯一的扁平名称，两个 index
 不引用 Release 无法寻址的目录路径。普通 Runtime 包不含 `SKILL.md`，Agent Skill 也不携带执行代码、
-凭据或依赖实现。`skill-library-v1` 保留原资产供既有 lock 继续按原摘要获取，不被 v2 覆盖。
+凭据或依赖实现。Runtime wheel 不携带可发现的业务 Skill，也不写宿主 Skill 目录；所有业务方法统一
+经 Hub 精确 lock/CAS 解析。`skill-library-v1` 与 `skill-library-v2` 保留原资产供既有 lock 继续按原
+摘要获取，不被 v3 覆盖。
 
 Runtime Hub 先由调用方取得并核验明确的 `source.json`，再走显式状态根：
 
 ```powershell
 gravity skills sync --source source.json --state-root <state-root>
+gravity skills list --state-root <state-root>
+gravity skills show <exact-skill-uri> --state-root <state-root>
 gravity skills search <query> --state-root <state-root>
 gravity skills lock --skill <exact-skill-uri> --output gravity.skills.lock.json --state-root <state-root>
 gravity skills fetch --source source.json --lock gravity.skills.lock.json --state-root <state-root>

@@ -11,10 +11,9 @@ from gravity_insight.skill_contract import (
     SkillContractError,
     load_skill_manifest,
     normalize_skill_identity,
-    skill_artifact,
-    skill_artifacts,
     validate_skill_journey_parity,
 )
+from tests.locked_skill_fixture import canonical_skill_manifest, skill_artifact
 
 
 SKILL_URI = "skill://gravity.game/ap-cost-anomaly-localization@1.0.0"
@@ -22,11 +21,9 @@ SKILL_URI = "skill://gravity.game/ap-cost-anomaly-localization@1.0.0"
 
 class SkillContractTests(unittest.TestCase):
     def test_reference_manifest_has_orthogonal_state_and_typed_dependencies(self):
-        artifacts = skill_artifacts()
-        artifact = artifacts[0]
+        artifact = skill_artifact()
         contract = artifact["contract"]
 
-        self.assertEqual(1, len(artifacts))
         self.assertEqual(SKILL_URI, artifact["skill_uri"])
         self.assertEqual("specified", contract["specification"])
         self.assertEqual("reviewed", contract["lifecycle"])
@@ -44,12 +41,11 @@ class SkillContractTests(unittest.TestCase):
 
         self.assertEqual(SKILL_URI, normalize_skill_identity(SKILL_URI))
         self.assertEqual(SKILL_URI, normalize_skill_identity(compact))
-        self.assertEqual(SKILL_URI, skill_artifact(compact)["skill_uri"])
         with self.assertRaises(InputValidationError):
             normalize_skill_identity("ap cost anomaly")
 
     def test_manifest_schema_and_cross_dependency_drift_fail_closed(self):
-        contract = skill_artifact(SKILL_URI)["contract"]
+        contract = canonical_skill_manifest()
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "skill.json"
             malformed = copy.deepcopy(contract)
@@ -66,18 +62,18 @@ class SkillContractTests(unittest.TestCase):
                 load_skill_manifest(path)
 
     def test_artifacts_are_defensive_copies(self):
-        artifact = skill_artifact(SKILL_URI)
+        artifact = skill_artifact()
         artifact["contract"]["skill_id"] = "poison"
 
         self.assertEqual(
             "ap-cost-anomaly-localization",
-            skill_artifact(SKILL_URI)["contract"]["skill_id"],
+            canonical_skill_manifest()["skill_id"],
         )
 
     def test_public_journey_parity_fails_with_the_skill_contract_error(self):
         with self.assertRaises(SkillContractError):
             validate_skill_journey_parity(
-                skill_artifact(SKILL_URI)["contract"],
+                canonical_skill_manifest(),
                 {"journey_id": "analysis.malformed"},
             )
 

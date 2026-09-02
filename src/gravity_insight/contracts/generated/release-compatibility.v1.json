@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "5b951f609816fc0d7fa52f7a34f3bf65d055414cf7de9f3dc9ed8863fce6ee11"
+    "compatibility_sha256": "840c0b11f1854baa05eb7dbf2652039ee21022be2c5f3b3fd9d022120f9646ca"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -80,6 +80,22 @@
     },
     {
       "version": "0.3.5",
+      "release_status": "released",
+      "release_date": "2026-09-02",
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.5-hard-break-1",
+          "description": "Runtime wheel 不再携带或公开解析项目特定的 Built-in Skill； `LocalSkillResolver` 与 `gravity skills export-agent` 已移除，execution snapshot 的 Skill resolution 只接受精确项目 lock。`gravity skills list/show` 现在必须指定 `--state-root` 并读取已同步 Hub。R01 获客成本异常定位保留原 Journey、Plan owner、 claims 和失败关闭能力，但项目必须提供 `gravity.skills.lock.json` 与已核验 CAS。",
+          "migration_guide": "docs/migration/0.3.5.md"
+        }
+      ],
+      "soft_breaks": [],
+      "migration_guide": "docs/migration/0.3.5.md"
+    },
+    {
+      "version": "0.3.6",
       "release_status": "unreleased",
       "release_date": null,
       "breaking_status": "none",

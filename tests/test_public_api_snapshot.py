@@ -44,7 +44,7 @@ class PublicApiSnapshotTests(unittest.TestCase):
         expected = expected_public_exports()
 
         self.assertEqual(expected, _lazy_exports())
-        self.assertEqual(147, len(expected))
+        self.assertEqual(146, len(expected))
 
     def test_manifest_rejects_a_duplicate_public_name(self) -> None:
         from scripts.generate_public_api_exports import load_manifest

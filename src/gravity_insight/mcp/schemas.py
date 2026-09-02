@@ -47,7 +47,7 @@ INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
                 {
                     "kind": {
                         "const": "journey",
-                        "description": "Select Journey for a registered business task and its acceptance contract, not an installed Skill workflow package.",
+                        "description": "Select Journey for a registered business task and its acceptance contract, not a synced Hub Skill package.",
                     },
                     "identifier": {
                         "type": "string",
@@ -62,13 +62,13 @@ INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
                 {
                     "kind": {
                         "const": "skill",
-                        "description": "Select Skill for an installed versioned workflow or method package, not a Journey task/readiness contract.",
+                        "description": "Select Skill for a synced Hub workflow or method package, not a Journey task/readiness contract.",
                     },
                     "identifier": {
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 512,
-                        "description": "Exact installed Skill URI or ID; omit only to list Skill metadata.",
+                        "description": "Exact synced Hub Skill URI; omit only to list Skill metadata.",
                     },
                 },
                 required=("kind",),

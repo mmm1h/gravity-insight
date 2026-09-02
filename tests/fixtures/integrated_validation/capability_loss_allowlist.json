@@ -1,4 +1,17 @@
 {
   "schema_version": "gravity.capability-loss-allowlist.v1",
-  "allowed_losses": []
+  "allowed_losses": [
+    {
+      "category": "public_api",
+      "identifier": "LocalSkillResolver",
+      "recorded_in": "docs/roadmap.md",
+      "owner_review": "approved"
+    },
+    {
+      "category": "cli_commands",
+      "identifier": "skills export-agent",
+      "recorded_in": "docs/roadmap.md",
+      "owner_review": "approved"
+    }
+  ]
 }

@@ -192,11 +192,6 @@
       "attribute": "CapabilityTrustService"
     },
     {
-      "name": "LocalSkillResolver",
-      "module": ".skill_package",
-      "attribute": "LocalSkillResolver"
-    },
-    {
       "name": "CallableProviderTransport",
       "module": ".provider_rpc_transport",
       "attribute": "CallableProviderTransport"

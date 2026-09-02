@@ -9,7 +9,7 @@
 | `execution-kernel` | `stable` | contracts, manifests, product/composite/Plan registries | [CLI](../../docs/reference/cli.md) |
 | `journey-trust-quality` | `stable` | Journey, Capability Trust and Data Quality schemas | [Agent workflow](../../docs/agent-workflow.md) |
 | `skill-runtime-hub` | `stable` | Skill, Hub source, lock and overlay schemas | [CLI](../../docs/reference/cli.md) |
-| `external-method-library` | `stable` | vendor-neutral Skill library and isolated Source Registry | [CT01](CT01-external-method-inventory.md), [CT02](CT02-skill-library-validation.md), [CT03](CT03-skill-library-specification.md), [CT04](CT04-agent-skill-distribution.md), [CT05](CT05-skill-content-completion.md) |
+| `external-method-library` | `stable` | vendor-neutral canonical Skill library and isolated external Source Registry | [CT01](CT01-external-method-inventory.md), [CT02](CT02-skill-library-validation.md), [CT03](CT03-skill-library-specification.md), [CT04](CT04-agent-skill-distribution.md), [CT05](CT05-skill-content-completion.md) |
 | `semantic-registry` | `stable` | Semantic definition/binding/composition schemas | [SDK](../../docs/reference/sdk.md) |
 | `operator-model` | `stable` | Operator and Model registries/schemas | [SDK](../../docs/reference/sdk.md) |
 | `context-provider` | `stable` | Context, Provider, binding and RPC schemas | [Security](../../SECURITY.md) |

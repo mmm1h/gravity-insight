@@ -17,7 +17,6 @@ class ReferenceJourneyContractTests(unittest.TestCase):
     def test_exact_artifacts_form_one_closed_dependency_graph(self):
         artifacts = reference_artifacts()
         journey = artifacts["journey"]["contract"]
-        skill = artifacts["skill"]["contract"]
         operator = artifacts["operator"]["contract"]
         capability = artifacts["capability"]["contract"]
         provider = artifacts["context_provider"]["contract"]
@@ -31,8 +30,6 @@ class ReferenceJourneyContractTests(unittest.TestCase):
             "metric-anomaly-localization@1",
             journey["required_capabilities"][0]["selector"],
         )
-        self.assertEqual([JOURNEY_ID], skill["covers_journeys"])
-        self.assertEqual(["read"], skill["effects"])
         self.assertEqual(
             OPERATOR_RESULT_SCHEMA_VERSION,
             operator["schemas"]["output"]["schema_version"],
@@ -69,7 +66,6 @@ class ReferenceJourneyContractTests(unittest.TestCase):
         second = reference_artifacts()
         for name in (
             "journey",
-            "skill",
             "operator",
             "context_provider",
             "capability",
@@ -77,22 +73,13 @@ class ReferenceJourneyContractTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertRegex(first[name]["digest"], r"^[0-9a-f]{64}$")
                 self.assertEqual(first[name]["digest"], second[name]["digest"])
-        self.assertRegex(first["skill"]["package_digest"], r"^[0-9a-f]{64}$")
 
     def test_artifacts_are_defensive_copies(self):
         poisoned = reference_artifacts()
         poisoned["journey"]["contract"]["journey_id"] = "poison"
-        poisoned["skill"]["guide"] = "poison"
 
         fresh = reference_artifacts()
         self.assertEqual(JOURNEY_ID, fresh["journey"]["contract"]["journey_id"])
-        self.assertIn("Context is data", fresh["skill"]["guide"])
-
-    def test_skill_is_static_and_cannot_install_or_execute_code(self):
-        rendered = str(reference_artifacts()["skill"])
-        for forbidden in ("scripts", "shell", "pip install", "http://", "https://"):
-            with self.subTest(forbidden=forbidden):
-                self.assertNotIn(forbidden, rendered.casefold())
 
 
 if __name__ == "__main__":

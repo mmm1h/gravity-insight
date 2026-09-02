@@ -13,11 +13,40 @@
 
 ## [Unreleased]
 
-Target release: `0.3.5`
+Target release: `0.3.6`
 
 ### Breaking changes
 
 - None.
+
+## [0.3.5] - 2026-09-02
+
+Migration guide: [0.3.5](docs/migration/0.3.5.md)
+
+### Breaking changes
+
+- **Hard break:** Runtime wheel 不再携带或公开解析项目特定的 Built-in Skill；
+  `LocalSkillResolver` 与 `gravity skills export-agent` 已移除，execution snapshot 的
+  Skill resolution 只接受精确项目 lock。`gravity skills list/show` 现在必须指定
+  `--state-root` 并读取已同步 Hub。R01 获客成本异常定位保留原 Journey、Plan owner、
+  claims 和失败关闭能力，但项目必须提供 `gravity.skills.lock.json` 与已核验 CAS。
+
+### Added
+
+- `skill-library-v3` 将 AP 成本异常定位作为第 44 个 canonical Skill，通过 Runtime Hub
+  与 Agent Skill 两种确定性投影分发，并达到 17/17 Method Complete。
+
+### Changed
+
+- MCP Skill inspection 与 `gravity://catalog/skills` 统一读取 workspace 的已同步 Hub 状态；
+  wheel 内置业务 Skill 数归零。
+- R01 execution snapshot 新增强制的 project lock、Hub source 和 package digest 绑定；
+  缺 lock、CAS、来源或摘要时在目标请求前返回稳定 Hub gap。
+
+### Removed
+
+- 删除 wheel-owned AP Skill manifest/package tree 及其单独生成器，避免 Runtime Core 与
+  Skill Library 形成两套业务方法分发权威。
 
 ## [0.3.4] - 2026-09-02
 

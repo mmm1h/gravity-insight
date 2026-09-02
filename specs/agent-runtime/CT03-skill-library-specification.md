@@ -5,7 +5,7 @@
 | Status | `fixed_dev` |
 | Canonical input | `skills/library/*.json` |
 | Builder | `scripts/generate_skill_library.py` |
-| Publication target | GitHub Release `skill-library-v2` |
+| Publication target | GitHub Release `skill-library-v3` |
 
 ## Contract
 
@@ -26,9 +26,11 @@ to the release base URL. Building does not publish, push, tag, or make a network
 call. The v2 build receipt keeps the complete local QA file list separate from
 the exact flat `release_assets` list.
 
-The earlier `skill-library-v1` publication remains immutable so existing lock
-digests keep their original fetch path. The current builder targets v2; it does
-not overwrite or delete v1 assets.
+The earlier `skill-library-v1` and `skill-library-v2` publications remain
+immutable so existing lock digests keep their original fetch paths. The current
+builder targets v3; it does not overwrite or delete earlier assets. V3 adds the
+Runtime-authored AP-cost reference method to the same canonical Hub channel and
+does not restore a wheel-owned business Skill registry.
 
 ## Acceptance
 

@@ -8,7 +8,8 @@
 
 ## Contract
 
-Each independently authored Skill has exactly one checked-in canonical manifest.
+Each independently authored external or Runtime first-party Skill has exactly one
+checked-in canonical manifest.
 Machine identities use `gravity.core.*`, `gravity.game.*`,
 `gravity.game.<genre>.*`, `org.<company>.*`, or `project.<game>.*`. The current
 cross-game library uses `gravity.core` for reusable data and contract methods and
@@ -17,8 +18,10 @@ genre-specific evidence.
 
 Machine IDs, URIs, schemas, reason codes, and artifact kinds are stable English.
 Names, methods, diagnostic steps, example questions, output sections, and repair
-guidance default to `zh-CN`. Provenance contains only an opaque Source Registry
-reference and independent-authorship decision.
+guidance default to `zh-CN`. External provenance contains only an opaque Source
+Registry reference; Runtime first-party provenance uses a stable
+`gravity-insight/<requirement>` reference. Both require independent-authorship
+evidence, while distribution remains Hub-only.
 
 ## Acceptance
 
@@ -27,5 +30,5 @@ reference and independent-authorship decision.
   contract.
 - Canonical manifests contain no vendor name, URL, source title, marketing
   effect number, or imported source body.
-- No second JSON, Markdown, package tree, ZIP, Hub index, or lock copy is
+- No second JSON, Markdown, wheel package tree, ZIP, Hub index, or lock copy is
   checked in for the same Skill.

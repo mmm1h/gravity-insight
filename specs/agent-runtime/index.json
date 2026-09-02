@@ -44,7 +44,7 @@
     {
       "id": "external-method-library",
       "maturity": "stable",
-      "owner": "vendor-neutral Skill library and isolated external method Source Registry",
+      "owner": "vendor-neutral canonical Skill library and isolated external method Source Registry",
       "machine_sources": [
         "../../skills/library",
         "../../skills/sources/registry.json",

@@ -170,32 +170,30 @@ def _invalid_can_run(
     artifacts: Mapping[str, Mapping[str, Any]], reasons: list[str]
 ) -> dict[str, Any]:
     journey = artifacts["journey"]
-    skill = artifacts["skill"]
     contract = journey["contract"]
     journey_ref = {
         "journey_id": contract["journey_id"],
         "version": contract["version"],
         "digest": journey["digest"],
     }
-    skill_ref = _artifact_skill_reference(skill)
-    snapshot = _invalid_snapshot(artifacts, journey_ref, skill_ref)
+    snapshot = _invalid_snapshot(artifacts, journey_ref)
     return {
         "schema_version": CAN_RUN_SCHEMA_VERSION,
         "ok": False,
         "status": "invalid",
         "exit_code": _INVALID_EXIT,
         "journey": journey_ref,
-        "skill": skill_ref,
+        "skill": None,
         "project_overlay": None,
         "lifecycle": {
             "journey": contract["lifecycle"],
-            "skill": skill["contract"]["lifecycle"],
+            "skill": None,
         },
         "readiness": {
-            "declared": skill["contract"]["readiness"],
+            "declared": None,
             "resolved": "invalid",
         },
-        "validation": skill["contract"]["validation"],
+        "validation": None,
         "can_run_status": "invalid",
         "reason_codes": list(dict.fromkeys(reasons)),
         "dependencies": {
@@ -207,7 +205,7 @@ def _invalid_can_run(
         },
         "request_budget": copy.deepcopy(contract["request_budget"]),
         "claim_policy": {
-            **copy.deepcopy(skill["contract"]["claim_policy"]),
+            **copy.deepcopy(contract["claim_policy"]),
             "optional_context_complete": True,
         },
         "execution_snapshot": snapshot,
@@ -223,7 +221,6 @@ def _invalid_can_run(
 def _invalid_snapshot(
     artifacts: Mapping[str, Mapping[str, Any]],
     journey_ref: Mapping[str, Any],
-    skill_ref: Mapping[str, Any],
 ) -> dict[str, Any]:
     contract = artifacts["journey"]["contract"]
     capability = artifacts["capability"]
@@ -258,7 +255,7 @@ def _invalid_snapshot(
     return build_execution_snapshot(
         status="blocked",
         journey=journey_ref,
-        skill=skill_ref,
+        skill=None,
         project_overlay=None,
         capabilities=[capability_ref],
         semantics=semantic_refs,
@@ -381,26 +378,6 @@ def _blocked_analysis_result(
         "network_called": network_called,
     }
     return compile_analysis_result(value)
-
-
-def _artifact_skill_reference(skill: Mapping[str, Any]) -> dict[str, Any]:
-    contract = skill["contract"]
-    return {
-        "uri": skill["skill_uri"],
-        "version": contract["version"],
-        "manifest_digest": skill["digest"],
-        "package_digest": skill["package_digest"],
-        "resolution": "unlocked",
-        "team_lock_digest": None,
-        "hub_source_digest": None,
-        "hub_source_reference": None,
-        "trusted_pack_lock_digest": None,
-        "trusted_pack_state_digest": None,
-        "trusted_pack_verification_digest": None,
-        "lifecycle": contract["lifecycle"],
-        "readiness": contract["readiness"],
-        "validation": contract["validation"],
-    }
 
 
 def _public_can_run(value: Mapping[str, Any]) -> dict[str, Any]:

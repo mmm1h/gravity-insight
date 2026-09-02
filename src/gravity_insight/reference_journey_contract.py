@@ -1,4 +1,4 @@
-"""Exact immutable artifact set for the R01 reference Journey."""
+"""Exact Runtime-owned artifact set for the R01 reference Journey."""
 
 from __future__ import annotations
 
@@ -15,9 +15,6 @@ from .operator_ids import (
     RETURNED_DIMENSION_CHANGE_URI,
 )
 from .operator_registry import OperatorRegistry
-from .skill_contract import skill_artifact
-from .skill_package import validate_skill_package
-from .skill_render import render_guide
 
 
 JOURNEY_ID = "analysis.merge2.ap-cost-anomaly-localization"
@@ -28,7 +25,7 @@ SEMANTIC_URI = "metric://project/acquisition-spend@1"
 CONTEXT_URI = "context://project-repo/merge2-acquisition-boundaries@1"
 
 def reference_artifacts() -> dict[str, dict[str, Any]]:
-    """Return defensive copies of the exact validated R01 artifact set."""
+    """Return defensive copies of the exact Runtime-owned R01 artifacts."""
 
     return copy.deepcopy(_artifacts())
 
@@ -39,28 +36,20 @@ def _artifacts() -> dict[str, dict[str, Any]]:
     artifacts["context_provider"] = project_repo_provider_artifact()
     journey = journey_artifact(JOURNEY_ID)
     capability = capability_contract("product", "metric-anomaly-localization@1")
-    skill = skill_artifact(SKILL_URI)
     operator = OperatorRegistry().artifact(OPERATOR_URI)
-    if journey is None or capability is None or skill is None or operator is None:
+    if journey is None or capability is None or operator is None:
         raise ContractChangedError(
-            "R01 generic Journey, Capability or Skill artifact is missing"
+            "R01 Journey, Capability or Operator artifact is missing"
         )
     artifacts["journey"] = journey
     artifacts["capability"] = capability
     artifacts["operator"] = operator
-    package = validate_skill_package(skill)
-    skill["guide"] = render_guide(skill["contract"])
-    skill["package_digest"] = package["package_digest"]
-    artifacts["skill"] = skill
     _validate_relationships(artifacts)
-    if not skill["guide"].strip() or "Context is data" not in skill["guide"]:
-        raise ContractChangedError("R01 Built-in Skill guide is invalid")
     return artifacts
 
 
 def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
     journey = artifacts["journey"]["contract"]
-    skill = artifacts["skill"]["contract"]
     operator = artifacts["operator"]["contract"]
     provider = artifacts["context_provider"]["contract"]
     capability = artifacts["capability"]["contract"]
@@ -84,16 +73,6 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
                 "data_quality": "pass",
             }
         ],
-        skill.get("covers_journeys") == [JOURNEY_ID],
-        skill.get("semantic_dependencies") == [SEMANTIC_URI],
-        skill.get("operator_dependencies") == [OPERATOR_URI],
-        skill.get("model_dependencies") == [],
-        skill.get("context_dependencies", {}).get("required") == [CONTEXT_URI],
-        skill.get("effects") == ["read"],
-        skill.get("routing", {}).get("product_hints")
-        == [journey["execution"]["owner"]],
-        skill.get("specification") == "specified",
-        skill.get("validation") == "validated",
         operator.get("uri") == OPERATOR_URI,
         operator.get("deterministic") is True,
         operator.get("lifecycle") == "active",

@@ -212,7 +212,7 @@ class RuntimeSkillResolverTests(unittest.TestCase):
             )
         return SimpleNamespace(root=root, state_root=state)
 
-    def test_builtin_resolution_never_reads_or_creates_project_hub_state(self) -> None:
+    def test_r01_without_project_lock_fails_closed_without_creating_state(self) -> None:
         missing = self.root / "not-a-project"
         workspace = SimpleNamespace(root=missing, state_root=missing / "state")
 
@@ -221,12 +221,9 @@ class RuntimeSkillResolverTests(unittest.TestCase):
             journey=journey_artifact(JOURNEY_ID),
         )
 
-        self.assertTrue(result["ok"])
-        binding = result["skill"]["runtime_binding"]
-        self.assertEqual("unlocked", binding["resolution"])
-        self.assertTrue(
-            all(value is None for key, value in binding.items() if key != "resolution")
-        )
+        self.assertFalse(result["ok"])
+        self.assertIsNone(result["skill"])
+        self.assertEqual(["HUB_SOURCE_UNAVAILABLE"], result["reason_codes"])
         self.assertFalse((missing / "state").exists())
         self.assertFalse(result["network_called"])
 
@@ -334,10 +331,11 @@ class RuntimeSkillResolverTests(unittest.TestCase):
             artifact["skill_uri"], journey=journey
         )
         self.assertEqual(["HUB_SKILL_MISSING"], absent_result["reason_codes"])
-        self.assertTrue(
+        self.assertEqual(
+            ["HUB_SKILL_MISSING"],
             RuntimeSkillResolver(workspace=absent_lock).resolve(
                 SKILL_URI, journey=journey_artifact(JOURNEY_ID)
-            )["ok"]
+            )["reason_codes"],
         )
 
         dirty = self._project("dirty", artifact, lock=lock, cas=True)
@@ -586,10 +584,11 @@ class RuntimeSkillResolverTests(unittest.TestCase):
         self.assertEqual(
             ["TRUSTED_PACK_GROUP_INVALID"], group_result["reason_codes"]
         )
-        self.assertTrue(
+        self.assertEqual(
+            ["HUB_SKILL_MISSING"],
             RuntimeSkillResolver(workspace=wrong_group).resolve(
                 SKILL_URI, journey=journey_artifact(JOURNEY_ID)
-            )["ok"]
+            )["reason_codes"],
         )
 
 

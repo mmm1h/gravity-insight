@@ -29,10 +29,10 @@ class SkillLibraryReleaseTests(unittest.TestCase):
         receipt = verify_release(self.fetch(self.outputs))
 
         self.assertEqual("passed", receipt["status"])
-        self.assertEqual(91, receipt["release_asset_count"])
-        self.assertEqual(90, receipt["receipt_bound_asset_count"])
-        self.assertEqual(43, receipt["runtime_archive_count"])
-        self.assertEqual(43, receipt["agent_archive_count"])
+        self.assertEqual(93, receipt["release_asset_count"])
+        self.assertEqual(92, receipt["receipt_bound_asset_count"])
+        self.assertEqual(44, receipt["runtime_archive_count"])
+        self.assertEqual(44, receipt["agent_archive_count"])
         self.assertTrue(receipt["validated_outside_checkout"])
         self.assertFalse(receipt["network_called"])
 

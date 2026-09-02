@@ -15,7 +15,7 @@ from .operator_registry import OperatorRegistry
 from .paths import PROJECT_ROOT
 from .repo_context_provider import RepoContextProvider
 from .semantic_registry import SemanticRegistry
-from .skill_contract import compile_skill_manifest, skill_artifacts
+from .skill_contract import compile_skill_manifest
 
 
 def _check(
@@ -76,12 +76,10 @@ def _skills(root: Path) -> dict[str, Any]:
             valid += 1
         except (OSError, RuntimeError, UnicodeError, ValueError, TypeError) as exc:
             errors.append(f"{relative(root, path)}: {type(exc).__name__}: {exc}")
-    builtins = skill_artifacts()
     return {
-        "passed": bool(paths) and valid == len(paths) and bool(builtins),
+        "passed": bool(paths) and valid == len(paths),
         "canonical_library": len(paths),
         "canonical_valid": valid,
-        "builtin_skills": len(builtins),
         "errors": errors,
     }
 

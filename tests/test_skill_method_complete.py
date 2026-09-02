@@ -21,6 +21,7 @@ from scripts.generate_skill_library import load_canonical_skills
 ROOT = Path(__file__).resolve().parents[1]
 COMPLETE_SKILLS = {
     "ad-delivery-analysis",
+    "ap-cost-anomaly-localization",
     "analysis-metric-definition-alignment",
     "app-device-performance-analysis",
     "channel-quality-analysis",
@@ -214,8 +215,8 @@ class SkillMethodCompleteTests(unittest.TestCase):
                 self.assertEqual(item.evaluation == "proxy", item.cannot_prove is not None)
 
     def test_report_covers_every_canonical_skill_and_every_item(self) -> None:
-        self.assertEqual(43, self.report["summary"]["skill_count"])
-        self.assertEqual(43, len(self.report["skills"]))
+        self.assertEqual(44, self.report["summary"]["skill_count"])
+        self.assertEqual(44, len(self.report["skills"]))
         for row in self.report["skills"]:
             with self.subTest(skill=row["skill_uri"]):
                 self.assertEqual(17, len(row["items"]))
@@ -233,7 +234,7 @@ class SkillMethodCompleteTests(unittest.TestCase):
             if row["method_complete"]
         }
         self.assertEqual(COMPLETE_SKILLS, complete)
-        self.assertEqual(43, self.report["summary"]["method_complete_true"])
+        self.assertEqual(44, self.report["summary"]["method_complete_true"])
         self.assertEqual(0, self.report["summary"]["method_complete_false"])
         manifests = {
             item["skill_id"]: item for item in load_canonical_skills()

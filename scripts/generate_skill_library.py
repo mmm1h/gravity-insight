@@ -47,7 +47,7 @@ AGENT_INDEX_SCHEMA_PATH = (
 )
 DEFAULT_OUTPUT = ROOT / "build" / "skill-hub"
 PUBLISH_BASE = (
-    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v2"
+    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v3"
 )
 _NAMESPACE = re.compile(
     r"^(?:gravity\.(?:core|game)(?:\.[a-z][a-z0-9-]*)*|"
@@ -315,7 +315,7 @@ def _hub_source(source_digest: str) -> dict[str, Any]:
                 "source_revision": source_digest,
             },
             "limits": {
-                "max_index_bytes": 1048576,
+                "max_index_bytes": 2097152,
                 "max_artifact_bytes": 4194304,
                 "timeout_seconds": 10,
             },
@@ -397,15 +397,26 @@ def _validate_provenance(manifests: tuple[dict[str, Any], ...]) -> None:
         for item in registry["items"]
         if item["mapping_kind"] == "future_skill"
     }
-    actual = {skill_uri(manifest) for manifest in manifests}
-    if expected != actual:
+    external = {
+        skill_uri(manifest)
+        for manifest in manifests
+        if manifest["provenance"]["source_kind"] == "independent"
+    }
+    if expected != external:
         raise SystemExit("future Skill registry and canonical manifests differ")
     for manifest in manifests:
         identity = skill_uri(manifest)
-        source = items.get(manifest["provenance"]["source_ref"])
-        if source is None or source["future_skill_uri"] != identity:
-            raise SystemExit(f"Skill provenance is absent or drifted: {identity}")
-        if manifest["provenance"]["authorship"] != "independently_authored":
+        provenance = manifest["provenance"]
+        if provenance["source_kind"] == "independent":
+            source = items.get(provenance["source_ref"])
+            if source is None or source["future_skill_uri"] != identity:
+                raise SystemExit(f"Skill provenance is absent or drifted: {identity}")
+        elif (
+            not provenance["source_ref"].startswith("gravity-insight/")
+            or provenance["license_review"] != "not_required"
+        ):
+            raise SystemExit(f"First-party Skill provenance is invalid: {identity}")
+        if provenance["authorship"] != "independently_authored":
             raise SystemExit(f"Skill independent authorship is not declared: {identity}")
 
 

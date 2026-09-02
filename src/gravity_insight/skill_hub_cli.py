@@ -10,6 +10,14 @@ from .skill_hub_state import read_json
 
 
 def add_skill_hub_actions(actions: Any) -> None:
+    listed = actions.add_parser("list", help="List Skills from synced Hub sources.")
+    listed.add_argument("--maximum", type=_positive, default=100)
+    _local(listed)
+
+    show = actions.add_parser("show", help="Show one exact synced Hub Skill.")
+    show.add_argument("skill")
+    _local(show)
+
     sync = actions.add_parser("sync", help="Sync one explicit Stage A Hub Source.")
     _source(sync)
     _local(sync)
@@ -54,18 +62,29 @@ def add_skill_hub_actions(actions: Any) -> None:
     audit = actions.add_parser("audit", help="Audit synced Hub snapshots offline.")
     _local(audit)
 
-    for parser in (sync, search, resolve, lock, fetch, install, update, verify, audit):
+    for parser in (
+        listed,
+        show,
+        sync,
+        search,
+        resolve,
+        lock,
+        fetch,
+        install,
+        update,
+        verify,
+        audit,
+    ):
         parser.set_defaults(network_required=False, _gravity_handler=dispatch)
-
-
-def add_hub_show_options(parser: Any) -> None:
-    parser.add_argument("--state-root")
-    parser.add_argument("--cas-root")
 
 
 def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
     client = SkillHubClient(args.state_root, cas_root=args.cas_root)
     command = args.skills_command
+    if command == "list":
+        return client.list(maximum=args.maximum)
+    if command == "show":
+        return client.show(args.skill)
     if command == "sync":
         return client.sync(_json(args.source), repository=args.repository)
     if command == "search":
@@ -91,10 +110,6 @@ def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
     if command == "verify":
         return client.verify(_json(args.lock))
     return client.audit()
-
-
-def hub_show(args: Any) -> dict[str, Any]:
-    return SkillHubClient(args.state_root, cas_root=args.cas_root).show(args.skill)
 
 
 def _local(parser: Any) -> None:
@@ -125,4 +140,4 @@ def _positive(value: str) -> int:
     return selected
 
 
-__all__ = ["add_hub_show_options", "add_skill_hub_actions", "dispatch", "hub_show"]
+__all__ = ["add_skill_hub_actions", "dispatch"]

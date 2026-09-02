@@ -144,11 +144,14 @@ class MCPResourceTests(unittest.TestCase):
         catalog = self.catalog(sdk)
 
         apps = catalog.read("gravity://workspace/apps")
+        skills = catalog.read("gravity://catalog/skills")
         lineage = catalog.read("gravity://metadata/table-lineage/publish")
         vocabulary = catalog.read("gravity://workspace/analysis-vocabulary/event")
 
         self.assertEqual(2, apps["value"]["count"])
         self.assertFalse(apps["value"]["network_called"])
+        self.assertEqual("gravity.skill-hub-list.v1", skills["value"]["schema_version"])
+        self.assertFalse(skills["value"]["network_called"])
         self.assertEqual("publish", lineage["value"]["query"])
         self.assertEqual("event", vocabulary["value"]["query"])
         self.assertEqual(["lineage:publish", "vocabulary:event"], sdk.calls)

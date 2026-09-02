@@ -1,4 +1,4 @@
-"""Deterministic Built-in package, docs, and Agent Skills Render Model."""
+"""Deterministic Runtime Hub and Agent Skill Render Model."""
 
 from __future__ import annotations
 
