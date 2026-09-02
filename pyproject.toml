@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gravity-insight"
-version = "0.3.4"
+version = "0.3.5"
 description = "Agent-first governed data-analysis runtime, Python SDK, and CLI for Gravity"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -61,8 +61,6 @@ include = ["gravity_insight*"]
 [tool.setuptools.package-data]
 gravity_insight = [
   "contracts/**/*.json",
-  "skills/**/*.md",
-  "skills/**/*.json",
   "manifests/*.json",
   "census/data/*",
   "governance/*.json",

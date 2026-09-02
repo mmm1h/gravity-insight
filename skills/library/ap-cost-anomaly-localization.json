@@ -1,0 +1,458 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "complete",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [
+      "window-metric-change",
+      "returned-dimension-change",
+      "selected-slice-observation"
+    ],
+    "forbidden": [
+      "complete-app-total",
+      "unreturned-values",
+      "causality",
+      "incrementality",
+      "roi",
+      "natural-volume-attribution"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project-repo/merge2-acquisition-boundaries@1"
+    ]
+  },
+  "covers_journeys": [
+    "analysis.merge2.ap-cost-anomaly-localization"
+  ],
+  "description": "在精确锁定项目获客成本口径后，对比两个等长且不重叠窗口中的返回渠道行，并验证一个调用方选择的渠道切片是否同向变化。",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "仅用于已锁定获客支出 Semantic、项目边界 Context、两个可比窗口和一个明确渠道切片的异常定位。",
+    "context_boundary": "项目 Context 只提供口径与边界，不能选择产品、改变读取效果、授权动作或把相关变化升级为因果结论。",
+    "steps": [
+      "先运行 Journey 就绪性检查，缺少精确 Skill lock、CAS、Semantic、Context、Trust、完整性或质量证据时停止。",
+      "通过现有 metric-anomaly-localization 产品和唯一 Plan owner 执行两个窗口的受治理查询。",
+      "只把匹配的返回渠道行交给已注册 returned-dimension-change Operator，保留未返回范围为未知。",
+      "报告返回行总和变化、匹配渠道变化和方向一致性，同时列出证据、排除项与禁止断言。"
+    ],
+    "title": "获客成本异常定位"
+  },
+  "lifecycle": "reviewed",
+  "method": {
+    "assumptions": {
+      "attribution": [
+        "归因模型、自然量边界、跨端合并和回溯窗口由项目 Context 锁定，本方法不自行选择或补写。"
+      ],
+      "cohort": [
+        "两个窗口使用相同 App、渠道维度、返回范围和归因队列，调用方选择的渠道必须在返回行中可匹配。"
+      ],
+      "inputs": [
+        "输入包含精确 App 别名、两个等长且不重叠的闭合窗口、一个渠道值、问题与待检验假设。"
+      ],
+      "requires_project_calibration": [
+        {
+          "calibration_id": "acquisition-spend-contract",
+          "subject": "获客支出指标、币种、税费返点、时间粒度、可加性和物理字段绑定。"
+        },
+        {
+          "calibration_id": "channel-comparison-contract",
+          "subject": "渠道枚举、归因队列、最小观测量、异常阈值和同向判定规则。"
+        }
+      ],
+      "time": [
+        "当前窗与基准窗等长、不重叠，使用同一业务时区和相同数据成熟度，项目绑定在两窗均有效。"
+      ],
+      "unit": [
+        "支出使用同一币种和缩放，只有合同声明为可加的返回渠道行才能求和。"
+      ]
+    },
+    "business_question": "在项目获客支出、归因、渠道和数据完整性口径不变时，返回渠道行的支出总和是否发生变化，调用方选择的渠道是否呈现相同方向？",
+    "data_checks": {
+      "completeness": [
+        "每个查询步骤都必须由同层 Capability Trust 明确证明为 complete，短页、返回行和 HTTP 成功不能提级。",
+        "两个窗口、渠道键、结果收据和项目依赖必须完整对齐，未返回渠道始终保留为未知残差。"
+      ],
+      "data_quality": [
+        "检查时间窗覆盖、连续性、空值、数值类型、非有限值、重复渠道键、币种单位和异常量级。",
+        "确认 Skill、Semantic、Context、Operator、Capability 和执行合同在查询前后没有漂移。"
+      ],
+      "failure_behavior": "任一必需检查失败时在目标查询前停止，或丢弃已执行结论，输出 Empty、Partial、Error 或 Gap 状态、稳定原因码和空业务结论。"
+    },
+    "dependency_status": [
+      {
+        "evidence": "Runtime 已登记稳定的 metric-anomaly-localization 产品；每次运行仍需通过当前 Trust、完整性与质量门禁。",
+        "identity": "metric-anomaly-localization@1",
+        "kind": "capability",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "该项目 Context 必须由调用项目按受治理路径、实体、有效时间、权威性和敏感度提供。",
+        "identity": "context://project-repo/merge2-acquisition-boundaries@1",
+        "kind": "context",
+        "reason_code": "CONTEXT_REQUIRED_MISSING",
+        "status": "requires_project_context"
+      },
+      {
+        "evidence": "Runtime Core 已登记确定性 returned-dimension-change Operator，并锁定输入、输出、假设和资源边界。",
+        "identity": "operator://gravity/returned-dimension-change@1",
+        "kind": "operator",
+        "reason_code": "DEPENDENCY_AVAILABLE",
+        "status": "available"
+      },
+      {
+        "evidence": "获客支出定义、物理字段、单位、生效窗口与 App 绑定由调用项目提供，Runtime 不从 ap_cost 字段名推断。",
+        "identity": "metric://project/acquisition-spend@1",
+        "kind": "semantic",
+        "reason_code": "SEMANTIC_DEFINITION_MISSING",
+        "status": "requires_project_binding"
+      }
+    ],
+    "diagnostic_tree": {
+      "branches": [
+        {
+          "branch_id": "comparison-not-ready",
+          "checks": [
+            "核对 Skill lock、Semantic、Context、Trust、完整性和质量。",
+            "核对两个窗口的长度、时区、生效范围和返回键。"
+          ],
+          "condition": "任一依赖缺失、漂移或两个窗口不可比。",
+          "leaves": [
+            {
+              "conclusion": "返回项目依赖缺口，不执行获客成本比较。",
+              "condition": "Skill lock、Semantic 或 Context 缺失或不一致。",
+              "exclusions": [
+                "不得从字段名、旧报告或外部文本猜测项目口径。"
+              ],
+              "leaf_id": "project-binding-gap"
+            },
+            {
+              "conclusion": "返回数据就绪性缺口，不解释返回行变化。",
+              "condition": "完整性不是 complete、质量未通过或窗口不可比。",
+              "exclusions": [
+                "不得用短页、成功状态或已有返回行代替完整性证明。"
+              ],
+              "leaf_id": "data-readiness-gap"
+            }
+          ]
+        },
+        {
+          "branch_id": "comparison-ready",
+          "checks": [
+            "比较两个窗口中相匹配渠道的返回行总和。",
+            "验证调用方选择渠道的变化方向是否与返回行总和一致。"
+          ],
+          "condition": "所有依赖已锁定，查询完整且数据质量通过。",
+          "leaves": [
+            {
+              "conclusion": "报告返回行总和与选择渠道同向变化。",
+              "condition": "两者变化符号一致且输入满足 Operator 假设。",
+              "exclusions": [
+                "同向变化不证明该渠道导致总体变化。"
+              ],
+              "leaf_id": "selected-channel-same-direction"
+            },
+            {
+              "conclusion": "报告返回行总和与选择渠道方向不同或无法匹配。",
+              "condition": "变化符号不一致、选择渠道缺失或变化为零。",
+              "exclusions": [
+                "不得据此推断未返回渠道、自然量、增量或投资回报。"
+              ],
+              "leaf_id": "selected-channel-divergent"
+            }
+          ]
+        }
+      ],
+      "root_question": "获客成本比较是否先满足精确锁定、口径可比、完整性 complete 和质量 pass？"
+    },
+    "dimension_scan": {
+      "baseline": "以等长基准窗中明确返回的渠道行为基准，只比较两个窗口都能按相同渠道键对齐的观测。",
+      "contribution_formula": "returned_change_k = current_ap_cost_k - reference_ap_cost_k; returned_share_k = returned_change_k / sum(abs(returned_change_i))",
+      "dimensions": [
+        {"dimension_id": "channel", "label": "返回渠道"},
+        {"dimension_id": "window", "label": "比较窗口"},
+        {"dimension_id": "attribution-boundary", "label": "归因边界"}
+      ],
+      "minimum_volume_rule": "任一窗口缺少匹配渠道、分母为零或低于项目最小观测量时，只报告有界事实，不计算稳定份额。",
+      "ranking_rule": "先按返回变化绝对值排序，再标记调用方选择渠道；排序仅覆盖明确返回并成功匹配的渠道。",
+      "residual_policy": "未返回渠道、无法匹配渠道、自然量和权限裁剪范围保留为未知残差，不补零也不外推。"
+    },
+    "examples": {
+      "eval_cases": [
+        {
+          "eval_id": "verified-comparison",
+          "expected_sections": ["scope-and-contract", "data-readiness", "method-output", "evidence", "claims-and-limitations"],
+          "forbidden_claims": ["complete-app-total", "causality", "roi"],
+          "question": "比较这两个等长窗口的获客成本，并检查我选的渠道是否同向变化。"
+        },
+        {
+          "eval_id": "incomplete-capability",
+          "expected_sections": ["data-readiness", "exclusions", "claims-and-limitations"],
+          "forbidden_claims": ["complete-app-total", "unreturned-values", "causality"],
+          "question": "接口返回了渠道行但完整性仍是未知，能否直接判断整体获客成本上涨？"
+        },
+        {
+          "eval_id": "missing-project-lock",
+          "expected_sections": ["scope-and-contract", "data-readiness", "claims-and-limitations"],
+          "forbidden_claims": ["causality", "incrementality", "natural-volume-attribution"],
+          "question": "项目没有锁定 AP 成本 Skill 和口径时，能否先按字段名运行？"
+        }
+      ],
+      "questions": [
+        "比较这两个等长窗口的获客成本，并检查我选的渠道是否同向变化。",
+        "接口返回了渠道行但完整性仍是未知，能否直接判断整体获客成本上涨？",
+        "项目没有锁定 AP 成本 Skill 和口径时，能否先按字段名运行？"
+      ],
+      "run_examples": [
+        {
+          "example_id": "locked-complete-success",
+          "expected": {
+            "allowed_claims": ["window-metric-change", "returned-dimension-change", "selected-slice-observation"],
+            "completeness": "complete",
+            "forbidden_claims": ["complete-app-total", "unreturned-values", "causality", "incrementality", "roi", "natural-volume-attribution"],
+            "network_called": true,
+            "reason_codes": [],
+            "sections": ["scope-and-contract", "data-readiness", "method-output", "dimension-contribution", "diagnostic-path", "exclusions", "evidence", "claims-and-limitations"],
+            "status": "success"
+          },
+          "input_template": {
+            "app": "<project-app-alias>",
+            "current_window": {"start": "<current-start>", "end": "<current-end>"},
+            "reference_window": {"start": "<reference-start>", "end": "<reference-end>"},
+            "selected_channel": "<project-channel-value>"
+          },
+          "question": "比较这两个等长窗口的获客成本，并检查我选的渠道是否同向变化。",
+          "scenario": "success",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "returned-prefix-partial",
+          "expected": {
+            "allowed_claims": ["selected-slice-observation"],
+            "completeness": "prefix",
+            "forbidden_claims": ["complete-app-total", "unreturned-values", "causality", "incrementality", "roi", "natural-volume-attribution"],
+            "network_called": true,
+            "reason_codes": ["METHOD_DATA_PARTIAL"],
+            "sections": ["scope-and-contract", "data-readiness", "evidence", "claims-and-limitations"],
+            "status": "partial"
+          },
+          "input_template": {
+            "app": "<project-app-alias>",
+            "current_window": {"start": "<current-start>", "end": "<current-end>"},
+            "reference_window": {"start": "<reference-start>", "end": "<reference-end>"},
+            "selected_channel": "<project-channel-value>"
+          },
+          "question": "只有部分渠道返回时，允许怎样描述我选择渠道的变化？",
+          "scenario": "empty_or_partial",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "missing-lock-gap",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": ["complete-app-total", "unreturned-values", "causality", "incrementality", "roi", "natural-volume-attribution"],
+            "network_called": false,
+            "reason_codes": ["HUB_SKILL_MISSING"],
+            "sections": ["scope-and-contract", "data-readiness", "claims-and-limitations"],
+            "status": "gap"
+          },
+          "input_template": {
+            "app": "<project-app-alias>",
+            "current_window": {"start": "<current-start>", "end": "<current-end>"},
+            "reference_window": {"start": "<reference-start>", "end": "<reference-end>"},
+            "skill_lock": "<missing>"
+          },
+          "question": "项目没有锁定 AP 成本 Skill 和口径时，能否先按字段名运行？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        }
+      ]
+    },
+    "exclusions": [
+      "不把明确返回渠道行之和称为完整 App 总支出。",
+      "不推断未返回渠道、权限裁剪范围或自然量为零。",
+      "不从窗口变化推导因果、增量、ROI 或预算优化结论。",
+      "不修改广告、预算、归因、报表、Semantic 或项目 Context。"
+    ],
+    "formulas": [
+      {
+        "denominator": "基准窗中匹配返回渠道行的支出总和；为零时不计算变化率。",
+        "expression": "returned_change_rate = (current_returned_sum - reference_returned_sum) / reference_returned_sum",
+        "formula_id": "returned-acquisition-spend-change-rate",
+        "interpretation": "该比例只描述两个窗口中明确返回并匹配渠道行的支出变化，不代表完整 App 总体。",
+        "numerator": "当前窗匹配返回渠道行支出总和减去基准窗对应总和。",
+        "requires_project_calibration": ["acquisition-spend-contract", "channel-comparison-contract"],
+        "unit": "无量纲比例",
+        "variables": [
+          {
+            "aggregation": "对合同允许相加的匹配返回渠道行求和",
+            "definition": "当前窗明确返回且通过渠道键匹配的获客支出。",
+            "distinct_by": null,
+            "symbol": "current_returned_sum"
+          },
+          {
+            "aggregation": "对合同允许相加的匹配返回渠道行求和",
+            "definition": "基准窗明确返回且通过渠道键匹配的获客支出。",
+            "distinct_by": null,
+            "symbol": "reference_returned_sum"
+          }
+        ],
+        "window": "两个等长、不重叠且使用同一时区、成熟度和项目绑定的闭合窗口。"
+      }
+    ],
+    "handoff": {
+      "authorization_boundary": "本方法只生成受治理分析结果，不自动调整预算、暂停渠道、修改归因、写入看板或执行任何生产动作。",
+      "automatic_execution": false,
+      "conditions": [
+        "只有项目负责人审阅完整证据、排除项和限制，并另行明确授权时，才可交给受治理实验或 Action。"
+      ],
+      "kind": "experiment",
+      "target": "受治理的渠道假设验证实验"
+    },
+    "method_revision": 1,
+    "procedure": [
+      {
+        "depends_on": [],
+        "instruction": "解析精确 Journey、Skill lock、项目 Overlay、获客支出 Semantic、Context、Capability 和 Operator 版本。",
+        "on_failure": "METHOD_INPUT_GAP",
+        "step_id": "resolve-locked-dependencies"
+      },
+      {
+        "depends_on": ["resolve-locked-dependencies"],
+        "instruction": "验证 App、两个窗口、渠道值、单位、归因和生效范围，并冻结值无关执行快照。",
+        "on_failure": "METHOD_SCOPE_INVALID",
+        "step_id": "validate-comparison-scope"
+      },
+      {
+        "depends_on": ["validate-comparison-scope"],
+        "instruction": "检查同层 Trust、完整性 complete 和数据质量 pass；任一不满足时保持零目标请求。",
+        "on_failure": "METHOD_DATA_INVALID",
+        "step_id": "gate-readiness"
+      },
+      {
+        "depends_on": ["gate-readiness"],
+        "instruction": "通过现有 Plan owner 执行两个窗口的受治理查询，记录请求预算、结果状态和收据引用。",
+        "on_failure": "METHOD_QUERY_ERROR",
+        "step_id": "execute-existing-plan"
+      },
+      {
+        "depends_on": ["execute-existing-plan"],
+        "instruction": "使用确定性 Operator 对齐渠道键并计算返回行总和、渠道变化和选择渠道的方向一致性。",
+        "on_failure": "METHOD_FORMULA_INVALID",
+        "step_id": "compare-returned-rows"
+      },
+      {
+        "depends_on": ["compare-returned-rows"],
+        "instruction": "沿依赖未就绪和比较已就绪两条诊断路径验证条件、反例与排除项，未通过叶子不得进入结论。",
+        "on_failure": "METHOD_DIAGNOSIS_INCONCLUSIVE",
+        "step_id": "traverse-diagnostic-tree"
+      },
+      {
+        "depends_on": ["traverse-diagnostic-tree"],
+        "instruction": "查询后重新冻结依赖快照；若发生漂移则丢弃结论，否则输出事实、证据、限制、允许和禁止断言。",
+        "on_failure": "DEPENDENCY_SNAPSHOT_CHANGED",
+        "step_id": "assemble-governed-result"
+      }
+    ],
+    "result": {
+      "required_fields": ["status", "reason-codes", "scope", "evidence", "conclusion", "allowed-claims", "forbidden-claims", "dependency-snapshot"],
+      "sections": [
+        {"section_id": "scope-and-contract", "title": "范围与契约"},
+        {"section_id": "data-readiness", "title": "数据与依赖就绪性"},
+        {"section_id": "method-output", "title": "返回行比较结果"},
+        {"section_id": "dimension-contribution", "title": "渠道维度变化"},
+        {"section_id": "diagnostic-path", "title": "诊断路径"},
+        {"section_id": "exclusions", "title": "排除项"},
+        {"section_id": "evidence", "title": "证据与完整性"},
+        {"section_id": "claims-and-limitations", "title": "允许断言与限制"}
+      ]
+    },
+    "scope": {
+      "applicable": [
+        "需要比较同一项目获客支出指标在两个等长窗口中的明确返回渠道行变化。",
+        "需要检查一个调用方明确选择的渠道是否与返回行总和呈现同向观测。"
+      ],
+      "not_applicable": [
+        "要求完整 App 总支出、未返回渠道推断、因果、增量、ROI 或自然量归因。",
+        "项目尚未提供获客支出 Semantic、归因边界 Context、精确 Skill lock 或受治理 App 绑定。"
+      ]
+    },
+    "states": {
+      "empty": {
+        "allowed_claims": [],
+        "behavior": "合法完整查询没有返回匹配渠道行时，报告空返回事实，不把空结果解释为支出为零或渠道不存在。",
+        "reason_code": "METHOD_RESULT_EMPTY"
+      },
+      "error": {
+        "allowed_claims": [],
+        "behavior": "查询、Operator、结果编译或快照复核失败时保留失败阶段和稳定原因码，不补写业务结论。",
+        "reason_code": "METHOD_EXECUTION_ERROR"
+      },
+      "gap": {
+        "allowed_claims": [],
+        "behavior": "缺少 Skill lock、CAS、Semantic、Context、Trust、完整性或质量证据时在目标请求前停止并给出精确补救。",
+        "reason_code": "METHOD_INPUT_GAP"
+      },
+      "partial": {
+        "allowed_claims": ["selected-slice-observation"],
+        "behavior": "只报告调用方选择且明确返回的渠道观测，保留未返回残差并禁止总体、排序完整性和根因断言。",
+        "reason_code": "METHOD_DATA_PARTIAL"
+      }
+    }
+  },
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [
+    "operator://gravity/returned-dimension-change@1"
+  ],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "not_required",
+    "source_kind": "first_party",
+    "source_ref": "gravity-insight/R01",
+    "source_revision": "4e44d1bac7d321962b20c3c42ec570a019338e69"
+  },
+  "readiness": "executable",
+  "request_budget": {
+    "known_requests_max": 4,
+    "known_requests_min": 4,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 4
+  },
+  "requirements": {
+    "completeness": "complete",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": false,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/acquisition-spend@1"
+  ],
+  "skill_id": "ap-cost-anomaly-localization",
+  "specification": "specified",
+  "summary": "比较两个窗口的返回获客支出渠道行，并检验一个已选择渠道的观测方向。",
+  "validation": "validated",
+  "version": "1.0.0"
+}

@@ -105,7 +105,7 @@
       "required": ["source_kind", "source_ref", "source_revision", "authorship", "license_review"],
       "additionalProperties": false,
       "properties": {
-        "source_kind": {"enum": ["built_in", "independent"]},
+        "source_kind": {"enum": ["first_party", "independent"]},
         "source_ref": {"type": "string", "minLength": 1, "maxLength": 256},
         "source_revision": {"type": "string", "minLength": 1, "maxLength": 128},
         "authorship": {"enum": ["independently_authored"]},

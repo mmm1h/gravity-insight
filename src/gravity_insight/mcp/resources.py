@@ -13,7 +13,7 @@ from typing import Any
 from urllib.parse import quote, unquote, urlsplit
 
 from ..agent_runtime_contracts import canonical_digest
-from ..skill_package import LocalSkillResolver
+from ..skill_hub_client import SkillHubClient
 
 
 RESOURCE_CATALOG_SCHEMA_VERSION = "gravity.mcp-resource-catalog.v1"
@@ -23,7 +23,7 @@ _STATIC_RESOURCES = (
     ("gravity://server/metadata", "Gravity MCP server metadata"),
     ("gravity://catalog/capabilities", "Governed Capability catalog"),
     ("gravity://catalog/journeys", "Registered Journey catalog"),
-    ("gravity://catalog/skills", "Installed Built-in Skill catalog"),
+    ("gravity://catalog/skills", "Synced Skill Hub catalog"),
     ("gravity://workspace/apps", "Configured workspace App aliases"),
     ("gravity://catalog/sql-products", "Registered SQL product catalog"),
     ("gravity://receipts", "Principal-scoped Runtime receipt page"),
@@ -118,8 +118,8 @@ class ResourceCatalog:
         self._access = access or ResourceAccessPolicy()
         self._cache = cache or ScopedResourceCache()
         self._page_size = page_size
-        self._skills = LocalSkillResolver(capability_trust=sdk.capability_trust)
         workspace = getattr(sdk, "workspace", None)
+        self._skill_state_root = getattr(workspace, "state_root", None)
         workspace_identity = str(
             getattr(workspace, "state_root", None)
             or getattr(workspace, "root", None)
@@ -200,7 +200,7 @@ class ResourceCatalog:
             "gravity://server/metadata": lambda: dict(self._metadata()),
             "gravity://catalog/capabilities": lambda: self._sdk.capabilities(limit=50),
             "gravity://catalog/journeys": self._sdk.journeys.list,
-            "gravity://catalog/skills": self._skills.list,
+            "gravity://catalog/skills": self._skill_list,
             "gravity://workspace/apps": self._workspace_apps,
             "gravity://catalog/sql-products": self._sql_products,
             "gravity://receipts": lambda: self._sdk.list_http_receipts(limit=100),
@@ -221,6 +221,9 @@ class ResourceCatalog:
         if vocabulary_query is not None:
             return dict(self._sdk.analysis_vocabulary(vocabulary_query, limit=50))
         raise ResourceError("Resource is unavailable")
+
+    def _skill_list(self) -> dict[str, Any]:
+        return SkillHubClient(self._skill_state_root).list()
 
     def _workspace_apps(self) -> dict[str, Any]:
         workspace = getattr(self._sdk, "workspace", None)

@@ -40,19 +40,19 @@ class SkillLibraryBuildTests(unittest.TestCase):
         self.assertEqual(self.outputs, builder.render_outputs())
 
     def test_build_contains_docs_packages_archives_and_indexes(self) -> None:
-        self.assertEqual(693, len(self.outputs))
-        self.assertEqual(43, sum(path.startswith("docs/") for path in self.outputs))
-        self.assertEqual(301, sum(path.startswith("packages/") for path in self.outputs))
+        self.assertEqual(709, len(self.outputs))
+        self.assertEqual(44, sum(path.startswith("docs/") for path in self.outputs))
+        self.assertEqual(308, sum(path.startswith("packages/") for path in self.outputs))
         self.assertEqual(
-            258,
+            264,
             sum(path.startswith("agent-skills/") for path in self.outputs),
         )
         self.assertEqual(
-            43,
+            44,
             sum(path.startswith("runtime-skill-") for path in self.outputs),
         )
         self.assertEqual(
-            43,
+            44,
             sum(
                 path.startswith("agent-skill-") and path.endswith(".zip")
                 for path in self.outputs
@@ -61,14 +61,14 @@ class SkillLibraryBuildTests(unittest.TestCase):
 
     def test_hub_index_contains_every_canonical_skill_once(self) -> None:
         identities = [item["skill_uri"] for item in self.index["skills"]]
-        self.assertEqual(43, len(identities))
+        self.assertEqual(44, len(identities))
         self.assertEqual(sorted(identities), identities)
         self.assertEqual(len(identities), len(set(identities)))
 
     def test_agent_index_contains_every_canonical_skill_once(self) -> None:
         identities = [item["skill_uri"] for item in self.agent_index["skills"]]
         names = [item["name"] for item in self.agent_index["skills"]]
-        self.assertEqual(43, len(identities))
+        self.assertEqual(44, len(identities))
         self.assertEqual(sorted(identities), identities)
         self.assertEqual(len(identities), len(set(identities)))
         self.assertEqual(len(names), len(set(names)))
@@ -190,10 +190,10 @@ class SkillLibraryBuildTests(unittest.TestCase):
             )
             semantic_rows.extend(semantics)
             required_context_rows.extend(required_context)
-        self.assertEqual(34, len(semantic_rows))
-        self.assertEqual(30, len(set(semantic_rows)))
-        self.assertEqual(23, len(required_context_rows))
-        self.assertEqual(23, len(set(required_context_rows)))
+        self.assertEqual(35, len(semantic_rows))
+        self.assertEqual(31, len(set(semantic_rows)))
+        self.assertEqual(24, len(required_context_rows))
+        self.assertEqual(24, len(set(required_context_rows)))
 
     def test_agent_archive_matches_index_and_unpacked_projection(self) -> None:
         for entry in self.agent_index["skills"]:
@@ -258,7 +258,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             )
 
     def test_static_hub_source_points_to_release_payload(self) -> None:
-        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v2"))
+        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v3"))
         self.assertEqual("static_https", self.source["transport"])
         self.assertIsNone(self.source["git"])
         self.assertTrue(self.source["https"]["index_url"].endswith("/index.json"))
@@ -270,6 +270,10 @@ class SkillLibraryBuildTests(unittest.TestCase):
         ]
         self.assertTrue(all("/" not in path for path in remote_archives))
         self.assertTrue(all(path in self.outputs for path in remote_archives))
+        self.assertLessEqual(
+            len(self.outputs["index.json"]),
+            self.source["limits"]["max_index_bytes"],
+        )
 
     def test_build_manifest_hashes_every_prior_output(self) -> None:
         rows = {row["path"]: row for row in self.build_manifest["files"]}
@@ -287,7 +291,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             if builder._is_release_asset(path)
         }
         self.assertEqual(expected, set(rows))
-        self.assertEqual(90, len(rows))
+        self.assertEqual(92, len(rows))
         self.assertTrue(all("/" not in path for path in rows))
         for path, row in rows.items():
             content = self.outputs[path]

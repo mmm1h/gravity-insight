@@ -21,6 +21,11 @@ from gravity_insight.reference_journey import (
 from gravity_insight.reference_journey_contract import reference_artifacts
 from tests.test_analysis_playbook import FakePlanExecutor, playbook_input
 from tests.test_project_skill_overlay import project_overlay, project_semantic_source
+from tests.locked_skill_fixture import (
+    locked_skill,
+    materialize_skill_cas,
+    write_skill_lock,
+)
 
 
 def journey_input():
@@ -122,9 +127,13 @@ class ChangingCoreRuntime:
 class ReferenceJourneyTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
-        self.root = Path(self.temporary.name)
-        self.state = self.root / "state"
+        base = Path(self.temporary.name)
+        self.root = base / "project"
+        self.root.mkdir()
+        self.state = base / "state"
         self.state.mkdir()
+        self.skill, self.skill_lock = locked_skill()
+        write_skill_lock(self.root, self.skill_lock)
         (self.root / "docs").mkdir()
         (self.root / "docs" / "metric.md").write_text(
             "# Metric\nCanonical metric boundary.", encoding="utf-8"
@@ -170,6 +179,7 @@ class ReferenceJourneyTests(unittest.TestCase):
             check=True,
             capture_output=True,
         )
+        materialize_skill_cas(self.state, self.skill)
         self.workspace = SimpleNamespace(root=self.root, state_root=self.state)
         self.sdk = FakeSDK(self.workspace)
         self.service = ReferenceJourneyRunner(self.sdk)

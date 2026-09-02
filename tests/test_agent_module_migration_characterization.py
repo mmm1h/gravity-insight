@@ -36,7 +36,7 @@ import json
 import sys
 
 expected = json.load(sys.stdin)
-assert len(expected) == 147, f"public snapshot count changed: {len(expected)}"
+assert len(expected) == 146, f"public snapshot count changed: {len(expected)}"
 
 def fresh_package():
     for module in list(sys.modules):
@@ -79,7 +79,7 @@ except AttributeError as error:
 else:
     raise AssertionError("unknown root export did not raise AttributeError")
 
-assert len(gravity_insight.__all__) == 148, (
+assert len(gravity_insight.__all__) == len(expected) + 1, (
     f"runtime __all__ count changed: {len(gravity_insight.__all__)}"
 )
 assert set(gravity_insight.__all__) == {*expected, "__version__"}
@@ -600,7 +600,7 @@ def run():
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
         expected = module_graph_baseline()
         self.assertEqual(
-            "6a96ff6f920ac9ad8424d302dbddc1659730fcdbd73f4811fae9a5b1300658b6",
+            "26efe36f11c93460ece23b9c12bc7bd3f8738f996c6427cc5e5420fc51f0a140",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(

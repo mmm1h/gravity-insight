@@ -37,13 +37,12 @@ def team_manifest(
 ) -> dict:
     path = (
         ROOT
-        / "src"
-        / "gravity_insight"
-        / "contracts"
         / "skills"
-        / "gravity.game.ap-cost-anomaly-localization.v1.json"
+        / "library"
+        / "ap-cost-anomaly-localization.json"
     )
     value = json.loads(path.read_text(encoding="utf-8"))
+    value.pop("method", None)
     value.update(
         {
             "namespace": namespace,
@@ -289,7 +288,7 @@ class SkillHubContractTests(unittest.TestCase):
         with self.assertRaisesRegex(SkillHubContractError, "SKILLS_LOCK_INVALID"):
             compile_skills_lock(malformed)
 
-    def test_lock_requires_exact_ids_and_rejects_builtin_override(self) -> None:
+    def test_lock_requires_exact_ids_and_accepts_first_party_library_skill(self) -> None:
         compiled = compile_hub_index(hub_index(packs=[]))
         with self.assertRaisesRegex(SkillHubContractError, "HUB_SKILL_MISSING"):
             build_skills_lock(
@@ -300,22 +299,23 @@ class SkillHubContractTests(unittest.TestCase):
 
         path = (
             ROOT
-            / "src"
-            / "gravity_insight"
-            / "contracts"
             / "skills"
-            / "gravity.game.ap-cost-anomaly-localization.v1.json"
+            / "library"
+            / "ap-cost-anomaly-localization.json"
         )
-        builtin = json.loads(path.read_text(encoding="utf-8"))
-        collision = compile_hub_index(
-            hub_index(skills=[skill_entry(builtin)], packs=[])
+        first_party = json.loads(path.read_text(encoding="utf-8"))
+        library = compile_hub_index(
+            hub_index(skills=[skill_entry(first_party)], packs=[])
         )
-        with self.assertRaisesRegex(SkillHubContractError, "HUB_BUILTIN_COLLISION"):
-            build_skills_lock(
-                collision,
-                source_snapshot(collision),
-                [next(iter(collision["skills"]))],
-            )
+        lock = build_skills_lock(
+            library,
+            source_snapshot(library),
+            [next(iter(library["skills"]))],
+        )
+        self.assertEqual(
+            "skill://gravity.game/ap-cost-anomaly-localization@1.0.0",
+            lock["skills"][0]["skill_uri"],
+        )
 
     def test_trusted_lock_and_installer_plan_are_separate_and_non_executable(self) -> None:
         wheel = b"trusted wheel"

@@ -13,7 +13,6 @@ from .journey_contract import load_journey_contract, validate_journey_bindings
 from .operator_registry import OperatorRegistry
 from .model_registry import ModelRegistry
 from .paths import PROJECT_ROOT
-from .skill_contract import skill_artifact
 
 
 def _journey_paths(root: Path) -> list[Path]:
@@ -92,8 +91,8 @@ def _dependency_reasons(
     if contract["required_context"]:
         reasons.append("PROJECT_CONTEXT_PACK_EVIDENCE_MISSING")
     required_skill = contract["required_skill"]
-    if required_skill and skill_artifact(required_skill) is None:
-        reasons.append("SKILL_DEPENDENCY_MISSING")
+    if required_skill:
+        reasons.append("PROJECT_SKILL_LOCK_EVIDENCE_MISSING")
     return list(dict.fromkeys(reasons)), evidence
 
 
@@ -126,7 +125,10 @@ def journey_certifications(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     for path, contract in contracts:
         reasons, capability_evidence = _dependency_reasons(
-            contract, trust=trust, operators=operators, models=models
+            contract,
+            trust=trust,
+            operators=operators,
+            models=models,
         )
         if registry_errors:
             reasons.append("JOURNEY_REGISTRY_BINDING_INVALID")

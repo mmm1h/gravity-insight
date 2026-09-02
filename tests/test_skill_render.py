@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import copy
-import importlib.util
 import json
 from pathlib import Path
 import unittest
 
-from gravity_insight.skill_contract import skill_artifact
 from gravity_insight.skill_render import (
     agent_skill_name,
     render_agent_export,
@@ -15,6 +13,7 @@ from gravity_insight.skill_render import (
     render_package_files,
     skill_package_descriptor,
 )
+from tests.locked_skill_fixture import skill_artifact
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +22,7 @@ SKILL_URI = "skill://gravity.game/ap-cost-anomaly-localization@1.0.0"
 
 class SkillRenderTests(unittest.TestCase):
     def test_repeated_package_render_is_byte_identical(self):
-        artifact = skill_artifact(SKILL_URI)
+        artifact = skill_artifact()
 
         first_files = render_package_files(artifact)
         second_files = render_package_files(artifact)
@@ -42,7 +41,7 @@ class SkillRenderTests(unittest.TestCase):
         )
 
     def test_agent_export_meets_frontmatter_and_progressive_disclosure_limits(self):
-        artifact = skill_artifact(SKILL_URI)
+        artifact = skill_artifact()
         export = render_agent_export(artifact, [artifact["contract"]])
         files = {item["path"]: item["content"] for item in export["files"]}
         lines = files["SKILL.md"].splitlines()
@@ -87,7 +86,7 @@ class SkillRenderTests(unittest.TestCase):
         self.assertFalse(export["network_called"])
 
     def test_namespace_normalization_collision_and_long_name_are_stable(self):
-        original = skill_artifact(SKILL_URI)["contract"]
+        original = skill_artifact()["contract"]
         first = copy.deepcopy(original)
         second = copy.deepcopy(original)
         first["namespace"] = "studio.alpha"
@@ -108,20 +107,14 @@ class SkillRenderTests(unittest.TestCase):
         self.assertEqual(long_name, agent_skill_name(long_contract, [long_contract]))
 
     def test_docs_and_package_generators_are_current(self):
-        artifact = skill_artifact(SKILL_URI)
+        artifact = skill_artifact()
         docs = ROOT / "docs" / "agent-skills" / "ap-cost-anomaly-localization.md"
         self.assertFalse(docs.exists())
         self.assertEqual(render_docs_mirror(artifact), render_docs_mirror(artifact))
-
-        script = ROOT / "scripts" / "generate_skill_packages.py"
-        spec = importlib.util.spec_from_file_location("skill_packages", script)
-        self.assertIsNotNone(spec)
-        self.assertIsNotNone(spec.loader)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        for path, content in module.render_outputs().items():
-            with self.subTest(path=path):
-                self.assertEqual(content, path.read_bytes())
+        wheel_skills = ROOT / "src" / "gravity_insight" / "skills"
+        self.assertFalse(
+            wheel_skills.exists() and any(path.is_file() for path in wheel_skills.rglob("*"))
+        )
 
 
 if __name__ == "__main__":

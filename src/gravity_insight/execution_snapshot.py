@@ -102,20 +102,6 @@ def _unique(values: Sequence[Mapping[str, Any]], *keys: str) -> None:
 def _validate_skill_binding(value: Mapping[str, Any] | None) -> None:
     if value is None:
         return
-    fields = (
-        "team_lock_digest",
-        "hub_source_digest",
-        "hub_source_reference",
-        "trusted_pack_lock_digest",
-        "trusted_pack_state_digest",
-        "trusted_pack_verification_digest",
-    )
-    if value["resolution"] == "unlocked":
-        if any(value[field] is not None for field in fields):
-            raise ExecutionSnapshotError(
-                "Unlocked Skill snapshot contains Team binding state"
-            )
-        return
     if (
         value["team_lock_digest"] is None
         or value["hub_source_digest"] is None

@@ -611,7 +611,7 @@
       }
     },
     {
-      "blocker_note": "`analysis.merge2.ap-cost-anomaly-localization` 由 `project.merge2` Overlay 显式扩展 Built-in Skill，绑定 project Semantic、deterministic Operator 与两份 `role=data` Repo Context；Core 将 exact Journey/Skill package/Overlay/Trust/Semantic/Operator/Context/执行合同冻结为值无关 `gravity.execution-snapshot.v1`，既有 runner/Plan 是唯一执行者并产出正式 `gravity.analysis-result.v1`。当前 `report.multidim.query` 权威完整性仍为 `unknown`，故 `can-run/run` 都返回 `blocked/COMPLETENESS_INSUFFICIENT`、空 findings/claims/receipts 且零请求；synthetic complete/fresh 只证明组合等价，不提升生产 Trust。",
+      "blocker_note": "`analysis.merge2.ap-cost-anomaly-localization` 由项目精确 Skill lock 与本地 CAS 解析 canonical Library Skill，再由 `project.merge2` Overlay 绑定 project Semantic、deterministic Operator 与两份 `role=data` Repo Context；wheel 不再内置业务 Skill，缺 lock/CAS 时以稳定 Hub gap 零请求失败关闭。Core 仍将 exact Journey/Skill package/lock/Overlay/Trust/Semantic/Operator/Context/执行合同冻结为值无关 `gravity.execution-snapshot.v1`，既有 runner/Plan 是唯一执行者并产出正式 `gravity.analysis-result.v1`。当前 `report.multidim.query` 权威完整性仍为 `unknown`，故依赖齐全时 `can-run/run` 仍返回 `blocked/COMPLETENESS_INSUFFICIENT`、空 findings/claims/receipts 且零请求；synthetic complete/fresh 只证明组合等价，不提升生产 Trust。",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
@@ -620,12 +620,12 @@
       "request_budget": {
         "raw": "can-run 0；当前 run 0"
       },
-      "row_digest": "a4bac63bf7d61b6f2fdf79c0fdd31c2c2a08caae67107099262af3c5247ffa3c",
+      "row_digest": "8005545d6c39debd1e290ad340b8d2224905a7774bb3fa88cdc3533b45c3201f",
       "surfaces": {
-        "agent": "有（Built-in Agent Skill）",
+        "agent": "有（Library Agent Skill）",
         "cli": "有",
         "plan": "复用既有 Plan",
-        "raw": "有 / 有 / 复用既有 Plan / 有（Built-in Agent Skill）",
+        "raw": "有 / 有 / 复用既有 Plan / 有（Library Agent Skill）",
         "sdk": "有"
       }
     },
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "99c27db9c7271ba5ee734a4f57c49c4d829157f7f5e7f4f7e85753b5f126a78b",
+  "snapshot_digest": "7f505bdf15698fdb6a04a57bbabd11f4dc57e5dcea4301a6082e96023215f058",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "056ca9fbecfed2f5a0a76fc89ec035c66b4e393def129b0232002d21578db142"
+  "source_sha256": "a026e7683d50d5141798bf96365b4672c643eafdbef21eaa542412b73b4bb652"
 }

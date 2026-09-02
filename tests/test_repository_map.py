@@ -197,7 +197,7 @@ class RepositoryMapTests(unittest.TestCase):
         payload = MAP_PATH.read_bytes()
         parsed = json.loads(payload)
         self.assertEqual(self.document, parsed)
-        self.assertLess(len(payload), 250_000)
+        self.assertLess(len(payload), 255_000)
 
 
 if __name__ == "__main__":

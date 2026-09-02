@@ -23,7 +23,7 @@ from .journey_contract import (
 )
 from .model_registry import ModelRegistry
 from .operator_registry import OperatorRegistry
-from .reference_journey_contract import JOURNEY_ID, reference_artifacts
+from .reference_journey_contract import JOURNEY_ID
 
 
 CAN_RUN_SCHEMA_VERSION = "gravity.journey-can-run.v1"
@@ -440,17 +440,8 @@ def _journey(journey_id: Any) -> dict[str, Any]:
 
 
 def _skill_reference(contract: Mapping[str, Any]) -> dict[str, Any] | None:
-    if contract["journey_id"] != JOURNEY_ID:
-        uri = contract.get("required_skill")
-        return {"uri": uri} if isinstance(uri, str) and uri else None
-    skill = reference_artifacts()["skill"]
-    manifest = skill["contract"]
-    return {
-        "namespace": manifest["namespace"],
-        "skill_id": manifest["skill_id"],
-        "version": manifest["version"],
-        "digest": skill["package_digest"],
-    }
+    uri = contract.get("required_skill")
+    return {"uri": uri} if isinstance(uri, str) and uri else None
 
 
 __all__ = [

@@ -27,7 +27,7 @@
     },
     {
       "case_id": "tool-inspect-skills",
-      "question": "Inspect the installed Skill metadata before choosing a workflow.",
+      "question": "Inspect the synced Hub Skill metadata before choosing a workflow.",
       "expected_first_choice": "tool:gravity.inspect:skill",
       "request": {"method": "tools/call", "name": "gravity.inspect", "arguments": {"kind": "skill"}},
       "legal_answer": {"kind": "tool_result", "is_error": false, "status": "success"}
@@ -111,7 +111,7 @@
     },
     {
       "case_id": "resource-skill-catalog",
-      "question": "Read the catalog Resource for installed Built-in Skills.",
+      "question": "Read the catalog Resource for synced Hub Skills.",
       "expected_first_choice": "resource:gravity://catalog/skills",
       "request": {"method": "resources/read", "uri": "gravity://catalog/skills"},
       "legal_answer": {"kind": "resource_content"}

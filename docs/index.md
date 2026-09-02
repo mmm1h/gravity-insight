@@ -11,7 +11,7 @@
 | 从 Skill Hub 发现、锁定或安装统一方法 | [CLI Skill Hub 参考](reference/cli.md#skill-hub-与-agent-skill) | [Runtime Component Index](../specs/agent-runtime/index.md) |
 | 执行事件、漏斗、留存、导出或受治理写入 | [Agent 任务指南](agent-skills/index.md) | [CLI 参考](reference/cli.md)、[分页语义](reference/pagination.md) |
 | 在 Python 中长期集成 | [SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
-| 升级版本或维护发布说明 | [迁移说明](migration/README.md) | [0.3.4 迁移说明](migration/0.3.4.md)、[CHANGELOG](../CHANGELOG.md) |
+| 升级版本或维护发布说明 | [迁移说明](migration/README.md) | [0.3.5 迁移说明](migration/0.3.5.md)、[CHANGELOG](../CHANGELOG.md) |
 | 在本地 Host 试用 MCP stdio | [MCP stdio 试点](reference/mcp.md) | [团队上手包](team-onboarding.md) |
 | 生成或执行显式 DAG / playbook | [Plan 参考](reference/plan.md) | [Agent 工作流](agent-workflow.md) |
 | 定位 operation 字段、错误码或 fail-closed 行为 | [机器契约索引](reference/cli.md#machine-contract-index) | 运行时 `describe` / `schema` 输出 |

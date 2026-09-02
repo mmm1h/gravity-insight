@@ -13,7 +13,6 @@ from .agent_runtime_contracts import (
     validate_schema,
 )
 from .runtime_compatibility import normalized_version, runtime_satisfies, runtime_within
-from .skill_contract import skill_artifact
 from .skill_hub_archive import validate_wheel_file
 from .skill_hub_contract import SkillHubContractError, artifact_path
 
@@ -47,10 +46,6 @@ def build_skills_lock(
     identities = _requested(requested, "skill")
     entries: list[dict[str, Any]] = []
     for identity in identities:
-        if skill_artifact(identity) is not None:
-            raise SkillHubContractError(
-                "HUB_BUILTIN_COLLISION", "Hub lock cannot override a Built-in Skill"
-            )
         entry = index["skills"].get(identity)
         if entry is None:
             raise SkillHubContractError("HUB_SKILL_MISSING", "Exact Hub Skill is missing")

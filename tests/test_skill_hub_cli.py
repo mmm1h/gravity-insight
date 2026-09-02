@@ -123,6 +123,11 @@ class SkillHubCliTests(unittest.TestCase):
         self.assertEqual(0, code, stderr)
         self.assertEqual("synced", synced["status"])
 
+        code, listed, _ = self.invoke("skills", "list", *common)
+        self.assertEqual(0, code)
+        self.assertEqual("gravity.skill-hub-list.v1", listed["schema_version"])
+        self.assertEqual(self.skill["skill_uri"], listed["results"][0]["skill_uri"])
+
         code, searched, _ = self.invoke(
             "skills", "search", "team-analysis", *common
         )
@@ -189,21 +194,6 @@ class SkillHubCliTests(unittest.TestCase):
         code, audit, _ = self.invoke("skills", "audit", *common)
         self.assertEqual(0, code)
         self.assertEqual(1, len(audit["sources"]))
-
-        code, builtins, _ = self.invoke("skills", "list")
-        self.assertEqual(0, code)
-        self.assertEqual("unlocked", builtins["skills"][0]["skill_resolution"])
-        export_root = self.root / "agent-export"
-        code, exported, _ = self.invoke(
-            "skills",
-            "export-agent",
-            builtins["skills"][0]["skill_uri"],
-            "--output",
-            str(export_root),
-        )
-        self.assertEqual(0, code)
-        self.assertEqual("written", exported["status"])
-        self.assertTrue((Path(exported["output"]) / "SKILL.md").is_file())
 
     def test_trusted_cli_stops_at_exact_external_installer_plan(self) -> None:
         common = self.local()

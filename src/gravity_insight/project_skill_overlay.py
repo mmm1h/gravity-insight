@@ -1,4 +1,4 @@
-"""Tracked project bindings for exact Built-in Skill composition."""
+"""Tracked project bindings for exact locked Skill composition."""
 
 from __future__ import annotations
 

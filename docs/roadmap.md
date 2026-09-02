@@ -34,6 +34,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - Agent Skill 分发完成不等于 Method Complete；`generate_method_gap_report.py` 的逐项机器结果继续作为方法完整度 Owner，未完整 manifest 是后续 Skill Hub 内容深化的首要输入，不由 ZIP 数量或可安装状态掩盖。
 - CT05 按获批 staged epic 将适用外部方法清单固定为 43 项；最终退出要求 43/43 均为 Method Complete、每项至少三类结构化运行示例、Runtime 自有依赖无缺口，项目自有 Semantic/Context 缺口有可验证模板。内容完整不自动提升 readiness。
 - CT05 已通过 [`skill-library-v2`](https://github.com/mmm1h/gravity-insight/releases/tag/skill-library-v2) 发布：标签固定到 `ad1097443e6fd29bdcdb9bf36ce803271be2ae47`，90 个 receipt-bound 资产加 build manifest 均通过 checkout 外回读，43/43 Runtime 与 43/43 Agent archive 完整验证；canonical source SHA-256 为 `b03992523e2bbb9c31c4c50d8b35af143ddaaa44a30b3fc2becb6a7364e6ad71`，build manifest SHA-256 为 `b23fc0e657e2ed6defb81ecb5f8f050a03ace04aa026c5198cb603e3c93c3243`。已公开的 `skill-library-v1` 85 个资产保持不变，使旧 lock 的 URL、摘要与安装能力继续可用。
+- 0.3.5 收敛业务 Skill 分发：Runtime wheel 内置业务 Skill 数归零，43 项外部方法与 Runtime 第一方 AP 成本参考方法统一组成 44 项 canonical Library；R01 只接受项目提交的精确 Skill lock 与本地核验 CAS，缺失时零目标请求失败关闭。`skill-library-v3` 与 0.3.5 发布完成前不宣称外部可用，v1/v2 资产继续不可变。
 - Skill Library build receipt schema 直接升级到 v2，将完整本地 QA tree 与 GitHub Release 的扁平 `release_assets` 分开；receipt schema v1 从未发布且没有当前消费者，因此该破坏性升级不损失读取或安装能力。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。

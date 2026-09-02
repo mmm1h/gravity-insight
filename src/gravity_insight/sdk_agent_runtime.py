@@ -140,7 +140,7 @@ class AgentRuntimeSdkMixin:
 
     @property
     def skill_runtime(self) -> Any:
-        """The offline Built-in or exact locked Team Skill runtime."""
+        """The offline exact project-locked Skill runtime."""
 
         if self._skill_runtime_service is None:
             with self._skill_runtime_lock:

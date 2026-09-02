@@ -13,6 +13,13 @@ from gravity_insight.execution_snapshot import (
 
 
 DIGEST = "a" * 64
+HUB_SOURCE = {
+    "source_id": "hub-source://org/example@1",
+    "transport": "git",
+    "source_descriptor_digest": "7" * 64,
+    "source_revision": "8" * 40,
+    "index_digest": "9" * 64,
+}
 
 
 def snapshot(**changes):
@@ -24,10 +31,10 @@ def snapshot(**changes):
             "version": "1.0.0",
             "manifest_digest": "b" * 64,
             "package_digest": "c" * 64,
-            "resolution": "unlocked",
-            "team_lock_digest": None,
-            "hub_source_digest": None,
-            "hub_source_reference": None,
+            "resolution": "locked",
+            "team_lock_digest": "0" * 64,
+            "hub_source_digest": canonical_digest(HUB_SOURCE),
+            "hub_source_reference": HUB_SOURCE,
             "trusted_pack_lock_digest": None,
             "trusted_pack_state_digest": None,
             "trusted_pack_verification_digest": None,
@@ -138,28 +145,13 @@ class ExecutionSnapshotTests(unittest.TestCase):
 
         self.assertEqual("analysis.example", value["journey"]["journey_id"])
 
-    def test_skill_binding_requires_exact_locked_or_empty_unlocked_state(self):
-        source = {
-            "source_id": "hub-source://org/example@1",
-            "transport": "git",
-            "source_descriptor_digest": "7" * 64,
-            "source_revision": "8" * 40,
-            "index_digest": "9" * 64,
-        }
+    def test_skill_binding_requires_exact_locked_source_state(self):
         locked = copy.deepcopy(snapshot()["skill"])
-        locked.update(
-            {
-                "resolution": "locked",
-                "team_lock_digest": "0" * 64,
-                "hub_source_digest": canonical_digest(source),
-                "hub_source_reference": source,
-            }
-        )
         self.assertEqual("locked", snapshot(skill=locked)["skill"]["resolution"])
 
         polluted = copy.deepcopy(snapshot()["skill"])
-        polluted["team_lock_digest"] = "0" * 64
-        with self.assertRaisesRegex(ExecutionSnapshotError, "Team binding"):
+        polluted["team_lock_digest"] = None
+        with self.assertRaisesRegex(ExecutionSnapshotError, "source binding"):
             snapshot(skill=polluted)
 
         drifted = copy.deepcopy(locked)

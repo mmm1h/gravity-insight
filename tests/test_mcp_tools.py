@@ -90,6 +90,15 @@ class MCPToolTests(unittest.TestCase):
         self.assertTrue(execution["isError"])
         self.assertEqual(0, self.network_calls)
 
+    def test_skill_inspection_reads_synced_hub_state_without_target_network(self) -> None:
+        inspected = tool_call(self.server, "gravity.inspect", {"kind": "skill"})
+
+        result = inspected["structuredContent"]["result"]
+        self.assertEqual("gravity.skill-hub-list.v1", result["schema_version"])
+        self.assertEqual(0, result["count"])
+        self.assertFalse(result["network_called"])
+        self.assertEqual(0, self.network_calls)
+
     def test_execute_rejects_raw_operation_shape_before_network(self) -> None:
         result = tool_call(
             self.server,

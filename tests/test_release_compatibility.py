@@ -53,8 +53,14 @@ class ReleaseCompatibilityTests(unittest.TestCase):
             "docs/migration/0.3.4.md", releases["0.3.4"]["migration_guide"]
         )
         self.assertEqual("released", releases["0.3.4"]["release_status"])
-        self.assertEqual("unreleased", releases["0.3.5"]["release_status"])
-        self.assertEqual("none", releases["0.3.5"]["breaking_status"])
+        self.assertEqual("released", releases["0.3.5"]["release_status"])
+        self.assertEqual("breaking", releases["0.3.5"]["breaking_status"])
+        self.assertEqual(1, len(releases["0.3.5"]["hard_breaks"]))
+        self.assertEqual(
+            "docs/migration/0.3.5.md", releases["0.3.5"]["migration_guide"]
+        )
+        self.assertEqual("unreleased", releases["0.3.6"]["release_status"])
+        self.assertEqual("none", releases["0.3.6"]["breaking_status"])
         for version in ("0.3.1", "0.3.2"):
             with self.subTest(version=version):
                 self.assertEqual("unknown", releases[version]["breaking_status"])
@@ -80,18 +86,20 @@ class ReleaseCompatibilityTests(unittest.TestCase):
             changelog = root / "CHANGELOG.md"
             migration_dir = root / "docs/migration"
             migration_dir.mkdir(parents=True)
-            for version in ("0.3.3", "0.3.4", "0.3.5"):
+            for version in ("0.3.3", "0.3.4", "0.3.5", "0.3.6"):
                 (migration_dir / f"{version}.md").write_text(
                     f"# Synthetic {version} migration\n", encoding="utf-8"
                 )
             source = CHANGELOG_PATH.read_text(encoding="utf-8")
-            marker = "- None.\n"
+            marker = "Target release: `0.3.6`\n\n### Breaking changes\n\n- None."
             self.assertIn(marker, source)
             changelog.write_text(
                 source.replace(
                     marker,
-                    "- **Hard break:** synthetic stale-contract proof.\n"
-                    "\nMigration guide: [0.3.5](docs/migration/0.3.5.md)\n",
+                    "Target release: `0.3.6`\n\n"
+                    "Migration guide: [0.3.6](docs/migration/0.3.6.md)\n\n"
+                    "### Breaking changes\n\n"
+                    "- **Hard break:** synthetic stale-contract proof.",
                     1,
                 ),
                 encoding="utf-8",
@@ -107,8 +115,18 @@ class ReleaseCompatibilityTests(unittest.TestCase):
             wheel = build_offline_wheel(ROOT, Path(raw))
             with zipfile.ZipFile(wheel) as bundle:
                 packaged = json.loads(bundle.read(WHEEL_CONTRACT_PATH))
+                names = bundle.namelist()
+                root_init = bundle.read("gravity_insight/__init__.py")
 
         self.assertEqual(load_release_compatibility(), packaged)
+        self.assertFalse(
+            any(
+                name.startswith("gravity_insight/skills/")
+                or name.startswith("gravity_insight/contracts/skills/")
+                for name in names
+            )
+        )
+        self.assertNotIn(b"LocalSkillResolver", root_init)
 
 
 if __name__ == "__main__":

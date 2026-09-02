@@ -24,15 +24,7 @@ def skill_reference(artifact: Mapping[str, Any] | None) -> dict[str, Any] | None
     contract = artifact["contract"]
     binding = artifact.get("runtime_binding")
     if not isinstance(binding, Mapping):
-        binding = {
-            "resolution": "unlocked",
-            "team_lock_digest": None,
-            "hub_source_digest": None,
-            "hub_source_reference": None,
-            "trusted_pack_lock_digest": None,
-            "trusted_pack_state_digest": None,
-            "trusted_pack_verification_digest": None,
-        }
+        raise ValueError("resolved Skill is missing its exact project lock binding")
     return {
         "uri": artifact["skill_uri"],
         "version": contract["version"],

@@ -28,7 +28,6 @@ import scripts.generate_agent_skills as agent_guides
 import scripts.generate_execution_variant_characterization as execution_variant
 import scripts.generate_journey_ledger as journey_ledger
 import scripts.generate_skill_library as skill_library_generator
-import scripts.generate_skill_packages as skill_packages
 from gravity_insight.documentation_gate import (
     DocumentationGateError,
     validate_architecture_binding,
@@ -1917,33 +1916,6 @@ class GateFailureGuidanceTests(unittest.TestCase):
                     agent_guides.main()
         self.assertIn("do not match their current contract inputs", str(raised.exception))
         self.assertIn("python scripts/generate_agent_skills.py", str(raised.exception))
-
-    def test_skill_package_mismatch_message_gives_rebuild_command(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
-            target = Path(temp) / "package" / "SKILL.md"
-            with patch.object(skill_packages, "render_outputs", return_value={target: b"new"}), patch.object(
-                sys, "argv", ["generate_skill_packages.py", "--check"]
-            ):
-                with self.assertRaises(SystemExit) as raised:
-                    skill_packages.main()
-        self.assertIn("missing or differ", str(raised.exception))
-        self.assertIn("python scripts/generate_skill_packages.py", str(raised.exception))
-
-    def test_skill_package_extra_message_requires_manual_deletion_review(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:
-            target = Path(temp) / "package" / "SKILL.md"
-            target.parent.mkdir()
-            target.write_bytes(b"current")
-            extra = target.parent / "unexpected.txt"
-            extra.write_text("unexpected", encoding="utf-8")
-            with patch.object(skill_packages, "render_outputs", return_value={target: b"current"}), patch.object(
-                sys, "argv", ["generate_skill_packages.py", "--check"]
-            ):
-                with self.assertRaises(SystemExit) as raised:
-                    skill_packages.main()
-        self.assertIn("unregistered files", str(raised.exception))
-        self.assertIn("will not delete", str(raised.exception))
-        self.assertIn("delete only files that are not registered", str(raised.exception))
 
     def test_journey_ledger_stale_message_gives_rebuild_command(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temp:

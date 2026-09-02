@@ -73,7 +73,7 @@
         "version": {"type": "string", "minLength": 5, "maxLength": 64},
         "manifest_digest": {"$ref": "#/$defs/digest"},
         "package_digest": {"$ref": "#/$defs/digest"},
-        "resolution": {"enum": ["unlocked", "locked"]},
+        "resolution": {"const": "locked"},
         "team_lock_digest": {"$ref": "#/$defs/nullable_digest"},
         "hub_source_digest": {"$ref": "#/$defs/nullable_digest"},
         "hub_source_reference": {"anyOf": [{"$ref": "#/$defs/hub_source"}, {"type": "null"}]},

@@ -65,7 +65,6 @@ _LOW_RISK_PREFIXES = (
     "content/",
     "docs/",
     "skills/",
-    "src/gravity_insight/skills/",
     "tests/",
 )
 _LOW_RISK_EXACT_PATHS = {"README.md", "SECURITY.md"}

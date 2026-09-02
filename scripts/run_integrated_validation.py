@@ -139,10 +139,6 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
             (py, "scripts/generate_agent_skills.py", "--check"),
         ),
         GateSpec(
-            "generator_skill_packages",
-            (py, "scripts/generate_skill_packages.py", "--check"),
-        ),
-        GateSpec(
             "generator_journey_ledger",
             (py, "scripts/generate_journey_ledger.py", "--check"),
         ),

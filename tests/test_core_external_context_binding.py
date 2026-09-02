@@ -18,8 +18,6 @@ from gravity_insight.journey_contract import journey_artifact
 from gravity_insight.provider_rpc_transport import CallableProviderTransport
 from gravity_insight.reference_journey import ReferenceJourneyRunner
 from gravity_insight.reference_journey_contract import JOURNEY_ID, SKILL_URI
-from gravity_insight.skill_contract import skill_artifact
-from gravity_insight.skill_render import skill_package_descriptor
 from tests.test_core_skill_runtime import scope
 from tests.test_external_context_binding import REQUIREMENT_ID, binding
 from tests.test_external_context_contracts import provider_descriptor, resource, response
@@ -29,6 +27,12 @@ from tests.test_reference_journey import (
     StaticTrustService,
     journey_input,
     stable_trust,
+)
+from tests.locked_skill_fixture import (
+    bind_locked_skill,
+    locked_skill,
+    materialize_skill_cas,
+    write_skill_lock,
 )
 
 
@@ -48,7 +52,7 @@ class StaticSkillResolver:
 
 
 def external_skill(*, required: bool) -> dict:
-    artifact = skill_artifact(SKILL_URI)
+    artifact, lock = locked_skill()
     contract = artifact["contract"]
     field = "required" if required else "optional"
     contract["context_dependencies"][field].append(REQUIREMENT_ID)
@@ -56,17 +60,7 @@ def external_skill(*, required: bool) -> dict:
         "selected-slice-observation"
     ]
     artifact["digest"] = canonical_digest(contract)
-    artifact["package_digest"] = skill_package_descriptor(artifact)["package_digest"]
-    artifact["runtime_binding"] = {
-        "resolution": "unlocked",
-        "team_lock_digest": None,
-        "hub_source_digest": None,
-        "hub_source_reference": None,
-        "trusted_pack_lock_digest": None,
-        "trusted_pack_state_digest": None,
-        "trusted_pack_verification_digest": None,
-    }
-    return artifact
+    return bind_locked_skill(artifact, lock)
 
 
 def external_journey() -> dict:
@@ -79,7 +73,12 @@ def external_journey() -> dict:
 class CoreExternalContextBindingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
-        self.root = Path(self.temporary.name)
+        base = Path(self.temporary.name)
+        self.root = base / "project"
+        self.root.mkdir()
+        self.state = base / "state"
+        self.skill, self.skill_lock = locked_skill()
+        write_skill_lock(self.root, self.skill_lock)
         (self.root / "docs").mkdir()
         (self.root / "docs" / "metric.md").write_text(
             "# Metric\nCanonical metric boundary.", encoding="utf-8"
@@ -126,9 +125,10 @@ class CoreExternalContextBindingTests(unittest.TestCase):
             check=True,
             capture_output=True,
         )
+        materialize_skill_cas(self.state, self.skill)
         self.workspace = SimpleNamespace(
             root=self.root,
-            state_root=self.root / "state",
+            state_root=self.state,
         )
 
     def tearDown(self) -> None:

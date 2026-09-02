@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import unittest
 
+from gravity_insight.agent_runtime_contracts import canonical_digest
 from gravity_insight.analysis_result_contract import (
     AnalysisResultContractError,
     compile_analysis_result,
@@ -109,6 +110,13 @@ def execution_snapshot(*, context=True, status="resolved"):
         if context
         else []
     )
+    source = {
+        "source_id": "hub-source://org/example@1",
+        "transport": "git",
+        "source_descriptor_digest": "7" * 64,
+        "source_revision": "8" * 40,
+        "index_digest": "9" * 64,
+    }
     return build_execution_snapshot(
         status=status,
         journey={"journey_id": "analysis.example", "version": 1, "digest": "a" * 64},
@@ -117,10 +125,10 @@ def execution_snapshot(*, context=True, status="resolved"):
             "version": "1.0.0",
             "manifest_digest": "b" * 64,
             "package_digest": "c" * 64,
-            "resolution": "unlocked",
-            "team_lock_digest": None,
-            "hub_source_digest": None,
-            "hub_source_reference": None,
+            "resolution": "locked",
+            "team_lock_digest": "0" * 64,
+            "hub_source_digest": canonical_digest(source),
+            "hub_source_reference": source,
             "trusted_pack_lock_digest": None,
             "trusted_pack_state_digest": None,
             "trusted_pack_verification_digest": None,

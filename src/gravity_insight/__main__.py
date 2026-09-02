@@ -21,8 +21,7 @@ Usage:
   gravity runtime health
   gravity docs check
   gravity capabilities trust|validate|impact
-  gravity skills list|show|export-agent
-  gravity skills sync|search|resolve|lock|fetch|install|update|verify|audit
+  gravity skills list|show|sync|search|resolve|lock|fetch|install|update|verify|audit
   gravity trusted-packs resolve|lock|fetch|verify|install-plan
   gravity action segment-update|dashboard-delivery preview|execute --input <json|file|->
   gravity experiment propose|outcome-handoff --input <json|file|->

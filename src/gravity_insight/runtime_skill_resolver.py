@@ -1,4 +1,4 @@
-"""Offline Built-in or exact Team Skill resolution for Core Runtime."""
+"""Offline resolution of exact project-locked Skill Hub packages."""
 
 from __future__ import annotations
 
@@ -21,7 +21,6 @@ from .runtime_compatibility import normalized_version, runtime_satisfies
 from .skill_contract import (
     SkillContractError,
     normalize_skill_identity,
-    skill_artifact,
     validate_skill_journey_parity,
 )
 from .skill_hub_archive import validate_skill_directory
@@ -32,7 +31,6 @@ from .skill_hub_state import (
     compile_trusted_installation_state,
     read_json,
 )
-from .skill_package import SkillPackageError, validate_skill_package
 from .trusted_pack_hub import verify_trusted_pack_startup
 
 
@@ -45,7 +43,7 @@ _DistributionLookup = Callable[[str], Any]
 
 
 class RuntimeSkillResolver:
-    """Resolve code-owned Built-ins or one exact project-locked Team package."""
+    """Resolve one exact project-locked Skill without network activity."""
 
     def __init__(
         self,
@@ -80,24 +78,7 @@ class RuntimeSkillResolver:
             identity = normalize_skill_identity(identifier)
         except InputValidationError:
             return _result(None, ["SKILL_DEPENDENCY_UNRESOLVED"])
-        builtin = skill_artifact(identity)
-        if builtin is not None:
-            return self._resolve_builtin(builtin, journey)
         return self._resolve_locked(identity, journey)
-
-    def _resolve_builtin(
-        self,
-        artifact: dict[str, Any],
-        journey: Mapping[str, Any] | None,
-    ) -> dict[str, Any]:
-        try:
-            package = validate_skill_package(artifact)
-            artifact["package_digest"] = package["package_digest"]
-            artifact["runtime_binding"] = _binding("unlocked")
-            reasons = _artifact_reasons(artifact, journey)
-        except SkillPackageError:
-            return _result(None, ["SKILL_PACKAGE_INVALID"])
-        return _result(artifact, reasons)
 
     def _resolve_locked(
         self,
@@ -127,13 +108,12 @@ class RuntimeSkillResolver:
             )
             if entry is None:
                 raise SkillHubContractError(
-                    "HUB_SKILL_MISSING", "Exact Team Skill is absent from the lock"
+                    "HUB_SKILL_MISSING", "Exact Skill is absent from the project lock"
                 )
             verified = self._cas_artifact(entry)
             artifact = copy.deepcopy(verified["artifact"])
             artifact["package_digest"] = verified["package"]["package_digest"]
             artifact["runtime_binding"] = _binding(
-                "locked",
                 team_lock_digest=lock["lock_digest"],
                 hub_source=lock["source"],
             )
@@ -338,11 +318,11 @@ def _validate_locked_entry(
         compatible = runtime_satisfies(runtime_version, contract["runtime_requires"])
     except ValueError as exc:
         raise SkillHubContractError(
-            "HUB_RUNTIME_INCOMPATIBLE", "Team Skill Runtime requirement is invalid"
+            "HUB_RUNTIME_INCOMPATIBLE", "Locked Skill Runtime requirement is invalid"
         ) from exc
     if not compatible:
         raise SkillHubContractError(
-            "HUB_RUNTIME_INCOMPATIBLE", "Team Skill does not support this Runtime"
+            "HUB_RUNTIME_INCOMPATIBLE", "Locked Skill does not support this Runtime"
         )
     if (
         artifact["skill_uri"] != entry["skill_uri"]
@@ -353,11 +333,7 @@ def _validate_locked_entry(
     ):
         raise SkillHubContractError(
             "HUB_SKILL_DIGEST_MISMATCH",
-            "Team Skill lock and verified CAS content disagree",
-        )
-    if contract["provenance"]["source_kind"] != "independent":
-        raise SkillHubContractError(
-            "HUB_SKILL_INVALID", "Team Skill provenance is not independent"
+            "Project Skill lock and verified CAS content disagree",
         )
 
 
@@ -423,14 +399,13 @@ def _artifact_reasons(
 
 
 def _binding(
-    resolution: str,
     *,
     team_lock_digest: str | None = None,
     hub_source: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     source = copy.deepcopy(dict(hub_source)) if hub_source is not None else None
     return {
-        "resolution": resolution,
+        "resolution": "locked",
         "team_lock_digest": team_lock_digest,
         "hub_source_digest": canonical_digest(source) if source is not None else None,
         "hub_source_reference": source,

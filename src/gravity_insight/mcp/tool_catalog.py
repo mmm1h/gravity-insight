@@ -41,7 +41,7 @@ _DEFINITIONS = (
     ToolDefinition(
         "gravity.inspect",
         "Inspect Gravity Runtime",
-        "Inspect one selected metadata object without target network access. A Skill is an installed versioned workflow package; a Journey is a registered task and acceptance contract. Choose the kind explicitly.",
+        "Inspect one selected metadata object without target network access. A Skill is a synced Hub workflow package; a Journey is a registered task and acceptance contract. Choose the kind explicitly.",
         True,
         True,
     ),

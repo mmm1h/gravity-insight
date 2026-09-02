@@ -11,6 +11,11 @@ from gravity_insight.core_skill_runtime import CoreSkillRuntime
 from gravity_insight.reference_journey_contract import JOURNEY_ID
 from tests.test_project_skill_overlay import project_overlay, project_semantic_source
 from tests.test_reference_journey import StaticTrustService, stable_trust
+from tests.locked_skill_fixture import (
+    locked_skill,
+    materialize_skill_cas,
+    write_skill_lock,
+)
 
 
 def scope(app_alias="merge2-legacy"):
@@ -26,7 +31,12 @@ def scope(app_alias="merge2-legacy"):
 class CoreSkillRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
-        self.root = Path(self.temporary.name)
+        base = Path(self.temporary.name)
+        self.root = base / "project"
+        self.root.mkdir()
+        self.state = base / "state"
+        self.skill, self.skill_lock = locked_skill()
+        write_skill_lock(self.root, self.skill_lock)
         (self.root / "docs").mkdir()
         (self.root / "docs" / "metric.md").write_text(
             "# Metric\nCanonical metric boundary.", encoding="utf-8"
@@ -70,12 +80,13 @@ class CoreSkillRuntimeTests(unittest.TestCase):
             check=True,
             capture_output=True,
         )
-        self.workspace = SimpleNamespace(root=self.root, state_root=self.root / "state")
+        materialize_skill_cas(self.state, self.skill)
+        self.workspace = SimpleNamespace(root=self.root, state_root=self.state)
 
     def tearDown(self):
         self.temporary.cleanup()
 
-    def test_complete_local_dependencies_resolve_without_hub_or_provider(self):
+    def test_complete_locked_dependencies_resolve_without_network_or_provider(self):
         runtime = CoreSkillRuntime(
             workspace=self.workspace,
             capability_trust=StaticTrustService(stable_trust()),
@@ -88,7 +99,10 @@ class CoreSkillRuntimeTests(unittest.TestCase):
         )
 
         self.assertEqual("verified", result["status"])
-        self.assertEqual("unlocked", result["skill"]["resolution"])
+        self.assertEqual("locked", result["skill"]["resolution"])
+        self.assertEqual(
+            self.skill_lock["lock_digest"], result["skill"]["team_lock_digest"]
+        )
         self.assertEqual("executable", result["readiness"]["declared"])
         self.assertEqual("resolved", result["overlay_status"])
         self.assertEqual(1, len(result["semantic_bindings"]))
