@@ -320,7 +320,7 @@ class SkillHubIoTests(unittest.TestCase):
         with self.assertRaisesRegex(SkillHubContractError, "HUB_SOURCE_OUTPUT_LIMIT"):
             session.read_artifact(self.skill["archive"]["path"])
 
-    def test_default_https_transport_disables_environment_and_redirects(self) -> None:
+    def test_default_https_transport_disables_environment_and_bounds_redirects(self) -> None:
         response = Mock(
             status_code=200,
             is_redirect=False,
@@ -342,17 +342,116 @@ class SkillHubIoTests(unittest.TestCase):
         response.close.assert_called_once_with()
         session.close.assert_called_once_with()
 
-        redirect = Mock(status_code=302, is_redirect=True, headers={})
+        redirect = Mock(
+            status_code=302,
+            is_redirect=True,
+            headers={"Location": "https://cdn.example.invalid/index.json?signature=1"},
+        )
+        redirected = Mock(
+            status_code=200,
+            is_redirect=False,
+            headers={"Content-Length": "3"},
+        )
+        redirected.iter_content.return_value = [b"abc"]
         redirected_session = Mock(trust_env=True)
-        redirected_session.get.return_value = redirect
+        redirected_session.get.side_effect = [redirect, redirected]
+        with patch("requests.Session", return_value=redirected_session):
+            content = _https_get(
+                "https://skills.example.invalid/index.json",
+                16,
+                7,
+                allowed_redirect_hosts=("cdn.example.invalid",),
+            )
+        self.assertEqual(b"abc", content)
+        self.assertFalse(redirected_session.trust_env)
+        self.assertEqual(2, redirected_session.get.call_count)
+        self.assertEqual(
+            "https://cdn.example.invalid/index.json?signature=1",
+            redirected_session.get.call_args_list[1].args[0],
+        )
+        self.assertTrue(
+            all(
+                call.kwargs["allow_redirects"] is False
+                for call in redirected_session.get.call_args_list
+            )
+        )
+        redirect.close.assert_called_once_with()
+        redirected.close.assert_called_once_with()
+        redirected_session.close.assert_called_once_with()
+
+        undeclared_redirect = Mock(
+            status_code=302,
+            is_redirect=True,
+            headers={"Location": "https://cdn.example.invalid/index.json"},
+        )
+        rejected_session = Mock(trust_env=True)
+        rejected_session.get.return_value = undeclared_redirect
         with (
-            patch("requests.Session", return_value=redirected_session),
+            patch("requests.Session", return_value=rejected_session),
             self.assertRaisesRegex(SkillHubContractError, "HUB_SOURCE_UNAVAILABLE"),
         ):
             _https_get("https://skills.example.invalid/index.json", 16, 7)
-        self.assertFalse(redirected_session.trust_env)
-        redirect.close.assert_called_once_with()
-        redirected_session.close.assert_called_once_with()
+        self.assertFalse(rejected_session.trust_env)
+        undeclared_redirect.close.assert_called_once_with()
+        rejected_session.close.assert_called_once_with()
+
+    def test_default_https_transport_rejects_unsafe_or_chained_redirects(self) -> None:
+        unsafe_locations = (
+            None,
+            "http://cdn.example.invalid/index.json",
+            "https://other.example.invalid/index.json",
+            "https://user@cdn.example.invalid/index.json",
+            "https://cdn.example.invalid:8443/index.json",
+            "https://cdn.example.invalid/index.json#fragment",
+        )
+        for location in unsafe_locations:
+            with self.subTest(location=location):
+                headers = {} if location is None else {"Location": location}
+                redirect = Mock(status_code=302, is_redirect=True, headers=headers)
+                session = Mock(trust_env=True)
+                session.get.return_value = redirect
+                with (
+                    patch("requests.Session", return_value=session),
+                    self.assertRaisesRegex(
+                        SkillHubContractError, "HUB_SOURCE_UNAVAILABLE"
+                    ),
+                ):
+                    _https_get(
+                        "https://skills.example.invalid/index.json",
+                        16,
+                        7,
+                        allowed_redirect_hosts=("cdn.example.invalid",),
+                    )
+                self.assertEqual(1, session.get.call_count)
+                redirect.close.assert_called_once_with()
+                session.close.assert_called_once_with()
+
+        first = Mock(
+            status_code=302,
+            is_redirect=True,
+            headers={"Location": "https://cdn.example.invalid/first"},
+        )
+        second = Mock(
+            status_code=302,
+            is_redirect=True,
+            headers={"Location": "https://cdn.example.invalid/second"},
+        )
+        session = Mock(trust_env=True)
+        session.get.side_effect = [first, second]
+        with (
+            patch("requests.Session", return_value=session),
+            self.assertRaisesRegex(SkillHubContractError, "HUB_SOURCE_UNAVAILABLE"),
+        ):
+            _https_get(
+                "https://skills.example.invalid/index.json",
+                16,
+                7,
+                allowed_redirect_hosts=("cdn.example.invalid",),
+            )
+        self.assertEqual(2, session.get.call_count)
+        first.close.assert_called_once_with()
+        second.close.assert_called_once_with()
+        session.close.assert_called_once_with()
 
     def test_skill_archive_and_trusted_wheel_validate_without_loading_code(self) -> None:
         skill = validate_skill_archive(self.skill_zip, self.skill)

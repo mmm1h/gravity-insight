@@ -47,7 +47,7 @@ AGENT_INDEX_SCHEMA_PATH = (
 )
 DEFAULT_OUTPUT = ROOT / "build" / "skill-hub"
 PUBLISH_BASE = (
-    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v3"
+    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v4"
 )
 _NAMESPACE = re.compile(
     r"^(?:gravity\.(?:core|game)(?:\.[a-z][a-z0-9-]*)*|"
@@ -313,6 +313,7 @@ def _hub_source(source_digest: str) -> dict[str, Any]:
                 "index_url": f"{PUBLISH_BASE}/index.json",
                 "artifact_base_url": f"{PUBLISH_BASE}/",
                 "source_revision": source_digest,
+                "allowed_redirect_hosts": ["release-assets.githubusercontent.com"],
             },
             "limits": {
                 "max_index_bytes": 2097152,

@@ -23,7 +23,7 @@ except ModuleNotFoundError:  # Imported as scripts.verify_skill_library_release.
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_TAG = "skill-library-v3"
+RELEASE_TAG = "skill-library-v4"
 MANIFEST_NAME = "build-manifest.json"
 _MANIFEST_LIMIT = 1_048_576
 _ASSET_LIMIT = 4_194_304
@@ -256,7 +256,7 @@ def _write_receipt(path: Path, receipt: Mapping[str, Any]) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Download and validate the fixed Skill Library v2 release."
+        description="Download and validate the current fixed Skill Library release."
     )
     parser.add_argument("--receipt", type=Path)
     args = parser.parse_args(argv)

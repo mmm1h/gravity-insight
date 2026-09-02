@@ -182,6 +182,7 @@ class SkillHubContractTests(unittest.TestCase):
                     "index_url": "https://skills.example.invalid/v1/index.json",
                     "artifact_base_url": "https://skills.example.invalid/v1/artifacts/",
                     "source_revision": "review-2026-08-22",
+                    "allowed_redirect_hosts": ["cdn.example.invalid"],
                 },
             }
         )
@@ -189,6 +190,10 @@ class SkillHubContractTests(unittest.TestCase):
 
         self.assertRegex(git["digest"], r"^[0-9a-f]{64}$")
         self.assertNotEqual(git["digest"], static["digest"])
+        self.assertEqual(
+            ["cdn.example.invalid"],
+            static["contract"]["https"]["allowed_redirect_hosts"],
+        )
         for mutate in (
             lambda value: value["git"].update(
                 {"repository_uri": "https://token@example.invalid/team.git"}
@@ -200,6 +205,17 @@ class SkillHubContractTests(unittest.TestCase):
             mutate(value)
             with self.assertRaises(SkillHubContractError):
                 compile_hub_source(value)
+
+        for redirect_hosts in (
+            ["https://cdn.example.invalid"],
+            ["CDN.example.invalid"],
+            ["cdn.example.invalid", "cdn.example.invalid"],
+        ):
+            with self.subTest(redirect_hosts=redirect_hosts):
+                value = copy.deepcopy(https)
+                value["https"]["allowed_redirect_hosts"] = redirect_hosts
+                with self.assertRaises(SkillHubContractError):
+                    compile_hub_source(value)
 
     def test_index_recompiles_skill_package_and_trusted_descriptor(self) -> None:
         first = compile_hub_index(hub_index(), runtime_version="0.3.0")
