@@ -63,7 +63,12 @@ class GateSpec:
     allow_network: bool = False
 
 
-def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
+def gate_specs(
+    python: Path,
+    run_root: Path,
+    *,
+    cumulative_capability_base: str = "main",
+) -> tuple[GateSpec, ...]:
     py = str(python)
     usability = run_root / "agent-usability"
     return (
@@ -237,7 +242,7 @@ def gate_specs(python: Path, run_root: Path) -> tuple[GateSpec, ...]:
                 py,
                 "scripts/check_cumulative_capabilities.py",
                 "--base",
-                "main",
+                cumulative_capability_base,
                 "--head",
                 "HEAD",
             ),
@@ -288,6 +293,10 @@ def preconditions() -> dict[str, Any]:
             and executable.is_relative_to(expected_venv)
         ),
     }
+
+
+def _cumulative_capability_base(*, branch_is_main: bool) -> str:
+    return "HEAD^" if branch_is_main else "main"
 
 
 def _gate_environment(*, allow_network: bool = False) -> dict[str, str]:
@@ -584,7 +593,13 @@ def main(argv: list[str] | None = None) -> int:
     run_root = ROOT / "tmp/integrated-validation" / before["head"]
     logs = run_root / "logs"
     logs.mkdir(parents=True, exist_ok=True)
-    available = gate_specs(Path(sys.executable).resolve(), run_root)
+    available = gate_specs(
+        Path(sys.executable).resolve(),
+        run_root,
+        cumulative_capability_base=_cumulative_capability_base(
+            branch_is_main=before["branch_is_main"]
+        ),
+    )
     selected_names = (
         [name.strip() for name in args.only.split(",") if name.strip()]
         if args.only
