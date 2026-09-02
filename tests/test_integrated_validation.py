@@ -21,6 +21,7 @@ from scripts.run_integrated_validation import (
     POST_RELEASE_GATES,
     GateSpec,
     _display_path,
+    _gate_environment,
     _summary,
     gate_specs,
     integrated_green,
@@ -358,6 +359,21 @@ class IntegratedValidationTests(unittest.TestCase):
             }.issubset(names)
         )
         self.assertLess(names.index("repository_map"), names.index("package_reference_checkpoint"))
+        self.assertEqual(
+            {"release_sbom", "dependency_audit"},
+            {gate.name for gate in gates if gate.allow_network},
+        )
+
+    def test_gate_environment_blocks_network_except_for_explicit_opt_in(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            offline = _gate_environment()
+            online = _gate_environment(allow_network=True)
+
+        for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"):
+            self.assertEqual("http://127.0.0.1:9", offline[name])
+            self.assertNotIn(name, online)
+        self.assertEqual("127.0.0.1,localhost", offline["NO_PROXY"])
+        self.assertNotIn("NO_PROXY", online)
 
     def test_green_requires_clean_main_same_head_complete_zero_exit_set(self) -> None:
         before = {
