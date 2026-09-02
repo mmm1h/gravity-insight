@@ -1,0 +1,73 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/sentiment-aggregation@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "sentiment-aggregation",
+        "rows": [
+          {
+            "key": "positive",
+            "values": {
+              "count": 60
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "negative",
+            "values": {
+              "count": 40
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "classified_item_count",
+        "additivity": "additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "sentiment-aggregation",
+        "verdict": "returned_categories_aggregated",
+        "metrics": {
+          "returned_total": "100"
+        },
+        "ranked_rows": [
+          {
+            "key": "positive",
+            "value": "60",
+            "contribution": "0.6",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "negative",
+            "value": "40",
+            "contribution": "0.4",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Rows must already be classified under one project-approved taxonomy.",
+          "Aggregation neither classifies text nor infers author intent."
+        ]
+      }
+    }
+  ]
+}

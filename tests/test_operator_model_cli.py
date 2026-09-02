@@ -31,12 +31,12 @@ class OperatorModelCliTests(unittest.TestCase):
         return code, json.loads(rendered), stderr.getvalue()
 
     def test_root_exports_and_operator_inspection_are_offline(self) -> None:
-        self.assertEqual(1, OperatorRegistry().list()["count"])
-        self.assertEqual(0, ModelRegistry().list()["count"])
+        self.assertEqual(10, OperatorRegistry().list()["count"])
+        self.assertEqual(5, ModelRegistry().list()["count"])
 
         code, listed, stderr = self.invoke("operators", "list")
         self.assertEqual(0, code)
-        self.assertEqual(1, listed["count"])
+        self.assertEqual(10, listed["count"])
         self.assertEqual("", stderr)
 
         code, described, stderr = self.invoke(

@@ -41,6 +41,9 @@ from tests.test_skill_hub_contracts import (
 from tests.test_model_registry import MODEL_URI
 
 
+BUILTIN_MODEL_URI = "model://gravity/ltv-curve@1"
+
+
 def _team_manifest(*, models: list[str] | None = None) -> dict:
     value = team_manifest()
     value["covers_journeys"] = [JOURNEY_ID]
@@ -298,6 +301,21 @@ class RuntimeSkillResolverTests(unittest.TestCase):
         self.assertEqual(lock["lock_digest"], first["team_lock_digest"])
         self.assertEqual(lock["source"], first["hub_source_reference"])
         self.assertRegex(first["hub_source_digest"], r"^[0-9a-f]{64}$")
+
+    def test_runtime_builtin_model_needs_no_trusted_pack_binding(self) -> None:
+        manifest = _team_manifest(models=[BUILTIN_MODEL_URI])
+        artifact, lock, _trusted = self._locks(manifest)
+        workspace = self._project("builtin-model", artifact, lock=lock, cas=True)
+
+        result = RuntimeSkillResolver(workspace=workspace).resolve(
+            artifact["skill_uri"], journey=_synthetic_journey(manifest)
+        )
+
+        self.assertTrue(result["ok"])
+        binding = result["skill"]["runtime_binding"]
+        self.assertIsNone(binding["trusted_pack_lock_digest"])
+        self.assertIsNone(binding["trusted_pack_state_digest"])
+        self.assertFalse(result["network_called"])
 
     def test_lock_and_cas_fail_closed_without_fallback_or_creation(self) -> None:
         manifest = _team_manifest()

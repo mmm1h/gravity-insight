@@ -540,7 +540,7 @@
     "source_ref": "source://external-method/0ee4f8b5d0c9f770",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 3,
     "known_requests_min": 2,
@@ -567,6 +567,6 @@
   "skill_id": "channel-quality-analysis",
   "specification": "specified",
   "summary": "在一个明确的价值与成本契约下比较返回的渠道观测结果。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

@@ -18,7 +18,8 @@ from .operator_contract import (
     validate_operator_input,
     validate_operator_output,
 )
-from .operator_ids import RETURNED_DIMENSION_CHANGE_URI
+from .operators.governed_methods import execute_governed_method
+from .operator_ids import GOVERNED_METHOD_URIS, RETURNED_DIMENSION_CHANGE_URI
 from .operator_returned_dimension_change import (
     OperatorMethodError,
     returned_dimension_change,
@@ -29,8 +30,18 @@ _URI = re.compile(
     r"^operator://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"
 )
 _LOCAL_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
-_RUNNERS: dict[str, Callable[..., dict[str, Any]]] = {
-    RETURNED_DIMENSION_CHANGE_URI: returned_dimension_change,
+_RUNNERS: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
+    RETURNED_DIMENSION_CHANGE_URI: lambda inputs: returned_dimension_change(
+        **{
+            key: copy.deepcopy(value)
+            for key, value in inputs.items()
+            if key not in {"units", "additivity"}
+        }
+    ),
+    **{
+        uri: execute_governed_method
+        for uri in GOVERNED_METHOD_URIS.values()
+    },
 }
 
 
@@ -171,13 +182,8 @@ class OperatorRegistry:
         uri = artifact["contract"]["uri"]
         try:
             normalized = validate_operator_input(artifact, inputs)
-            _validate_safe_domain(artifact["contract"], normalized)
-            method_inputs = {
-                key: copy.deepcopy(value)
-                for key, value in normalized.items()
-                if key not in {"units", "additivity"}
-            }
-            result = _RUNNERS[uri](**method_inputs)
+            _validate_safe_domain(artifact, normalized)
+            result = _RUNNERS[uri](normalized)
             selected = validate_operator_output(artifact, result)
             _validate_output_budget(artifact["contract"], selected)
         except (OperatorContractError, OperatorMethodError) as exc:
@@ -209,8 +215,9 @@ class OperatorRegistry:
 
 
 def _validate_safe_domain(
-    contract: Mapping[str, Any], inputs: Mapping[str, Any]
+    artifact: Mapping[str, Any], inputs: Mapping[str, Any]
 ) -> None:
+    contract = artifact["contract"]
     domain = contract["safe_domain"]
     if canonical_json_size(inputs, reason_code="OPERATOR_INPUT_INVALID") > domain[
         "max_input_bytes"
@@ -218,6 +225,9 @@ def _validate_safe_domain(
         raise OperatorContractError(
             "OPERATOR_RESOURCE_LIMIT", "Operator input exceeds its byte budget"
         )
+    if contract["uri"] != RETURNED_DIMENSION_CHANGE_URI:
+        _validate_governed_domain(contract, inputs)
+        return
     for name in ("current_rows", "reference_rows"):
         if len(inputs[name]) < contract["requirements"]["minimum_rows_per_window"]:
             raise OperatorContractError(
@@ -239,6 +249,56 @@ def _validate_safe_domain(
             "Operator additivity is outside the safe domain",
         )
     _validate_row_values(inputs, domain)
+
+
+def _validate_governed_domain(
+    contract: Mapping[str, Any], inputs: Mapping[str, Any]
+) -> None:
+    if inputs["method"] != contract["method"]["method_id"]:
+        raise OperatorContractError(
+            "OPERATOR_INPUT_INVALID", "Operator method and input method disagree"
+        )
+    rows = inputs["rows"]
+    minimum = contract["requirements"]["minimum_rows_per_window"]
+    domain = contract["safe_domain"]
+    if len(rows) < minimum:
+        raise OperatorContractError(
+            "OPERATOR_SAMPLE_INSUFFICIENT",
+            "Operator rows do not meet the minimum sample requirement",
+        )
+    if len(rows) > domain["max_rows_per_window"]:
+        raise OperatorContractError(
+            "OPERATOR_RESOURCE_LIMIT", "Operator rows exceed the safe domain"
+        )
+    keys: set[str] = set()
+    if len(inputs["parameters"]) > 32:
+        raise OperatorContractError(
+            "OPERATOR_RESOURCE_LIMIT", "Operator parameter count exceeds the safe domain"
+        )
+    for row in rows:
+        key = row["key"]
+        if key in keys:
+            raise OperatorContractError(
+                "OPERATOR_INPUT_INVALID", "Operator row keys are duplicated"
+            )
+        keys.add(key)
+        if not 1 <= len(row["values"]) <= 16:
+            raise OperatorContractError(
+                "OPERATOR_RESOURCE_LIMIT", "Operator row value count exceeds the safe domain"
+            )
+        if len(key.encode("utf-8")) > domain["max_dimension_key_bytes"]:
+            raise OperatorContractError(
+                "OPERATOR_RESOURCE_LIMIT", "Operator row key is too large"
+            )
+        for value in row["values"].values():
+            _validate_decimal_digits(value, domain["max_decimal_digits"])
+    for value in inputs["parameters"].values():
+        _validate_decimal_digits(value, domain["max_decimal_digits"])
+    if inputs["additivity"] not in contract["unit_policy"]["allowed_additivity"]:
+        raise OperatorContractError(
+            "OPERATOR_ADDITIVITY_UNSUPPORTED",
+            "Operator additivity is outside the safe domain",
+        )
 
 
 def _validate_row_values(

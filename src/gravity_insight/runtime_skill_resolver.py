@@ -14,6 +14,7 @@ from .agent_runtime_contracts import canonical_digest
 from .context_contract import ContextContractError
 from .errors import InputValidationError
 from .operator_contract import builtin_operator_artifacts
+from .model_contract import builtin_model_artifacts
 from .repo_context_git import assert_clean_paths, git_snapshot
 from .repo_context_index import read_context_file
 from .runtime_compatibility import normalized_version, runtime_satisfies
@@ -205,7 +206,10 @@ class RuntimeSkillResolver:
             item["contract"]["uri"] for item in builtin_operator_artifacts()
         }
         required_operators = set(contract["operator_dependencies"]) - builtin_operators
-        required_models = set(contract["model_dependencies"])
+        builtin_models = {
+            item["contract"]["uri"] for item in builtin_model_artifacts()
+        }
+        required_models = set(contract["model_dependencies"]) - builtin_models
         if not required_operators and not required_models:
             return [], []
 

@@ -1,0 +1,66 @@
+{
+  "artifact_kind": "model",
+  "schema_version": "gravity.model-artifact.v1",
+  "uri": "model://gravity/player-lifetime@1",
+  "version": 1,
+  "alias": "player-lifetime",
+  "owner": "gravity-runtime/model-methods",
+  "lifecycle": "active",
+  "operator_uri": "operator://gravity/retention-curve@1",
+  "artifact": {
+    "kind": "parameters",
+    "digest": "a0313c9c1d3db649d212bd873b9c87dd30a20c74911c6988a02869227a23882a",
+    "resource": "player-lifetime.v1.json"
+  },
+  "lineage": {
+    "fitting_window": {
+      "start": "2026-08-01",
+      "end": "2026-08-31"
+    },
+    "data_uris": [
+      "fixture://gravity/player-lifetime-conformance@1"
+    ],
+    "source_digests": [
+      "a0313c9c1d3db649d212bd873b9c87dd30a20c74911c6988a02869227a23882a"
+    ],
+    "sample_count": 1
+  },
+  "evaluation": {
+    "status": "validated",
+    "evaluated_at": "2026-09-01",
+    "expires_at": "2031-09-01",
+    "metrics": [
+      {
+        "name": "deterministic_conformance",
+        "value": 1,
+        "threshold": 1,
+        "passed": true
+      }
+    ]
+  },
+  "safe_domain": {
+    "horizon_days": 3650,
+    "minimum_samples": 1,
+    "units": [
+      "day"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "gravity-runtime/method-review",
+    "approved_at": "2026-09-01"
+  },
+  "claim_policy": {
+    "validated": [
+      "deterministic scenario over caller-bound parameters"
+    ],
+    "scenario": [
+      "unvalidated project calibration scenario"
+    ],
+    "forbidden": [
+      "causal claim",
+      "project accuracy guarantee",
+      "guaranteed future outcome"
+    ]
+  }
+}

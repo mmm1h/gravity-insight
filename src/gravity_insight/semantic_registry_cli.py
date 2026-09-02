@@ -10,7 +10,17 @@ from .semantic_contract import SemanticContractError, load_semantic_source
 from .semantic_registry import SemanticRegistry
 
 
-_KINDS = ("metric", "dimension", "entity", "cohort", "event", "sku", "activity", "release")
+_KINDS = (
+    "metric",
+    "dimension",
+    "entity",
+    "cohort",
+    "event",
+    "sku",
+    "activity",
+    "release",
+    "schema",
+)
 _LOCAL_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
 
 

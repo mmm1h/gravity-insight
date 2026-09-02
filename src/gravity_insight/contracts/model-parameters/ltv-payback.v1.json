@@ -1,0 +1,16 @@
+{
+  "artifact_kind": "model_parameters",
+  "schema_version": "gravity.model-parameters.v1",
+  "model_uri": "model://gravity/ltv-payback@1",
+  "revision": 1,
+  "operator_uri": "operator://gravity/ltv-payback-period@1",
+  "mode": "caller_bound_parameters",
+  "required_parameters": [
+    "mature cumulative value",
+    "governed acquisition cost"
+  ],
+  "limitations": [
+    "Project values are supplied through governed Semantic and Context bindings.",
+    "The artifact validates deterministic scenario mechanics, not project predictive accuracy."
+  ]
+}

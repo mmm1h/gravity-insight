@@ -528,7 +528,7 @@
     "source_ref": "source://external-method/01d778f708f0f4ac",
     "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 0,
     "known_requests_min": 0,
@@ -550,6 +550,6 @@
   "skill_id": "sql-performance-optimization",
   "specification": "specified",
   "summary": "评审确切的查询计划和数据库契约，不执行未受治理的 SQL。",
-  "validation": "unvalidated",
+  "validation": "validated",
   "version": "1.0.0"
 }

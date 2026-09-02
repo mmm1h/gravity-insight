@@ -25,7 +25,7 @@ def add_operator_model_commands(commands: Any, add_input: Callable[..., None]) -
         parser.set_defaults(network_required=False, _gravity_handler=dispatch)
 
     models = commands.add_parser(
-        "models", help="Inspect and evaluate explicit local Model Artifacts."
+        "models", help="Inspect Runtime-owned or explicit local Model Artifacts."
     )
     model_actions = models.add_subparsers(dest="models_command", required=True)
     model_list = model_actions.add_parser("list")
@@ -53,7 +53,8 @@ def dispatch(
         if args.operators_command == "describe":
             return registry.describe(args.uri)
         return registry.validate(object_input(args.input))
-    registry = ModelRegistry(getattr(args, "model_sources", ()))
+    sources = getattr(args, "model_sources", ())
+    registry = ModelRegistry(sources or None)
     if args.models_command == "list":
         return registry.list()
     if args.models_command == "describe":
@@ -72,7 +73,10 @@ def _add_model_sources(parser: Any) -> None:
         dest="model_sources",
         action="append",
         default=[],
-        help="Explicit local gravity.model-artifact.v1 JSON file; may be repeated.",
+        help=(
+            "Explicit local gravity.model-artifact.v1 JSON diagnostic source; "
+            "may be repeated and does not persist or inherit Runtime trust."
+        ),
     )
 
 

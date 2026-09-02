@@ -13,7 +13,7 @@
     "artifact_kind": {"const": "semantic_definition"},
     "schema_version": {"const": "gravity.semantic-definition.v1"},
     "uri": {"type": "string", "minLength": 8, "maxLength": 256, "pattern": "^[a-z]+://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"},
-    "kind": {"enum": ["metric", "dimension", "entity", "cohort", "event", "sku", "activity", "release"]},
+    "kind": {"enum": ["metric", "dimension", "entity", "cohort", "event", "sku", "activity", "release", "schema"]},
     "version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
     "owner": {"type": "string", "minLength": 1, "maxLength": 128},
     "authority": {"enum": ["runtime", "organization", "project"]},

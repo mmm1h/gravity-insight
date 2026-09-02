@@ -36,7 +36,8 @@
             "references/GUIDE.md",
             "references/SCHEMA.json",
             "references/CLAIMS.md",
-            "references/EXAMPLES.md"
+            "references/EXAMPLES.md",
+            "references/PROJECT_BINDINGS.json"
           ]
         },
         "size_bytes": {"type": "integer", "minimum": 1, "maximum": 262144},
@@ -112,8 +113,8 @@
         "package_digest": {"$ref": "#/$defs/digest"},
         "files": {
           "type": "array",
-          "minItems": 5,
-          "maxItems": 5,
+          "minItems": 6,
+          "maxItems": 6,
           "uniqueItems": true,
           "items": {"$ref": "#/$defs/file"}
         },

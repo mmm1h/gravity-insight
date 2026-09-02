@@ -459,7 +459,9 @@ gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
 `skill_uri` 选择 archive，核验 `sha256` 和 `size_bytes`，再把 ZIP 中唯一同名根目录交给宿主自己的
 Skill 安装机制。Runtime 不写宿主 Skill 目录。Agent Skill 可安装不代表可执行；入口必须读取
 `SCHEMA.json` 的声明和 Runtime 当前 readiness，在 `blocked`、`unvalidated` 或依赖未解析时停止。
-Model Artifact 的 `gravity models ... --source` 是模型诊断面，不是 Skill 安装方式。
+不带 `--source` 的 `gravity models ...` 读取 Runtime Core 内置且受信的 Model Artifact；
+`--source` 只在当前进程隔离读取显式本地 JSON，既不持久注册也不继承 Runtime trust，仍是诊断面而
+不是 Skill 安装方式。
 
 ## Metadata
 

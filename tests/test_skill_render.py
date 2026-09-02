@@ -68,10 +68,21 @@ class SkillRenderTests(unittest.TestCase):
                 "references/SCHEMA.json",
                 "references/CLAIMS.md",
                 "references/EXAMPLES.md",
+                "references/PROJECT_BINDINGS.json",
             },
             set(files),
         )
         self.assertIn("# Run Examples", files["references/EXAMPLES.md"])
+        bindings = json.loads(files["references/PROJECT_BINDINGS.json"])
+        self.assertEqual(
+            "gravity.skill-project-bindings-template.v1",
+            bindings["schema_version"],
+        )
+        self.assertEqual(SKILL_URI, bindings["skill_uri"])
+        self.assertEqual(
+            "gravity.semantic-source.v1",
+            bindings["semantic_source_template"]["schema_version"],
+        )
         self.assertNotIn("scripts/", repr(files))
         self.assertFalse(export["network_called"])
 

@@ -1,0 +1,66 @@
+{
+  "artifact_kind": "model",
+  "schema_version": "gravity.model-artifact.v1",
+  "uri": "model://gravity/ltv-payback@1",
+  "version": 1,
+  "alias": "ltv-payback",
+  "owner": "gravity-runtime/model-methods",
+  "lifecycle": "active",
+  "operator_uri": "operator://gravity/ltv-payback-period@1",
+  "artifact": {
+    "kind": "parameters",
+    "digest": "786bda5b51d4c7695635090ddc69f5a4fd4f6a7934ff608f755d652824d4ecc2",
+    "resource": "ltv-payback.v1.json"
+  },
+  "lineage": {
+    "fitting_window": {
+      "start": "2026-08-01",
+      "end": "2026-08-31"
+    },
+    "data_uris": [
+      "fixture://gravity/ltv-payback-conformance@1"
+    ],
+    "source_digests": [
+      "786bda5b51d4c7695635090ddc69f5a4fd4f6a7934ff608f755d652824d4ecc2"
+    ],
+    "sample_count": 1
+  },
+  "evaluation": {
+    "status": "validated",
+    "evaluated_at": "2026-09-01",
+    "expires_at": "2031-09-01",
+    "metrics": [
+      {
+        "name": "deterministic_conformance",
+        "value": 1,
+        "threshold": 1,
+        "passed": true
+      }
+    ]
+  },
+  "safe_domain": {
+    "horizon_days": 3650,
+    "minimum_samples": 1,
+    "units": [
+      "currency"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "gravity-runtime/method-review",
+    "approved_at": "2026-09-01"
+  },
+  "claim_policy": {
+    "validated": [
+      "deterministic scenario over caller-bound parameters"
+    ],
+    "scenario": [
+      "unvalidated project calibration scenario"
+    ],
+    "forbidden": [
+      "causal claim",
+      "project accuracy guarantee",
+      "guaranteed future outcome"
+    ]
+  }
+}

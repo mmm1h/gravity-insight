@@ -100,12 +100,15 @@ def validate_operator_input(
 ) -> dict[str, Any]:
     selected = _object(value, "Operator input", "OPERATOR_INPUT_INVALID")
     _validate_with_schema(artifact["input_schema"], selected, "OPERATOR_INPUT_INVALID")
-    selected.setdefault("current_step_id", "compare_current")
-    selected.setdefault("reference_step_id", "compare_reference")
-    selected.setdefault("selected_current_step_id", "validate_current")
-    selected.setdefault("selected_reference_step_id", "validate_reference")
-    selected.setdefault("metric", "ap_cost")
-    selected.setdefault("dimension", "click_company")
+    if artifact["input_schema"].get("$id") == (
+        "gravity.operator-input.returned-dimension-change.v1"
+    ):
+        selected.setdefault("current_step_id", "compare_current")
+        selected.setdefault("reference_step_id", "compare_reference")
+        selected.setdefault("selected_current_step_id", "validate_current")
+        selected.setdefault("selected_reference_step_id", "validate_reference")
+        selected.setdefault("metric", "ap_cost")
+        selected.setdefault("dimension", "click_company")
     return selected
 
 

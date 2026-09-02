@@ -1,0 +1,98 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/retention-curve@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "retention-curve",
+        "rows": [
+          {
+            "key": "day-0",
+            "values": {
+              "day": 0,
+              "retention": 1
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "day-1",
+            "values": {
+              "day": 1,
+              "retention": 0.6
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          },
+          {
+            "key": "day-7",
+            "values": {
+              "day": 7,
+              "retention": 0.3
+            },
+            "evidence": {
+              "step_id": "evidence-2",
+              "path": "/rows/2"
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "retention_share",
+        "additivity": "non_additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "retention-curve",
+        "verdict": "returned_survival_curve_valid",
+        "metrics": {
+          "observed_area": "3.5",
+          "first_day": "0",
+          "last_day": "7"
+        },
+        "ranked_rows": [
+          {
+            "key": "day-0",
+            "value": "1",
+            "contribution": null,
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "day-1",
+            "value": "0.6",
+            "contribution": null,
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          },
+          {
+            "key": "day-7",
+            "value": "0.3",
+            "contribution": null,
+            "rank": 3,
+            "evidence": {
+              "step_id": "evidence-2",
+              "path": "/rows/2"
+            }
+          }
+        ],
+        "limitations": [
+          "The area covers only supplied mature retention nodes.",
+          "No tail lifetime is extrapolated without a separately approved Model Artifact."
+        ]
+      }
+    }
+  ]
+}

@@ -23,11 +23,21 @@ from .semantic_registry_graph import semantic_conflicts, validate_semantic_graph
 
 
 _URI = re.compile(
-    r"^(metric|dimension|entity|cohort|event|sku|activity|release)://"
+    r"^(metric|dimension|entity|cohort|event|sku|activity|release|schema)://"
     r"[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"
 )
 _KINDS = frozenset(
-    {"metric", "dimension", "entity", "cohort", "event", "sku", "activity", "release"}
+    {
+        "metric",
+        "dimension",
+        "entity",
+        "cohort",
+        "event",
+        "sku",
+        "activity",
+        "release",
+        "schema",
+    }
 )
 _LOCAL_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
 

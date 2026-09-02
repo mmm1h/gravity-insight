@@ -1,0 +1,75 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/price-elasticity@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "price-elasticity",
+        "rows": [
+          {
+            "key": "state-a",
+            "values": {
+              "price": 10,
+              "quantity": 100
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "state-b",
+            "values": {
+              "price": 12,
+              "quantity": 80
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "price_and_quantity",
+        "additivity": "non_additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "price-elasticity",
+        "verdict": "returned_inverse_response",
+        "metrics": {
+          "arc_elasticity": "-1.222222"
+        },
+        "ranked_rows": [
+          {
+            "key": "state-a",
+            "value": "10",
+            "contribution": "100",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "state-b",
+            "value": "12",
+            "contribution": "80",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "The two price states must be caller-gated as comparable exposures.",
+          "Observed arc elasticity does not prove causal price response or an optimum."
+        ]
+      }
+    }
+  ]
+}

@@ -61,6 +61,7 @@ _AGENT_FILES = {
     "references/SCHEMA.json",
     "references/CLAIMS.md",
     "references/EXAMPLES.md",
+    "references/PROJECT_BINDINGS.json",
 }
 
 

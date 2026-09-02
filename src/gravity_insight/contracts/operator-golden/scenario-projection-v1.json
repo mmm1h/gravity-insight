@@ -1,0 +1,82 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/scenario-projection@1",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v1",
+        "method": "scenario-projection",
+        "rows": [
+          {
+            "key": "active-base",
+            "values": {
+              "baseline": 100,
+              "coefficient": 2,
+              "change": 10
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "cost-base",
+            "values": {
+              "baseline": 50,
+              "coefficient": -1,
+              "change": 5
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "parameters": {
+          "horizon_days": 30
+        },
+        "unit": "scenario_unit",
+        "additivity": "additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v1",
+        "method": "scenario-projection",
+        "verdict": "scenario_increase_observed",
+        "metrics": {
+          "horizon_days": "30",
+          "baseline_total": "150",
+          "scenario_total": "165",
+          "scenario_change": "15"
+        },
+        "ranked_rows": [
+          {
+            "key": "active-base",
+            "value": "120",
+            "contribution": "20",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "cost-base",
+            "value": "45",
+            "contribution": "-5",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Projection uses only caller-supplied coefficients and bounded parameter changes.",
+          "The scenario is not a forecast guarantee or causal effect estimate."
+        ]
+      }
+    }
+  ]
+}

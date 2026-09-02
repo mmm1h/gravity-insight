@@ -11,6 +11,7 @@ from gravity_insight.operator_contract import (
     compile_operator_contract,
 )
 from gravity_insight.operator_ids import (
+    GOVERNED_METHOD_URIS,
     RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA,
     RETURNED_DIMENSION_CHANGE_URI,
 )
@@ -46,15 +47,16 @@ def operator_input(**overrides):
 
 
 class OperatorRegistryTests(unittest.TestCase):
-    def test_only_the_r01_operator_is_packaged_and_described_formally(self) -> None:
+    def test_runtime_operator_inventory_is_exact_and_described_formally(self) -> None:
         registry = OperatorRegistry()
 
         listed = registry.list()
         described = registry.describe(RETURNED_DIMENSION_CHANGE_URI)
         artifact = described["operator"]
 
-        self.assertEqual(1, listed["count"])
-        self.assertEqual(RETURNED_DIMENSION_CHANGE_URI, listed["operators"][0]["uri"])
+        expected = {RETURNED_DIMENSION_CHANGE_URI, *GOVERNED_METHOD_URIS.values()}
+        self.assertEqual(10, listed["count"])
+        self.assertEqual(expected, {item["uri"] for item in listed["operators"]})
         self.assertEqual("gravity.operator.v1", artifact["contract"]["schema_version"])
         self.assertEqual(
             RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA,
@@ -63,6 +65,39 @@ class OperatorRegistryTests(unittest.TestCase):
         self.assertRegex(artifact["digest"], r"^[0-9a-f]{64}$")
         self.assertRegex(artifact["assumptions_digest"], r"^[0-9a-f]{64}$")
         self.assertFalse(listed["network_called"])
+
+    def test_governed_methods_execute_their_exact_golden_inputs(self) -> None:
+        registry = OperatorRegistry()
+        for method, uri in GOVERNED_METHOD_URIS.items():
+            with self.subTest(method=method):
+                artifact = registry.artifact(uri)
+                case = artifact["golden"]["cases"][0]
+                first = registry.execute(uri, case["input"])
+                second = registry.execute(uri, copy.deepcopy(case["input"]))
+                self.assertEqual(first, second)
+                self.assertEqual("success", first["status"])
+                self.assertEqual(method, first["result"]["method"])
+                self.assertTrue(first["result"]["limitations"])
+                self.assertTrue(first["result"]["ranked_rows"])
+                self.assertEqual(case["expected"], first["result"])
+
+    def test_governed_method_rejects_extra_values_and_parameters(self) -> None:
+        registry = OperatorRegistry()
+        uri = GOVERNED_METHOD_URIS["campaign-outcome-evaluation"]
+        artifact = registry.artifact(uri)
+        inputs = copy.deepcopy(artifact["golden"]["cases"][0]["input"])
+        inputs["rows"][0]["values"]["undeclared"] = 1
+        self.assertEqual(
+            ["OPERATOR_INPUT_INVALID"],
+            registry.execute(uri, inputs)["reason_codes"],
+        )
+
+        inputs = copy.deepcopy(artifact["golden"]["cases"][0]["input"])
+        inputs["parameters"]["undeclared"] = 1
+        self.assertEqual(
+            ["OPERATOR_INPUT_INVALID"],
+            registry.execute(uri, inputs)["reason_codes"],
+        )
 
     def test_golden_result_is_deterministic_and_observational(self) -> None:
         registry = OperatorRegistry()
@@ -259,7 +294,7 @@ class OperatorRegistryTests(unittest.TestCase):
         registry = OperatorRegistry()
         with patch.dict(
             registry_module._RUNNERS,
-            {RETURNED_DIMENSION_CHANGE_URI: lambda **_inputs: {"schema_version": "bad"}},
+            {RETURNED_DIMENSION_CHANGE_URI: lambda _inputs: {"schema_version": "bad"}},
         ):
             drift = registry.execute(RETURNED_DIMENSION_CHANGE_URI, operator_input())
         self.assertEqual(["OPERATOR_OUTPUT_INVALID"], drift["reason_codes"])
@@ -267,7 +302,7 @@ class OperatorRegistryTests(unittest.TestCase):
     def test_registry_startup_rejects_golden_drift(self) -> None:
         with patch.dict(
             registry_module._RUNNERS,
-            {RETURNED_DIMENSION_CHANGE_URI: lambda **_inputs: {"schema_version": "bad"}},
+            {RETURNED_DIMENSION_CHANGE_URI: lambda _inputs: {"schema_version": "bad"}},
         ), self.assertRaisesRegex(OperatorContractError, "OPERATOR_GOLDEN_MISMATCH"):
             OperatorRegistry()
 
