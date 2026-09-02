@@ -20,6 +20,7 @@ from scripts.check_installed_wheel_consumer import (
 from scripts.run_integrated_validation import (
     POST_RELEASE_GATES,
     GateSpec,
+    _cumulative_capability_base,
     _display_path,
     _gate_environment,
     _summary,
@@ -363,6 +364,20 @@ class IntegratedValidationTests(unittest.TestCase):
             {"release_sbom", "dependency_audit"},
             {gate.name for gate in gates if gate.allow_network},
         )
+
+    def test_cumulative_capability_compares_the_previous_main_revision(self) -> None:
+        self.assertEqual("HEAD^", _cumulative_capability_base(branch_is_main=True))
+        self.assertEqual("main", _cumulative_capability_base(branch_is_main=False))
+        gate = next(
+            item
+            for item in gate_specs(
+                ROOT / ".venv/Scripts/python.exe",
+                ROOT / "tmp/test",
+                cumulative_capability_base="HEAD^",
+            )
+            if item.name == "cumulative_capability"
+        )
+        self.assertEqual("HEAD^", gate.command[3])
 
     def test_gate_environment_blocks_network_except_for_explicit_opt_in(self) -> None:
         with patch.dict(
