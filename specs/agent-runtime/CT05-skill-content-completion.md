@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | `in_progress` |
+| Status | `released` |
 | Delivery type | `staged_epic` |
 | Owner | `skills/library/*.json` |
 | Canonical input | `skills/library/*.json` |
@@ -12,7 +12,7 @@
 | Directive approval | `approved` |
 | External approval | Owner required 100% complete and usable Skill content on 2026-09-02 |
 | Applicable target | `43` independently authored canonical Skills |
-| Current milestone | `M5` publication candidate targets immutable-successor channel `skill-library-v2`; external readback pending |
+| Current milestone | `M5` complete; `skill-library-v2` published and externally read back |
 
 ## Requirement
 
@@ -35,6 +35,22 @@ fail-closed remedy. No milestone may promote readiness by documentation alone.
 | `M3` | Monetization, LTV/LT, retention, churn and user analysis | Canonical library reaches 43/43 Method Complete |
 | `M4` | Runtime-owned dependency closure and project binding templates | Zero Runtime-owned dependency gaps; every project gap has a validated template |
 | `M5` | Final deterministic publication and external readback | All 43 Agent archives validate outside the checkout |
+
+## Release verdict
+
+CT05 was released through
+[`skill-library-v2`](https://github.com/mmm1h/gravity-insight/releases/tag/skill-library-v2)
+at commit `ad1097443e6fd29bdcdb9bf36ce803271be2ae47`. The release contains
+90 receipt-bound assets plus `build-manifest.json`: 43 Runtime archives, 43
+Agent archives, and four governed index/source/schema assets. Its canonical
+source SHA-256 is
+`b03992523e2bbb9c31c4c50d8b35af143ddaaa44a30b3fc2becb6a7364e6ad71`, and
+the build-manifest SHA-256 is
+`b23fc0e657e2ed6defb81ecb5f8f050a03ace04aa026c5198cb603e3c93c3243`.
+External readback downloaded 6,379,242 bytes outside the checkout and validated
+43/43 Runtime and 43/43 Agent archives. The official main integrated-validation
+receipt passed all 31 gates with no failures or skips. `skill-library-v1`
+remains unchanged with its original 85 assets.
 
 ## Acceptance
 
