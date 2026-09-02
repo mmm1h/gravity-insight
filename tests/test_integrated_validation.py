@@ -365,13 +365,17 @@ class IntegratedValidationTests(unittest.TestCase):
         )
 
     def test_gate_environment_blocks_network_except_for_explicit_opt_in(self) -> None:
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(
+            os.environ, {"PIP_NO_BUILD_ISOLATION": "inherited"}, clear=True
+        ):
             offline = _gate_environment()
             online = _gate_environment(allow_network=True)
 
         for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"):
             self.assertEqual("http://127.0.0.1:9", offline[name])
             self.assertNotIn(name, online)
+        self.assertEqual("0", offline["PIP_NO_BUILD_ISOLATION"])
+        self.assertNotIn("PIP_NO_BUILD_ISOLATION", online)
         self.assertEqual("127.0.0.1,localhost", offline["NO_PROXY"])
         self.assertNotIn("NO_PROXY", online)
 

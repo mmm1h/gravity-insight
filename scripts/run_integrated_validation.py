@@ -301,9 +301,11 @@ def _gate_environment(*, allow_network: bool = False) -> dict[str, str]:
     environment["PYTHONUTF8"] = "1"
     environment["PYTHONIOENCODING"] = "utf-8"
     environment["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"
-    # pip's negative boolean option uses "0" to activate --no-build-isolation.
-    environment["PIP_NO_BUILD_ISOLATION"] = "0"
-    if not allow_network:
+    if allow_network:
+        environment.pop("PIP_NO_BUILD_ISOLATION", None)
+    else:
+        # pip's negative boolean option uses "0" to activate --no-build-isolation.
+        environment["PIP_NO_BUILD_ISOLATION"] = "0"
         environment["HTTP_PROXY"] = "http://127.0.0.1:9"
         environment["HTTPS_PROXY"] = "http://127.0.0.1:9"
         environment["ALL_PROXY"] = "http://127.0.0.1:9"
