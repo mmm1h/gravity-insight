@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "f79e9a93edcf5eaa43bc4c95ad0a977e7f53e618b735ba48a41336cd0b4135aa"
+    "compatibility_sha256": "5b951f609816fc0d7fa52f7a34f3bf65d055414cf7de9f3dc9ed8863fce6ee11"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -64,8 +64,8 @@
     },
     {
       "version": "0.3.4",
-      "release_status": "unreleased",
-      "release_date": null,
+      "release_status": "released",
+      "release_date": "2026-09-02",
       "breaking_status": "breaking",
       "breaking_status_reason": "breaking_changes_recorded",
       "hard_breaks": [
@@ -77,6 +77,16 @@
       ],
       "soft_breaks": [],
       "migration_guide": "docs/migration/0.3.4.md"
+    },
+    {
+      "version": "0.3.5",
+      "release_status": "unreleased",
+      "release_date": null,
+      "breaking_status": "none",
+      "breaking_status_reason": "explicitly_recorded_none",
+      "hard_breaks": [],
+      "soft_breaks": [],
+      "migration_guide": null
     }
   ]
 }

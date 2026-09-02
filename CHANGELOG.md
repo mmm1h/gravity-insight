@@ -13,7 +13,13 @@
 
 ## [Unreleased]
 
-Target release: `0.3.4`
+Target release: `0.3.5`
+
+### Breaking changes
+
+- None.
+
+## [0.3.4] - 2026-09-02
 
 Migration guide: [0.3.4](docs/migration/0.3.4.md)
 
