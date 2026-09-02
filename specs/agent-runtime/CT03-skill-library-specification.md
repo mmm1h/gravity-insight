@@ -5,7 +5,7 @@
 | Status | `fixed_dev` |
 | Canonical input | `skills/library/*.json` |
 | Builder | `scripts/generate_skill_library.py` |
-| Publication target | GitHub Release `skill-library-v1` |
+| Publication target | GitHub Release `skill-library-v2` |
 
 ## Contract
 
@@ -25,6 +25,10 @@ build receipt, and the flat ZIP assets referenced by the two indexes.
 to the release base URL. Building does not publish, push, tag, or make a network
 call. The v2 build receipt keeps the complete local QA file list separate from
 the exact flat `release_assets` list.
+
+The earlier `skill-library-v1` publication remains immutable so existing lock
+digests keep their original fetch path. The current builder targets v2; it does
+not overwrite or delete v1 assets.
 
 ## Acceptance
 

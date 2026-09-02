@@ -27,6 +27,8 @@ Migration guide: [0.3.4](docs/migration/0.3.4.md)
 
 - Skill Library 为每个 canonical Skill 确定性生成标准 Agent Skill 目录、可复现 ZIP、
   `gravity.agent-skill-index.v1` 及其可离线验证 schema。
+- 新增 `skill-library-v2` 发布通道承载 43 项 Method Complete 方法、Runtime-owned
+  Operator/Model 依赖和项目 Semantic/Context 填充模板；v1 资产保持不变。
 
 ### Changed
 
