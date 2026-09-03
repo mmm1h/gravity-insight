@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "6702f271ba23f5b6a05fedc5917259c3ba56a57998d43d390c342290f916c933",
-    "manual_review_sha256": "f8a366d856ebed171797141e00d904d25a876ef037998c98eca26947bf45d5da",
+    "reference_evidence_sha256": "d91417528d1b6ea9d48948e52a949190d19affa6a3c8850ce83f85efc391ecc4",
+    "manual_review_sha256": "7c2e9bd27b59994220d8ad69965abea93c04c4b0aa23be8c1078e5f79b7f4547",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3102,
-    "scanned_file_count": 3095,
+    "version_controlled_file_count": 3103,
+    "scanned_file_count": 3096,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -656,22 +656,26 @@
     {
       "basis": "The loop input is the literal singleton ('gravity_insight',), so it cannot select any deep agent module.",
       "evidence_kind": "finite_input_dataflow"
+    },
+    {
+      "basis": "The dynamic import producer has no finite, reviewed input domain; R17 cannot prove that it excludes a moved or deleted owner.",
+      "evidence_kind": "unresolved_dynamic_dataflow"
     }
   ],
   "summary": {
-    "tracked_site_count": 280,
-    "reference_site_count": 278,
-    "manual_review_site_count": 142,
-    "reference_manual_overlap_count": 140,
+    "tracked_site_count": 281,
+    "reference_site_count": 279,
+    "manual_review_site_count": 143,
+    "reference_manual_overlap_count": 141,
     "manual_only_site_count": 2,
-    "unique_source_keys": 280,
+    "unique_source_keys": 281,
     "unclassified_sites": 0,
-    "blocker_count": 0,
-    "site_blocker_count": 0,
+    "blocker_count": 1,
+    "site_blocker_count": 1,
     "actionable_site_count": 0,
     "reference_categories": {
       "documentation_spec": 2,
-      "dynamic_import": 11,
+      "dynamic_import": 12,
       "entrypoint_config": 58,
       "manual_patch_expression": 120,
       "module_qualname_dependency": 7,
@@ -681,16 +685,23 @@
     "manual_review_categories": {
       "agent_prefix_template": 2,
       "bare_agent_string": 2,
-      "dynamic_import": 11,
+      "dynamic_import": 12,
       "module_owner_receiver": 7,
       "non_string_patch_expression": 120
     },
     "dispositions": {
+      "blocker": 1,
       "no_migration_effect": 280
     },
-    "sites_sha256": "00d94c51b259af0d61550add96e706a1a542e813db23b9890bcfad9b0e1f789c"
+    "sites_sha256": "0e2c08b3c8b6ee38fed74889a9978f5e822eaf532cf0bdec0108886901173927"
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "source_key": "tests/r17-blocker-b7k87y0b/attack.py:2:9:import_module",
+      "reason_code": "unreviewed_dynamic_import_domain",
+      "basis": "The dynamic import producer has no finite, reviewed input domain; R17 cannot prove that it excludes a moved or deleted owner."
+    }
+  ],
   "site_fields": [
     "source_key",
     "tracked_sources",
@@ -2776,6 +2787,21 @@
       }
     ],
     [
+      "tests/r17-blocker-b7k87y0b/attack.py:2:9:import_module",
+      "rm",
+      "dynamic_import",
+      "runtime_module_name",
+      "",
+      "dynamic_import",
+      "manual",
+      "blocker",
+      "unreviewed_dynamic_import_domain",
+      64,
+      {
+        "kind": "block"
+      }
+    ],
+    [
       "tests/test_action_dashboard_connector.py:19:1:from import",
       "r",
       "exact_reference",
@@ -4291,7 +4317,7 @@
       }
     ],
     [
-      "tests/test_maturity.py:29:13:mock.patch.object",
+      "tests/test_maturity.py:30:13:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "generate_method_gap_report",
