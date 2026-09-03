@@ -234,7 +234,7 @@ def _run_fetch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     failure = _incomplete_fetch_failure(result) if graph_incomplete else None
     if failure is not None:
         _write_failure(args, failure)
-    _write_fetch_step(args, result["summary"], failure)
+    _write_fetch_step(args, result, failure)
     return result["summary"], _UPSTREAM_EXIT if incomplete else 0
 
 
@@ -340,7 +340,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     if args.command == "status":
         from .status import census_status
 
-        return census_status(REPO_ROOT, args.evidence), 0
+        return census_status(REPO_ROOT, args.evidence or None), 0
     handler = handlers.get(args.command)
     if handler is None:
         raise ValueError("choose --smoke or a subcommand")

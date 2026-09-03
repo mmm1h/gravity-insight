@@ -3,6 +3,7 @@ name: Gravity upstream census
 on:
   schedule:
     - cron: "17 * * * *"
+    - cron: "47 1 * * *"
   workflow_dispatch:
 
 permissions:
@@ -44,10 +45,14 @@ jobs:
           gravity census check-upstream --output $check
           $result = Get-Content -Raw $check | ConvertFrom-Json
           "changed=$($result.upstream_changed.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          $dailyVerification = '${{ github.event.schedule }}' -eq '47 1 * * *'
+          $manualVerification = '${{ github.event_name }}' -eq 'workflow_dispatch'
+          $fullRequired = $result.upstream_changed -or $dailyVerification -or $manualVerification
+          "full_required=$($fullRequired.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
       - name: Fetch the complete public bundle graph
         id: fetch
-        if: steps.upstream.outputs.changed == 'true'
+        if: steps.upstream.outputs.full_required == 'true'
         continue-on-error: true
         shell: pwsh
         run: |
@@ -145,7 +150,7 @@ jobs:
           exit 3
 
       - name: Parse routes and reconcile manifest coverage
-        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome == 'success'
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
         shell: pwsh
         run: |
           $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
@@ -155,7 +160,7 @@ jobs:
           gravity census coverage --routes $routes --output (Join-Path $evidence "current-coverage.json") --report (Join-Path $evidence "current-coverage-report.md") --require-complete
 
       - name: Diff routes and locate affected operations
-        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome == 'success'
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
         shell: pwsh
         run: |
           $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
@@ -165,6 +170,41 @@ jobs:
           gravity census impact $diff --output $impact --overlay-output (Join-Path $evidence "health-overlay-candidate.json") --require-complete
           $plan = (Get-Content -Raw $impact | ConvertFrom-Json).probe_plan
           $plan | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $evidence "targeted-probe-plan.json")
+
+      - name: Verify current scoring evidence
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
+          $statusPath = Join-Path $evidence "scoring-status.json"
+          gravity census status --json `
+            --evidence (Join-Path $evidence "census-step-output.json") `
+            --evidence (Join-Path $evidence "current-snapshot.json") `
+            --evidence (Join-Path $evidence "route-diff.json") |
+            Set-Content -Encoding utf8 -LiteralPath $statusPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Census status could not read the scoring evidence."
+          }
+          $status = Get-Content -Raw -LiteralPath $statusPath | ConvertFrom-Json
+          if ($status.current.measured -ne $true) {
+            throw "The complete crawl did not produce current, baseline-bound scoring evidence."
+          }
+          if ([int64]$status.current.freshness.max_age_seconds -ne 93600) {
+            throw "The Census current-evidence freshness contract drifted."
+          }
+
+      - name: Upload current scoring evidence
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gravity-census-current-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/gravity-drift/census-step-output.json
+            ${{ runner.temp }}/gravity-drift/current-snapshot.json
+            ${{ runner.temp }}/gravity-drift/route-diff.json
+            ${{ runner.temp }}/gravity-drift/scoring-status.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload drift evidence and the schedule-only probe plan
         if: always()
@@ -176,17 +216,17 @@ jobs:
           retention-days: 14
 
       - name: Warn when upstream capacity prevents a complete crawl
-        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class == 'upstream_capacity'
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class == 'upstream_capacity'
         shell: pwsh
         run: |
           $stepResult = Join-Path $env:RUNNER_TEMP "gravity-drift/census-step-output.json"
           $step = Get-Content -Raw -LiteralPath $stepResult | ConvertFrom-Json
           $classes = @($step.failure.failures | ForEach-Object { $_.status_class } | Sort-Object -Unique) -join ", "
-          Write-Output "::warning title=Gravity upstream census capacity blocked::Entry HTML changed, but the complete crawl remained blocked after ${{ steps.fetch.outputs.crawl_attempts }} attempts. Failure classes: $classes. No route-drift conclusion was made; inspect the uploaded fetch-failure.json before retrying."
+          Write-Output "::warning title=Gravity upstream census capacity blocked::A required complete crawl remained blocked after ${{ steps.fetch.outputs.crawl_attempts }} attempts. Failure classes: $classes. No route-drift conclusion was made; inspect the uploaded fetch-failure.json before retrying."
           "### Gravity upstream census capacity warning" >> $env:GITHUB_STEP_SUMMARY
-          "Entry HTML changed, but upstream capacity prevented a complete graph after ${{ steps.fetch.outputs.crawl_attempts }} bounded attempts. No route-drift conclusion was made. Inspect the uploaded sanitized diagnostic artifact before retrying." >> $env:GITHUB_STEP_SUMMARY
+          "Upstream capacity prevented a required complete graph after ${{ steps.fetch.outputs.crawl_attempts }} bounded attempts. No route-drift conclusion was made. Inspect the uploaded sanitized diagnostic artifact before retrying." >> $env:GITHUB_STEP_SUMMARY
 
       - name: Reject an incomplete changed bundle crawl
-        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class != 'upstream_capacity'
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class != 'upstream_capacity'
         shell: pwsh
-        run: throw "The entry changed, but a complete public static graph could not be proven for a non-capacity reason. Inspect the uploaded snapshot and fetch-failure.json, correct that cause, and rerun the workflow."
+        run: throw "A required complete public static graph could not be proven for a non-capacity reason. Inspect the uploaded snapshot and fetch-failure.json, correct that cause, and rerun the workflow."
