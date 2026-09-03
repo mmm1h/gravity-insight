@@ -207,6 +207,7 @@
         "default_limit",
         "list.[].[].event_index",
         "list.[].[].target.*",
+        "list.[].[].list.[].cnt",
         "list.[].[].list.[].*"
       ],
       "required_data_keys": [

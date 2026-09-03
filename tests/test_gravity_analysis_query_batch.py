@@ -24,6 +24,7 @@ from gravity_insight.errors import InputValidationError
 from gravity_insight.cli import build_parser
 from gravity_insight.onboarding import command_requires_credentials
 from gravity_insight.errors import PermissionUnavailableError
+from gravity_insight.saved_analysis import execute_saved_analysis
 from gravity_insight.sdk import GravitySDK
 from gravity_insight.transport import TransportResponse
 from gravity_insight.workspace import load_workspace
@@ -71,6 +72,60 @@ def _event_result() -> dict[str, Any]:
             "target_list": ["registered"],
             "default_limit": 50,
             "date_list": [{"start_date": "2026-07-01", "end_date": "2026-07-01"}],
+        },
+    }
+
+
+def _issue_91_spec(*, time_grain: str = "total") -> dict[str, Any]:
+    return {
+        "start": "2026-07-01",
+        "end": "2026-07-01",
+        "time_grain": time_grain,
+        "steps": [
+            {
+                "event": "registered",
+                "metric": {
+                    "field": "PresetUserCount",
+                    "aggregation": "PresetUserCount",
+                },
+            }
+        ],
+        "group_by": [
+            {"field": "account_kind", "source": "user", "bucket": "default"},
+            {"field": "level", "source": "event", "bucket": "default"},
+        ],
+    }
+
+
+def _issue_91_event_result(
+    *, measure: Any = 7, include_measure: bool = True, time_grain: str = "total"
+) -> dict[str, Any]:
+    measure_key = "cnt" if time_grain == "total" else "2026-07-01"
+    row = {
+        "用户.账户类型": "fixture-user",
+        "事件.等级": "fixture-event",
+        "unregistered_measure": 99,
+    }
+    if include_measure:
+        row[measure_key] = measure
+    return {
+        "code": 0,
+        "data": {
+            "list": [
+                [
+                    {
+                        "start_date": "2026-07-01",
+                        "end_date": "2026-07-01",
+                        "target": {"registered": 7},
+                        "list": [row],
+                        "event_index": 0,
+                        "cnt": 11,
+                    }
+                ]
+            ],
+            "target_list": ["registered"],
+            "default_limit": 50,
+            "date_list": [{"date_list": [measure_key]}],
         },
     }
 
@@ -483,6 +538,91 @@ class CountingInsight:
             raise AssertionError(message) from exc
 
 class AnalysisQueryBatchTests(unittest.TestCase):
+    def test_total_event_spec_retains_registered_count_per_dimension_row(self) -> None:
+        sdk, _transport = _transport_sdk(_issue_91_event_result())
+
+        result = sdk.analysis_query("event", _issue_91_spec(), app="demo")
+
+        row = result["data"]["list"][0][0]["list"][0]
+        self.assertEqual((True, "success", 7), (result["ok"], result["status"], row["cnt"]))
+        self.assertNotIn("unregistered_measure", row)
+        self.assertNotIn("cnt", result["data"]["list"][0][0])
+
+    def test_total_event_batch_plan_retains_the_same_count_projection(self) -> None:
+        sdk, _transport = _transport_sdk(_issue_91_event_result())
+        payload = {
+            "schema_version": BATCH_SCHEMA_VERSION,
+            "queries": [
+                {
+                    "id": "total_event",
+                    "kind": "event",
+                    "app": "demo",
+                    "spec": _issue_91_spec(),
+                }
+            ],
+        }
+
+        result = sdk.analysis_queries(payload, max_workers=1)
+
+        query = result["results"][0]["result"]
+        row = query["data"]["list"][0][0]["list"][0]
+        self.assertEqual(("success", True, "success", 7), (
+            result["status"], query["ok"], query["status"], row["cnt"]
+        ))
+        self.assertNotIn("unregistered_measure", row)
+
+    def test_saved_event_replay_retains_the_same_total_count_projection(self) -> None:
+        sdk, _transport = _transport_sdk(_issue_91_event_result())
+        definition = {
+            "id": "91",
+            "app_id": "1001",
+            "name": "fixture total event",
+            "subject": "analysis_event",
+            "config": _issue_91_spec(),
+        }
+
+        result = execute_saved_analysis(
+            sdk.insight,
+            definition=definition,
+            app="demo",
+            workspace=sdk.workspace,
+        )
+
+        row = result["result"]["data"]["list"][0][0]["list"][0]
+        self.assertEqual((True, "success", 7), (result["ok"], result["status"], row["cnt"]))
+        self.assertNotIn("unregistered_measure", row)
+
+    def test_total_event_missing_or_invalid_count_fails_closed(self) -> None:
+        cases = {
+            "missing": _issue_91_event_result(include_measure=False),
+            "string": _issue_91_event_result(measure="7"),
+        }
+        for case, response in cases.items():
+            with self.subTest(case=case):
+                sdk, _transport = _transport_sdk(response)
+                result = sdk.analysis_query("event", _issue_91_spec(), app="demo")
+
+                self.assertEqual((False, "contract_changed"), (result["ok"], result["status"]))
+                self.assertTrue(any(
+                    "required analysis numeric measures are absent or invalid" in warning
+                    for warning in result["warnings"]
+                ))
+
+    def test_daily_event_projection_still_retains_date_keyed_count(self) -> None:
+        sdk, _transport = _transport_sdk(
+            _issue_91_event_result(time_grain="day")
+        )
+
+        result = sdk.analysis_query(
+            "event", _issue_91_spec(time_grain="day"), app="demo"
+        )
+
+        row = result["data"]["list"][0][0]["list"][0]
+        self.assertEqual((True, "success", 7), (
+            result["ok"], result["status"], row["2026-07-01"]
+        ))
+        self.assertNotIn("cnt", row)
+
     def test_event_subday_batch_fails_before_transport_or_adaptive_retry(self) -> None:
         for grain in ("hour", "minute"):
             with self.subTest(grain=grain):

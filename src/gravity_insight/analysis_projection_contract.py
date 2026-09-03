@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
@@ -55,6 +56,7 @@ ANALYSIS_COMPOSED_GROUP_KEY_RE = re.compile(
     r"\$[A-Za-z][A-Za-z0-9_]{0,31}$"
 )
 _EVENT_QUERY_GROUP_ROW_PATH = ("list", "[]", "[]", "list", "[]")
+ANALYSIS_EVENT_TOTAL_MEASURE_PATH = (*_EVENT_QUERY_GROUP_ROW_PATH, "cnt")
 _SCATTER_GROUP_ROW_PATH = ("aggregate_date", "[]", "[]")
 # Fingerprints are unique in the current catalog. A new groupable analysis
 # route must match one of these data_key sets or the load-time invariant
@@ -169,6 +171,47 @@ def nested_analysis_response_keys(projection: Any) -> frozenset[str]:
     return ANALYSIS_NESTED_RESPONSE_KEYS_BY_SHAPE[shape]
 
 
+def validate_required_analysis_measures(
+    projection: Any,
+    projected: Mapping[str, Any],
+    values: Mapping[str, Any],
+    warnings: tuple[str, ...],
+    drift: Any,
+) -> tuple[dict[str, Any], tuple[str, ...], Any]:
+    """Fail closed when scalar event rows lose their contracted count."""
+
+    result = dict(projected)
+    if analysis_group_shape(projection) != "event":
+        return result, warnings, drift
+    groups = values.get("group_by_list")
+    if not isinstance(groups, (list, tuple)):
+        return result, warnings, drift
+    total_requested = any(
+        isinstance(group, Mapping)
+        and group.get("type") == "default_event"
+        and group.get("field") == "create_time"
+        and group.get("group_by") == "total"
+        for group in groups
+    )
+    if not total_requested:
+        return result, warnings, drift
+    parents = _analysis_path_values(result, ANALYSIS_EVENT_TOTAL_MEASURE_PATH[:-1])
+    key = ANALYSIS_EVENT_TOTAL_MEASURE_PATH[-1]
+    violations = sum(
+        not isinstance(parent, Mapping)
+        or key not in parent
+        or not _is_finite_number(parent[key])
+        for parent in parents
+    )
+    if not violations:
+        return result, warnings, drift
+    warning = (
+        "required analysis numeric measures are absent or invalid "
+        f"(count={violations})"
+    )
+    return result, (*warnings, warning), drift.__class__.BREAKING
+
+
 def accepts_property_grouping(fields: Sequence[Any]) -> bool:
     """True when the caller can request a non-time property partition."""
 
@@ -191,10 +234,68 @@ def operation_uses_dynamic_aggregate(operation: "OperationSpec") -> bool:
     )
 
 
-def allowed_analysis_response_key(name: str, response_keys: set[str], path: tuple[str, ...] = ()) -> bool:
-    if name in response_keys or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name) or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(name):
+def allowed_analysis_response_key(
+    name: str,
+    response_keys: set[str],
+    path: tuple[str, ...] = (),
+    numeric_paths: tuple[tuple[str, ...], ...] = (),
+) -> bool:
+    if (
+        name in response_keys
+        or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name)
+        or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(name)
+        or _contracted_numeric_key_allowed((*path, name), numeric_paths)
+    ):
         return True
     return _allowed_dynamic_group_label_key(name, path)
+
+
+def analysis_numeric_path_allowed(
+    path: tuple[str, ...], numeric_paths: tuple[tuple[str, ...], ...]
+) -> bool:
+    return any(
+        len(pattern) == len(path)
+        and all(
+            expected == "*" or expected == actual
+            for expected, actual in zip(pattern, path)
+        )
+        for pattern in numeric_paths
+    )
+
+
+def _contracted_numeric_key_allowed(
+    path: tuple[str, ...], numeric_paths: tuple[tuple[str, ...], ...]
+) -> bool:
+    return any(
+        pattern
+        and pattern[-1] not in {"*", "[]"}
+        and analysis_numeric_path_allowed(path, (pattern,))
+        for pattern in numeric_paths
+    )
+
+
+def _analysis_path_values(value: Any, path: tuple[str, ...]) -> tuple[Any, ...]:
+    if not path:
+        return (value,)
+    head, *tail = path
+    remaining = tuple(tail)
+    if head == "[]":
+        if not isinstance(value, (list, tuple)):
+            return ()
+        return tuple(
+            nested
+            for item in value
+            for nested in _analysis_path_values(item, remaining)
+        )
+    if not isinstance(value, Mapping) or head not in value:
+        return ()
+    return _analysis_path_values(value[head], remaining)
+
+
+def _is_finite_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and (
+        not isinstance(value, float) or math.isfinite(value)
+    )
 
 
 def _allowed_dynamic_group_label_key(name: str, path: tuple[str, ...]) -> bool:
@@ -314,6 +415,7 @@ def _validate_gravity_identity_aliases(projection: Any) -> None:
 __all__ = [
     "ANALYSIS_COMPOSED_GROUP_KEY_RE",
     "ANALYSIS_DATE_RESPONSE_KEY_RE",
+    "ANALYSIS_EVENT_TOTAL_MEASURE_PATH",
     "ANALYSIS_GROUP_DISPLAY_KEY_RE",
     "ANALYSIS_GROUP_LABEL_KEY_RE",
     "ANALYSIS_INDEX_RESPONSE_KEY_RE",
@@ -321,11 +423,13 @@ __all__ = [
     "ANALYSIS_NESTED_RESPONSE_KEYS_BY_SHAPE",
     "ANALYSIS_SAFE_RESPONSE_SCALARS",
     "accepts_property_grouping",
+    "analysis_numeric_path_allowed",
     "allowed_analysis_response_key",
     "analysis_group_shape",
     "funnel_mode_shape_changed",
     "is_groupable_analysis_query",
     "nested_analysis_response_keys",
     "operation_uses_dynamic_aggregate",
+    "validate_required_analysis_measures",
     "validate_group_identity_invariant",
 ]

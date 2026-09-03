@@ -13,9 +13,11 @@ from .analysis_projection_contract import (
     ANALYSIS_SAFE_RESPONSE_SCALARS,
     allowed_analysis_response_key as _allowed_analysis_response_key,
     analysis_group_shape,
+    analysis_numeric_path_allowed as _analysis_numeric_path_allowed,
     funnel_mode_shape_changed,
     nested_analysis_response_keys,
     operation_uses_dynamic_aggregate,
+    validate_required_analysis_measures,
 )
 from .drift import ProjectionDrift, projection_drift_status
 from .errors import ManifestError, PolicyViolation, error_for_status
@@ -354,7 +356,9 @@ def _project_analysis_aggregate(
         warnings.append(
             f"unsafe or unbounded analysis response values were omitted (count={dropped})"
         )
-    return projected, tuple(warnings), drift
+    return validate_required_analysis_measures(
+        operation.response_projection, projected, values, tuple(warnings), drift
+    )
 
 
 def _project_analysis_value(
@@ -440,7 +444,9 @@ def _project_analysis_mapping(
                 name, blocked,
                 allow_contracted_identifiers=allow_identifiers,
             )
-            or not _allowed_analysis_response_key(name, response_keys, path)
+            or not _allowed_analysis_response_key(
+                name, response_keys, path, numeric_paths
+            )
         ):
             audit_path = ("data", *("*" if part == "[]" else part for part in path))
             recorder.add_unknown_fields(audit_path, value, {name})
@@ -485,17 +491,6 @@ def _project_analysis_sequence(
             result.append(normalized)
             drift = max(drift, nested_drift)
     return result, drift
-
-
-def _analysis_numeric_path_allowed(
-    path: tuple[str, ...],
-    numeric_paths: tuple[tuple[str, ...], ...],
-) -> bool:
-    return any(
-        len(pattern) == len(path)
-        and all(expected == "*" or expected == actual for expected, actual in zip(pattern, path))
-        for pattern in numeric_paths
-    )
 
 
 def _analysis_response_keys(

@@ -2634,6 +2634,7 @@
           "default_limit",
           "list.[].[].event_index",
           "list.[].[].target.*",
+          "list.[].[].list.[].cnt",
           "list.[].[].list.[].*"
         ],
         "opaque_json_item_keys": [],
