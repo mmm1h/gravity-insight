@@ -19,6 +19,16 @@ Target release: `0.3.7`
 
 - None.
 
+### Fixed
+
+- `gravity maturity score` no longer reports the correctness/surface-parity and
+  architecture/token dimensions as unmeasurable. The isolated quality-profile
+  subprocess printed a diagnostic report to stdout ahead of its JSON payload, so
+  whole-document parsing failed while the subprocess still exited zero — an
+  unexplained `None` indistinguishable from missing data. The report now goes to
+  stderr, stdout carries exactly one machine-readable document, and parse failures
+  surface an explicit reason in each dimension's `missing` instead of being swallowed.
+
 ## [0.3.6] - 2026-09-03
 
 ### Breaking changes
