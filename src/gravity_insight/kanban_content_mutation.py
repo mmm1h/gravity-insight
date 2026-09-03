@@ -122,15 +122,17 @@ def _replace_notes(
     if not send:
         return preview
     mutation = client._execute_mutation(DASHBOARD_UPDATE, inputs)
-    after = read_detail(client, app, space, dashboard)
-    actual = detail_notes(after)
-    expected_markers = {marker_from_text(item["name"]) for item in layout}
-    actual_markers = {marker_from_text(item.get("name")) for item in actual}
-    if actual_markers != expected_markers or report_list(after):
-        raise MutationReadbackError(
-            "dashboard note replacement did not round-trip without report changes",
-            next_action="Read the exact dashboard layout and report list before another content write.",
-        )
+    recovery_marker = marker_from_text(detail.get("name"))
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        after = read_detail(client, app, space, dashboard)
+        actual = detail_notes(after)
+        expected_markers = {marker_from_text(item["name"]) for item in layout}
+        actual_markers = {marker_from_text(item.get("name")) for item in actual}
+        if actual_markers != expected_markers or report_list(after):
+            raise MutationReadbackError(
+                "dashboard note replacement did not round-trip without report changes",
+                next_action="Read the exact dashboard layout and report list before another content write.",
+            )
     return completed(
         preview,
         mutation,
@@ -203,12 +205,13 @@ def _delete_note(
     if not send:
         return preview
     mutation = client._execute_mutation(NOTE_DELETE, inputs)
-    after = read_detail(client, app, space, dashboard)
-    if any(item.get("i") == note_id for item in detail_notes(after)):
-        raise MutationReadbackError(
-            "dashboard note still exists after delete acknowledgement",
-            next_action="Read the exact dashboard layout before another explicit note delete.",
-        )
+    with MutationReadbackError.after_dispatch(mutation, marker):
+        after = read_detail(client, app, space, dashboard)
+        if any(item.get("i") == note_id for item in detail_notes(after)):
+            raise MutationReadbackError(
+                "dashboard note still exists after delete acknowledgement",
+                next_action="Read the exact dashboard layout before another explicit note delete.",
+            )
     return completed(preview, mutation, {"kind": "note", "id": note_id, "deleted": True}, status="deleted")
 
 
@@ -270,13 +273,15 @@ def _unlink_reports(
     if not send:
         return preview
     mutation = client._execute_mutation(REPORT_UNLINK, inputs)
-    after = read_detail(client, app, space, dashboard)
-    remaining = _attached_report_ids(report_list(after))
-    if set(report_ids) & remaining:
-        raise MutationReadbackError(
-            "dashboard report association still exists after unlink acknowledgement",
-            next_action="Read the exact dashboard report list before another unlink.",
-        )
+    recovery_marker = marker_from_text(detail.get("name"))
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        after = read_detail(client, app, space, dashboard)
+        remaining = _attached_report_ids(report_list(after))
+        if set(report_ids) & remaining:
+            raise MutationReadbackError(
+                "dashboard report association still exists after unlink acknowledgement",
+                next_action="Read the exact dashboard report list before another unlink.",
+            )
     return completed(preview, mutation, {"dashboard_id": dashboard, "unlinked_report_ids": report_ids}, status="updated")
 
 
@@ -319,12 +324,13 @@ def _save_order(client: Any, app: int, supplied: list[dict[str, Any]], *, send: 
         return preview
     expected = _order_signature(supplied)
     mutation = client._execute_mutation(DASHBOARD_ORDER, inputs)
-    after, _objects = read_tree(client, app)
-    if _order_signature(after) != expected:
-        raise MutationReadbackError(
-            "Kanban order did not round-trip",
-            next_action="Read the latest tree and review concurrent ordering changes before another save.",
-        )
+    with MutationReadbackError.after_dispatch(mutation):
+        after, _objects = read_tree(client, app)
+        if _order_signature(after) != expected:
+            raise MutationReadbackError(
+                "Kanban order did not round-trip",
+                next_action="Read the latest tree and review concurrent ordering changes before another save.",
+            )
     return completed(preview, mutation, {"kind": "kanban_order", "saved": True}, status="updated")
 
 

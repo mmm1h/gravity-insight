@@ -111,15 +111,16 @@ def _delete_dashboards(
     if not send:
         return preview
     mutation = client._execute_mutation(DASHBOARD_DELETE, inputs)
-    _tree, remaining = read_tree(client, app)
-    remaining_ids = {
-        item.object_id for item in remaining if item.kind == "dashboard"
-    }
-    if remaining_ids & set(dashboard_ids):
-        raise MutationReadbackError(
-            "one or more dashboards still exist after delete acknowledgement",
-            next_action="Read the exact dashboard IDs and inspect references before another explicit delete.",
-        )
+    with MutationReadbackError.after_dispatch(mutation):
+        _tree, remaining = read_tree(client, app)
+        remaining_ids = {
+            item.object_id for item in remaining if item.kind == "dashboard"
+        }
+        if remaining_ids & set(dashboard_ids):
+            raise MutationReadbackError(
+                "one or more dashboards still exist after delete acknowledgement",
+                next_action="Read the exact dashboard IDs and inspect references before another explicit delete.",
+            )
     return completed(
         preview,
         mutation,

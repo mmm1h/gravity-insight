@@ -33,6 +33,7 @@ from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.kanban-mutation.v1"
+_UNGROUPED_FOLDER_IDS = (None, 0, "0", -1, "-1")
 _MARKER = re.compile(r"GSDK-[0-9a-f]{12}")
 _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
 
@@ -78,6 +79,14 @@ def nonnegative_id(value: Any, field: str) -> int:
             next_action=f"Use 0 for the ungrouped destination or an exact positive {field} from the Kanban tree, then run dry-run again.",
         )
     return value
+
+
+def normalize_folder_id(value: Any) -> int | None:
+    return None if value in _UNGROUPED_FOLDER_IDS else _response_nonzero_id(value, "tree.folder_id")
+
+
+def folder_ids_equal(actual: Any, expected: Any) -> bool:
+    return normalize_folder_id(actual) == normalize_folder_id(expected)
 
 
 def normalize_report_id(value: Any) -> str | None:
@@ -173,13 +182,14 @@ def _flatten_tree(rows: Sequence[Mapping[str, Any]]) -> list[KanbanObject]:
             node, inherited_space, root
         )
         current_folder = object_id if folder else inherited_folder
+        dashboard_folder = normalize_folder_id(node.get("folder_id", inherited_folder)) if kind == "dashboard" else None
         result.append(
             KanbanObject(
                 kind,
                 object_id,
                 name,
                 space_id,
-                None if kind != "dashboard" else inherited_folder,
+                dashboard_folder,
                 owner_id,
                 owner_name,
             )
@@ -311,7 +321,7 @@ def descendants(objects: Sequence[KanbanObject], target: KanbanObject) -> list[K
             for item in objects
             if item.kind == "dashboard"
             and item.space_id == target.space_id
-            and item.folder_id == target.object_id
+            and folder_ids_equal(item.folder_id, target.object_id)
         ]
     return []
 
