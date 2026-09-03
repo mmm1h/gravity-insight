@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -70,6 +71,32 @@ def is_success_status(status: Any) -> bool:
 def _single_line(message: Any, *, limit: int = 500) -> str:
     rendered = " ".join(str(message).splitlines()).strip()
     return (rendered or "Gravity Insight operation failed")[:limit]
+
+
+def _safe_acknowledgement(
+    value: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise ValueError("acknowledgement must be an object")
+    result: dict[str, Any] = {"received": True}
+    operation = value.get("operation_id")
+    status = value.get("status")
+    attempts = value.get("attempts")
+    if isinstance(operation, str) and operation.strip():
+        result["operation_id"] = _single_line(operation, limit=128)
+    if isinstance(status, str) and status.strip():
+        result["status"] = _single_line(status, limit=64)
+    if type(attempts) is int and attempts >= 0:
+        result["attempts"] = attempts
+    return result
+
+
+def _optional_boolean(value: Any, field: str) -> bool | None:
+    if value is not None and not isinstance(value, bool):
+        raise ValueError(f"{field} must be a boolean")
+    return value
 
 
 def _input_field(message: str) -> str | None:
@@ -176,6 +203,10 @@ class ErrorDetail:
     retryable: bool = False
     retry_after_ms: int | None = None
     next_action: str = ""
+    write_sent: bool | None = None
+    acknowledgement: dict[str, Any] | None = None
+    marker: str | None = None
+    automatic_retry: bool | None = None
 
     @classmethod
     def create(
@@ -189,6 +220,10 @@ class ErrorDetail:
         retryable: bool | None = None,
         retry_after_ms: int | None = None,
         next_action: str | None = None,
+        write_sent: bool | None = None,
+        acknowledgement: Mapping[str, Any] | None = None,
+        marker: str | None = None,
+        automatic_retry: bool | None = None,
     ) -> "ErrorDetail":
         normalized_code = _code_value(code)
         normalized_message = _single_line(message)
@@ -210,6 +245,7 @@ class ErrorDetail:
                 or normalized_retry_after < 0
             ):
                 raise ValueError("retry_after_ms must be a non-negative integer")
+        normalized_acknowledgement = _safe_acknowledgement(acknowledgement)
         return cls(
             code=normalized_code,
             category=normalized_category,
@@ -227,10 +263,14 @@ class ErrorDetail:
                 next_action or _default_next_action(normalized_code, operation_id),
                 limit=500,
             ),
+            write_sent=_optional_boolean(write_sent, "write_sent"),
+            acknowledgement=normalized_acknowledgement,
+            marker=_single_line(marker, limit=64) if marker else None,
+            automatic_retry=_optional_boolean(automatic_retry, "automatic_retry"),
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "code": self.code,
             "category": self.category,
             "message": self.message,
@@ -239,6 +279,15 @@ class ErrorDetail:
             "retry_after_ms": self.retry_after_ms,
             "next_action": self.next_action,
         }
+        if self.write_sent is not None:
+            result["write_sent"] = self.write_sent
+        if self.acknowledgement is not None:
+            result["acknowledgement"] = dict(self.acknowledgement)
+        if self.marker is not None:
+            result["marker"] = self.marker
+        if self.automatic_retry is not None:
+            result["automatic_retry"] = self.automatic_retry
+        return result
 
 
 @dataclass(frozen=True)

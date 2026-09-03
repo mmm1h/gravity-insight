@@ -160,10 +160,14 @@ def _workflow_metric(root: Path) -> dict[str, Any]:
 
 
 def architecture_evidence(
-    root: Path, profile: Mapping[str, Any] | None, certifications: Mapping[str, Any]
+    root: Path,
+    profile: Mapping[str, Any] | None,
+    certifications: Mapping[str, Any],
+    *,
+    profile_failure: str | None = None,
 ) -> list[dict[str, Any]]:
     return [
-        *_quality_metrics(profile),
+        *_quality_metrics(profile, profile_failure=profile_failure),
         _component_pointer_metric(root),
         _token_proxy_metric(certifications),
     ]
@@ -171,14 +175,19 @@ def architecture_evidence(
 
 def _quality_metrics(
     profile: Mapping[str, Any] | None,
+    *,
+    profile_failure: str | None = None,
 ) -> list[dict[str, Any]]:
     if profile is None:
+        missing = ["a successful isolated quality-profile collection"]
+        if profile_failure:
+            missing.append(profile_failure)
         return [
             metric(
                 source="gravity_insight.quality.inspect_repository",
                 claim="repository quality profile is available",
                 measured=False,
-                missing=("a successful isolated quality-profile collection",),
+                missing=missing,
             )
         ]
     definitions = (

@@ -57,13 +57,14 @@ def create_folder(
         if existing is not None:
             return idempotent(FOLDER_CREATE, existing)
         mutation = client._execute_mutation(FOLDER_CREATE, inputs)
-        _tree, after = read_tree(client, app)
-        created = create_preflight(after, "folder", marker, wire_name)
-        if created is None or created.space_id != space:
-            raise MutationReadbackError(
-                "created Kanban folder did not round-trip under the requested space",
-                next_action="Inspect this SDK marker and its current parent before another create.",
-            )
+        with MutationReadbackError.after_dispatch(mutation, marker):
+            _tree, after = read_tree(client, app)
+            created = create_preflight(after, "folder", marker, wire_name)
+            if created is None or created.space_id != space:
+                raise MutationReadbackError(
+                    "created Kanban folder did not round-trip under the requested space",
+                    next_action="Inspect this SDK marker and its current parent before another create.",
+                )
         return completed(preview, mutation, created.public(), status="created")
 
 
@@ -108,13 +109,15 @@ def _rename_folder(
     if not send:
         return preview
     mutation = client._execute_mutation(FOLDER_UPDATE, inputs)
-    _tree, after = read_tree(client, app)
-    updated = find_object(after, "folder", folder_id)
-    if updated.name != wire_name or updated.space_id != space:
-        raise MutationReadbackError(
-            "Kanban folder rename did not round-trip",
-            next_action="Read the exact folder and parent space before another write.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, after = read_tree(client, app)
+        updated = find_object(after, "folder", folder_id)
+        if updated.name != wire_name or updated.space_id != space:
+            raise MutationReadbackError(
+                "Kanban folder rename did not round-trip",
+                next_action="Read the exact folder and parent space before another write.",
+            )
     return completed(
         preview,
         mutation,
@@ -179,14 +182,16 @@ def _move_folder(
     if not send:
         return preview
     mutation = client._execute_mutation(FOLDER_MOVE, inputs)
-    _tree, after = read_tree(client, app)
-    moved = find_object(after, "folder", folder_id)
-    moved_children = descendants(after, moved)
-    if moved.space_id != destination or {item.object_id for item in moved_children} != {item.object_id for item in children}:
-        raise MutationReadbackError(
-            "folder move did not preserve the reviewed descendants at the destination",
-            next_action="Read both spaces and inspect the folder/dashboard identities before another move.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, after = read_tree(client, app)
+        moved = find_object(after, "folder", folder_id)
+        moved_children = descendants(after, moved)
+        if moved.space_id != destination or {item.object_id for item in moved_children} != {item.object_id for item in children}:
+            raise MutationReadbackError(
+                "folder move did not preserve the reviewed descendants at the destination",
+                next_action="Read both spaces and inspect the folder/dashboard identities before another move.",
+            )
     return completed(
         preview,
         mutation,
@@ -244,18 +249,20 @@ def _delete_folder(
     if not send:
         return preview
     mutation = client._execute_mutation(FOLDER_DELETE, inputs)
-    _tree, remaining = read_tree(client, app)
-    if any(item.kind == "folder" and item.object_id == folder_id for item in remaining):
-        raise MutationReadbackError(
-            "Kanban folder still exists after delete acknowledgement",
-            next_action="Read the exact marked folder before another explicit delete.",
-        )
-    remaining_dashboards = {item.object_id: item for item in remaining if item.kind == "dashboard"}
-    if any(item.object_id not in remaining_dashboards for item in dashboards):
-        raise MutationReadbackError(
-            "folder deletion did not preserve every dashboard promised by the relocation contract",
-            next_action="Stop writes and inspect the affected dashboards; do not retry the parent delete.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, remaining = read_tree(client, app)
+        if any(item.kind == "folder" and item.object_id == folder_id for item in remaining):
+            raise MutationReadbackError(
+                "Kanban folder still exists after delete acknowledgement",
+                next_action="Read the exact marked folder before another explicit delete.",
+            )
+        remaining_dashboards = {item.object_id: item for item in remaining if item.kind == "dashboard"}
+        if any(item.object_id not in remaining_dashboards for item in dashboards):
+            raise MutationReadbackError(
+                "folder deletion did not preserve every dashboard promised by the relocation contract",
+                next_action="Stop writes and inspect the affected dashboards; do not retry the parent delete.",
+            )
     return completed(
         preview,
         mutation,
