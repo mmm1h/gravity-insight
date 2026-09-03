@@ -1,5 +1,7 @@
+import io
 import json
 import unittest
+from contextlib import redirect_stderr
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -101,6 +103,44 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
             lazy.run_saved_analysis("main", "Daily", start="2026-08-01")
         with self.assertRaises(InputValidationError):
             lazy.saved_analyses("main", max_items=100_001)
+
+    def test_cli_serializes_bounded_value_free_unsupported_diagnostics(self):
+        error = UnsupportedOperationError(
+            "report.config contains unregistered Web fields",
+            field="report.config",
+            unsupported_items=[
+                {
+                    "field": "report.config.formulaControl",
+                    "type": "object",
+                    "value": "tenant-secret-value",
+                }
+            ],
+        )
+        stderr = io.StringIO()
+        argv = [
+            "analysis", "saved", "prepare", "--app", "main", "--ref", "Daily",
+            "--start", "2026-08-01", "--end", "2026-08-07",
+        ]
+
+        with (
+            patch("gravity_insight.saved_analysis_cli.load_workspace", return_value=_Workspace()),
+            patch("gravity_insight.saved_analysis_cli.runtime.build_client", return_value=object()),
+            patch(
+                "gravity_insight.saved_analysis_cli.prepare_saved_analysis",
+                side_effect=error,
+            ),
+            redirect_stderr(stderr),
+        ):
+            exit_code = cli.main(argv)
+
+        detail = json.loads(stderr.getvalue())["error"]
+        self.assertEqual(4, exit_code)
+        self.assertEqual(
+            [{"field": "report.config.formulaControl", "type": "object"}],
+            detail["unsupported_items"],
+        )
+        self.assertFalse(detail["unsupported_items_truncated"])
+        self.assertNotIn("tenant-secret-value", stderr.getvalue())
 
     def test_plan_is_literal_except_app_and_scrubs_artifact_inputs(self):
         workspace, request = _Workspace(), {
