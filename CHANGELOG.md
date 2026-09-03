@@ -19,6 +19,19 @@ Target release: `0.3.7`
 
 - None.
 
+### Fixed
+
+- Total-grain event queries no longer return an apparently successful metric
+  table containing only dimension labels. The registered `cnt` measure was
+  stripped as an unregistered response key while the call still reported
+  `ok=true`, so a missing value could be read as zero. `cnt` is now registered
+  at its exact path, every leaf dimension row is checked for a finite numeric
+  measure, and a missing or invalid one is raised as breaking drift
+  (`ok=false`, `status=contract_changed`). Responses that previously looked
+  successful but carried no measure now fail closed instead. Wrong-level `cnt`
+  and other unregistered keys are still stripped, and daily projection is
+  unchanged.
+
 ### Added
 
 - `gravity analysis dashboard kanban schema` now publishes typed collection
