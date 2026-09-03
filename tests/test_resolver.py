@@ -4,6 +4,7 @@ import unittest
 import tempfile
 
 import json
+import re
 import sqlite3
 from contextlib import closing
 from pathlib import Path
@@ -223,7 +224,22 @@ class ResolverTests(unittest.TestCase):
         assert result["receipt"]["request_count"] == 1
         assert (result["ok"], result["status"], result["exit_code"]) == (True, "empty", 0)
         assert result["receipt_storage"]["persisted"] is True
-        receipt_text = json.dumps(result["receipt"], ensure_ascii=False)
+        # The digest fields carry no business value by construction: receipt_id
+        # is a random uuid4 and the fingerprints hash shapes, not values. They
+        # are also hex, so a short literal like "1001" lands inside one by
+        # chance often enough to fail this assertion at random — which is a
+        # false alarm, not a leak. Check them for digest shape, then scan every
+        # value-carrying field (including any nested facet) for the real values.
+        receipt = dict(result["receipt"])
+        digest_fields = (
+            "receipt_id",
+            "input_shape_fingerprint",
+            "output_shape_fingerprint",
+            "contract_fingerprint",
+        )
+        for name in digest_fields:
+            assert re.fullmatch(r"[0-9a-f]{32}|[0-9a-f]{64}", receipt.pop(name)), name
+        receipt_text = json.dumps(receipt, ensure_ascii=False)
         assert "1001" not in receipt_text
         assert "2026-08-01" not in receipt_text
 
