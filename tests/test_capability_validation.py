@@ -123,6 +123,22 @@ class CapabilityValidationTests(unittest.TestCase):
         with self.assertRaises(CapabilityValidationError):
             CapabilityValidationStore(values=[validation(), validation()]).list()
 
+    def test_scoped_upsert_is_atomic_and_unscoped_write_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            scoped = CapabilityValidationStore(root, scope_bound=True)
+
+            path = scoped.upsert([validation()])
+
+            self.assertEqual(root / STORE_RELATIVE_PATH, path)
+            self.assertEqual(1, len(CapabilityValidationStore(root, scope_bound=True).list()))
+            with self.assertRaises(CapabilityValidationError):
+                CapabilityValidationStore(root).upsert([validation()])
+            before = path.read_bytes()
+            with self.assertRaises(CapabilityValidationError):
+                scoped.upsert([validation(validated_at="not-a-time")])
+            self.assertEqual(before, path.read_bytes())
+
 
 if __name__ == "__main__":
     unittest.main()

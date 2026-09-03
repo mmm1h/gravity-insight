@@ -53,7 +53,11 @@ class CapabilityTrustService:
         provider_resolver: ProviderResolver = current_provider_fingerprint,
         clock: Clock | None = None,
     ) -> None:
-        self._validation_store = validation_store or CapabilityValidationStore()
+        self._validation_store = (
+            validation_store
+            if validation_store is not None
+            else CapabilityValidationStore.for_current_principal()
+        )
         self._contracts = (
             {
                 key: copy.deepcopy(dict(value))

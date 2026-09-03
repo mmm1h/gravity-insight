@@ -62,6 +62,17 @@ class CapabilityTrustTests(unittest.TestCase):
                 self.assertFalse(result["network_called"])
                 self.assertEqual([], result["allowed_claims"])
 
+    @patch.object(CapabilityValidationStore, "for_current_principal")
+    def test_default_service_reads_only_the_current_principal_store(self, current):
+        current.return_value = CapabilityValidationStore(values=[validation()])
+
+        result = CapabilityTrustService(clock=lambda: NOW).trust(
+            "operation", "app.list"
+        )
+
+        self.assertEqual("stable", result["trust_status"])
+        current.assert_called_once_with()
+
     def test_valid_current_validation_can_make_one_operation_stable(self):
         result = self.service(validation()).trust("operation", "app.list")
 
