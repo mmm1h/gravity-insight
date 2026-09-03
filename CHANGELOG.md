@@ -69,6 +69,15 @@ Target release: `0.3.7`
   exact-operation HTTP receipt and six non-empty checks (receipt, semantic status,
   non-empty result, schema/type, freshness, no drift), and expires after 24 hours
   so a stale pass can never stand in for a current one.
+- Native saved artifact shapes now cover registration-day payer retention, a
+  disjoint first-payment retention cohort, a custom-only average-duration Event
+  and a basic multi-metric Event. Each shape was registered from a real
+  `saved prepare` diagnostic rather than inferred, and the two retention
+  families keep separate denominators — similar field paths are not treated as
+  evidence of shared semantics. Event queries may now declare zero ordinary
+  metrics when at least one custom formula metric is present and passes full
+  formula validation; both empty still fails closed, and funnel and retention
+  keep their two-item minimum.
 
 ## [0.3.6] - 2026-09-03
 

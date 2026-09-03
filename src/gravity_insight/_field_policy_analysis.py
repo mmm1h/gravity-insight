@@ -193,7 +193,12 @@ def _validate_property_query(
 def _validate_query_items(
     query_kind: str, value: Any, references: AnalysisReferences
 ) -> None:
-    minimum = 2 if query_kind in {"funnel", "retention"} else 1
+    if query_kind in {"funnel", "retention"}:
+        minimum = 2
+    elif query_kind == "event":
+        minimum = 0
+    else:
+        minimum = 1
     maximum = 2 if query_kind == "retention" else 50
     if query_kind == "scatter":
         validate_analysis_scatter_items(
@@ -223,8 +228,14 @@ def _validate_query_kind_controls(
 def _validate_event_controls(
     inputs: Mapping[str, Any], references: AnalysisReferences
 ) -> None:
-    validate_event_query_labels(inputs.get("query_item_list"))
-    validate_analysis_custom_items(inputs.get("custom_query_item_list", ()), references)
+    query_items = inputs.get("query_item_list")
+    custom_items = inputs.get("custom_query_item_list", ())
+    validate_event_query_labels(query_items)
+    validate_analysis_custom_items(
+        custom_items,
+        references,
+        minimum=1 if not query_items else 0,
+    )
     validate_analysis_split_event(inputs.get("split_event", {}), references)
     validate_analysis_aggregate_config(inputs.get("aggregate_config", {}))
     validate_analysis_extra_data(inputs.get("extra_data", {}))

@@ -220,12 +220,23 @@ def _validate_scatter_aggregate(value: Any) -> None:
 
 
 def validate_analysis_custom_items(
-    value: Any, references: AnalysisReferences
+    value: Any,
+    references: AnalysisReferences,
+    *,
+    minimum: int = 0,
 ) -> None:
-    if not isinstance(value, (list, tuple)) or len(value) > 50:
+    if (
+        not isinstance(value, (list, tuple))
+        or not minimum <= len(value) <= 50
+    ):
+        allowed = (
+            "a non-empty array with at most 50 custom query items"
+            if minimum
+            else "an array with at most 50 custom query items"
+        )
         raise InputValidationError(
             f"actual value: {len(value) if isinstance(value, (list, tuple)) else actual_value(type(value).__name__)}; "
-            "allowed value: an array with at most 50 custom query items",
+            f"allowed value: {allowed}",
             field="custom_query_item_list",
         )
     for item in value:
