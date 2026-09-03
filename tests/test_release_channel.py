@@ -207,25 +207,29 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def test_offline_cli_steps_disable_startup_upgrade(self) -> None:
         ci = self.workflows[CI_WORKFLOW.name]
-        step = self._step(ci, "Check all CLI namespaces offline")
-        env_block = re.search(r"(?ms)^        env:\n((?:^          .+\n?)*)", step)
-        self.assertIsNotNone(env_block)
-        configured = dict(
-            re.findall(
-                r"(?m)^          ([A-Z][A-Z0-9_]*):\s*[\"']?([^\"'\s#]+)",
-                env_block.group(1) if env_block is not None else "",
+        with self.subTest(workflow=CI_WORKFLOW.name):
+            step = self._step(ci, "Check all CLI namespaces offline")
+            env_block = re.search(
+                r"(?ms)^        env:\n((?:^          .+\n?)*)", step
             )
-        )
-        self.assertIn(AUTO_UPGRADE_ENV, configured)
-        self.assertEqual("0", configured[AUTO_UPGRADE_ENV])
-        self.assertFalse(
-            startup_update_enabled(
-                ["--help"],
-                environ={AUTO_UPGRADE_ENV: configured[AUTO_UPGRADE_ENV]},
+            self.assertIsNotNone(env_block)
+            configured = dict(
+                re.findall(
+                    r"(?m)^          ([A-Z][A-Z0-9_]*):\s*[\"']?([^\"'\s#]+)",
+                    env_block.group(1) if env_block is not None else "",
+                )
             )
-        )
-        self.assertIn("Require a green exact-SHA SDK CI run", self.workflow)
-        self.assertNotIn("Check all CLI namespaces offline", self.workflow)
+            self.assertIn(AUTO_UPGRADE_ENV, configured)
+            self.assertEqual("0", configured[AUTO_UPGRADE_ENV])
+            self.assertFalse(
+                startup_update_enabled(
+                    ["--help"],
+                    environ={AUTO_UPGRADE_ENV: configured[AUTO_UPGRADE_ENV]},
+                )
+            )
+        with self.subTest(workflow=RELEASE_WORKFLOW.name):
+            self.assertIn("Require a green exact-SHA SDK CI run", self.workflow)
+            self.assertNotIn("Check all CLI namespaces offline", self.workflow)
 
     def test_exact_sha_ci_reuse_and_supply_chain_are_read_only(self) -> None:
         verify = self._job("verify_ci")
@@ -265,17 +269,17 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_release_workspace_outputs_are_excluded_from_checkpoint_file_universe(
         self,
     ) -> None:
-        release_gates = "\n".join(
-            (
-                self._job("verify_ci"),
-                self._job("release_supply_chain"),
-            )
-        )
+        workflow_outputs = "\n".join(self.workflows.values())
         outputs = (
             (
                 "path: release-evidence/secret-scan.json",
                 "release-evidence/secret-scan.json",
             ),
+            (
+                "--output-dir tmp/agent-usability-gate",
+                "tmp/agent-usability-gate/probe.json",
+            ),
+            ("> tmp/agent-usability-gate.log", "tmp/agent-usability-gate.log"),
             ("python -m build", "build/probe"),
             ("path: dist/", "dist/probe"),
             ("--output-dir release-evidence", "release-evidence/probe.cdx.json"),
@@ -286,7 +290,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         for workflow_fragment, output in outputs:
             with self.subTest(output=output):
-                self.assertIn(workflow_fragment, release_gates)
+                self.assertIn(workflow_fragment, workflow_outputs)
                 ignored = _run(
                     ["git", "check-ignore", "--verbose", "--", output], cwd=ROOT
                 )
