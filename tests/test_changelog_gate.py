@@ -17,9 +17,9 @@ class ChangelogGateTests(unittest.TestCase):
         report = validate_changelog()
 
         self.assertEqual("0.3.7", report.project_version)
-        self.assertEqual("0.3.7", report.target_version)
+        self.assertEqual("0.3.8", report.target_version)
         self.assertEqual(
-            ("0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2", "0.3.1"),
+            ("0.3.7", "0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2", "0.3.1"),
             report.released_versions,
         )
         self.assertEqual(5, report.breaking_entries)
@@ -98,7 +98,8 @@ class ChangelogGateTests(unittest.TestCase):
 
             with self.assertRaisesRegex(
                 ChangelogError,
-                r"lock inventory mismatch: missing=\['0.3.6', '0.3.5', '0.3.4', '0.3.3', '0.3.1'\]",
+                r"lock inventory mismatch: missing=\['0.3.7', '0.3.6', '0.3.5', "
+                r"'0.3.4', '0.3.3', '0.3.1'\]",
             ):
                 validate_changelog(lock_path=lock)
 
