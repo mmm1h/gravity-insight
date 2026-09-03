@@ -194,6 +194,8 @@ def diff_snapshots(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
         "status": "complete",
         "drift_conclusion_available": True,
         "failure_class": None,
+        "old_bundle_id": old.get("bundle_id"),
+        "new_bundle_id": new.get("bundle_id"),
         "old_bundle_complete": bool(old.get("summary", {}).get("complete", False)),
         "new_bundle_complete": bool(new.get("summary", {}).get("complete", False)),
         "summary": {
@@ -389,11 +391,12 @@ def write_failure(args: Any, payload: dict[str, Any]) -> None:
         write_json(target, payload)
 
 
-def write_fetch_step(args: Any, summary: dict[str, Any] | None,
+def write_fetch_step(args: Any, snapshot: dict[str, Any] | None,
                      failure: dict[str, Any] | None) -> None:
     if not (target := getattr(args, "step_output", None)):
         return
-    selected = dict(summary or {})
+    selected_snapshot = dict(snapshot or {})
+    selected = dict(selected_snapshot.get("summary", {}))
     complete = selected.get("complete") is True and failure is None
     used, limit = int(selected.get("request_attempts", 0)), int(selected.get("request_limit", 0))
     budget = (dict(failure.get("request_budget", {})) if failure else
@@ -402,4 +405,6 @@ def write_fetch_step(args: Any, summary: dict[str, Any] | None,
         "operation": "fetch_public_static_graph", "status": "complete" if complete else "error",
         "complete": complete, "drift_conclusion_available": complete,
         "failure_class": None if failure is None else failure["failure_class"],
+        "observed_at": selected_snapshot.get("fetched_at"),
+        "bundle_id": selected_snapshot.get("bundle_id"),
         "request_budget": budget, "summary": selected, "failure": failure})

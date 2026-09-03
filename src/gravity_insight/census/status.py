@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -11,96 +12,245 @@ from gravity_insight.paths import PROJECT_ROOT
 from .diffing import CensusFailureClass
 
 
+CURRENT_EVIDENCE_DIRECTORY = Path("tmp/census-current")
+CURRENT_MAX_AGE = timedelta(hours=26)
+CURRENT_FUTURE_SKEW = timedelta(minutes=5)
+_HEX = frozenset("0123456789abcdef")
+
+
 def _documents(paths: Iterable[Path]) -> list[tuple[Path, dict[str, Any]]]:
     result: list[tuple[Path, dict[str, Any]]] = []
     for path in paths:
         if path.is_file():
-            result.append((path, load_object(path)))
+            try:
+                result.append((path, load_object(path)))
+            except (OSError, UnicodeError, ValueError):
+                continue
     return result
 
 
-def _current_observation(
-    root: Path, documents: list[tuple[Path, dict[str, Any]]]
-) -> dict[str, Any]:
-    steps, diffs = _observation_receipts(documents)
-    if not steps or not diffs:
-        return _missing_observation(root, documents, steps=steps, diffs=diffs)
-    step_path, step = steps[-1]
-    diff_path, diff = diffs[-1]
-    return _measured_observation(root, step_path, step, diff_path, diff)
+def _parse_time(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc)
 
 
-def _observation_receipts(
+def _valid_bundle_id(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in _HEX for character in value)
+    )
+
+
+def _fetch_steps(
     documents: list[tuple[Path, dict[str, Any]]],
-) -> tuple[list[tuple[Path, dict[str, Any]]], list[tuple[Path, dict[str, Any]]]]:
-    steps = [
+) -> list[tuple[Path, dict[str, Any]]]:
+    return [
         item
         for item in documents
         if item[1].get("schema_version") == "gravity-census.step-output.v1"
+        and item[1].get("operation") == "fetch_public_static_graph"
     ]
-    diffs = [
-        item
-        for item in documents
-        if "drift_conclusion_available" in item[1]
-        and item[1].get("kind") in {"route_diff", "bundle_snapshot_diff"}
-    ]
-    return steps, diffs
+
+
+def _step_identity(
+    step_path: Path,
+    step: Mapping[str, Any],
+    documents: list[tuple[Path, dict[str, Any]]],
+) -> tuple[str, datetime, Path] | None:
+    for path, snapshot in documents:
+        if path.parent != step_path.parent or snapshot.get("schema_version") != 1:
+            continue
+        summary = snapshot.get("summary")
+        observed_at = _parse_time(snapshot.get("fetched_at"))
+        bundle_id = snapshot.get("bundle_id")
+        if (
+            observed_at is not None
+            and _valid_bundle_id(bundle_id)
+            and isinstance(summary, Mapping)
+            and summary.get("complete") is True
+            and summary == step.get("summary")
+        ):
+            receipt_bundle_id = step.get("bundle_id")
+            receipt_observed_at = _parse_time(step.get("observed_at"))
+            legacy = receipt_bundle_id is None and step.get("observed_at") is None
+            if not legacy and (
+                receipt_bundle_id != bundle_id or receipt_observed_at != observed_at
+            ):
+                continue
+            return str(bundle_id), observed_at, path
+    return None
+
+
+def _complete_step(step: Mapping[str, Any]) -> bool:
+    summary = step.get("summary")
+    return bool(
+        step.get("status") == "complete"
+        and step.get("complete") is True
+        and step.get("failure_class") is None
+        and isinstance(summary, Mapping)
+        and summary.get("complete") is True
+    )
+
+
+def _matching_diff(
+    step_path: Path,
+    bundle_id: str,
+    baseline_bundle_id: str,
+    documents: list[tuple[Path, dict[str, Any]]],
+) -> tuple[Path, dict[str, Any]] | None:
+    for path, diff in documents:
+        if path.parent != step_path.parent:
+            continue
+        if (
+            diff.get("schema_version") == 1
+            and diff.get("kind") in {"route_diff", "bundle_snapshot_diff"}
+            and diff.get("status") == "complete"
+            and diff.get("drift_conclusion_available") is True
+            and diff.get("failure_class") is None
+            and diff.get("old_bundle_complete") is True
+            and diff.get("new_bundle_complete") is True
+            and diff.get("old_bundle_id") == baseline_bundle_id
+            and diff.get("new_bundle_id") == bundle_id
+        ):
+            return path, diff
+    return None
+
+
+def _observation_candidates(
+    documents: list[tuple[Path, dict[str, Any]]], baseline_bundle_id: str
+) -> list[dict[str, Any]]:
+    candidates = []
+    for step_path, step in _fetch_steps(documents):
+        identity = _step_identity(step_path, step, documents)
+        if not _complete_step(step) or identity is None:
+            continue
+        bundle_id, observed_at, snapshot_path = identity
+        matched = _matching_diff(
+            step_path, bundle_id, baseline_bundle_id, documents
+        )
+        if matched is None:
+            continue
+        diff_path, diff = matched
+        summary = diff.get("summary", {})
+        changed = any(type(value) is int and value > 0 for value in summary.values())
+        paths = [step_path, diff_path, snapshot_path]
+        candidates.append(
+            {
+                "observed_at": observed_at,
+                "bundle_id": bundle_id,
+                "changed": changed,
+                "paths": paths,
+            }
+        )
+    return candidates
+
+
+def _freshness(observed_at: datetime, now: datetime) -> dict[str, Any]:
+    age = (now - observed_at).total_seconds()
+    if age < -CURRENT_FUTURE_SKEW.total_seconds():
+        status = "future"
+    elif age > CURRENT_MAX_AGE.total_seconds():
+        status = "expired"
+    else:
+        status = "current"
+    return {
+        "status": status,
+        "observed_at": observed_at.isoformat(timespec="seconds"),
+        "age_seconds": round(age, 3),
+        "max_age_seconds": int(CURRENT_MAX_AGE.total_seconds()),
+        "future_clock_skew_seconds": int(CURRENT_FUTURE_SKEW.total_seconds()),
+    }
 
 
 def _missing_observation(
     root: Path,
     documents: list[tuple[Path, dict[str, Any]]],
-    *,
-    steps: list[tuple[Path, dict[str, Any]]],
-    diffs: list[tuple[Path, dict[str, Any]]],
+    candidate: Mapping[str, Any] | None,
+    freshness: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
-    missing = []
-    if not steps:
-        missing.append("a current gravity-census.step-output.v1 fetch receipt")
-    if not diffs:
-        missing.append("a complete current route or bundle diff")
+    if candidate is not None and freshness is not None:
+        missing = [
+            "a complete Census observation no older than 26 hours"
+            if freshness["status"] == "expired"
+            else "a Census observation timestamp no more than 5 minutes in the future"
+        ]
+        evidence = [relative(root, path) for path in candidate["paths"]]
+    else:
+        steps = _fetch_steps(documents)
+        diffs = [
+            value
+            for _path, value in documents
+            if value.get("kind") in {"route_diff", "bundle_snapshot_diff"}
+        ]
+        missing = []
+        if not steps:
+            missing.append("a current gravity-census.step-output.v1 fetch receipt")
+        if not diffs:
+            missing.append("a complete current route or bundle diff")
+        if steps and diffs:
+            missing.append(
+                "a fetch receipt, snapshot, and complete diff bound to the same current bundle and reviewed baseline"
+            )
+        evidence = [relative(root, path) for path, _value in documents]
     return {
         "measured": False,
         "status": "unmeasured",
         "failure_class": None,
         "drift_conclusion_available": False,
         "changed": None,
+        "bundle_id": candidate.get("bundle_id") if candidate else None,
+        "freshness": dict(freshness) if freshness else None,
         "missing": missing,
-        "evidence": [relative(root, path) for path, _value in documents],
+        "evidence": evidence,
     }
 
 
-def _measured_observation(
+def _current_observation(
     root: Path,
-    step_path: Path,
-    step: Mapping[str, Any],
-    diff_path: Path,
-    diff: Mapping[str, Any],
+    documents: list[tuple[Path, dict[str, Any]]],
+    baseline_bundle_id: str,
+    now: datetime,
 ) -> dict[str, Any]:
-    complete = step.get("complete") is True
-    conclusion = diff.get("drift_conclusion_available") is True
-    summary = diff.get("summary") if isinstance(diff.get("summary"), Mapping) else {}
-    changed = any(type(value) is int and value > 0 for value in summary.values())
-    failure = step.get("failure_class")
-    if failure is not None and failure not in {item.value for item in CensusFailureClass}:
-        failure = CensusFailureClass.UNCLASSIFIED.value
-    measured = complete and conclusion
-    status = "changed" if changed else "unchanged"
-    if not measured:
-        status = "blocked"
-    return {
-        "measured": measured,
-        "status": status,
-        "failure_class": failure,
-        "drift_conclusion_available": conclusion,
-        "changed": changed if conclusion else None,
-        "missing": [] if measured else ["complete fetch and diff evidence"],
-        "evidence": [relative(root, step_path), relative(root, diff_path)],
-    }
+    candidates = _observation_candidates(documents, baseline_bundle_id)
+    current = [
+        (item, _freshness(item["observed_at"], now))
+        for item in candidates
+        if _freshness(item["observed_at"], now)["status"] == "current"
+    ]
+    if current:
+        candidate, freshness = max(current, key=lambda item: item[0]["observed_at"])
+        return {
+            "measured": True,
+            "status": "changed" if candidate["changed"] else "unchanged",
+            "failure_class": None,
+            "drift_conclusion_available": True,
+            "changed": candidate["changed"],
+            "bundle_id": candidate["bundle_id"],
+            "freshness": freshness,
+            "missing": [],
+            "evidence": [relative(root, path) for path in candidate["paths"]],
+        }
+    if not candidates:
+        return _missing_observation(root, documents, None, None)
+    candidate = max(candidates, key=lambda item: item["observed_at"])
+    return _missing_observation(
+        root, documents, candidate, _freshness(candidate["observed_at"], now)
+    )
 
 
 def census_status(
-    root: Path = PROJECT_ROOT, evidence_paths: Iterable[Path] = ()
+    root: Path = PROJECT_ROOT,
+    evidence_paths: Iterable[Path] | None = None,
+    *,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     root = root.resolve()
     data = root / "src/gravity_insight/census/data"
@@ -110,10 +260,18 @@ def census_status(
     snapshot = load_object(snapshot_path)
     routes = load_object(routes_path)
     coverage = load_object(coverage_path)
-    supplied = [path.resolve() for path in evidence_paths]
-    if not supplied:
-        supplied = sorted(data.glob("*.json"))
-    current = _current_observation(root, _documents(supplied))
+    if evidence_paths is None:
+        evidence_root = root / CURRENT_EVIDENCE_DIRECTORY
+        supplied = sorted(evidence_root.rglob("*.json")) if evidence_root.is_dir() else []
+    else:
+        supplied = [path.resolve() for path in evidence_paths]
+    selected_now = now or datetime.now(timezone.utc)
+    if selected_now.tzinfo is None:
+        raise ValueError("Census status now must include a timezone")
+    selected_now = selected_now.astimezone(timezone.utc)
+    current = _current_observation(
+        root, _documents(supplied), str(snapshot.get("bundle_id")), selected_now
+    )
     summary = snapshot.get("summary", {})
     route_source = routes.get("source", {})
     coverage_summary = coverage.get("summary", {})
@@ -140,6 +298,12 @@ def census_status(
             "pending_js": summary.get("pending_js"),
             "failed_js": summary.get("failed_js"),
         },
+        "current_evidence_policy": {
+            "directory": CURRENT_EVIDENCE_DIRECTORY.as_posix(),
+            "max_age_seconds": int(CURRENT_MAX_AGE.total_seconds()),
+            "future_clock_skew_seconds": int(CURRENT_FUTURE_SKEW.total_seconds()),
+            "artifact_retention_is_freshness": False,
+        },
         "current": current,
         "failure_classes": [item.value for item in CensusFailureClass],
         "evidence": [
@@ -151,4 +315,9 @@ def census_status(
     }
 
 
-__all__ = ["census_status"]
+__all__ = [
+    "CURRENT_EVIDENCE_DIRECTORY",
+    "CURRENT_FUTURE_SKEW",
+    "CURRENT_MAX_AGE",
+    "census_status",
+]

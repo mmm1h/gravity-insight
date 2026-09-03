@@ -19,6 +19,26 @@ Target release: `0.3.7`
 
 - None.
 
+### Fixed
+
+- `gravity maturity score` no longer reports the correctness/surface-parity and
+  architecture/token dimensions as unmeasurable. The isolated quality-profile
+  subprocess printed a diagnostic report to stdout ahead of its JSON payload, so
+  whole-document parsing failed while the subprocess still exited zero — an
+  unexplained `None` indistinguishable from missing data. The report now goes to
+  stderr, stdout carries exactly one machine-readable document, and parse failures
+  surface an explicit reason in each dimension's `missing` instead of being swallowed.
+- The Skill maturity dimension now derives Method Complete from the current report
+  generated at scoring time rather than an absent manifest field, so
+  `skill_semantic_operator_context` is measurable. The report carries a deterministic
+  hash of the manifest set it read; a missing, failed or count-mismatched report keeps
+  the dimension `measured=false` instead of reporting a stale conclusion.
+- Upstream drift is measurable again. The census workflow now publishes a dedicated
+  current-state artifact after a complete crawl, and `census status` / `maturity score`
+  read it from an ignored local directory. Evidence older than 26 hours, or stamped
+  more than five minutes in the future, is rejected as expired rather than silently
+  accepted.
+
 ## [0.3.6] - 2026-09-03
 
 ### Breaking changes
