@@ -590,6 +590,46 @@ class GravityKanbanMutationTests(unittest.TestCase):
         self.assertEqual([], client.previews)
         self.assertEqual([], client.writes)
 
+    def test_split_link_requests_cannot_bypass_total_layout_capacity(self) -> None:
+        available = [
+            {"id": item, "app_id": 1, "name": f"Report {item}"}
+            for item in range(1, 19)
+        ]
+        client = _LinkClient(available=available)
+        client.detail["ui_config"] = json.dumps(
+            [
+                {"i": f"notes_{item}", "subject": "notes", "x": 0, "y": item}
+                for item in range(3)
+            ]
+        )
+        sdk = GravitySDK(insight=client)
+
+        first = sdk.kanban_mutation(
+            "dashboard.report.link",
+            {
+                "app_id": 1,
+                "space_id": 10,
+                "dashboard_id": 30,
+                "report_ids": list(range(1, 18)),
+            },
+            execute=True,
+        )
+        with self.assertRaises(InputValidationError) as captured:
+            sdk.kanban_mutation(
+                "dashboard.report.link",
+                {
+                    "app_id": 1,
+                    "space_id": 10,
+                    "dashboard_id": 30,
+                    "report_ids": [18],
+                },
+            )
+
+        self.assertEqual("updated", first["status"])
+        self.assertEqual("report_ids", captured.exception.field)
+        self.assertEqual(20, len(json.loads(client.detail["ui_config"])))
+        self.assertEqual(1, len(client.writes))
+
     def test_link_rejects_missing_or_inaccessible_report_before_preview_or_write(self) -> None:
         client = _LinkClient(available=[{"id": 4, "app_id": 1, "name": "Visible"}])
 

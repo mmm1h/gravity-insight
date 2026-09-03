@@ -144,6 +144,7 @@
     "gravity_insight.dimension_sum_audit",
     "gravity_insight.doctor_cli",
     "gravity_insight.documentation_gate",
+    "gravity_insight.documentation_status",
     "gravity_insight.domain_catalog",
     "gravity_insight.domains",
     "gravity_insight.drift",
@@ -152,6 +153,8 @@
     "gravity_insight.error_sql",
     "gravity_insight.error_types",
     "gravity_insight.errors",
+    "gravity_insight.evidence_cli",
+    "gravity_insight.evidence_common",
     "gravity_insight.execution_snapshot",
     "gravity_insight.execution_variant",
     "gravity_insight.execution_variant_characterization",
@@ -198,20 +201,28 @@
     "gravity_insight.http_runtime",
     "gravity_insight.http_runtime_observation",
     "gravity_insight.install_doctor",
+    "gravity_insight.journey_certification",
     "gravity_insight.journey_cli",
     "gravity_insight.journey_contract",
     "gravity_insight.journey_ledger",
     "gravity_insight.journey_service",
     "gravity_insight.json_output",
+    "gravity_insight.kanban_board_plan",
+    "gravity_insight.kanban_board_plan_actions",
+    "gravity_insight.kanban_board_plan_input",
+    "gravity_insight.kanban_board_plan_result",
+    "gravity_insight.kanban_board_plan_state",
     "gravity_insight.kanban_content_mutation",
     "gravity_insight.kanban_dashboard_delete_mutation",
     "gravity_insight.kanban_dashboard_mutation",
     "gravity_insight.kanban_folder_mutation",
+    "gravity_insight.kanban_limits",
     "gravity_insight.kanban_mutation",
     "gravity_insight.kanban_mutation_cli",
     "gravity_insight.kanban_mutation_contracts",
     "gravity_insight.kanban_mutation_support",
     "gravity_insight.kanban_report_link_mutation",
+    "gravity_insight.kanban_schema",
     "gravity_insight.kanban_space_mutation",
     "gravity_insight.kanban_wire_validation",
     "gravity_insight.list_row_projection",
@@ -223,6 +234,9 @@
     "gravity_insight.material_performance",
     "gravity_insight.material_performance_plan_result",
     "gravity_insight.material_performance_result",
+    "gravity_insight.maturity",
+    "gravity_insight.maturity_dimensions_core",
+    "gravity_insight.maturity_dimensions_ops",
     "gravity_insight.metadata_catalog_snapshot",
     "gravity_insight.metadata_cli",
     "gravity_insight.metadata_lineage",
@@ -410,6 +424,7 @@
     "gravity_insight.result_source",
     "gravity_insight.runtime",
     "gravity_insight.runtime_compatibility",
+    "gravity_insight.runtime_health",
     "gravity_insight.runtime_principal",
     "gravity_insight.runtime_scope",
     "gravity_insight.runtime_skill_resolver",
@@ -523,6 +538,34 @@
     {
       "module": "gravity_insight.journey_certification",
       "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
+    },
+    {
+      "module": "gravity_insight.kanban_board_plan",
+      "reason": "K87 extends the existing root-level kanban_* product family. The board planner remains beside its mutation contracts while input, state, action and result units are split only to satisfy the repository's 500/80/15 structural gates; this is not a new generic subsystem."
+    },
+    {
+      "module": "gravity_insight.kanban_board_plan_actions",
+      "reason": "K87 extends the existing root-level kanban_* product family. The board planner remains beside its mutation contracts while input, state, action and result units are split only to satisfy the repository's 500/80/15 structural gates; this is not a new generic subsystem."
+    },
+    {
+      "module": "gravity_insight.kanban_board_plan_input",
+      "reason": "K87 extends the existing root-level kanban_* product family. The board planner remains beside its mutation contracts while input, state, action and result units are split only to satisfy the repository's 500/80/15 structural gates; this is not a new generic subsystem."
+    },
+    {
+      "module": "gravity_insight.kanban_board_plan_result",
+      "reason": "K87 extends the existing root-level kanban_* product family. The board planner remains beside its mutation contracts while input, state, action and result units are split only to satisfy the repository's 500/80/15 structural gates; this is not a new generic subsystem."
+    },
+    {
+      "module": "gravity_insight.kanban_board_plan_state",
+      "reason": "K87 extends the existing root-level kanban_* product family. The board planner remains beside its mutation contracts while input, state, action and result units are split only to satisfy the repository's 500/80/15 structural gates; this is not a new generic subsystem."
+    },
+    {
+      "module": "gravity_insight.kanban_limits",
+      "reason": "K87 gives the existing root-level kanban_* product family one shared source for enforced and discoverable collection limits; keeping it beside the validators prevents schema/runtime drift and does not create a generic subsystem."
+    },
+    {
+      "module": "gravity_insight.kanban_schema",
+      "reason": "K87 gives the existing root-level kanban_* product family a machine-readable schema owner beside the validators; it is consumed only by Kanban schema and board prepare surfaces and is not a generic registry."
     },
     {
       "module": "gravity_insight.maturity",

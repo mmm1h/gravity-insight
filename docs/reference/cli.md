@@ -56,7 +56,7 @@ raw operation。
 | Analysis Query | `analysis query` | `analysis_query()` | `analysis_query` |
 | Analysis Context / Defaults | `analysis context/defaults` | `analysis_context()` / `analysis_default_dictionary()` | `analysis_context` / `analysis_default_dictionary` |
 | Business Pulse | `reports pulse` | `business_pulse()` | `business_pulse` |
-| Dashboard | `analysis dashboard snapshot/prepare/run` | `dashboard_snapshot()` / dashboard analysis methods | `dashboard_snapshot` / `dashboard_analysis` |
+| Dashboard | `analysis dashboard snapshot/prepare/run`、`analysis dashboard kanban schema/prepare/mutate` | `dashboard_snapshot()` / dashboard analysis / Kanban methods | `dashboard_snapshot` / `dashboard_analysis` / `kanban_mutation` |
 | User / Order | `analysis user journey/order` | `user_journey()` / order methods | `user_journey` / order composites |
 | Segment | `analysis segment evaluate/snapshot/members` | matching segment methods | `segment_evaluate` / `segment_snapshot` / `segment_members` |
 | User Detail Aggregate | `analysis user-detail-aggregate` | `user_detail_aggregate()` | `user_detail_aggregate` |
@@ -189,7 +189,7 @@ gravity insight run analysis.event.list --input <request.json> --all-pages
 | Segment | `analysis segment snapshot\|members\|evaluate` |
 | Orders | `analysis order directory\|trace` |
 | User Journey | `analysis user journey` |
-| Dashboard | `analysis dashboard snapshot\|prepare\|run` |
+| Dashboard | `analysis dashboard snapshot\|prepare\|run`、`analysis dashboard kanban schema\|prepare\|mutate` |
 | Material | `materials performance\|fetch\|title-packages` |
 | Promotion | `promotion performance\|advertiser-profile\|bilibili-account-performance` |
 
@@ -341,6 +341,39 @@ child 投影；结果不回显 TraceID。
 
 `prepare` 编译可支持图表，`run` 执行；单图失败隔离，结果按看板顺序返回。引用必须是稳定 ID 或
 精确名称，日期窗由调用方提供。
+
+### Kanban whole-board prepare v1
+
+`gravity analysis dashboard kanban schema` 同时返回单动作 `input_schema`、
+`constraints.action_batch_limits` 和独立的 `constraints.dashboard_layout_capacity`。前者描述一次动作
+接收多少项，例如 `dashboard.report.link.report_ids` 为 `1..20`；后者描述解码后整个 `ui_config`
+最多 20 项，累计计算 report、note 和其他布局项，拆分 link 请求不会增加容量。note 的嵌套 object、
+必填字段及字符串长度也在 schema 中。
+
+在第一次写之前运行：
+
+```powershell
+gravity analysis dashboard kanban prepare --input board.json
+```
+
+`board.json` 是完整目标，不是一个 link 批次：
+
+```json
+{
+  "app_id": 101,
+  "target": {"mode": "new", "space_id": 10, "folder_id": 0, "name": "Growth", "idempotency_key": "growth-v1"},
+  "saved_definitions": [{"key": "daily-active", "name": "Daily active", "subject": "analysis_event", "config": {"start": "2026-08-01", "end": "2026-08-07", "time_grain": "day", "calculate_layer_y": true, "steps": [{"event": "app_open", "metric": {"field": "PresetAllCount", "aggregation": "PresetAllCount"}}]}}],
+  "notes": [{"title": "Method", "content": "Cohort and metric definition", "idempotency_key": "method-v1"}]
+}
+```
+
+`target.mode` 可为 `new` 或 `existing`。每个 saved definition 可带 `report_id` 指定既有对象；省略时按
+完整定义的 SDK marker 决定 reuse/create，指定后按 detail 决定 reuse/update，并在 update 前执行与写面
+相同的 marker-or-owner 检查。Web artifact 另带配对 `start/end`。返回 `saved_definitions[*].decision`、
+期望/现存/最终计数、剩余容量、`actions` DAG、类型化 `$ref` 延迟 ID，以及 prepare 和计划执行的有界
+I/O 估计。prepare 自身固定 `effect=read`、`write_sent=false`、`mutation_calls=0`，没有 execute 开关；
+每个后续 mutation 仍须走原动作的 dry-run、人工审查和 execute。并发变化可能触发执行时幂等复用，
+因此写次数是当前快照下的计划值与上界，不是跨步骤原子承诺。
 
 ### Segment Snapshot v1
 

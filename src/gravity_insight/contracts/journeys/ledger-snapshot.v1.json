@@ -421,16 +421,16 @@
       }
     },
     {
-      "blocker_note": "`space → folder → dashboard` 是上游目录层级，note 是 dashboard `ui_config` 中的嵌入项，不是第四层目录资源。生产闭环完成 create/rename/move/copy/note update+delete/readback/父删除迁移/批量清理，以及自有保存分析的 link/detail readback/unlink；父删除 dry-run 在写前给出精确迁移数与 `dashboards_deleted=0`。所有可删除对象须有 `GSDK-<12 hex>` marker；Plan 只接受显式 `preview/execute` mode，Agent 自然语言永不自动写。share、所有权 transfer、素材/资产仍不在闭环证据内。",
+      "blocker_note": "`space → folder → dashboard` 是上游目录层级，note 是 dashboard `ui_config` 中的嵌入项，不是第四层目录资源。整板 prepare 在首写前编译全部 saved artifact、读取有界目录/目标、区分单动作批量上限与 20 项总布局容量，并返回 reuse/create/update/link 与延迟 ID DAG；prepare 不预览或执行 mutation。生产闭环完成 create/rename/move/copy/note update+delete/readback/父删除迁移/批量清理，以及自有保存分析的 link/detail readback/unlink；父删除 dry-run 在写前给出精确迁移数与 `dashboards_deleted=0`。所有可删除对象须有 `GSDK-<12 hex>` marker；Plan 只接受显式 `preview/execute` mode，Agent 自然语言永不自动写。share、所有权 transfer、素材/资产仍不在闭环证据内。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "创建并管理可持久化的看板工作区与分析便签",
       "ledger_status": "已闭环",
       "legacy_display_key": "创建并管理可持久化的看板工作区与分析便签",
       "request_budget": {
-        "raw": "2（dry-run / 人工确认后同参数 execute）"
+        "raw": "整板 prepare 1；每个写动作 2（dry-run / 人工确认后 execute）"
       },
-      "row_digest": "764935447565cdae45f8e6a9ebcc2e59511fbdbe7910e848f0b2980f1323009d",
+      "row_digest": "7b96b8241ef469d86742519379cfe4b789da54ebadb493e14010165598d60e95",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "7f505bdf15698fdb6a04a57bbabd11f4dc57e5dcea4301a6082e96023215f058",
+  "snapshot_digest": "0e40465bffa9b5d48389764a2e58dcf1561db7a38b8838bcc46264a25b996f45",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "a026e7683d50d5141798bf96365b4672c643eafdbef21eaa542412b73b4bb652"
+  "source_sha256": "a2784c9bc888c284a5e8bc239eb3db76ac6df5b7473e9606d7177372d8b2c863"
 }

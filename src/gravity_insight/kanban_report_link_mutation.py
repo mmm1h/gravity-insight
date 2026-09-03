@@ -11,6 +11,11 @@ from typing import Any
 
 from .actionable_error_values import actual_value
 from .errors import ContractChangedError, InputValidationError, MutationReadbackError
+from .kanban_limits import (
+    DASHBOARD_LAYOUT_MAX_ITEMS,
+    REPORT_LINK_BATCH_MAX_ITEMS,
+    REPORT_LINK_BATCH_MIN_ITEMS,
+)
 from .kanban_mutation_contracts import DASHBOARD_UPDATE, REPORT_LIST
 from .kanban_mutation_support import (
     WRITE_LOCK,
@@ -103,9 +108,9 @@ def _prepare_link(
     existing_set = set(existing_ids)
     new_ids = [item for item in report_ids if item not in existing_set]
     already_attached = [item for item in report_ids if item in existing_set]
-    if len(existing_ids) + len(new_ids) > 20:
+    if len(existing_ids) + len(new_ids) > REPORT_LINK_BATCH_MAX_ITEMS:
         raise InputValidationError(
-            f"actual value: {len(existing_ids) + len(new_ids)} attached reports; allowed value: at most 20",
+            f"actual value: {len(existing_ids) + len(new_ids)} attached reports; allowed value: at most {REPORT_LINK_BATCH_MAX_ITEMS}",
             field="report_ids",
             next_action="Unlink enough existing reports or select fewer new report IDs, then run dry-run again.",
         )
@@ -215,9 +220,9 @@ def _linked_layout(
     new_ids: Sequence[str],
     available: Mapping[str, Mapping[str, Any]],
 ) -> list[Mapping[str, Any]]:
-    if len(layout) + len(new_ids) > 20:
+    if len(layout) + len(new_ids) > DASHBOARD_LAYOUT_MAX_ITEMS:
         raise InputValidationError(
-            f"actual value: {len(layout) + len(new_ids)} layout items; allowed value: at most 20",
+            f"actual value: {len(layout) + len(new_ids)} layout items; allowed value: at most {DASHBOARD_LAYOUT_MAX_ITEMS}",
             field="report_ids",
             next_action="Remove enough dashboard layout items or select fewer reports, then run dry-run again.",
         )
@@ -352,7 +357,7 @@ def _dashboard_layout(detail: Mapping[str, Any]) -> tuple[str, list[Mapping[str,
         decoded = []
     if (
         not isinstance(decoded, list)
-        or len(decoded) > 20
+        or len(decoded) > DASHBOARD_LAYOUT_MAX_ITEMS
         or any(not isinstance(item, Mapping) for item in decoded)
     ):
         raise ContractChangedError(
@@ -364,9 +369,13 @@ def _dashboard_layout(detail: Mapping[str, Any]) -> tuple[str, list[Mapping[str,
 
 
 def _report_ids(value: Any) -> list[str]:
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)) or not 1 <= len(value) <= 20:
+    if (
+        not isinstance(value, Sequence)
+        or isinstance(value, (str, bytes))
+        or not REPORT_LINK_BATCH_MIN_ITEMS <= len(value) <= REPORT_LINK_BATCH_MAX_ITEMS
+    ):
         raise InputValidationError(
-            f"actual value: {actual_value(value)}; allowed value: 1 through 20 positive integer or bounded opaque string report IDs",
+            f"actual value: {actual_value(value)}; allowed value: {REPORT_LINK_BATCH_MIN_ITEMS} through {REPORT_LINK_BATCH_MAX_ITEMS} positive integer or bounded opaque string report IDs",
             field="report_ids",
             next_action="Provide a non-empty bounded report_ids list from the saved-analysis catalog and run dry-run again.",
         )

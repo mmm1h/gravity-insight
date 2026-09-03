@@ -25,6 +25,11 @@ from .kanban_dashboard_mutation import (
 )
 from .kanban_folder_mutation import create_folder, delete_folder, move_folder, rename_folder
 from .kanban_report_link_mutation import link_reports
+from .kanban_schema import (
+    kanban_action_input_schema,
+    kanban_collection_constraints,
+    kanban_prepare_input_schema,
+)
 from .kanban_space_mutation import create_space, delete_space, rename_space, transfer_space
 
 
@@ -96,16 +101,27 @@ def run_kanban_mutation(
 
 def kanban_mutation_schema() -> dict[str, Any]:
     return {
-        "schema_version": "gravity-insight.kanban-mutation-schema.v1",
+        "schema_version": "gravity-insight.kanban-mutation-schema.v2",
         "ok": True,
         "status": "success",
         "effect": "mutation",
         "confirmation_flow": ["dry-run", "human-review", "same-action-and-inputs-with-execute"],
         "natural_language_auto_execute": False,
+        "constraints": kanban_collection_constraints(),
+        "whole_board_prepare": {
+            "command": "gravity analysis dashboard kanban prepare --input <json|file|->",
+            "effect": "read",
+            "mutation_allowed": False,
+            "execute_mode": False,
+            "input_schema": kanban_prepare_input_schema(),
+        },
         "actions": {
             action: {
                 "required": sorted(required),
                 "optional": sorted(optional),
+                "input_schema": kanban_action_input_schema(
+                    action, required, optional
+                ),
             }
             for action, (_handler, required, optional) in sorted(_ACTIONS.items())
         },
