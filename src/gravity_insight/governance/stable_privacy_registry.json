@@ -351,6 +351,7 @@
       "data.list",
       "data.list[][].event_index",
       "data.list[][].list[].*",
+      "data.list[][].list[].cnt",
       "data.list[][].target.*",
       "data.target_list"
     ],
