@@ -13,7 +13,22 @@
 
 ## [Unreleased]
 
-Target release: `0.3.7`
+Target release: `0.3.8`
+
+### Breaking changes
+
+- None.
+
+### Added
+
+- `operator://gravity/significance-test@1` now evaluates independent binary
+  outcome arms entirely offline through `gravity experiment evaluate` and
+  `sdk.experiments.evaluate()`. The result carries the selected tail, alpha,
+  Bonferroni family handling, observed risk difference and uncertainty; sample,
+  variance, window, grouping, causal-claim and same-run self-validation failures
+  remain distinct fail-closed outcomes.
+
+## [0.3.7] - 2026-09-04
 
 ### Breaking changes
 
@@ -62,12 +77,6 @@ Target release: `0.3.7`
 
 ### Added
 
-- `operator://gravity/significance-test@1` now evaluates independent binary
-  outcome arms entirely offline through `gravity experiment evaluate` and
-  `sdk.experiments.evaluate()`. The result carries the selected tail, alpha,
-  Bonferroni family handling, observed risk difference and uncertainty; sample,
-  variance, window, grouping, causal-claim and same-run self-validation failures
-  remain distinct fail-closed outcomes.
 - `gravity analysis dashboard kanban schema` now publishes typed collection
   constraints, and separates a single-request batch bound (`report_ids`,
   1..20, scope `single_action_request`) from total board capacity (decoded
