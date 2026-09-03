@@ -806,6 +806,27 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             self.assertEqual("unclassified", step["failure_class"])
             self.assertEqual(failure, step["failure"])
 
+    def test_success_step_output_binds_snapshot_time_and_bundle(self) -> None:
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temporary:
+            target = Path(temporary) / "step-output.json"
+            snapshot = {
+                "fetched_at": "2026-09-03T01:16:26+00:00",
+                "bundle_id": "1" * 64,
+                "summary": {
+                    "complete": True,
+                    "request_attempts": 513,
+                    "request_limit": 800,
+                },
+            }
+            run.__globals__["_write_fetch_step"](
+                SimpleNamespace(step_output=target), snapshot, None
+            )
+            step = json.loads(target.read_text(encoding="utf-8"))
+
+        self.assertEqual(snapshot["fetched_at"], step["observed_at"])
+        self.assertEqual(snapshot["bundle_id"], step["bundle_id"])
+        self.assertEqual(snapshot["summary"], step["summary"])
+
     def test_governor_exception_renders_machine_decidable_census_error(self) -> None:
         error = RuntimeError("safe circuit error")
         error.code = "GOVERNOR_CIRCUIT_OPEN"
@@ -839,13 +860,18 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         )
         self.assertIn("--step-output $stepResult", workflow)
         self.assertIn("gravity-census.step-output.v1", workflow)
+        self.assertIn('cron: "47 1 * * *"', workflow)
+        self.assertIn("full_required=", workflow)
+        self.assertIn("Verify current scoring evidence", workflow)
+        self.assertIn("max_age_seconds -ne 93600", workflow)
+        self.assertIn("gravity-census-current-${{ github.run_id }}", workflow)
         self.assertIn(
             "workflow_attempt_started_without_terminal_cli_output", workflow
         )
         self.assertIn("ConvertFrom-Json -ErrorAction Stop", workflow)
         self.assertIn("Start-Sleep -Seconds $delaySeconds", workflow)
         self.assertIn(
-            "steps.fetch.outputs.failure_class == 'upstream_capacity'", workflow
+            "steps.upstream.outputs.full_required == 'true'", workflow
         )
         self.assertIn(
             "steps.fetch.outputs.failure_class != 'upstream_capacity'", workflow
