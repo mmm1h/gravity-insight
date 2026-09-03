@@ -1309,7 +1309,7 @@
       "action": "query",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
-      "description": "漏斗分析结构化聚合；步骤、窗口和条件契约已确认，动态响应按受控聚合投影输出。上游 window_funnel_mode=4 只返回各步人数，不返回转化率；SDK 不代算。人数是该步及之前每步都完成的有序子集。调用方自算时须先选定分母：相对上一步=本步人数/上一步人数，相对第一步=本步人数/第一步人数。三步及以上两种口径不同。",
+      "description": "漏斗分析结构化聚合；步骤、窗口和条件契约已确认，动态响应按受控聚合投影输出。上游 window_funnel_mode=4 只返回各步人数，不返回转化率；SDK 不代算。人数是该步及之前每步都完成的有序子集。调用方自算时须先选定分母：相对上一步=本步人数/上一步人数，相对第一步=本步人数/第一步人数。三步及以上两种口径不同。非空 Funnel 请求声明用户属性 group_by 时，分组标签必须出现在 aggregate_date.group.*（整窗）或 date_list.[].*.[].group（分日）；上游仅返回日期优先聚合时属于 breaking contract drift，禁止无保留成功。安全补救是 calculate_each_day=false，并按每个已知组值分别发送仅含一个用户属性等值 filter 的请求，离线核对请求与 filter 绑定后只读取 aggregate_date.total；分组读回重新验证前不得把日期解释成请求维度。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {

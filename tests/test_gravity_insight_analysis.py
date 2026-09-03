@@ -144,6 +144,98 @@ def event_inputs(**overrides: Any) -> dict[str, Any]:
 
 
 class GravityInsightAnalysisTests(unittest.TestCase):
+    def test_funnel_requested_group_fails_closed_when_aggregate_group_is_date_only(
+        self,
+    ) -> None:
+        operation = repository_manifest("analysis.funnel.query")["operations"][0]
+        inputs = json.loads(json.dumps(operation["live_probe"]["input"]))
+        inputs.update(app_id="101", query_id=QUERY_ID, to_calc_each_day=False)
+        inputs["group_by_list"].append(
+            {"type": "user", "field": "$os", "group_by": "$os"}
+        )
+        data = {
+            "date_list": None,
+            "aggregate_by_date": None,
+            "aggregate_date": {
+                "group": {"2026-08-07": {"0": 7, "1": 3}},
+                "total": {"0": 7, "1": 3},
+            },
+            "window_funnel_mode": 4,
+        }
+        client, transport = client_for(
+            "analysis.funnel.query",
+            handler=lambda *_args: {"code": 0, "data": data},
+        )
+        client._executor._field_validator = lambda *_args: None
+
+        result = client.read("analysis.funnel.query", inputs)
+
+        self.assertEqual((False, "contract_changed"), (result["ok"], result["status"]))
+        self.assertEqual(
+            ("CONTRACT_CHANGED", "group_by_list", False),
+            (
+                result["error"]["code"],
+                result["error"]["field"],
+                result["error"]["retryable"],
+            ),
+        )
+        self.assertEqual(
+            [{"field": "$os", "type": "unsupported_grouping"}],
+            result["error"]["unsupported_items"],
+        )
+        self.assertIn(
+            "exactly one user-property equality filter",
+            result["error"]["next_action"],
+        )
+        self.assertTrue(
+            any("date-priority aggregates" in item for item in result["warnings"])
+        )
+        self.assertEqual({}, result["data"]["aggregate_date"]["group"])
+        self.assertEqual(1, len(transport.calls))
+
+    def test_funnel_requested_group_fails_closed_when_each_day_groups_are_dates(
+        self,
+    ) -> None:
+        operation = repository_manifest("analysis.funnel.query")["operations"][0]
+        inputs = json.loads(json.dumps(operation["live_probe"]["input"]))
+        inputs.update(app_id="101", query_id=QUERY_ID, to_calc_each_day=True)
+        inputs["group_by_list"].append(
+            {"type": "user", "field": "$os", "group_by": "$os"}
+        )
+        data = {
+            "date_list": [
+                {
+                    "2026-08-07": [
+                        {"cnt": {"0": 7, "1": 3}, "group": "2026-08-07"}
+                    ]
+                }
+            ],
+            "aggregate_by_date": {"2026-08-07": {"0": 7, "1": 3}},
+            "aggregate_date": None,
+            "window_funnel_mode": 0,
+        }
+        client, transport = client_for(
+            "analysis.funnel.query",
+            handler=lambda *_args: {"code": 0, "data": data},
+        )
+        client._executor._field_validator = lambda *_args: None
+
+        result = client.read("analysis.funnel.query", inputs)
+
+        self.assertEqual((False, "contract_changed"), (result["ok"], result["status"]))
+        self.assertEqual(
+            [{"field": "$os", "type": "unsupported_grouping"}],
+            result["error"]["unsupported_items"],
+        )
+        self.assertIn("aggregate_date.total", result["error"]["next_action"])
+        self.assertTrue(
+            any("date-priority aggregates" in item for item in result["warnings"])
+        )
+        self.assertNotIn(
+            "group", result["data"]["date_list"][0]["2026-08-07"][0]
+        )
+        self.assertEqual(1, len(transport.calls))
+
     def test_funnel_daily_projection_is_mode_aware_and_fail_closed(self) -> None:
         operation = repository_manifest("analysis.funnel.query")["operations"][0]
         inputs = json.loads(json.dumps(operation["live_probe"]["input"]))

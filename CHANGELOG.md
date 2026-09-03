@@ -21,6 +21,17 @@ Target release: `0.3.7`
 
 ### Fixed
 
+- Funnel queries no longer answer a grouped question with an ungrouped total.
+  When upstream could not honour a requested user-property `group_by_list`, it
+  returned date-priority aggregates instead; those carry finite numbers, so a
+  caller checking only the status read the whole-funnel total as if it were the
+  grouped answer. The date values under Funnel's `group` container were admitted
+  by the global date-key opening — that bypass is closed, scalar projection is
+  now path-aware, and a non-empty Funnel result that lost its requested grouping
+  is raised as breaking drift (`ok=false`, `status=contract_changed`) naming the
+  dropped fields. The error carries a verified workaround; see
+  [Funnel grouping alternatives](docs/guides/funnel-grouping-alternatives.md).
+  Requests that keep their grouping, and every non-Funnel shape, are unchanged.
 - Total-grain event queries no longer return an apparently successful metric
   table containing only dimension labels. The registered `cnt` measure was
   stripped as an unregistered response key while the call still reported

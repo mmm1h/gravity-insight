@@ -212,6 +212,125 @@ def validate_required_analysis_measures(
     return result, (*warnings, warning), drift.__class__.BREAKING
 
 
+def validate_required_analysis_projection(
+    projection: Any,
+    projected: Mapping[str, Any],
+    values: Mapping[str, Any],
+    warnings: tuple[str, ...],
+    drift: Any,
+) -> tuple[dict[str, Any], tuple[str, ...], Any]:
+    """Apply the measure and dimension contracts in one pass."""
+
+    projected, warnings, drift = validate_required_analysis_measures(
+        projection, projected, values, tuple(warnings), drift
+    )
+    return validate_required_analysis_dimensions(
+        projection, projected, values, warnings, drift
+    )
+
+
+def validate_required_analysis_dimensions(
+    projection: Any,
+    projected: Mapping[str, Any],
+    values: Mapping[str, Any],
+    warnings: tuple[str, ...],
+    drift: Any,
+) -> tuple[dict[str, Any], tuple[str, ...], Any]:
+    """Fail closed when a non-empty Funnel result loses its requested group."""
+
+    result = dict(projected)
+    missing = missing_funnel_grouping_fields(projection, result, values)
+    if not missing:
+        return result, warnings, drift
+    warning = (
+        "requested funnel user-property grouping dimensions are absent or invalid; "
+        f"the response contains date-priority aggregates (count={len(missing)})"
+    )
+    return result, (*warnings, warning), drift.__class__.BREAKING
+
+
+def missing_funnel_grouping_fields(
+    projection: Any, projected: Mapping[str, Any], values: Mapping[str, Any]
+) -> tuple[str, ...]:
+    """Name the requested user-property groups the response failed to keep."""
+
+    if analysis_group_shape(projection) != "funnel":
+        return ()
+    requested = _requested_funnel_user_group_fields(values)
+    if not requested:
+        return ()
+    root = (
+        projected.get("aggregate_by_date")
+        if values.get("to_calc_each_day") is True
+        else projected.get("aggregate_date")
+    )
+    if not _contains_finite_number(root):
+        return ()
+    labels = _funnel_group_labels(projected, values.get("to_calc_each_day") is True)
+    if any(_is_contracted_funnel_group_label(item) for item in labels):
+        return ()
+    return requested
+
+
+def _requested_funnel_user_group_fields(
+    values: Mapping[str, Any],
+) -> tuple[str, ...]:
+    groups = values.get("group_by_list")
+    if not isinstance(groups, (list, tuple)):
+        return ()
+    result = []
+    for group in groups:
+        if not isinstance(group, Mapping):
+            continue
+        if group.get("type") not in {"user", "user_property"}:
+            continue
+        field = group.get("field")
+        if isinstance(field, str) and field:
+            result.append(field)
+    return tuple(dict.fromkeys(result))
+
+
+def _funnel_group_labels(
+    projected: Mapping[str, Any], calculate_each_day: bool
+) -> tuple[Any, ...]:
+    if not calculate_each_day:
+        aggregate = projected.get("aggregate_date")
+        groups = aggregate.get("group") if isinstance(aggregate, Mapping) else None
+        return tuple(groups) if isinstance(groups, Mapping) else ()
+    labels = []
+    date_list = projected.get("date_list")
+    if not isinstance(date_list, (list, tuple)):
+        return ()
+    for date_entry in date_list:
+        if not isinstance(date_entry, Mapping):
+            continue
+        for rows in date_entry.values():
+            if not isinstance(rows, (list, tuple)):
+                continue
+            labels.extend(
+                row.get("group")
+                for row in rows
+                if isinstance(row, Mapping) and "group" in row
+            )
+    return tuple(labels)
+
+
+def _is_contracted_funnel_group_label(value: Any) -> bool:
+    return isinstance(value, str) and bool(
+        ANALYSIS_GROUP_LABEL_KEY_RE.fullmatch(value.strip())
+    )
+
+
+def _contains_finite_number(value: Any) -> bool:
+    if _is_finite_number(value):
+        return True
+    if isinstance(value, Mapping):
+        return any(_contains_finite_number(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_contains_finite_number(item) for item in value)
+    return False
+
+
 def accepts_property_grouping(fields: Sequence[Any]) -> bool:
     """True when the caller can request a non-time property partition."""
 
@@ -240,6 +359,10 @@ def allowed_analysis_response_key(
     path: tuple[str, ...] = (),
     numeric_paths: tuple[tuple[str, ...], ...] = (),
 ) -> bool:
+    # A date under Funnel's group container is a mislabeled group, not a time
+    # bucket. Apply the path-specific rule before the global date-key opening.
+    if len(path) >= 2 and path[-2:] == ("aggregate_date", "group"):
+        return _allowed_dynamic_group_label_key(name, path)
     if (
         name in response_keys
         or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name)
@@ -295,6 +418,31 @@ def _analysis_path_values(value: Any, path: tuple[str, ...]) -> tuple[Any, ...]:
 def _is_finite_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and (
         not isinstance(value, float) or math.isfinite(value)
+    )
+
+
+def allowed_analysis_response_scalar(
+    value: str, response_keys: set[str], path: tuple[str, ...]
+) -> bool:
+    """Apply the Funnel daily group-value contract before scalar openings."""
+
+    stripped = value.strip()
+    if funnel_group_label_value_path(path):
+        return bool(ANALYSIS_GROUP_LABEL_KEY_RE.fullmatch(stripped))
+    return bool(
+        stripped in response_keys
+        or stripped in ANALYSIS_SAFE_RESPONSE_SCALARS
+        or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped)
+        or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(stripped)
+    )
+
+
+def funnel_group_label_value_path(path: tuple[str, ...]) -> bool:
+    return bool(
+        len(path) == 5
+        and path[0:2] == ("date_list", "[]")
+        and ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(path[2])
+        and path[3:] == ("[]", "group")
     )
 
 
@@ -423,13 +571,18 @@ __all__ = [
     "ANALYSIS_NESTED_RESPONSE_KEYS_BY_SHAPE",
     "ANALYSIS_SAFE_RESPONSE_SCALARS",
     "accepts_property_grouping",
+    "allowed_analysis_response_scalar",
     "analysis_numeric_path_allowed",
     "allowed_analysis_response_key",
     "analysis_group_shape",
+    "funnel_group_label_value_path",
     "funnel_mode_shape_changed",
     "is_groupable_analysis_query",
+    "missing_funnel_grouping_fields",
     "nested_analysis_response_keys",
     "operation_uses_dynamic_aggregate",
+    "validate_required_analysis_dimensions",
     "validate_required_analysis_measures",
+    "validate_required_analysis_projection",
     "validate_group_identity_invariant",
 ]
