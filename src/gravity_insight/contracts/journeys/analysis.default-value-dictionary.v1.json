@@ -1,0 +1,44 @@
+{
+  "artifact_kind": "journey",
+  "schema_version": "gravity.journey.v1",
+  "journey_id": "analysis.default-value-dictionary",
+  "version": 1,
+  "display_name": "查询分析默认值字典",
+  "display_binding": {"legacy_display_key": "查询分析默认值字典"},
+  "lifecycle": "active",
+  "owner": "gravity-runtime/analysis",
+  "calling_project": null,
+  "required_capabilities": [
+    {
+      "identity_kind": "operation",
+      "selector": "analysis.default_val.list",
+      "contract_version": "1",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "required_semantics": [],
+  "required_operators": [],
+  "required_models": [],
+  "required_context": [],
+  "required_skill": null,
+  "surfaces": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+  "request_budget": {
+    "known_requests_min": 1,
+    "known_requests_max": 1,
+    "unknown_discovery_max": 3,
+    "acceptance_production_requests": 0,
+    "runtime_additional_requests": 0
+  },
+  "claim_policy": {
+    "allowed": ["returned-analysis-default-dictionary"],
+    "forbidden": ["unregistered-dictionary-keys", "universal-sdk-defaults"]
+  },
+  "execution": {
+    "mode": "composite",
+    "owner": "composite:analysis_default_dictionary",
+    "path": ["composite:analysis_default_dictionary", "analysis.default_val.list"]
+  },
+  "project_contract_path": null
+}
