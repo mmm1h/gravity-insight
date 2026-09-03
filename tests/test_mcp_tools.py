@@ -77,7 +77,7 @@ class MCPToolTests(unittest.TestCase):
             {"journey_id": "analysis.event-trend", "inputs": {}},
         )
 
-        self.assertEqual(11, inspected["structuredContent"]["result"]["count"])
+        self.assertEqual(13, inspected["structuredContent"]["result"]["count"])
         self.assertEqual(
             "blocked", readiness["structuredContent"]["result"]["can_run_status"]
         )

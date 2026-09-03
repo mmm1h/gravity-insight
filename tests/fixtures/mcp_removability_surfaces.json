@@ -3,11 +3,13 @@
   "baseline": "824f92524f5703d7cb7ba0b2d6a671befb51a45f",
   "journeys": {
     "analysis.business-pulse": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.default-value-dictionary": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.event-trend": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.experiment-outcome-evaluation": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
     "analysis.ltv-curve-fit": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
     "analysis.merge2.ap-cost-anomaly-localization": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.readable-app-catalog": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.realtime-event-catalog": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.gravity.game.community-context-correlation": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
     "analysis.gravity.game.device-segment-event-review": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.gravity.core.project-metric-contract-check": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},

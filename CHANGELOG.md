@@ -62,6 +62,12 @@ Target release: `0.3.7`
 
 ### Added
 
+- Two previously human-ledger-only closed analysis journeys now have versioned
+  machine Journey contracts. Each contract binds its existing ledger title,
+  governed operation dependencies, four reachable surfaces, bounded request
+  budget, execution owner, and allowed/forbidden claims. Offline certification
+  remains `uncertified` until current Capability Validation evidence exists; no
+  production execution is implied by registration.
 - `gravity analysis dashboard kanban schema` now publishes typed collection
   constraints, and separates a single-request batch bound (`report_ids`,
   1..20, scope `single_action_request`) from total board capacity (decoded
