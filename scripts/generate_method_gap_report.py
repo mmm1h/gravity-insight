@@ -8,6 +8,7 @@ from functools import lru_cache
 import json
 from pathlib import Path
 import re
+import sys
 from typing import Any, Callable, Mapping, Sequence
 
 
@@ -180,7 +181,8 @@ def emit_compiler_report(root: Path) -> None:
             compact_report(library_report(selected)),
             ensure_ascii=False,
             sort_keys=True,
-        )
+        ),
+        file=sys.stderr,
     )
     _EMITTED_ROOTS.add(selected)
 

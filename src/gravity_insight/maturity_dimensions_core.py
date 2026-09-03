@@ -14,10 +14,13 @@ from .skill_contract import compile_skill_manifest
 
 
 def correctness_evidence(
-    profile: Mapping[str, Any] | None, certifications: Mapping[str, Any]
+    profile: Mapping[str, Any] | None,
+    certifications: Mapping[str, Any],
+    *,
+    profile_failure: str | None = None,
 ) -> list[dict[str, Any]]:
     return [
-        *_operation_evidence(profile),
+        *_operation_evidence(profile, profile_failure=profile_failure),
         _journey_registry_metric(certifications),
         _surface_metric(certifications),
         *_capability_evidence(),
@@ -26,14 +29,19 @@ def correctness_evidence(
 
 def _operation_evidence(
     profile: Mapping[str, Any] | None,
+    *,
+    profile_failure: str | None = None,
 ) -> list[dict[str, Any]]:
     if profile is None:
+        missing = ["a successful isolated quality-profile collection"]
+        if profile_failure:
+            missing.append(profile_failure)
         return [
             metric(
                 source="python -m gravity_insight.compiler check",
                 claim="operation contracts and provenance compile deterministically",
                 measured=False,
-                missing=("a successful isolated quality-profile collection",),
+                missing=missing,
             )
         ]
     count = int(profile["operation_count"])

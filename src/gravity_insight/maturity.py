@@ -128,7 +128,7 @@ def _run_evaluation(
     }
 
 
-def _quality_profile(root: Path) -> dict[str, Any] | None:
+def _quality_profile(root: Path) -> tuple[dict[str, Any] | None, str | None]:
     completed = subprocess.run(
         (sys.executable, "-c", _QUALITY_PROFILE_SCRIPT, str(root)),
         cwd=root,
@@ -138,18 +138,28 @@ def _quality_profile(root: Path) -> dict[str, Any] | None:
         timeout=120,
     )
     if completed.returncode:
-        return None
+        return (
+            None,
+            f"isolated quality-profile process exited with code {completed.returncode}",
+        )
     try:
         value = json.loads(completed.stdout)
-    except json.JSONDecodeError:
-        return None
-    return value if isinstance(value, dict) else None
+    except json.JSONDecodeError as exc:
+        return (
+            None,
+            "isolated quality-profile stdout was not a JSON document "
+            f"(line {exc.lineno}, column {exc.colno}: {exc.msg})",
+        )
+    if not isinstance(value, dict):
+        return None, "isolated quality-profile stdout JSON root was not an object"
+    return value, None
 
 
 def _evidence_sets(
     root: Path,
     *,
     profile: Any,
+    profile_failure: str | None,
     certifications: Mapping[str, Any],
     census: Mapping[str, Any],
     health: Mapping[str, Any],
@@ -166,13 +176,17 @@ def _evidence_sets(
         observed=docs["summary"],
     )
     return (
-        correctness_evidence(profile, certifications),
+        correctness_evidence(
+            profile, certifications, profile_failure=profile_failure
+        ),
         journey_evidence(root, certifications, evaluation, evaluation_observed),
         skill_evidence(root, health),
         census_evidence(census),
         performance_evidence(certifications, census, evaluation),
         ci_evidence(root, git_state(root)),
-        architecture_evidence(root, profile, certifications),
+        architecture_evidence(
+            root, profile, certifications, profile_failure=profile_failure
+        ),
         [docs_metric],
     )
 
@@ -215,7 +229,7 @@ def _total(dimensions: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     root = root.resolve()
     repository = git_state(root)
-    profile = _quality_profile(root)
+    profile, profile_failure = _quality_profile(root)
     certifications = journey_certifications(root)
     census = census_status(root)
     health = runtime_health_report(root, include_compiler=False)
@@ -224,6 +238,7 @@ def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     sets = _evidence_sets(
         root,
         profile=profile,
+        profile_failure=profile_failure,
         certifications=certifications,
         census=census,
         health=health,
