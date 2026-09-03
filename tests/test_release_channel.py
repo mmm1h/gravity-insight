@@ -152,7 +152,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def _job(self, name: str) -> str:
         matched = re.search(
-            rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z][a-z0-9-]*:\n|\Z)",
+            rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z][a-z0-9_-]*:\n|\Z)",
             self.workflow,
         )
         self.assertIsNotNone(matched, name)
@@ -161,7 +161,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def _step(self, workflow: str, name: str) -> str:
         matched = re.search(
             rf"(?ms)^      - name: {re.escape(name)}\n"
-            r".*?(?=^      - |^  [a-z][a-z0-9-]*:\n|\Z)",
+            r".*?(?=^      - |^  [a-z][a-z0-9_-]*:\n|\Z)",
             workflow,
         )
         self.assertIsNotNone(matched, name)
@@ -178,9 +178,13 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertEqual(
             [
                 "actions/upload-artifact",
+                "actions/download-artifact",
+                "actions/upload-artifact",
+                "actions/upload-artifact",
                 "actions/upload-artifact",
                 "actions/download-artifact",
                 "pypa/gh-action-pypi-publish",
+                "actions/download-artifact",
                 "actions/download-artifact",
             ],
             [value.rsplit("@", 1)[0] for value in indented],
@@ -225,27 +229,43 @@ class ReleaseWorkflowTests(unittest.TestCase):
                     )
                 )
 
-    def test_build_is_read_only_and_publishes_checked_artifacts_and_evidence(self) -> None:
-        build = self._job("build")
+    def test_parallel_release_gates_are_read_only_and_publish_checked_artifacts(self) -> None:
+        secret = self._job("release_secret_history")
+        validation = self._job("release_validation")
+        build = self._job("release_supply_chain")
+        for job in (secret, validation, build):
+            self.assertIn("contents: read", job)
+            self.assertNotIn("contents: write", job)
         self.assertIn("contents: read", build)
-        self.assertNotIn("contents: write", build)
         self.assertIn("name: python-distributions", build)
         self.assertIn("path: dist/", build)
         self.assertIn("name: release-supply-chain", build)
         self.assertIn("path: release-evidence/", build)
-        self.assertIn("scripts/scan_repository_secrets.py --history", build)
+        self.assertIn("scripts/scan_repository_secrets.py --history", secret)
+        self.assertIn("name: release-secret-scan", secret)
         self.assertIn("scripts/generate_release_sbom.py", build)
         self.assertIn("scripts/audit_release_dependencies.py", build)
-        self.assertLess(
-            build.index("scripts/audit_release_dependencies.py"),
-            self.workflow.index("  publish:"),
-        )
-        self.assertNotIn("gh release create", build)
+        publish_index = self.workflow.index("  publish:")
+        for fragment in (
+            "scripts/scan_repository_secrets.py --history",
+            "scripts/generate_release_sbom.py",
+            "scripts/audit_release_dependencies.py",
+            "python -m gravity_insight.compiler check",
+            "python -m gravity_insight.quality check",
+        ):
+            self.assertLess(self.workflow.index(fragment), publish_index)
+        self.assertNotIn("gh release create", secret + validation + build)
 
     def test_release_workspace_outputs_are_excluded_from_checkpoint_file_universe(
         self,
     ) -> None:
-        build = self._job("build")
+        release_gates = "\n".join(
+            (
+                self._job("release_secret_history"),
+                self._job("release_validation"),
+                self._job("release_supply_chain"),
+            )
+        )
         outputs = (
             (
                 "--receipt release-evidence/secret-scan.json",
@@ -266,7 +286,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         for workflow_fragment, output in outputs:
             with self.subTest(output=output):
-                self.assertIn(workflow_fragment, build)
+                self.assertIn(workflow_fragment, release_gates)
                 ignored = _run(
                     ["git", "check-ignore", "--verbose", "--", output], cwd=ROOT
                 )
@@ -281,9 +301,14 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def test_oidc_publish_and_provenance_precede_github_release(self) -> None:
         publish = self._job("publish")
-        release_provenance = self._job("release-provenance")
-        github_release = self._job("github-release")
-        self.assertIn("needs: build", publish)
+        finalize = self._job("finalize_release")
+        for gate in (
+            "release_windows_tests_audit",
+            "release_secret_history",
+            "release_validation",
+            "release_supply_chain",
+        ):
+            self.assertIn(f"- {gate}", publish)
         self.assertIn("id-token: write", publish)
         self.assertIn("name: python-distributions", publish)
         self.assertIn("scripts/verify_release_provenance.py pypi-plan", publish)
@@ -291,21 +316,35 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("gh-action-pypi-publish@", publish)
         self.assertIn("attestations: true", publish)
         self.assertIn("packages-dir: ${{ runner.temp }}/pypi-upload/", publish)
-        self.assertIn("needs: publish", release_provenance)
-        self.assertIn("timeout-minutes: 10", release_provenance)
-        self.assertIn("scripts/verify_release_provenance.py", release_provenance)
-        self.assertNotRegex(release_provenance, r"\b(?:delete|yank)\b")
-        self.assertIn("needs: [publish, release-provenance]", github_release)
-        self.assertIn("contents: write", github_release)
-        self.assertIn("actions/checkout@", github_release)
-        self.assertIn("name: release-supply-chain", github_release)
-        self.assertIn("path: release-evidence/", github_release)
-        self.assertIn("scripts/verify_release_provenance.py recover", github_release)
-        self.assertIn("--extra-asset-dir release-evidence", github_release)
+        self.assertIn("needs: publish", finalize)
+        self.assertIn("timeout-minutes: 10", finalize)
+        self.assertIn("contents: write", finalize)
+        self.assertIn("actions/checkout@", finalize)
+        self.assertIn("name: release-supply-chain", finalize)
+        self.assertIn("name: release-secret-scan", finalize)
+        self.assertIn("path: release-evidence/", finalize)
+        provenance = "python scripts/verify_release_provenance.py gravity-insight"
+        recovery = "python scripts/verify_release_provenance.py recover"
+        self.assertIn(provenance, finalize)
+        self.assertIn(recovery, finalize)
+        self.assertLess(finalize.index(provenance), finalize.index(recovery))
+        self.assertIn("--extra-asset-dir release-evidence", finalize)
+        self.assertNotRegex(finalize, r"\b(?:delete|yank)\b")
         self.assertNotIn("gh release create", self.workflow)
 
+    def test_measurement_path_cannot_publish_or_mutate_a_release(self) -> None:
+        measurement = self._job("measure_release")
+        self.assertIn("if: inputs.measure", measurement)
+        self.assertIn("contents: read", measurement)
+        self.assertNotIn("contents: write", measurement)
+        self.assertNotIn("id-token: write", measurement)
+        self.assertNotIn("gh-action-pypi-publish", measurement)
+        self.assertIn("scripts/verify_release_provenance.py pypi-plan", measurement)
+        self.assertIn("scripts/verify_release_provenance.py recover", measurement)
+        self.assertIn("--repository-root release-source", measurement)
+
     def test_manual_recovery_is_standalone_and_checks_out_requested_tag(self) -> None:
-        recovery = self._job("recover-github-release")
+        recovery = self._job("recover_github_release")
         self.assertNotIn("needs:", recovery)
         self.assertIn("github.event_name == 'workflow_dispatch'", recovery)
         self.assertEqual(2, recovery.count("actions/checkout@"))
@@ -322,7 +361,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
         def ci_job(name: str) -> str:
             matched = re.search(
-                rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z][a-z0-9-]*:\n|\Z)",
+                rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z][a-z0-9_-]*:\n|\Z)",
                 ci,
             )
             self.assertIsNotNone(matched, name)
@@ -347,13 +386,18 @@ class ReleaseWorkflowTests(unittest.TestCase):
         floor = min(tested, key=lambda value: tuple(int(part) for part in value.split(".")))
         self.assertEqual(f">={floor}", PROJECT["project"]["requires-python"])
 
-        windows = ci_job("test")
-        linux311 = ci_job("core-linux-python311")
-        linux312 = ci_job("core-linux-python312")
-        wheel312 = ci_job("installed-wheel-linux-python312")
+        windows = ci_job("windows_tests")
+        windows_audit = ci_job("windows_tests_audit")
+        linux311 = ci_job("core_linux_python311")
+        linux312 = ci_job("core_linux_python312")
+        wheel312 = ci_job("installed_wheel_linux_python312")
         self.assertIn("runs-on: windows-latest", windows)
         self.assertIn('python-version: "3.11"', windows)
-        self.assertIn("Run tests with duration budget gate", windows)
+        self.assertIn("Run complete Windows test shard with duration budget", windows)
+        self.assertIn("shard: [1, 2, 3, 4]", windows)
+        self.assertIn("--shard-count 4", windows)
+        self.assertIn("--expected-shards 4", windows_audit)
+        self.assertIn("Prove full Windows collection and execution conservation", windows_audit)
         for job, version in ((linux311, "3.11"), (linux312, "3.12")):
             self.assertIn("runs-on: ubuntu-latest", job)
             self.assertIn(f'python-version: "{version}"', job)

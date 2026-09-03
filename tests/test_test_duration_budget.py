@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from io import StringIO
+import json
+from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 import unittest
 
@@ -9,12 +12,16 @@ import pytest
 from scripts.check_test_duration_budget import (
     CALIBRATED_CI_ENVELOPE_SECONDS,
     CI_JOB_TIMEOUT_SECONDS,
+    CollectionRecorder,
     DurationRecorder,
     MAX_SINGLE_TEST_JOB_SHARE,
     PYTEST_ARGUMENTS,
+    SHARD_RECEIPT_SCHEMA,
     TEST_DURATION_LIMIT_SECONDS,
     DurationMeasurement,
+    audit_shard_receipts,
     duration_budget_errors,
+    partition_nodeids,
     run_gate,
 )
 
@@ -85,6 +92,97 @@ class TestDurationBudgetTests(unittest.TestCase):
         )
         self.assertEqual([*PYTEST_ARGUMENTS, "tests/test_broken.py"], captured)
         self.assertIn("pytest exit_code=1", output.getvalue())
+
+    def test_collection_recorder_and_partition_preserve_exact_nodeids(self) -> None:
+        recorder = CollectionRecorder()
+        recorder.pytest_collection_finish(
+            SimpleNamespace(
+                items=[
+                    SimpleNamespace(nodeid="tests/test_b.py::Case::test_2"),
+                    SimpleNamespace(nodeid="tests/test_a.py::Case::test_1"),
+                    SimpleNamespace(nodeid="tests/test_c.py::test_3"),
+                    SimpleNamespace(nodeid="tests/test_a.py::Case::test_4"),
+                ]
+            )
+        )
+
+        shards = partition_nodeids(recorder.nodeids, 2)
+
+        self.assertEqual(
+            (
+                (
+                    "tests/test_a.py::Case::test_1",
+                    "tests/test_b.py::Case::test_2",
+                ),
+                (
+                    "tests/test_a.py::Case::test_4",
+                    "tests/test_c.py::test_3",
+                ),
+            ),
+            shards,
+        )
+        self.assertEqual(
+            sorted(recorder.nodeids), sorted(nodeid for shard in shards for nodeid in shard)
+        )
+
+    def test_shard_receipt_audit_fails_closed_on_missing_shard(self) -> None:
+        collected = [
+            "tests/test_a.py::Case::test_1",
+            "tests/test_b.py::Case::test_2",
+        ]
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            receipt = {
+                "schema_version": SHARD_RECEIPT_SCHEMA,
+                "status": "passed",
+                "shard_index": 1,
+                "shard_count": 2,
+                "collected_nodeids": collected,
+                "selected_nodeids": [collected[0]],
+                "actual_nodeids": [collected[0]],
+                "errors": [],
+            }
+            (root / "pytest-shard-1.json").write_text(
+                json.dumps(receipt), encoding="utf-8"
+            )
+
+            summary, errors = audit_shard_receipts(root, 2)
+
+        self.assertEqual("failed", summary["status"])
+        self.assertTrue(any("missing=[2]" in error for error in errors))
+
+    def test_shard_receipt_audit_proves_collection_selection_and_execution(self) -> None:
+        collected = [
+            "tests/test_a.py::Case::test_1",
+            "tests/test_b.py::Case::test_2",
+            "tests/test_c.py::test_3",
+            "tests/test_d.py::Case::test_4",
+        ]
+        partitions = partition_nodeids(collected, 2)
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            for index, selected in enumerate(partitions, 1):
+                receipt = {
+                    "schema_version": SHARD_RECEIPT_SCHEMA,
+                    "status": "passed",
+                    "shard_index": index,
+                    "shard_count": 2,
+                    "collected_nodeids": collected,
+                    "selected_nodeids": list(selected),
+                    "actual_nodeids": list(selected),
+                    "errors": [],
+                }
+                (root / f"pytest-shard-{index}.json").write_text(
+                    json.dumps(receipt), encoding="utf-8"
+                )
+
+            summary, errors = audit_shard_receipts(root, 2)
+
+        self.assertEqual((), errors)
+        self.assertEqual("passed", summary["status"])
+        self.assertEqual(4, summary["collection_count"])
+        self.assertEqual(4, summary["selected_total"])
+        self.assertEqual(4, summary["actual_total"])
 
 
 if __name__ == "__main__":

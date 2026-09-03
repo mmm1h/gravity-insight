@@ -7,19 +7,113 @@ name: SDK Release
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to recover (for example v0.3.2)
+        description: Existing release tag to recover or use for a read-only measurement
         required: true
         type: string
+      measure:
+        description: Run the release graph and read-only external tail without publishing
+        required: false
+        default: false
+        type: boolean
 
 env:
   PYTHONUTF8: "1"
   PYTHONIOENCODING: utf-8
 
 jobs:
-  build:
-    if: github.event_name == 'push'
+  release_windows_tests:
+    name: release-windows-tests (${{ matrix.shard }}/4)
+    if: github.event_name == 'push' || inputs.measure
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and test runner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Run complete Windows release test shard with duration budget
+        run: >-
+          python scripts/check_test_duration_budget.py
+          --shard-index ${{ matrix.shard }}
+          --shard-count 4
+          --receipt tmp/pytest-shards/pytest-shard-${{ matrix.shard }}.json
+      - name: Upload Windows release test shard receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-windows-pytest-shard-${{ matrix.shard }}
+          path: tmp/pytest-shards/pytest-shard-${{ matrix.shard }}.json
+          if-no-files-found: error
+
+  release_windows_tests_audit:
+    name: release-windows-tests-audit
+    if: always() && (github.event_name == 'push' || inputs.measure)
+    needs: release_windows_tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install shard auditor
+        run: python -m pip install --disable-pip-version-check pytest pytest-xdist
+      - name: Download all Windows release test shard receipts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: release-windows-pytest-shard-*
+          path: tmp/pytest-shards
+          merge-multiple: true
+      - name: Prove full Windows release collection and execution conservation
+        run: >-
+          python scripts/check_test_duration_budget.py
+          --audit-receipts tmp/pytest-shards
+          --expected-shards 4
+          --audit-output tmp/pytest-shards/audit.json
+
+  release_secret_history:
+    name: release-secret-history
+    if: github.event_name == 'push' || inputs.measure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and secret scanner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Scan tracked files and complete Git history for secrets
+        run: python scripts/scan_repository_secrets.py --history --receipt release-evidence/secret-scan.json
+      - name: Upload release secret-scan evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-secret-scan
+          path: release-evidence/secret-scan.json
+          if-no-files-found: error
+
+  release_validation:
+    name: release-validation
+    if: github.event_name == 'push' || inputs.measure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -32,43 +126,55 @@ jobs:
           cache: pip
       - name: Install SDK and test runner
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
-      - name: Scan tracked files and complete Git history for secrets
-        run: python scripts/scan_repository_secrets.py --history --receipt release-evidence/secret-scan.json
-      - name: Run tests
-        run: python -m pytest -q -n auto --dist load
       - name: Check deterministic contracts
         run: python -m gravity_insight.compiler check
       - name: Check quality ratchet
         run: python -m gravity_insight.quality check
       - name: Check release tag matches package version
+        if: github.event_name == 'push'
         run: python scripts/check_release_tag.py
+      - name: Exercise release-tag gate without changing a remote tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          git tag -d "$RELEASE_TAG" || true
+          git tag "$RELEASE_TAG" HEAD
+          python scripts/check_release_tag.py
       - name: Check development Agent usability eval
         env:
           PYTHONPATH: src
-        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path tmp | Out-Null
-          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content tmp/agent-usability-gate.log -Tail 40
-            exit $LASTEXITCODE
+          mkdir -p tmp
+          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1 || {
+            tail -n 40 tmp/agent-usability-gate.log
+            exit 1
           }
-          Write-Output "PASS agent-usability development eval"
+          echo "PASS agent-usability development eval"
       - name: Check all CLI namespaces offline
         env:
           GRAVITY_INSIGHT_AUTO_UPGRADE: "0"
-        shell: pwsh
         run: |
           gravity --help
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity --workspace examples/workspace sql --dry-run
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity census --smoke
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity insight --dry-run
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Install release tooling
-        run: python -m pip install --disable-pip-version-check build twine
+
+  release_supply_chain:
+    name: release-supply-chain
+    if: github.event_name == 'push' || inputs.measure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and release tooling
+        run: python -m pip install --disable-pip-version-check -e ".[dev]" twine
       - name: Build wheel and source distribution
         run: python -m build
       - name: Check distributions
@@ -91,8 +197,13 @@ jobs:
           if-no-files-found: error
 
   publish:
+    name: publish
     if: github.event_name == 'push'
-    needs: build
+    needs:
+      - release_windows_tests_audit
+      - release_secret_history
+      - release_validation
+      - release_supply_chain
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -100,8 +211,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
@@ -125,24 +234,10 @@ jobs:
           attestations: true
           packages-dir: ${{ runner.temp }}/pypi-upload/
 
-  release-provenance:
+  finalize_release:
+    name: finalize-release
     if: github.event_name == 'push'
     needs: publish
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.11"
-      - name: Verify PyPI provenance binds to published files
-        run: python scripts/verify_release_provenance.py gravity-insight "${GITHUB_REF_NAME#v}"
-
-  github-release:
-    if: github.event_name == 'push'
-    needs: [publish, release-provenance]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -152,14 +247,21 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
-      - name: Download supply-chain evidence
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Download release supply-chain evidence
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: release-supply-chain
           path: release-evidence/
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      - name: Download release secret-scan evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          python-version: "3.11"
+          name: release-secret-scan
+          path: release-evidence/
+      - name: Verify PyPI provenance binds to published files
+        run: python scripts/verify_release_provenance.py gravity-insight "${GITHUB_REF_NAME#v}"
       - name: Reconcile GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -171,8 +273,65 @@ jobs:
           --repository "$GITHUB_REPOSITORY"
           --extra-asset-dir release-evidence
 
-  recover-github-release:
-    if: github.event_name == 'workflow_dispatch'
+  measure_release:
+    name: release-measurement
+    if: inputs.measure
+    needs:
+      - release_windows_tests_audit
+      - release_secret_history
+      - release_validation
+      - release_supply_chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+          path: release-source
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Download existing release assets for a read-only publish plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          mkdir -p published-dist release-evidence
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.whl' --pattern '*.tar.gz' --dir published-dist
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.json' --dir release-evidence
+      - name: Exercise idempotent PyPI publish plan without upload permission
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          python scripts/verify_release_provenance.py pypi-plan
+          --project gravity-insight
+          --version "${RELEASE_TAG#v}"
+          --dist-dir published-dist
+          --stage-dir "$RUNNER_TEMP/pypi-upload"
+      - name: Verify existing PyPI provenance
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python scripts/verify_release_provenance.py gravity-insight "${RELEASE_TAG#v}"
+      - name: Exercise idempotent GitHub reconciliation with a read-only token
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          python scripts/verify_release_provenance.py recover
+          --project gravity-insight
+          --version "${RELEASE_TAG#v}"
+          --tag "$RELEASE_TAG"
+          --repository "$GITHUB_REPOSITORY"
+          --repository-root release-source
+          --extra-asset-dir release-evidence
+
+  recover_github_release:
+    name: recover-github-release
+    if: github.event_name == 'workflow_dispatch' && !inputs.measure
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
