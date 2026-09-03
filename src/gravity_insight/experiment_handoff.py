@@ -56,7 +56,7 @@ class ExperimentHandoffService:
     def evaluate(self, request: Mapping[str, Any]) -> dict[str, Any]:
         """Evaluate aggregate binary outcomes from one independent Handoff."""
 
-        from .operators.experiment_outcome import evaluate_experiment_outcome
+        from .operators.significance_test import evaluate_experiment_outcome
 
         return evaluate_experiment_outcome(
             request,

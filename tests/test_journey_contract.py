@@ -19,9 +19,11 @@ from gravity_insight.journey_ledger import load_packaged_journey_ledger
 
 EXPECTED = {
     "analysis.readable-app-catalog",
+    "analysis.default-value-dictionary",
     "analysis.event-trend",
     "analysis.business-pulse",
     "analysis.merge2.ap-cost-anomaly-localization",
+    "analysis.realtime-event-catalog",
     "analysis.experiment-outcome-evaluation",
     "analysis.ltv-curve-fit",
     "analysis.gravity.game.community-context-correlation",
@@ -33,7 +35,7 @@ EXPECTED = {
 
 
 class JourneyContractTests(unittest.TestCase):
-    def test_pilot_matrix_has_exact_explicit_display_bindings(self):
+    def test_registry_has_exact_explicit_display_bindings(self):
         artifacts = journey_artifacts()
         ids = {item["contract"]["journey_id"] for item in artifacts}
 
@@ -60,7 +62,7 @@ class JourneyContractTests(unittest.TestCase):
 
         self.assertEqual("valid", result["status"])
         self.assertEqual(69, result["ledger_row_count"])
-        self.assertEqual(11, result["machine_contract_count"])
+        self.assertEqual(13, result["machine_contract_count"])
         self.assertFalse(result["network_called"])
         first = next(
             item

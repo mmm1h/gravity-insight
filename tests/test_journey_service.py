@@ -37,7 +37,7 @@ class JourneyServiceTests(unittest.TestCase):
         verified = self.service.verify()
         described = self.service.describe("analysis.event-trend")
 
-        self.assertEqual(11, listed["count"])
+        self.assertEqual(13, listed["count"])
         self.assertEqual(
             sorted(item["journey_id"] for item in listed["journeys"]),
             [item["journey_id"] for item in listed["journeys"]],

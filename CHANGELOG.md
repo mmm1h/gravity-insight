@@ -21,6 +21,12 @@ Target release: `0.3.8`
 
 ### Added
 
+- Two previously human-ledger-only closed analysis journeys now have versioned
+  machine Journey contracts. Each contract binds its existing ledger title,
+  governed operation dependencies, four reachable surfaces, bounded request
+  budget, execution owner, and allowed/forbidden claims. Offline certification
+  remains `uncertified` until current Capability Validation evidence exists; no
+  production execution is implied by registration.
 - `operator://gravity/significance-test@1` now evaluates independent binary
   outcome arms entirely offline through `gravity experiment evaluate` and
   `sdk.experiments.evaluate()`. The result carries the selected tail, alpha,
