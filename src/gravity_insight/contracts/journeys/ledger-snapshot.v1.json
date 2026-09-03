@@ -22,7 +22,7 @@
       }
     },
     {
-      "blocker_note": "2026-08-18 生产对账：单调、第一步=注册分母、分日可加成立；响应不返回率。合同/describe/`spec-schema` 现已声明：只返回人数、不代算率、两种分母口径。compact 用户分维曾编成 `user_property` 被拒，现映射为可自纠错误。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：`$UserFirstRegister→$AdClick` 近 7 天单调且分日可加；中文长问默认识别器落到不可执行 `analysis.task.handoff`，短问/宿主臂命中产品卡。不改状态。2026-08-19 #227：漏斗结果信封现有 `interpretation.returns_conversion_rate=false` 与两种 `rate_denominators`；投放中 App 同窗生产确认 data 无率字段、未代算。不改状态、不改冻结 case。",
+      "blocker_note": "2026-08-18 生产对账：单调、第一步=注册分母、分日可加成立；响应不返回率。合同/describe/`spec-schema` 现已声明：只返回人数、不代算率、两种分母口径。compact 用户分维曾编成 `user_property` 被拒，现映射为可自纠错误。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：`$UserFirstRegister→$AdClick` 近 7 天单调且分日可加；中文长问默认识别器落到不可执行 `analysis.task.handoff`，短问/宿主臂命中产品卡。不改状态。2026-08-19 #227：漏斗结果信封现有 `interpretation.returns_conversion_rate=false` 与两种 `rate_denominators`；投放中 App 同窗生产确认 data 无率字段、未代算。不改状态、不改冻结 case。2026-09-03 #94：非空 Funnel 的用户属性分组在整窗与分日模式都被上游日期优先 shape 取代；Runtime 现按 `aggregate_date.group.*` / `date_list.[].*.[].group` 显式契约失败关闭，并返回 `group_by_list`、`unsupported_items` 与[单 filter 聚合绕行](guides/funnel-grouping-alternatives.md)。分组读回重新验证前不把日期解释成请求维度。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "看多步行为的转化漏斗",
@@ -31,7 +31,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "a7dca1077884ad0183660def139980256a61ada7fe552da7e1699ac9b0a13968",
+      "row_digest": "6c021e51a1a982596a96b979da125a0ac3561e5de2f2b303275c380cc9afabe5",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "0e40465bffa9b5d48389764a2e58dcf1561db7a38b8838bcc46264a25b996f45",
+  "snapshot_digest": "3ba0e771b4a72c9288972090ce89eb6236cd67fbd0e0c34511c9cdf3151d45e5",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "a2784c9bc888c284a5e8bc239eb3db76ac6df5b7473e9606d7177372d8b2c863"
+  "source_sha256": "25ee94c740142066578eb0997b62f71b219e9fdebbe0e1a116121474fa3007fe"
 }

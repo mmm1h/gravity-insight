@@ -9,18 +9,18 @@ from typing import Any, Callable, Mapping
 
 from .analysis_projection_contract import (
     ANALYSIS_DATE_RESPONSE_KEY_RE,
-    ANALYSIS_INDEX_RESPONSE_KEY_RE,
-    ANALYSIS_SAFE_RESPONSE_SCALARS,
     allowed_analysis_response_key as _allowed_analysis_response_key,
+    allowed_analysis_response_scalar as _allowed_analysis_response_scalar,
     analysis_group_shape,
     analysis_numeric_path_allowed as _analysis_numeric_path_allowed,
+    funnel_group_label_value_path as _funnel_group_label_value_path,
     funnel_mode_shape_changed,
     nested_analysis_response_keys,
     operation_uses_dynamic_aggregate,
-    validate_required_analysis_measures,
+    validate_required_analysis_projection,
 )
 from .drift import ProjectionDrift, projection_drift_status
-from .errors import ManifestError, PolicyViolation, error_for_status
+from .errors import ManifestError, PolicyViolation
 from .list_row_projection import _project_list_rows
 from .material_asset_source import _capture_private_material_asset_rows
 from .models import (
@@ -30,7 +30,11 @@ from .models import (
     safe_read_inputs,
 )
 from .page_envelope import page_envelope
-from .read_result_support import pagination_result_dimensions, result_warnings
+from .read_result_support import (
+    analysis_read_error,
+    pagination_result_dimensions,
+    result_warnings,
+)
 from .receipt import capture_http_receipt_references, record_response_drift
 from .registry import PolicyEngine, Registry
 from .response_drift import ResponseDriftRecorder
@@ -126,6 +130,7 @@ class ReadExecutor:
         page = page_envelope(operation, values, page_info, len(items))
         safe_inputs = safe_read_inputs(operation, values, _redact)
         status = _read_status(getattr(response, "status_code", 200), semantic_status, projection_drift, _is_empty(projected, items))
+        error = analysis_read_error(operation, projected, values, status)
         return ReadResult(
             schema_version="gravity-insight.read.v1",
             status=status,
@@ -141,7 +146,7 @@ class ReadExecutor:
             page=page,
             data=projected,
             operation_id=operation.operation_id,
-            warnings=result_warnings(operation, drift_warnings), error=error_for_status(status, operation_id=operation.operation_id),
+            warnings=result_warnings(operation, drift_warnings), error=error,
             items=items, page_info=page_info,
             http_receipts=tuple(http_receipts),
             response_drift=response_drift,
@@ -356,7 +361,7 @@ def _project_analysis_aggregate(
         warnings.append(
             f"unsafe or unbounded analysis response values were omitted (count={dropped})"
         )
-    return validate_required_analysis_measures(
+    return validate_required_analysis_projection(
         operation.response_projection, projected, values, tuple(warnings), drift
     )
 
@@ -412,10 +417,12 @@ def _project_analysis_scalar(
         return _ABSENT
     if isinstance(value, str) and (
         len(value) > 4_096
+        or _funnel_group_label_value_path(path)
+        and not _allowed_analysis_response_scalar(value, response_keys, path)
         or not allow_identifiers
         and (
             _sensitive_analysis_scalar(value, blocked)
-            or not _allowed_analysis_response_scalar(value, response_keys)
+            or not _allowed_analysis_response_scalar(value, response_keys, path)
         )
     ):
         return _ABSENT
@@ -560,16 +567,6 @@ def _analysis_response_keys(
             add(group.get("field"))
             add(group.get("group_by"))
     return result
-
-
-def _allowed_analysis_response_scalar(value: str, response_keys: set[str]) -> bool:
-    stripped = value.strip()
-    return bool(
-        stripped in response_keys
-        or stripped in ANALYSIS_SAFE_RESPONSE_SCALARS
-        or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped)
-        or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(stripped)
-    )
 
 
 def _sensitive_analysis_scalar(value: str, blocked: set[str]) -> bool:
