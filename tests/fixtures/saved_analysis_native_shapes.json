@@ -1,0 +1,49 @@
+{
+  "schema_version": "gravity-insight.saved-shape-evidence.v1",
+  "definitions": [
+    {
+      "subject": "analysis_retention",
+      "error": {
+        "field": "report.config",
+        "unsupported_items": [
+          {"field": "report.config.filterCondition", "type": "text"},
+          {"field": "report.config.period_calc_method", "type": "text"},
+          {"field": "report.config.userFiltering", "type": "array"}
+        ],
+        "unsupported_items_truncated": false
+      }
+    },
+    {
+      "subject": "analysis_retention",
+      "error": {
+        "field": "report.config",
+        "unsupported_items": [
+          {"field": "report.config.filterCondition", "type": "text"},
+          {"field": "report.config.period_calc_method", "type": "text"},
+          {"field": "report.config.userFiltering", "type": "array"}
+        ],
+        "unsupported_items_truncated": false
+      }
+    },
+    {
+      "subject": "analysis_event",
+      "error": {
+        "field": "report.config.compareList",
+        "unsupported_items": [
+          {"field": "report.config.compareList", "type": "array"}
+        ],
+        "unsupported_items_truncated": false
+      }
+    },
+    {
+      "subject": "analysis_event",
+      "error": {
+        "field": "report.config.compareList",
+        "unsupported_items": [
+          {"field": "report.config.compareList", "type": "array"}
+        ],
+        "unsupported_items_truncated": false
+      }
+    }
+  ]
+}

@@ -15,15 +15,29 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from .actionable_error_values import actual_value
 from .dashboard_artifact_contract import BODY_FIELDS, SUBJECT_KINDS, UI_FIELDS
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError, UnsupportedOperationError
-from .actionable_error_values import actual_value
 
 
 MAX_CONFIG_BYTES = 1_048_576
 MAX_ANALYSIS_DAYS = 90
 _MISSING = object()
+_NATIVE_RETENTION_UI_FIELDS = frozenset({"filterCondition", "period_calc_method", "userFiltering"})
+_NATIVE_RETENTION_BODY_FIELDS = frozenset({"app_id", "date_list", "offset"})
+_FIRST_PAY_MARKER = {"operator": "EQUALS", "field": "$is_first_pay", "type": "event", "value": [True]}
+_REGISTRATION_DAY = {"operator": "RELATIVE_DAY", "field": "$UserCreateTime", "type": "user", "value": ["event", "$EventCreateTime", "0", "0"]}
+_UI_ARRAY_FIELDS = {
+    "event": ("getSelectQueryList", "globalFiltering", "groupBy", "queryItemList", "customQueryItemList", "splitEvent", "cascaderValue", "checkIndexList", "viewNumValue"),
+    "property": ("groupBy",),
+    "retention": ("queryItemList", "group_by_list", "groupBy", "checkIndexList", "cascaderValue", "compareList"),
+    "funnel": ("cascaderValue", "checkIndexList", "compareList", "groupBy", "queryItemList", "selectedSteps"),
+    "scatter": ("groupBy", "queryItemList"),
+}
+_UI_DEFAULT_OBJECT_FIELDS = {"event": ("groupByCreateTime",), "retention": ("groupByCreateTime",), "funnel": ("groupByCreateTime",), "scatter": ("groupByCreateTime",)}
+_UI_OPEN_OBJECT_FIELDS = {"event": ("aggregate_config", "extra_data", "splitEventOtherData"), "property": ("queryItem",)}
+_UI_DATE_FIELDS = {"event": ("date_list",), "retention": ("date_list",), "funnel": ("date_list",)}
 
 
 @dataclass(frozen=True)
@@ -78,10 +92,21 @@ def compile_dashboard_chart(
     selected_app = _app_id(app_id)
     validate_dashboard_window(start, end)
     config = _config(item.get("config"))
-    _reject_unknown(config, UI_FIELDS[kind], "report.config")
+    retention_profile = (
+        _native_retention_profile(config.get("calculateBody"))
+        if kind == "retention"
+        else None
+    )
+    ui_fields = UI_FIELDS[kind]
+    if retention_profile is not None:
+        ui_fields |= _NATIVE_RETENTION_UI_FIELDS
+    _reject_unknown(config, ui_fields, "report.config")
     _validate_ui_config(kind, config)
     body = _mapping(config.get("calculateBody"), "report.config.calculateBody")
-    _reject_unknown(body, BODY_FIELDS[kind], "report.config.calculateBody")
+    body_fields = BODY_FIELDS[kind]
+    if retention_profile is not None:
+        body_fields |= _NATIVE_RETENTION_BODY_FIELDS
+    _reject_unknown(body, body_fields, "report.config.calculateBody")
     inputs, applied, limitations = _compile_inputs(
         kind,
         config,
@@ -163,7 +188,7 @@ def _event_inputs(
         "global_conditions": copy.deepcopy(body.get("global_conditions", [])),
         "global_cond_logic": body.get("global_cond_logic", "AND"),
         "split_event": copy.deepcopy(body.get("split_event", {})),
-        "date_list": [_date_item(start, end)],
+        "date_list": _event_date_list(config, start, end),
         "return_hierarchy_list": config.get("tableShowType") == "level",
         "calc_layer_y": True,
         "aggregate_config": copy.deepcopy(config.get("aggregate_config", {})),
@@ -199,6 +224,7 @@ def _retention_inputs(
     offset = config.get("cascaderInput", 7) if offset_selector == "custom" else offset_selector
     if isinstance(offset, bool) or not isinstance(offset, int):
         _unsupported("retention offset is invalid", "report.config.cascaderValue", offset)
+    _validate_retention_persisted_controls(config, body, app_id, offset)
     groups.append({"type": "default_event", "field": "create_time", "group_by": cascade[0]})
     total = config.get("total_calc_type", "total_week")
     if not isinstance(total, str) or total not in {"total_week", "total_month"}:
@@ -304,61 +330,88 @@ def _event_time_group(item: Mapping[str, Any], grain: Any) -> dict[str, Any]:
     return result
 
 
+def _event_date_list(config: Mapping[str, Any], start: str, end: str) -> list[dict[str, str]]:
+    dates = [_date_item(start, end)]
+    comparisons = config.get("compareList")
+    if comparisons in (None, []):
+        return dates
+    values = _sequence(comparisons, "report.config.compareList")
+    if len(values) != 1 or not isinstance(values[0], Mapping):
+        _unsupported("event compareList must contain the one proven native comparison", "report.config.compareList", comparisons)
+    if config.get("currentSelectCompare") != 0:
+        _unsupported("event currentSelectCompare does not select the proven comparison", "report.config.currentSelectCompare", config.get("currentSelectCompare", _MISSING))
+    comparison = values[0]
+    _reject_unknown(comparison, frozenset({"date_list", "kid"}), "report.config.compareList[]")
+    _text(comparison.get("kid"), "report.config.compareList[].kid", maximum=128)
+    control = _mapping(comparison.get("date_list"), "report.config.compareList[].date_list")
+    _reject_unknown(control, frozenset({"date_list"}), "report.config.compareList[].date_list")
+    pair = _sequence(control.get("date_list"), "report.config.compareList[].date_list.date_list")
+    if len(pair) != 2 or any(not isinstance(item, str) for item in pair):
+        _unsupported("event comparison date_list must contain two text dates", "report.config.compareList[].date_list.date_list", pair)
+    _date_window(pair[0], pair[1])
+    dates.append(_date_item(pair[0], pair[1]))
+    return dates
+
+
+def _native_retention_profile(body: Any) -> str | None:
+    if not isinstance(body, Mapping):
+        return None
+    items = body.get("query_item_list")
+    if not isinstance(items, list) or len(items) != 2:
+        return None
+    before = items[0]
+    if not isinstance(before, Mapping) or before.get("event_name") != "$PayEvent":
+        return None
+    conditions = before.get("conditions")
+    if not isinstance(conditions, list) or any(not isinstance(item, Mapping) for item in conditions):
+        return None
+    normalized = [dict(item) for item in conditions]
+    if normalized == [_FIRST_PAY_MARKER]:
+        return "first_payment_cohorts"
+    if len(normalized) == 2 and all(expected in normalized for expected in (_FIRST_PAY_MARKER, _REGISTRATION_DAY)):
+        return "registration_day_payers"
+    return None
+
+
+def _validate_retention_persisted_controls(config: Mapping[str, Any], body: Mapping[str, Any], app_id: str, offset: int) -> None:
+    stored_app = body.get("app_id")
+    if stored_app is not None and _app_id(stored_app) != app_id:
+        _unsupported("retention calculateBody.app_id does not match the selected App", "calculateBody.app_id", stored_app)
+    if "date_list" in body:
+        _date_list(body["date_list"], "calculateBody.date_list")
+    stored_offset = body.get("offset")
+    if stored_offset is not None and stored_offset != offset:
+        _unsupported("retention calculateBody.offset disagrees with its UI control", "calculateBody.offset", stored_offset)
+    ui_period = config.get("period_calc_method")
+    if ui_period is not None and ui_period != body.get("period_calc_method"):
+        _unsupported("retention period_calc_method disagrees with calculateBody", "report.config.period_calc_method", ui_period)
+
+
+def _validate_retention_ui_controls(config: Mapping[str, Any]) -> None:
+    for field in ("filterCondition", "period_calc_method"):
+        if field in config:
+            _text(config[field], f"report.config.{field}", maximum=64)
+    if config.get("userFiltering") not in (None, []):
+        _unsupported("retention userFiltering is not proven beyond an empty UI mirror", "report.config.userFiltering", config.get("userFiltering"))
+
+
 def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
     """Validate proven UI-only containers before intentionally not executing them."""
 
-    if kind == "event":
-        if config.get("compareList") not in (None, []):
-            _unsupported("event comparison windows cannot be represented by one explicit date pair", "report.config.compareList", config.get("compareList"))
-        _optional_object(config, "groupByCreateTime")
-        _optional_object(config, "aggregate_config", fields=None)
-        _optional_date_list(config, "date_list")
-        for field in (
-            "getSelectQueryList", "globalFiltering", "groupBy", "queryItemList",
-            "customQueryItemList", "splitEvent",
-        ):
-            _optional_array(config, field)
-        _optional_object(config, "extra_data", fields=None)
-        _optional_object(config, "splitEventOtherData", fields=None)
-        for field in ("cascaderValue", "checkIndexList", "viewNumValue"):
-            _optional_array(config, field)
-        _optional_sort(config)
-    elif kind == "property":
-        _optional_array(config, "groupBy")
-        _optional_sort(config)
-        _optional_object(config, "queryItem", fields=None)
-    elif kind == "retention":
-        _optional_array(config, "queryItemList")
-        _optional_array(config, "group_by_list")
-        _optional_array(config, "groupBy")
-        _optional_array(config, "checkIndexList")
-        _optional_sort(config)
-        _optional_array(config, "cascaderValue")
-        _optional_array(config, "compareList")
-        _optional_object(config, "groupByCreateTime")
-        _optional_date_list(config, "date_list")
-    elif kind == "funnel":
-        for field in (
-            "cascaderValue", "checkIndexList", "compareList", "groupBy",
-            "queryItemList", "selectedSteps",
-        ):
-            _optional_array(config, field)
-        _optional_object(config, "groupByCreateTime")
-        _optional_date_list(config, "date_list")
-        _optional_sort(config)
-    else:
-        _optional_object(config, "groupByCreateTime")
-        for field in ("groupBy", "queryItemList"):
-            _optional_array(config, field)
-        _optional_sort(config)
+    for field in _UI_ARRAY_FIELDS[kind]:
+        _optional_array(config, field)
+    for field in _UI_DEFAULT_OBJECT_FIELDS.get(kind, ()):
+        _optional_object(config, field)
+    for field in _UI_OPEN_OBJECT_FIELDS.get(kind, ()):
+        _optional_object(config, field, fields=None)
+    for field in _UI_DATE_FIELDS.get(kind, ()):
+        _optional_date_list(config, field)
+    _optional_sort(config)
+    if kind == "retention":
+        _validate_retention_ui_controls(config)
 
 
-def _optional_object(
-    config: Mapping[str, Any],
-    key: str,
-    *,
-    fields: frozenset[str] | None = frozenset({"label", "value"}),
-) -> None:
+def _optional_object(config: Mapping[str, Any], key: str, *, fields: frozenset[str] | None = frozenset({"label", "value"})) -> None:
     if key not in config or config.get(key) is None:
         return
     value = _mapping(config[key], f"report.config.{key}")
@@ -391,15 +444,18 @@ def _optional_array(config: Mapping[str, Any], key: str) -> None:
 def _optional_date_list(config: Mapping[str, Any], key: str) -> None:
     if key not in config or config.get(key) is None:
         return
-    values = _sequence(config[key], f"report.config.{key}")
+    _date_list(config[key], f"report.config.{key}")
+
+
+def _date_list(value: Any, field: str) -> list[Any]:
+    values = _sequence(value, field)
     if not values or any(not isinstance(item, Mapping) for item in values):
-        _unsupported("saved Dashboard date_list must contain date objects", f"report.config.{key}", values)
+        _unsupported("saved Dashboard date_list must contain date objects", field, values)
     for item in values:
-        _reject_unknown(
-            item,
-            frozenset({"start_date", "end_date"}),
-            f"report.config.{key}",
-        )
+        _reject_unknown(item, frozenset({"start_date", "end_date"}), field)
+        if set(item) != {"start_date", "end_date"}:
+            _unsupported("saved Dashboard date_list items require start_date and end_date", field, item)
+    return values
 
 
 def _config(value: Any) -> Mapping[str, Any]:
@@ -420,14 +476,9 @@ def _config(value: Any) -> Mapping[str, Any]:
 
 
 def _date_window(start: str, end: str) -> None:
-    left = _parse_date(start, "start")
-    right = _parse_date(end, "end")
-    days = (right - left).total_seconds() / 86_400
-    if days < 0 or days > MAX_ANALYSIS_DAYS:
-        raise InputValidationError(
-            f"actual value: {actual_value((start, end))}; " + ("dashboard analysis dates must be ordered within 90 days"),
-            field="start/end",
-        )
+    left, right = _parse_date(start, "start"), _parse_date(end, "end")
+    if not 0 <= (right - left).total_seconds() / 86_400 <= MAX_ANALYSIS_DAYS:
+        raise InputValidationError(f"actual value: {actual_value((start, end))}; dashboard analysis dates must be ordered within 90 days", field="start/end")
 
 
 def _validation_status(value: Any) -> str:
@@ -439,18 +490,16 @@ def _validation_dependencies(value: Mapping[str, Any]) -> tuple[str, ...]:
     dependencies = value.get("live_metadata_dependencies", ())
     if not isinstance(dependencies, (list, tuple)):
         return ()
-    return tuple(dict.fromkeys(
-        item for item in dependencies if isinstance(item, str) and item
-    ))
+    return tuple(dict.fromkeys(item for item in dependencies if isinstance(item, str) and item))
 
 
 def _parse_date(value: Any, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
-        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be an ISO date or timestamp"), field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; {field} must be an ISO date or timestamp", field=field)
     try:
         parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
     except ValueError as exc:
-        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be an ISO date or timestamp"), field=field) from exc
+        raise InputValidationError(f"actual value: {actual_value(value)}; {field} must be an ISO date or timestamp", field=field) from exc
     return parsed.replace(tzinfo=parsed.tzinfo or timezone.utc).astimezone(timezone.utc)
 
 
@@ -460,13 +509,13 @@ def _date_item(start: str, end: str) -> dict[str, str]:
 
 def _app_id(value: Any) -> str:
     if isinstance(value, bool):
-        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("app_id must be a positive integer"), field="app_id")
+        raise InputValidationError(f"actual value: {actual_value(value)}; app_id must be a positive integer", field="app_id")
     try:
         parsed = int(str(value).strip())
     except (TypeError, ValueError) as exc:
-        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("app_id must be a positive integer"), field="app_id") from exc
+        raise InputValidationError(f"actual value: {actual_value(value)}; app_id must be a positive integer", field="app_id") from exc
     if parsed <= 0:
-        raise InputValidationError(f"actual value: {actual_value(parsed)}; " + ("app_id must be a positive integer"), field="app_id")
+        raise InputValidationError(f"actual value: {actual_value(parsed)}; app_id must be a positive integer", field="app_id")
     return str(parsed)
 
 
@@ -491,7 +540,7 @@ def _sequence(value: Any, field: str) -> list[Any]:
 
 def _text(value: Any, field: str, *, maximum: int) -> str:
     if not isinstance(value, (str, int)) or isinstance(value, bool):
-        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be text"), field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; {field} must be text", field=field)
     rendered = str(value).strip()
     if not rendered or len(rendered) > maximum:
         raise InputValidationError(f"{field} is missing or too long", field=field, next_action="Correct that field to a documented value and retry.")
@@ -500,26 +549,10 @@ def _text(value: Any, field: str, *, maximum: int) -> str:
 
 def _reject_unknown(value: Mapping[str, Any], allowed: frozenset[str], field: str) -> None:
     if any(not isinstance(key, str) for key in value):
-        _unsupported(
-            f"{field} contains a non-text Web field",
-            field,
-            unsupported_items=(
-                {"field": _diagnostic_field(field), "type": "non_text_field"},
-            ),
-        )
+        _unsupported(f"{field} contains a non-text Web field", field, unsupported_items=({"field": _diagnostic_field(field), "type": "non_text_field"},))
     unknown = sorted(set(value) - set(allowed))
     if unknown:
-        _unsupported(
-            f"{field} contains unregistered Web fields",
-            field,
-            unsupported_items=tuple(
-                {
-                    "field": f"{_diagnostic_field(field)}.{key}",
-                    "type": _structural_type(value[key]),
-                }
-                for key in unknown
-            ),
-        )
+        _unsupported(f"{field} contains unregistered Web fields", field, unsupported_items=tuple({"field": f"{_diagnostic_field(field)}.{key}", "type": _structural_type(value[key])} for key in unknown))
 
 
 def _diagnostic_field(field: str) -> str:
@@ -527,43 +560,19 @@ def _diagnostic_field(field: str) -> str:
 
 
 def _structural_type(value: Any) -> str:
+    checks = ((bool, "boolean"), (str, "text"), (Mapping, "object"), (Sequence, "array"), ((int, float), "number"))
     if value is _MISSING:
         return "missing"
     if value is None:
         return "null"
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, str):
-        return "text"
-    if isinstance(value, Mapping):
-        return "object"
-    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
-        return "array"
-    if isinstance(value, (int, float)):
-        return "number"
-    return "non_json"
+    if isinstance(value, bytes):
+        return "non_json"
+    return next((name for types, name in checks if isinstance(value, types)), "non_json")
 
 
-def _unsupported(
-    message: str,
-    field: str,
-    value: Any = _MISSING,
-    *,
-    unsupported_items: Sequence[Mapping[str, str]] | None = None,
-    next_action: str = "Keep this chart unsupported until the Web artifact contract is proven.",
-) -> None:
-    items = unsupported_items or (
-        {
-            "field": _diagnostic_field(field),
-            "type": _structural_type(value),
-        },
-    )
-    raise UnsupportedOperationError(
-        message,
-        field=field,
-        next_action=next_action,
-        unsupported_items=items,
-    )
+def _unsupported(message: str, field: str, value: Any = _MISSING, *, unsupported_items: Sequence[Mapping[str, str]] | None = None, next_action: str = "Keep this chart unsupported until the Web artifact contract is proven.") -> None:
+    items = unsupported_items or ({"field": _diagnostic_field(field), "type": _structural_type(value)},)
+    raise UnsupportedOperationError(message, field=field, next_action=next_action, unsupported_items=items)
 
 
 __all__ = [

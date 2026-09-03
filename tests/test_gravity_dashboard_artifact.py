@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from pathlib import Path
 
 from gravity_insight.dashboard_artifact import compile_dashboard_chart
 from gravity_insight.errors import (
@@ -20,6 +21,47 @@ def _event(name: str = "event") -> dict:
         "event_label": name,
         "event_name": name,
         "target": {"field": "PresetAllCount", "name": "PresetAllCount"},
+    }
+
+
+_FIRST_PAY_MARKER = {
+    "operator": "EQUALS",
+    "field": "$is_first_pay",
+    "type": "event",
+    "value": [True],
+}
+_REGISTRATION_DAY = {
+    "operator": "RELATIVE_DAY",
+    "field": "$UserCreateTime",
+    "type": "user",
+    "value": ["event", "$EventCreateTime", "0", "0"],
+}
+
+
+def _native_retention(conditions: list[dict]) -> dict:
+    before = _event("$PayEvent")
+    before["conditions"] = conditions
+    return {
+        "calculateBody": {
+            "app_id": 17,
+            "custom_before_method": "SUM",
+            "date_list": [
+                {"start_date": "2025-01-01", "end_date": "2025-01-02"}
+            ],
+            "group_by_list": [],
+            "offset": 7,
+            "period_calc_method": "SUM",
+            "property_condition": [],
+            "query_item_list": [before, _event("$MPLaunch")],
+            "user_cond_logic": "AND",
+            "user_filtering": {},
+            "user_re_attribute_filtering": {},
+        },
+        "cascaderInput": 7,
+        "cascaderValue": ["day", 7],
+        "filterCondition": "and",
+        "period_calc_method": "SUM",
+        "userFiltering": [],
     }
 
 
@@ -46,6 +88,182 @@ class _RejectingClient(_Client):
 
 
 class DashboardArtifactTests(unittest.TestCase):
+    def test_registration_day_payer_retention_keeps_its_own_denominator(self) -> None:
+        client = _Client()
+        conditions = [dict(_FIRST_PAY_MARKER), dict(_REGISTRATION_DAY)]
+
+        compile_dashboard_chart(
+            client,
+            {
+                "report_id": "registration-day",
+                "name": "registration-day payer D1",
+                "subject": "analysis_retention",
+                "config": _native_retention(conditions),
+            },
+            app_id=17,
+            start="2026-08-01",
+            end="2026-08-02",
+        )
+
+        inputs = client.calls[0][1]
+        self.assertEqual(conditions, inputs["query_item_list"][0]["conditions"])
+        self.assertEqual(
+            [{"start_date": "2026-08-01", "end_date": "2026-08-02"}],
+            inputs["date_list"],
+        )
+        self.assertEqual(7, inputs["offset"])
+
+    def test_first_payment_retention_keeps_disjoint_cohort_denominator(self) -> None:
+        client = _Client()
+        conditions = [dict(_FIRST_PAY_MARKER)]
+
+        compile_dashboard_chart(
+            client,
+            {
+                "report_id": "first-payment",
+                "name": "first-payment cohort return",
+                "subject": "analysis_retention",
+                "config": _native_retention(conditions),
+            },
+            app_id=17,
+            start="2026-08-01",
+            end="2026-08-02",
+        )
+
+        inputs = client.calls[0][1]
+        self.assertEqual(conditions, inputs["query_item_list"][0]["conditions"])
+        self.assertNotIn(
+            _REGISTRATION_DAY,
+            inputs["query_item_list"][0]["conditions"],
+        )
+        self.assertEqual("$PayEvent", inputs["query_item_list"][0]["event_name"])
+
+    def test_mutable_payer_and_unregistered_time_shapes_stay_unsupported(self) -> None:
+        mutable = _native_retention([{
+            "operator": "GREATER",
+            "field": "$pay_count",
+            "type": "user",
+            "value": ["0"],
+        }])
+        with self.assertRaises(UnsupportedOperationError) as captured:
+            compile_dashboard_chart(
+                _Client(),
+                {
+                    "report_id": "future-payer-leak",
+                    "name": "future payer leak",
+                    "subject": "analysis_retention",
+                    "config": mutable,
+                },
+                app_id=17,
+                start="2026-08-01",
+                end="2026-08-02",
+            )
+        self.assertEqual(
+            [
+                {"field": "report.config.filterCondition", "type": "text"},
+                {"field": "report.config.period_calc_method", "type": "text"},
+                {"field": "report.config.userFiltering", "type": "array"},
+            ],
+            captured.exception.to_error_detail().to_dict()["unsupported_items"],
+        )
+
+        custom_time = _native_retention([dict(_FIRST_PAY_MARKER)])
+        custom_time["calculateBody"]["extra_data"] = {
+            "client_server_time": "CLIENT"
+        }
+        with self.assertRaises(UnsupportedOperationError) as captured_time:
+            compile_dashboard_chart(
+                _Client(),
+                {
+                    "report_id": "custom-time",
+                    "name": "custom time",
+                    "subject": "analysis_retention",
+                    "config": custom_time,
+                },
+                app_id=17,
+                start="2026-08-01",
+                end="2026-08-02",
+            )
+        self.assertEqual(
+            [{
+                "field": "report.config.calculateBody.extra_data",
+                "type": "object",
+            }],
+            captured_time.exception.to_error_detail().to_dict()["unsupported_items"],
+        )
+
+    def test_event_native_comparison_and_custom_metric_are_preserved(self) -> None:
+        client = _Client()
+        custom_metric = {
+            "custom_name": "average duration",
+            "decimal_point": "2",
+            "event_index": 0,
+            "formula": "x1/x2",
+            "query_item_list": [_event("duration"), _event("users")],
+        }
+
+        compile_dashboard_chart(
+            client,
+            {
+                "report_id": "average-duration",
+                "name": "average duration",
+                "subject": "analysis_event",
+                "config": {
+                    "calculateBody": {
+                        "app_id": 17,
+                        "custom_query_item_list": [custom_metric],
+                        "date_list": [{
+                            "start_date": "2025-01-01",
+                            "end_date": "2025-01-02",
+                        }],
+                        "global_conditions": [],
+                        "group_by_list": [],
+                        "query_item_list": [],
+                    },
+                    "compareList": [{
+                        "date_list": {
+                            "date_list": ["2024-04-28", "2024-05-05"]
+                        },
+                        "kid": "comparison-1",
+                    }],
+                    "currentSelectCompare": 0,
+                    "date_list": [{
+                        "start_date": "2025-01-01",
+                        "end_date": "2025-01-02",
+                    }],
+                },
+            },
+            app_id=17,
+            start="2026-08-01",
+            end="2026-08-02",
+        )
+
+        inputs = client.calls[0][1]
+        self.assertEqual([custom_metric], inputs["custom_query_item_list"])
+        self.assertEqual(
+            [
+                {"start_date": "2026-08-01", "end_date": "2026-08-02"},
+                {"start_date": "2024-04-28", "end_date": "2024-05-05"},
+            ],
+            inputs["date_list"],
+        )
+
+    def test_saved_shape_evidence_fixture_is_value_free(self) -> None:
+        fixture = json.loads(
+            (Path(__file__).parent / "fixtures" / "saved_analysis_native_shapes.json")
+            .read_text(encoding="utf-8")
+        )
+        self.assertEqual(4, len(fixture["definitions"]))
+        for definition in fixture["definitions"]:
+            self.assertEqual({"subject", "error"}, set(definition))
+            self.assertEqual(
+                {"field", "unsupported_items", "unsupported_items_truncated"},
+                set(definition["error"]),
+            )
+            self.assertFalse(definition["error"]["unsupported_items_truncated"])
+            for item in definition["error"]["unsupported_items"]:
+                self.assertEqual({"field", "type"}, set(item))
+
     def test_five_subjects_compile_to_exact_stable_inputs(self) -> None:
         reports = {
             "analysis_event": {
