@@ -22,6 +22,7 @@ class QualityProfileCollectionTests(unittest.TestCase):
         stderr = io.StringIO()
         report = {
             "schema_version": "gravity.skill-method-complete-report.v1",
+            "source": {"manifest_count": 0, "sha256": "0" * 64},
             "summary": {},
             "skills": [],
         }
