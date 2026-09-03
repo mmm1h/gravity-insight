@@ -16,7 +16,7 @@ class ChangelogGateTests(unittest.TestCase):
     def test_repository_changelog_contract_passes(self) -> None:
         report = validate_changelog()
 
-        self.assertEqual("0.3.6", report.project_version)
+        self.assertEqual("0.3.7", report.project_version)
         self.assertEqual("0.3.7", report.target_version)
         self.assertEqual(
             ("0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2", "0.3.1"),
@@ -29,9 +29,9 @@ class ChangelogGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw:
             pyproject = Path(raw) / "pyproject.toml"
             source = PYPROJECT_PATH.read_text(encoding="utf-8")
-            self.assertIn('version = "0.3.6"', source)
+            self.assertIn('version = "0.3.7"', source)
             pyproject.write_text(
-                source.replace('version = "0.3.6"', 'version = "9.9.9"', 1),
+                source.replace('version = "0.3.7"', 'version = "9.9.9"', 1),
                 encoding="utf-8",
             )
 
