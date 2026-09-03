@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from functools import lru_cache
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -103,20 +103,53 @@ def evaluate_manifest(manifest: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=4)
+def _manifest_source_binding(
+    root: Path, manifests: Sequence[tuple[Path, Mapping[str, Any]]]
+) -> dict[str, Any]:
+    sources = [
+        {
+            "path": path.relative_to(root).as_posix(),
+            "manifest": manifest,
+        }
+        for path, manifest in manifests
+    ]
+    fingerprint = hashlib.sha256(
+        json.dumps(
+            sources,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        "manifest_glob": "skills/library/*.json",
+        "manifest_count": len(sources),
+        "manifest_set_sha256": fingerprint,
+        "generation": "recomputed_from_current_manifests_on_each_invocation",
+    }
+
+
 def library_report(root: Path) -> dict[str, Any]:
     from gravity_insight.agent_runtime_contracts import load_json_object
     from gravity_insight.skill_contract import compile_skill_manifest
 
-    source = root.resolve() / "skills" / "library"
+    root = root.resolve()
+    source = root / "skills" / "library"
+    manifests = [
+        (
+            path,
+            load_json_object(path, f"canonical Skill {path.name}"),
+        )
+        for path in sorted(source.glob("*.json"))
+    ]
     rows = [
         evaluate_manifest(
             compile_skill_manifest(
-                load_json_object(path, f"canonical Skill {path.name}"),
+                manifest,
                 label=f"canonical Skill {path.name}",
             )
         )
-        for path in sorted(source.glob("*.json"))
+        for path, manifest in manifests
     ]
     if not rows:
         raise ValueError(f"canonical Skill library is empty: {source}")
@@ -132,6 +165,7 @@ def library_report(root: Path) -> dict[str, Any]:
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "definition": "Method Complete measures method-document completeness; execution readiness and dependency availability remain separate fail-closed states.",
+        "source": _manifest_source_binding(root, manifests),
         "criteria": [
             {
                 "item": item.item,
@@ -156,6 +190,7 @@ def library_report(root: Path) -> dict[str, Any]:
 def compact_report(report: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "schema_version": report["schema_version"],
+        "source": report["source"],
         "summary": report["summary"],
         "skills": [
             {
