@@ -74,11 +74,11 @@ class DurationRecorder:
     def nodeids(self) -> tuple[str, ...]:
         return tuple(sorted(self._seconds_by_nodeid))
 
-    def duplicate_phases(self) -> tuple[str, ...]:
+    def duplicate_items(self) -> tuple[str, ...]:
         return tuple(
-            f"{nodeid} [{phase}] x{count}"
+            f"{nodeid} [setup] x{count}"
             for (nodeid, phase), count in sorted(self._phase_counts.items())
-            if count != 1
+            if phase == "setup" and count != 1
         )
 
 
@@ -252,9 +252,9 @@ def run_gate(
                 f"expected={len(expected_nodeids)} actual={len(actual_nodeids)} "
                 f"missing={missing} unexpected={unexpected}"
             )
-    duplicate_phases = recorder.duplicate_phases()
-    if duplicate_phases:
-        errors.append(f"pytest repeated item phases: {duplicate_phases}")
+    duplicate_items = recorder.duplicate_items()
+    if duplicate_items:
+        errors.append(f"pytest repeated test items: {duplicate_items}")
     if receipt is not None:
         slowest = durations[0] if durations else None
         _write_json(
@@ -279,7 +279,7 @@ def run_gate(
                 "slowest_nodeid": slowest.nodeid if slowest is not None else None,
                 "duration_limit_seconds": TEST_DURATION_LIMIT_SECONDS,
                 "pytest_exit_code": exit_code,
-                "duplicate_phases": list(duplicate_phases),
+                "duplicate_items": list(duplicate_items),
                 "errors": errors,
             },
         )

@@ -393,6 +393,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         wheel312 = ci_job("installed_wheel_linux_python312")
         self.assertIn("runs-on: windows-latest", windows)
         self.assertIn('python-version: "3.11"', windows)
+        self.assertIn("fetch-depth: 0", windows)
         self.assertIn("Run complete Windows test shard with duration budget", windows)
         self.assertIn("shard: [1, 2, 3, 4]", windows)
         self.assertIn("--shard-count 4", windows)
@@ -401,6 +402,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         for job, version in ((linux311, "3.11"), (linux312, "3.12")):
             self.assertIn("runs-on: ubuntu-latest", job)
             self.assertIn(f'python-version: "{version}"', job)
+            self.assertIn("fetch-depth: 0", job)
             self.assertIn("python -m pytest -q", job)
         self.assertIn("runs-on: ubuntu-latest", wheel312)
         self.assertIn('python-version: "3.12"', wheel312)
