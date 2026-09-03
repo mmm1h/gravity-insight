@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib, json, os, subprocess, sys, tempfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-import sys
 from typing import Any, TextIO
 
 import pytest
@@ -35,6 +35,9 @@ MAX_SINGLE_TEST_JOB_SHARE = TEST_DURATION_LIMIT_SECONDS / CI_JOB_TIMEOUT_SECONDS
 # Match direct developer runs and integrated validation. Repository tree readers
 # and writers still coordinate through the shared cross-process test gate.
 PYTEST_ARGUMENTS = ("-q", "-n", "auto", "--dist", "load")
+PYTEST_COLLECTION_ARGUMENTS = ("--collect-only", "-q", "-n", "0")
+SHARD_RECEIPT_SCHEMA = "gravity.pytest-shard-receipt.v1"
+SHARD_AUDIT_SCHEMA = "gravity.pytest-shard-audit.v1"
 
 
 @dataclass(frozen=True)
@@ -48,10 +51,13 @@ class DurationRecorder:
 
     def __init__(self) -> None:
         self._seconds_by_nodeid: dict[str, float] = {}
+        self._phase_counts: dict[tuple[str, str], int] = {}
 
     def pytest_runtest_logreport(self, report: Any) -> None:
         if report.when not in {"setup", "call", "teardown"}:
             return
+        key = (report.nodeid, report.when)
+        self._phase_counts[key] = self._phase_counts.get(key, 0) + 1
         self._seconds_by_nodeid[report.nodeid] = (
             self._seconds_by_nodeid.get(report.nodeid, 0.0) + report.duration
         )
@@ -64,6 +70,118 @@ class DurationRecorder:
                 key=lambda item: (-item[1], item[0]),
             )
         )
+
+    def nodeids(self) -> tuple[str, ...]:
+        return tuple(sorted(self._seconds_by_nodeid))
+
+    def duplicate_items(self) -> tuple[str, ...]:
+        return tuple(
+            f"{nodeid} [setup] x{count}"
+            for (nodeid, phase), count in sorted(self._phase_counts.items())
+            if phase == "setup" and count != 1
+        )
+
+
+class CollectionRecorder:
+    """Capture the exact item identities from one non-xdist collection."""
+
+    def __init__(self) -> None:
+        self.nodeids: tuple[str, ...] = ()
+
+    def pytest_collection_finish(self, session: Any) -> None:
+        self.nodeids = tuple(item.nodeid for item in session.items)
+
+
+def _duplicates(values: Sequence[str]) -> tuple[str, ...]:
+    counts: dict[str, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return tuple(sorted(value for value, count in counts.items() if count != 1))
+
+
+def _nodeids_sha256(values: Sequence[str]) -> str:
+    payload = "".join(f"{value}\n" for value in sorted(values)).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def collect_nodeids(
+    targets: Sequence[str],
+    *,
+    pytest_runner: Callable[..., int | pytest.ExitCode] = pytest.main,
+) -> tuple[int, tuple[str, ...], tuple[str, ...]]:
+    recorder = CollectionRecorder()
+    exit_code = int(
+        pytest_runner(
+            [*PYTEST_COLLECTION_ARGUMENTS, *(targets or ("tests",))],
+            plugins=[recorder],
+        )
+    )
+    duplicates = _duplicates(recorder.nodeids)
+    errors: list[str] = []
+    if exit_code != int(pytest.ExitCode.OK):
+        errors.append(f"pytest collection exit_code={exit_code}")
+    if not recorder.nodeids:
+        errors.append("pytest collection returned zero test items")
+    if duplicates:
+        errors.append(f"pytest collection contains duplicate nodeids: {duplicates}")
+    return exit_code, recorder.nodeids, tuple(errors)
+
+
+def partition_nodeids(
+    nodeids: Sequence[str], shard_count: int
+) -> tuple[tuple[str, ...], ...]:
+    if shard_count < 1:
+        raise ValueError("shard_count must be at least 1")
+    if shard_count > len(nodeids):
+        raise ValueError("shard_count cannot exceed the collected item count")
+    ordered = sorted(nodeids)
+    return tuple(tuple(ordered[index::shard_count]) for index in range(shard_count))
+
+
+def _collect_in_subprocess(targets: Sequence[str]) -> tuple[str, ...]:
+    temporary_parent = ROOT / "tmp"
+    temporary_parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix="pytest-shard-collection-", dir=temporary_parent
+    ) as raw:
+        output = Path(raw) / "collection.json"
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).resolve()),
+                "--write-collection",
+                str(output),
+                *(targets or ("tests",)),
+            ],
+            cwd=ROOT,
+            env=os.environ.copy(),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if completed.returncode != 0 or not output.is_file():
+            detail = (completed.stdout + completed.stderr).strip()
+            raise ValueError(f"pytest shard collection failed: {detail}")
+        payload = json.loads(output.read_text(encoding="utf-8"))
+    errors = payload.get("errors")
+    nodeids = payload.get("nodeids")
+    if errors or not isinstance(nodeids, list) or not all(
+        isinstance(value, str) and value for value in nodeids
+    ):
+        raise ValueError(f"pytest shard collection receipt is invalid: {payload}")
+    print(
+        "pytest shard collection: "
+        f"items={len(nodeids)} sha256={_nodeids_sha256(nodeids)}"
+    )
+    return tuple(nodeids)
 
 
 def duration_budget_errors(
@@ -84,6 +202,11 @@ def run_gate(
     *,
     pytest_runner: Callable[..., int | pytest.ExitCode] = pytest.main,
     stream: TextIO = sys.stdout,
+    expected_nodeids: Sequence[str] = (),
+    collected_nodeids: Sequence[str] = (),
+    shard_index: int | None = None,
+    shard_count: int | None = None,
+    receipt: Path | None = None,
 ) -> int:
     recorder = DurationRecorder()
     exit_code = int(
@@ -110,6 +233,7 @@ def run_gate(
             file=stream,
         )
 
+    actual_nodeids = recorder.nodeids()
     errors = list(duration_budget_errors(durations))
     if exit_code != int(pytest.ExitCode.OK):
         errors.append(
@@ -117,6 +241,48 @@ def run_gate(
         )
     if not durations:
         errors.append("pytest produced no per-test duration reports")
+    if expected_nodeids:
+        expected = set(expected_nodeids)
+        actual = set(actual_nodeids)
+        missing = sorted(expected - actual)
+        unexpected = sorted(actual - expected)
+        if len(actual_nodeids) != len(expected_nodeids) or missing or unexpected:
+            errors.append(
+                "pytest executed nodeids differ from the assigned shard: "
+                f"expected={len(expected_nodeids)} actual={len(actual_nodeids)} "
+                f"missing={missing} unexpected={unexpected}"
+            )
+    duplicate_items = recorder.duplicate_items()
+    if duplicate_items:
+        errors.append(f"pytest repeated test items: {duplicate_items}")
+    if receipt is not None:
+        slowest = durations[0] if durations else None
+        _write_json(
+            receipt,
+            {
+                "schema_version": SHARD_RECEIPT_SCHEMA,
+                "status": "passed" if not errors else "failed",
+                "shard_index": shard_index,
+                "shard_count": shard_count,
+                "collection_count": len(collected_nodeids),
+                "collection_sha256": _nodeids_sha256(collected_nodeids),
+                "collected_nodeids": sorted(collected_nodeids),
+                "selected_count": len(expected_nodeids),
+                "selected_sha256": _nodeids_sha256(expected_nodeids),
+                "selected_nodeids": sorted(expected_nodeids),
+                "actual_count": len(actual_nodeids),
+                "actual_sha256": _nodeids_sha256(actual_nodeids),
+                "actual_nodeids": list(actual_nodeids),
+                "max_test_duration_seconds": (
+                    round(slowest.seconds, 6) if slowest is not None else None
+                ),
+                "slowest_nodeid": slowest.nodeid if slowest is not None else None,
+                "duration_limit_seconds": TEST_DURATION_LIMIT_SECONDS,
+                "pytest_exit_code": exit_code,
+                "duplicate_items": list(duplicate_items),
+                "errors": errors,
+            },
+        )
     if errors:
         for error in errors:
             print(f"FAIL P1 test-duration-budget: {error}", file=stream)
@@ -129,8 +295,147 @@ def run_gate(
     return 0
 
 
+def _string_list(payload: dict[str, Any], key: str) -> tuple[str, ...] | None:
+    value = payload.get(key)
+    if not isinstance(value, list) or not all(
+        isinstance(item, str) and item for item in value
+    ):
+        return None
+    return tuple(value)
+
+
+def audit_shard_receipts(
+    receipt_root: Path, expected_shards: int
+) -> tuple[dict[str, Any], tuple[str, ...]]:
+    if expected_shards < 1:
+        raise ValueError("expected_shards must be at least 1")
+    paths = sorted(receipt_root.rglob("pytest-shard-*.json"))
+    errors: list[str] = []
+    payloads: dict[int, dict[str, Any]] = {}
+    for path in paths:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"cannot read shard receipt {path}: {exc}")
+            continue
+        if not isinstance(payload, dict):
+            errors.append(f"shard receipt is not an object: {path}")
+            continue
+        if payload.get("schema_version") != SHARD_RECEIPT_SCHEMA:
+            errors.append(f"shard receipt schema is invalid: {path}")
+            continue
+        index = payload.get("shard_index")
+        if not isinstance(index, int) or not 1 <= index <= expected_shards:
+            errors.append(f"shard receipt index is invalid: {path}: {index!r}")
+            continue
+        if index in payloads:
+            errors.append(f"duplicate receipt for shard {index}: {path}")
+            continue
+        payloads[index] = payload
+
+    expected_indices = set(range(1, expected_shards + 1))
+    missing_indices = sorted(expected_indices - set(payloads))
+    unexpected_indices = sorted(set(payloads) - expected_indices)
+    if missing_indices or unexpected_indices:
+        errors.append(
+            "shard receipt index set mismatch: "
+            f"missing={missing_indices} unexpected={unexpected_indices}"
+        )
+
+    canonical: tuple[str, ...] = ()
+    selected_by_index: dict[int, tuple[str, ...]] = {}
+    actual_by_index: dict[int, tuple[str, ...]] = {}
+    for index, payload in sorted(payloads.items()):
+        collected = _string_list(payload, "collected_nodeids")
+        selected = _string_list(payload, "selected_nodeids")
+        actual = _string_list(payload, "actual_nodeids")
+        if collected is None or selected is None or actual is None:
+            errors.append(f"shard {index} receipt has an invalid nodeid list")
+            continue
+        if payload.get("shard_count") != expected_shards:
+            errors.append(
+                f"shard {index} count mismatch: "
+                f"expected={expected_shards} actual={payload.get('shard_count')!r}"
+            )
+        if payload.get("status") != "passed" or payload.get("errors"):
+            errors.append(f"shard {index} did not produce a clean passing receipt")
+        if _duplicates(collected):
+            errors.append(f"shard {index} collected duplicate nodeids")
+        if not canonical:
+            canonical = collected
+        elif collected != canonical:
+            errors.append(f"shard {index} collection differs from shard 1")
+        selected_by_index[index] = selected
+        actual_by_index[index] = actual
+
+    if canonical and len(payloads) == expected_shards:
+        expected_partitions = partition_nodeids(canonical, expected_shards)
+        for index, expected in enumerate(expected_partitions, 1):
+            selected = selected_by_index.get(index, ())
+            actual = actual_by_index.get(index, ())
+            if selected != expected:
+                missing = sorted(set(expected) - set(selected))
+                unexpected = sorted(set(selected) - set(expected))
+                errors.append(
+                    f"shard {index} partition mismatch: "
+                    f"missing={missing} unexpected={unexpected}"
+                )
+            if actual != selected:
+                missing = sorted(set(selected) - set(actual))
+                unexpected = sorted(set(actual) - set(selected))
+                errors.append(
+                    f"shard {index} execution mismatch: "
+                    f"missing={missing} unexpected={unexpected}"
+                )
+
+        selected_all = [
+            nodeid
+            for index in sorted(selected_by_index)
+            for nodeid in selected_by_index[index]
+        ]
+        actual_all = [
+            nodeid
+            for index in sorted(actual_by_index)
+            for nodeid in actual_by_index[index]
+        ]
+        for label, observed in (("selected", selected_all), ("actual", actual_all)):
+            missing = sorted(set(canonical) - set(observed))
+            unexpected = sorted(set(observed) - set(canonical))
+            duplicates = _duplicates(observed)
+            if len(observed) != len(canonical) or missing or unexpected or duplicates:
+                errors.append(
+                    f"{label} union does not conserve the full collection: "
+                    f"collection={len(canonical)} {label}={len(observed)} "
+                    f"missing={missing} unexpected={unexpected} "
+                    f"duplicates={list(duplicates)}"
+                )
+
+    summary = {
+        "schema_version": SHARD_AUDIT_SCHEMA,
+        "status": "passed" if not errors else "failed",
+        "expected_shards": expected_shards,
+        "receipt_count": len(payloads),
+        "collection_count": len(canonical),
+        "collection_sha256": _nodeids_sha256(canonical),
+        "selected_total": sum(len(value) for value in selected_by_index.values()),
+        "actual_total": sum(len(value) for value in actual_by_index.values()),
+        "shard_selected_counts": {
+            str(index): len(value) for index, value in sorted(selected_by_index.items())
+        },
+        "errors": errors,
+    }
+    return summary, tuple(errors)
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--shard-index", type=int)
+    parser.add_argument("--shard-count", type=int)
+    parser.add_argument("--receipt", type=Path)
+    parser.add_argument("--audit-receipts", type=Path)
+    parser.add_argument("--expected-shards", type=int)
+    parser.add_argument("--audit-output", type=Path)
+    parser.add_argument("--write-collection", type=Path, help=argparse.SUPPRESS)
     parser.add_argument(
         "targets",
         nargs="*",
@@ -141,6 +446,82 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.write_collection is not None:
+        exit_code, nodeids, errors = collect_nodeids(args.targets)
+        _write_json(
+            args.write_collection,
+            {
+                "pytest_exit_code": exit_code,
+                "nodeid_count": len(nodeids),
+                "nodeids_sha256": _nodeids_sha256(nodeids),
+                "nodeids": list(nodeids),
+                "errors": list(errors),
+            },
+        )
+        return 1 if errors else 0
+
+    if args.audit_receipts is not None:
+        if args.expected_shards is None or args.audit_output is None:
+            print(
+                "--audit-receipts requires --expected-shards and --audit-output",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            summary, errors = audit_shard_receipts(
+                args.audit_receipts.resolve(), args.expected_shards
+            )
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            print(f"pytest shard audit failed closed: {exc}", file=sys.stderr)
+            return 2
+        _write_json(args.audit_output, summary)
+        if errors:
+            for error in errors:
+                print(f"FAIL pytest-shard-audit: {error}", file=sys.stderr)
+            return 1
+        print(
+            "PASS pytest-shard-audit: "
+            f"shards={summary['receipt_count']} "
+            f"collected={summary['collection_count']} "
+            f"selected={summary['selected_total']} actual={summary['actual_total']} "
+            f"sha256={summary['collection_sha256']}"
+        )
+        return 0
+
+    shard_options = (args.shard_index, args.shard_count, args.receipt)
+    if any(value is not None for value in shard_options):
+        if any(value is None for value in shard_options):
+            print(
+                "sharded runs require --shard-index, --shard-count, and --receipt",
+                file=sys.stderr,
+            )
+            return 2
+        assert args.shard_index is not None
+        assert args.shard_count is not None
+        assert args.receipt is not None
+        if not 1 <= args.shard_index <= args.shard_count:
+            print("--shard-index must be between 1 and --shard-count", file=sys.stderr)
+            return 2
+        try:
+            collected = _collect_in_subprocess(args.targets)
+            partitions = partition_nodeids(collected, args.shard_count)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            print(f"pytest sharding failed closed: {exc}", file=sys.stderr)
+            return 2
+        selected = partitions[args.shard_index - 1]
+        print(
+            f"pytest shard {args.shard_index}/{args.shard_count}: "
+            f"selected={len(selected)} sha256={_nodeids_sha256(selected)}"
+        )
+        return run_gate(
+            selected,
+            expected_nodeids=selected,
+            collected_nodeids=collected,
+            shard_index=args.shard_index,
+            shard_count=args.shard_count,
+            receipt=args.receipt,
+        )
+
     return run_gate(args.targets)
 
 

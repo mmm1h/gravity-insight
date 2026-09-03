@@ -137,6 +137,13 @@ class DashboardAnalysisTests(unittest.TestCase):
         self.assertEqual("prepared", result["status"])
         self.assertFalse(result["query_executed"])
         self.assertEqual([], client.batch_calls)
+        self.assertEqual(
+            [{"field": "report.subject", "type": "text"}],
+            result["charts"][1]["error"]["unsupported_items"],
+        )
+        self.assertFalse(
+            result["charts"][1]["error"]["unsupported_items_truncated"]
+        )
         encoded = json.dumps(result).casefold()
         for forbidden in ("calculatebody", "query_item_list", "login", "compiled_input"):
             self.assertNotIn(forbidden, encoded)

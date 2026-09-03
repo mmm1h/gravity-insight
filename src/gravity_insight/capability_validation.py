@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import re
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
@@ -52,6 +53,19 @@ class CapabilityValidationStore:
         )
         self._loaded: dict[tuple[str, str], dict[str, Any]] | None = None
 
+    @classmethod
+    def for_current_principal(cls) -> "CapabilityValidationStore":
+        """Bind persisted Validation to the current credential generation."""
+
+        from .runtime_scope import resolve_env_path, scope_workspace
+        from .workspace import load_workspace
+
+        env_path, isolated = resolve_env_path()
+        workspace = scope_workspace(
+            load_workspace(), env_path, isolated=isolated
+        )
+        return cls(workspace.state_root, scope_bound=True)
+
     def get(self, identity_kind: str, selector: str) -> dict[str, Any] | None:
         selected = self._values().get((identity_kind, selector))
         return copy.deepcopy(selected) if selected is not None else None
@@ -61,6 +75,52 @@ class CapabilityValidationStore:
             copy.deepcopy(value)
             for _, value in sorted(self._values().items(), key=lambda item: item[0])
         )
+
+    def upsert(self, values: Sequence[Mapping[str, Any]]) -> Path:
+        """Atomically merge validated entries into this scoped private store."""
+
+        if self._provided is not None or not self._scope_bound or self._state_root is None:
+            raise CapabilityValidationError(
+                "Capability Validation writes require a principal-scoped store"
+            )
+        additions: dict[tuple[str, str], dict[str, Any]] = {}
+        for value in values:
+            selected = validate_capability_validation(value)
+            key = validation_identity(selected)
+            if key in additions:
+                raise CapabilityValidationError(
+                    "Capability Validation upsert identity is duplicated"
+                )
+            additions[key] = selected
+        merged = {
+            validation_identity(value): value
+            for value in self.list()
+        }
+        merged.update(additions)
+        document = {
+            "schema_version": STORE_SCHEMA_VERSION,
+            "validations": [
+                copy.deepcopy(value)
+                for _, value in sorted(merged.items(), key=lambda item: item[0])
+            ],
+        }
+        target = self._state_root / STORE_RELATIVE_PATH
+        from .result_output import write_rendered_result
+
+        write_rendered_result(
+            str(target),
+            json.dumps(
+                document,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+        )
+        self._loaded = {
+            key: copy.deepcopy(value) for key, value in merged.items()
+        }
+        return target
 
     def _values(self) -> dict[tuple[str, str], dict[str, Any]]:
         if self._loaded is not None:

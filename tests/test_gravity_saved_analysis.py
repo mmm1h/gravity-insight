@@ -11,6 +11,7 @@ from gravity_insight.errors import (
     InputValidationError,
     PaginationError,
     UnsupportedOperationError,
+    error_envelope,
 )
 from gravity_insight.saved_analysis import (
     GET_OPERATION_ID,
@@ -19,6 +20,7 @@ from gravity_insight.saved_analysis import (
     execute_saved_analysis,
     inspect_saved_analysis,
     list_saved_analyses,
+    prepare_saved_analysis,
     resolve_saved_analysis,
 )
 from gravity_insight.saved_analysis_result import saved_result_item_count
@@ -383,6 +385,48 @@ class SavedAnalysisTests(unittest.TestCase):
         self.assertNotIn("must-not-leak", encoded)
         self.assertNotIn("calculateBody", encoded)
         self.assertIsNone(result["result"]["data"])
+
+    def test_catalog_prepare_exposes_only_unsupported_paths_and_types(self) -> None:
+        bad = web_definition()
+        bad["config"]["formulaControl"] = {
+            "expression": "tenant-secret-formula-value"
+        }
+        client = Client(
+            [{key: value for key, value in bad.items() if key != "config"}]
+        )
+
+        def read(operation_id: str, inputs: dict[str, Any]) -> dict[str, Any]:
+            client.calls.append(("read", operation_id, inputs))
+            return {
+                "status": "success",
+                "data": {
+                    "name": bad["name"],
+                    "config": json.dumps(bad["config"]),
+                },
+                "error": None,
+            }
+
+        client.read = read
+        with self.assertRaises(UnsupportedOperationError) as captured:
+            prepare_saved_analysis(
+                client,
+                reference=bad["id"],
+                app="main",
+                workspace=workspace(),
+                start="2026-08-01",
+                end="2026-08-07",
+            )
+
+        detail = error_envelope(captured.exception)["error"]
+        self.assertEqual("UNSUPPORTED", detail["code"])
+        self.assertEqual("local", detail["category"])
+        self.assertEqual("report.config", detail["field"])
+        self.assertEqual(
+            [{"field": "report.config.formulaControl", "type": "object"}],
+            detail["unsupported_items"],
+        )
+        self.assertNotIn("tenant-secret-formula-value", json.dumps(detail))
+        self.assertFalse(any(call[0] == "validate" for call in client.calls))
 
 
 if __name__ == "__main__":
