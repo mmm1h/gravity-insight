@@ -125,7 +125,10 @@ class CapabilityValidationTests(unittest.TestCase):
 
     def test_scoped_upsert_is_atomic_and_unscoped_write_fails(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            # The store resolves its state root, so compare against a resolved
+            # path: Windows shortens long user names to 8.3 form (RUNNER~1) in
+            # temp paths, and an unresolved expectation fails only there.
+            root = Path(temporary).resolve()
             scoped = CapabilityValidationStore(root, scope_bound=True)
 
             path = scoped.upsert([validation()])
