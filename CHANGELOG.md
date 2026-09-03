@@ -19,6 +19,14 @@ Target release: `0.3.7`
 
 - None.
 
+### Added
+
+- Capability Trust and Data Quality can now be established from real read-only
+  execution instead of remaining permanently `unknown`. Each validation binds an
+  exact-operation HTTP receipt and six non-empty checks (receipt, semantic status,
+  non-empty result, schema/type, freshness, no drift), and expires after 24 hours
+  so a stale pass can never stand in for a current one.
+
 ### Fixed
 
 - `gravity maturity score` no longer reports the correctness/surface-parity and
