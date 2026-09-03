@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "7ad384363c631c95313c9c1067664bb78ab5ad57a4ba72c32f0fc7d54c48d9e7",
-    "manual_review_sha256": "e5cfc1124e2ded562244713b3cb91561468fad4f4b5d8244f3f54fa373e45144",
+    "reference_evidence_sha256": "91955d1ac9484d6ef9dd3da435852c73c478126a39592f4d57efe78f9f858259",
+    "manual_review_sha256": "282903be7191d7cc8aae29a6ba10961194d81d2a9f17c8684ede5171bdded6d2",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3101,
     "scanned_file_count": 3094,
@@ -684,7 +684,7 @@
     "dispositions": {
       "no_migration_effect": 279
     },
-    "sites_sha256": "8f2220e9659092e7f08df6a94c0f6ff851f542f15459c1d310bca9ee72cd1869"
+    "sites_sha256": "b9c3a47564e9b35367c1c1bc7e23d925455169ed52834e8181d25a4032a8df14"
   },
   "blockers": [],
   "site_fields": [
@@ -1902,7 +1902,7 @@
       }
     ],
     [
-      "src/gravity_insight/error_models.py:315:5:__module__",
+      "src/gravity_insight/error_models.py:364:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",
@@ -1932,7 +1932,7 @@
       }
     ],
     [
-      "src/gravity_insight/error_types.py:182:5:__module__",
+      "src/gravity_insight/error_types.py:267:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",

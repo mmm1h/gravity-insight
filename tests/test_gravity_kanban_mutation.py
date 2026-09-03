@@ -10,9 +10,27 @@ from gravity_insight.agents.kanban_mutation import (
     kanban_mutation_cards,
 )
 from gravity_insight.cli import build_parser
-from gravity_insight.errors import InputValidationError, MutationReadbackError
+from gravity_insight.errors import (
+    InputValidationError,
+    MutationReadbackError,
+    error_envelope,
+)
+from gravity_insight.kanban_dashboard_mutation import (
+    copy_dashboard,
+    create_dashboard,
+    move_dashboard,
+    move_dashboard_to_folder,
+)
 from gravity_insight.kanban_folder_mutation import delete_folder, rename_folder
-from gravity_insight.kanban_mutation_contracts import DASHBOARD_UPDATE, REPORT_UNLINK
+from gravity_insight.kanban_mutation_contracts import (
+    DASHBOARD_COPY,
+    DASHBOARD_CREATE,
+    DASHBOARD_FOLDER_MOVE,
+    DASHBOARD_MOVE,
+    DASHBOARD_UPDATE,
+    DETAIL,
+    REPORT_UNLINK,
+)
 from gravity_insight.kanban_space_mutation import delete_space, rename_space
 from gravity_insight.plan import AdapterContext
 from gravity_insight.plan_kanban_mutation_adapter import validate_kanban_plan
@@ -178,7 +196,266 @@ class _LinkClient:
         }
 
 
+class _DashboardHierarchyClient:
+    def __init__(self, *, create_fault: str | None = None) -> None:
+        self.create_fault = create_fault
+        self.writes: list[tuple[str, dict]] = []
+        self.next_dashboard_id = 600
+        self.tree = [
+            {
+                "id": 100,
+                "name": f"Personal | {MARKER}",
+                "folder_or_dashboard": [
+                    {
+                        "id": -1,
+                        "name": "ungrouped",
+                        "is_folder": True,
+                        "space_id": 100,
+                        "dashboards": [
+                            {
+                                "id": 555,
+                                "name": f"Ungrouped source | {MARKER}",
+                                "space_id": 100,
+                                "folder_id": 0,
+                            }
+                        ],
+                    },
+                    {
+                        "id": 200,
+                        "name": f"Folder A | {MARKER}",
+                        "is_folder": True,
+                        "space_id": 100,
+                        "dashboards": [
+                            {
+                                "id": 556,
+                                "name": f"Grouped source | {MARKER}",
+                                "space_id": 100,
+                                "folder_id": 200,
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "id": 101,
+                "name": f"Destination | {MARKER}",
+                "folder_or_dashboard": [
+                    {
+                        "id": -1,
+                        "name": "ungrouped",
+                        "is_folder": True,
+                        "space_id": 101,
+                        "dashboards": [],
+                    },
+                    {
+                        "id": 201,
+                        "name": f"Folder B | {MARKER}",
+                        "is_folder": True,
+                        "space_id": 101,
+                        "dashboards": [],
+                    },
+                ],
+            },
+        ]
+
+    def _preview_mutation(self, operation_id, inputs):
+        return {
+            "ok": True,
+            "operation_id": operation_id,
+            "request": {"inputs": copy.deepcopy(inputs)},
+            "network_called": False,
+        }
+
+    def _execute_mutation(self, operation_id, inputs):
+        selected = copy.deepcopy(inputs)
+        self.writes.append((operation_id, selected))
+        if operation_id in {DASHBOARD_CREATE, DASHBOARD_COPY}:
+            destination_space = (
+                selected["space_id"]
+                if operation_id == DASHBOARD_CREATE
+                else selected["to_space_id"]
+            )
+            destination_folder = selected.get(
+                "folder_id" if operation_id == DASHBOARD_CREATE else "to_folder_id",
+                0,
+            )
+            if self.create_fault == "wrong_folder":
+                destination_folder = 200
+            elif self.create_fault == "wrong_space":
+                destination_space = 101
+            self._append_dashboard(
+                destination_space,
+                destination_folder,
+                {
+                    "id": self.next_dashboard_id,
+                    "name": selected["name"],
+                    "space_id": destination_space,
+                    "folder_id": destination_folder,
+                },
+            )
+            self.next_dashboard_id += 1
+        elif operation_id == DASHBOARD_FOLDER_MOVE:
+            dashboard = self._remove_dashboard(selected["dashboard_id"])
+            dashboard["space_id"] = selected["space_id"]
+            dashboard["folder_id"] = selected["folder_id"]
+            self._append_dashboard(
+                selected["space_id"], selected["folder_id"], dashboard
+            )
+        elif operation_id == DASHBOARD_MOVE:
+            dashboard_id = selected["dashboards"][0]["dashboard_id"]
+            dashboard = self._remove_dashboard(dashboard_id)
+            dashboard["space_id"] = selected["to_space_id"]
+            dashboard["folder_id"] = selected.get("to_folder_id", 0)
+            self._append_dashboard(
+                selected["to_space_id"], selected.get("to_folder_id", 0), dashboard
+            )
+        return {
+            "ok": True,
+            "status": "success",
+            "operation_id": operation_id,
+            "attempts": 1,
+            "unsafe_extra": {"must_not": "escape"},
+        }
+
+    def read(self, operation_id, inputs):
+        if operation_id == DETAIL:
+            dashboard = self._find_dashboard(int(inputs["id"]))
+            return {
+                "ok": True,
+                "status": "success",
+                "data": {
+                    **copy.deepcopy(dashboard),
+                    "ui_config": "[]",
+                    "even_report": [],
+                },
+            }
+        return {
+            "ok": True,
+            "status": "success",
+            "data": copy.deepcopy(self.tree),
+        }
+
+    def _append_dashboard(self, space_id: int, folder_id: int, dashboard: dict) -> None:
+        space = next(item for item in self.tree if item["id"] == space_id)
+        tree_folder_id = -1 if folder_id == 0 else folder_id
+        folder = next(
+            item
+            for item in space["folder_or_dashboard"]
+            if item["id"] == tree_folder_id
+        )
+        folder["dashboards"].append(dashboard)
+
+    def _find_dashboard(self, dashboard_id: int) -> dict:
+        for space in self.tree:
+            for folder in space["folder_or_dashboard"]:
+                for dashboard in folder["dashboards"]:
+                    if dashboard["id"] == dashboard_id:
+                        return dashboard
+        raise AssertionError(f"dashboard {dashboard_id} is missing")
+
+    def _remove_dashboard(self, dashboard_id: int) -> dict:
+        dashboard = self._find_dashboard(dashboard_id)
+        for space in self.tree:
+            for folder in space["folder_or_dashboard"]:
+                if dashboard in folder["dashboards"]:
+                    folder["dashboards"].remove(dashboard)
+                    return dashboard
+        raise AssertionError(f"dashboard {dashboard_id} is missing")
+
+
 class GravityKanbanMutationTests(unittest.TestCase):
+    def test_ungrouped_dashboard_create_and_copy_round_trip(self) -> None:
+        create_client = _DashboardHierarchyClient()
+        created = create_dashboard(
+            create_client,
+            app_id=1,
+            space_id=100,
+            folder_id=0,
+            name="created",
+            idempotency_key="create-ungrouped",
+            execute=True,
+        )
+        copy_client = _DashboardHierarchyClient()
+        copied = copy_dashboard(
+            copy_client,
+            app_id=1,
+            dashboard_id=555,
+            from_space_id=100,
+            to_space_id=100,
+            to_folder_id=0,
+            name="copied",
+            idempotency_key="copy-ungrouped",
+            execute=True,
+        )
+
+        self.assertEqual(("created", None), (created["status"], created["target"]["folder_id"]))
+        self.assertEqual(("copied", None), (copied["status"], copied["target"]["folder_id"]))
+        self.assertEqual(0, create_client.writes[0][1]["folder_id"])
+        self.assertNotIn("to_folder_id", copy_client.writes[0][1])
+
+    def test_dashboard_moves_to_and_from_ungrouped_round_trip(self) -> None:
+        client = _DashboardHierarchyClient()
+
+        ungrouped = move_dashboard_to_folder(
+            client,
+            app_id=1,
+            space_id=100,
+            dashboard_id=556,
+            folder_id=0,
+            execute=True,
+        )
+        regrouped = move_dashboard(
+            client,
+            app_id=1,
+            dashboard_id=555,
+            from_space_id=100,
+            to_space_id=101,
+            to_folder_id=201,
+            execute=True,
+        )
+
+        self.assertEqual((100, None), (
+            ungrouped["target"]["space_id"], ungrouped["target"]["folder_id"]
+        ))
+        self.assertEqual((101, 201), (
+            regrouped["target"]["space_id"], regrouped["target"]["folder_id"]
+        ))
+
+    def test_create_rejects_wrong_folder_and_space_after_acknowledgement(self) -> None:
+        for fault in ("wrong_folder", "wrong_space"):
+            with self.subTest(fault=fault):
+                client = _DashboardHierarchyClient(create_fault=fault)
+                with self.assertRaises(MutationReadbackError) as captured:
+                    create_dashboard(
+                        client,
+                        app_id=1,
+                        space_id=100,
+                        folder_id=0,
+                        name="created",
+                        idempotency_key=f"create-{fault}",
+                        execute=True,
+                    )
+
+                detail = error_envelope(
+                    captured.exception, operation_id=DASHBOARD_CREATE
+                )["error"]
+                self.assertEqual(1, len(client.writes))
+                self.assertFalse(detail["retryable"])
+                self.assertTrue(detail["write_sent"])
+                self.assertFalse(detail["automatic_retry"])
+                self.assertRegex(detail["marker"], r"^GSDK-[0-9a-f]{12}$")
+                self.assertEqual(
+                    {
+                        "received": True,
+                        "operation_id": DASHBOARD_CREATE,
+                        "status": "success",
+                        "attempts": 1,
+                    },
+                    detail["acknowledgement"],
+                )
+                self.assertNotIn("unsafe_extra", detail["acknowledgement"])
+                self.assertIn("Do not retry", detail["next_action"])
+
     def test_parent_delete_preview_reports_relocation_before_write(self) -> None:
         client = _PreviewClient()
 

@@ -15,6 +15,7 @@ from .kanban_mutation_contracts import DASHBOARD_UPDATE, REPORT_LIST
 from .kanban_mutation_support import (
     WRITE_LOCK,
     completed,
+    marker_from_text,
     mutation_preview,
     normalize_report_id,
     positive_id,
@@ -70,8 +71,10 @@ def _link_reports(
     if not state.new_ids:
         return _already_attached(preview, dashboard, report_ids)
     mutation = client._execute_mutation(DASHBOARD_UPDATE, state.inputs)
-    after = read_detail(client, app, space, dashboard)
-    remaining_ids = _verify_link_readback(after, state)
+    recovery_marker = marker_from_text(detail.get("name"))
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        after = read_detail(client, app, space, dashboard)
+        remaining_ids = _verify_link_readback(after, state)
     return completed(
         preview,
         mutation,
