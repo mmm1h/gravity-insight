@@ -479,11 +479,14 @@ def _highest_error(
 def _safe_compile_error(error: GravityInsightError) -> ErrorDetail:
     code = str(error.code.value if isinstance(error.code, ErrorCode) else error.code)
     selected = code if code in _KNOWN_CODES else ErrorCode.UNSUPPORTED.value
+    unsupported_items = getattr(error, "unsupported_items", None)
     return ErrorDetail.create(
         selected,
         "Dashboard chart cannot be compiled through a proven stable contract.",
-        field="report.config",
+        field=error.field if unsupported_items is not None else "report.config",
         next_action="Keep this chart unsupported until its Web artifact contract is proven.",
+        unsupported_items=unsupported_items,
+        unsupported_items_truncated=getattr(error, "unsupported_items_truncated", None),
     )
 
 
