@@ -1,0 +1,97 @@
+{
+  "artifact_kind": "operator",
+  "schema_version": "gravity.operator.v1",
+  "uri": "operator://gravity/significance-test@1",
+  "version": 1,
+  "owner": "gravity-runtime/methods",
+  "lifecycle": "active",
+  "deterministic": true,
+  "method": {
+    "method_id": "significance-test",
+    "revision": 1,
+    "description": "Compare independent binary-outcome arms in a later external evidence window without causal or self-validation claims."
+  },
+  "schemas": {
+    "input": {
+      "schema_version": "gravity.operator-input.significance-test.v1",
+      "resource": "significance-test-input-v1.schema.json"
+    },
+    "output": {
+      "schema_version": "gravity.operator-result.significance-test.v1",
+      "resource": "significance-test-output-v1.schema.json"
+    }
+  },
+  "implementation": {
+    "kind": "runtime_builtin",
+    "group": "gravity.operators"
+  },
+  "assumptions": [
+    {
+      "assumption_id": "external-post-window-observation",
+      "statement": "The observation digest is supplied by a run distinct from recommendation and evaluation, and its evidence window starts after the recommendation window."
+    },
+    {
+      "assumption_id": "independent-binary-arms",
+      "statement": "Control and treatment are independent arms with binary outcomes and no unit interference."
+    },
+    {
+      "assumption_id": "normal-approximation",
+      "statement": "Every observed success and failure cell contains at least five samples."
+    },
+    {
+      "assumption_id": "observational-claim-only",
+      "statement": "A significant result is an observation within the supplied window and never a causal or incremental conclusion."
+    }
+  ],
+  "requirements": {
+    "minimum_rows_per_window": 1,
+    "data_quality": "caller_gated",
+    "completeness": "caller_gated"
+  },
+  "safe_domain": {
+    "max_rows_per_window": 32,
+    "max_input_bytes": 1048576,
+    "max_output_bytes": 1048576,
+    "max_dimension_key_bytes": 256,
+    "max_decimal_digits": 38
+  },
+  "unit_policy": {
+    "mode": "same_declared_unit",
+    "allowed_additivity": ["non_additive"]
+  },
+  "claim_policy": {
+    "allowed": ["experiment-outcome-observation"],
+    "forbidden": [
+      "causality-without-controlled-evidence",
+      "recommendation-self-validation"
+    ],
+    "limitations": [
+      "Version 1 supports aggregate binary outcomes only.",
+      "The two-proportion z approximation requires at least five observations in every success/failure cell.",
+      "Alpha is caller-selected within the supported numeric domain 0.000001 through 0.5.",
+      "Multiple metrics require explicit Bonferroni family control.",
+      "Statistical significance is not a causal, incremental, or future-impact claim."
+    ]
+  },
+  "failure_reasons": [
+    "OPERATOR_INPUT_INVALID",
+    "OPERATOR_SAMPLE_INSUFFICIENT",
+    "OPERATOR_NUMERIC_INVALID",
+    "OPERATOR_VARIANCE_DEGENERATE",
+    "OPERATOR_EVIDENCE_WINDOW_INVALID",
+    "OPERATOR_EVIDENCE_WINDOW_OVERLAP",
+    "OPERATOR_SELF_VALIDATION_FORBIDDEN",
+    "OPERATOR_CAUSALITY_FORBIDDEN",
+    "OPERATOR_MULTIPLICITY_REQUIRED",
+    "OPERATOR_UNIT_MISMATCH",
+    "OPERATOR_ADDITIVITY_UNSUPPORTED",
+    "OPERATOR_RESOURCE_LIMIT",
+    "OPERATOR_OUTPUT_INVALID"
+  ],
+  "golden_cases": [
+    {
+      "case_id": "non-significant-observation",
+      "resource": "significance-test-v1.json"
+    }
+  ]
+}

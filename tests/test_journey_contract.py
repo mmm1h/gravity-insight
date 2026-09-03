@@ -86,13 +86,19 @@ class JourneyContractTests(unittest.TestCase):
         self.assertTrue(all(value == "missing" for value in ltv["surfaces"].values()))
 
         outcome = journey_artifact("analysis.experiment-outcome-evaluation")["contract"]
-        self.assertEqual("unavailable", outcome["execution"]["mode"])
+        self.assertEqual("composite", outcome["execution"]["mode"])
         self.assertEqual(
             ["operator://gravity/significance-test@1"],
             outcome["required_operators"],
         )
-        self.assertTrue(
-            all(value == "missing" for value in outcome["surfaces"].values())
+        self.assertEqual(
+            {
+                "cli": "declared",
+                "sdk": "declared",
+                "plan": "declared",
+                "agent": "declared",
+            },
+            outcome["surfaces"],
         )
 
     def test_schema_display_and_surface_contradictions_fail_closed(self):

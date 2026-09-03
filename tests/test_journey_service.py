@@ -86,8 +86,8 @@ class JourneyServiceTests(unittest.TestCase):
             ltv["dependencies"]["models"][0]["production_claims_allowed"]
         )
         outcome = results["analysis.experiment-outcome-evaluation"]
-        self.assertEqual("blocked", outcome["can_run_status"])
-        self.assertEqual(["OPERATOR_UNAVAILABLE"], outcome["reason_codes"])
+        self.assertEqual("unknown", outcome["can_run_status"])
+        self.assertEqual([], outcome["reason_codes"])
         self.assertEqual(
             0,
             sum(

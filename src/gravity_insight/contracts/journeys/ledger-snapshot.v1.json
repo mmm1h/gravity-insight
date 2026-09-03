@@ -630,22 +630,22 @@
       }
     },
     {
-      "blocker_note": "`analysis.experiment-outcome-evaluation` 与原建议 Journey 分离；Outcome Handoff 只绑定外部 observation digest 和后置非重叠证据窗，不执行评估。当前 `operator://gravity/significance-test@1` 未登记，故 `can-run` 必须返回 `blocked/OPERATOR_UNAVAILABLE`；不得让 Proposal、原建议或同一运行自证结果。",
+      "blocker_note": "`analysis.experiment-outcome-evaluation` 与原建议 Journey 分离；`gravity experiment evaluate` / `sdk.experiments.evaluate()` 已能只消费验证后的外部 Outcome Handoff 和后置非重叠证据窗，以 `operator://gravity/significance-test@1` 对独立二元比例组做确定性本地评估，但尚未绑定通用 Journey runner 与 canonical reference，因此 CLI/SDK 保守记为 `declared`。算子拒绝因果 claim、同 run 自证、重叠窗、缺组、样本不足与退化方差；有效但未过显著性阈值仍是成功观察结果。Plan 尚无该本地复合节点，Agent 尚无中英首问卡，故机器认证仅为 `uncertified`，不得写成四面闭环。",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "基于独立实验观察窗评估实验结果",
-      "ledger_status": "当前阻塞（R12-C 仅交付 handoff）",
+      "ledger_status": "未闭环（本地评估可执行，四面尚未毕业）",
       "legacy_display_key": "基于独立实验观察窗评估实验结果",
       "request_budget": {
         "raw": "0 / 0"
       },
-      "row_digest": "ba8d1db31c899523c276425a15ac23f3e8caa65143318ecb554e17df3e58e4d6",
+      "row_digest": "13414d2b2daa916437a2ab5d951b731b3a1e7b3b7bd3faf6f11538ad037f5911",
       "surfaces": {
-        "agent": "无",
-        "cli": "无",
-        "plan": "无",
-        "raw": "无 / 无 / 无 / 无",
-        "sdk": "无"
+        "agent": "已声明",
+        "cli": "已声明（CLI 可直调）",
+        "plan": "已声明",
+        "raw": "已声明（CLI 可直调） / 已声明（SDK 可直调） / 已声明 / 已声明",
+        "sdk": "已声明（SDK 可直调）"
       }
     },
     {
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "3ba0e771b4a72c9288972090ce89eb6236cd67fbd0e0c34511c9cdf3151d45e5",
+  "snapshot_digest": "878e7cf25bb505d35540cd6917f3bd46e39bfb19dbe0170476bdafd800155e59",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "25ee94c740142066578eb0997b62f71b219e9fdebbe0e1a116121474fa3007fe"
+  "source_sha256": "505f576df4b87d12a04aa1c6cedcc88339716a3e99d8cc3abb9dba624b1b415f"
 }

@@ -10,7 +10,10 @@ from unittest.mock import patch
 
 from gravity_insight import ModelRegistry, OperatorRegistry
 from gravity_insight.cli import main
-from gravity_insight.operator_ids import RETURNED_DIMENSION_CHANGE_URI
+from gravity_insight.operator_ids import (
+    RETURNED_DIMENSION_CHANGE_URI,
+    SIGNIFICANCE_TEST_URI,
+)
 from tests.test_model_registry import MODEL_URI, model_artifact
 
 
@@ -31,12 +34,12 @@ class OperatorModelCliTests(unittest.TestCase):
         return code, json.loads(rendered), stderr.getvalue()
 
     def test_root_exports_and_operator_inspection_are_offline(self) -> None:
-        self.assertEqual(10, OperatorRegistry().list()["count"])
+        self.assertEqual(11, OperatorRegistry().list()["count"])
         self.assertEqual(5, ModelRegistry().list()["count"])
 
         code, listed, stderr = self.invoke("operators", "list")
         self.assertEqual(0, code)
-        self.assertEqual(10, listed["count"])
+        self.assertEqual(11, listed["count"])
         self.assertEqual("", stderr)
 
         code, described, stderr = self.invoke(
@@ -50,6 +53,14 @@ class OperatorModelCliTests(unittest.TestCase):
         contract = OperatorRegistry().artifact(RETURNED_DIMENSION_CHANGE_URI)["contract"]
         code, validated, stderr = self.invoke(
             "operators", "validate", "--input", json.dumps(contract)
+        )
+        self.assertEqual(0, code)
+        self.assertEqual("valid", validated["status"])
+        self.assertEqual("", stderr)
+
+        significance = OperatorRegistry().artifact(SIGNIFICANCE_TEST_URI)
+        code, validated, stderr = self.invoke(
+            "operators", "validate", "--input", json.dumps(significance["contract"])
         )
         self.assertEqual(0, code)
         self.assertEqual("valid", validated["status"])

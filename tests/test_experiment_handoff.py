@@ -217,6 +217,32 @@ def outcome_request(
     }
 
 
+def evaluation_request(handoff: dict[str, object]) -> dict[str, object]:
+    return {
+        "handoff": handoff,
+        "recommendation_run_id": "recommendation-run-1",
+        "observation_run_id": "observation-run-1",
+        "evaluation_run_id": "evaluation-run-1",
+        "test": {
+            "method": "two-proportion-z-test",
+            "alpha": 0.05,
+            "multiplicity": "bonferroni",
+        },
+        "metrics": [
+            {
+                "metric_uri": PRIMARY_URI,
+                "control": {"successes": 100, "trials": 1000},
+                "treatment": {"successes": 150, "trials": 1000},
+            },
+            {
+                "metric_uri": GUARDRAIL_URI,
+                "control": {"successes": 50, "trials": 1000},
+                "treatment": {"successes": 55, "trials": 1000},
+            },
+        ],
+    }
+
+
 def resign_proposal(value: dict[str, object]) -> dict[str, object]:
     selected = copy.deepcopy(value)
     body = {
@@ -384,10 +410,8 @@ class OutcomeHandoffTests(unittest.TestCase):
 
         self.assertEqual("handoff_ready", result["status"])
         self.assertEqual(OUTCOME_JOURNEY_ID, result["outcome_journey"]["journey_id"])
-        self.assertEqual("blocked", result["outcome_journey"]["can_run_status"])
-        self.assertEqual(
-            ["OPERATOR_UNAVAILABLE"], result["outcome_journey"]["reason_codes"]
-        )
+        self.assertEqual("verified", result["outcome_journey"]["can_run_status"])
+        self.assertEqual([], result["outcome_journey"]["reason_codes"])
         self.assertTrue(result["independence"]["journey_distinct"])
         self.assertTrue(result["independence"]["evidence_window_separate"])
         self.assertFalse(result["independence"]["same_run_evaluation_allowed"])
@@ -485,6 +509,20 @@ class OutcomeHandoffTests(unittest.TestCase):
         with self.assertRaises(ExperimentContractError):
             validate_outcome_evaluation_handoff(resign_handoff(private_metric))
 
+    def test_evaluation_consumes_external_handoff_and_remains_offline(self) -> None:
+        service = ExperimentHandoffService()
+        handoff = service.outcome_handoff(outcome_request(self.proposal))
+        result = service.evaluate(evaluation_request(handoff))
+
+        self.assertTrue(result["ok"])
+        self.assertEqual("success", result["status"])
+        self.assertEqual(
+            handoff["experiment"]["evidence_digest"],
+            result["result"]["provenance"]["observation_digest"],
+        )
+        self.assertEqual("bonferroni", result["result"]["test_specification"]["multiplicity"])
+        self.assertFalse(result["network_called"])
+
 
 class ExperimentSurfaceTests(unittest.TestCase):
     def test_sdk_property_is_lazy_cached_and_never_constructs_data_clients(self) -> None:
@@ -516,8 +554,20 @@ class ExperimentSurfaceTests(unittest.TestCase):
                 json.dumps(outcome_request(compile_experiment_proposal(proposal_request()))),
             ]
         )
+        handoff = compile_outcome_evaluation_handoff(
+            outcome_request(compile_experiment_proposal(proposal_request()))
+        )
+        evaluate_args = parser.parse_args(
+            [
+                "experiment",
+                "evaluate",
+                "--input",
+                json.dumps(evaluation_request(handoff)),
+            ]
+        )
         self.assertFalse(proposal_args.network_required)
         self.assertFalse(outcome_args.network_required)
+        self.assertFalse(evaluate_args.network_required)
 
         stdout = io.StringIO()
         stderr = io.StringIO()
@@ -529,6 +579,23 @@ class ExperimentSurfaceTests(unittest.TestCase):
         self.assertEqual("", stderr.getvalue())
         result = json.loads(stdout.getvalue())
         self.assertEqual("gravity.experiment-proposal.v1", result["schema_version"])
+        self.assertFalse(result["network_called"])
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = cli.main(
+                [
+                    "experiment",
+                    "evaluate",
+                    "--input",
+                    json.dumps(evaluation_request(handoff)),
+                ]
+            )
+        self.assertEqual(0, code)
+        self.assertEqual("", stderr.getvalue())
+        result = json.loads(stdout.getvalue())
+        self.assertEqual("success", result["status"])
         self.assertFalse(result["network_called"])
 
         invalid = proposal_request()

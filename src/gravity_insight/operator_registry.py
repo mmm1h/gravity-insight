@@ -19,7 +19,12 @@ from .operator_contract import (
     validate_operator_output,
 )
 from .operators.governed_methods import execute_governed_method
-from .operator_ids import GOVERNED_METHOD_URIS, RETURNED_DIMENSION_CHANGE_URI
+from .operators.significance_test import significance_test
+from .operator_ids import (
+    GOVERNED_METHOD_URIS,
+    RETURNED_DIMENSION_CHANGE_URI,
+    SIGNIFICANCE_TEST_URI,
+)
 from .operator_returned_dimension_change import (
     OperatorMethodError,
     returned_dimension_change,
@@ -42,6 +47,7 @@ _RUNNERS: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
         uri: execute_governed_method
         for uri in GOVERNED_METHOD_URIS.values()
     },
+    SIGNIFICANCE_TEST_URI: significance_test,
 }
 
 
@@ -192,6 +198,7 @@ class OperatorRegistry:
                 "invalid",
                 [exc.reason_code],
                 operator=_reference(artifact),
+                error=exc,
             )
         return {
             "schema_version": "gravity.operator-execution.v1",
@@ -225,6 +232,9 @@ def _validate_safe_domain(
         raise OperatorContractError(
             "OPERATOR_RESOURCE_LIMIT", "Operator input exceeds its byte budget"
         )
+    if contract["uri"] == SIGNIFICANCE_TEST_URI:
+        _validate_significance_domain(contract, inputs)
+        return
     if contract["uri"] != RETURNED_DIMENSION_CHANGE_URI:
         _validate_governed_domain(contract, inputs)
         return
@@ -249,6 +259,41 @@ def _validate_safe_domain(
             "Operator additivity is outside the safe domain",
         )
     _validate_row_values(inputs, domain)
+
+
+def _validate_significance_domain(
+    contract: Mapping[str, Any], inputs: Mapping[str, Any]
+) -> None:
+    metrics = inputs["metrics"]
+    domain = contract["safe_domain"]
+    if len(metrics) < contract["requirements"]["minimum_rows_per_window"]:
+        raise OperatorContractError(
+            "OPERATOR_SAMPLE_INSUFFICIENT",
+            "Significance testing requires at least one metric.",
+            field="metrics",
+            next_action="Provide at least one complete metric comparison.",
+        )
+    if len(metrics) > domain["max_rows_per_window"]:
+        raise OperatorContractError(
+            "OPERATOR_RESOURCE_LIMIT",
+            "Significance metric count exceeds the safe domain.",
+            field="metrics",
+            next_action="Split the metric family into smaller explicit evaluations.",
+        )
+    if inputs["unit"] != "proportion":
+        raise OperatorContractError(
+            "OPERATOR_UNIT_MISMATCH",
+            "Significance-test v1 supports proportion outcomes only.",
+            field="unit",
+            next_action="Use unit=proportion or choose a different registered method.",
+        )
+    if inputs["additivity"] not in contract["unit_policy"]["allowed_additivity"]:
+        raise OperatorContractError(
+            "OPERATOR_ADDITIVITY_UNSUPPORTED",
+            "Significance-test v1 requires non-additive proportion semantics.",
+            field="additivity",
+            next_action="Use additivity=non_additive for binary outcome proportions.",
+        )
 
 
 def _validate_governed_domain(
@@ -388,8 +433,11 @@ def _execution_failure(
     reasons: Sequence[str],
     *,
     operator: Mapping[str, Any] | None,
+    error: Exception | None = None,
 ) -> dict[str, Any]:
-    return {
+    field = getattr(error, "field", None)
+    next_action = getattr(error, "next_action", None)
+    result = {
         "schema_version": "gravity.operator-execution.v1",
         "status": status,
         "ok": False,
@@ -400,6 +448,13 @@ def _execution_failure(
         "reason_codes": list(dict.fromkeys(reasons)),
         "network_called": False,
     }
+    if field is not None and next_action is not None:
+        result["error"] = {
+            "reason_code": reasons[0],
+            "field": field,
+            "next_action": next_action,
+        }
+    return result
 
 
 def _validation_failure(reason: str) -> dict[str, Any]:

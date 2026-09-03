@@ -53,6 +53,18 @@ class ExperimentHandoffService:
             request, operators=self._operators
         )
 
+    def evaluate(self, request: Mapping[str, Any]) -> dict[str, Any]:
+        """Evaluate aggregate binary outcomes from one independent Handoff."""
+
+        from .operators.experiment_outcome import evaluate_experiment_outcome
+
+        return evaluate_experiment_outcome(
+            request,
+            operators=self._operators,
+            validate_handoff=validate_outcome_evaluation_handoff,
+            error_type=ExperimentContractError,
+        )
+
 
 def compile_experiment_power_analysis(
     value: Mapping[str, Any],

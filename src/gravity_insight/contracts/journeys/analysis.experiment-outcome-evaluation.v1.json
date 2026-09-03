@@ -19,10 +19,10 @@
   "required_context": [],
   "required_skill": null,
   "surfaces": {
-    "cli": "missing",
-    "sdk": "missing",
-    "plan": "missing",
-    "agent": "missing"
+    "cli": "declared",
+    "sdk": "declared",
+    "plan": "declared",
+    "agent": "declared"
   },
   "request_budget": {
     "known_requests_min": 0,
@@ -41,9 +41,12 @@
     ]
   },
   "execution": {
-    "mode": "unavailable",
+    "mode": "composite",
     "owner": "experiment-outcome-evaluation",
-    "path": []
+    "path": [
+      "gravity.outcome-evaluation-handoff.v1",
+      "operator://gravity/significance-test@1"
+    ]
   },
   "project_contract_path": null
 }
