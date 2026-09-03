@@ -7,6 +7,7 @@ from typing import Any
 
 from .actionable_error_values import actual_value
 from .errors import InputValidationError, MutationReadbackError
+from .kanban_limits import DASHBOARD_DELETE_BATCH_MAX_ITEMS
 from .kanban_mutation_contracts import DASHBOARD_DELETE
 from .kanban_mutation_support import (
     WRITE_LOCK,
@@ -137,10 +138,10 @@ def _dashboard_ids(value: Any) -> list[int]:
     if (
         not isinstance(value, Sequence)
         or isinstance(value, (str, bytes))
-        or not 1 <= len(value) <= 100
+        or not 1 <= len(value) <= DASHBOARD_DELETE_BATCH_MAX_ITEMS
     ):
         raise InputValidationError(
-            f"actual value: {actual_value(value)}; allowed value: 1 through 100 dashboard IDs",
+            f"actual value: {actual_value(value)}; allowed value: 1 through {DASHBOARD_DELETE_BATCH_MAX_ITEMS} dashboard IDs",
             field="dashboard_ids",
             next_action="Provide a non-empty bounded list from the latest Kanban tree and run dry-run again.",
         )

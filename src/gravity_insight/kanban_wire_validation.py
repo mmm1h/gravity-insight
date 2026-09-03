@@ -18,6 +18,12 @@ from .kanban_mutation_contracts import (
     NOTE_DELETE,
     SPACE_CREATE,
 )
+from .kanban_limits import (
+    DASHBOARD_DELETE_BATCH_MAX_ITEMS,
+    DASHBOARD_LAYOUT_MAX_ITEMS,
+    ORDER_ROOT_BATCH_MAX_ITEMS,
+    REPORT_UNLINK_BATCH_MAX_ITEMS,
+)
 from .segment_mutation_support import MARKER_PREFIX
 
 
@@ -39,7 +45,11 @@ def validate_kanban_wire(operation_id: str, values: Mapping[str, Any]) -> None:
     if operation_id == DASHBOARD_UPDATE:
         _dashboard_content(values)
     if operation_id == DASHBOARD_ORDER:
-        _bounded_objects(values.get("order_detail"), "order_detail", maximum=1_000)
+        _bounded_objects(
+            values.get("order_detail"),
+            "order_detail",
+            maximum=ORDER_ROOT_BATCH_MAX_ITEMS,
+        )
     if operation_id == NOTE_DELETE:
         note_id = values.get("i")
         if not isinstance(note_id, str) or not note_id.startswith("notes_") or len(note_id) > 64:
@@ -68,15 +78,20 @@ def _identity_arrays(operation_id: str, values: Mapping[str, Any]) -> None:
 
 
 def _integer_array(value: Any, field: str) -> None:
+    maximum = (
+        DASHBOARD_DELETE_BATCH_MAX_ITEMS
+        if field == "dashboard_ids"
+        else REPORT_UNLINK_BATCH_MAX_ITEMS
+    )
     if (
         not isinstance(value, Sequence)
         or isinstance(value, (str, bytes))
-        or not 1 <= len(value) <= 100
+        or not 1 <= len(value) <= maximum
         or any(type(item) is not int or item < 1 for item in value)
         or len(set(value)) != len(value)
     ):
         raise InputValidationError(
-            f"actual value: {actual_value(value)}; allowed value: 1 through 100 unique positive integer IDs",
+            f"actual value: {actual_value(value)}; allowed value: 1 through {maximum} unique positive integer IDs",
             field=field,
             next_action="Use unique IDs from the latest Kanban readback and run dry-run again.",
         )
@@ -105,7 +120,12 @@ def _dashboard_moves(value: Any) -> None:
 
 
 def _dashboard_content(values: Mapping[str, Any]) -> None:
-    _bounded_objects(values.get("report_list"), "report_list", maximum=20, allow_empty=True)
+    _bounded_objects(
+        values.get("report_list"),
+        "report_list",
+        maximum=DASHBOARD_LAYOUT_MAX_ITEMS,
+        allow_empty=True,
+    )
     raw = values.get("ui_config")
     if not isinstance(raw, str) or len(raw) > 100_000:
         raise InputValidationError(
@@ -121,7 +141,12 @@ def _dashboard_content(values: Mapping[str, Any]) -> None:
             field="ui_config",
             next_action="Correct the JSON layout and run dry-run again.",
         ) from exc
-    _bounded_objects(decoded, "ui_config", maximum=20, allow_empty=True)
+    _bounded_objects(
+        decoded,
+        "ui_config",
+        maximum=DASHBOARD_LAYOUT_MAX_ITEMS,
+        allow_empty=True,
+    )
 
 
 def _bounded_objects(

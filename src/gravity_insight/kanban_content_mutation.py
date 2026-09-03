@@ -9,6 +9,12 @@ from typing import Any
 
 from .actionable_error_values import actual_value
 from .errors import ContractChangedError, InputValidationError, MutationReadbackError
+from .kanban_limits import (
+    NOTE_BATCH_MAX_ITEMS,
+    ORDER_ROOT_BATCH_MAX_ITEMS,
+    REPORT_UNLINK_BATCH_MAX_ITEMS,
+    REPORT_UNLINK_BATCH_MIN_ITEMS,
+)
 from .kanban_mutation_contracts import (
     DASHBOARD_ORDER,
     DASHBOARD_UPDATE,
@@ -69,6 +75,14 @@ def replace_notes(
         send=False,
         expected_preimage_digest=None,
     )
+
+
+def compile_notes(
+    notes: Sequence[Mapping[str, Any]], dashboard_id: int
+) -> list[dict[str, Any]]:
+    """Compile caller notes without reading or previewing a mutation."""
+
+    return _notes(notes, positive_id(dashboard_id, "dashboard_id"))
 
 
 def _replace_notes(
@@ -335,11 +349,15 @@ def _save_order(client: Any, app: int, supplied: list[dict[str, Any]], *, send: 
 
 
 def _notes(value: Any, dashboard_id: int) -> list[dict[str, Any]]:
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)) or len(value) > 20:
+    if (
+        not isinstance(value, Sequence)
+        or isinstance(value, (str, bytes))
+        or len(value) > NOTE_BATCH_MAX_ITEMS
+    ):
         raise InputValidationError(
-            f"actual value: {actual_value({'type': type(value).__name__, 'length': len(value) if isinstance(value, Sequence) else None})}; allowed value: an array of at most 20 notes",
+            f"actual value: {actual_value({'type': type(value).__name__, 'length': len(value) if isinstance(value, Sequence) else None})}; allowed value: an array of at most {NOTE_BATCH_MAX_ITEMS} notes",
             field="notes",
-            next_action="Provide zero through 20 note objects and run dry-run again.",
+            next_action=f"Provide zero through {NOTE_BATCH_MAX_ITEMS} note objects and run dry-run again.",
         )
     result = []
     for index, item in enumerate(value):
@@ -366,9 +384,13 @@ def _notes(value: Any, dashboard_id: int) -> list[dict[str, Any]]:
 
 
 def _id_list(value: Any, field: str) -> list[str]:
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)) or not 1 <= len(value) <= 100:
+    if (
+        not isinstance(value, Sequence)
+        or isinstance(value, (str, bytes))
+        or not REPORT_UNLINK_BATCH_MIN_ITEMS <= len(value) <= REPORT_UNLINK_BATCH_MAX_ITEMS
+    ):
         raise InputValidationError(
-            f"actual value: {actual_value(value)}; allowed value: 1 through 100 positive integer or bounded opaque string IDs",
+            f"actual value: {actual_value(value)}; allowed value: {REPORT_UNLINK_BATCH_MIN_ITEMS} through {REPORT_UNLINK_BATCH_MAX_ITEMS} positive integer or bounded opaque string IDs",
             field=field,
             next_action=f"Provide a non-empty bounded {field} list from the latest dashboard detail and run dry-run again.",
         )
@@ -419,9 +441,14 @@ def _report_associations(
 
 
 def _order_detail(value: Any) -> list[dict[str, Any]]:
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)) or not value or len(value) > 1_000:
+    if (
+        not isinstance(value, Sequence)
+        or isinstance(value, (str, bytes))
+        or not value
+        or len(value) > ORDER_ROOT_BATCH_MAX_ITEMS
+    ):
         raise InputValidationError(
-            f"actual value: {actual_value({'type': type(value).__name__, 'length': len(value) if isinstance(value, Sequence) else None})}; allowed value: the non-empty current Kanban tree, at most 1000 roots",
+            f"actual value: {actual_value({'type': type(value).__name__, 'length': len(value) if isinstance(value, Sequence) else None})}; allowed value: the non-empty current Kanban tree, at most {ORDER_ROOT_BATCH_MAX_ITEMS} roots",
             field="order_detail",
             next_action="Use the latest bounded Kanban tree and run dry-run again.",
         )
@@ -457,4 +484,10 @@ def _order_signature(value: Sequence[Mapping[str, Any]]) -> list[Any]:
     return visit(value)
 
 
-__all__ = ["delete_note", "replace_notes", "save_order", "unlink_reports"]
+__all__ = [
+    "compile_notes",
+    "delete_note",
+    "replace_notes",
+    "save_order",
+    "unlink_reports",
+]

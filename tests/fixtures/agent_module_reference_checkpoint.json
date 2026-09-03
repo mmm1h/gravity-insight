@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "0afa426ada9353bf574399f9e0a065b61b3d2cdcfcefb4efc6434d4a222a3024",
+    "reference_evidence_sha256": "fd0b2c8a8488a426b015efb8a3c773e29caa664c0864c862975d9de0c16dd791",
     "manual_review_sha256": "307f9cac11d43908a5d3e7d6a6a66b3cbf8a0ecc9e7a494dbcdb2367f7c677bf",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3105,
-    "scanned_file_count": 3098,
+    "version_controlled_file_count": 3113,
+    "scanned_file_count": 3106,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -692,7 +692,7 @@
     "dispositions": {
       "no_migration_effect": 281
     },
-    "sites_sha256": "91ce6b22e04ad0ae2f775a699e65f44d306198a034ff1e15ec30a8db35fd051f"
+    "sites_sha256": "a41dc1da9344aeb8d248da3dc54ec93a8c5920678f1086785776b1c3572f93a1"
   },
   "blockers": [],
   "site_fields": [
@@ -1430,7 +1430,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:179891:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:181742:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1445,7 +1445,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:180022:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:181873:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1460,7 +1460,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:180253:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:182104:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1475,7 +1475,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:180576:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:182427:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1490,7 +1490,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:183885:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:185736:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1505,7 +1505,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:190481:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:192332:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1520,7 +1520,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:190788:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:192639:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1535,7 +1535,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:192970:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:194821:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1550,7 +1550,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:212991:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:214842:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1565,7 +1565,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:218005:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:219856:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1580,7 +1580,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:218568:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:220419:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1595,7 +1595,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:221098:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:222949:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1610,7 +1610,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:225482:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:227333:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1625,7 +1625,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:237833:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239684:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1640,7 +1640,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:238016:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239867:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1655,7 +1655,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239186:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:241037:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1670,7 +1670,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:239347:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:241198:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1685,7 +1685,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240325:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:242176:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1700,7 +1700,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240565:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:242416:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1715,7 +1715,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:240866:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:242717:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1730,7 +1730,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:241059:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:242910:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1745,7 +1745,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:241224:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:243075:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1760,7 +1760,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:241317:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:243168:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1775,7 +1775,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:241593:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:243444:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1790,7 +1790,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:244556:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:246407:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1805,7 +1805,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:245120:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:246971:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1820,7 +1820,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:245220:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:247071:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1835,7 +1835,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:247658:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v1.json:1:249509:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

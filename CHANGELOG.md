@@ -21,6 +21,19 @@ Target release: `0.3.7`
 
 ### Added
 
+- `gravity analysis dashboard kanban schema` now publishes typed collection
+  constraints, and separates a single-request batch bound (`report_ids`,
+  1..20, scope `single_action_request`) from total board capacity (decoded
+  `ui_config`, 20 items, scope `dashboard_total_layout`) with an explicit
+  `request_splitting_increases_capacity=false`. Provenance reports
+  `upstream_limit_verified=false`: the limit is a governed SDK wire contract
+  and has never been observed enforced upstream.
+- `gravity analysis dashboard kanban prepare` plans an entire board — saved
+  definitions, notes and an existing or new target — before the first write.
+  It returns per-chart artifact compatibility, reuse/create/update decisions,
+  desired/existing/final counts, remaining capacity, an actions DAG with
+  deferred-ID references, and bounded read/write estimates, while performing
+  zero mutations.
 - Capability Trust and Data Quality can now be established from real read-only
   execution instead of remaining permanently `unknown`. Each validation binds an
   exact-operation HTTP receipt and six non-empty checks (receipt, semantic status,
