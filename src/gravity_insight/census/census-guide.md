@@ -31,7 +31,7 @@ source; auth and permission failures are never treated as route drift.
 ## Reproduce
 
 ```powershell
-gravity census fetch --require-complete --raw-dir tmp/codex/gi-census-full/final --output tmp/codex/gi-census-full/bundle-snapshot.json
+gravity census fetch --require-complete --raw-dir tmp/codex/gi-census-full/final --output tmp/codex/gi-census-full/bundle-snapshot.json --step-output tmp/codex/gi-census-full/census-step-output.json
 gravity census parse --snapshot tmp/codex/gi-census-full/bundle-snapshot.json --raw-dir tmp/codex/gi-census-full/final --output tmp/codex/gi-census-full/routes.json
 gravity census coverage --routes tmp/codex/gi-census-full/routes.json --require-complete --require-accounted --output tmp/codex/gi-census-full/coverage.json --report tmp/codex/gi-census-full/coverage-report.md
 gravity census diff <reviewed-routes.json> <current-routes.json> --output <route-diff.json>
@@ -101,6 +101,43 @@ stable. This is the observed cost of the current graph, not a fixed budget: the 
 
 The reviewed baseline is checked in. A detected change therefore remains visible on later runs
 until a human reviews and promotes the new snapshot and any contract updates.
+
+## Current scoring evidence
+
+The scheduled workflow is the producer for current drift evidence. It runs the lightweight entry
+check hourly, triggers a complete crawl immediately when that check changes, and also performs one
+complete crawl every day at `01:47Z`. The daily crawl keeps an unchanged baseline measurable without
+turning every hourly check into a several-hundred-request bundle crawl.
+
+After a complete crawl passes the scoring self-check, the workflow uploads a dedicated
+`gravity-census-current-<run-id>` artifact containing a `gravity-census.step-output.v1` receipt,
+the current snapshot, and a route diff. Check-only and failed runs cannot publish this artifact;
+their always-uploaded `gravity-upstream-<run-id>` artifact remains diagnostic only. A successful
+receipt records the snapshot's `observed_at` and `bundle_id`. `census status` accepts the chain only
+when the receipt is complete, the diff is complete, both current bundle IDs match, and the diff's
+old bundle ID matches the checked-in baseline. Artifacts produced before those two receipt fields
+were added are accepted only when a same-directory snapshot has exactly the receipt summary and
+supplies the matching bundle ID and `fetched_at`.
+
+`tmp/census-current/` is the local, ignored landing directory. Download a successful run into its
+own subdirectory; both `gravity census status --json` and `gravity maturity score --json` discover
+it without network access:
+
+```powershell
+$repo = gh repo view --json nameWithOwner --jq '.nameWithOwner'
+$artifacts = gh api "repos/$repo/actions/artifacts?per_page=100" | ConvertFrom-Json
+$artifact = $artifacts.artifacts | Where-Object { $_.name -like 'gravity-census-current-*' } | Sort-Object created_at -Descending | Select-Object -First 1
+if ($null -eq $artifact) { throw 'Owner input missing: no complete gravity-census-current artifact is available.' }
+gh run download $artifact.workflow_run.id --name $artifact.name --dir "tmp/census-current/$($artifact.id)"
+gravity census status --json
+gravity maturity score --json
+```
+
+An observation is current through 26 hours after `observed_at`, allowing the daily schedule up to
+two hours of runner delay. At 26 hours plus one second it is expired and the dimension becomes
+`unmeasured`; artifact retention does not extend freshness. A timestamp more than five minutes in
+the future also becomes `unmeasured`. Downloading an artifact does not rewrite its observation
+time.
 
 To reproduce the one-time comparison with the previous partial census, retain its routes file and
 pass it explicitly:

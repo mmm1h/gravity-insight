@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import json
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
 from gravity_insight.census.diffing import CensusFailureClass
-from gravity_insight.census.status import census_status
+from gravity_insight.census.status import CURRENT_MAX_AGE, census_status
 from gravity_insight.cli import build_parser
 from gravity_insight.documentation_status import (
     documentation_report,
@@ -15,6 +17,7 @@ from gravity_insight.documentation_status import (
 )
 from gravity_insight.evidence_common import dimension, metric
 from gravity_insight.journey_certification import journey_certifications
+from gravity_insight.maturity_dimensions_core import census_evidence
 from gravity_insight.runtime_health import runtime_health_report
 
 
@@ -44,6 +47,61 @@ class EvidenceCommandRegistrationTests(unittest.TestCase):
 
 
 class EvidenceCollectorTests(unittest.TestCase):
+    def _current_census_evidence(
+        self,
+        directory: Path,
+        *,
+        observed_at: datetime,
+        old_bundle_id: str,
+        changed: bool = False,
+    ) -> list[Path]:
+        bundle_id = "1" * 64
+        summary = {"complete": True, "request_attempts": 2, "request_limit": 10}
+        step = {
+            "schema_version": "gravity-census.step-output.v1",
+            "operation": "fetch_public_static_graph",
+            "status": "complete",
+            "complete": True,
+            "drift_conclusion_available": True,
+            "failure_class": None,
+            "observed_at": observed_at.isoformat(),
+            "bundle_id": bundle_id,
+            "request_budget": {"used": 2, "limit": 10, "remaining": 8},
+            "summary": summary,
+            "failure": None,
+        }
+        diff = {
+            "schema_version": 1,
+            "kind": "route_diff",
+            "status": "complete",
+            "drift_conclusion_available": True,
+            "failure_class": None,
+            "old_bundle_id": old_bundle_id,
+            "new_bundle_id": bundle_id,
+            "old_bundle_complete": True,
+            "new_bundle_complete": True,
+            "summary": {
+                "added": int(changed),
+                "removed": 0,
+                "method_changed": 0,
+                "path_changed": 0,
+            },
+        }
+        snapshot = {
+            "schema_version": 1,
+            "fetched_at": observed_at.isoformat(),
+            "bundle_id": bundle_id,
+            "summary": summary,
+        }
+        paths = [
+            directory / "census-step-output.json",
+            directory / "route-diff.json",
+            directory / "current-snapshot.json",
+        ]
+        for path, value in zip(paths, (step, diff, snapshot)):
+            path.write_text(json.dumps(value), encoding="utf-8")
+        return paths
+
     def test_unmeasured_metric_never_becomes_zero_or_an_estimate(self) -> None:
         result = dimension(
             dimension_id="example",
@@ -79,13 +137,109 @@ class EvidenceCollectorTests(unittest.TestCase):
         )
 
     def test_census_status_reuses_the_closed_failure_classes(self) -> None:
-        result = census_status(ROOT)
+        result = census_status(ROOT, evidence_paths=())
         self.assertEqual(
             [item.value for item in CensusFailureClass], result["failure_classes"]
         )
         self.assertTrue(result["baseline"]["complete"])
         self.assertFalse(result["current"]["measured"])
         self.assertIsNone(result["current"]["changed"])
+
+    def test_census_observation_is_current_through_the_26_hour_boundary(self) -> None:
+        observed_at = datetime(2026, 9, 3, 1, tzinfo=timezone.utc)
+        baseline = census_status(ROOT, evidence_paths=())["baseline"]["bundle_id"]
+        with tempfile.TemporaryDirectory() as temporary:
+            paths = self._current_census_evidence(
+                Path(temporary), observed_at=observed_at, old_bundle_id=baseline
+            )
+            result = census_status(
+                ROOT, paths, now=observed_at + CURRENT_MAX_AGE
+            )
+
+        self.assertTrue(result["current"]["measured"])
+        self.assertEqual("current", result["current"]["freshness"]["status"])
+        self.assertEqual(93600, result["current"]["freshness"]["max_age_seconds"])
+        scored = dimension(
+            dimension_id="upstream_drift_reliability_operations",
+            name="Census",
+            maximum=10,
+            evidence=census_evidence(result),
+        )
+        self.assertEqual((True, 10.0), (scored["measured"], scored["score"]))
+
+    def test_expired_census_observation_becomes_unmeasured(self) -> None:
+        observed_at = datetime(2026, 9, 3, 1, tzinfo=timezone.utc)
+        baseline = census_status(ROOT, evidence_paths=())["baseline"]["bundle_id"]
+        with tempfile.TemporaryDirectory() as temporary:
+            paths = self._current_census_evidence(
+                Path(temporary), observed_at=observed_at, old_bundle_id=baseline
+            )
+            result = census_status(
+                ROOT, paths, now=observed_at + CURRENT_MAX_AGE + timedelta(seconds=1)
+            )
+
+        self.assertFalse(result["current"]["measured"])
+        self.assertEqual("unmeasured", result["current"]["status"])
+        self.assertEqual("expired", result["current"]["freshness"]["status"])
+        self.assertIsNone(result["current"]["changed"])
+        self.assertIn("no older than 26 hours", result["current"]["missing"][0])
+
+    def test_census_observation_rejects_future_time_and_baseline_mismatch(self) -> None:
+        now = datetime(2026, 9, 3, 1, tzinfo=timezone.utc)
+        baseline = census_status(ROOT, evidence_paths=())["baseline"]["bundle_id"]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            future_paths = self._current_census_evidence(
+                directory,
+                observed_at=now + timedelta(minutes=5, seconds=1),
+                old_bundle_id=baseline,
+            )
+            future = census_status(ROOT, future_paths, now=now)
+            mismatch_paths = self._current_census_evidence(
+                directory,
+                observed_at=now,
+                old_bundle_id="f" * 64,
+            )
+            mismatch = census_status(ROOT, mismatch_paths, now=now)
+            receipt_mismatch_paths = self._current_census_evidence(
+                directory, observed_at=now, old_bundle_id=baseline
+            )
+            snapshot = json.loads(
+                receipt_mismatch_paths[2].read_text(encoding="utf-8")
+            )
+            snapshot["bundle_id"] = "2" * 64
+            receipt_mismatch_paths[2].write_text(
+                json.dumps(snapshot), encoding="utf-8"
+            )
+            receipt_mismatch = census_status(
+                ROOT, receipt_mismatch_paths, now=now
+            )
+
+        self.assertFalse(future["current"]["measured"])
+        self.assertEqual("future", future["current"]["freshness"]["status"])
+        self.assertFalse(mismatch["current"]["measured"])
+        self.assertIn("reviewed baseline", mismatch["current"]["missing"][0])
+        self.assertFalse(receipt_mismatch["current"]["measured"])
+        self.assertIn("same current bundle", receipt_mismatch["current"]["missing"][0])
+
+    def test_legacy_step_receipt_requires_a_same_directory_snapshot_binding(self) -> None:
+        observed_at = datetime(2026, 9, 3, 1, tzinfo=timezone.utc)
+        baseline = census_status(ROOT, evidence_paths=())["baseline"]["bundle_id"]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            paths = self._current_census_evidence(
+                directory, observed_at=observed_at, old_bundle_id=baseline
+            )
+            step = json.loads(paths[0].read_text(encoding="utf-8"))
+            step.pop("observed_at")
+            step.pop("bundle_id")
+            paths[0].write_text(json.dumps(step), encoding="utf-8")
+            result = census_status(
+                ROOT, paths, now=observed_at + timedelta(hours=1)
+            )
+
+        self.assertTrue(result["current"]["measured"])
+        self.assertIn("current-snapshot.json", result["current"]["evidence"][2])
 
     def test_runtime_health_and_documentation_gates_pass(self) -> None:
         health = runtime_health_report(ROOT)
