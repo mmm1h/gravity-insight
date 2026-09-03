@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.operator-result.significance-test.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "verdict", "test_specification", "assumptions",
+    "provenance", "metrics", "claims", "statement", "limitations",
+    "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.operator-result.significance-test.v1"},
+    "verdict": {"enum": ["significant_observed_difference", "no_significant_observed_difference"]},
+    "test_specification": {"$ref": "#/$defs/test_specification"},
+    "assumptions": {"$ref": "#/$defs/assumptions"},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/metric"}
+    },
+    "claims": {"$ref": "#/$defs/claims"},
+    "statement": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "number": {"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?(?:e[+-]?[0-9]+)?$"},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "window": {
+      "type": "object",
+      "required": ["start", "end", "timezone"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {"$ref": "#/$defs/date"},
+        "end": {"$ref": "#/$defs/date"},
+        "timezone": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "test_specification": {
+      "type": "object",
+      "required": [
+        "method", "null_variance", "tail", "alpha", "multiplicity", "family_size",
+        "per_comparison_alpha", "p_value_adjustment", "confidence_interval",
+        "decision_rule"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "method": {"const": "two-proportion-z-test"},
+        "null_variance": {"const": "pooled-under-null"},
+        "tail": {"const": "per_metric"},
+        "alpha": {"$ref": "#/$defs/number"},
+        "multiplicity": {"enum": ["none", "bonferroni"]},
+        "family_size": {"type": "integer", "minimum": 1, "maximum": 32},
+        "per_comparison_alpha": {"$ref": "#/$defs/number"},
+        "p_value_adjustment": {"enum": ["none", "bonferroni"]},
+        "confidence_interval": {"const": "two-sided-unpooled-wald-risk-difference"},
+        "decision_rule": {"const": "adjusted_p_value <= alpha"}
+      }
+    },
+    "assumptions": {
+      "type": "object",
+      "required": [
+        "independent_arms", "binary_outcome", "normal_approximation",
+        "minimum_observed_cell_count", "pooled_null_variance", "observational_only"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "independent_arms": {"const": "caller_asserted"},
+        "binary_outcome": {"const": "verified_from_aggregate_counts"},
+        "normal_approximation": {"const": "verified"},
+        "minimum_observed_cell_count": {"const": 5},
+        "pooled_null_variance": {"const": true},
+        "observational_only": {"const": true}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "recommendation_digest", "observation_digest", "assignment_digest",
+        "observation_source", "recommendation_window", "evidence_window",
+        "runs_distinct"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "recommendation_digest": {"$ref": "#/$defs/digest"},
+        "observation_digest": {"$ref": "#/$defs/digest"},
+        "assignment_digest": {"$ref": "#/$defs/digest"},
+        "observation_source": {"const": "external"},
+        "recommendation_window": {"$ref": "#/$defs/window"},
+        "evidence_window": {"$ref": "#/$defs/window"},
+        "runs_distinct": {"const": true}
+      }
+    },
+    "arm": {
+      "type": "object",
+      "required": ["successes", "trials", "rate"],
+      "additionalProperties": false,
+      "properties": {
+        "successes": {"type": "integer", "minimum": 0},
+        "trials": {"type": "integer", "minimum": 1},
+        "rate": {"$ref": "#/$defs/number"}
+      }
+    },
+    "confidence_interval": {
+      "type": "object",
+      "required": ["level", "lower", "upper", "method"],
+      "additionalProperties": false,
+      "properties": {
+        "level": {"$ref": "#/$defs/number"},
+        "lower": {"$ref": "#/$defs/number"},
+        "upper": {"$ref": "#/$defs/number"},
+        "method": {"const": "two-sided-unpooled-wald-risk-difference"}
+      }
+    },
+    "fact_reference": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "properties": {"path": {"type": "string", "pattern": "^/.+$"}}
+    },
+    "metric": {
+      "type": "object",
+      "required": [
+        "metric_uri", "role", "alternative", "control", "treatment",
+        "observed_risk_difference", "observed_relative_lift",
+        "standard_error_null", "z_statistic", "p_value", "adjusted_p_value",
+        "significant", "observed_direction", "confidence_interval",
+        "fact_references"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "metric_uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "role": {"enum": ["primary", "guardrail"]},
+        "alternative": {"enum": ["two_sided", "greater", "less"]},
+        "control": {"$ref": "#/$defs/arm"},
+        "treatment": {"$ref": "#/$defs/arm"},
+        "observed_risk_difference": {"$ref": "#/$defs/number"},
+        "observed_relative_lift": {"anyOf": [{"$ref": "#/$defs/number"}, {"type": "null"}]},
+        "standard_error_null": {"$ref": "#/$defs/number"},
+        "z_statistic": {"$ref": "#/$defs/number"},
+        "p_value": {"$ref": "#/$defs/number"},
+        "adjusted_p_value": {"$ref": "#/$defs/number"},
+        "significant": {"type": "boolean"},
+        "observed_direction": {"enum": ["increase", "decrease", "no_change"]},
+        "confidence_interval": {"$ref": "#/$defs/confidence_interval"},
+        "fact_references": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"$ref": "#/$defs/fact_reference"}
+        }
+      }
+    },
+    "claims": {
+      "type": "object",
+      "required": ["allowed", "forbidden"],
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {"const": "experiment-outcome-observation"}
+        },
+        "forbidden": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "causality-without-controlled-evidence",
+              "recommendation-self-validation"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

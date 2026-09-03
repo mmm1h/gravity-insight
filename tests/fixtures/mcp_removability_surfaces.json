@@ -5,7 +5,7 @@
     "analysis.business-pulse": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.default-value-dictionary": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.event-trend": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
-    "analysis.experiment-outcome-evaluation": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
+    "analysis.experiment-outcome-evaluation": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
     "analysis.ltv-curve-fit": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"},
     "analysis.merge2.ap-cost-anomaly-localization": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
     "analysis.readable-app-catalog": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},

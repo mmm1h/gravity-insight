@@ -14,6 +14,7 @@ from gravity_insight.operator_ids import (
     GOVERNED_METHOD_URIS,
     RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA,
     RETURNED_DIMENSION_CHANGE_URI,
+    SIGNIFICANCE_TEST_URI,
 )
 from gravity_insight.operator_registry import OperatorRegistry
 
@@ -54,8 +55,12 @@ class OperatorRegistryTests(unittest.TestCase):
         described = registry.describe(RETURNED_DIMENSION_CHANGE_URI)
         artifact = described["operator"]
 
-        expected = {RETURNED_DIMENSION_CHANGE_URI, *GOVERNED_METHOD_URIS.values()}
-        self.assertEqual(10, listed["count"])
+        expected = {
+            RETURNED_DIMENSION_CHANGE_URI,
+            SIGNIFICANCE_TEST_URI,
+            *GOVERNED_METHOD_URIS.values(),
+        }
+        self.assertEqual(11, listed["count"])
         self.assertEqual(expected, {item["uri"] for item in listed["operators"]})
         self.assertEqual("gravity.operator.v1", artifact["contract"]["schema_version"])
         self.assertEqual(

@@ -27,6 +27,12 @@ Target release: `0.3.8`
   budget, execution owner, and allowed/forbidden claims. Offline certification
   remains `uncertified` until current Capability Validation evidence exists; no
   production execution is implied by registration.
+- `operator://gravity/significance-test@1` now evaluates independent binary
+  outcome arms entirely offline through `gravity experiment evaluate` and
+  `sdk.experiments.evaluate()`. The result carries the selected tail, alpha,
+  Bonferroni family handling, observed risk difference and uncertainty; sample,
+  variance, window, grouping, causal-claim and same-run self-validation failures
+  remain distinct fail-closed outcomes.
 
 ## [0.3.7] - 2026-09-04
 

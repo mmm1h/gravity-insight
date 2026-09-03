@@ -1,4 +1,4 @@
-"""Offline CLI for inert Experiment Proposal and Outcome Handoff artifacts."""
+"""Offline CLI for Experiment Proposal, Outcome Handoff, and evaluation."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import Any
 def add_experiment_commands(commands: Any, add_input: Callable[..., None]) -> Any:
     experiment = commands.add_parser(
         "experiment",
-        help="Compile an Experiment Proposal or independent Outcome Handoff.",
+        help="Compile an Experiment Proposal, independent Outcome Handoff, or evaluation.",
     )
     actions = experiment.add_subparsers(dest="experiment_command", required=True)
     propose = actions.add_parser("propose")
@@ -18,6 +18,9 @@ def add_experiment_commands(commands: Any, add_input: Callable[..., None]) -> An
     outcome = actions.add_parser("outcome-handoff")
     add_input(outcome, required=True)
     outcome.set_defaults(network_required=False, _gravity_handler=dispatch)
+    evaluate = actions.add_parser("evaluate")
+    add_input(evaluate, required=True)
+    evaluate.set_defaults(network_required=False, _gravity_handler=dispatch)
     return experiment
 
 
@@ -30,7 +33,9 @@ def dispatch(
     service = ExperimentHandoffService()
     if args.experiment_command == "propose":
         return service.propose(request)
-    return service.outcome_handoff(request)
+    if args.experiment_command == "outcome-handoff":
+        return service.outcome_handoff(request)
+    return service.evaluate(request)
 
 
 __all__ = ["add_experiment_commands", "dispatch"]

@@ -16,8 +16,17 @@ SCHEMA_VERSION = RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA
 class OperatorMethodError(ValueError):
     """Governed input facts violate one stable Operator failure boundary."""
 
-    def __init__(self, reason_code: str, message: str) -> None:
+    def __init__(
+        self,
+        reason_code: str,
+        message: str,
+        *,
+        field: str | None = None,
+        next_action: str | None = None,
+    ) -> None:
         self.reason_code = reason_code
+        self.field = field
+        self.next_action = next_action
         super().__init__(message)
 
 

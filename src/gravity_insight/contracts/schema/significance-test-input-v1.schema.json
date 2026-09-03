@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.operator-input.significance-test.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "claim", "recommendation", "observation",
+    "evidence_window", "evaluation_run_id", "test", "metrics", "unit",
+    "additivity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.operator-input.significance-test.v1"},
+    "claim": {"type": "string", "minLength": 1, "maxLength": 128},
+    "recommendation": {"$ref": "#/$defs/recommendation"},
+    "observation": {"$ref": "#/$defs/observation"},
+    "evidence_window": {"$ref": "#/$defs/window"},
+    "evaluation_run_id": {"$ref": "#/$defs/run_id"},
+    "test": {"$ref": "#/$defs/test"},
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/metric"}
+    },
+    "unit": {"const": "proportion"},
+    "additivity": {"const": "non_additive"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,128}$"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "window": {
+      "type": "object",
+      "required": ["start", "end", "timezone"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {"$ref": "#/$defs/date"},
+        "end": {"$ref": "#/$defs/date"},
+        "timezone": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "required": ["digest", "producer_run_id", "window"],
+      "additionalProperties": false,
+      "properties": {
+        "digest": {"$ref": "#/$defs/digest"},
+        "producer_run_id": {"$ref": "#/$defs/run_id"},
+        "window": {"$ref": "#/$defs/window"}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "required": ["source", "digest", "assignment_digest", "producer_run_id", "window"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {"enum": ["external", "internal"]},
+        "digest": {"$ref": "#/$defs/digest"},
+        "assignment_digest": {"$ref": "#/$defs/digest"},
+        "producer_run_id": {"$ref": "#/$defs/run_id"},
+        "window": {"$ref": "#/$defs/window"}
+      }
+    },
+    "test": {
+      "type": "object",
+      "required": ["method", "alpha", "multiplicity"],
+      "additionalProperties": false,
+      "properties": {
+        "method": {"const": "two-proportion-z-test"},
+        "alpha": {"type": "number", "minimum": 0, "maximum": 1},
+        "multiplicity": {"enum": ["none", "bonferroni"]}
+      }
+    },
+    "arm": {
+      "type": "object",
+      "required": ["successes", "trials"],
+      "additionalProperties": false,
+      "properties": {
+        "successes": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "trials": {"type": "integer", "minimum": 1, "maximum": 1000000000}
+      }
+    },
+    "metric": {
+      "type": "object",
+      "required": ["metric_uri", "role", "alternative", "control", "treatment"],
+      "additionalProperties": false,
+      "properties": {
+        "metric_uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "role": {"enum": ["primary", "guardrail"]},
+        "alternative": {"enum": ["two_sided", "greater", "less"]},
+        "control": {"$ref": "#/$defs/arm"},
+        "treatment": {"$ref": "#/$defs/arm"}
+      }
+    }
+  }
+}

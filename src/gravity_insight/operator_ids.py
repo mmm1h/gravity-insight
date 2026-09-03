@@ -4,6 +4,9 @@ RETURNED_DIMENSION_CHANGE_URI = "operator://gravity/returned-dimension-change@1"
 RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA = (
     "gravity.operator-result.returned-dimension-change.v1"
 )
+SIGNIFICANCE_TEST_URI = "operator://gravity/significance-test@1"
+SIGNIFICANCE_TEST_INPUT_SCHEMA = "gravity.operator-input.significance-test.v1"
+SIGNIFICANCE_TEST_RESULT_SCHEMA = "gravity.operator-result.significance-test.v1"
 
 GOVERNED_METHOD_INPUT_SCHEMA = "gravity.operator-input.governed-method.v1"
 GOVERNED_METHOD_RESULT_SCHEMA = "gravity.operator-result.governed-method.v1"
@@ -25,4 +28,7 @@ __all__ = [
     "GOVERNED_METHOD_URIS",
     "RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA",
     "RETURNED_DIMENSION_CHANGE_URI",
+    "SIGNIFICANCE_TEST_INPUT_SCHEMA",
+    "SIGNIFICANCE_TEST_RESULT_SCHEMA",
+    "SIGNIFICANCE_TEST_URI",
 ]

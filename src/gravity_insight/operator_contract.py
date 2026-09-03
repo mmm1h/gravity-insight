@@ -34,8 +34,17 @@ _URI = re.compile(
 class OperatorContractError(AgentRuntimeContractError):
     """An Operator definition or packaged schema/golden resource is invalid."""
 
-    def __init__(self, reason_code: str, message: str) -> None:
+    def __init__(
+        self,
+        reason_code: str,
+        message: str,
+        *,
+        field: str | None = None,
+        next_action: str | None = None,
+    ) -> None:
         self.reason_code = reason_code
+        self.field = field
+        self.next_action = next_action
         super().__init__(f"{reason_code}: {message}")
 
 
@@ -188,7 +197,26 @@ def _validate_with_schema(
             value
         )
     except ContractError as exc:
-        raise OperatorContractError(reason_code, "value does not match Operator schema") from exc
+        message = str(exc)
+        raise OperatorContractError(
+            reason_code,
+            "value does not match Operator schema",
+            field=_schema_error_field(message),
+            next_action=(
+                "Correct the reported Operator field to match the described schema, "
+                "then retry."
+            ),
+        ) from exc
+
+
+def _schema_error_field(message: str) -> str:
+    match = re.search(r": \$(?P<path>(?:\.[A-Za-z0-9_]+|\[[0-9]+\])*)", message)
+    path = match.group("path").lstrip(".") if match is not None else "input"
+    missing = re.search(r"missing required fields: (?P<fields>[A-Za-z0-9_, ]+)", message)
+    if missing is not None:
+        first = missing.group("fields").split(",", 1)[0].strip()
+        path = f"{path}.{first}" if path else first
+    return path or "input"
 
 
 def _unique_ids(values: list[dict[str, Any]], key: str, label: str) -> None:
