@@ -177,7 +177,6 @@ class ReleaseWorkflowTests(unittest.TestCase):
         indented = re.findall(r"(?m)^\s+uses:\s*([^\s#]+)", self.workflow)
         self.assertEqual(
             [
-                "actions/upload-artifact",
                 "actions/download-artifact",
                 "actions/upload-artifact",
                 "actions/upload-artifact",
@@ -207,75 +206,76 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
 
     def test_offline_cli_steps_disable_startup_upgrade(self) -> None:
-        for name, workflow in self.workflows.items():
-            with self.subTest(workflow=name):
-                step = self._step(workflow, "Check all CLI namespaces offline")
-                env_block = re.search(
-                    r"(?ms)^        env:\n((?:^          .+\n?)*)", step
-                )
-                self.assertIsNotNone(env_block, name)
-                configured = dict(
-                    re.findall(
-                        r"(?m)^          ([A-Z][A-Z0-9_]*):\s*[\"']?([^\"'\s#]+)",
-                        env_block.group(1) if env_block is not None else "",
-                    )
-                )
-                self.assertIn(AUTO_UPGRADE_ENV, configured)
-                self.assertEqual("0", configured[AUTO_UPGRADE_ENV])
-                self.assertFalse(
-                    startup_update_enabled(
-                        ["--help"],
-                        environ={AUTO_UPGRADE_ENV: configured[AUTO_UPGRADE_ENV]},
-                    )
-                )
+        ci = self.workflows[CI_WORKFLOW.name]
+        step = self._step(ci, "Check all CLI namespaces offline")
+        env_block = re.search(r"(?ms)^        env:\n((?:^          .+\n?)*)", step)
+        self.assertIsNotNone(env_block)
+        configured = dict(
+            re.findall(
+                r"(?m)^          ([A-Z][A-Z0-9_]*):\s*[\"']?([^\"'\s#]+)",
+                env_block.group(1) if env_block is not None else "",
+            )
+        )
+        self.assertIn(AUTO_UPGRADE_ENV, configured)
+        self.assertEqual("0", configured[AUTO_UPGRADE_ENV])
+        self.assertFalse(
+            startup_update_enabled(
+                ["--help"],
+                environ={AUTO_UPGRADE_ENV: configured[AUTO_UPGRADE_ENV]},
+            )
+        )
+        self.assertIn("Require a green exact-SHA SDK CI run", self.workflow)
+        self.assertNotIn("Check all CLI namespaces offline", self.workflow)
 
-    def test_parallel_release_gates_are_read_only_and_publish_checked_artifacts(self) -> None:
-        secret = self._job("release_secret_history")
-        validation = self._job("release_validation")
+    def test_exact_sha_ci_reuse_and_supply_chain_are_read_only(self) -> None:
+        verify = self._job("verify_ci")
         build = self._job("release_supply_chain")
-        for job in (secret, validation, build):
+        for job in (verify, build):
             self.assertIn("contents: read", job)
             self.assertNotIn("contents: write", job)
+        self.assertIn("actions: read", verify)
+        self.assertNotIn("id-token: write", verify)
+        self.assertIn("Require a green exact-SHA SDK CI run", verify)
+        self.assertIn("head_sha=\"$GITHUB_SHA\"", verify)
+        self.assertIn('expected_event="push"', verify)
+        self.assertIn('expected_branch="main"', verify)
+        self.assertIn('.name == \"ci-required\"', verify)
+        self.assertIn("name: ci-secret-scan", verify)
+        self.assertIn("run-id: ${{ steps.ci.outputs.run_id }}", verify)
+        self.assertIn('receipt.get("history_included") is True', verify)
+        self.assertIn('receipt.get("repository_head") == expected', verify)
+        self.assertIn("name: release-secret-scan", verify)
         self.assertIn("contents: read", build)
         self.assertIn("name: python-distributions", build)
         self.assertIn("path: dist/", build)
         self.assertIn("name: release-supply-chain", build)
         self.assertIn("path: release-evidence/", build)
-        self.assertIn("scripts/scan_repository_secrets.py --history", secret)
-        self.assertIn("name: release-secret-scan", secret)
         self.assertIn("scripts/generate_release_sbom.py", build)
         self.assertIn("scripts/audit_release_dependencies.py", build)
         publish_index = self.workflow.index("  publish:")
         for fragment in (
-            "scripts/scan_repository_secrets.py --history",
             "scripts/generate_release_sbom.py",
             "scripts/audit_release_dependencies.py",
-            "python -m gravity_insight.compiler check",
-            "python -m gravity_insight.quality check",
+            "Require a green exact-SHA SDK CI run",
+            "Validate complete-history secret-scan receipt binding",
         ):
             self.assertLess(self.workflow.index(fragment), publish_index)
-        self.assertNotIn("gh release create", secret + validation + build)
+        self.assertNotIn("gh release create", verify + build)
 
     def test_release_workspace_outputs_are_excluded_from_checkpoint_file_universe(
         self,
     ) -> None:
         release_gates = "\n".join(
             (
-                self._job("release_secret_history"),
-                self._job("release_validation"),
+                self._job("verify_ci"),
                 self._job("release_supply_chain"),
             )
         )
         outputs = (
             (
-                "--receipt release-evidence/secret-scan.json",
+                "path: release-evidence/secret-scan.json",
                 "release-evidence/secret-scan.json",
             ),
-            (
-                "--output-dir tmp/agent-usability-gate",
-                "tmp/agent-usability-gate/probe.json",
-            ),
-            ("> tmp/agent-usability-gate.log", "tmp/agent-usability-gate.log"),
             ("python -m build", "build/probe"),
             ("path: dist/", "dist/probe"),
             ("--output-dir release-evidence", "release-evidence/probe.cdx.json"),
@@ -302,13 +302,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_oidc_publish_and_provenance_precede_github_release(self) -> None:
         publish = self._job("publish")
         finalize = self._job("finalize_release")
-        for gate in (
-            "release_windows_tests_audit",
-            "release_secret_history",
-            "release_validation",
-            "release_supply_chain",
-        ):
-            self.assertIn(f"- {gate}", publish)
+        self.assertIn("needs: [verify_ci, release_supply_chain]", publish)
         self.assertIn("id-token: write", publish)
         self.assertIn("name: python-distributions", publish)
         self.assertIn("scripts/verify_release_provenance.py pypi-plan", publish)

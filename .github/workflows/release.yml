@@ -15,83 +15,26 @@ name: SDK Release
         required: false
         default: false
         type: boolean
+      ci_run_id:
+        description: Successful exact-SHA SDK CI run used by read-only measurement
+        required: false
+        type: string
 
 env:
   PYTHONUTF8: "1"
   PYTHONIOENCODING: utf-8
 
 jobs:
-  release_windows_tests:
-    name: release-windows-tests (${{ matrix.shard }}/4)
+  verify_ci:
+    name: verify-ci
     if: github.event_name == 'push' || inputs.measure
-    runs-on: windows-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.11"
-          cache: pip
-      - name: Install SDK and test runner
-        run: python -m pip install --disable-pip-version-check -e ".[dev]"
-      - name: Run complete Windows release test shard with duration budget
-        run: >-
-          python scripts/check_test_duration_budget.py
-          --shard-index ${{ matrix.shard }}
-          --shard-count 4
-          --receipt tmp/pytest-shards/pytest-shard-${{ matrix.shard }}.json
-      - name: Upload Windows release test shard receipt
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: release-windows-pytest-shard-${{ matrix.shard }}
-          path: tmp/pytest-shards/pytest-shard-${{ matrix.shard }}.json
-          if-no-files-found: error
-
-  release_windows_tests_audit:
-    name: release-windows-tests-audit
-    if: always() && (github.event_name == 'push' || inputs.measure)
-    needs: release_windows_tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
+      actions: read
       contents: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.11"
-          cache: pip
-      - name: Install shard auditor
-        run: python -m pip install --disable-pip-version-check pytest pytest-xdist
-      - name: Download all Windows release test shard receipts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: release-windows-pytest-shard-*
-          path: tmp/pytest-shards
-          merge-multiple: true
-      - name: Prove full Windows release collection and execution conservation
-        run: >-
-          python scripts/check_test_duration_budget.py
-          --audit-receipts tmp/pytest-shards
-          --expected-shards 4
-          --audit-output tmp/pytest-shards/audit.json
-
-  release_secret_history:
-    name: release-secret-history
-    if: github.event_name == 'push' || inputs.measure
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
+    outputs:
+      ci_run_id: ${{ steps.ci.outputs.run_id }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -100,38 +43,8 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - name: Install SDK and secret scanner
-        run: python -m pip install --disable-pip-version-check -e ".[dev]"
-      - name: Scan tracked files and complete Git history for secrets
-        run: python scripts/scan_repository_secrets.py --history --receipt release-evidence/secret-scan.json
-      - name: Upload release secret-scan evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: release-secret-scan
-          path: release-evidence/secret-scan.json
-          if-no-files-found: error
-
-  release_validation:
-    name: release-validation
-    if: github.event_name == 'push' || inputs.measure
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.11"
-          cache: pip
-      - name: Install SDK and test runner
-        run: python -m pip install --disable-pip-version-check -e ".[dev]"
-      - name: Check deterministic contracts
-        run: python -m gravity_insight.compiler check
-      - name: Check quality ratchet
-        run: python -m gravity_insight.quality check
+      - name: Install release-tag checker
+        run: python -m pip install --disable-pip-version-check -e .
       - name: Check release tag matches package version
         if: github.event_name == 'push'
         run: python scripts/check_release_tag.py
@@ -143,24 +56,84 @@ jobs:
           git tag -d "$RELEASE_TAG" || true
           git tag "$RELEASE_TAG" HEAD
           python scripts/check_release_tag.py
-      - name: Check development Agent usability eval
+      - name: Require a green exact-SHA SDK CI run
+        id: ci
         env:
-          PYTHONPATH: src
+          GH_TOKEN: ${{ github.token }}
+          MEASURE: ${{ inputs.measure }}
+          REQUESTED_RUN_ID: ${{ inputs.ci_run_id }}
         run: |
-          mkdir -p tmp
-          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1 || {
-            tail -n 40 tmp/agent-usability-gate.log
+          if [[ "$MEASURE" == "true" ]]; then
+            run_id="$REQUESTED_RUN_ID"
+            expected_event="workflow_dispatch"
+            expected_branch="$GITHUB_REF_NAME"
+          else
+            run_id=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+              -f head_sha="$GITHUB_SHA" -f branch=main -f event=push -f status=success -f per_page=100 \
+              --jq '.workflow_runs | sort_by(.run_number) | .[-1].id // empty')
+            expected_event="push"
+            expected_branch="main"
+          fi
+          if [[ ! "$run_id" =~ ^[0-9]+$ ]]; then
+            echo "No candidate SDK CI run for exact SHA $GITHUB_SHA" >&2
             exit 1
-          }
-          echo "PASS agent-usability development eval"
-      - name: Check all CLI namespaces offline
+          fi
+          IFS=$'\t' read -r head_sha event head_branch conclusion path < <(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" \
+              --jq '[.head_sha, .event, .head_branch, .conclusion, .path] | @tsv'
+          )
+          if [[ "$head_sha" != "$GITHUB_SHA" || "$event" != "$expected_event" || \
+                "$head_branch" != "$expected_branch" || "$conclusion" != "success" || \
+                "$path" != ".github/workflows/ci.yml" ]]; then
+            echo "SDK CI run $run_id is not a green exact-SHA $expected_event/$expected_branch run" >&2
+            exit 1
+          fi
+          required=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" \
+            -f per_page=100 \
+            --jq '[.jobs[] | select(.name == "ci-required" and .conclusion == "success")] | length')
+          if [[ "$required" != "1" ]]; then
+            echo "SDK CI run $run_id has no unique successful ci-required job" >&2
+            exit 1
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "PASS exact-SHA SDK CI reuse: run_id=$run_id sha=$GITHUB_SHA"
+      - name: Download exact-SHA secret-scan receipt
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ci-secret-scan
+          path: release-evidence/
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.ci.outputs.run_id }}
+      - name: Validate complete-history secret-scan receipt binding
         env:
-          GRAVITY_INSIGHT_AUTO_UPGRADE: "0"
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
-          gravity --help
-          gravity --workspace examples/workspace sql --dry-run
-          gravity census --smoke
-          gravity insight --dry-run
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("release-evidence/secret-scan.json")
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          expected = os.environ["EXPECTED_SHA"]
+          valid = (
+              receipt.get("status") == "passed"
+              and receipt.get("history_included") is True
+              and receipt.get("repository_head") == expected
+              and receipt.get("history_commit_count", 0) > 0
+              and receipt.get("scanned_tracked_file_count", 0) > 0
+              and receipt.get("unreviewed_findings") == []
+          )
+          if not valid:
+              raise SystemExit(f"invalid exact-SHA secret-scan receipt: {receipt}")
+          print(f"PASS exact-SHA secret-scan receipt: sha={expected}")
+          PY
+      - name: Upload release secret-scan evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-secret-scan
+          path: release-evidence/secret-scan.json
+          if-no-files-found: error
 
   release_supply_chain:
     name: release-supply-chain
@@ -201,11 +174,7 @@ jobs:
   publish:
     name: publish
     if: github.event_name == 'push'
-    needs:
-      - release_windows_tests_audit
-      - release_secret_history
-      - release_validation
-      - release_supply_chain
+    needs: [verify_ci, release_supply_chain]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -278,11 +247,7 @@ jobs:
   measure_release:
     name: release-measurement
     if: inputs.measure
-    needs:
-      - release_windows_tests_audit
-      - release_secret_history
-      - release_validation
-      - release_supply_chain
+    needs: [verify_ci, release_supply_chain]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
