@@ -1,11 +1,18 @@
 # Release Gate
 
 The tag workflow is the publication boundary. Supply-chain controls run in the
-Windows `build` job before the OIDC `publish` job and are hard failures: a
-missing scanner/tool, incomplete Git history, unreviewed secret candidate,
-failed artifact install, invalid or incomplete SBOM, unreachable advisory
-service, incomplete audit response, or reported vulnerability blocks publish.
-There are no warning-only supply-chain outcomes.
+Ubuntu `release-supply-chain` job, and the tagged commit's CI evidence is
+re-checked by `verify-ci`; both gate the OIDC `publish` job. They are hard
+failures: a missing scanner/tool, incomplete Git history, unreviewed secret
+candidate, failed artifact install, invalid or incomplete SBOM, unreachable
+advisory service, incomplete audit response, or reported vulnerability blocks
+publish. There are no warning-only supply-chain outcomes.
+
+`verify-ci` only accepts a CI run for the identical commit SHA that ran on
+`main` from a `push` event, succeeded, and reported `ci-required`. A missing or
+mismatched run fails the release rather than publishing on stale evidence.
+`ci-required` is the single aggregated branch-protection check; individual
+failures still surface in their own named jobs.
 
 ## Independent controls
 
