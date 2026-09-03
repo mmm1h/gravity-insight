@@ -26,7 +26,7 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "25cb690a16b8fa78e646f5b692282efb114f46f107682806c4c4078bf69bd65c",
+    "reference_evidence_sha256": "6702f271ba23f5b6a05fedc5917259c3ba56a57998d43d390c342290f916c933",
     "manual_review_sha256": "f8a366d856ebed171797141e00d904d25a876ef037998c98eca26947bf45d5da",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3102,
@@ -688,7 +688,7 @@
     "dispositions": {
       "no_migration_effect": 280
     },
-    "sites_sha256": "78afada48c57653d319565480c06936750314a3a4489eee8d39f5530f5496853"
+    "sites_sha256": "00d94c51b259af0d61550add96e706a1a542e813db23b9890bcfad9b0e1f789c"
   },
   "blockers": [],
   "site_fields": [
@@ -766,7 +766,7 @@
       }
     ],
     [
-      "scripts/generate_method_gap_report.py:109:5:from import",
+      "scripts/generate_method_gap_report.py:134:5:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -4516,7 +4516,7 @@
       }
     ],
     [
-      "tests/test_skill_method_complete.py:7:1:from import",
+      "tests/test_skill_method_complete.py:9:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

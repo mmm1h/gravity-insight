@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 from gravity_insight.agent_runtime_contracts import (
@@ -10,6 +12,7 @@ from gravity_insight.agent_runtime_contracts import (
 )
 from gravity_insight.skill_contract import SkillContractError, compile_skill_manifest
 from gravity_insight.model_registry import ModelRegistry
+from gravity_insight.maturity_dimensions_core import skill_evidence
 from gravity_insight.operator_registry import OperatorRegistry
 from gravity_insight.project_skill_overlay import compile_project_skill_overlay
 from gravity_insight.semantic_contract import compile_semantic_source
@@ -226,7 +229,108 @@ class SkillMethodCompleteTests(unittest.TestCase):
     def test_compact_command_report_retains_each_skill_item_result(self) -> None:
         compact = compact_report(self.report)
         self.assertEqual(self.report["summary"], compact["summary"])
+        self.assertEqual(self.report["source"], compact["source"])
         self.assertTrue(all(len(row["items"]) == 17 for row in compact["skills"]))
+
+    def test_maturity_evidence_consumes_the_current_method_report(self) -> None:
+        evidence = skill_evidence(
+            ROOT,
+            {
+                "checks": [
+                    {"id": "provider_offline_reachability", "status": "pass"}
+                ]
+            },
+        )
+        method = next(
+            item
+            for item in evidence
+            if item["claim"]
+            == "Skill method completeness is computed from current canonical manifests"
+        )
+        self.assertTrue(method["measured"])
+        self.assertEqual(44, method["passed"])
+        self.assertEqual(44, method["total"])
+        self.assertEqual(
+            "recomputed_from_current_manifests_on_each_invocation",
+            method["observed"]["generation"],
+        )
+        self.assertEqual(64, len(method["observed"]["manifest_set_sha256"]))
+
+    def test_report_recomputes_after_a_manifest_changes_in_process(self) -> None:
+        manifest = copy.deepcopy(load_canonical_skills()[0])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            library = root / "skills" / "library"
+            library.mkdir(parents=True)
+            path = library / "skill.json"
+            path.write_text(
+                json.dumps(manifest, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            initial = library_report(root)
+            stale_report = root / "tmp" / "method-gap-report.json"
+            stale_report.parent.mkdir()
+            stale_report.write_text(
+                json.dumps(initial, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            manifest["method"]["business_question"] = "English-only question"
+            path.write_text(
+                json.dumps(manifest, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            changed = library_report(root)
+            evidence = skill_evidence(
+                root,
+                {
+                    "checks": [
+                        {"id": "provider_offline_reachability", "status": "pass"}
+                    ]
+                },
+            )
+            current_metric = next(
+                item
+                for item in evidence
+                if item["claim"]
+                == "Skill method completeness is computed from current canonical manifests"
+            )
+
+        self.assertEqual(1, initial["summary"]["method_complete_true"])
+        self.assertEqual(0, changed["summary"]["method_complete_true"])
+        self.assertEqual(1, changed["summary"]["method_complete_false"])
+        self.assertTrue(current_metric["measured"])
+        self.assertEqual(0, current_metric["passed"])
+        self.assertEqual(1, current_metric["total"])
+        self.assertNotEqual(
+            initial["source"]["manifest_set_sha256"],
+            changed["source"]["manifest_set_sha256"],
+        )
+        self.assertEqual(
+            changed["source"]["manifest_set_sha256"],
+            current_metric["observed"]["manifest_set_sha256"],
+        )
+
+    def test_missing_current_report_remains_unmeasured(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            evidence = skill_evidence(
+                Path(temporary),
+                {
+                    "checks": [
+                        {"id": "provider_offline_reachability", "status": "pass"}
+                    ]
+                },
+            )
+        method = next(
+            item
+            for item in evidence
+            if item["claim"]
+            == "Skill method completeness is computed from current canonical manifests"
+        )
+        self.assertFalse(method["measured"])
+        self.assertIsNone(method["passed"])
+        self.assertIsNone(method["total"])
+        self.assertEqual("ValueError", method["observed"]["report_error"])
 
     def test_all_canonical_methods_are_complete(self) -> None:
         complete = {

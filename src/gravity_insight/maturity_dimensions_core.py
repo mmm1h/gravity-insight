@@ -227,7 +227,8 @@ def _evaluation_layer_evidence(evaluation: Mapping[str, Any]) -> list[dict[str, 
 
 
 def skill_evidence(root: Path, health: Mapping[str, Any]) -> list[dict[str, Any]]:
-    manifests, valid, missing_method = _skill_manifests(root)
+    manifests, valid = _skill_manifests(root)
+    method_report, method_report_error = _current_method_report(root)
     evidence = [
         metric(
             source="skills/library/*.json + gravity.skill.v1",
@@ -238,40 +239,69 @@ def skill_evidence(root: Path, health: Mapping[str, Any]) -> list[dict[str, Any]
             observed={"valid": valid, "manifests": len(manifests)},
             missing=() if manifests else ("canonical Skill manifests",),
         ),
-        _method_complete_metric(manifests, missing_method),
+        _method_complete_metric(manifests, method_report, method_report_error),
         *_registry_evidence(health),
     ]
     return evidence
 
 
-def _skill_manifests(root: Path) -> tuple[list[dict[str, Any]], int, int]:
+def _skill_manifests(root: Path) -> tuple[list[dict[str, Any]], int]:
     manifests = []
     valid = 0
-    missing = 0
     for path in sorted((root / "skills/library").glob("*.json")):
         value = load_object(path)
         manifests.append(value)
-        missing += "method_complete" not in value
         try:
             compile_skill_manifest(value, label=relative(root, path))
             valid += 1
         except (RuntimeError, ValueError, TypeError):
             pass
-    return manifests, valid, missing
+    return manifests, valid
+
+
+def _current_method_report(
+    root: Path,
+) -> tuple[Mapping[str, Any] | None, str | None]:
+    try:
+        from scripts.generate_method_gap_report import library_report
+
+        return library_report(root), None
+    except (ImportError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        return None, type(exc).__name__
 
 
 def _method_complete_metric(
-    manifests: list[dict[str, Any]], missing: int
+    manifests: list[dict[str, Any]],
+    report: Mapping[str, Any] | None,
+    report_error: str | None,
 ) -> dict[str, Any]:
-    measured = bool(manifests) and not missing
+    summary = report.get("summary", {}) if report is not None else {}
+    source = report.get("source", {}) if report is not None else {}
+    report_count = int(summary.get("skill_count", 0))
+    measured = bool(manifests) and report is not None and report_count == len(manifests)
+    missing = ()
+    if not measured:
+        missing = ("a current Method Complete report for every canonical Skill",)
     return metric(
-        source="skills/library/*.json#/method_complete",
-        claim="Skill method completeness is machine-declared",
+        source="scripts/generate_method_gap_report.py::library_report(current manifests)",
+        claim="Skill method completeness is computed from current canonical manifests",
         measured=measured,
-        passed=sum(item.get("method_complete") is True for item in manifests) if measured else None,
-        total=len(manifests) if measured else None,
-        observed={"manifests": len(manifests), "missing_field": missing},
-        missing=() if measured else ("method_complete on every canonical Skill manifest",),
+        passed=int(summary["method_complete_true"]) if measured else None,
+        total=report_count if measured else None,
+        observed={
+            "manifests": len(manifests),
+            "report_skills": report_count,
+            "method_complete": (
+                int(summary["method_complete_true"]) if measured else None
+            ),
+            "method_incomplete": (
+                int(summary["method_complete_false"]) if measured else None
+            ),
+            "manifest_set_sha256": source.get("manifest_set_sha256"),
+            "generation": source.get("generation"),
+            "report_error": report_error,
+        },
+        missing=missing,
     )
 
 
