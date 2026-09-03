@@ -126,7 +126,15 @@ jobs:
       - name: Check quality ratchet
         run: python -m gravity_insight.quality check
       - name: Check release tag matches package version
+        if: github.event_name != 'workflow_dispatch'
         run: python scripts/check_release_tag.py
+      - name: Exercise release-tag gate without changing a remote tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          release_tag="v$(python -c 'import gravity_insight; print(gravity_insight.__version__)')"
+          git tag -d "$release_tag" || true
+          git tag "$release_tag" HEAD
+          python scripts/check_release_tag.py
 
   agent_usability:
     name: agent-usability
