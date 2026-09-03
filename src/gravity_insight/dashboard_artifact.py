@@ -23,6 +23,9 @@ from .actionable_error_values import actual_value
 
 MAX_CONFIG_BYTES = 1_048_576
 MAX_ANALYSIS_DAYS = 90
+_MISSING = object()
+
+
 @dataclass(frozen=True)
 class CompiledDashboardChart:
     """One Dashboard artifact compiled to an exact stable Analysis request."""
@@ -71,11 +74,7 @@ def compile_dashboard_chart(
     subject = _text(item.get("subject"), "report.subject", maximum=64)
     kind = SUBJECT_KINDS.get(subject)
     if kind is None:
-        raise UnsupportedOperationError(
-            "dashboard chart subject is not supported by strict replay",
-            field="report.subject",
-            next_action="Keep this chart unsupported until its query contract is proven.",
-        )
+        _unsupported("dashboard chart subject is not supported by strict replay", "report.subject", subject, next_action="Keep this chart unsupported until its query contract is proven.")
     selected_app = _app_id(app_id)
     validate_dashboard_window(start, end)
     config = _config(item.get("config"))
@@ -94,11 +93,7 @@ def compile_dashboard_chart(
     operation_id = ANALYSIS_QUERY_OPERATIONS[kind]
     validation = client.validate(operation_id, inputs)
     if not isinstance(validation, Mapping) or validation.get("ok") is not True:
-        raise UnsupportedOperationError(
-            "dashboard chart cannot be validated against the stable Analysis contract",
-            field="report.config",
-            next_action="Keep this chart unsupported; do not translate or retry its Web config.",
-        )
+        _unsupported("dashboard chart cannot be validated against the stable Analysis contract", "report.config", config, next_action="Keep this chart unsupported; do not translate or retry its Web config.")
     return CompiledDashboardChart(
         report_id=report_id,
         name=name,
@@ -149,17 +144,14 @@ def _event_inputs(
     end: str,
 ) -> dict[str, Any]:
     if body.get("user_filtering") not in (None, [], {}):
-        _unsupported("event user_filtering is not registered", "calculateBody.user_filtering")
+        _unsupported("event user_filtering is not registered", "calculateBody.user_filtering", body.get("user_filtering"))
     groups = _objects(body.get("group_by_list", []), "calculateBody.group_by_list")
     grain = _ui_object(
         config.get("groupByCreateTime", {}),
         "report.config.groupByCreateTime",
     ).get("value")
     if any(item.get("field") == "create_time" for item in groups) and grain is None:
-        _unsupported(
-            "event groupByCreateTime.value is required for create_time grouping",
-            "report.config.groupByCreateTime.value",
-        )
+        _unsupported("event groupByCreateTime.value is required for create_time grouping", "report.config.groupByCreateTime.value", grain)
     if grain is not None:
         groups = [_event_time_group(item, grain) for item in groups]
     return {
@@ -196,27 +188,24 @@ def _retention_inputs(
 ) -> dict[str, Any]:
     reattribute = body.get("user_re_attribute_filtering")
     if reattribute not in (None, [], {}):
-        _unsupported(
-            "retention user_re_attribute_filtering is not sent by Dashboard Web",
-            "calculateBody.user_re_attribute_filtering",
-        )
+        _unsupported("retention user_re_attribute_filtering is not sent by Dashboard Web", "calculateBody.user_re_attribute_filtering", reattribute)
     groups = _objects(body.get("group_by_list", []), "calculateBody.group_by_list")
     cascade = _sequence(config.get("cascaderValue", ["day", 7]), "report.config.cascaderValue")
     if len(cascade) != 2:
-        _unsupported("retention cascaderValue must contain grain and offset", "report.config.cascaderValue")
+        _unsupported("retention cascaderValue must contain grain and offset", "report.config.cascaderValue", cascade)
     grain, offset_selector = cascade
     if not isinstance(grain, str) or not grain:
-        _unsupported("retention grain is invalid", "report.config.cascaderValue")
+        _unsupported("retention grain is invalid", "report.config.cascaderValue", grain)
     offset = config.get("cascaderInput", 7) if offset_selector == "custom" else offset_selector
     if isinstance(offset, bool) or not isinstance(offset, int):
-        _unsupported("retention offset is invalid", "report.config.cascaderValue")
+        _unsupported("retention offset is invalid", "report.config.cascaderValue", offset)
     groups.append({"type": "default_event", "field": "create_time", "group_by": cascade[0]})
     total = config.get("total_calc_type", "total_week")
     if not isinstance(total, str) or total not in {"total_week", "total_month"}:
-        _unsupported("retention total_calc_type is invalid", "report.config.total_calc_type")
+        _unsupported("retention total_calc_type is invalid", "report.config.total_calc_type", total)
     total_enabled = config.get("is_total_calc", False)
     if not isinstance(total_enabled, bool):
-        _unsupported("retention is_total_calc must be boolean", "report.config.is_total_calc")
+        _unsupported("retention is_total_calc must be boolean", "report.config.is_total_calc", total_enabled)
     total_calc_type = "DAY"
     if total_enabled:
         total_calc_type = {"total_week": "WEEK", "total_month": "MONTH"}.get(total, "DAY")
@@ -245,7 +234,7 @@ def _funnel_inputs(
 ) -> dict[str, Any]:
     series_type = config.get("seriesType")
     if not isinstance(series_type, str):
-        _unsupported("funnel seriesType must be text", "report.config.seriesType")
+        _unsupported("funnel seriesType must be text", "report.config.seriesType", series_type)
     normalized_series = {
         "bar": "funnel_bar",
         "line": "funnel_line",
@@ -271,16 +260,16 @@ def _scatter_inputs(
 ) -> dict[str, Any]:
     groups = _objects(body.get("group_by_list", []), "calculateBody.group_by_list")
     if not groups or groups[-1].get("field") != "create_time":
-        _unsupported("scatter config is missing its trailing create_time group", "calculateBody.group_by_list")
+        _unsupported("scatter config is missing its trailing create_time group", "calculateBody.group_by_list", groups)
     series_type = config.get("seriesType")
     if not isinstance(series_type, str):
-        _unsupported("scatter seriesType must be text", "report.config.seriesType")
+        _unsupported("scatter seriesType must be text", "report.config.seriesType", series_type)
     grain = _ui_object(
         config.get("groupByCreateTime"),
         "report.config.groupByCreateTime",
     ).get("value")
     if not isinstance(grain, str) or not grain:
-        _unsupported("scatter groupByCreateTime.value is required", "report.config.groupByCreateTime.value")
+        _unsupported("scatter groupByCreateTime.value is required", "report.config.groupByCreateTime.value", grain)
     effective_grain = "total" if series_type == "scatter_bar" else grain
     groups[-1] = {
         "type": "default_event",
@@ -304,14 +293,14 @@ def _event_time_group(item: Mapping[str, Any], grain: Any) -> dict[str, Any]:
     if result.get("field") != "create_time":
         return result
     if isinstance(grain, bool) or not isinstance(grain, (str, int)):
-        _unsupported("event groupByCreateTime.value is invalid", "report.config.groupByCreateTime.value")
+        _unsupported("event groupByCreateTime.value is invalid", "report.config.groupByCreateTime.value", grain)
     if grain in {1, 5, 10}:
         result.update({"group_by": "minute", "granularity": grain})
     elif isinstance(grain, str) and grain:
         result["group_by"] = grain
         result.pop("granularity", None)
     else:
-        _unsupported("event groupByCreateTime.value is invalid", "report.config.groupByCreateTime.value")
+        _unsupported("event groupByCreateTime.value is invalid", "report.config.groupByCreateTime.value", grain)
     return result
 
 
@@ -320,10 +309,7 @@ def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
 
     if kind == "event":
         if config.get("compareList") not in (None, []):
-            _unsupported(
-                "event comparison windows cannot be represented by one explicit date pair",
-                "report.config.compareList",
-            )
+            _unsupported("event comparison windows cannot be represented by one explicit date pair", "report.config.compareList", config.get("compareList"))
         _optional_object(config, "groupByCreateTime")
         _optional_object(config, "aggregate_config", fields=None)
         _optional_date_list(config, "date_list")
@@ -407,10 +393,7 @@ def _optional_date_list(config: Mapping[str, Any], key: str) -> None:
         return
     values = _sequence(config[key], f"report.config.{key}")
     if not values or any(not isinstance(item, Mapping) for item in values):
-        _unsupported(
-            "saved Dashboard date_list must contain date objects",
-            f"report.config.{key}",
-        )
+        _unsupported("saved Dashboard date_list must contain date objects", f"report.config.{key}", values)
     for item in values:
         _reject_unknown(
             item,
@@ -422,17 +405,17 @@ def _optional_date_list(config: Mapping[str, Any], key: str) -> None:
 def _config(value: Any) -> Mapping[str, Any]:
     if isinstance(value, str):
         if len(value.encode("utf-8")) > MAX_CONFIG_BYTES:
-            _unsupported("dashboard chart config exceeds its size limit", "report.config")
+            _unsupported("dashboard chart config exceeds its size limit", "report.config", value)
         try:
             value = json.loads(value)
         except (TypeError, ValueError):
-            _unsupported("dashboard chart config is not valid JSON", "report.config")
+            _unsupported("dashboard chart config is not valid JSON", "report.config", value)
     elif isinstance(value, Mapping):
         try:
             if len(json.dumps(value, ensure_ascii=False).encode("utf-8")) > MAX_CONFIG_BYTES:
-                _unsupported("dashboard chart config exceeds its size limit", "report.config")
+                _unsupported("dashboard chart config exceeds its size limit", "report.config", value)
         except (TypeError, ValueError):
-            _unsupported("dashboard chart config is not JSON-compatible", "report.config")
+            _unsupported("dashboard chart config is not JSON-compatible", "report.config", value)
     return _mapping(value, "report.config")
 
 
@@ -489,20 +472,20 @@ def _app_id(value: Any) -> str:
 
 def _mapping(value: Any, field: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
-        _unsupported(f"{field} must be an object", field)
+        _unsupported(f"{field} must be an object", field, value)
     return value
 
 
 def _objects(value: Any, field: str) -> list[dict[str, Any]]:
     values = _sequence(value, field)
     if any(not isinstance(item, Mapping) for item in values):
-        _unsupported(f"{field} must contain objects", field)
+        _unsupported(f"{field} must contain objects", field, values)
     return [copy.deepcopy(dict(item)) for item in values]
 
 
 def _sequence(value: Any, field: str) -> list[Any]:
     if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
-        _unsupported(f"{field} must be an array", field)
+        _unsupported(f"{field} must be an array", field, value)
     return list(value)
 
 
@@ -517,17 +500,69 @@ def _text(value: Any, field: str, *, maximum: int) -> str:
 
 def _reject_unknown(value: Mapping[str, Any], allowed: frozenset[str], field: str) -> None:
     if any(not isinstance(key, str) for key in value):
-        _unsupported(f"{field} contains a non-text Web field", field)
+        _unsupported(
+            f"{field} contains a non-text Web field",
+            field,
+            unsupported_items=(
+                {"field": _diagnostic_field(field), "type": "non_text_field"},
+            ),
+        )
     unknown = sorted(set(value) - set(allowed))
     if unknown:
-        _unsupported(f"{field} contains unregistered Web fields", field)
+        _unsupported(
+            f"{field} contains unregistered Web fields",
+            field,
+            unsupported_items=tuple(
+                {
+                    "field": f"{_diagnostic_field(field)}.{key}",
+                    "type": _structural_type(value[key]),
+                }
+                for key in unknown
+            ),
+        )
 
 
-def _unsupported(message: str, field: str) -> None:
+def _diagnostic_field(field: str) -> str:
+    return f"report.config.{field}" if field.startswith("calculateBody") else field
+
+
+def _structural_type(value: Any) -> str:
+    if value is _MISSING:
+        return "missing"
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, str):
+        return "text"
+    if isinstance(value, Mapping):
+        return "object"
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        return "array"
+    if isinstance(value, (int, float)):
+        return "number"
+    return "non_json"
+
+
+def _unsupported(
+    message: str,
+    field: str,
+    value: Any = _MISSING,
+    *,
+    unsupported_items: Sequence[Mapping[str, str]] | None = None,
+    next_action: str = "Keep this chart unsupported until the Web artifact contract is proven.",
+) -> None:
+    items = unsupported_items or (
+        {
+            "field": _diagnostic_field(field),
+            "type": _structural_type(value),
+        },
+    )
     raise UnsupportedOperationError(
         message,
         field=field,
-        next_action="Keep this chart unsupported until the Web artifact contract is proven.",
+        next_action=next_action,
+        unsupported_items=items,
     )
 
 

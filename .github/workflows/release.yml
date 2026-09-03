@@ -7,8 +7,17 @@ name: SDK Release
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to recover (for example v0.3.2)
+        description: Existing release tag to recover or use for a read-only measurement
         required: true
+        type: string
+      measure:
+        description: Run the release graph and read-only external tail without publishing
+        required: false
+        default: false
+        type: boolean
+      ci_run_id:
+        description: Successful exact-SHA SDK CI run used by read-only measurement
+        required: false
         type: string
 
 env:
@@ -16,12 +25,16 @@ env:
   PYTHONIOENCODING: utf-8
 
 jobs:
-  build:
-    if: github.event_name == 'push'
-    runs-on: windows-latest
-    timeout-minutes: 30
+  verify_ci:
+    name: verify-ci
+    if: github.event_name == 'push' || inputs.measure
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
+      actions: read
       contents: read
+    outputs:
+      ci_run_id: ${{ steps.ci.outputs.run_id }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -30,45 +43,113 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - name: Install SDK and test runner
-        run: python -m pip install --disable-pip-version-check -e ".[dev]"
-      - name: Scan tracked files and complete Git history for secrets
-        run: python scripts/scan_repository_secrets.py --history --receipt release-evidence/secret-scan.json
-      - name: Run tests
-        run: python -m pytest -q -n auto --dist load
-      - name: Check deterministic contracts
-        run: python -m gravity_insight.compiler check
-      - name: Check quality ratchet
-        run: python -m gravity_insight.quality check
+      - name: Install release-tag checker
+        run: python -m pip install --disable-pip-version-check -e .
       - name: Check release tag matches package version
+        if: github.event_name == 'push'
         run: python scripts/check_release_tag.py
-      - name: Check development Agent usability eval
+      - name: Exercise release-tag gate without changing a remote tag
+        if: github.event_name == 'workflow_dispatch'
         env:
-          PYTHONPATH: src
-        shell: pwsh
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          New-Item -ItemType Directory -Force -Path tmp | Out-Null
-          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content tmp/agent-usability-gate.log -Tail 40
-            exit $LASTEXITCODE
-          }
-          Write-Output "PASS agent-usability development eval"
-      - name: Check all CLI namespaces offline
+          git tag -d "$RELEASE_TAG" || true
+          git tag "$RELEASE_TAG" HEAD
+          python scripts/check_release_tag.py
+      - name: Require a green exact-SHA SDK CI run
+        id: ci
         env:
-          GRAVITY_INSIGHT_AUTO_UPGRADE: "0"
-        shell: pwsh
+          GH_TOKEN: ${{ github.token }}
+          MEASURE: ${{ inputs.measure }}
+          REQUESTED_RUN_ID: ${{ inputs.ci_run_id }}
         run: |
-          gravity --help
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          gravity --workspace examples/workspace sql --dry-run
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          gravity census --smoke
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          gravity insight --dry-run
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Install release tooling
-        run: python -m pip install --disable-pip-version-check build twine
+          if [[ "$MEASURE" == "true" ]]; then
+            run_id="$REQUESTED_RUN_ID"
+            expected_event="workflow_dispatch"
+            expected_branch="$GITHUB_REF_NAME"
+          else
+            run_id=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+              -f head_sha="$GITHUB_SHA" -f branch=main -f event=push -f status=success -f per_page=100 \
+              --jq '.workflow_runs | sort_by(.run_number) | .[-1].id // empty')
+            expected_event="push"
+            expected_branch="main"
+          fi
+          if [[ ! "$run_id" =~ ^[0-9]+$ ]]; then
+            echo "No candidate SDK CI run for exact SHA $GITHUB_SHA" >&2
+            exit 1
+          fi
+          IFS=$'\t' read -r head_sha event head_branch conclusion path < <(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" \
+              --jq '[.head_sha, .event, .head_branch, .conclusion, .path] | @tsv'
+          )
+          if [[ "$head_sha" != "$GITHUB_SHA" || "$event" != "$expected_event" || \
+                "$head_branch" != "$expected_branch" || "$conclusion" != "success" || \
+                "$path" != ".github/workflows/ci.yml" ]]; then
+            echo "SDK CI run $run_id is not a green exact-SHA $expected_event/$expected_branch run" >&2
+            exit 1
+          fi
+          required=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" \
+            -f per_page=100 \
+            --jq '[.jobs[] | select(.name == "ci-required" and .conclusion == "success")] | length')
+          if [[ "$required" != "1" ]]; then
+            echo "SDK CI run $run_id has no unique successful ci-required job" >&2
+            exit 1
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "PASS exact-SHA SDK CI reuse: run_id=$run_id sha=$GITHUB_SHA"
+      - name: Download exact-SHA secret-scan receipt
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ci-secret-scan
+          path: release-evidence/
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.ci.outputs.run_id }}
+      - name: Validate complete-history secret-scan receipt binding
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("release-evidence/secret-scan.json")
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          expected = os.environ["EXPECTED_SHA"]
+          valid = (
+              receipt.get("status") == "passed"
+              and receipt.get("history_included") is True
+              and receipt.get("repository_head") == expected
+              and receipt.get("history_commit_count", 0) > 0
+              and receipt.get("scanned_tracked_file_count", 0) > 0
+              and receipt.get("unreviewed_findings") == []
+          )
+          if not valid:
+              raise SystemExit(f"invalid exact-SHA secret-scan receipt: {receipt}")
+          print(f"PASS exact-SHA secret-scan receipt: sha={expected}")
+          PY
+      - name: Upload release secret-scan evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-secret-scan
+          path: release-evidence/secret-scan.json
+          if-no-files-found: error
+
+  release_supply_chain:
+    name: release-supply-chain
+    if: github.event_name == 'push' || inputs.measure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and release tooling
+        run: python -m pip install --disable-pip-version-check -e ".[dev]" twine
       - name: Build wheel and source distribution
         run: python -m build
       - name: Check distributions
@@ -91,8 +172,9 @@ jobs:
           if-no-files-found: error
 
   publish:
+    name: publish
     if: github.event_name == 'push'
-    needs: build
+    needs: [verify_ci, release_supply_chain]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -100,8 +182,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
@@ -125,24 +205,10 @@ jobs:
           attestations: true
           packages-dir: ${{ runner.temp }}/pypi-upload/
 
-  release-provenance:
+  finalize_release:
+    name: finalize-release
     if: github.event_name == 'push'
     needs: publish
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.11"
-      - name: Verify PyPI provenance binds to published files
-        run: python scripts/verify_release_provenance.py gravity-insight "${GITHUB_REF_NAME#v}"
-
-  github-release:
-    if: github.event_name == 'push'
-    needs: [publish, release-provenance]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -152,14 +218,21 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
-      - name: Download supply-chain evidence
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Download release supply-chain evidence
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: release-supply-chain
           path: release-evidence/
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      - name: Download release secret-scan evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          python-version: "3.11"
+          name: release-secret-scan
+          path: release-evidence/
+      - name: Verify PyPI provenance binds to published files
+        run: python scripts/verify_release_provenance.py gravity-insight "${GITHUB_REF_NAME#v}"
       - name: Reconcile GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -171,8 +244,61 @@ jobs:
           --repository "$GITHUB_REPOSITORY"
           --extra-asset-dir release-evidence
 
-  recover-github-release:
-    if: github.event_name == 'workflow_dispatch'
+  measure_release:
+    name: release-measurement
+    if: inputs.measure
+    needs: [verify_ci, release_supply_chain]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+          path: release-source
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Download existing release assets for a read-only publish plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          mkdir -p published-dist release-evidence
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.whl' --pattern '*.tar.gz' --dir published-dist
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.json' --dir release-evidence
+      - name: Exercise idempotent PyPI publish plan without upload permission
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          python scripts/verify_release_provenance.py pypi-plan
+          --project gravity-insight
+          --version "${RELEASE_TAG#v}"
+          --dist-dir published-dist
+          --stage-dir "$RUNNER_TEMP/pypi-upload"
+      - name: Verify existing PyPI provenance
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python scripts/verify_release_provenance.py gravity-insight "${RELEASE_TAG#v}"
+      - name: Exercise idempotent GitHub reconciliation with a read-only token
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          python scripts/verify_release_provenance.py recover
+          --project gravity-insight
+          --version "${RELEASE_TAG#v}"
+          --tag "$RELEASE_TAG"
+          --repository "$GITHUB_REPOSITORY"
+          --repository-root release-source
+          --extra-asset-dir release-evidence
+
+  recover_github_release:
+    name: recover-github-release
+    if: github.event_name == 'workflow_dispatch' && !inputs.measure
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

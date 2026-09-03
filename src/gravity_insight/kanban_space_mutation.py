@@ -57,13 +57,14 @@ def create_space(
         if existing is not None:
             return idempotent(SPACE_CREATE, existing)
         mutation = client._execute_mutation(SPACE_CREATE, inputs)
-        _tree, after = read_tree(client, app)
-        created = create_preflight(after, "space", marker, wire_name)
-        if created is None:
-            raise MutationReadbackError(
-                "created Kanban space did not round-trip through the tree",
-                next_action="Inspect this SDK marker before deciding whether another create is safe.",
-            )
+        with MutationReadbackError.after_dispatch(mutation, marker):
+            _tree, after = read_tree(client, app)
+            created = create_preflight(after, "space", marker, wire_name)
+            if created is None:
+                raise MutationReadbackError(
+                    "created Kanban space did not round-trip through the tree",
+                    next_action="Inspect this SDK marker before deciding whether another create is safe.",
+                )
         return completed(preview, mutation, created.public(), status="created")
 
 
@@ -104,13 +105,15 @@ def _rename_space(
     if not send:
         return preview
     mutation = client._execute_mutation(SPACE_UPDATE, inputs)
-    _tree, after = read_tree(client, app)
-    updated = find_object(after, "space", space_id)
-    if updated.name != wire_name:
-        raise MutationReadbackError(
-            "Kanban space rename did not round-trip",
-            next_action="Read the exact space and review its current name before another write.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, after = read_tree(client, app)
+        updated = find_object(after, "space", space_id)
+        if updated.name != wire_name:
+            raise MutationReadbackError(
+                "Kanban space rename did not round-trip",
+                next_action="Read the exact space and review its current name before another write.",
+            )
     return completed(
         preview,
         mutation,
@@ -164,19 +167,21 @@ def _delete_space(client: Any, app: int, space_id: int, *, send: bool) -> dict[s
     if not send:
         return preview
     mutation = client._execute_mutation(SPACE_DELETE, inputs)
-    _tree, remaining = read_tree(client, app)
-    if any(item.kind == "space" and item.object_id == space_id for item in remaining):
-        raise MutationReadbackError(
-            "Kanban space still exists after delete acknowledgement",
-            next_action="Read the exact marked space and inspect its ownership before another explicit delete.",
-        )
-    remaining_dashboards = {item.object_id: item for item in remaining if item.kind == "dashboard"}
-    missing = [item.object_id for item in dashboards if item.object_id not in remaining_dashboards]
-    if missing:
-        raise MutationReadbackError(
-            "space deletion did not preserve every dashboard promised by the upstream relocation contract",
-            next_action="Stop writes and inspect the affected dashboard IDs; do not retry the parent delete.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, remaining = read_tree(client, app)
+        if any(item.kind == "space" and item.object_id == space_id for item in remaining):
+            raise MutationReadbackError(
+                "Kanban space still exists after delete acknowledgement",
+                next_action="Read the exact marked space and inspect its ownership before another explicit delete.",
+            )
+        remaining_dashboards = {item.object_id: item for item in remaining if item.kind == "dashboard"}
+        missing = [item.object_id for item in dashboards if item.object_id not in remaining_dashboards]
+        if missing:
+            raise MutationReadbackError(
+                "space deletion did not preserve every dashboard promised by the upstream relocation contract",
+                next_action="Stop writes and inspect the affected dashboard IDs; do not retry the parent delete.",
+            )
     target = _deleted_space_target(preimage, dashboards, remaining_dashboards)
     target["ownership"] = ownership.public()
     return completed(preview, mutation, target, status="deleted")
@@ -232,12 +237,14 @@ def _transfer_space(
     if not send:
         return preview
     mutation = client._execute_mutation(SPACE_TRANSFER, inputs)
-    owner = read_space_owner(client, app, space_id)
-    if owner.owner_id != str(uid):
-        raise MutationReadbackError(
-            "space transfer acknowledgement did not round-trip to the requested creator",
-            next_action="Inspect the exact space membership and ownership before another transfer.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        owner = read_space_owner(client, app, space_id)
+        if owner.owner_id != str(uid):
+            raise MutationReadbackError(
+                "space transfer acknowledgement did not round-trip to the requested creator",
+                next_action="Inspect the exact space membership and ownership before another transfer.",
+            )
     return completed(
         preview,
         mutation,

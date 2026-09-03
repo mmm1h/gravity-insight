@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
-from .error_models import ErrorCategory, ErrorCode, GravityInsightError
+from .error_models import ErrorCategory, ErrorCode, ErrorDetail, GravityInsightError
 
 
 class ManifestError(GravityInsightError, ValueError):
@@ -136,6 +138,89 @@ class MutationReadbackError(UpstreamError):
     code = "MUTATION_READBACK_FAILED"
     category = ErrorCategory.UPSTREAM
     retryable = True
+
+    @classmethod
+    @contextmanager
+    def after_dispatch(
+        cls, acknowledgement: Any, marker: str | None = None
+    ) -> Iterator[None]:
+        try:
+            yield
+        except cls as error:
+            if error.write_sent:
+                raise
+            raise cls(
+                str(error),
+                field=error.field,
+                retry_after_ms=error.retry_after_ms,
+                next_action=error.next_action,
+                code=error.code,
+                write_sent=True,
+                acknowledgement=acknowledgement,
+                marker=marker or error.marker,
+            ) from error
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        field: str | None = None,
+        retry_after_ms: int | None = None,
+        next_action: str | None = None,
+        code: ErrorCode | str | None = None,
+        write_sent: bool = False,
+        acknowledgement: Any = None,
+        marker: str | None = None,
+    ) -> None:
+        if write_sent:
+            next_action = self._post_dispatch_next_action(next_action)
+        super().__init__(
+            message,
+            field=field,
+            retry_after_ms=retry_after_ms,
+            next_action=next_action,
+            code=code,
+        )
+        self.write_sent = write_sent
+        self.acknowledgement = acknowledgement
+        self.marker = marker
+        self.automatic_retry = False if write_sent else None
+        if write_sent:
+            self.retryable = False
+
+    def to_error_detail(
+        self,
+        *,
+        operation_id: str | None = None,
+        next_action: str | None = None,
+    ) -> ErrorDetail:
+        return ErrorDetail.create(
+            self.code,
+            str(self),
+            operation_id=operation_id,
+            category=self.category,
+            field=self.field,
+            retryable=self.retryable,
+            retry_after_ms=self.retry_after_ms,
+            next_action=(
+                self._post_dispatch_next_action(next_action)
+                if next_action and self.write_sent
+                else next_action or self.next_action
+            ),
+            write_sent=self.write_sent if self.write_sent else None,
+            acknowledgement=self.acknowledgement,
+            marker=self.marker,
+            automatic_retry=self.automatic_retry,
+        )
+
+    @staticmethod
+    def _post_dispatch_next_action(next_action: str | None) -> str:
+        recovery = next_action or (
+            "Read the affected resource and recover it by the reported marker or exact identifier."
+        )
+        if "do not retry" in recovery.casefold():
+            return recovery
+        return f"Do not retry this mutation. {recovery}"
 
 
 class PaginationError(GravityInsightError):

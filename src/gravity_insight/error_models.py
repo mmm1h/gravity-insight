@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -36,6 +37,8 @@ class ErrorCategory(str, Enum):
 SUCCESS_STATUSES = frozenset({"success", "empty", "contract_changed_additive"})
 
 _EXTENSION_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,63}$")
+_UNSUPPORTED_ITEM_TYPE_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+_MAX_UNSUPPORTED_ITEMS = 20
 _CODE_DEFAULTS: dict[str, tuple[ErrorCategory, bool]] = {
     ErrorCode.UNKNOWN_OPERATION.value: (ErrorCategory.CALLER, False),
     ErrorCode.INPUT_INVALID.value: (ErrorCategory.CALLER, False),
@@ -70,6 +73,70 @@ def is_success_status(status: Any) -> bool:
 def _single_line(message: Any, *, limit: int = 500) -> str:
     rendered = " ".join(str(message).splitlines()).strip()
     return (rendered or "Gravity Insight operation failed")[:limit]
+
+
+def _safe_acknowledgement(
+    value: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise ValueError("acknowledgement must be an object")
+    result: dict[str, Any] = {"received": True}
+    operation = value.get("operation_id")
+    status = value.get("status")
+    attempts = value.get("attempts")
+    if isinstance(operation, str) and operation.strip():
+        result["operation_id"] = _single_line(operation, limit=128)
+    if isinstance(status, str) and status.strip():
+        result["status"] = _single_line(status, limit=64)
+    if type(attempts) is int and attempts >= 0:
+        result["attempts"] = attempts
+    return result
+
+
+def _safe_unsupported_items(
+    value: Sequence[Mapping[str, Any]] | None,
+    truncated: bool | None = None,
+) -> tuple[tuple[dict[str, str], ...] | None, bool | None]:
+    if value is None:
+        if truncated not in (None, False):
+            raise ValueError("unsupported_items_truncated requires unsupported_items")
+        return None, None
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError("unsupported_items must be an array")
+    normalized_truncated = _optional_boolean(
+        truncated, "unsupported_items_truncated"
+    )
+    result: list[dict[str, str]] = []
+    for index, item in enumerate(value):
+        if index >= _MAX_UNSUPPORTED_ITEMS:
+            normalized_truncated = True
+            break
+        if not isinstance(item, Mapping):
+            raise ValueError("unsupported_items must contain objects")
+        field = item.get("field")
+        item_type = item.get("type")
+        if not isinstance(field, str) or not field.strip():
+            raise ValueError("unsupported item field must be text")
+        if (
+            not isinstance(item_type, str)
+            or _UNSUPPORTED_ITEM_TYPE_RE.fullmatch(item_type.strip()) is None
+        ):
+            raise ValueError("unsupported item type must be a bounded identifier")
+        result.append(
+            {
+                "field": _single_line(field, limit=128),
+                "type": item_type.strip(),
+            }
+        )
+    return tuple(result), bool(normalized_truncated)
+
+
+def _optional_boolean(value: Any, field: str) -> bool | None:
+    if value is not None and not isinstance(value, bool):
+        raise ValueError(f"{field} must be a boolean")
+    return value
 
 
 def _input_field(message: str) -> str | None:
@@ -176,6 +243,12 @@ class ErrorDetail:
     retryable: bool = False
     retry_after_ms: int | None = None
     next_action: str = ""
+    write_sent: bool | None = None
+    acknowledgement: dict[str, Any] | None = None
+    marker: str | None = None
+    automatic_retry: bool | None = None
+    unsupported_items: tuple[dict[str, str], ...] | None = None
+    unsupported_items_truncated: bool | None = None
 
     @classmethod
     def create(
@@ -189,6 +262,12 @@ class ErrorDetail:
         retryable: bool | None = None,
         retry_after_ms: int | None = None,
         next_action: str | None = None,
+        write_sent: bool | None = None,
+        acknowledgement: Mapping[str, Any] | None = None,
+        marker: str | None = None,
+        automatic_retry: bool | None = None,
+        unsupported_items: Sequence[Mapping[str, Any]] | None = None,
+        unsupported_items_truncated: bool | None = None,
     ) -> "ErrorDetail":
         normalized_code = _code_value(code)
         normalized_message = _single_line(message)
@@ -210,6 +289,12 @@ class ErrorDetail:
                 or normalized_retry_after < 0
             ):
                 raise ValueError("retry_after_ms must be a non-negative integer")
+        normalized_acknowledgement = _safe_acknowledgement(acknowledgement)
+        normalized_unsupported, normalized_unsupported_truncated = (
+            _safe_unsupported_items(
+                unsupported_items, unsupported_items_truncated
+            )
+        )
         return cls(
             code=normalized_code,
             category=normalized_category,
@@ -227,10 +312,16 @@ class ErrorDetail:
                 next_action or _default_next_action(normalized_code, operation_id),
                 limit=500,
             ),
+            write_sent=_optional_boolean(write_sent, "write_sent"),
+            acknowledgement=normalized_acknowledgement,
+            marker=_single_line(marker, limit=64) if marker else None,
+            automatic_retry=_optional_boolean(automatic_retry, "automatic_retry"),
+            unsupported_items=normalized_unsupported,
+            unsupported_items_truncated=normalized_unsupported_truncated,
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "code": self.code,
             "category": self.category,
             "message": self.message,
@@ -239,6 +330,22 @@ class ErrorDetail:
             "retry_after_ms": self.retry_after_ms,
             "next_action": self.next_action,
         }
+        if self.write_sent is not None:
+            result["write_sent"] = self.write_sent
+        if self.acknowledgement is not None:
+            result["acknowledgement"] = dict(self.acknowledgement)
+        if self.marker is not None:
+            result["marker"] = self.marker
+        if self.automatic_retry is not None:
+            result["automatic_retry"] = self.automatic_retry
+        if self.unsupported_items is not None:
+            result["unsupported_items"] = [
+                dict(item) for item in self.unsupported_items
+            ]
+            result["unsupported_items_truncated"] = bool(
+                self.unsupported_items_truncated
+            )
+        return result
 
 
 @dataclass(frozen=True)
@@ -274,6 +381,8 @@ class GravityInsightError(RuntimeError):
         retry_after_ms: int | None = None,
         next_action: str | None = None,
         code: ErrorCode | str | None = None,
+        unsupported_items: Sequence[Mapping[str, Any]] | None = None,
+        unsupported_items_truncated: bool | None = None,
     ) -> None:
         super().__init__(_single_line(message))
         self.field = field
@@ -281,6 +390,11 @@ class GravityInsightError(RuntimeError):
         self.next_action = next_action
         if code is not None:
             self.code = code
+        self.unsupported_items, self.unsupported_items_truncated = (
+            _safe_unsupported_items(
+                unsupported_items, unsupported_items_truncated
+            )
+        )
 
     def to_error_detail(
         self,
@@ -297,6 +411,8 @@ class GravityInsightError(RuntimeError):
             retryable=self.retryable,
             retry_after_ms=self.retry_after_ms,
             next_action=next_action or self.next_action,
+            unsupported_items=self.unsupported_items,
+            unsupported_items_truncated=self.unsupported_items_truncated,
         )
 
 

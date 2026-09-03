@@ -21,8 +21,10 @@ from .kanban_mutation_support import (
     create_preflight,
     detail_notes,
     find_object,
+    folder_ids_equal,
     idempotent,
     marked_name,
+    marker_from_text,
     mutation_preview,
     nonnegative_id,
     positive_id,
@@ -80,17 +82,18 @@ def create_dashboard(
         if existing is not None:
             return idempotent(DASHBOARD_CREATE, existing)
         mutation = client._execute_mutation(DASHBOARD_CREATE, inputs)
-        _tree, after = read_tree(client, app)
-        created = create_preflight(after, "dashboard", marker, wire_name)
-        if (
-            created is None
-            or created.space_id != space
-            or created.folder_id != (folder or None)
-        ):
-            raise MutationReadbackError(
-                "created dashboard did not round-trip under the requested parent",
-                next_action="Inspect this SDK marker and its current space/folder before another create.",
-            )
+        with MutationReadbackError.after_dispatch(mutation, marker):
+            _tree, after = read_tree(client, app)
+            created = create_preflight(after, "dashboard", marker, wire_name)
+            if (
+                created is None
+                or created.space_id != space
+                or not folder_ids_equal(created.folder_id, folder)
+            ):
+                raise MutationReadbackError(
+                    "created dashboard did not round-trip under the requested parent",
+                    next_action="Inspect this SDK marker and its current space/folder before another create.",
+                )
         return completed(preview, mutation, created.public(), status="created")
 
 
@@ -140,13 +143,15 @@ def _rename_dashboard(
     if not send:
         return preview
     mutation = client._execute_mutation(DASHBOARD_RENAME, inputs)
-    _tree, after = read_tree(client, app)
-    updated = find_object(after, "dashboard", dashboard_id)
-    if updated.name != wire_name or updated.space_id != space:
-        raise MutationReadbackError(
-            "dashboard rename did not round-trip",
-            next_action="Read the exact dashboard coordinates before another rename.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, after = read_tree(client, app)
+        updated = find_object(after, "dashboard", dashboard_id)
+        if updated.name != wire_name or updated.space_id != space:
+            raise MutationReadbackError(
+                "dashboard rename did not round-trip",
+                next_action="Read the exact dashboard coordinates before another rename.",
+            )
     return completed(
         preview,
         mutation,
@@ -204,18 +209,15 @@ def _move_to_folder(
     if not send:
         return preview
     mutation = client._execute_mutation(DASHBOARD_FOLDER_MOVE, inputs)
-    _tree, after = read_tree(client, app)
-    moved = find_object(after, "dashboard", dashboard_id)
-    folder_matches = (
-        moved.folder_id == folder
-        if folder
-        else preimage.folder_id is None or moved.folder_id != preimage.folder_id
-    )
-    if moved.space_id != space or not folder_matches:
-        raise MutationReadbackError(
-            "dashboard folder move did not round-trip to the requested destination",
-            next_action="Read the exact dashboard tree coordinates before another move.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, after = read_tree(client, app)
+        moved = find_object(after, "dashboard", dashboard_id)
+        if moved.space_id != space or not folder_ids_equal(moved.folder_id, folder):
+            raise MutationReadbackError(
+                "dashboard folder move did not round-trip to the requested destination",
+                next_action="Read the exact dashboard tree coordinates before another move.",
+            )
     return completed(
         preview,
         mutation,
@@ -283,20 +285,17 @@ def _move_dashboard(
     if not send:
         return preview
     mutation = client._execute_mutation(DASHBOARD_MOVE, inputs)
-    _tree, after = read_tree(client, app)
-    moved = find_object(after, "dashboard", dashboard_id)
-    folder_matches = (
-        moved.folder_id == folder
-        if folder
-        else destination != source
-        or preimage.folder_id is None
-        or moved.folder_id != preimage.folder_id
-    )
-    if moved.space_id != destination or not folder_matches:
-        raise MutationReadbackError(
-            "dashboard move did not round-trip to the requested destination",
-            next_action="Read the source and destination spaces before another move.",
-        )
+    recovery_marker = marker_from_text(preimage.name)
+    with MutationReadbackError.after_dispatch(mutation, recovery_marker):
+        _tree, after = read_tree(client, app)
+        moved = find_object(after, "dashboard", dashboard_id)
+        if moved.space_id != destination or not folder_ids_equal(
+            moved.folder_id, folder
+        ):
+            raise MutationReadbackError(
+                "dashboard move did not round-trip to the requested destination",
+                next_action="Read the source and destination spaces before another move.",
+            )
     return completed(
         preview,
         mutation,
@@ -395,13 +394,18 @@ def _copy_dashboard(
     if existing is not None:
         return idempotent(DASHBOARD_COPY, existing)
     mutation = client._execute_mutation(DASHBOARD_COPY, inputs)
-    _tree, after = read_tree(client, app)
-    created = create_preflight(after, "dashboard", marker, wire_name)
-    if created is None or created.space_id != destination or created.folder_id != (folder or None):
-        raise MutationReadbackError(
-            "copied dashboard did not round-trip at the requested destination",
-            next_action="Inspect this SDK marker before deciding whether another copy is safe.",
-        )
+    with MutationReadbackError.after_dispatch(mutation, marker):
+        _tree, after = read_tree(client, app)
+        created = create_preflight(after, "dashboard", marker, wire_name)
+        if (
+            created is None
+            or created.space_id != destination
+            or not folder_ids_equal(created.folder_id, folder)
+        ):
+            raise MutationReadbackError(
+                "copied dashboard did not round-trip at the requested destination",
+                next_action="Inspect this SDK marker before deciding whether another copy is safe.",
+            )
     return completed(preview, mutation, created.public(), status="copied")
 
 

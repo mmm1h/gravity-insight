@@ -4,16 +4,22 @@ on:
   push:
     branches: [main, dev]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: sdk-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   PYTHONUTF8: "1"
   PYTHONIOENCODING: utf-8
 
 jobs:
-  surface-parity:
+  surface_parity:
+    name: surface-parity
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
@@ -27,9 +33,14 @@ jobs:
       - name: Check stable Direct and Plan surface parity
         run: python -m pytest -q tests/test_user_detail_aggregate.py
 
-  test:
+  windows_tests:
+    name: windows-tests (${{ matrix.shard }}/4)
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -40,41 +51,155 @@ jobs:
           cache: pip
       - name: Install SDK and test runner
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Run complete Windows test shard with duration budget
+        run: >-
+          python scripts/check_test_duration_budget.py
+          --shard-index ${{ matrix.shard }}
+          --shard-count 4
+          --receipt tmp/pytest-shards/pytest-shard-${{ matrix.shard }}.json
+      - name: Upload Windows test shard receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-pytest-shard-${{ matrix.shard }}
+          path: tmp/pytest-shards/pytest-shard-${{ matrix.shard }}.json
+          if-no-files-found: error
+
+  windows_tests_audit:
+    name: windows-tests-audit
+    if: always()
+    needs: windows_tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install shard auditor
+        run: python -m pip install --disable-pip-version-check pytest pytest-xdist
+      - name: Download all Windows test shard receipts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: windows-pytest-shard-*
+          path: tmp/pytest-shards
+          merge-multiple: true
+      - name: Prove full Windows collection and execution conservation
+        run: >-
+          python scripts/check_test_duration_budget.py
+          --audit-receipts tmp/pytest-shards
+          --expected-shards 4
+          --audit-output tmp/pytest-shards/audit.json
+
+  secret_history:
+    name: secret-history
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and secret scanner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
       - name: Scan tracked files and complete Git history for secrets
         run: python scripts/scan_repository_secrets.py --history --receipt tmp/supply-chain/secret-scan.json
-      - name: Run tests with duration budget gate
-        run: python scripts/check_test_duration_budget.py
+      - name: Upload exact-SHA secret-scan receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-secret-scan
+          path: tmp/supply-chain/secret-scan.json
+          if-no-files-found: error
+
+  governance:
+    name: governance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and test runner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
       - name: Check deterministic contracts
         run: python -m gravity_insight.compiler check
       - name: Check quality ratchet
         run: python -m gravity_insight.quality check
       - name: Check release tag matches package version
+        if: github.event_name != 'workflow_dispatch'
         run: python scripts/check_release_tag.py
+      - name: Exercise release-tag gate without changing a remote tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          release_tag="v$(python -c 'import gravity_insight; print(gravity_insight.__version__)')"
+          git tag -d "$release_tag" || true
+          git tag "$release_tag" HEAD
+          python scripts/check_release_tag.py
+
+  agent_usability:
+    name: agent-usability
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and test runner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
       - name: Check development Agent usability eval
         env:
           PYTHONPATH: src
-        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path tmp | Out-Null
-          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content tmp/agent-usability-gate.log -Tail 40
-            exit $LASTEXITCODE
+          mkdir -p tmp
+          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1 || {
+            tail -n 40 tmp/agent-usability-gate.log
+            exit 1
           }
-          Write-Output "PASS agent-usability development eval"
+          echo "PASS agent-usability development eval"
+
+  cli_smoke:
+    name: cli-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and test runner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
       - name: Check all CLI namespaces offline
         env:
           GRAVITY_INSIGHT_AUTO_UPGRADE: "0"
-        shell: pwsh
         run: |
           gravity --help
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity --workspace examples/workspace sql --dry-run
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity census --smoke
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           gravity insight --dry-run
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  supply_chain:
+    name: supply-chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and release tooling
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
       - name: Build release distributions for supply-chain checks
         run: python -m build
       - name: Generate wheel and sdist SBOMs
@@ -82,7 +207,8 @@ jobs:
       - name: Audit isolated wheel runtime dependencies
         run: python scripts/audit_release_dependencies.py --dist-dir dist --receipt tmp/supply-chain/dependency-audit.json
 
-  core-linux-python311:
+  core_linux_python311:
+    name: core-linux-python311
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -102,7 +228,8 @@ jobs:
       - name: Check quality ratchet
         run: python -m gravity_insight.quality check
 
-  core-linux-python312:
+  core_linux_python312:
+    name: core-linux-python312
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -120,7 +247,8 @@ jobs:
       - name: Run core tests
         run: python -m pytest -q
 
-  installed-wheel-linux-python312:
+  installed_wheel_linux_python312:
+    name: installed-wheel-linux-python312
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -133,3 +261,45 @@ jobs:
         run: python -m pip install --disable-pip-version-check ".[dev]"
       - name: Build, install, and test an isolated wheel
         run: python scripts/check_installed_wheel_surface_matrix.py
+
+  ci_required:
+    name: ci-required
+    if: always()
+    needs:
+      - surface_parity
+      - windows_tests
+      - windows_tests_audit
+      - secret_history
+      - governance
+      - agent_usability
+      - cli_smoke
+      - supply_chain
+      - core_linux_python311
+      - core_linux_python312
+      - installed_wheel_linux_python312
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI gate
+        env:
+          RESULTS: >-
+            surface-parity=${{ needs.surface_parity.result }}
+            windows-tests=${{ needs.windows_tests.result }}
+            windows-tests-audit=${{ needs.windows_tests_audit.result }}
+            secret-history=${{ needs.secret_history.result }}
+            governance=${{ needs.governance.result }}
+            agent-usability=${{ needs.agent_usability.result }}
+            cli-smoke=${{ needs.cli_smoke.result }}
+            supply-chain=${{ needs.supply_chain.result }}
+            core-linux-python311=${{ needs.core_linux_python311.result }}
+            core-linux-python312=${{ needs.core_linux_python312.result }}
+            installed-wheel-linux-python312=${{ needs.installed_wheel_linux_python312.result }}
+        run: |
+          failed=0
+          for result in $RESULTS; do
+            echo "$result"
+            if [[ "$result" != *=success ]]; then
+              failed=1
+            fi
+          done
+          exit "$failed"
