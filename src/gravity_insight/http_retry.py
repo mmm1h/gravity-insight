@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 
+MAX_RETRY_AFTER_SECONDS = 30.0
+
+
 def response_payload(response: Any) -> Any:
     try:
         return response.json()
@@ -34,20 +37,29 @@ def retry_delay(
         minimum = _retry_after_seconds(value, wall_clock)
         if minimum >= 0:
             jitter = min(1.0, max(0.05, minimum * 0.1))
-            return minimum + jitter * unit_random(random_source)
+            return min(
+                MAX_RETRY_AFTER_SECONDS,
+                minimum + jitter * unit_random(random_source),
+            )
     base = float(min(2 ** (attempt + 1), 8))
     return base * (1.0 + 0.2 * unit_random(random_source))
 
 
 def _retry_after_seconds(value: Any, wall_clock: Callable[[], datetime]) -> float:
     try:
-        return max(0.0, min(float(value), 30.0))
+        return max(0.0, min(float(value), MAX_RETRY_AFTER_SECONDS))
     except (TypeError, ValueError):
         try:
             retry_at = email.utils.parsedate_to_datetime(value)
             if retry_at.tzinfo is None:
                 retry_at = retry_at.replace(tzinfo=timezone.utc)
-            return max(0.0, min((retry_at - wall_clock()).total_seconds(), 30.0))
+            return max(
+                0.0,
+                min(
+                    (retry_at - wall_clock()).total_seconds(),
+                    MAX_RETRY_AFTER_SECONDS,
+                ),
+            )
         except (TypeError, ValueError, OverflowError):
             return -1.0
 
@@ -60,4 +72,10 @@ def unit_random(source: Callable[[], float]) -> float:
     return max(0.0, min(value, 1.0))
 
 
-__all__ = ["is_retryable_exception", "response_payload", "retry_delay", "unit_random"]
+__all__ = [
+    "MAX_RETRY_AFTER_SECONDS",
+    "is_retryable_exception",
+    "response_payload",
+    "retry_delay",
+    "unit_random",
+]

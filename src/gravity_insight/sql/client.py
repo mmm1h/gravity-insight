@@ -137,6 +137,7 @@ class GravityClient:
                     status=_find_status(payload),
                     classification="http_error",
                 ),
+                retry_after_ms=getattr(response, "retry_after_ms", None),
             )
 
         status = _find_status(payload)

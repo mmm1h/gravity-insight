@@ -23,6 +23,12 @@ Target release: `0.3.8`
   and module-graph nodes; raw JSON consumers must decode those tables. The
   repository loader and task-context surface still return the complete v1 fact
   shape, and generation proves decoded v2 is field-for-field identical.
+- **Soft break:** Registered SQL Evidence verification is now fixed at one product
+  in flight; direct `verify_all(..., max_workers=N)` callers must remove values
+  other than `1`, and direct `build_evidence()` callers must supply the ordered
+  verification history. New Evidence is schema v2 and adds that history as a
+  required field. Runtime readers continue to accept immutable v1 Evidence, so
+  existing read capability is retained while strict raw-output consumers migrate.
 
 Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
@@ -51,6 +57,18 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   Bonferroni family handling, observed risk difference and uncertainty; sample,
   variance, window, grouping, causal-claim and same-run self-validation failures
   remain distinct fail-closed outcomes.
+
+### Fixed
+
+- `gravity sql verify` no longer discards an already-verified product prefix when
+  a later registered product remains HTTP-rate-limited after the shared runtime's
+  bounded retries. Verification is sequential, the final 429 emits a typed
+  `RATE_LIMITED` receipt with a maximum 30-second `retry_after_ms`, and the exact
+  prefix is atomically checkpointed under workspace state. `--resume` validates
+  the date, datasource, configured order, component SQL/contract hashes, and the
+  failed product before continuing. Partial checkpoints cannot be published as
+  readiness; completed Evidence distinguishes a single run from segmented
+  completion and preserves each segment's time and product scope.
 
 ## [0.3.7] - 2026-09-04
 

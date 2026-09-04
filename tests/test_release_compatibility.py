@@ -66,7 +66,7 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         self.assertEqual("unreleased", releases["0.3.8"]["release_status"])
         self.assertEqual("breaking", releases["0.3.8"]["breaking_status"])
         self.assertEqual(1, len(releases["0.3.8"]["hard_breaks"]))
-        self.assertEqual([], releases["0.3.8"]["soft_breaks"])
+        self.assertEqual(1, len(releases["0.3.8"]["soft_breaks"]))
         self.assertEqual(
             "docs/migration/0.3.8.md", releases["0.3.8"]["migration_guide"]
         )

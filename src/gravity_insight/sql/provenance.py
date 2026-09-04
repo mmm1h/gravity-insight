@@ -9,8 +9,13 @@ cleanliness, credential, or product check could run.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import subprocess
+import sys
+from collections.abc import Mapping
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +25,8 @@ from gravity_insight.workspace import Workspace, load_workspace
 
 
 ROOT = PROJECT_ROOT
+VERIFICATION_RUN_VERSION = "gravity.sql-verification-run.v1"
+VERIFICATION_RESUME_POLICY = "gravity.sql-verification-strict-prefix.v1"
 
 
 def git_toplevel(candidate: Path) -> Path | None:
@@ -120,10 +127,292 @@ def preflight_git_report(repository_root: Path | None) -> dict[str, Any]:
     }
 
 
+def verification_failure(error: BaseException) -> dict[str, Any]:
+    stage = getattr(error, "sql_stage", None)
+    if stage in {"bind", "compile", "plan", "execute", "shape"}:
+        return _annotated_verification_failure(error, stage)
+    detail = _error_detail(error)
+    category = str(detail.get("category", "local"))
+    return {
+        "stage": "bind" if category == "caller" else "execute",
+        "upstream_category": category,
+        "code": str(detail.get("code", "SQL_UNEXPECTED_FAILURE")),
+        "message": "Gravity SQL verification failed",
+        "retryable": detail.get("retryable") is True,
+        "reached_sql_engine": "unknown",
+        "next_action": str(
+            detail.get("next_action", "Inspect the governed SQL failure and retry.")
+        ),
+        "http_status": None,
+        "retry_after_ms": detail.get("retry_after_ms"),
+    }
+
+
+def _annotated_verification_failure(
+    error: BaseException, stage: str
+) -> dict[str, Any]:
+    reached = str(getattr(error, "reached_sql_engine", "unknown"))
+    return {
+        "stage": stage,
+        "upstream_category": str(getattr(error, "sql_category", "runtime")),
+        "code": str(getattr(error, "code", "SQL_UNEXPECTED_FAILURE")),
+        "message": str(getattr(error, "safe_message", "Gravity SQL request failed")),
+        "retryable": bool(getattr(error, "retryable", False)),
+        "reached_sql_engine": reached if reached in {"yes", "no", "unknown"} else "unknown",
+        "next_action": str(
+            getattr(error, "next_action", "Inspect the governed SQL failure and retry.")
+        ),
+        "http_status": _optional_nonnegative_int(getattr(error, "http_status", None)),
+        "retry_after_ms": _optional_nonnegative_int(
+            getattr(error, "retry_after_ms", None)
+        ),
+    }
+
+
+def _error_detail(error: BaseException) -> Mapping[str, Any]:
+    try:
+        factory = getattr(error, "to_error_detail", None)
+        detail = factory() if callable(factory) else None
+        rendered = detail.to_dict() if detail is not None else None
+        return rendered if isinstance(rendered, Mapping) else {}
+    except (AttributeError, TypeError, ValueError):
+        return {}
+
+
+def _optional_nonnegative_int(value: Any) -> int | None:
+    return value if type(value) is int and value >= 0 else None
+
+
+def verification_failure_is_rate_limited(failure: Mapping[str, Any]) -> bool:
+    return bool(
+        failure.get("code") == "SQL_HTTP_RATE_LIMITED"
+        and failure.get("http_status") == 429
+        and failure.get("retryable") is True
+    )
+
+
+def verification_failure_run(
+    owner: Any,
+    day: date,
+    names: tuple[str, ...],
+    completed: Mapping[str, dict[str, Any]],
+    segments: list[dict[str, Any]],
+    product: str,
+    failure: Mapping[str, Any],
+    workspace: Any,
+    *,
+    rate_limited: bool,
+) -> dict[str, Any]:
+    retry_after_ms = _verification_retry_after(owner, failure, rate_limited)
+    error = _verification_error(day, product, failure, rate_limited, retry_after_ms)
+    category = "runtime" if rate_limited else _verification_failure_category(failure)
+    result: dict[str, Any] = {
+        "schema_version": owner.VERIFICATION_RUN_VERSION,
+        "ok": False,
+        "status": "rate_limited" if rate_limited else "error",
+        "exit_code": owner.sql_error_exit_code(category),
+        "readiness_achieved": False,
+        "verification_status": "interrupted" if rate_limited else "failed",
+        "datasource_id": owner._datasource_id(workspace=workspace),
+        "verified_for_date": day.isoformat(),
+        "window": owner._window_dict(*owner.day_window(day)),
+        "configured_products": list(names),
+        "completed_products": dict(completed),
+        "pending_products": list(names[len(completed) :]),
+        "verification": {
+            "mode": "interrupted" if rate_limited else "terminal_failure",
+            "segment_count": len(segments),
+            "segments": segments,
+        },
+        "failure": error,
+        "resume": verification_resume_contract(owner, day, rate_limited),
+    }
+    result["checkpoint_sha256"] = verification_checkpoint_digest(result)
+    return result
+
+
+def _verification_retry_after(
+    owner: Any, failure: Mapping[str, Any], rate_limited: bool
+) -> int | None:
+    if not rate_limited:
+        return None
+    received = failure.get("retry_after_ms")
+    selected = received if type(received) is int and received >= 0 else 0
+    return min(
+        owner.VERIFICATION_MAX_BACKOFF_MS,
+        max(owner.VERIFICATION_MIN_BACKOFF_MS, selected),
+    )
+
+
+def _verification_error(
+    day: date,
+    product: str,
+    failure: Mapping[str, Any],
+    rate_limited: bool,
+    retry_after_ms: int | None,
+) -> dict[str, Any]:
+    return {
+        "product": product,
+        "code": "RATE_LIMITED" if rate_limited else failure["code"],
+        "sql_code": failure["code"],
+        "category": "upstream" if rate_limited else _verification_failure_category(failure),
+        "message": failure["message"],
+        "stage": failure["stage"],
+        "retryable": failure["retryable"],
+        "retry_after_ms": retry_after_ms,
+        "upstream_error": {
+            "category": failure["upstream_category"],
+            "http_status": failure["http_status"],
+        },
+        "next_action": (
+            f"Wait the bounded retry_after_ms, then run `gravity sql verify --date "
+            f"{day.isoformat()} --resume`; keep concurrency at 1 and do not increase it."
+            if rate_limited
+            else failure["next_action"]
+        ),
+    }
+
+
+def _verification_failure_category(failure: Mapping[str, Any]) -> str:
+    if failure["upstream_category"] in {"authentication", "credentials"}:
+        return "authentication"
+    if failure["upstream_category"] == "local_validation":
+        return "input"
+    if failure["stage"] in {"compile", "shape"}:
+        return "contract"
+    return "runtime"
+
+
+def verification_resume_contract(owner: Any, day: date, supported: bool) -> dict[str, Any]:
+    return {
+        "supported": supported,
+        "policy": VERIFICATION_RESUME_POLICY,
+        "strict_prefix": True,
+        "max_backoff_ms": owner.VERIFICATION_MAX_BACKOFF_MS,
+        "command": (
+            f"gravity sql verify --date {day.isoformat()} --resume" if supported else None
+        ),
+    }
+
+
+def verification_checkpoint_path(owner: Any, day: date, workspace: Workspace) -> Path:
+    identity = hashlib.sha256(
+        f"{owner._datasource_id(workspace=workspace)}\0{day.isoformat()}".encode("utf-8")
+    ).hexdigest()[:16]
+    return (
+        workspace.state_root
+        / "evidence"
+        / "sql-verification-resume"
+        / f"{day.isoformat()}-{identity}.json"
+    )
+
+
+def verification_checkpoint_digest(value: Mapping[str, Any]) -> str:
+    payload = {key: item for key, item in value.items() if key != "checkpoint_sha256"}
+    return hashlib.sha256(
+        json.dumps(
+            payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def write_verification_checkpoint(
+    owner: Any, value: Mapping[str, Any], day: date, workspace: Workspace
+) -> Path:
+    owner.validate_resume_checkpoint(owner, value, day, owner.product_names(workspace), workspace)
+    path = verification_checkpoint_path(owner, day, workspace)
+    owner.write_document_atomic(path, dict(value))
+    return path
+
+
+def read_verification_checkpoint(
+    owner: Any, day: date, workspace: Workspace
+) -> dict[str, Any]:
+    path = verification_checkpoint_path(owner, day, workspace)
+    if not path.is_file():
+        raise EvidenceFormatError(
+            "no rate-limited SQL verification checkpoint exists for the requested date"
+        )
+    try:
+        value = owner.load_document(path)
+    except (owner.DocumentError, OSError) as exc:
+        raise EvidenceFormatError(
+            "the SQL verification checkpoint could not be read"
+        ) from exc
+    owner.validate_resume_checkpoint(owner, value, day, owner.product_names(workspace), workspace)
+    return dict(value)
+
+
+def clear_verification_checkpoint(owner: Any, day: date, workspace: Workspace) -> None:
+    verification_checkpoint_path(owner, day, workspace).unlink(missing_ok=True)
+
+
+def is_incomplete_verification(value: Any) -> bool:
+    return bool(
+        isinstance(value, Mapping)
+        and value.get("schema_version") == VERIFICATION_RUN_VERSION
+        and value.get("readiness_achieved") is False
+    )
+
+
+def run_verification_cli(
+    owner: Any,
+    client: Any,
+    day: date,
+    workspace: Workspace,
+    *,
+    resume: bool,
+    publish: bool,
+    publisher: Any,
+    evidence_path: Path,
+    serializer: Any,
+) -> int:
+    checkpoint = read_verification_checkpoint(owner, day, workspace) if resume else None
+    evidence = owner.execute_sql_verification(
+        owner, client, day, workspace=workspace, resume=checkpoint
+    )
+    if is_incomplete_verification(evidence):
+        if evidence["status"] == "rate_limited":
+            write_verification_checkpoint(owner, evidence, day, workspace)
+            print("CHECKPOINTED rate-limited SQL verification prefix", file=sys.stderr)
+        print(serializer(evidence, ensure_ascii=False, indent=2, sort_keys=True))
+        return int(evidence["exit_code"])
+    if publish:
+        publisher(evidence, workspace=workspace)
+        _clear_obsolete_checkpoint(owner, day, workspace)
+        print(f"PUBLISHED {evidence_path}", file=sys.stderr)
+    print(serializer(evidence, ensure_ascii=False, indent=2, sort_keys=True))
+    return 0
+
+
+def _clear_obsolete_checkpoint(owner: Any, day: date, workspace: Workspace) -> None:
+    try:
+        clear_verification_checkpoint(owner, day, workspace)
+    except OSError:
+        print(
+            "WARNING: published Evidence is durable, but its obsolete SQL "
+            "verification checkpoint could not be removed",
+            file=sys.stderr,
+        )
+
+
 __all__ = [
     "ROOT",
+    "VERIFICATION_RESUME_POLICY",
+    "VERIFICATION_RUN_VERSION",
+    "clear_verification_checkpoint",
     "git_state",
     "git_toplevel",
+    "is_incomplete_verification",
     "preflight_git_report",
     "provenance_root",
+    "read_verification_checkpoint",
+    "run_verification_cli",
+    "verification_checkpoint_digest",
+    "verification_checkpoint_path",
+    "verification_failure",
+    "verification_failure_is_rate_limited",
+    "verification_failure_run",
+    "verification_resume_contract",
+    "write_verification_checkpoint",
 ]

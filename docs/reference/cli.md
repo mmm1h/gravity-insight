@@ -528,6 +528,13 @@ relation/function allowlist、timeout、VM step、row 与 byte budget 共同失�
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
 前进入稳定 Journey、Skill、Dashboard 或 Action。
 
+`gravity sql verify --date YYYY-MM-DD [--publish]` 固定按登记顺序单并发验证全部产品。最终 429
+返回 typed `RATE_LIMITED` checkpoint（`readiness_achieved=false`）并保留已成功的严格前缀；
+`--resume` 只在日期、datasource、产品顺序及组件 SQL/contract hash 全部仍匹配时从失败产品继续。
+非 429 不可续跑，partial checkpoint 不能发布。新建完整 Evidence 的 schema version 是 2，
+`verification.mode` 区分 `single_run` 与 `resumed_after_rate_limit`，`segments` 记录每段时间、产品范围
+和中断产品；Runtime 仍可读取已经发布的 v1 Evidence。
+
 CLI 的 `sql explorer inspect|execute` 仍是离线 SQLite 路径。联网 Gravity SQL Fast Lane 目前只由 SDK
 模块 `gravity_insight.sql.verification.GravitySqlExplorerAdapter` 显式暴露；它不会被 Agent、Plan 或
 Registered Product 自动选中，方言与上游身份/事务/scan/cancel 缺口见

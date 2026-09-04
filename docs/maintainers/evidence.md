@@ -21,7 +21,9 @@ git diff --check
 gravity sql verify --date YYYY-MM-DD
 ```
 
-不带 `--publish` 时只执行验证，不更新发布指针。检查每个产品的：
+不带 `--publish` 时只执行验证，不更新发布指针。产品严格按 workspace 登记顺序、单并发执行；
+每个 HTTP 请求继续经过共享 host limiter 与 Adaptive Governor。CLI 默认最多三次 HTTP 尝试，
+`Retry-After` 与跨进程续跑冷却都以 30 秒为上界。检查每个产品的：
 
 - 查询窗口和 App 范围；
 - success、partial、empty 或 blocked；
@@ -39,6 +41,19 @@ gravity sql verify --date YYYY-MM-DD --publish
 
 发布应先写不可变 snapshot，校验后再原子更新 latest 指针。不要手工编辑 Evidence JSON/YAML，也不要覆盖已有不可变 snapshot。
 
+若最终 HTTP 429 仍未恢复，命令以退出码 3 输出
+`gravity.sql-verification-run.v1`，并把已经成功的严格产品前缀原子写入 workspace state；该文件
+`readiness_achieved=false`、`verification_status=interrupted`，不会进入 Evidence latest。等待收据中的
+`retry_after_ms` 后运行：
+
+```powershell
+gravity sql verify --date YYYY-MM-DD --publish --resume
+```
+
+`--resume` 只读取相同日期和 datasource 的固定 checkpoint，要求产品清单与顺序不变、已完成项恰为
+严格前缀、失败项恰为下一个产品，并重新核对每个复用组件的 SQL/contract hash。任何漂移都在发送
+下一次请求前失败关闭；非 429（例如 SQL engine rejection）不生成可续跑 checkpoint。
+
 ## 4. 发布后检查
 
 ```powershell
@@ -49,7 +64,8 @@ gravity sql status --json
 
 ## 失败处理
 
-- 上游失败或限流：不发布，保留脱敏错误摘要；
+- 最终 429：不发布，保留 typed retry receipt 与已完成前缀；按 `--resume` 的严格前缀合同续跑；
+- 非 429 上游失败：不发布且不允许借 checkpoint 跳过失败产品；先按结构化 `next_action` 修复；
 - 产品 partial：只有合同允许且 warnings 完整时才可继续评审；
 - 合同或 SQL hash 漂移：旧 Evidence 自动视为 stale，先审查改动；
 - 发布中断：保留已写的不可变 snapshot，不手工移动 latest；

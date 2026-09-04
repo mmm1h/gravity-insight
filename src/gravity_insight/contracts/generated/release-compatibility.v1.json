@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "1cab50b0d1076957d54ed28ed4393dac4d14a65d34e34bbada1fdb85709d9f3c"
+    "compatibility_sha256": "a54fd9657d422114e675c763ce0ee6fd615aea15f196cc90a2b5d6d7dc20adc9"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -123,11 +123,17 @@
       "hard_breaks": [
         {
           "id": "0.3.8-hard-break-1",
-          "description": "The checked-in Repository Map moves from `contracts/generated/repository-map.v1.json` to `repository-map.v2.json`. Its whole-file JSON transport now tables repeated entry strings, issue paths, and module-graph nodes; raw JSON consumers must decode those tables. The repository loader and task-context surface still return the complete v1 fact shape, and generation proves decoded v2 is field-for-field identical. Migration guide: [0.3.8](docs/migration/0.3.8.md)",
+          "description": "The checked-in Repository Map moves from `contracts/generated/repository-map.v1.json` to `repository-map.v2.json`. Its whole-file JSON transport now tables repeated entry strings, issue paths, and module-graph nodes; raw JSON consumers must decode those tables. The repository loader and task-context surface still return the complete v1 fact shape, and generation proves decoded v2 is field-for-field identical.",
           "migration_guide": "docs/migration/0.3.8.md"
         }
       ],
-      "soft_breaks": [],
+      "soft_breaks": [
+        {
+          "id": "0.3.8-soft-break-1",
+          "description": "Registered SQL Evidence verification is now fixed at one product in flight; direct `verify_all(..., max_workers=N)` callers must remove values other than `1`, and direct `build_evidence()` callers must supply the ordered verification history. New Evidence is schema v2 and adds that history as a required field. Runtime readers continue to accept immutable v1 Evidence, so existing read capability is retained while strict raw-output consumers migrate. Migration guide: [0.3.8](docs/migration/0.3.8.md)",
+          "migration_guide": "docs/migration/0.3.8.md"
+        }
+      ],
       "migration_guide": "docs/migration/0.3.8.md"
     }
   ]
