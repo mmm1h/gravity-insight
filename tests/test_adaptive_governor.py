@@ -66,6 +66,20 @@ class _FakeClock:
         self.value += seconds
 
 
+class _ArmableTimeoutClock(_FakeClock):
+    def __init__(self) -> None:
+        super().__init__()
+        self._scripted_reads: list[float] = []
+
+    def __call__(self) -> float:
+        if self._scripted_reads:
+            self.value = self._scripted_reads.pop(0)
+        return self.value
+
+    def expire_next_wait(self) -> None:
+        self._scripted_reads = [self.value, self.value + 1.0]
+
+
 def _request(
     *,
     scope: str = "scope",
@@ -368,12 +382,14 @@ class AdaptiveGovernorCapacityTests(unittest.TestCase):
 
 class AdaptiveGovernorWaitingTests(unittest.TestCase):
     def test_backpressure_is_local_governor_capacity_not_upstream_capacity_and_leaks_no_lease(self) -> None:
+        clock = _ArmableTimeoutClock()
         governor = AdaptiveRequestGovernor(
             mode=STATIC,
             total_capacity=2,
             business_capacity=1,
             sql_capacity=1,
             max_queue=1,
+            clock=clock,
         )
         release = threading.Event()
         entered = threading.Event()
@@ -410,6 +426,7 @@ class AdaptiveGovernorWaitingTests(unittest.TestCase):
                 cancelled.result(timeout=5)
             self.assertEqual("GOVERNOR_CANCELLED", stopped.exception.code)
 
+            clock.expire_next_wait()
             with self.assertRaises(GovernorRequestError) as timed_out:
                 governor.execute(_request(timeout=0.05), lambda: _Response())
             self.assertEqual("GOVERNOR_BACKPRESSURE", timed_out.exception.code)

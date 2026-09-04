@@ -27,6 +27,20 @@ class Clock:
         return self.value
 
 
+class TimeoutClock:
+    def __init__(self, provider_entered: threading.Event) -> None:
+        self._provider_entered = provider_entered
+        self._calls = 0
+
+    def __call__(self) -> float:
+        self._calls += 1
+        if self._calls <= 2:
+            return 100.0
+        if not self._provider_entered.wait(30):
+            raise AssertionError("provider worker did not start")
+        return 101.0
+
+
 class ProviderRpcGuardTests(unittest.TestCase):
     def test_mcp_transport_is_explicitly_injected_and_kind_bound(self) -> None:
         descriptor = provider_descriptor(transport="mcp")
@@ -224,8 +238,10 @@ class ProviderRpcGuardTests(unittest.TestCase):
         cancelled = threading.Event()
         release = threading.Event()
         completed = threading.Event()
+        entered = threading.Event()
 
         def slow(request, cancel):
+            entered.set()
             cancel.wait()
             cancelled.set()
             release.wait(30)
@@ -233,7 +249,9 @@ class ProviderRpcGuardTests(unittest.TestCase):
             return response(request["request_id"])
 
         timeout_guard = ProviderRpcGuard(
-            timeout_descriptor, CallableProviderTransport("host", slow)
+            timeout_descriptor,
+            CallableProviderTransport("host", slow),
+            clock=TimeoutClock(entered),
         )
         try:
             timed_out = timeout_guard.invoke(

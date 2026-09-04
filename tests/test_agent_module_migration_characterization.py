@@ -43,6 +43,14 @@ _LAZY_PROBE = _probe_source("lazy_root_exports.py.txt")
 _SHADOWING_PROBE = _probe_source("shadowed_root_exports.py.txt")
 _FAIL_CLOSED_PROBE = _probe_source("shadowed_export_fail_closed.py.txt")
 
+# A guard against a hung child, not an assertion about how long the import
+# should take -- the tests below assert on the probe's return code, never on
+# its duration. A guard has to sit far from the normal case, because the
+# distance is the only thing separating "the child hung" from "this machine is
+# busy". At 60s it did not: the probe exceeded it under 24 busy processes on 20
+# cores and the suite reported a timeout for a run that was merely slow.
+_PROBE_HANG_GUARD_SECONDS = 300
+
 
 class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
     def test_root_exports_are_lazy_cached_and_owned_in_an_isolated_process(self) -> None:
@@ -53,7 +61,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 cwd=temporary,
-                timeout=60,
+                timeout=_PROBE_HANG_GUARD_SECONDS,
             )
         self.assertEqual(0, completed.returncode, completed.stderr)
 
@@ -75,7 +83,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                     text=True,
                     capture_output=True,
                     cwd=temporary,
-                    timeout=60,
+                    timeout=_PROBE_HANG_GUARD_SECONDS,
                 )
             self.assertEqual(0, completed.returncode, completed.stderr)
 
@@ -88,7 +96,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 cwd=temporary,
-                timeout=60,
+                timeout=_PROBE_HANG_GUARD_SECONDS,
             )
         self.assertEqual(0, completed.returncode, completed.stderr)
 

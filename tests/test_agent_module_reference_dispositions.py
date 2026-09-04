@@ -272,10 +272,13 @@ def _assert_repository_tree_gate_orders_writer_and_scan(
             relative = (state / "attack.txt").read_text(encoding="utf-8")
 
             with test_case.assertRaises(RepositoryTreeGateTimeout) as timeout:
+                ticks = iter((0.0, 1.0))
                 with repository_tree_read(
                     root=ROOT,
                     purpose="deterministic timeout negative control",
                     timeout_seconds=0.05,
+                    clock=lambda: next(ticks),
+                    sleeper=lambda _seconds: None,
                 ):
                     pass
             test_case.assertIn("shared repository tree gate", str(timeout.exception))

@@ -13,29 +13,38 @@ def fresh_package():
     return importlib.import_module("gravity_insight")
 
 
+by_owner = {}
 for name, (owner, attribute) in expected.items():
+    by_owner.setdefault(owner, []).append((name, attribute))
+
+
+for owner, exports in by_owner.items():
     gravity_insight = fresh_package()
     absolute_owner = importlib.util.resolve_name(owner, gravity_insight.__name__)
     assert absolute_owner not in sys.modules, (
-        f"owner loaded with package for {name}: {absolute_owner}"
+        f"owner loaded with package: {absolute_owner}"
     )
-    assert name not in gravity_insight.__dict__, f"root export was eager: {name}"
-    first = getattr(gravity_insight, name)
+    assert all(name not in gravity_insight.__dict__ for name, _ in exports), (
+        f"root export was eager for owner: {absolute_owner}"
+    )
+    first_values = {
+        name: getattr(gravity_insight, name) for name, _attribute in exports
+    }
     owner_module = sys.modules.get(absolute_owner)
-    assert owner_module is not None, (
-        f"owner was not imported for {name}: {absolute_owner}"
-    )
-    assert first is getattr(owner_module, attribute), (
-        f"wrong owner identity for {name}: {absolute_owner}.{attribute}"
-    )
+    assert owner_module is not None, f"owner was not imported: {absolute_owner}"
+    for name, attribute in exports:
+        assert first_values[name] is getattr(owner_module, attribute), (
+            f"wrong owner identity for {name}: {absolute_owner}.{attribute}"
+        )
 
     del sys.modules[absolute_owner]
     try:
-        second = getattr(gravity_insight, name)
-        assert second is first, f"cached identity changed for {name}"
-        assert absolute_owner not in sys.modules, (
-            f"owner reloaded on cached access for {name}: {absolute_owner}"
-        )
+        for name, _attribute in exports:
+            second = getattr(gravity_insight, name)
+            assert second is first_values[name], f"cached identity changed for {name}"
+            assert absolute_owner not in sys.modules, (
+                f"owner reloaded on cached access for {name}: {absolute_owner}"
+            )
     finally:
         sys.modules[absolute_owner] = owner_module
 
