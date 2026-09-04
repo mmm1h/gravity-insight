@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib, json, os, subprocess, sys, tempfile
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TextIO
@@ -15,21 +15,23 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 QUALITY_BASELINE_PATH = ROOT / "src/gravity_insight/governance/quality-baseline.json"
-# The ratchet opened once, from 8 to 9, when this gate first met CI hardware.
-# `test_compact_pagination_output_contract_is_locked` reads every repository
-# module twice and loads two isolated functions, which is the marker's own
-# definition of a full-gate item, but it measured under the local budget and so
-# was never marked. It takes 55.471s on a CI Windows runner.
-#
-# That is a calibration mismatch, not a regression: `slow_test_seconds` is a
-# local measurement while the gate compares it against CI durations, and this
-# file already scales its other threshold by a measured 716/364 local-to-CI
-# ratio. Until that unit is reconciled, every repository-wide scan will drift
-# across the line in turn. Admitting the ninth member is the correction that
-# does not weaken a threshold; it is not licence to keep opening the ratchet.
+# The ratchet opened once, from 8 to 9, when CI exposed the calibration bug.
+# The ninth item remains because it reads the frozen and current repository
+# module sets and loads both isolated implementations: independently of its
+# duration, that is the marker's semantic repository-scan boundary. All nine
+# current members are scans, builds, or isolated subprocess gates, so the
+# calibration repair does not justify removing one.
 MAX_FULL_GATE_TESTS = 9
 MAX_LOCAL_FOCUSED_WALL_SECONDS = 100.0
 MAX_SLOW_TEST_SECONDS = 40.0
+# One measured coordinate transform owns every local/CI duration comparison.
+# Keep the source measurements visible so a future recalibration must change a
+# single ratio rather than independently opening policy thresholds.
+HISTORICAL_LOCAL_SUITE_SECONDS = 364.0
+HISTORICAL_CI_SUITE_SECONDS = 716.0
+LOCAL_TO_CI_DURATION_RATIO = (
+    HISTORICAL_CI_SUITE_SECONDS / HISTORICAL_LOCAL_SUITE_SECONDS
+)
 
 
 def _test_tier_baseline() -> dict[str, Any]:
@@ -75,13 +77,10 @@ CI_JOB_TIMEOUT_SECONDS = 20 * 60
 # The immutable four-minute ceiling rounds that envelope to a whole minute and
 # lets no item consume more than 20% of the real 20-minute CI job timeout.
 OBSERVED_LOCAL_MAX_SECONDS = 79.0
-HISTORICAL_LOCAL_SUITE_SECONDS = 364.0
-HISTORICAL_CI_SUITE_SECONDS = 716.0
 CI_VARIANCE_RESERVE = 1.25
 CALIBRATED_CI_ENVELOPE_SECONDS = (
     OBSERVED_LOCAL_MAX_SECONDS
-    * HISTORICAL_CI_SUITE_SECONDS
-    / HISTORICAL_LOCAL_SUITE_SECONDS
+    * LOCAL_TO_CI_DURATION_RATIO
     * CI_VARIANCE_RESERVE
 )
 TEST_DURATION_LIMIT_SECONDS = 4 * 60.0
@@ -89,7 +88,7 @@ MAX_SINGLE_TEST_JOB_SHARE = TEST_DURATION_LIMIT_SECONDS / CI_JOB_TIMEOUT_SECONDS
 # Match direct developer runs and integrated validation. Repository tree readers
 # and writers still coordinate through the shared cross-process test gate.
 PYTEST_ARGUMENTS = (
-    "-q", "-o", "addopts=", "-n", "auto", "--dist", "load",
+    "-q", "-o", "addopts=", "-n", "auto", "--dist", "loadfile",
 )
 PYTEST_COLLECTION_ARGUMENTS = (
     "--collect-only", "-q", "-o", "addopts=", "-n", "0",
@@ -269,9 +268,15 @@ def _collect_in_subprocess(targets: Sequence[str]) -> tuple[str, ...]:
 
 def duration_budget_errors(
     durations: Sequence[DurationMeasurement],
+    *,
+    duration_coordinate: str | None = None,
 ) -> tuple[str, ...]:
+    coordinate = duration_coordinate or active_duration_coordinate()
     errors: list[str] = []
     for item in durations:
+        local_seconds = local_equivalent_seconds(
+            item.seconds, duration_coordinate=coordinate
+        )
         if item.seconds > TEST_DURATION_LIMIT_SECONDS:
             errors.append(
                 f"test={item.nodeid} duration={item.seconds:.3f}s "
@@ -279,13 +284,35 @@ def duration_budget_errors(
                 f"most {MAX_SINGLE_TEST_JOB_SHARE:.2%} of the "
                 f"{CI_JOB_TIMEOUT_SECONDS}s CI test-job timeout"
             )
-        elif item.seconds > SLOW_TEST_LIMIT_SECONDS and not item.full_gate:
+        elif local_seconds > SLOW_TEST_LIMIT_SECONDS and not item.full_gate:
             errors.append(
-                f"test={item.nodeid} duration={item.seconds:.3f}s exceeds "
-                f"slow_test_limit={SLOW_TEST_LIMIT_SECONDS:.3f}s without "
+                f"test={item.nodeid} duration={item.seconds:.3f}s "
+                f"coordinate={coordinate} local_equivalent={local_seconds:.3f}s "
+                f"exceeds local_slow_test_limit={SLOW_TEST_LIMIT_SECONDS:.3f}s without "
                 f"@pytest.mark.{FULL_GATE_MARKER}"
             )
     return tuple(errors)
+
+
+def active_duration_coordinate(
+    environ: Mapping[str, str] | None = None,
+) -> str:
+    """Return the coordinate used by the current measured duration reports."""
+
+    selected = os.environ if environ is None else environ
+    return "ci" if selected.get("GITHUB_ACTIONS", "").casefold() == "true" else "local"
+
+
+def local_equivalent_seconds(
+    seconds: float, *, duration_coordinate: str
+) -> float:
+    """Normalize a measured duration before applying the local Focused policy."""
+
+    if duration_coordinate == "local":
+        return seconds
+    if duration_coordinate == "ci":
+        return seconds / LOCAL_TO_CI_DURATION_RATIO
+    raise ValueError(f"unsupported duration coordinate: {duration_coordinate!r}")
 
 
 def run_gate(
@@ -299,6 +326,7 @@ def run_gate(
     shard_count: int | None = None,
     receipt: Path | None = None,
 ) -> int:
+    duration_coordinate = active_duration_coordinate()
     recorder = DurationRecorder()
     exit_code = int(
         pytest_runner(
@@ -309,10 +337,15 @@ def run_gate(
     durations = recorder.durations()
     if durations:
         slowest = durations[0]
+        slowest_local_seconds = local_equivalent_seconds(
+            slowest.seconds, duration_coordinate=duration_coordinate
+        )
         print(
             "test-duration-budget metrics: "
             f"measured_tests={len(durations)}, "
             f"max_test_duration={slowest.seconds:.3f}s, "
+            f"duration_coordinate={duration_coordinate}, "
+            f"max_local_equivalent_duration={slowest_local_seconds:.3f}s, "
             f"limit={TEST_DURATION_LIMIT_SECONDS:.3f}s, "
             f"slowest={slowest.nodeid}",
             file=stream,
@@ -328,7 +361,11 @@ def run_gate(
     full_gate_nodeids = tuple(
         sorted(item.nodeid for item in durations if item.full_gate)
     )
-    errors = list(duration_budget_errors(durations))
+    errors = list(
+        duration_budget_errors(
+            durations, duration_coordinate=duration_coordinate
+        )
+    )
     if exit_code != int(pytest.ExitCode.OK):
         errors.append(
             f"pytest exit_code={exit_code}; the duration gate requires a green collector"
@@ -378,6 +415,9 @@ def run_gate(
                 ),
                 "slowest_nodeid": slowest.nodeid if slowest is not None else None,
                 "duration_limit_seconds": TEST_DURATION_LIMIT_SECONDS,
+                "duration_coordinate": duration_coordinate,
+                "local_to_ci_duration_ratio": LOCAL_TO_CI_DURATION_RATIO,
+                "local_slow_test_limit_seconds": SLOW_TEST_LIMIT_SECONDS,
                 "pytest_exit_code": exit_code,
                 "duplicate_items": list(duplicate_items),
                 "errors": errors,
@@ -390,7 +430,8 @@ def run_gate(
     print(
         "PASS test-duration-budget: every test stayed within the immutable "
         f"{TEST_DURATION_LIMIT_SECONDS:.3f}s limit; tests above "
-        f"{SLOW_TEST_LIMIT_SECONDS:.3f}s were in the full_gate tier",
+        f"{SLOW_TEST_LIMIT_SECONDS:.3f}s local-equivalent were in the "
+        f"full_gate tier (coordinate={duration_coordinate})",
         file=stream,
     )
     return 0
@@ -428,6 +469,12 @@ def audit_shard_receipts(
         if payload.get("schema_version") != SHARD_RECEIPT_SCHEMA:
             errors.append(f"shard receipt schema is invalid: {path}")
             continue
+        if payload.get("duration_coordinate") != "ci":
+            errors.append(f"shard receipt duration coordinate is not ci: {path}")
+        if payload.get("local_to_ci_duration_ratio") != LOCAL_TO_CI_DURATION_RATIO:
+            errors.append(f"shard receipt duration ratio is stale: {path}")
+        if payload.get("local_slow_test_limit_seconds") != SLOW_TEST_LIMIT_SECONDS:
+            errors.append(f"shard receipt local slow-test limit is stale: {path}")
         index = payload.get("shard_index")
         if not isinstance(index, int) or not 1 <= index <= expected_shards:
             errors.append(f"shard receipt index is invalid: {path}: {index!r}")
@@ -537,6 +584,9 @@ def audit_shard_receipts(
         "selected_total": sum(len(value) for value in selected_by_index.values()),
         "actual_total": sum(len(value) for value in actual_by_index.values()),
         "full_gate_total": sum(len(value) for value in full_gate_by_index.values()),
+        "duration_coordinate": "ci",
+        "local_to_ci_duration_ratio": LOCAL_TO_CI_DURATION_RATIO,
+        "local_slow_test_limit_seconds": SLOW_TEST_LIMIT_SECONDS,
         "shard_selected_counts": {
             str(index): len(value) for index, value in sorted(selected_by_index.items())
         },

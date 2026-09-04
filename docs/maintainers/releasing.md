@@ -14,6 +14,24 @@ mismatched run fails the release rather than publishing on stale evidence.
 `ci-required` is the single aggregated branch-protection check; individual
 failures still surface in their own named jobs.
 
+## J5 timing receipt
+
+The v0.3.7 tag run `33794176327` (2026-09-03) reached PyPI's recorded wheel
+upload in 76s and sdist upload in 78s. `verify-ci` and `release-supply-chain`
+ran in parallel for 17s and 50s; publish then ran for 26s. The workflow's first
+successful post-publish API verification completed about 136s after the tag,
+and GitHub Release reconciliation completed the workflow at 152s. Publish must
+continue to wait for both exact-SHA CI evidence and checked distributions.
+Inside supply-chain, Twine check, SBOM generation, and dependency audit could
+be split after the shared build, but the receipt shows only about four seconds
+outside the 14s SBOM critical branch, so the extra artifact/job coordination is
+not currently justified.
+
+Main CI run `33872829080` spent 429s in the complete-history scan (447s for the
+job), making it the critical path. PRs now use the bounded commit-range scan;
+`main`/`dev` pushes retain the full scan, which is stronger than a merely
+periodic sweep and preserves the exact-SHA release evidence contract.
+
 ## Independent controls
 
 Run these with the worktree's independent environment. The build inputs must be
@@ -42,9 +60,14 @@ and carry a review expiry before an ignore mechanism is added.
 
 Secret scanning uses detect-secrets provider-token, private-key, Basic Auth,
 JWT and secret-keyword detectors. It scans `git ls-files`, not arbitrary
-worktree files, and release/CI checkouts fetch and scan complete text history.
-The local ignored `.env.gravity.local` is therefore not read; if such a file is
-ever committed, it enters both tracked and history scope and blocks the gate.
+worktree files. Pull requests scan that complete tracked tree plus every added
+line in every commit from the base merge point through `HEAD`; this still finds
+a credential committed and deleted within the PR. `main`/`dev` pushes scan the
+complete text history. Release accepts only an exact-SHA successful `main` push
+receipt with `history_included=true`, so incremental PR evidence can never be
+promoted as release evidence. The local ignored `.env.gravity.local` is
+therefore not read; if such a file is ever committed, it enters tracked and
+history scope and blocks the gate.
 Generic entropy detectors are excluded because immutable digests and encrypted
 evaluation blobs create thousands of non-credential candidates. Reviewed
 synthetic-test exceptions bind path, detector and secret hash and require a

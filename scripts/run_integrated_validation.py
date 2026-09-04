@@ -79,7 +79,7 @@ def gate_specs(
         ),
         GateSpec(
             "pytest_collector",
-            (py, "-m", "pytest", "-q", "-n", "auto", "--dist", "load"),
+            (py, "-m", "pytest", "-q", "-n", "auto", "--dist", "loadfile"),
             1800,
         ),
         GateSpec(

@@ -129,14 +129,20 @@ def scan_tracked(root: Path) -> list[Finding]:
     return sorted(findings)
 
 
-def _history_lines(root: Path) -> Iterator[tuple[str, str, str]]:
-    command = (
+def _history_lines(
+    root: Path, revision_range: str | None = None
+) -> Iterator[tuple[str, str, str]]:
+    command = [
         "git",
         "-c",
         "core.quotepath=false",
         "log",
-        "--all",
-        "--root",
+    ]
+    if revision_range is None:
+        command.extend(("--all", "--root"))
+    else:
+        command.append(revision_range)
+    command.extend((
         "--no-renames",
         "--format=%x1e%H",
         "--unified=0",
@@ -145,7 +151,7 @@ def _history_lines(root: Path) -> Iterator[tuple[str, str, str]]:
         "-p",
         "--",
         ".",
-    )
+    ))
     process = subprocess.Popen(
         command,
         cwd=root,
@@ -175,12 +181,19 @@ def _history_lines(root: Path) -> Iterator[tuple[str, str, str]]:
         raise SecretScanError(f"git history scan failed: {stderr.strip()[-2000:]}")
 
 
-def scan_history(root: Path) -> list[Finding]:
+def _incremental_history_range(root: Path, since: str) -> tuple[str, str]:
+    merge_base = _git(root, "merge-base", since, "HEAD").stdout.strip()
+    if not merge_base:
+        raise SecretScanError(f"history base has no merge-base with HEAD: {since}")
+    return merge_base, f"{merge_base}..HEAD"
+
+
+def scan_history(root: Path, revision_range: str | None = None) -> list[Finding]:
     shallow = _git(root, "rev-parse", "--is-shallow-repository").stdout.strip()
     if shallow != "false":
         raise SecretScanError("Git history is shallow; a complete history scan is impossible")
     findings: set[Finding] = set()
-    for commit, path, line in _history_lines(root):
+    for commit, path, line in _history_lines(root, revision_range):
         for secret in scan_line(line):
             findings.add(
                 Finding(
@@ -234,11 +247,25 @@ def evaluate(
 
 
 def scan_repository(
-    root: Path, *, include_history: bool, allowlist_path: Path
+    root: Path,
+    *,
+    include_history: bool,
+    allowlist_path: Path,
+    history_since: str | None = None,
 ) -> tuple[int, dict[str, Any]]:
+    if include_history and history_since is not None:
+        raise SecretScanError("full and incremental history scopes are mutually exclusive")
+    history_base: str | None = None
+    revision_range: str | None = None
+    if history_since is not None:
+        history_base, revision_range = _incremental_history_range(root, history_since)
     with transient_settings(detector_settings()):
         tracked = scan_tracked(root)
-        history = scan_history(root) if include_history else []
+        history = (
+            scan_history(root, revision_range)
+            if include_history or revision_range is not None
+            else []
+        )
     findings = sorted({*tracked, *history})
     allowlist = load_allowlist(allowlist_path)
     allowed, blocked = evaluate(findings, allowlist)
@@ -247,11 +274,19 @@ def scan_repository(
         "allowlisted_count": len(allowed),
         "detectors": list(PLUGINS),
         "finding_count": len(findings),
+        "history_base": history_base,
         "history_included": include_history,
+        "history_scope": (
+            "full" if include_history else "incremental" if history_since else "none"
+        ),
         "history_commit_count": (
             int(_git(root, "rev-list", "--count", "--all").stdout.strip())
             if include_history
-            else 0
+            else (
+                int(_git(root, "rev-list", "--count", revision_range).stdout.strip())
+                if revision_range is not None
+                else 0
+            )
         ),
         "repository_head": _git(root, "rev-parse", "HEAD").stdout.strip(),
         "scanned_tracked_file_count": len(tracked_paths(root)),
@@ -282,7 +317,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--allowlist", type=Path, default=DEFAULT_ALLOWLIST)
-    parser.add_argument("--history", action="store_true")
+    history = parser.add_mutually_exclusive_group()
+    history.add_argument("--history", action="store_true")
+    history.add_argument(
+        "--history-since",
+        metavar="REVISION",
+        help="scan commits added since the revision's merge-base with HEAD",
+    )
     parser.add_argument("--receipt", type=Path)
     args = parser.parse_args(argv)
     try:
@@ -290,6 +331,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.root.resolve(),
             include_history=args.history,
             allowlist_path=args.allowlist.resolve(),
+            history_since=args.history_since,
         )
     except (OSError, ValueError, SecretScanError) as exc:
         code, receipt = 2, {"reason": str(exc), "status": "unable_to_scan"}

@@ -62,9 +62,19 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
 - Local validation now has one explainable `scripts/run_changed_tests.py`
   entry point. It derives changed files from Git, selects every test reached by
   the bounded reverse dependency closure, and promotes broad impact to Full
-  instead of silently truncating. Eight repository-wide scan/build checks are
+  instead of silently truncating. Nine repository-wide scan/build checks are
   marked `full_gate` and excluded only from Focused runs; raw pytest, unittest,
   and CI remain complete, with shard conservation and slow-test marker gates.
+- The four-worker pytest scheduler now uses `--dist loadfile`. Three same-host
+  full-suite runs measured 224.502s for `load`, 227.025s for `loadscope`, and
+  188.213s for `loadfile`; keeping a test module on one worker lets its existing
+  repository-scan caches and module fixtures be reused without sharing mutable
+  state across workers.
+- Pull-request secret scanning now checks the complete tracked tree plus only
+  commits added since the base merge point. Pushes to `main` and `dev` retain
+  the complete-history scan, and release still requires the exact-SHA full
+  history receipt, so the PR critical path is reduced without weakening the
+  publication boundary.
 
 ### Added
 
@@ -93,6 +103,12 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   remain distinct fail-closed outcomes.
 
 ### Fixed
+
+- Test-duration classification now normalizes GitHub Actions measurements to
+  local-equivalent seconds before applying the immutable 40s local Focused
+  threshold. Both that normalization and the 240s absolute CI envelope use one
+  measured `716/364` local-to-CI ratio; the absolute ceiling still applies to
+  raw CI wall time.
 
 - Grouped two-step user-count Retention no longer returns an arithmetically
   impossible total as `success`. Total offsets with negative counts, a numerator

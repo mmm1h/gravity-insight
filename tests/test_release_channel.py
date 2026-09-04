@@ -386,6 +386,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
         windows = ci_job("windows_tests")
         windows_audit = ci_job("windows_tests_audit")
+        secret_history = ci_job("secret_history")
         linux311 = ci_job("core_linux_python311")
         linux312 = ci_job("core_linux_python312")
         wheel312 = ci_job("installed_wheel_linux_python312")
@@ -397,11 +398,15 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("--shard-count 4", windows)
         self.assertIn("--expected-shards 4", windows_audit)
         self.assertIn("Prove full Windows collection and execution conservation", windows_audit)
+        self.assertIn('--history-since "$HISTORY_BASE"', secret_history)
+        self.assertIn("github.event_name != 'pull_request'", secret_history)
+        self.assertIn("--history --receipt", secret_history)
         for job, version in ((linux311, "3.11"), (linux312, "3.12")):
             self.assertIn("runs-on: ubuntu-latest", job)
             self.assertIn(f'python-version: "{version}"', job)
             self.assertIn("fetch-depth: 0", job)
             self.assertIn("python -m pytest -q", job)
+            self.assertIn("--dist loadfile", job)
         self.assertIn("runs-on: ubuntu-latest", wheel312)
         self.assertIn('python-version: "3.12"', wheel312)
         self.assertIn("Build, install, and test an isolated wheel", wheel312)
