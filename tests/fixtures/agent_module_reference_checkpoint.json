@@ -22,15 +22,15 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "7318121cee15feb0d9cdf7a22daf1698818060e2d805d685a5adda035a56f9af",
+    "scanner_sha256": "83bad409ec4542947eb0ab3cc6b07b4413e57b43cd30d22ff06729ba4dc990ff",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "4e383743228f430095addaafdbcbd073e29d836bd409ad3962d7a9983853080a",
-    "manual_review_sha256": "f81c04e4d4ba9c67bbffceff164a7c872c58943bcd12771c95436ac950ab09ee",
+    "reference_evidence_sha256": "4429c1adf3c91b1618c6f701e379eec2b3c29cf959134c7def125a8623ef8dda",
+    "manual_review_sha256": "fbca06e876d621031db1180799a2c84b80c2c27e6820485d8f50d03febd915d8",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3144,
-    "scanned_file_count": 3137,
+    "version_controlled_file_count": 3165,
+    "scanned_file_count": 3158,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -526,7 +526,15 @@
       "evidence_kind": "patch_api_semantics"
     },
     {
+      "basis": "mock.patch.object receives runtime object expression 'sql_cli'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
       "basis": "mock.patch.object receives runtime object expression 'changed'; the API does not resolve a dotted module string.",
+      "evidence_kind": "patch_api_semantics"
+    },
+    {
+      "basis": "mock.patch.object receives runtime object expression 'sql_cli.credentials'; the API does not resolve a dotted module string.",
       "evidence_kind": "patch_api_semantics"
     },
     {
@@ -663,12 +671,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 229,
-    "reference_site_count": 227,
-    "manual_review_site_count": 145,
-    "reference_manual_overlap_count": 143,
+    "tracked_site_count": 238,
+    "reference_site_count": 236,
+    "manual_review_site_count": 151,
+    "reference_manual_overlap_count": 149,
     "manual_only_site_count": 2,
-    "unique_source_keys": 229,
+    "unique_source_keys": 238,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -677,9 +685,9 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 123,
+      "manual_patch_expression": 129,
       "module_qualname_dependency": 7,
-      "static_import": 76,
+      "static_import": 79,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -687,12 +695,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 123
+      "non_string_patch_expression": 129
     },
     "dispositions": {
-      "no_migration_effect": 229
+      "no_migration_effect": 238
     },
-    "sites_sha256": "2cb042e1315dc280479aa44ea09067f08528a21d542fd76b14980bac7d70d59b"
+    "sites_sha256": "dd6ac59124d4da85234eab708963531fe3026fae13d38ef883d15c023b807a61"
   },
   "blockers": [],
   "site_fields": [
@@ -719,13 +727,13 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      61,
+      63,
       {
         "kind": "none"
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:74:113:bare text module string",
+      "docs/maintainers/technical-debt.md:72:113:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -734,7 +742,7 @@
       "context review",
       "no_migration_effect",
       "retained_exact_reference",
-      61,
+      63,
       {
         "kind": "none"
       }
@@ -770,6 +778,21 @@
       }
     ],
     [
+      "scripts/check_surface_parity.py:17:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      64,
+      {
+        "kind": "none"
+      }
+    ],
+    [
       "scripts/generate_method_gap_report.py:134:5:from import",
       "r",
       "exact_reference",
@@ -779,7 +802,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -794,7 +817,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -809,7 +832,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -824,7 +847,7 @@
       "manual",
       "no_migration_effect",
       "root_lazy_export_owner_map_migrated",
-      63,
+      65,
       {
         "kind": "none"
       }
@@ -839,7 +862,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -854,7 +877,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -869,7 +892,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -884,7 +907,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -899,7 +922,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -914,7 +937,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -929,7 +952,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -944,7 +967,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -959,7 +982,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -974,7 +997,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -989,13 +1012,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22117:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22127:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1004,13 +1027,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63373:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63511:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1019,7 +1042,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1034,7 +1057,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1049,7 +1072,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1064,7 +1087,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1139,7 +1162,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1154,7 +1177,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1169,7 +1192,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1184,7 +1207,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1199,7 +1222,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1214,7 +1237,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1229,7 +1252,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1244,7 +1267,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1259,13 +1282,13 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
     ],
     [
-      "src/gravity_insight/governance/domain-boundary-baseline.json:40:6:text module path",
+      "src/gravity_insight/governance/domain-boundary-baseline.json:55:6:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1274,7 +1297,22 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "src/gravity_insight/governance/envelope_obligation_gate.py:16:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      64,
       {
         "kind": "none"
       }
@@ -1289,7 +1327,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1304,7 +1342,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1319,7 +1357,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1334,7 +1372,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1349,7 +1387,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1364,7 +1402,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1379,7 +1417,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1394,7 +1432,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1409,7 +1447,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1424,7 +1462,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1439,7 +1477,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1454,7 +1492,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1469,7 +1507,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      53,
+      55,
       {
         "kind": "none"
       }
@@ -1484,7 +1522,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_call_domain",
-      46,
+      48,
       {
         "kind": "none"
       }
@@ -1499,7 +1537,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      52,
+      54,
       {
         "kind": "none"
       }
@@ -1514,7 +1552,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      52,
+      54,
       {
         "kind": "none"
       }
@@ -1529,7 +1567,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      52,
+      54,
       {
         "kind": "none"
       }
@@ -1544,7 +1582,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      52,
+      54,
       {
         "kind": "none"
       }
@@ -1559,7 +1597,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      52,
+      54,
       {
         "kind": "none"
       }
@@ -1574,7 +1612,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_suffix",
-      52,
+      54,
       {
         "kind": "none"
       }
@@ -1589,7 +1627,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1604,7 +1642,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1619,7 +1657,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1634,7 +1672,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1649,7 +1687,7 @@
       "manual",
       "no_migration_effect",
       "root_package_only",
-      64,
+      66,
       {
         "kind": "none"
       }
@@ -1664,7 +1702,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1679,7 +1717,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1694,7 +1732,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1709,7 +1747,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1724,7 +1762,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1739,7 +1777,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1754,7 +1792,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1769,7 +1807,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1784,7 +1822,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1799,7 +1837,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1814,7 +1852,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1829,7 +1867,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1844,7 +1882,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      49,
+      51,
       {
         "kind": "none"
       }
@@ -1859,7 +1897,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1874,7 +1912,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1889,7 +1927,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1904,7 +1942,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1919,7 +1957,7 @@
       null,
       "no_migration_effect",
       "legacy_prefix_migration_sentinel",
-      56,
+      58,
       {
         "kind": "none"
       }
@@ -1934,7 +1972,7 @@
       null,
       "no_migration_effect",
       "legacy_prefix_migration_sentinel",
-      56,
+      58,
       {
         "kind": "none"
       }
@@ -1949,7 +1987,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1964,7 +2002,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -1979,7 +2017,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      57,
+      59,
       {
         "kind": "none"
       }
@@ -1994,7 +2032,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      57,
+      59,
       {
         "kind": "none"
       }
@@ -2009,7 +2047,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      57,
+      59,
       {
         "kind": "none"
       }
@@ -2024,7 +2062,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      57,
+      59,
       {
         "kind": "none"
       }
@@ -2039,7 +2077,7 @@
       "exact",
       "no_migration_effect",
       "phase_state_contract_sentinel",
-      57,
+      59,
       {
         "kind": "none"
       }
@@ -2114,7 +2152,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -2144,7 +2182,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -2159,7 +2197,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -2189,7 +2227,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -2219,7 +2257,22 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_envelope_obligations.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      64,
       {
         "kind": "none"
       }
@@ -2234,7 +2287,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      58,
+      60,
       {
         "kind": "none"
       }
@@ -2249,7 +2302,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -2264,7 +2317,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      59,
+      61,
       {
         "kind": "none"
       }
@@ -2324,7 +2377,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -2339,7 +2392,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -2369,7 +2422,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      37,
+      39,
       {
         "kind": "none"
       }
@@ -2399,7 +2452,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      35,
+      37,
       {
         "kind": "none"
       }
@@ -2414,7 +2467,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      35,
+      37,
       {
         "kind": "none"
       }
@@ -2429,7 +2482,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      35,
+      37,
       {
         "kind": "none"
       }
@@ -2444,7 +2497,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      35,
+      37,
       {
         "kind": "none"
       }
@@ -2459,7 +2512,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      35,
+      37,
       {
         "kind": "none"
       }
@@ -2564,7 +2617,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      44,
+      46,
       {
         "kind": "none"
       }
@@ -2594,7 +2647,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      35,
+      37,
       {
         "kind": "none"
       }
@@ -2609,7 +2662,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      35,
+      37,
       {
         "kind": "none"
       }
@@ -2654,7 +2707,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      51,
+      53,
       {
         "kind": "none"
       }
@@ -2669,7 +2722,7 @@
       "requires ownership review",
       "no_migration_effect",
       "receiver_owner_outside_r17",
-      60,
+      62,
       {
         "kind": "none"
       }
@@ -2774,7 +2827,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      33,
+      35,
       {
         "kind": "none"
       }
@@ -2864,7 +2917,7 @@
       "manual",
       "no_migration_effect",
       "helper_receives_only_objects",
-      55,
+      57,
       {
         "kind": "none"
       }
@@ -2885,7 +2938,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:175:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:190:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2900,7 +2953,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:199:18:patch.object",
+      "tests/test_gravity_insight_pagination.py:214:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2915,7 +2968,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:218:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:233:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2930,7 +2983,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:237:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:252:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2945,7 +2998,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:248:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:263:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2960,7 +3013,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:284:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:299:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2975,7 +3028,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:307:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:322:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2990,22 +3043,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:327:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "self.client",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      6,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_gravity_insight_pagination.py:388:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:342:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -3035,6 +3073,21 @@
       }
     ],
     [
+      "tests/test_gravity_insight_pagination.py:418:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      6,
+      {
+        "kind": "none"
+      }
+    ],
+    [
       "tests/test_gravity_insight_probe_semantics.py:392:14:patch.object",
       "rm",
       "non_string_patch_expression",
@@ -3044,7 +3097,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3059,7 +3112,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3074,7 +3127,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3089,7 +3142,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3104,7 +3157,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3119,7 +3172,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3134,7 +3187,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3149,7 +3202,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      39,
+      41,
       {
         "kind": "none"
       }
@@ -3164,7 +3217,7 @@
       "manual",
       "no_migration_effect",
       "helper_receives_only_objects",
-      55,
+      57,
       {
         "kind": "none"
       }
@@ -3194,7 +3247,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      34,
+      36,
       {
         "kind": "none"
       }
@@ -3209,7 +3262,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      34,
+      36,
       {
         "kind": "none"
       }
@@ -3299,7 +3352,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_test_domain",
-      54,
+      56,
       {
         "kind": "none"
       }
@@ -3434,7 +3487,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      48,
+      50,
       {
         "kind": "none"
       }
@@ -3464,7 +3517,7 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      47,
+      49,
       {
         "kind": "none"
       }
@@ -3479,7 +3532,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      45,
+      47,
       {
         "kind": "none"
       }
@@ -3509,7 +3562,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      41,
+      43,
       {
         "kind": "none"
       }
@@ -3524,7 +3577,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      38,
+      40,
       {
         "kind": "none"
       }
@@ -3539,7 +3592,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      31,
+      32,
       {
         "kind": "none"
       }
@@ -3554,7 +3607,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      32,
+      34,
       {
         "kind": "none"
       }
@@ -3584,7 +3637,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      42,
+      44,
       {
         "kind": "none"
       }
@@ -3614,7 +3667,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      43,
+      45,
       {
         "kind": "none"
       }
@@ -3629,7 +3682,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -3659,7 +3712,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -3674,7 +3727,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -3689,7 +3742,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -3704,7 +3757,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -3719,7 +3772,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -3734,7 +3787,97 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_cli_boundaries.py:119:43:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      31,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_cli_boundaries.py:124:16:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      31,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_cli_boundaries.py:163:43:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      31,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_cli_boundaries.py:165:16:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      31,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_cli_boundaries.py:61:43:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_cli.credentials",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      33,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_cli_boundaries.py:96:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      31,
       {
         "kind": "none"
       }
@@ -3749,7 +3892,7 @@
       "exact",
       "no_migration_effect",
       "retained_module_reference",
-      62,
+      64,
       {
         "kind": "none"
       }
@@ -3764,7 +3907,7 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      40,
+      42,
       {
         "kind": "none"
       }
@@ -3785,7 +3928,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1100:18:mock.patch.object",
+      "tests/test_sql_products.py:1102:18:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "provenance",
@@ -3794,13 +3937,13 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      36,
+      38,
       {
         "kind": "none"
       }
     ],
     [
-      "tests/test_sql_products.py:1134:14:mock.patch.object",
+      "tests/test_sql_products.py:1136:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "provenance",
@@ -3809,13 +3952,13 @@
       "manual",
       "no_migration_effect",
       "direct_object_patch",
-      36,
+      38,
       {
         "kind": "none"
       }
     ],
     [
-      "tests/test_sql_products.py:1159:18:mock.patch.object",
+      "tests/test_sql_products.py:1161:18:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.credentials",
@@ -3830,7 +3973,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1159:84:mock.patch.object",
+      "tests/test_sql_products.py:1161:84:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.credentials.subprocess",
@@ -3845,7 +3988,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1169:14:mock.patch.object",
+      "tests/test_sql_products.py:1171:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3860,7 +4003,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:365:14:mock.patch.object",
+      "tests/test_sql_products.py:367:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3875,7 +4018,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:393:14:mock.patch.object",
+      "tests/test_sql_products.py:395:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3890,7 +4033,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:402:14:mock.patch.object",
+      "tests/test_sql_products.py:404:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3905,7 +4048,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:435:14:mock.patch.object",
+      "tests/test_sql_products.py:437:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3920,7 +4063,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:461:14:mock.patch.object",
+      "tests/test_sql_products.py:463:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3935,7 +4078,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:485:14:mock.patch.object",
+      "tests/test_sql_products.py:487:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3950,7 +4093,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:506:14:mock.patch.object",
+      "tests/test_sql_products.py:508:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3965,7 +4108,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:541:14:mock.patch.object",
+      "tests/test_sql_products.py:543:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3980,7 +4123,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:557:14:mock.patch.object",
+      "tests/test_sql_products.py:559:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -3995,7 +4138,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:599:14:mock.patch.object",
+      "tests/test_sql_products.py:601:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -4010,7 +4153,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:621:14:mock.patch.object",
+      "tests/test_sql_products.py:623:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -4025,7 +4168,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:657:22:mock.patch.object",
+      "tests/test_sql_products.py:659:22:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -4040,7 +4183,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:657:72:mock.patch",
+      "tests/test_sql_products.py:659:72:mock.patch",
       "rm",
       "non_string_patch_expression",
       "f\"gravity_insight.sql.__main__.{patch_target}\"",
@@ -4049,13 +4192,13 @@
       "manual",
       "no_migration_effect",
       "fixed_non_agent_patch_path",
-      50,
+      52,
       {
         "kind": "none"
       }
     ],
     [
-      "tests/test_sql_products.py:670:14:mock.patch.object",
+      "tests/test_sql_products.py:672:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -4070,7 +4213,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:707:14:mock.patch.object",
+      "tests/test_sql_products.py:709:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -4085,7 +4228,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:725:14:mock.patch.object",
+      "tests/test_sql_products.py:727:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -4100,7 +4243,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:769:12:mock.patch.object",
+      "tests/test_sql_products.py:771:12:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",

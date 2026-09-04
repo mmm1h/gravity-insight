@@ -5,8 +5,8 @@
   "maximum_ast_only_scc_size": 20,
   "maximum_direction_violation_count": 13,
   "minimum_classification_coverage": {
-    "classified_module_count": 179,
-    "module_count": 692
+    "classified_module_count": 183,
+    "module_count": 696
   },
   "protected_non_root_unclassified_modules": [
     "gravity_insight.operators",
