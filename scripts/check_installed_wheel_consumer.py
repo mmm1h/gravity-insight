@@ -19,7 +19,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONSUMER = ROOT.parent / "work-dashboard"
-DEFAULT_REVISION = "64c08582690ac4bb2b04d3c3cd22a5716b1dc0f0"
+DEFAULT_REVISION = "6c740a5660c087b733f752e4bf9c1a5edfdd04b2"
 STRICT_PREREQUISITES_ENV = "GRAVITY_REQUIRE_CANONICAL_CONSUMER"
 CONSUMER_TESTS = (
     "tests.test_gravity_insight_adoption",
@@ -382,6 +382,17 @@ def check_installed_wheel_consumer(
         package_path = Path(lines[0]).resolve()
         if not package_path.is_relative_to(site):
             raise ConsumerCheckError(f"installed import escaped wheel: {package_path}")
+        # The probe above runs isolated with the wheel site prepended, but the
+        # consumer tests cannot: unittest has to import the consumer's own
+        # package from cwd. Without this the run inherits whichever
+        # gravity-insight this interpreter already has -- for a maintainer that
+        # is the editable checkout, so the tests silently exercised the working
+        # tree instead of the wheel this gate exists to check.
+        environment["PYTHONPATH"] = str(site)
+        # The built wheel is a pre-release the index has never seen. Declaring it
+        # as the consumer's explicit pin keeps the consumer's freshness check
+        # meaningful without asking PyPI to confirm an unpublished version.
+        environment["WORK_DASHBOARD_GRAVITY_EXPLICIT_PIN"] = lines[1]
         tested = _run(
             [sys.executable, "-m", "unittest", *CONSUMER_TESTS],
             cwd=consumer,
