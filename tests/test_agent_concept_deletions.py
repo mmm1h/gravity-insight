@@ -985,6 +985,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
             ):
                 _metadata_inventory_contract(_repository_modules(package))
 
+    @pytest.mark.full_gate
     def test_compact_pagination_output_contract_is_locked(self) -> None:
         frozen_modules = _frozen_repository_modules()
         _, frozen_definition = _compact_pagination_contract(frozen_modules)

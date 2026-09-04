@@ -189,7 +189,8 @@
       "tests/test_installed_wheel.py::InstalledWheelTests::test_built_wheel_contains_and_imports_every_source_module_and_resource",
       "tests/test_agent_module_migration_characterization.py::AgentModuleMigrationCharacterizationTests::test_agent_deep_paths_are_explicitly_public_or_internal",
       "tests/test_gravity_insight_cli.py::GravityInsightCliTests::test_domain_and_cli_modules_have_no_compiled_operation_literals",
-      "tests/test_repository_map.py::RepositoryMapTests::test_checked_in_projection_is_reproducible_and_current"
+      "tests/test_repository_map.py::RepositoryMapTests::test_checked_in_projection_is_reproducible_and_current",
+      "tests/test_agent_concept_deletions.py::AgentConceptDeletionTests::test_compact_pagination_output_contract_is_locked"
     ],
     "local_focused_wall_seconds": 100,
     "slow_test_seconds": 40
