@@ -48,6 +48,21 @@ jobs:
       - name: Check release tag matches package version
         if: github.event_name == 'push'
         run: python scripts/check_release_tag.py
+      - name: Require release tag to equal protected main
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          gh api "repos/$GITHUB_REPOSITORY/branches/main" \
+            > "$RUNNER_TEMP/main-branch.json"
+          python scripts/check_release_main.py \
+            --expected-sha "$GITHUB_SHA" \
+            --tag "$GITHUB_REF_NAME" \
+            --main-ref refs/remotes/origin/main \
+            --event-name "$GITHUB_EVENT_NAME" \
+            --branch-metadata "$RUNNER_TEMP/main-branch.json" \
+            --receipt release-evidence/main-equivalence.json
       - name: Exercise release-tag gate without changing a remote tag
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -78,25 +93,20 @@ jobs:
             echo "No candidate SDK CI run for exact SHA $GITHUB_SHA" >&2
             exit 1
           fi
-          IFS=$'\t' read -r head_sha event head_branch conclusion path < <(
-            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" \
-              --jq '[.head_sha, .event, .head_branch, .conclusion, .path] | @tsv'
-          )
-          if [[ "$head_sha" != "$GITHUB_SHA" || "$event" != "$expected_event" || \
-                "$head_branch" != "$expected_branch" || "$conclusion" != "success" || \
-                "$path" != ".github/workflows/ci.yml" ]]; then
-            echo "SDK CI run $run_id is not a green exact-SHA $expected_event/$expected_branch run" >&2
-            exit 1
-          fi
-          required=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" \
-            -f per_page=100 \
-            --jq '[.jobs[] | select(.name == "ci-required" and .conclusion == "success")] | length')
-          if [[ "$required" != "1" ]]; then
-            echo "SDK CI run $run_id has no unique successful ci-required job" >&2
-            exit 1
-          fi
+          mkdir -p "$RUNNER_TEMP/release-ci" release-evidence
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" \
+            > "$RUNNER_TEMP/release-ci/run.json"
+          gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" \
+            -f per_page=100 > "$RUNNER_TEMP/release-ci/jobs.json"
+          python scripts/check_release_ci.py \
+            --run "$RUNNER_TEMP/release-ci/run.json" \
+            --jobs "$RUNNER_TEMP/release-ci/jobs.json" \
+            --run-id "$run_id" \
+            --expected-sha "$GITHUB_SHA" \
+            --expected-event "$expected_event" \
+            --expected-branch "$expected_branch" \
+            --receipt release-evidence/ci.json
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
-          echo "PASS exact-SHA SDK CI reuse: run_id=$run_id sha=$GITHUB_SHA"
       - name: Download exact-SHA secret-scan receipt
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -134,16 +144,28 @@ jobs:
           name: release-secret-scan
           path: release-evidence/secret-scan.json
           if-no-files-found: error
+      - name: Upload exact-SHA release CI evidence
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-ci-evidence
+          path: |
+            release-evidence/main-equivalence.json
+            release-evidence/ci.json
+          if-no-files-found: error
 
   release_supply_chain:
     name: release-supply-chain
     if: github.event_name == 'push' || inputs.measure
+    needs: verify_ci
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
@@ -158,6 +180,74 @@ jobs:
         run: python scripts/generate_release_sbom.py --dist-dir dist --output-dir release-evidence
       - name: Audit isolated wheel runtime dependencies
         run: python scripts/audit_release_dependencies.py --dist-dir dist --receipt release-evidence/dependency-audit.json
+      - name: Download exact-SHA release CI evidence
+        if: github.event_name == 'push'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-ci-evidence
+          path: tmp/release-input/
+      - name: Download exact-SHA secret-history evidence
+        if: github.event_name == 'push'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-secret-scan
+          path: tmp/release-input/
+      - name: Prepare exact-main Integrated Validation environment
+        if: github.event_name == 'push'
+        run: |
+          git clone --quiet --filter=blob:none --no-tags \
+            https://github.com/mmm1h/work-dashboard.git "$RUNNER_TEMP/work-dashboard"
+          git -C "$RUNNER_TEMP/work-dashboard" rev-parse --verify refs/heads/main
+          python -m venv .venv
+          .venv/bin/python -m pip install --disable-pip-version-check -e ".[dev]"
+          git switch --force-create main "$GITHUB_SHA"
+      - name: Run exact-tag Integrated Validation
+        if: github.event_name == 'push'
+        env:
+          GRAVITY_CANONICAL_CONSUMER_REPOSITORY: ${{ runner.temp }}/work-dashboard
+          GRAVITY_REQUIRE_CANONICAL_CONSUMER: "1"
+          PYTEST_XDIST_AUTO_NUM_WORKERS: "4"
+        run: >-
+          .venv/bin/python scripts/run_integrated_validation.py
+          --receipt release-evidence/integrated-validation.json
+      - name: Check intended wheel surface matrix
+        if: github.event_name == 'push'
+        run: >-
+          .venv/bin/python scripts/check_installed_wheel_surface_matrix.py
+          --wheel dist/*.whl
+          --receipt release-evidence/installed-wheel-surface.json
+      - name: Check intended wheel canonical consumer
+        if: github.event_name == 'push'
+        run: >-
+          .venv/bin/python scripts/check_installed_wheel_consumer.py
+          --consumer-repository "$RUNNER_TEMP/work-dashboard"
+          --revision 6c740a5660c087b733f752e4bf9c1a5edfdd04b2
+          --wheel dist/*.whl
+          --strict-prerequisites
+          --receipt release-evidence/canonical-consumer.json
+      - name: Check release changelog and migration declaration
+        if: github.event_name == 'push'
+        run: >-
+          .venv/bin/python scripts/check_changelog.py
+          --release-version "${GITHUB_REF_NAME#v}"
+          --receipt release-evidence/changelog.json
+      - name: Aggregate pre-publish release receipt
+        if: github.event_name == 'push'
+        run: >-
+          .venv/bin/python scripts/build_release_gate_receipt.py
+          --expected-sha "$GITHUB_SHA"
+          --release-tag "$GITHUB_REF_NAME"
+          --dist-dir dist
+          --sbom-dir release-evidence
+          --main-receipt tmp/release-input/main-equivalence.json
+          --ci-receipt tmp/release-input/ci.json
+          --integrated-validation-receipt release-evidence/integrated-validation.json
+          --secret-scan-receipt tmp/release-input/secret-scan.json
+          --dependency-audit-receipt release-evidence/dependency-audit.json
+          --surface-receipt release-evidence/installed-wheel-surface.json
+          --consumer-receipt release-evidence/canonical-consumer.json
+          --changelog-receipt release-evidence/changelog.json
+          --output release-evidence/release-gate.json
       - name: Upload checked distributions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

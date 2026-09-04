@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONSUMER = ROOT.parent / "work-dashboard"
 DEFAULT_REVISION = "6c740a5660c087b733f752e4bf9c1a5edfdd04b2"
 STRICT_PREREQUISITES_ENV = "GRAVITY_REQUIRE_CANONICAL_CONSUMER"
+CONSUMER_REPOSITORY_ENV = "GRAVITY_CANONICAL_CONSUMER_REPOSITORY"
 CONSUMER_TESTS = (
     "tests.test_gravity_insight_adoption",
     "tests.test_r01_reference_journey_consumer",
@@ -293,6 +294,8 @@ def _project_consumer_tests(consumer: Path, commit: str) -> list[dict[str, Any]]
 def check_installed_wheel_consumer(
     consumer_repository: Path = DEFAULT_CONSUMER,
     revision: str = DEFAULT_REVISION,
+    *,
+    wheel: Path | None = None,
 ) -> dict[str, Any]:
     consumer_repository = consumer_repository.resolve()
     commit = _resolve_consumer_revision(consumer_repository, revision)
@@ -306,7 +309,14 @@ def check_installed_wheel_consumer(
         wheelhouse.mkdir()
         site.mkdir(parents=True)
         consumer.mkdir()
-        wheel = build_or_reuse_offline_wheel(ROOT, wheelhouse)
+        if wheel is None:
+            selected_wheel = build_or_reuse_offline_wheel(ROOT, wheelhouse)
+        else:
+            selected_wheel = wheel.resolve()
+            if not selected_wheel.is_file() or selected_wheel.suffix != ".whl":
+                raise ConsumerCheckError(
+                    f"installed-wheel input is not a wheel file: {selected_wheel}"
+                )
         install_command = [
             sys.executable,
             "-m",
@@ -318,7 +328,7 @@ def check_installed_wheel_consumer(
         ]
         if sys.version_info >= (3, 13):
             install_command.append("--ignore-requires-python")
-        install_command.extend(["--target", str(site), str(wheel)])
+        install_command.extend(["--target", str(site), str(selected_wheel)])
         installed = _run(install_command, cwd=temporary)
         if installed.returncode != 0:
             raise ConsumerCheckError(
@@ -408,8 +418,8 @@ def check_installed_wheel_consumer(
             "consumer_commit": commit,
             "consumer_tests": list(CONSUMER_TESTS),
             "consumer_test_projection": consumer_test_projection,
-            "wheel": wheel.name,
-            "wheel_sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
+            "wheel": selected_wheel.name,
+            "wheel_sha256": hashlib.sha256(selected_wheel.read_bytes()).hexdigest(),
             "installed_package": str(package_path),
             "installed_version": lines[1],
             "summary": summary,
@@ -435,6 +445,7 @@ def run_consumer_gate(
     revision: str = DEFAULT_REVISION,
     *,
     strict_prerequisites: bool | None = None,
+    wheel: Path | None = None,
 ) -> dict[str, Any]:
     strict = (
         _strict_prerequisites_from_environment()
@@ -442,7 +453,12 @@ def run_consumer_gate(
         else strict_prerequisites
     )
     try:
-        check = check_installed_wheel_consumer(consumer_repository, revision)
+        if wheel is None:
+            check = check_installed_wheel_consumer(consumer_repository, revision)
+        else:
+            check = check_installed_wheel_consumer(
+                consumer_repository, revision, wheel=wheel
+            )
     except ConsumerPrerequisiteError as exc:
         status = "fail" if strict else "skipped"
         return {
@@ -493,12 +509,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run the bound canonical consumer against an installed wheel."
     )
-    parser.add_argument("--consumer-repository", type=Path, default=DEFAULT_CONSUMER)
+    configured_consumer = os.environ.get(CONSUMER_REPOSITORY_ENV)
+    parser.add_argument(
+        "--consumer-repository",
+        type=Path,
+        default=Path(configured_consumer) if configured_consumer else DEFAULT_CONSUMER,
+    )
     parser.add_argument("--revision", default=DEFAULT_REVISION)
+    parser.add_argument("--wheel", type=Path)
+    parser.add_argument("--receipt", type=Path)
+    parser.add_argument("--strict-prerequisites", action="store_true")
     args = parser.parse_args(argv)
     try:
         result = run_consumer_gate(
-            args.consumer_repository, args.revision
+            args.consumer_repository,
+            args.revision,
+            strict_prerequisites=True if args.strict_prerequisites else None,
+            wheel=args.wheel,
         )
     except ConsumerCheckError as exc:
         result = {
@@ -510,6 +537,13 @@ def main(argv: list[str] | None = None) -> int:
             "reason_code": "invalid_strict_prerequisites_setting",
             "reason": str(exc),
         }
+    if args.receipt is not None:
+        args.receipt.parent.mkdir(parents=True, exist_ok=True)
+        args.receipt.write_text(
+            json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return int(result["exit_code"])
 

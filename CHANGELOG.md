@@ -43,6 +43,11 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
 ### Changed
 
+- The version-tag release path now proves tag/current-main/CI commit identity,
+  runs a fresh zero-skip Integrated Validation receipt, checks the intended wheel
+  across five surfaces and the pinned canonical consumer, validates changelog and
+  migration declarations, and aggregates every pre-publish result into one
+  artifact-bound release receipt before the unchanged OIDC publisher can run.
 - The Agent install contract now defaults to the latest published version
   instead of requiring an exact one. Pinning needed someone to supply a version
   number; with nobody supplying it an Agent reused whatever version the example
