@@ -4,8 +4,12 @@ import unittest
 
 from gravity_insight.analysis_context import ANALYSIS_CONTEXT_SOURCES, analysis_context
 from gravity_insight.app_snapshot import app_snapshot
-from gravity_insight.errors import InputValidationError
-from gravity_insight.output_projection import project_output
+from gravity_insight.errors import (
+    ContractChangedError,
+    InputValidationError,
+    error_detail_from_exception,
+)
+from gravity_insight.output_projection import apply_output_fields, project_output
 
 
 class _BatchClient:
@@ -100,6 +104,42 @@ class CapabilityDeepeningTests(unittest.TestCase):
         self.assertEqual(projected["data"]["page_info"], {"page": 1})
         with self.assertRaises(InputValidationError):
             project_output(schema, "report.example.query", envelope, ["secret"])
+
+    def test_non_object_operation_output_belongs_to_contract_maintainers(self):
+        schema = {"response_projection": {"item_keys": ["id"]}}
+
+        with self.assertRaises(ContractChangedError) as caught:
+            apply_output_fields("not-an-object", schema, ["id"])  # type: ignore[arg-type]
+
+        detail = error_detail_from_exception(caught.exception)
+        self.assertEqual("CONTRACT_CHANGED", detail.code)
+        self.assertEqual("upstream", detail.category)
+        self.assertNotEqual("caller", detail.category)
+        self.assertIsNone(detail.field)
+        self.assertIn("Repair owner:", detail.next_action)
+        self.assertIn("not the caller", detail.next_action)
+        self.assertIn("Next step:", detail.next_action)
+        self.assertIn("Stop condition:", detail.next_action)
+
+    def test_invalid_operation_schema_belongs_to_runtime_contract_owner(self):
+        envelope = {"status": "success", "data": {"list": []}}
+
+        for schema in ({}, {"response_projection": []}, []):
+            with self.subTest(schema=schema), self.assertRaises(
+                ContractChangedError
+            ) as caught:
+                apply_output_fields(envelope, schema, ["id"])  # type: ignore[arg-type]
+            detail = error_detail_from_exception(caught.exception)
+            self.assertEqual(("CONTRACT_CHANGED", "upstream"), (
+                detail.code, detail.category,
+            ))
+            self.assertIsNone(detail.field)
+            self.assertIn(
+                "Repair owner: Gravity Runtime operation-contract maintainer.",
+                detail.next_action,
+            )
+            self.assertIn("Next step:", detail.next_action)
+            self.assertIn("Stop condition:", detail.next_action)
 
 
 if __name__ == "__main__":

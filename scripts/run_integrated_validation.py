@@ -274,10 +274,51 @@ def _git(*arguments: str) -> str:
     return completed.stdout.strip()
 
 
+def _within(candidate: Path, base: Path) -> bool:
+    try:
+        return candidate.is_relative_to(base)
+    except (OSError, ValueError):
+        return False
+
+
+def is_independent_venv(
+    *,
+    expected_venv: Path,
+    executable: Path,
+    executable_real: Path,
+    prefix: Path,
+    base_prefix: Path,
+) -> bool:
+    """Decide whether the running interpreter is this worktree's own venv.
+
+    Split out as a pure function because the interesting inputs cannot be
+    produced on the machine that runs the test: `venv` copies `python.exe` on
+    Windows but symlinks `bin/python` at the base interpreter on POSIX, so the
+    executable path means a different thing on each platform for the very same
+    venv. Accept the executable if *either* the invoked path or its
+    symlink-resolved form lands inside the venv; requiring the resolved form
+    made this gate unsatisfiable on Linux while staying green on Windows.
+
+    `prefix` is the load-bearing fact. CPython derives it from the invoked
+    interpreter's own `pyvenv.cfg`, so it cannot name this worktree's venv
+    unless this worktree's venv is what is running.
+    """
+    return (
+        prefix == expected_venv
+        and prefix != base_prefix
+        and (
+            _within(executable, expected_venv)
+            or _within(executable_real, expected_venv)
+        )
+    )
+
+
 def preconditions() -> dict[str, Any]:
     expected_venv = (ROOT / ".venv").resolve()
-    executable = Path(sys.executable).resolve()
+    executable = Path(sys.executable).absolute()
+    executable_real = Path(sys.executable).resolve()
     prefix = Path(sys.prefix).resolve()
+    base_prefix = Path(sys.base_prefix).resolve()
     head = _git("rev-parse", "HEAD")
     branch = _git("branch", "--show-current")
     dirty_paths = _git("status", "--porcelain", "--untracked-files=all").splitlines()
@@ -289,11 +330,16 @@ def preconditions() -> dict[str, Any]:
         "dirty_paths": dirty_paths,
         "expected_venv": str(expected_venv),
         "python_executable": str(executable),
+        "python_executable_real": str(executable_real),
+        "venv_python_is_symlink": executable != executable_real,
         "python_prefix": str(prefix),
-        "independent_venv": (
-            prefix == expected_venv
-            and sys.prefix != sys.base_prefix
-            and executable.is_relative_to(expected_venv)
+        "python_base_prefix": str(base_prefix),
+        "independent_venv": is_independent_venv(
+            expected_venv=expected_venv,
+            executable=executable,
+            executable_real=executable_real,
+            prefix=prefix,
+            base_prefix=base_prefix,
         ),
     }
 

@@ -211,9 +211,29 @@ jobs:
           chmod 600 "$RUNNER_TEMP/consumer-ssh/id_ed25519"
           ssh-keyscan -t ed25519 github.com > "$RUNNER_TEMP/consumer-ssh/known_hosts" 2>/dev/null
           export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/consumer-ssh/id_ed25519 -o IdentitiesOnly=yes -o UserKnownHostsFile=$RUNNER_TEMP/consumer-ssh/known_hosts"
-          git clone --quiet --filter=blob:none --no-tags \
+          # Do NOT add --filter=blob:none here. This clone is not just read by
+          # the gate -- check_installed_wheel_consumer.py runs `git fetch
+          # <this path> <commit>` from a scratch repository, so the clone acts
+          # as the *server* for that fetch. A blobless clone is a promisor
+          # client with lazy fetching disabled on the serving side, so it
+          # cannot hand over the blobs it deferred:
+          #   remote: fatal: could not fetch <oid> from promisor remote
+          #   fatal: protocol error: bad pack header
+          # That is the whole failure of release run 33908804079 (29/30 gates
+          # passed). Cloning the blobs up front is the cost of being fetchable.
+          git clone --quiet --no-tags \
             git@github.com:mmm1h/work-dashboard.git "$RUNNER_TEMP/work-dashboard"
-          git -C "$RUNNER_TEMP/work-dashboard" rev-parse --verify refs/heads/main
+          consumer_head="$(git -C "$RUNNER_TEMP/work-dashboard" rev-parse --verify refs/heads/main)"
+          # Prove the clone can be fetched *from* the way the gate does it,
+          # here, rather than 20 minutes later inside gate 30 of 30. `cat-file
+          # -e` would not do: a blobless clone still has every commit object,
+          # so it passes in exactly the case this guards against. Only a real
+          # fetch exercises the pack the serving side has to build.
+          git init --quiet "$RUNNER_TEMP/consumer-fetch-probe"
+          git -C "$RUNNER_TEMP/consumer-fetch-probe" \
+            -c protocol.file.allow=always fetch --quiet --no-tags \
+            "$RUNNER_TEMP/work-dashboard" "$consumer_head"
+          rm -rf "$RUNNER_TEMP/consumer-fetch-probe"
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -e ".[dev]"
           git switch --force-create main "$GITHUB_SHA"

@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from unittest.mock import patch
 
 from scripts.check_installed_wheel_consumer import (
@@ -27,6 +27,7 @@ from scripts.run_integrated_validation import (
     _summary,
     gate_specs,
     integrated_green,
+    is_independent_venv,
     run_gate,
     summarize_gate_results,
 )
@@ -395,6 +396,90 @@ class IntegratedValidationTests(unittest.TestCase):
         self.assertNotIn("PIP_NO_BUILD_ISOLATION", online)
         self.assertEqual("127.0.0.1,localhost", offline["NO_PROXY"])
         self.assertNotIn("NO_PROXY", online)
+
+    def test_posix_symlinked_venv_python_is_still_an_independent_venv(self) -> None:
+        """The exact values the release runner reported when this gate refused.
+
+        `venv` symlinks `bin/python` at the base interpreter on POSIX and copies
+        `python.exe` on Windows, so resolving the executable answers a different
+        question per platform. The predicate had no direct coverage and was only
+        ever exercised on Windows, where it is accidentally true; on the Linux
+        release runner it was unsatisfiable and blocked v0.3.8.
+        """
+        tree = PurePosixPath("/home/runner/work/gravity-insight/gravity-insight")
+        venv = tree / ".venv"
+        base = PurePosixPath("/opt/hostedtoolcache/Python/3.11.16/x64")
+
+        self.assertTrue(
+            is_independent_venv(
+                expected_venv=venv,
+                executable=venv / "bin/python",
+                executable_real=base / "bin/python3.11",
+                prefix=venv,
+                base_prefix=base,
+            )
+        )
+
+        windows_tree = PureWindowsPath(r"D:\git-pjt\gravity-insight")
+        windows_venv = windows_tree / ".venv"
+        self.assertTrue(
+            is_independent_venv(
+                expected_venv=windows_venv,
+                executable=windows_venv / "Scripts/python.exe",
+                executable_real=windows_venv / "Scripts/python.exe",
+                prefix=windows_venv,
+                base_prefix=PureWindowsPath(r"C:\Python311"),
+            )
+        )
+
+    def test_independent_venv_still_rejects_the_wrong_interpreter(self) -> None:
+        tree = PurePosixPath("/home/runner/work/gravity-insight/gravity-insight")
+        venv = tree / ".venv"
+        base = PurePosixPath("/opt/hostedtoolcache/Python/3.11.16/x64")
+        other = PurePosixPath("/home/runner/other-tree/.venv")
+
+        for label, kwargs in (
+            (
+                "a sibling worktree's venv",
+                {
+                    "executable": other / "bin/python",
+                    "executable_real": base / "bin/python3.11",
+                    "prefix": other,
+                    "base_prefix": base,
+                },
+            ),
+            (
+                "the bare base interpreter",
+                {
+                    "executable": base / "bin/python3.11",
+                    "executable_real": base / "bin/python3.11",
+                    "prefix": base,
+                    "base_prefix": base,
+                },
+            ),
+            (
+                "a venv whose prefix is its own base",
+                {
+                    "executable": venv / "bin/python",
+                    "executable_real": base / "bin/python3.11",
+                    "prefix": venv,
+                    "base_prefix": venv,
+                },
+            ),
+            (
+                "an executable outside the venv it claims",
+                {
+                    "executable": other / "bin/python",
+                    "executable_real": other / "bin/python",
+                    "prefix": venv,
+                    "base_prefix": base,
+                },
+            ),
+        ):
+            with self.subTest(rejects=label):
+                self.assertFalse(
+                    is_independent_venv(expected_venv=venv, **kwargs)
+                )
 
     def test_green_requires_clean_main_same_head_complete_zero_exit_set(self) -> None:
         before = {
