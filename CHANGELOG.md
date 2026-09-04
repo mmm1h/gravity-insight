@@ -60,6 +60,13 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
 ### Fixed
 
+- Registered SQL product results now separate execution status from data
+  completeness. Each successful item reports whether its declared `max_rows` was
+  reached and returns canonical `complete|unknown` completeness; an exact cap hit
+  without an independent total is `possible_truncation` with a bounded warning,
+  while the existing N+1 over-fetch still fails closed when an extra row is
+  observed. Readiness and immutable Evidence binding remain separate from this
+  per-query completeness signal.
 - `gravity sql verify` no longer discards an already-verified product prefix when
   a later registered product remains HTTP-rate-limited after the shared runtime's
   bounded retries. Verification is sequential, the final 429 emits a typed

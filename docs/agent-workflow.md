@@ -55,6 +55,8 @@ gravity agent-catalog describe <selector>
 1. Stable Insight 能等价回答：使用 Insight。
 2. 需要 workspace 已审查跨表聚合：使用登记 SQL product。
    间接问法只有在同时说明审核、跨表聚合、登记名称、日期窗和运行目标时才归属此路径；Agent 只按调用方给出的精确登记名选择 product。名称缺失或未登记时返回 `WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED`，不猜表、字段或 SQL。
+   执行后必须单独检查 `completeness` 与 `row_cap_reached`；readiness、Evidence 有效或
+   `status=complete` 都不能代替下游 cohort 完整性。`possible_truncation` 时不得接受完整 cohort claim。
 3. 已有结果上的比率、占比、变化和集合对账：使用调用方声明的 derived spec。
 4. 三者都不满足：返回 capability gap，不生成裸 SQL 或任意 HTTP；隔离 SQL Explorer 只接受调用方另行显式构造的本地请求，绝不作为 Agent/Plan fallback，结果也不能进入 stable Journey。
 

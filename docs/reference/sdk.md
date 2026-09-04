@@ -278,6 +278,12 @@ rows = sql.execute_sql("SELECT count(*) AS total FROM governed_source")
 Evidence、聚合隐私或输出投影。团队产品和 Agent 使用 `query_sql_products()` 或 `gravity sql query`；
 不要把 `execute_sql()` 暴露为任意 SQL 工具。
 
+`query_sql_products()` 的成功项必须同时读取 `row_cap_reached`、`completeness` 和
+`completeness_reason`。`status=complete` 是执行状态，不证明结果集合完整；特别是 readiness 只证明
+当前登记合同及不可变 Evidence 可用，不能把它提升为下游 cohort 的完整性证明。撞 `max_rows` 且
+没有独立 `summary.total_row_count` 时，结果保持 `completeness=unknown` 并给出
+`possible_truncation`，而不是猜成完整或确定截断。
+
 `gravity.sql_explorer.inspect()` / `execute()` 保留为显式本地 SQLite 合同测试路径，使用 AST、只读数据库
 身份、authorizer 和资源预算。联网 SQL Fast Lane 的 owner 是
 `gravity_insight.sql.verification.GravitySqlExplorerAdapter`；调用方用 `runtime_factory` 延迟提供既有
