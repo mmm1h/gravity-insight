@@ -7,6 +7,8 @@ import unittest
 from collections import deque
 from pathlib import Path
 
+import pytest
+
 from gravity_insight.documentation_gate import (
     CANONICAL_MAX_BYTES,
     CANONICAL_MAX_LINES,
@@ -199,6 +201,7 @@ class DocumentationArchitectureTests(unittest.TestCase):
         ]
         self.assertEqual([], offenders)
 
+    @pytest.mark.full_gate
     def test_no_unresolved_merge_conflict_markers(self) -> None:
         # A botched conflict resolution once shipped `<<<<<<<` markers into the
         # journey ledger on dev, main and origin: the duplicate rows were caught

@@ -1,0 +1,51 @@
+import importlib
+import importlib.util
+import json
+import sys
+
+payload = json.load(sys.stdin)
+expected = payload["exports"]
+names = payload["names"]
+mode = sys.argv[1]
+
+gravity_insight = importlib.import_module("gravity_insight")
+
+
+def public_value(name):
+    value = getattr(gravity_insight, name)
+    owner, attribute = expected[name]
+    owner_module = importlib.import_module(owner, gravity_insight.__name__)
+    assert callable(value), (
+        f"root export is not callable for {name}: {type(value).__name__}"
+    )
+    assert value is getattr(owner_module, attribute), f"wrong owner identity for {name}"
+    return value
+
+
+if mode == "child-first":
+    children = {
+        name: importlib.import_module(f"gravity_insight.{name}") for name in names
+    }
+    values = {name: public_value(name) for name in names}
+    assert all(
+        children[name] is sys.modules[f"gravity_insight.{name}"] for name in names
+    )
+elif mode == "export-first":
+    values = {name: public_value(name) for name in names}
+    for name in names:
+        importlib.import_module(f"gravity_insight.{name}")
+    assert all(public_value(name) is values[name] for name in names)
+elif mode == "cross-order":
+    values = {}
+    for export_name, child_name in zip(names, reversed(names), strict=True):
+        importlib.import_module(f"gravity_insight.{child_name}")
+        values[export_name] = public_value(export_name)
+    assert all(public_value(name) is values[name] for name in names)
+else:
+    raise AssertionError(f"unknown probe mode: {mode}")
+
+print(json.dumps({
+    "mode": mode,
+    "types": [type(public_value(name)).__name__ for name in names],
+    "callable": [callable(public_value(name)) for name in names],
+}, sort_keys=True))

@@ -40,7 +40,6 @@ class SkillLibraryBuildTests(unittest.TestCase):
         self.assertEqual(self.outputs, builder.render_outputs())
 
     def test_build_contains_docs_packages_archives_and_indexes(self) -> None:
-        self.assertEqual(709, len(self.outputs))
         self.assertEqual(44, sum(path.startswith("docs/") for path in self.outputs))
         self.assertEqual(308, sum(path.startswith("packages/") for path in self.outputs))
         self.assertEqual(

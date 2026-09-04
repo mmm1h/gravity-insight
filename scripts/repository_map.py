@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 from collections import Counter, defaultdict, deque
 import hashlib
 import importlib.util
@@ -74,6 +75,26 @@ _LOW_RISK_PREFIXES = (
     "tests/",
 )
 _LOW_RISK_EXACT_PATHS = {"README.md", "SECURITY.md"}
+FULL_GATE_MARKER = "full_gate"
+FULL_GATE_TEST_FILES = frozenset(
+    {
+        "tests/test_agent_concept_deletions.py",
+        "tests/test_agent_module_reference_dispositions.py",
+        "tests/test_agent_module_migration_characterization.py",
+        "tests/test_documentation.py",
+        "tests/test_gravity_insight_cli.py",
+        "tests/test_gravity_insight_quality.py",
+        "tests/test_installed_wheel.py",
+        "tests/test_repository_map.py",
+    }
+)
+# Two reverse hops cover the normal module -> service -> public-surface shape.
+# The graph's synthetic package-parent and lazy-export hubs make an unbounded
+# closure reach almost every module, so traversal stops before expanding a node
+# above the observed high-fanout tail. A broad result is promoted to Full.
+FOCUSED_REVERSE_DEPTH = 2
+FOCUSED_REVERSE_FANOUT_LIMIT = 40
+FOCUSED_TEST_FILE_LIMIT = 80
 REQUIRED_MAP_FIELDS = (
     "domain",
     "capability",
@@ -1029,7 +1050,8 @@ def _normalize_input_path(value: str, root: Path) -> str:
             return path.resolve().relative_to(root.resolve()).as_posix()
         except ValueError as exc:
             raise RepositoryMapError(f"changed file is outside repository: {value}") from exc
-    return PurePosixPath(value.replace("\\", "/")).as_posix().lstrip("./")
+    normalized = PurePosixPath(value.replace("\\", "/")).as_posix()
+    return normalized[2:] if normalized.startswith("./") else normalized
 
 
 def _matching_entries(
@@ -1234,6 +1256,8 @@ def _integrated_canary_gate(python: str) -> list[str]:
 def _risk_rule_for_path(path: str) -> tuple[str, str]:
     normalized = PurePosixPath(path.replace("\\", "/")).as_posix()
     lowered = normalized.casefold()
+    if normalized in FULL_GATE_TEST_FILES:
+        return "high", "high:full-gate-test"
     if normalized in _HIGH_RISK_EXACT_PATHS:
         return "high", "high:governance-or-shared-spine"
     if any(normalized.startswith(prefix) for prefix in _HIGH_RISK_PREFIXES):
@@ -1256,6 +1280,7 @@ def classify_change_risk(
     focused_gate: Sequence[str] = (),
     full_gate: Sequence[str] = (),
     python: str | None = None,
+    impact_overflow: str | None = None,
 ) -> dict[str, Any]:
     """Classify a change once, taking the highest matching risk conservatively."""
 
@@ -1276,6 +1301,14 @@ def classify_change_risk(
         else:
             level, rule = "high", "high:unresolved-entity-fails-closed"
         matches.append({"subject": entity_id, "level": level, "rule": rule})
+    if impact_overflow:
+        matches.append(
+            {
+                "subject": impact_overflow,
+                "level": "high",
+                "rule": "high:focused-impact-overflow",
+            }
+        )
     level = max((item["level"] for item in matches), key=RISK_LEVELS.__getitem__)
     commands = list(focused_gate)
     if level == "medium":
@@ -1318,6 +1351,34 @@ def _closure(reverse: Mapping[str, set[str]], seeds: Iterable[str]) -> list[str]
     return sorted(seen - seed_set)
 
 
+def _bounded_reverse_closure(
+    reverse: Mapping[str, set[str]],
+    seeds: Iterable[str],
+    *,
+    depth: int = FOCUSED_REVERSE_DEPTH,
+    fanout_limit: int = FOCUSED_REVERSE_FANOUT_LIMIT,
+) -> tuple[list[str], list[dict[str, Any]]]:
+    """Return bounded dependents and every hub where expansion stopped."""
+
+    seed_set = set(seeds)
+    seen = set(seed_set)
+    queue = deque((seed, 0) for seed in sorted(seed_set))
+    boundaries: list[dict[str, Any]] = []
+    while queue:
+        node, distance = queue.popleft()
+        if distance >= depth:
+            continue
+        dependents = sorted(reverse.get(node, set()))
+        if len(dependents) > fanout_limit:
+            boundaries.append({"module": node, "dependent_count": len(dependents)})
+            continue
+        for dependent in dependents:
+            if dependent not in seen:
+                seen.add(dependent)
+                queue.append((dependent, distance + 1))
+    return sorted(seen - seed_set), boundaries
+
+
 def _bounded_set(values: Sequence[str], limit: int = 40) -> dict[str, Any]:
     selected = sorted(set(values))
     return {
@@ -1328,11 +1389,57 @@ def _bounded_set(values: Sequence[str], limit: int = 40) -> dict[str, Any]:
     }
 
 
-def _test_references_for_modules(root: Path, modules: Sequence[str]) -> list[str]:
+def _known_module_reference(value: str, known_modules: set[str]) -> str | None:
+    candidate = value
+    while candidate.startswith("gravity_insight"):
+        if candidate in known_modules:
+            return candidate
+        candidate = candidate.rpartition(".")[0]
+    return None
+
+
+def _test_module_references(source: str, known_modules: set[str]) -> set[str]:
+    """Extract exact static and literal runtime-module references from a test."""
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+    references: set[str] = set()
+    for node in ast.walk(tree):
+        values: list[str] = []
+        if isinstance(node, ast.Import):
+            values.extend(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            values.append(node.module)
+            values.extend(f"{node.module}.{alias.name}" for alias in node.names)
+        elif (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and node.value.startswith("gravity_insight")
+        ):
+            values.append(node.value)
+        for value in values:
+            reference = _known_module_reference(value, known_modules)
+            if reference is not None:
+                references.add(reference)
+    return references
+
+
+def _test_references_for_modules(
+    root: Path,
+    modules: Sequence[str],
+    *,
+    known_modules: Iterable[str],
+) -> list[str]:
+    selected = set(modules)
+    known = set(known_modules)
     result: list[str] = []
     for path in sorted((root / "tests").rglob("*.py")):
         text = _read_text(path)
-        if text is not None and any(module in text for module in modules):
+        if text is not None and selected.intersection(
+            _test_module_references(text, known)
+        ):
             result.append(_posix(path, root))
     return result
 
@@ -1418,6 +1525,8 @@ def build_task_context(
     references: dict[tuple[str, int | None, int | None], dict[str, Any]] = {}
     unresolved: list[str] = []
     terms = set(normalized_values)
+    changed: list[str] = []
+    missing_changed: list[str] = []
     if kind == "issue":
         terms.update(
             f"technical debt #{int(value.removeprefix('#'))}"
@@ -1426,6 +1535,7 @@ def build_task_context(
 
     if kind == "changed_files":
         changed = [_normalize_input_path(value, root) for value in normalized_values]
+        missing_changed = [path for path in changed if not (root / path).exists()]
         for path in changed:
             if _is_history(path):
                 unresolved.append(f"history/archive excluded by default: {path}")
@@ -1526,6 +1636,11 @@ def build_task_context(
             for path in (entry["tests"] or [])
             if Path(path).suffix == ".py"
         }
+        | {
+            path
+            for path in changed
+            if Path(path).suffix == ".py" and Path(path).name.startswith("test_")
+        }
     )
     candidate_docs = sorted(
         {path for entry in context_entries for path in (entry["current_docs"] or [])}
@@ -1579,8 +1694,18 @@ def build_task_context(
     direct_dependencies = sorted({target for seed in seed_modules for target in edges.get(seed, [])})
     direct_dependents = sorted({source for seed in seed_modules for source in reverse.get(seed, set())})
     transitive = _closure(reverse, seed_modules)
+    bounded_dependents, fanout_boundaries = _bounded_reverse_closure(
+        reverse, seed_modules
+    )
     impacted_tests = sorted(
-        set(candidate_tests) | set(_test_references_for_modules(root, [*seed_modules, *direct_dependents]))
+        set(candidate_tests)
+        | set(
+            _test_references_for_modules(
+                root,
+                [*seed_modules, *bounded_dependents],
+                known_modules=edges,
+            )
+        )
     )
     directly_runnable = [
         path
@@ -1608,6 +1733,25 @@ def build_task_context(
         for path in impacted_tests
         if Path(path).suffix == ".py" and Path(path).name.startswith("test_")
     ]]))
+    overflow_reasons: list[str] = []
+    if missing_changed:
+        overflow_reasons.append(
+            "deleted or missing changed paths require Full: "
+            + ", ".join(sorted(missing_changed))
+        )
+    seed_boundaries = sorted(
+        item["module"] for item in fanout_boundaries if item["module"] in seed_modules
+    )
+    if seed_boundaries:
+        overflow_reasons.append(
+            "changed module exceeds reverse-fanout limit: " + ", ".join(seed_boundaries)
+        )
+    if len(runnable_tests) > FOCUSED_TEST_FILE_LIMIT:
+        overflow_reasons.append(
+            f"impacted test files {len(runnable_tests)} exceed limit "
+            f"{FOCUSED_TEST_FILE_LIMIT}"
+        )
+    impact_overflow = "; ".join(overflow_reasons) or None
     for path in runnable_tests[:2]:
         start, end = _line_span(root / path, [*seed_modules, *implementation_selectors], radius=3)
         if start is None:
@@ -1628,12 +1772,16 @@ def build_task_context(
 
     python = sys.executable.replace("\\", "/")
     focused_gate = [f'& "{python}" scripts/generate_repository_map.py --check']
-    if runnable_tests:
+    if runnable_tests and impact_overflow is None:
         focused_gate.append(
-            f'& "{python}" -m pytest -q ' + runnable_tests[0]
+            f'& "{python}" -m pytest -q -m "not {FULL_GATE_MARKER}" '
+            + " ".join(runnable_tests)
         )
     else:
-        focused_gate.append(f'& "{python}" -m pytest -q tests/test_repository_map.py')
+        focused_gate.append(
+            f'& "{python}" -m pytest -q -m "not {FULL_GATE_MARKER}" '
+            "tests/test_repository_map.py"
+        )
 
     order = {"L1": 0, "L2": 1, "L3": 2, "L0": 3}
     minimal = sorted(
@@ -1665,6 +1813,7 @@ def build_task_context(
         focused_gate=focused_gate,
         full_gate=_full_gate(root),
         python=python,
+        impact_overflow=impact_overflow,
     )
     result = {
         "schema_version": "gravity.task-context-pack.v1",
@@ -1691,6 +1840,14 @@ def build_task_context(
             "direct_dependencies": direct_dependencies,
             "direct_dependents": direct_dependents,
             "transitive_dependents": _bounded_set(transitive),
+            "selection_strategy": "bounded_reverse_dependency_closure",
+            "closure_depth": FOCUSED_REVERSE_DEPTH,
+            "reverse_fanout_limit": FOCUSED_REVERSE_FANOUT_LIMIT,
+            "test_file_limit": FOCUSED_TEST_FILE_LIMIT,
+            "bounded_dependents": _bounded_set(bounded_dependents),
+            "fanout_boundaries": fanout_boundaries,
+            "overflow_reason": impact_overflow,
+            "test_binding": "ast_imports_and_literal_module_references",
             "impacted_test_files": impacted_tests,
         },
         "risk_assessment": risk,

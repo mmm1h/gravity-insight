@@ -53,6 +53,12 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   resolved version back as an observation rather than as the input to the next
   install. Project `requirements.txt` / `pyproject.toml` pins are unaffected and
   deliberately left exact.
+- Local validation now has one explainable `scripts/run_changed_tests.py`
+  entry point. It derives changed files from Git, selects every test reached by
+  the bounded reverse dependency closure, and promotes broad impact to Full
+  instead of silently truncating. Eight repository-wide scan/build checks are
+  marked `full_gate` and excluded only from Focused runs; raw pytest, unittest,
+  and CI remain complete, with shard conservation and slow-test marker gates.
 
 ### Added
 

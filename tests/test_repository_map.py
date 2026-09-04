@@ -5,11 +5,16 @@ import json
 from pathlib import Path
 import unittest
 
+import pytest
+
 from scripts.repository_map import (
     MAP_PATH,
     MAP_FACT_SCHEMA,
     MAP_SCHEMA,
     REQUIRED_MAP_FIELDS,
+    FOCUSED_REVERSE_DEPTH,
+    FOCUSED_REVERSE_FANOUT_LIMIT,
+    FOCUSED_TEST_FILE_LIMIT,
     RepositoryMapError,
     build_repository_map,
     build_task_context,
@@ -31,6 +36,7 @@ class RepositoryMapTests(unittest.TestCase):
         cls.transport = json.loads(MAP_PATH.read_bytes())
         cls.document = load_repository_map(MAP_PATH)
 
+    @pytest.mark.full_gate
     def test_checked_in_projection_is_reproducible_and_current(self) -> None:
         first = build_repository_map(ROOT)
         second = build_repository_map(ROOT)
@@ -151,6 +157,23 @@ class RepositoryMapTests(unittest.TestCase):
         )
         self.assertEqual(expected, pack["impact_scope"]["direct_dependents"])
         self.assertGreater(pack["impact_scope"]["transitive_dependents"]["count"], 0)
+        self.assertEqual(
+            "bounded_reverse_dependency_closure",
+            pack["impact_scope"]["selection_strategy"],
+        )
+        self.assertEqual(FOCUSED_REVERSE_DEPTH, pack["impact_scope"]["closure_depth"])
+        self.assertEqual(
+            FOCUSED_REVERSE_FANOUT_LIMIT,
+            pack["impact_scope"]["reverse_fanout_limit"],
+        )
+        self.assertEqual(FOCUSED_TEST_FILE_LIMIT, pack["impact_scope"]["test_file_limit"])
+        focused = next(
+            command for command in pack["focused_gate"] if " -m pytest " in command
+        )
+        for path in pack["impact_scope"]["impacted_test_files"]:
+            if Path(path).name.startswith("test_"):
+                self.assertIn(path, focused)
+        self.assertIn('-m "not full_gate"', focused)
 
     def test_graph_owner_change_reaches_the_existing_graph_regression_test(self) -> None:
         pack = build_task_context(
@@ -193,6 +216,8 @@ class RepositoryMapTests(unittest.TestCase):
                 "adversarial_review",
             ),
             (["unknown/top-level.file"], "high", "adversarial_review"),
+            (["tests/test_repository_map.py"], "high", "adversarial_review"),
+            ([".github/workflows/ci.yml"], "high", "adversarial_review"),
         )
         for paths, level, review in cases:
             with self.subTest(paths=paths):
@@ -213,6 +238,21 @@ class RepositoryMapTests(unittest.TestCase):
         self.assertEqual("full", high["selected_commands"][0])
         self.assertTrue(any("run_integrated_validation.py" in item for item in high["selected_commands"]))
         self.assertTrue(any("test_control_plane_lifecycle.py" in item for item in high["selected_commands"]))
+        overflow = classify_change_risk(
+            ["src/gravity_insight/quality.py"],
+            focused_gate=["focused"],
+            full_gate=["full"],
+            python="python",
+            impact_overflow="impacted test files 81 exceed limit 80",
+        )
+        self.assertEqual("high", overflow["level"])
+        self.assertEqual("high:focused-impact-overflow", overflow["matched_rules"][-1]["rule"])
+        self.assertEqual("full", overflow["selected_commands"][0])
+        workflow = classify_change_risk([".github/workflows/ci.yml"])
+        self.assertEqual(
+            "high:contract-agent-route-or-release-control",
+            workflow["matched_rules"][0]["rule"],
+        )
 
     def test_task_context_exposes_risk_specific_command_sets(self) -> None:
         low = build_task_context(
@@ -239,6 +279,14 @@ class RepositoryMapTests(unittest.TestCase):
             any("check_installed_wheel_consumer.py" in item for item in medium["risk_assessment"]["selected_commands"])
         )
         self.assertEqual("high", high["risk_assessment"]["level"])
+        deleted = build_task_context(
+            "changed_files",
+            "src/gravity_insight/deleted_module.py",
+            root=ROOT,
+            map_document=self.document,
+        )
+        self.assertEqual("high", deleted["risk_assessment"]["level"])
+        self.assertIn("deleted or missing", deleted["impact_scope"]["overflow_reason"])
 
     def test_machine_projection_is_compact_and_directly_consumed(self) -> None:
         payload = MAP_PATH.read_bytes()

@@ -159,6 +159,9 @@ select = ["F"]
 
 [tool.pytest.ini_options]
 addopts = "-n auto --dist load"
+markers = [
+  "full_gate: repository-wide scans, builds, or subprocess gates excluded from Focused validation",
+]
 # Transient codex worktrees live at the repository root and duplicate every
 # tests/ basename, which breaks pytest collection with import file mismatch.
 norecursedirs = ["_wt_*", ".venv", "build", "dist", "tmp"]
