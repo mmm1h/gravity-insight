@@ -50,6 +50,7 @@ class CommandProviderTransport:
         *,
         work_root: str | Path,
         environment: Mapping[str, str] | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._contract = compile_external_provider(descriptor)["contract"]
         binding = self._contract["deployment"]["subprocess"]
@@ -66,6 +67,7 @@ class CommandProviderTransport:
         self._base_arguments = list(binding["arguments"])
         self._working_directory = working
         self._environment = _command_environment(environment)
+        self._clock = clock
         self._processes: dict[str, subprocess.Popen[bytes]] = {}
         self._degradations: dict[str, dict[str, Any]] = {}
         self._guard = threading.Lock()
@@ -126,7 +128,11 @@ class CommandProviderTransport:
                 raise OSError("Command source stdin is unavailable")
             process.stdin.close()
             reason = _monitor_process(
-                process, capture["exceeded"], cancel_event, timeout_ms=timeout_ms
+                process,
+                capture["exceeded"],
+                cancel_event,
+                timeout_ms=timeout_ms,
+                clock=self._clock,
             )
             if reason is not None:
                 _terminate_process_tree(
@@ -518,7 +524,7 @@ def subprocess_context_provider(
         else SubprocessProviderTransport
     )
     transport = transport_type(
-        contract, work_root=work_root, environment=environment
+        contract, work_root=work_root, environment=environment, clock=clock
     )
     return ExternalContextProvider(contract, transport, clock=clock)
 

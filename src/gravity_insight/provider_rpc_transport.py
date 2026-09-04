@@ -162,6 +162,7 @@ class SubprocessProviderTransport:
         *,
         work_root: str | Path,
         environment: Mapping[str, str] | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         contract = compile_external_provider(descriptor)["contract"]
         if contract["transport"] != self.kind:
@@ -183,6 +184,7 @@ class SubprocessProviderTransport:
         self._command = [str(executable), *binding["arguments"]]
         self._working_directory = working
         self._environment = _sanitized_environment(environment)
+        self._clock = clock
         self._processes: dict[str, subprocess.Popen[bytes]] = {}
         self._guard = threading.Lock()
 
@@ -208,6 +210,7 @@ class SubprocessProviderTransport:
                 capture["exceeded"],
                 cancel_event,
                 timeout_ms=timeout_ms,
+                clock=self._clock,
             )
             if reason is not None:
                 _terminate_process_tree(process, cancellation_grace_ms)
@@ -299,14 +302,15 @@ def _monitor_process(
     cancel_event: threading.Event,
     *,
     timeout_ms: int,
+    clock: Callable[[], float] = time.monotonic,
 ) -> str | None:
-    deadline = time.monotonic() + timeout_ms / 1000
+    deadline = clock() + timeout_ms / 1000
     while process.poll() is None:
         if cancel_event.is_set():
             return "PROVIDER_RPC_CANCELLED"
         if output_limit.is_set():
             return "PROVIDER_RPC_OUTPUT_LIMIT"
-        if time.monotonic() >= deadline:
+        if clock() >= deadline:
             return "PROVIDER_RPC_TIMEOUT"
         time.sleep(0.005)
     return None

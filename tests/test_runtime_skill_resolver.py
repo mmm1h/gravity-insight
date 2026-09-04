@@ -39,9 +39,19 @@ from tests.test_skill_hub_contracts import (
     trusted_entry,
 )
 from tests.test_model_registry import MODEL_URI
+from tests.locked_skill_fixture import PinnedSnapshotCoreRuntime
 
 
 BUILTIN_MODEL_URI = "model://gravity/ltv-curve@1"
+
+
+class _ResolvedSkillResolver:
+    def __init__(self, result: dict) -> None:
+        self._result = result
+
+    def resolve(self, _identifier: str, *, journey: dict) -> dict:
+        del journey
+        return copy.deepcopy(self._result)
 
 
 def _team_manifest(*, models: list[str] | None = None) -> dict:
@@ -179,17 +189,20 @@ class RuntimeSkillResolverTests(unittest.TestCase):
             check=True,
             capture_output=True,
         )
-        subprocess.run(
-            ["git", "-C", str(root), "config", "user.name", "R09B Test"],
-            check=True,
-        )
-        subprocess.run(
-            ["git", "-C", str(root), "config", "user.email", "r09b@example.invalid"],
-            check=True,
-        )
         subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
         subprocess.run(
-            ["git", "-C", str(root), "commit", "-m", "fixture"],
+            [
+                "git",
+                "-C",
+                str(root),
+                "-c",
+                "user.name=R09B Test",
+                "-c",
+                "user.email=r09b@example.invalid",
+                "commit",
+                "-m",
+                "fixture",
+            ],
             check=True,
             capture_output=True,
         )
@@ -210,7 +223,17 @@ class RuntimeSkillResolverTests(unittest.TestCase):
             (state / "trusted-packs-installation.json").write_text(
                 json.dumps(trusted_state, sort_keys=True) + "\n", encoding="utf-8"
             )
-        return SimpleNamespace(root=root, state_root=state)
+        source_revision = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        return SimpleNamespace(
+            root=root,
+            state_root=state,
+            source_revision=source_revision,
+        )
 
     def test_r01_without_project_lock_fails_closed_without_creating_state(self) -> None:
         missing = self.root / "not-a-project"
@@ -257,15 +280,17 @@ class RuntimeSkillResolverTests(unittest.TestCase):
         ):
             for workspace in workspaces:
                 resolver = RuntimeSkillResolver(workspace=workspace)
-                self.assertFalse(
-                    resolver.resolve(
-                        artifact["skill_uri"], journey=synthetic
-                    )["network_called"]
+                resolution = resolver.resolve(
+                    artifact["skill_uri"], journey=synthetic
                 )
-                core = CoreSkillRuntime(
+                self.assertTrue(resolution["ok"])
+                self.assertFalse(resolution["network_called"])
+                core = PinnedSnapshotCoreRuntime(
                     workspace=workspace,
                     capability_trust=StaticTrustService(stable_trust()),
-                    skill_resolver=resolver,
+                    skill_resolver=_ResolvedSkillResolver(resolution),
+                    source_revision=workspace.source_revision,
+                    observed_at="2026-08-22T00:00:00Z",
                 )
                 sdk = FakeSDK(workspace)
                 result = ReferenceJourneyRunner(sdk, core_runtime=core).run(

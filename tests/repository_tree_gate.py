@@ -10,7 +10,7 @@ from pathlib import Path
 import tempfile
 import threading
 import time
-from typing import BinaryIO, Iterator, Literal
+from typing import BinaryIO, Callable, Iterator, Literal
 
 
 DEFAULT_TIMEOUT_SECONDS = 120.0
@@ -94,6 +94,8 @@ def _acquire(
     purpose: str,
     root: Path,
     lock_path: Path,
+    clock: Callable[[], float],
+    sleeper: Callable[[float], None],
 ) -> None:
     while True:
         try:
@@ -104,14 +106,14 @@ def _acquire(
                 f"failed closed acquiring {mode} repository tree gate for "
                 f"{purpose!r} at {stage}; root={root} lock={lock_path}: {exc}"
             ) from exc
-        remaining = deadline - time.monotonic()
+        remaining = deadline - clock()
         if remaining <= 0:
             raise RepositoryTreeGateTimeout(
                 f"timed out after {timeout_seconds:.3f}s acquiring {mode} "
                 f"repository tree gate for {purpose!r} at {stage}; "
                 f"root={root} lock={lock_path}"
             )
-        time.sleep(min(_POLL_INTERVAL_SECONDS, remaining))
+        sleeper(min(_POLL_INTERVAL_SECONDS, remaining))
 
 
 def _held_modes() -> dict[Path, Literal["shared", "exclusive"]]:
@@ -129,6 +131,8 @@ def _repository_tree_gate(
     purpose: str,
     mode: Literal["shared", "exclusive"],
     timeout_seconds: float,
+    clock: Callable[[], float],
+    sleeper: Callable[[float], None],
 ) -> Iterator[None]:
     resolved = root.resolve()
     if not purpose.strip():
@@ -154,7 +158,7 @@ def _repository_tree_gate(
     except BaseException:
         turnstile.close()
         raise
-    deadline = time.monotonic() + timeout_seconds
+    deadline = clock() + timeout_seconds
     turnstile_locked = False
     access_locked = False
     try:
@@ -168,6 +172,8 @@ def _repository_tree_gate(
             purpose=purpose,
             root=resolved,
             lock_path=turnstile_path,
+            clock=clock,
+            sleeper=sleeper,
         )
         turnstile_locked = True
         _acquire(
@@ -180,6 +186,8 @@ def _repository_tree_gate(
             purpose=purpose,
             root=resolved,
             lock_path=access_path,
+            clock=clock,
+            sleeper=sleeper,
         )
         access_locked = True
         if mode == "shared":
@@ -204,6 +212,8 @@ def repository_tree_read(
     root: Path,
     purpose: str,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    clock: Callable[[], float] = time.monotonic,
+    sleeper: Callable[[float], None] = time.sleep,
 ) -> Iterator[None]:
     """Hold shared repository access or fail closed within ``timeout_seconds``."""
     return _repository_tree_gate(
@@ -211,6 +221,8 @@ def repository_tree_read(
         purpose=purpose,
         mode="shared",
         timeout_seconds=timeout_seconds,
+        clock=clock,
+        sleeper=sleeper,
     )
 
 
@@ -219,6 +231,8 @@ def repository_tree_write(
     root: Path,
     purpose: str,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    clock: Callable[[], float] = time.monotonic,
+    sleeper: Callable[[float], None] = time.sleep,
 ) -> Iterator[None]:
     """Hold exclusive repository access or fail closed within ``timeout_seconds``."""
     return _repository_tree_gate(
@@ -226,4 +240,6 @@ def repository_tree_write(
         purpose=purpose,
         mode="exclusive",
         timeout_seconds=timeout_seconds,
+        clock=clock,
+        sleeper=sleeper,
     )

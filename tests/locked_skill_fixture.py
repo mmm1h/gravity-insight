@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 import json
 from pathlib import Path
 from typing import Any
 
 from gravity_insight import __version__
 from gravity_insight.agent_runtime_contracts import canonical_digest
+from gravity_insight.core_skill_runtime import CoreSkillRuntime
 from gravity_insight.skill_contract import compile_skill_manifest, skill_uri
 from gravity_insight.skill_hub_contract import compile_hub_index
 from gravity_insight.skill_hub_locks import build_skills_lock
@@ -15,6 +17,35 @@ from tests.test_skill_hub_contracts import hub_index, skill_entry, source_snapsh
 
 ROOT = Path(__file__).resolve().parents[1]
 AP_COST_SKILL_ID = "ap-cost-anomaly-localization"
+
+
+class PinnedSnapshotCoreRuntime(CoreSkillRuntime):
+    """Resolve fixture context against one already committed Git snapshot."""
+
+    def __init__(
+        self,
+        *,
+        source_revision: str,
+        observed_at: str,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._source_revision = source_revision
+        self._observed_at = observed_at
+
+    def resolve(
+        self,
+        journey_id: str,
+        scope: Mapping[str, Any],
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return super().resolve(
+            journey_id,
+            scope,
+            source_revision=self._source_revision,
+            observed_at=self._observed_at,
+            **kwargs,
+        )
 
 
 def canonical_skill_manifest(skill_id: str = AP_COST_SKILL_ID) -> dict[str, Any]:
@@ -95,6 +126,7 @@ __all__ = [
     "bind_locked_skill",
     "locked_skill",
     "materialize_skill_cas",
+    "PinnedSnapshotCoreRuntime",
     "skill_artifact",
     "write_skill_lock",
 ]

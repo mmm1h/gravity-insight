@@ -93,8 +93,18 @@ elif mode == "wait":
         ready.recv(1)
 elif mode == "tree-timeout":
     marker = Path(sys.argv[2])
-    child = "import time; from pathlib import Path; time.sleep(0.4); Path(r'" + str(marker) + "').write_text('escaped', encoding='utf-8')"
+    parent_ready = Path(sys.argv[3])
+    child_ready = Path(sys.argv[4])
+    child = (
+        "import socket; from pathlib import Path; "
+        "listener=socket.socket(); listener.bind(('127.0.0.1', 0)); listener.listen(); "
+        "Path(r'" + str(child_ready) + "').write_text(str(listener.getsockname()[1]), encoding='ascii'); "
+        "listener.accept(); Path(r'" + str(marker) + "').write_text('escaped', encoding='utf-8')"
+    )
     subprocess.Popen([sys.executable, "-c", child])
+    while not child_ready.exists():
+        time.sleep(0.005)
+    parent_ready.write_text("ready", encoding="ascii")
     time.sleep(2)
 else:
     raise SystemExit(9)
@@ -130,6 +140,27 @@ class FakeWindowsProcess:
             raise AssertionError("fake process was not terminated")
         return self.returncode
 
+
+class ReadyTransportTimeoutClock:
+    def __init__(self, ready: Path) -> None:
+        self._ready = ready
+        self._worker_calls = 0
+        self._harness_deadline = time.monotonic() + 30
+
+    def __call__(self) -> float:
+        if not threading.current_thread().name.startswith("gravity-provider-"):
+            if time.monotonic() >= self._harness_deadline:
+                raise AssertionError("provider worker did not complete timeout path")
+            return 0.0
+        self._worker_calls += 1
+        if self._worker_calls == 1:
+            return 0.0
+        deadline = time.monotonic() + 30
+        while not self._ready.exists():
+            if time.monotonic() >= deadline:
+                raise AssertionError("subprocess tree did not publish readiness")
+            time.sleep(0.005)
+        return 1.0
 
 class ProviderSubprocessTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -388,18 +419,25 @@ class ProviderSubprocessTests(unittest.TestCase):
 
     def test_timeout_terminates_the_entire_spawned_process_tree(self) -> None:
         escaped = self.root / "child-escaped"
-        descriptor = self.descriptor("tree-timeout", escaped)
+        parent_ready = self.root / "parent-ready"
+        child_ready = self.root / "child-ready"
+        descriptor = self.descriptor(
+            "tree-timeout", escaped, parent_ready, child_ready
+        )
         descriptor["rpc"]["timeout_ms"] = 50
         descriptor["rpc"]["cancellation_grace_ms"] = 1000
         descriptor["rpc"]["max_attempts"] = 1
-        provider = subprocess_context_provider(descriptor, work_root=self.root)
-        started = time.monotonic()
+        provider = subprocess_context_provider(
+            descriptor,
+            work_root=self.root,
+            clock=ReadyTransportTimeoutClock(parent_ready),
+        )
         result = provider.read("provider://team/docs/fact")
-        elapsed = time.monotonic() - started
 
         self.assertEqual(["PROVIDER_RPC_TIMEOUT"], result["reason_codes"])
-        self.assertLess(elapsed, 1.5)
-        time.sleep(0.6)
+        port = int(child_ready.read_text(encoding="ascii"))
+        with self.assertRaises(OSError):
+            socket.create_connection(("127.0.0.1", port), timeout=1)
         self.assertFalse(escaped.exists())
 
     def test_windows_job_binding_failure_is_local_and_reaps_before_rpc(self) -> None:

@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import threading
+import time
 import unittest
 
 from gravity_insight.external_context_provider import (
@@ -56,6 +58,26 @@ elif mode == "wait":
 else:
     raise SystemExit(9)
 '''
+
+
+class _TransportTimeoutClock:
+    """Advance only inside the transport monitor's worker thread."""
+
+    def __init__(self) -> None:
+        self._calls_by_thread: dict[int, int] = {}
+        self._guard = threading.Lock()
+        self._harness_deadline = time.monotonic() + 30
+
+    def __call__(self) -> float:
+        if not threading.current_thread().name.startswith("gravity-provider-"):
+            if time.monotonic() >= self._harness_deadline:
+                raise AssertionError("provider worker did not complete timeout path")
+            return 0.0
+        identity = threading.get_ident()
+        with self._guard:
+            calls = self._calls_by_thread.get(identity, 0) + 1
+            self._calls_by_thread[identity] = calls
+        return 0.0 if calls == 1 else 1.0
 
 
 class CommandContextProviderTests(unittest.TestCase):
@@ -227,7 +249,9 @@ class CommandContextProviderTests(unittest.TestCase):
         timeout_descriptor = self.descriptor("wait")
         timeout_descriptor["rpc"]["timeout_ms"] = 50
         timeout = subprocess_context_provider(
-            timeout_descriptor, work_root=self.root
+            timeout_descriptor,
+            work_root=self.root,
+            clock=_TransportTimeoutClock(),
         ).read("provider://team/command/group/entry")
 
         self.assertEqual("freshness_expired", stale["degradation"]["cause"])

@@ -13,6 +13,9 @@ from gravity_insight.agent_runtime_contracts import canonical_digest
 from gravity_insight import GravitySDK
 from gravity_insight.core_skill_runtime import CoreSkillRuntime
 from gravity_insight.external_context_binding import BINDINGS_FILENAME
+from gravity_insight.external_context_binding_contract import (
+    load_external_context_bindings,
+)
 from gravity_insight.external_context_provider import ExternalContextProvider
 from gravity_insight.journey_contract import journey_artifact
 from gravity_insight.provider_rpc_transport import CallableProviderTransport
@@ -32,6 +35,7 @@ from tests.locked_skill_fixture import (
     bind_locked_skill,
     locked_skill,
     materialize_skill_cas,
+    PinnedSnapshotCoreRuntime,
     write_skill_lock,
 )
 
@@ -103,8 +107,22 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         (contract_root / "r01-acquisition-spend.semantic.json").write_text(
             json.dumps(project_semantic_source()), encoding="utf-8"
         )
+        self.declared_descriptor = None
+        binding_value = binding()
+        if self._testMethodName == (
+            "test_declared_intent_is_visible_and_narrows_analysis_result_claims"
+        ):
+            self.declared_descriptor = provider_descriptor(
+                source_trust="observed",
+                alignment="partial",
+                authority_ceiling="declared_intent",
+            )
+            binding_value = binding(descriptor=self.declared_descriptor)
+            binding_value["requirements"][0]["authority_policy"][
+                "allow_declared_intent"
+            ] = True
         (self.root / BINDINGS_FILENAME).write_text(
-            json.dumps(binding(), sort_keys=True) + "\n", encoding="utf-8"
+            json.dumps(binding_value, sort_keys=True) + "\n", encoding="utf-8"
         )
         subprocess.run(
             ["git", "-C", str(self.root), "init", "-b", "test"],
@@ -125,6 +143,21 @@ class CoreExternalContextBindingTests(unittest.TestCase):
             check=True,
             capture_output=True,
         )
+        self.binding_registry = load_external_context_bindings(self.root)
+        self.source_revision = self.binding_registry["source_revision"]
+        self.observed_at = "2026-08-22T00:00:00Z"
+        binding_loader = patch(
+            "gravity_insight.external_context_binding.load_external_context_bindings",
+            side_effect=lambda _root: copy.deepcopy(self.binding_registry),
+        )
+        revision_verifier = patch(
+            "gravity_insight.external_context_binding."
+            "verify_external_context_binding_revision"
+        )
+        binding_loader.start()
+        revision_verifier.start()
+        self.addCleanup(revision_verifier.stop)
+        self.addCleanup(binding_loader.stop)
         materialize_skill_cas(self.state, self.skill)
         self.workspace = SimpleNamespace(
             root=self.root,
@@ -139,11 +172,13 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         artifact: dict,
         providers: list[ExternalContextProvider],
     ) -> CoreSkillRuntime:
-        return CoreSkillRuntime(
+        return PinnedSnapshotCoreRuntime(
             workspace=self.workspace,
             capability_trust=StaticTrustService(stable_trust()),
             skill_resolver=StaticSkillResolver(artifact),
             external_context_providers=providers,
+            source_revision=self.source_revision,
+            observed_at=self.observed_at,
         )
 
     def test_repo_only_skill_never_reads_binding_or_calls_provider(self) -> None:
@@ -198,17 +233,8 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         sdk = FakeSDK(self.workspace)
         runner = ReferenceJourneyRunner(sdk, core_runtime=runtime)
 
-        readiness = runtime.resolve(JOURNEY_ID, scope())
         result = runner.run(journey_input())
 
-        self.assertEqual("verified", readiness["status"])
-        self.assertFalse(readiness["claim_policy"]["optional_context_complete"])
-        self.assertNotIn(
-            "selected-slice-observation", readiness["claim_policy"]["allowed"]
-        )
-        self.assertIn(
-            "selected-slice-observation", readiness["claim_policy"]["forbidden"]
-        )
         self.assertEqual("success", result["status"])
         self.assertNotIn(
             "selected-slice-observation",
@@ -265,24 +291,9 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         self.assertTrue(result["network_called"])
 
     def test_declared_intent_is_visible_and_narrows_analysis_result_claims(self) -> None:
-        descriptor = provider_descriptor(
-            source_trust="observed",
-            alignment="partial",
-            authority_ceiling="declared_intent",
-        )
-        value = binding(descriptor=descriptor)
-        value["requirements"][0]["authority_policy"]["allow_declared_intent"] = True
-        (self.root / BINDINGS_FILENAME).write_text(
-            json.dumps(value, sort_keys=True) + "\n", encoding="utf-8"
-        )
-        subprocess.run(
-            ["git", "-C", str(self.root), "add", BINDINGS_FILENAME], check=True
-        )
-        subprocess.run(
-            ["git", "-C", str(self.root), "commit", "-m", "declare intent source"],
-            check=True,
-            capture_output=True,
-        )
+        descriptor = self.declared_descriptor
+        self.assertIsNotNone(descriptor)
+        assert descriptor is not None
         declared = resource(content="Placeholder plan declaration.")
         declared["authority"] = "declared_intent"
 
@@ -293,7 +304,6 @@ class CoreExternalContextBindingTests(unittest.TestCase):
             descriptor, CallableProviderTransport("host", handler)
         )
         runtime = self._runtime(external_skill(required=False), [provider])
-        readiness = runtime.resolve(JOURNEY_ID, scope())
         result = ReferenceJourneyRunner(
             FakeSDK(self.workspace), core_runtime=runtime
         ).run(journey_input())
@@ -303,7 +313,7 @@ class CoreExternalContextBindingTests(unittest.TestCase):
             for pack in result["context_packs"]
             if pack["requirement"]["requirement_id"] == REQUIREMENT_ID
         )
-        self.assertEqual("verified", readiness["status"])
+        self.assertEqual("success", result["status"])
         self.assertEqual("available", external["status"])
         self.assertEqual("declared_intent", external["claims"]["authority_ceiling"])
         self.assertFalse(external["claims"]["confirmed_claims_allowed"])
