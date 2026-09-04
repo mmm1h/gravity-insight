@@ -26,6 +26,19 @@ Target release: `0.3.8`
 
 Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
+### Changed
+
+- The Agent install contract now defaults to the latest published version
+  instead of requiring an exact one. Pinning needed someone to supply a version
+  number; with nobody supplying it an Agent reused whatever version the example
+  or its own memory carried, and the startup update check is disabled while a
+  pin is in effect — so the install silently stayed on a long-superseded
+  release. `pin_when_asked` keeps exact pinning available for a stated
+  reproducibility requirement, and the contract now also says to read the
+  resolved version back as an observation rather than as the input to the next
+  install. Project `requirements.txt` / `pyproject.toml` pins are unaffected and
+  deliberately left exact.
+
 ### Added
 
 - `GravitySDK.reconcile_standard_retention_denominators()` now produces a bounded,
