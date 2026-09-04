@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
+import textwrap
 import json
 import os
 import subprocess
@@ -218,12 +219,33 @@ def _is_envelope_shape(keys: set[str]) -> bool:
     )
 
 
+def _return_shape(node: ast.AST, source: str) -> str:
+    """Describe a returned value by its source text, not by its parsed shape.
+
+    `ast.dump` is not a stable identity across interpreters: Python 3.13 stopped
+    emitting fields left at their empty defaults, so the same return statement
+    dumps differently on 3.12 and on 3.14. Every baseline key here embeds this
+    digest, so an AST-derived one would mark all 319 recorded paths as new the
+    moment the gate ran on a different supported Python.
+
+    Pinning `feature_version` on the parse does not help; it constrains the
+    grammar accepted, not how the resulting tree is rendered.
+    """
+
+    segment = ast.get_source_segment(source, node)
+    if segment is None:  # pragma: no cover - parsed nodes always carry positions
+        return ast.dump(node, annotate_fields=True, include_attributes=False)
+    lines = [line.rstrip() for line in segment.splitlines()]
+    return textwrap.dedent("\n".join(lines))
+
+
 def _function_paths(
     path: str,
     qualname: str,
     function: ast.FunctionDef | ast.AsyncFunctionDef,
     serializer_names: set[str],
     serializer_modules: set[str],
+    source: str,
 ) -> list[EnvelopePath]:
     names = _mapping_keys(function)
     candidates: list[tuple[ast.Return, set[str], bool, str]] = []
@@ -242,7 +264,7 @@ def _function_paths(
             keys = _literal_keys(node.value)
         if serializer_call is None and not _is_envelope_shape(keys):
             continue
-        shape = ast.dump(node.value, annotate_fields=True, include_attributes=False)
+        shape = _return_shape(node.value, source)
         digest = hashlib.sha256(
             (shape + "\0" + "\0".join(sorted(keys))).encode("utf-8")
         ).hexdigest()[:16]
@@ -291,7 +313,9 @@ def inspect_repository(root: Path = ROOT) -> list[EnvelopePath]:
         names, modules = _serializer_bindings(tree)
         for qualname, function in _functions(tree):
             rows.extend(
-                _function_paths(relative, qualname, function, names, modules)
+                _function_paths(
+                    relative, qualname, function, names, modules, source
+                )
             )
     return sorted(rows, key=lambda item: item.identity)
 

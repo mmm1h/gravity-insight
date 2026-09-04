@@ -26,7 +26,7 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "4429c1adf3c91b1618c6f701e379eec2b3c29cf959134c7def125a8623ef8dda",
+    "reference_evidence_sha256": "1c93fabe59f60195f8efad4ccca3f4a6037916c9fb1f1f9549155293cf319c29",
     "manual_review_sha256": "fbca06e876d621031db1180799a2c84b80c2c27e6820485d8f50d03febd915d8",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3165,
@@ -700,7 +700,7 @@
     "dispositions": {
       "no_migration_effect": 238
     },
-    "sites_sha256": "dd6ac59124d4da85234eab708963531fe3026fae13d38ef883d15c023b807a61"
+    "sites_sha256": "7eda0ab1a9ddbf991469c3a48a3ec55c848f04a3a54e2811f805d3498987f5f1"
   },
   "blockers": [],
   "site_fields": [
@@ -1303,7 +1303,7 @@
       }
     ],
     [
-      "src/gravity_insight/governance/envelope_obligation_gate.py:16:1:from import",
+      "src/gravity_insight/governance/envelope_obligation_gate.py:17:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

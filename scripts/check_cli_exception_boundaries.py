@@ -7,6 +7,7 @@ import ast
 import hashlib
 import json
 import sys
+import textwrap
 from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
@@ -48,8 +49,20 @@ class Finding:
     handler_sha256: str
 
     @property
-    def allowlist_key(self) -> tuple[str, int, str, str]:
-        return self.path, self.line, self.detector, self.handler_sha256
+    def allowlist_key(self) -> tuple[str, str, str]:
+        """Identify a reviewed handler without depending on where it sits.
+
+        The line number is deliberately absent. A handler's review is about the
+        handler, and any edit above it renumbers every handler below -- which in
+        a repository that merges parallel branches means unrelated work silently
+        revokes reviews and reports them as unreviewed findings. That happened
+        twice within an hour while integrating this very change.
+
+        `handler_sha256` is the identity; `line` stays on the entry so a reader
+        can find the handler, and is refreshed from the scan rather than matched.
+        """
+
+        return self.path, self.detector, self.handler_sha256
 
 
 class _HandlerNodes(ast.NodeVisitor):
@@ -129,12 +142,32 @@ def _structured_serialization(node: ast.AST) -> bool:
     )
 
 
-def _handler_hash(handler: ast.ExceptHandler) -> str:
-    normalized = ast.dump(handler, annotate_fields=True, include_attributes=False)
+def _handler_hash(handler: ast.ExceptHandler, source: str) -> str:
+    """Identify a handler by its source text, not by its parsed shape.
+
+    `ast.dump` looks like the obvious identity and is not one: Python 3.13
+    stopped emitting fields left at their empty defaults, so the same handler
+    hashes differently on 3.12 and on 3.14. An allowlist keyed that way can only
+    ever be valid on one interpreter, and this repository's CI runs two.
+
+    The source segment is stable across versions and still changes whenever the
+    handler itself does, which is the property the allowlist needs. Trailing
+    whitespace and the block's own indentation are normalized away so that
+    moving a handler between nesting levels does not silently revoke its review.
+    """
+
+    segment = ast.get_source_segment(source, handler)
+    if segment is None:  # pragma: no cover - parsed nodes always carry positions
+        raise CliBoundaryGateError("handler has no source segment")
+    normalized = textwrap.dedent(
+        "\n".join(line.rstrip() for line in segment.splitlines())
+    )
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
-def _handler_findings(path: str, handler: ast.ExceptHandler) -> list[Finding]:
+def _handler_findings(
+    path: str, handler: ast.ExceptHandler, source: str
+) -> list[Finding]:
     collector = _HandlerNodes()
     for statement in handler.body:
         collector.visit(statement)
@@ -187,7 +220,7 @@ def _handler_findings(path: str, handler: ast.ExceptHandler) -> list[Finding]:
                 detectors.add("flattened-exception-escape")
     if plain_output and not derived_output:
         detectors.add("opaque-exception-to-plain-output")
-    digest = _handler_hash(handler)
+    digest = _handler_hash(handler, source)
     return [Finding(path, handler.lineno, detector, digest) for detector in sorted(detectors)]
 
 
@@ -218,7 +251,8 @@ def inventory(root: Path) -> list[Finding]:
     for source_path in sorted(source_root.rglob("*.py")):
         relative = source_path.relative_to(root).as_posix()
         try:
-            tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=relative)
+            text = source_path.read_text(encoding="utf-8")
+            tree = ast.parse(text, filename=relative)
         except (OSError, UnicodeError, SyntaxError) as exc:
             raise CliBoundaryGateError(f"cannot parse CLI candidate {relative}: {exc}") from exc
         if not _is_cli_boundary(source_path, tree):
@@ -227,7 +261,7 @@ def inventory(root: Path) -> list[Finding]:
             (node for node in ast.walk(tree) if isinstance(node, ast.ExceptHandler)),
             key=lambda node: node.lineno,
         ):
-            findings.extend(_handler_findings(relative, handler))
+            findings.extend(_handler_findings(relative, handler, text))
     return sorted(
         set(findings),
         key=lambda item: (item.path, item.line, item.detector, item.handler_sha256),
@@ -287,12 +321,7 @@ def load_allowlist(
             raise CliBoundaryGateError(
                 f"CLI exception allowlist entry {index} expired on {expiry.isoformat()}"
             )
-        key = (
-            item["path"],
-            item["line"],
-            item["detector"],
-            item["handler_sha256"],
-        )
+        key = (item["path"], item["detector"], item["handler_sha256"])
         if key in result:
             raise CliBoundaryGateError(
                 f"duplicate CLI exception allowlist entry {index}"
@@ -303,11 +332,11 @@ def load_allowlist(
 
 def evaluate(
     findings: Iterable[Finding],
-    allowlist: Mapping[tuple[str, int, str, str], Mapping[str, Any]],
-) -> tuple[list[Finding], list[Finding], list[tuple[str, int, str, str]]]:
+    allowlist: Mapping[tuple[str, str, str], Mapping[str, Any]],
+) -> tuple[list[Finding], list[Finding], list[tuple[str, str, str]]]:
     allowed: list[Finding] = []
     blocked: list[Finding] = []
-    used: set[tuple[str, int, str, str]] = set()
+    used: set[tuple[str, str, str]] = set()
     for finding in findings:
         if finding.allowlist_key in allowlist:
             allowed.append(finding)
@@ -337,9 +366,9 @@ def check_repository(
         "unused_allowlist_entries": [
             {
                 "path": key[0],
-                "line": key[1],
-                "detector": key[2],
-                "handler_sha256": key[3],
+                "detector": key[1],
+                "handler_sha256": key[2],
+                "line": allowlist[key]["line"],
             }
             for key in unused
         ],
