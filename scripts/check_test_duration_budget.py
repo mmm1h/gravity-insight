@@ -102,6 +102,21 @@ class DurationMeasurement:
     nodeid: str
     seconds: float
     full_gate: bool = False
+    call_seconds: float | None = None
+
+    @property
+    def slow_test_seconds(self) -> float:
+        """Time this test itself spent, excluding shared fixture setup.
+
+        A class- or module-scoped fixture is billed by pytest to whichever test
+        happens to trigger it, so the summed phases make the slow-test verdict
+        depend on execution order. Two tests failed this gate on `main` at
+        147.629s and 81.777s while measuring 0.04s and 1.74s of their own work;
+        the rest was a shared setUpClass that a different sibling would have
+        absorbed on the next run.
+        """
+
+        return self.seconds if self.call_seconds is None else self.call_seconds
 
 
 class DurationRecorder:
@@ -109,6 +124,7 @@ class DurationRecorder:
 
     def __init__(self) -> None:
         self._seconds_by_nodeid: dict[str, float] = {}
+        self._call_seconds_by_nodeid: dict[str, float] = {}
         self._phase_counts: dict[tuple[str, str], int] = {}
         self._full_gate_nodeids: set[str] = set()
 
@@ -120,12 +136,21 @@ class DurationRecorder:
         self._seconds_by_nodeid[report.nodeid] = (
             self._seconds_by_nodeid.get(report.nodeid, 0.0) + report.duration
         )
+        if report.when == "call":
+            self._call_seconds_by_nodeid[report.nodeid] = (
+                self._call_seconds_by_nodeid.get(report.nodeid, 0.0) + report.duration
+            )
         if FULL_GATE_MARKER in getattr(report, "keywords", {}):
             self._full_gate_nodeids.add(report.nodeid)
 
     def durations(self) -> tuple[DurationMeasurement, ...]:
         return tuple(
-            DurationMeasurement(nodeid, seconds, nodeid in self._full_gate_nodeids)
+            DurationMeasurement(
+                nodeid,
+                seconds,
+                nodeid in self._full_gate_nodeids,
+                self._call_seconds_by_nodeid.get(nodeid),
+            )
             for nodeid, seconds in sorted(
                 self._seconds_by_nodeid.items(),
                 key=lambda item: (-item[1], item[0]),
@@ -274,8 +299,13 @@ def duration_budget_errors(
     coordinate = duration_coordinate or active_duration_coordinate()
     errors: list[str] = []
     for item in durations:
+        # The absolute ceiling stays on the summed phases: shared setup really
+        # does consume the job budget, whoever is billed for it. The slow-test
+        # threshold asks a different question -- is this test too slow for the
+        # local Focused loop -- and that must not depend on which sibling
+        # happened to trigger a class-scoped fixture first.
         local_seconds = local_equivalent_seconds(
-            item.seconds, duration_coordinate=coordinate
+            item.slow_test_seconds, duration_coordinate=coordinate
         )
         if item.seconds > TEST_DURATION_LIMIT_SECONDS:
             errors.append(
@@ -286,7 +316,8 @@ def duration_budget_errors(
             )
         elif local_seconds > SLOW_TEST_LIMIT_SECONDS and not item.full_gate:
             errors.append(
-                f"test={item.nodeid} duration={item.seconds:.3f}s "
+                f"test={item.nodeid} call={item.slow_test_seconds:.3f}s "
+                f"phases_total={item.seconds:.3f}s "
                 f"coordinate={coordinate} local_equivalent={local_seconds:.3f}s "
                 f"exceeds local_slow_test_limit={SLOW_TEST_LIMIT_SECONDS:.3f}s without "
                 f"@pytest.mark.{FULL_GATE_MARKER}"

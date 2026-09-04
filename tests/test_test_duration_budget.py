@@ -50,10 +50,13 @@ class TestDurationBudgetTests(unittest.TestCase):
             recorder.pytest_runtest_logreport(
                 SimpleNamespace(nodeid=nodeid, when=phase, duration=duration)
             )
+        # Ordering and the summed total are unchanged; the call phase is now
+        # recorded alongside them so the slow-test verdict can ask about the
+        # test's own work rather than about a shared fixture it triggered.
         self.assertEqual(
             (
-                DurationMeasurement("tests/test_slow.py::test_slow", 0.8),
-                DurationMeasurement("tests/test_fast.py::test_fast", 0.4),
+                DurationMeasurement("tests/test_slow.py::test_slow", 0.8, False, 0.8),
+                DurationMeasurement("tests/test_fast.py::test_fast", 0.4, False, 0.2),
             ),
             recorder.durations(),
         )
@@ -165,6 +168,51 @@ class TestDurationBudgetTests(unittest.TestCase):
         self.assertIn("local_slow_test_limit=40.000s", errors[0])
         self.assertEqual("local", active_duration_coordinate({}))
         self.assertEqual("ci", active_duration_coordinate({"GITHUB_ACTIONS": "true"}))
+
+    def test_shared_fixture_setup_is_not_billed_to_the_test_that_triggered_it(
+        self,
+    ) -> None:
+        # Both numbers are real: on main these two tests were reported at
+        # 147.629s and 81.777s while their own call phases were 0.04s and 1.74s.
+        # The remainder was a class-scoped setUpClass that pytest bills to
+        # whichever sibling runs first, so the verdict moved with execution
+        # order and the same commit passed one run and failed the next.
+        absorbed_setup = DurationMeasurement(
+            "tests/test_matrix.py::MatrixTests::test_first_to_run",
+            147.629,
+            False,
+            0.040,
+        )
+        self.assertEqual(
+            (),
+            duration_budget_errors((absorbed_setup,), duration_coordinate="ci"),
+        )
+
+        # The ceiling is a different question -- shared setup does consume the
+        # job budget -- so the summed phases still have to answer for it.
+        over_ceiling = DurationMeasurement(
+            "tests/test_matrix.py::MatrixTests::test_first_to_run",
+            240.001,
+            False,
+            0.040,
+        )
+        self.assertIn(
+            "limit=240.000s",
+            duration_budget_errors((over_ceiling,), duration_coordinate="ci")[0],
+        )
+
+        # A test that is genuinely slow in its own call phase still fails.
+        genuinely_slow = DurationMeasurement(
+            "tests/test_matrix.py::MatrixTests::test_slow_body",
+            120.0,
+            False,
+            40.0 * LOCAL_TO_CI_DURATION_RATIO + 0.001,
+        )
+        message = duration_budget_errors(
+            (genuinely_slow,), duration_coordinate="ci"
+        )[0]
+        self.assertIn("local_equivalent=40.001s", message)
+        self.assertIn("phases_total=120.000s", message)
 
     def test_collection_recorder_and_partition_preserve_exact_nodeids(self) -> None:
         recorder = CollectionRecorder()
