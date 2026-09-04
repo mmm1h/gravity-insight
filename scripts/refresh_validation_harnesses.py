@@ -15,7 +15,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def ordered_steps(python: str, *, check: bool) -> tuple[tuple[str, ...], ...]:
     suffix = ("--check",) if check else ()
+    module_graph_action = "check" if check else "refresh"
+    domain_boundary_action = (
+        ("domain-boundary", "check")
+        if check
+        else ("domain-boundary", "baseline", "--write")
+    )
     return (
+        (
+            python,
+            "-m",
+            "tests.agent_migration_characterization",
+            module_graph_action,
+        ),
+        (
+            python,
+            "scripts/audit_agent_module_references.py",
+            *domain_boundary_action,
+        ),
         (python, "scripts/generate_repository_map.py", *suffix),
         (
             python,
@@ -54,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
             {
                 "schema_version": "gravity.validation-harness-refresh.v1",
                 "order": [
+                    "module_graph_baseline",
+                    "domain_boundary_baseline",
                     "repository_map",
                     "agent_module_reference_checkpoint",
                 ],

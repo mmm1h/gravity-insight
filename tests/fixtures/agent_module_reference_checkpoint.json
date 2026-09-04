@@ -22,15 +22,15 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "7318121cee15feb0d9cdf7a22daf1698818060e2d805d685a5adda035a56f9af",
+    "scanner_sha256": "83bad409ec4542947eb0ab3cc6b07b4413e57b43cd30d22ff06729ba4dc990ff",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "a1faf5ffc0c5b432d6050f26eb3a2a9dd8eca34b0cab2dc958e4a9026ea1895a",
-    "manual_review_sha256": "f81c04e4d4ba9c67bbffceff164a7c872c58943bcd12771c95436ac950ab09ee",
+    "reference_evidence_sha256": "e20ddb560a7a0e23f548b28d110d5e0be9ea961e2c245716f9121237a8dc9d30",
+    "manual_review_sha256": "35d406614066fa6403ef87f89d5ebe3a704379e0dac72a6a45831b9135d338c2",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3143,
-    "scanned_file_count": 3136,
+    "version_controlled_file_count": 3144,
+    "scanned_file_count": 3137,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -692,7 +692,7 @@
     "dispositions": {
       "no_migration_effect": 229
     },
-    "sites_sha256": "608e42d6e3572c24a8622ed4d4157b480877060b17ccb3cf2dd6faf93c2f1912"
+    "sites_sha256": "acd409b39701909f1e32a5e21dbf7a4a4e1ca179b311eff4bb17506656da9361"
   },
   "blockers": [],
   "site_fields": [
@@ -725,7 +725,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:74:113:bare text module string",
+      "docs/maintainers/technical-debt.md:72:113:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -995,7 +995,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22117:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22127:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1010,7 +1010,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63328:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63399:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1265,7 +1265,7 @@
       }
     ],
     [
-      "src/gravity_insight/governance/domain-boundary-baseline.json:40:6:text module path",
+      "src/gravity_insight/governance/domain-boundary-baseline.json:55:6:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

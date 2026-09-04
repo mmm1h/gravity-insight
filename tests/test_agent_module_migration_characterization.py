@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import itertools
 import json
 from pathlib import Path
 import subprocess
@@ -480,10 +481,58 @@ def run():
             graph["edges"]["gravity_insight.consumer"],
         )
 
+    def test_sql_modules_import_in_every_order_without_eager_cycle(self) -> None:
+        modules = (
+            "gravity_insight.sql",
+            "gravity_insight.sql.catalog",
+            "gravity_insight.sql.products",
+            "gravity_insight.sql.query",
+            "gravity_insight.sql.verification",
+        )
+        definition = module_graph_definition()
+        inventory, edge_kinds = module_graph_edge_kinds(PACKAGE_ROOT)
+        graph = module_graph_for_profile(
+            (name for name, _is_package in inventory.values()),
+            edge_kinds,
+            definition["profiles"]["eager-ast-only"],
+        )
+        self.assertEqual([], module_graph_cyclic_sccs(graph))
+
+        probe = "\n".join(
+            (
+                "import importlib",
+                "import itertools",
+                "import sys",
+                "import gravity_insight",
+                f"modules = {modules!r}",
+                "for order in itertools.permutations(modules):",
+                "    for name in tuple(sys.modules):",
+                "        if name == 'gravity_insight.sql' or name.startswith('gravity_insight.sql.'):",
+                "            sys.modules.pop(name, None)",
+                "    gravity_insight.__dict__.pop('sql', None)",
+                "    for name in order:",
+                "        importlib.import_module(name)",
+                "print(sum(1 for _ in itertools.permutations(modules)))",
+            )
+        )
+        completed = subprocess.run(
+            [sys.executable, "-c", probe],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(
+            str(len(tuple(itertools.permutations(modules)))),
+            completed.stdout.strip(),
+        )
+
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
         expected = module_graph_baseline()
         self.assertEqual(
-            "7e3aa7647f0d92d2cf7c6a7dad8d1fdb759589d1aaa51c5a7cb4b244d15f5c33",
+            "7a8ae828a7847aba1fafed9ec955cf0bb95925d078d9f0a14d056086ec273f12",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
@@ -491,7 +540,7 @@ def run():
                 "ast-only": 20,
                 "ast+lazy-exports": 429,
                 "canonical": 541,
-                "eager-ast-only": 5,
+                "eager-ast-only": 0,
             },
             {
                 profile: summary["largest_cyclic_scc_size"]

@@ -17,6 +17,11 @@ from .module_graph import (
     module_graph_edge_kinds,
     module_graph_for_profile,
 )
+from .domain_boundary_coverage import (
+    classification_ratchet_errors,
+    coverage_is_lower,
+    valid_coverage_fraction,
+)
 
 _ModuleGraphAny = Any
 _module_graph_argparse = argparse
@@ -27,7 +32,7 @@ ROOT = PACKAGE_ROOT.parents[1]
 DOMAIN_BOUNDARY_BASELINE_PATH = (
     ROOT / "src/gravity_insight/governance/domain-boundary-baseline.json"
 )
-DOMAIN_BOUNDARY_SCHEMA_VERSION = "gravity.domain-boundary-baseline.v1"
+DOMAIN_BOUNDARY_SCHEMA_VERSION = "gravity.domain-boundary-baseline.v2"
 DOMAIN_UNCLASSIFIED = "unclassified"
 DOMAIN_LAYER_ORDER = {
     "contracts_value_objects": 0,
@@ -182,8 +187,12 @@ def domain_boundary_measurement(
         package_root, inventory, layers
     )
     layer_counts = Counter(layers.values())
+    unclassified_modules = sorted(
+        module for module in nodes if layers[module] == DOMAIN_UNCLASSIFIED
+    )
+    classified_module_count = len(nodes) - len(unclassified_modules)
     return {
-        "schema_version": "gravity.domain-boundary-measurement.v1",
+        "schema_version": "gravity.domain-boundary-measurement.v2",
         "graph": {
             "definition_id": definition["definition_id"],
             "definition_sha256": module_graph_canonical_sha256(definition),
@@ -206,6 +215,13 @@ def domain_boundary_measurement(
                 layer: layer_counts.get(layer, 0)
                 for layer in (*DOMAIN_LAYER_ORDER, DOMAIN_UNCLASSIFIED)
             },
+            "coverage": {
+                "classified_module_count": classified_module_count,
+                "module_count": len(nodes),
+            },
+            "classified_module_count": classified_module_count,
+            "unclassified_module_count": len(unclassified_modules),
+            "unclassified_modules": unclassified_modules,
             "root_direct_module_count": len(root_modules),
             "root_classified_count": len(classified_root),
             "root_unclassified_count": len(unclassified_root),
@@ -220,18 +236,63 @@ def domain_boundary_baseline_document(
     measurement: Mapping[str, _ModuleGraphAny],
     prior: Mapping[str, _ModuleGraphAny] | None = None,
 ) -> dict[str, _ModuleGraphAny]:
-    exemptions = [] if prior is None else prior.get("root_module_exemptions", [])
+    exemptions = [] if prior is None else prior.get(
+        "unclassified_module_exemptions",
+        prior.get("root_module_exemptions", []),
+    )
     if not isinstance(exemptions, list):
-        raise ValueError("root_module_exemptions must be a list")
+        raise ValueError("unclassified_module_exemptions must be a list")
+    protected_root = (
+        measurement["root_direct_modules"]
+        if prior is None
+        else prior.get("protected_root_modules")
+    )
+    if not isinstance(protected_root, list):
+        raise ValueError("protected_root_modules must be a list")
+    root_modules = set(measurement["root_direct_modules"])
+    current_non_root_unclassified = sorted(
+        set(measurement["classification"]["unclassified_modules"]) - root_modules
+    )
+    protected_non_root = (
+        current_non_root_unclassified
+        if prior is None or "protected_non_root_unclassified_modules" not in prior
+        else prior.get("protected_non_root_unclassified_modules")
+    )
+    if not isinstance(protected_non_root, list):
+        raise ValueError("protected_non_root_unclassified_modules must be a list")
+    coverage = dict(measurement["classification"]["coverage"])
+    if prior is not None and "minimum_classification_coverage" in prior:
+        previous_coverage = prior["minimum_classification_coverage"]
+        if not valid_coverage_fraction(previous_coverage):
+            raise ValueError("minimum_classification_coverage is invalid")
+        if coverage_is_lower(coverage, previous_coverage):
+            coverage = dict(previous_coverage)
+
+    def threshold(key: str, observed: int) -> int:
+        if prior is None or key not in prior:
+            return observed
+        previous = prior[key]
+        if not isinstance(previous, int) or previous < 0:
+            raise ValueError(f"{key} must be a non-negative integer")
+        return min(previous, observed)
+
     return {
         "schema_version": DOMAIN_BOUNDARY_SCHEMA_VERSION,
         "graph_definition_id": measurement["graph"]["definition_id"],
         "graph_definition_sha256": measurement["graph"]["definition_sha256"],
         "classification_policy_sha256": measurement["classification"]["policy_sha256"],
-        "maximum_ast_only_scc_size": measurement["graph"]["largest_cyclic_scc_size"],
-        "maximum_direction_violation_count": measurement["direction"]["violation_count"],
-        "protected_root_modules": measurement["root_direct_modules"],
-        "root_module_exemptions": exemptions,
+        "maximum_ast_only_scc_size": threshold(
+            "maximum_ast_only_scc_size",
+            measurement["graph"]["largest_cyclic_scc_size"],
+        ),
+        "maximum_direction_violation_count": threshold(
+            "maximum_direction_violation_count",
+            measurement["direction"]["violation_count"],
+        ),
+        "minimum_classification_coverage": coverage,
+        "protected_root_modules": protected_root,
+        "protected_non_root_unclassified_modules": protected_non_root,
+        "unclassified_module_exemptions": exemptions,
     }
 
 
@@ -285,54 +346,6 @@ def _domain_threshold_errors(
     return errors
 
 
-def _domain_exempt_root_modules(
-    baseline: Mapping[str, _ModuleGraphAny],
-) -> tuple[set[str], list[str]]:
-    exemptions = baseline.get("root_module_exemptions")
-    if not isinstance(exemptions, list):
-        return set(), ["domain boundary root_module_exemptions must be a list"]
-    allowed: set[str] = set()
-    errors: list[str] = []
-    for index, exemption in enumerate(exemptions):
-        if not isinstance(exemption, dict) or set(exemption) != {"module", "reason"}:
-            errors.append(
-                f"domain boundary root exemption {index} must contain module and reason"
-            )
-            continue
-        module, reason = exemption["module"], exemption["reason"]
-        if not isinstance(module, str) or not isinstance(reason, str) or not reason.strip():
-            errors.append(
-                f"domain boundary root exemption {index} needs a module and non-empty reason"
-            )
-            continue
-        allowed.add(module)
-    return allowed, errors
-
-
-def _domain_root_errors(
-    measurement: Mapping[str, _ModuleGraphAny],
-    baseline: Mapping[str, _ModuleGraphAny],
-) -> list[str]:
-    protected = baseline.get("protected_root_modules")
-    errors: list[str] = []
-    if not isinstance(protected, list) or not all(
-        isinstance(module, str) for module in protected
-    ):
-        errors.append("domain boundary protected_root_modules must be a string list")
-        protected = []
-    allowed, exemption_errors = _domain_exempt_root_modules(baseline)
-    errors.extend(exemption_errors)
-    new_modules = sorted(
-        set(measurement["root_direct_modules"]) - set(protected) - allowed
-    )
-    if new_modules:
-        errors.append(
-            "new modules may not enter the gravity_insight root package without an "
-            "exact reasoned exemption: " + ", ".join(new_modules)
-        )
-    return errors
-
-
 def evaluate_domain_boundary(
     measurement: Mapping[str, _ModuleGraphAny],
     baseline: Mapping[str, _ModuleGraphAny],
@@ -344,7 +357,7 @@ def evaluate_domain_boundary(
     return [
         *_domain_identity_errors(measurement, baseline),
         *_domain_threshold_errors(measurement, baseline),
-        *_domain_root_errors(measurement, baseline),
+        *classification_ratchet_errors(measurement, baseline),
     ]
 
 
@@ -414,6 +427,8 @@ def _domain_boundary_cli(argv: Sequence[str]) -> int:
         "PASS domain-boundary: "
         f"ast_scc={observed['graph']['largest_cyclic_scc_size']} "
         f"direction_violations={observed['direction']['violation_count']} "
+        f"classified={observed['classification']['classified_module_count']}/"
+        f"{observed['graph']['node_count']} "
         f"root_modules={observed['classification']['root_direct_module_count']} "
         f"unclassified_root={observed['classification']['root_unclassified_count']}"
     )

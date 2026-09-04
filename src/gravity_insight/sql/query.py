@@ -15,18 +15,13 @@ from gravity_insight.http_runtime import MAX_SQL_CONCURRENCY
 from gravity_insight.receipt import capture_http_receipt_references
 from gravity_insight.result_audit import add_result_audit
 from gravity_insight.result_source import CALLER_DEFINED, result_source
-from gravity_insight.sql.products import (
-    EvidenceFormatError,
-    normalize_app_ids,
-    normalize_window,
-    run_product,
-)
 from gravity_insight.sql.failures import (
     SqlFailure,
     classify_sql_failure,
     diagnostic_fields,
     execution_evidence,
 )
+from gravity_insight.sql.time_window import EvidenceFormatError, normalize_window
 from gravity_insight.workspace import Workspace, load_workspace
 
 
@@ -184,6 +179,8 @@ def _execute_one_captured(
     normalized: dict[str, Any],
     workspace: Workspace | None,
 ) -> dict[str, Any]:
+    from gravity_insight.sql.products import run_product
+
     product = normalized["product"]
     counted = _CountedSqlClient(client)
     started = time.monotonic()
@@ -269,6 +266,8 @@ def _failure_category(failure: SqlFailure) -> str:
 def _normalize(
     value: object, workspace: Workspace | None
 ) -> dict[str, Any]:
+    from gravity_insight.sql.products import normalize_app_ids
+
     if not isinstance(value, Mapping):
         raise _RequestError(
             "SQL_PRODUCT_REQUEST_NOT_OBJECT",

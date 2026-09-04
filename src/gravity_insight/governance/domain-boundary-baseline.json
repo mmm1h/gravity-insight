@@ -4,6 +4,21 @@
   "graph_definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
   "maximum_ast_only_scc_size": 20,
   "maximum_direction_violation_count": 13,
+  "minimum_classification_coverage": {
+    "classified_module_count": 179,
+    "module_count": 692
+  },
+  "protected_non_root_unclassified_modules": [
+    "gravity_insight.operators",
+    "gravity_insight.operators.governed_methods",
+    "gravity_insight.operators.significance_test",
+    "gravity_insight.skill_support",
+    "gravity_insight.skill_support.project_bindings",
+    "gravity_insight.support",
+    "gravity_insight.support.documents",
+    "gravity_insight.support.evidence",
+    "gravity_insight.support.process_lock"
+  ],
   "protected_root_modules": [
     "gravity_insight",
     "gravity_insight.__main__",
@@ -522,7 +537,8 @@
     "gravity_insight.workspace_semantic_context",
     "gravity_insight.workspace_sql_product_install"
   ],
-  "root_module_exemptions": [
+  "schema_version": "gravity.domain-boundary-baseline.v2",
+  "unclassified_module_exemptions": [
     {
       "module": "gravity_insight.documentation_status",
       "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
@@ -583,6 +599,5 @@
       "module": "gravity_insight.runtime_health",
       "reason": "Landed on main via the maturity-scoring PR before this gate existed, so the ratchet never had a chance to reject it. These eight modules form one evidence subsystem and belong in a dedicated non-root package; tracked as debt, not accepted as a permanent root resident. Removing the exemption is the acceptance test for that move."
     }
-  ],
-  "schema_version": "gravity.domain-boundary-baseline.v1"
+  ]
 }
