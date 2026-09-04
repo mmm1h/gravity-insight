@@ -431,11 +431,9 @@ def _run_verify_command(args: argparse.Namespace) -> int:
             evidence_path=EVIDENCE_PATH, serializer=json_output.dumps,
         )
     except (OSError, UnicodeEncodeError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return sql_error_exit_code("local_io")
+        return verify_all.run_boundary_error_cli(exc, serializer=json_output.dumps)
     except (GravityAuthError, EvidenceFormatError, RuntimeError, ValueError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return sql_error_exit_code("input")
+        return verify_all.run_boundary_error_cli(exc, serializer=json_output.dumps)
 
 
 def _run_query_command(

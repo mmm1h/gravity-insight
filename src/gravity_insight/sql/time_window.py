@@ -72,13 +72,17 @@ def execute_sql_verification(
     segment_started = verification_timestamp(clock)
     segment_products: list[str] = []
     for product in names[len(completed) :]:
+        counted = _CountedVerificationClient(client)
+        product_started = _time.monotonic()
         try:
             completed[product] = owner.run_product(
-                client, product, start_at, end_at, workspace=workspace
+                counted, product, start_at, end_at, workspace=workspace
             )
             segment_products.append(product)
         except Exception as exc:
-            failure = owner.verification_failure(exc)
+            failure = _timed_verification_failure(
+                owner, exc, counted, product_started
+            )
             rate_limited = owner.verification_failure_is_rate_limited(failure)
             segments.append(
                 verification_segment(
@@ -122,6 +126,32 @@ def execute_sql_verification(
         list(completed.values()),
         verification=history,
         workspace=workspace,
+    )
+
+
+class _CountedVerificationClient:
+    """Count logical SQL calls without exposing or retaining their statements."""
+
+    def __init__(self, client: Any) -> None:
+        self._client = client
+        self.request_count = 0
+
+    def execute_sql(self, sql: str) -> list[dict[str, Any]]:
+        self.request_count += 1
+        return self._client.execute_sql(sql)
+
+
+def _timed_verification_failure(
+    owner: Any,
+    error: BaseException,
+    client: _CountedVerificationClient,
+    started: float,
+) -> dict[str, Any]:
+    return owner.verification_failure(
+        error,
+        elapsed_seconds=_time.monotonic() - started,
+        request_count=client.request_count,
+        request_count_bound=1,
     )
 
 

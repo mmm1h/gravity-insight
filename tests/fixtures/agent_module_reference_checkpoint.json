@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "a119b480fdde7f2c86a21cd6086487dc56bd99e0dd5ff8040857b613baa0e3c8",
-    "manual_review_sha256": "349dba82a26dec946c0230694544920f877a0b3cc6293706f94f9f81f102b108",
+    "reference_evidence_sha256": "f0fc98bc08c3bc5f665f9a11e5e521a7b004c3f97651407eaf471aa361e397bb",
+    "manual_review_sha256": "f14eae720f062c410155bd59ba6e35b762eb2002545a0e4c0c7910d224f2d581",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3131,
-    "scanned_file_count": 3124,
+    "version_controlled_file_count": 3135,
+    "scanned_file_count": 3128,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -663,12 +663,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 227,
-    "reference_site_count": 225,
-    "manual_review_site_count": 143,
-    "reference_manual_overlap_count": 141,
+    "tracked_site_count": 229,
+    "reference_site_count": 227,
+    "manual_review_site_count": 145,
+    "reference_manual_overlap_count": 143,
     "manual_only_site_count": 2,
-    "unique_source_keys": 227,
+    "unique_source_keys": 229,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -677,7 +677,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 121,
+      "manual_patch_expression": 123,
       "module_qualname_dependency": 7,
       "static_import": 76,
       "string_reference": 5
@@ -687,12 +687,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 121
+      "non_string_patch_expression": 123
     },
     "dispositions": {
-      "no_migration_effect": 227
+      "no_migration_effect": 229
     },
-    "sites_sha256": "70cf992fce2244a6d7f906fac1647946ce7625d4bf4fd504c4874fdcafea32bf"
+    "sites_sha256": "ba7fcb5aa1c72bb299cde151e785f3142d585b6806a8ad52cb9bae36e1bf5644"
   },
   "blockers": [],
   "site_fields": [
@@ -1010,7 +1010,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63104:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63108:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -4101,6 +4101,36 @@
     ],
     [
       "tests/test_sql_products.py:678:12:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_verification_diagnostics.py:107:14:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "gravity_cli.sys",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      14,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_verification_diagnostics.py:263:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",

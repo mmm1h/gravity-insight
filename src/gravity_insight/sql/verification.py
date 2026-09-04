@@ -88,6 +88,12 @@ def run_verification_cli(
     )
 
 
+def run_verification_boundary_error_cli(error: BaseException, **options: Any) -> int:
+    return products.run_verification_cli.boundary_error(
+        products, error, **options
+    )
+
+
 FAST_LANE_REQUEST_VERSION = "gravity.sql-fast-lane-request.v1"
 FAST_LANE_RESULT_VERSION = "gravity.sql-fast-lane-result.v1"
 FAST_LANE_PROMOTION_SOURCE_VERSION = "gravity.sql-explorer-promotion-source.v1"
@@ -568,5 +574,6 @@ verify_all.GravitySqlExplorerAdapter = GravitySqlExplorerAdapter
 verify_all.clear_verification_checkpoint = clear_verification_checkpoint
 verify_all.is_incomplete_verification = is_incomplete_verification
 verify_all.read_verification_checkpoint = read_verification_checkpoint
+verify_all.run_boundary_error_cli = run_verification_boundary_error_cli
 verify_all.run_cli = run_verification_cli
 verify_all.write_verification_checkpoint = write_verification_checkpoint

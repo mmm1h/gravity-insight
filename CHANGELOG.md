@@ -69,6 +69,14 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   failed product before continuing. Partial checkpoints cannot be published as
   readiness; completed Evidence distinguishes a single run from segmented
   completion and preserves each segment's time and product scope.
+- `gravity sql verify` failures now emit the dedicated, redacted
+  `gravity.sql-verification-result.v1` receipt instead of collapsing shared SQL
+  diagnostics into generic exception text. Engine rejection, non-tabular response,
+  and final rate limiting expose the same SQL stage/class/code source as `sql query`,
+  bounded logical-request and elapsed evidence, retryability, engine reachability,
+  sanitized protocol status, and a fixed safe next action. Internal resume checkpoints
+  retain the full strict prefix, while terminal output exposes only progress counts;
+  failed verification still cannot publish Evidence or claim readiness.
 
 ## [0.3.7] - 2026-09-04
 
