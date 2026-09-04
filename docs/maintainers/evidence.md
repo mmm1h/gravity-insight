@@ -41,10 +41,17 @@ gravity sql verify --date YYYY-MM-DD --publish
 
 发布应先写不可变 snapshot，校验后再原子更新 latest 指针。不要手工编辑 Evidence JSON/YAML，也不要覆盖已有不可变 snapshot。
 
-若最终 HTTP 429 仍未恢复，命令以退出码 3 输出
-`gravity.sql-verification-run.v1`，并把已经成功的严格产品前缀原子写入 workspace state；该文件
-`readiness_achieved=false`、`verification_status=interrupted`，不会进入 Evidence latest。等待收据中的
-`retry_after_ms` 后运行：
+验证失败时，CLI 输出专用的 `gravity.sql-verification-result.v1` 脱敏回执。`failure` 复用
+`sql query` 的 SQL 分类来源：`stage`、`sql_code`、`retryable`、`reached_sql_engine`、
+`upstream_error.category/code/protocol_status` 和有界的 `execution_evidence`；`code` 仅在最终 429
+需要表达续跑状态时为 `RATE_LIMITED`，此时 `sql_code` 仍为共享分类的
+`SQL_HTTP_RATE_LIMITED`。`progress` 只给产品计数和当前失败产品，不回显已完成产品的结果、SQL、
+App 范围、datasource 标识或业务行。
+
+若最终 HTTP 429 仍未恢复，命令以退出码 3 输出上述公开回执，并把完整的
+`gravity.sql-verification-run.v1` 严格产品前缀原子写入 workspace 私有 state。公开回执的
+`checkpoint.written=true`、`readiness_achieved=false`、`verification_status=interrupted`；内部
+checkpoint 不会进入 Evidence latest。等待回执中的 `failure.retry_after_ms` 后运行：
 
 ```powershell
 gravity sql verify --date YYYY-MM-DD --publish --resume
@@ -53,6 +60,10 @@ gravity sql verify --date YYYY-MM-DD --publish --resume
 `--resume` 只读取相同日期和 datasource 的固定 checkpoint，要求产品清单与顺序不变、已完成项恰为
 严格前缀、失败项恰为下一个产品，并重新核对每个复用组件的 SQL/contract hash。任何漂移都在发送
 下一次请求前失败关闭；非 429（例如 SQL engine rejection）不生成可续跑 checkpoint。
+
+`failure.next_action` 通常直接来自共享 SQL failure table；只有可续跑 429 会由 verify 层替换为
+带精确日期的 `--resume` 命令。日期/workspace/Evidence 输入错误与本地 I/O 错误使用 verify 边界的
+固定安全动作。任何分支都不拼接异常正文或上游 message。
 
 ## 4. 发布后检查
 

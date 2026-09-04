@@ -116,6 +116,13 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   static-window definition, explains why Funnel cannot supply the NOT-before
   set without forbidden persistence, and explicitly rejects ordinary
   event-date Retention as an equivalent estimator.
+- Registered SQL product results now separate execution status from data
+  completeness. Each successful item reports whether its declared `max_rows` was
+  reached and returns canonical `complete|unknown` completeness; an exact cap hit
+  without an independent total is `possible_truncation` with a bounded warning,
+  while the existing N+1 over-fetch still fails closed when an extra row is
+  observed. Readiness and immutable Evidence binding remain separate from this
+  per-query completeness signal.
 - `gravity sql verify` no longer discards an already-verified product prefix when
   a later registered product remains HTTP-rate-limited after the shared runtime's
   bounded retries. Verification is sequential, the final 429 emits a typed
@@ -125,6 +132,14 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   failed product before continuing. Partial checkpoints cannot be published as
   readiness; completed Evidence distinguishes a single run from segmented
   completion and preserves each segment's time and product scope.
+- `gravity sql verify` failures now emit the dedicated, redacted
+  `gravity.sql-verification-result.v1` receipt instead of collapsing shared SQL
+  diagnostics into generic exception text. Engine rejection, non-tabular response,
+  and final rate limiting expose the same SQL stage/class/code source as `sql query`,
+  bounded logical-request and elapsed evidence, retryability, engine reachability,
+  sanitized protocol status, and a fixed safe next action. Internal resume checkpoints
+  retain the full strict prefix, while terminal output exposes only progress counts;
+  failed verification still cannot publish Evidence or claim readiness.
 
 ## [0.3.7] - 2026-09-04
 

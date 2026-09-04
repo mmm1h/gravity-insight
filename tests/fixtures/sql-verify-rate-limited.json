@@ -1,0 +1,47 @@
+{
+  "name": "sql_verify_rate_limited",
+  "responses": [
+    {
+      "status_code": 200,
+      "payload": {
+        "status": "SUCCESS",
+        "code": 200,
+        "msg": "OK",
+        "data": {
+          "result": {
+            "columns": [{"name": "metric"}],
+            "rows": [["BUSINESS_ROW_SENTINEL"]]
+          }
+        }
+      }
+    },
+    {
+      "status_code": 429,
+      "retry_after_ms": 2500,
+      "payload": {
+        "status": "ERROR",
+        "code": 429,
+        "msg": "RAW_UPSTREAM_EXCEPTION_SENTINEL",
+        "extra": {
+          "error": {
+            "sql": "SQL_TEXT_SENTINEL",
+            "credential": "CREDENTIAL_SENTINEL",
+            "account_id": "ACCOUNT_ID_SENTINEL",
+            "app_id": 76543210,
+            "user_id": "USER_ID_SENTINEL"
+          }
+        }
+      }
+    }
+  ],
+  "forbidden_output": [
+    "RAW_UPSTREAM_EXCEPTION_SENTINEL",
+    "SQL_TEXT_SENTINEL",
+    "CREDENTIAL_SENTINEL",
+    "ACCOUNT_ID_SENTINEL",
+    "76543210",
+    "USER_ID_SENTINEL",
+    "BUSINESS_ROW_SENTINEL",
+    "FIXTURE_DATASOURCE_ID"
+  ]
+}

@@ -21,12 +21,18 @@ from typing import Any
 
 from gravity_insight.paths import PROJECT_ROOT
 from gravity_insight.sql.evidence_validation import EvidenceFormatError
+from gravity_insight.sql.failures import (
+    SqlFailure,
+    classify_sql_failure,
+    diagnostic_fields,
+)
 from gravity_insight.workspace import Workspace, load_workspace
 
 
 ROOT = PROJECT_ROOT
 VERIFICATION_RUN_VERSION = "gravity.sql-verification-run.v1"
 VERIFICATION_RESUME_POLICY = "gravity.sql-verification-strict-prefix.v1"
+VERIFICATION_CLI_RESULT_VERSION = "gravity.sql-verification-result.v1"
 
 
 def git_toplevel(candidate: Path) -> Path | None:
@@ -127,60 +133,35 @@ def preflight_git_report(repository_root: Path | None) -> dict[str, Any]:
     }
 
 
-def verification_failure(error: BaseException) -> dict[str, Any]:
-    stage = getattr(error, "sql_stage", None)
-    if stage in {"bind", "compile", "plan", "execute", "shape"}:
-        return _annotated_verification_failure(error, stage)
-    detail = _error_detail(error)
-    category = str(detail.get("category", "local"))
-    return {
-        "stage": "bind" if category == "caller" else "execute",
-        "upstream_category": category,
-        "code": str(detail.get("code", "SQL_UNEXPECTED_FAILURE")),
-        "message": "Gravity SQL verification failed",
-        "retryable": detail.get("retryable") is True,
-        "reached_sql_engine": "unknown",
-        "next_action": str(
-            detail.get("next_action", "Inspect the governed SQL failure and retry.")
-        ),
-        "http_status": None,
-        "retry_after_ms": detail.get("retry_after_ms"),
-    }
-
-
-def _annotated_verification_failure(
-    error: BaseException, stage: str
+def verification_failure(
+    error: BaseException,
+    *,
+    elapsed_seconds: float = 0,
+    request_count: int = 0,
+    request_count_bound: int = 1,
 ) -> dict[str, Any]:
-    reached = str(getattr(error, "reached_sql_engine", "unknown"))
+    """Project one verification failure through the shared SQL taxonomy."""
+
+    failure = classify_sql_failure(error, request_count=request_count)
+    diagnostic = diagnostic_fields(
+        failure,
+        elapsed_seconds=elapsed_seconds,
+        request_count=request_count,
+        request_count_bound=request_count_bound,
+    )
     return {
-        "stage": stage,
-        "upstream_category": str(getattr(error, "sql_category", "runtime")),
-        "code": str(getattr(error, "code", "SQL_UNEXPECTED_FAILURE")),
-        "message": str(getattr(error, "safe_message", "Gravity SQL request failed")),
-        "retryable": bool(getattr(error, "retryable", False)),
-        "reached_sql_engine": reached if reached in {"yes", "no", "unknown"} else "unknown",
-        "next_action": str(
-            getattr(error, "next_action", "Inspect the governed SQL failure and retry.")
-        ),
-        "http_status": _optional_nonnegative_int(getattr(error, "http_status", None)),
-        "retry_after_ms": _optional_nonnegative_int(
-            getattr(error, "retry_after_ms", None)
-        ),
+        "stage": failure.stage,
+        "upstream_category": failure.upstream_category,
+        "code": failure.code,
+        "message": failure.message,
+        "retryable": failure.retryable,
+        "reached_sql_engine": failure.reached_sql_engine,
+        "next_action": failure.next_action,
+        "http_status": failure.http_status,
+        "retry_after_ms": failure.retry_after_ms,
+        "upstream_error": diagnostic["upstream_error"],
+        "execution_evidence": diagnostic["execution_evidence"],
     }
-
-
-def _error_detail(error: BaseException) -> Mapping[str, Any]:
-    try:
-        factory = getattr(error, "to_error_detail", None)
-        detail = factory() if callable(factory) else None
-        rendered = detail.to_dict() if detail is not None else None
-        return rendered if isinstance(rendered, Mapping) else {}
-    except (AttributeError, TypeError, ValueError):
-        return {}
-
-
-def _optional_nonnegative_int(value: Any) -> int | None:
-    return value if type(value) is int and value >= 0 else None
 
 
 def verification_failure_is_rate_limited(failure: Mapping[str, Any]) -> bool:
@@ -259,11 +240,10 @@ def _verification_error(
         "message": failure["message"],
         "stage": failure["stage"],
         "retryable": failure["retryable"],
+        "reached_sql_engine": failure["reached_sql_engine"],
         "retry_after_ms": retry_after_ms,
-        "upstream_error": {
-            "category": failure["upstream_category"],
-            "http_status": failure["http_status"],
-        },
+        "upstream_error": dict(failure["upstream_error"]),
+        "execution_evidence": dict(failure["execution_evidence"]),
         "next_action": (
             f"Wait the bounded retry_after_ms, then run `gravity sql verify --date "
             f"{day.isoformat()} --resume`; keep concurrency at 1 and do not increase it."
@@ -271,6 +251,120 @@ def _verification_error(
             else failure["next_action"]
         ),
     }
+
+
+def verification_cli_failure_result(
+    value: Mapping[str, Any], *, checkpoint_written: bool
+) -> dict[str, Any]:
+    """Return the public failure receipt without private checkpoint payloads."""
+
+    configured = value["configured_products"]
+    completed = value["completed_products"]
+    pending = value["pending_products"]
+    failure = value["failure"]
+    return {
+        "schema_version": VERIFICATION_CLI_RESULT_VERSION,
+        "ok": False,
+        "status": value["status"],
+        "exit_code": value["exit_code"],
+        "readiness_achieved": False,
+        "verification_status": value["verification_status"],
+        "verified_for_date": value["verified_for_date"],
+        "progress": {
+            "configured_product_count": len(configured),
+            "completed_product_count": len(completed),
+            "pending_product_count": len(pending),
+            "failure_product": failure["product"],
+        },
+        "failure": dict(failure),
+        "resume": dict(value["resume"]),
+        "checkpoint": {
+            "written": checkpoint_written,
+            "strict_prefix": value["status"] == "rate_limited",
+            "completed_product_count": len(completed),
+        },
+    }
+
+
+def run_verification_boundary_error_cli(
+    owner: Any, error: BaseException, *, serializer: Any
+) -> int:
+    """Emit a safe public receipt for failures outside the product loop."""
+
+    if isinstance(error, (OSError, UnicodeError)):
+        category = "local_io"
+    else:
+        classified = classify_sql_failure(error, request_count=0)
+        category = (
+            "authentication"
+            if classified.kind in {"authentication", "credentials"}
+            else "input"
+        )
+    if category == "local_io":
+        failure = SqlFailure(
+            "local_io", "bind", "local_io", "SQL_VERIFY_LOCAL_IO",
+            "SQL verification could not read or write local state", False, "no",
+            "Inspect the workspace state path and permissions, then rerun verification.",
+        )
+    elif category == "input":
+        failure = SqlFailure(
+            "local_validation", "bind", "local_validation",
+            "SQL_VERIFY_INPUT_INVALID",
+            "SQL verification input or local contract is invalid", False, "no",
+            "Correct the verify date, workspace, or Evidence contract before retrying.",
+        )
+    else:
+        failure = classified
+    evidence = diagnostic_fields(
+        failure, elapsed_seconds=0, request_count=0, request_count_bound=1
+    )
+    exit_code = owner.sql_error_exit_code(category)
+    result = {
+        "schema_version": VERIFICATION_CLI_RESULT_VERSION,
+        "ok": False,
+        "status": "error",
+        "exit_code": exit_code,
+        "readiness_achieved": False,
+        "verification_status": "failed",
+        "verified_for_date": None,
+        "progress": {
+            "configured_product_count": None,
+            "completed_product_count": 0,
+            "pending_product_count": None,
+            "failure_product": None,
+        },
+        "failure": {
+            "product": None,
+            "code": failure.code,
+            "sql_code": failure.code,
+            "category": category,
+            "message": failure.message,
+            "stage": failure.stage,
+            "retryable": failure.retryable,
+            "reached_sql_engine": failure.reached_sql_engine,
+            "retry_after_ms": None,
+            "upstream_error": evidence["upstream_error"],
+            "execution_evidence": evidence["execution_evidence"],
+            "next_action": failure.next_action,
+        },
+        "resume": {
+            "supported": False,
+            "policy": VERIFICATION_RESUME_POLICY,
+            "strict_prefix": True,
+            "max_backoff_ms": owner.VERIFICATION_MAX_BACKOFF_MS,
+            "command": None,
+        },
+        "checkpoint": {
+            "written": False,
+            "strict_prefix": False,
+            "completed_product_count": 0,
+        },
+    }
+    print(
+        serializer(result, ensure_ascii=False, indent=2, sort_keys=True),
+        file=sys.stderr,
+    )
+    return exit_code
 
 
 def _verification_failure_category(failure: Mapping[str, Any]) -> str:
@@ -372,10 +466,19 @@ def run_verification_cli(
         owner, client, day, workspace=workspace, resume=checkpoint
     )
     if is_incomplete_verification(evidence):
+        checkpoint_written = False
         if evidence["status"] == "rate_limited":
             write_verification_checkpoint(owner, evidence, day, workspace)
+            checkpoint_written = True
             print("CHECKPOINTED rate-limited SQL verification prefix", file=sys.stderr)
-        print(serializer(evidence, ensure_ascii=False, indent=2, sort_keys=True))
+        print(serializer(
+            verification_cli_failure_result(
+                evidence, checkpoint_written=checkpoint_written
+            ),
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ))
         return int(evidence["exit_code"])
     if publish:
         publisher(evidence, workspace=workspace)
@@ -396,8 +499,12 @@ def _clear_obsolete_checkpoint(owner: Any, day: date, workspace: Workspace) -> N
         )
 
 
+run_verification_cli.boundary_error = run_verification_boundary_error_cli
+
+
 __all__ = [
     "ROOT",
+    "VERIFICATION_CLI_RESULT_VERSION",
     "VERIFICATION_RESUME_POLICY",
     "VERIFICATION_RUN_VERSION",
     "clear_verification_checkpoint",
@@ -407,12 +514,14 @@ __all__ = [
     "preflight_git_report",
     "provenance_root",
     "read_verification_checkpoint",
+    "run_verification_boundary_error_cli",
     "run_verification_cli",
     "verification_checkpoint_digest",
     "verification_checkpoint_path",
     "verification_failure",
     "verification_failure_is_rate_limited",
     "verification_failure_run",
+    "verification_cli_failure_result",
     "verification_resume_contract",
     "write_verification_checkpoint",
 ]
