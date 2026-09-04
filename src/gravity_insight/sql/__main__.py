@@ -22,10 +22,13 @@ from gravity_insight.sql.client import (
     build_sql_client,
 )
 from gravity_insight.sql.cli_input import query_requests
-from gravity_insight.sql.credentials import CredentialSyncError
+from gravity_insight.sql.credentials import CredentialSyncError, CredentialSyncNotReady
 from gravity_insight.sql.dry_run import dry_run_override
 from gravity_insight.sql.export import build_paged_sql
-from gravity_insight.sql.failures import execution_evidence
+from gravity_insight.sql.failures import (
+    emit_command_error,
+    emit_query_boundary_error,
+)
 from gravity_insight.sql.products import (
     EVIDENCE_PATH,
     EvidenceFormatError,
@@ -53,6 +56,13 @@ class _DirectQueryInputError(ValueError):
         self.field = field
 
 
+def _emit_command_error(command: str, kind: str, exit_code: int) -> int:
+    return emit_command_error(
+        command, kind, exit_code, serializer=json_output.dumps,
+        source=result_source(CALLER_DEFINED), stream=sys.stderr,
+    )
+
+
 def _run_credentials(args: argparse.Namespace) -> int:
     try:
         if args.credential_command == "status":
@@ -68,41 +78,46 @@ def _run_credentials(args: argparse.Namespace) -> int:
         print(json_output.dumps(result, ensure_ascii=False))
         return 0
     except CredentialSyncError as exc:
-        print(f"ERROR: {exc}")
-        return 1
+        return _emit_command_error(
+            f"credentials.{args.credential_command}",
+            "credential_not_ready"
+            if isinstance(exc, CredentialSyncNotReady)
+            else "credential_sync_failed",
+            1,
+        )
 
 
 def _missing_products_error(
-    configured_products: tuple[str, ...], workspace_error: str | None
+    configured_products: tuple[str, ...], workspace_invalid: bool, command: str | None
 ) -> int | None:
     if configured_products:
         return None
-    detail = workspace_error or (
-        "no SQL products are configured; add [products.<name>] to gravity.toml"
+    return _emit_command_error(
+        command or "unspecified",
+        "workspace_invalid" if workspace_invalid else "products_not_configured",
+        sql_error_exit_code("input"),
     )
-    print(f"ERROR: {detail}", file=sys.stderr)
-    return sql_error_exit_code("input")
 
 
-def _configured_products() -> tuple[tuple[str, ...], str | None]:
-    workspace_error: str | None = None
+def _configured_products() -> tuple[tuple[str, ...], bool]:
+    workspace_invalid = False
     try:
         configured_products = product_names()
-    except WorkspaceError as exc:
+    except WorkspaceError:
         configured_products = ()
-        workspace_error = str(exc)
+        workspace_invalid = True
     if len(configured_products) != len(set(configured_products)):
         raise RuntimeError("workspace SQL product names must be unique")
     if "" in configured_products:
         raise RuntimeError("workspace SQL product names must be non-empty")
-    return configured_products, workspace_error
+    return configured_products, workspace_invalid
 
 
 def build_parser(
     configured_products: tuple[str, ...] | None = None,
 ) -> argparse.ArgumentParser:
     if configured_products is None:
-        configured_products, _workspace_error = _configured_products()
+        configured_products, _workspace_invalid = _configured_products()
     parser = argparse.ArgumentParser(
         prog="gravity sql",
         description="Governed SQL fallback when stable Insight cannot express equivalent semantics; otherwise prefer Insight."
@@ -247,48 +262,11 @@ def _emit_query_error(
     field: str | None = None,
 ) -> int:
     exit_code = sql_error_exit_code(category)
-    stage = "shape" if category == "contract" else "execute" if category == "runtime" else "bind"
-    print(
-        json_output.dumps(
-            {
-                "schema_version": "gravity-sql.query.v1",
-                "result_source": result_source(CALLER_DEFINED),
-                "ok": False,
-                "status": "error",
-                "exit_code": exit_code,
-                "error": {
-                    "category": category,
-                    "code": code,
-                    "field": field,
-                    "message": message,
-                    "stage": stage,
-                    "retryable": category == "runtime",
-                    "reached_sql_engine": "unknown" if category == "runtime" else "no",
-                    "upstream_error": {
-                        "category": "unexpected_failure" if category == "runtime" else "not_reached",
-                        "code": code,
-                    },
-                    "execution_evidence": execution_evidence(
-                        elapsed_seconds=0, request_count=0, request_count_bound=1
-                    ),
-                    "next_action": (
-                        "Run `gravity auth status`; refresh or configure credentials, then retry."
-                        if category == "authentication"
-                        else
-                        "Run `gravity sql products`, correct this request, and retry."
-                        if category == "input"
-                        else "Inspect the governed SQL product contract and local state."
-                        if category in {"contract", "local_io"}
-                        else "Retry the same query once; if it fails again, run `gravity doctor --live`."
-                    ),
-                },
-            },
-            ensure_ascii=False,
-            sort_keys=True,
-        ),
-        file=sys.stderr,
+    return emit_query_boundary_error(
+        message, category=category, code=code, field=field, exit_code=exit_code,
+        serializer=json_output.dumps, source=result_source(CALLER_DEFINED),
+        stream=sys.stderr,
     )
-    return exit_code
 
 
 def _validate_direct_query_before_client(
@@ -378,9 +356,14 @@ def _run_status_command(args: argparse.Namespace) -> int:
             resolve_current_evidence(workspace=workspace),
             workspace=workspace,
         )
-    except (EvidenceFormatError, WorkspaceError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return sql_error_exit_code("input")
+    except EvidenceFormatError:
+        return _emit_command_error(
+            "status", "status_evidence_invalid", sql_error_exit_code("input")
+        )
+    except WorkspaceError:
+        return _emit_command_error(
+            "status", "workspace_invalid", sql_error_exit_code("input")
+        )
     if args.json:
         print(json_output.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
@@ -398,12 +381,24 @@ def _run_preflight_command(args: argparse.Namespace) -> int:
             date.fromisoformat(args.date) if args.date else None,
             workspace=load_workspace(),
         )
-    except (OSError, UnicodeEncodeError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return sql_error_exit_code("local_io")
-    except (EvidenceFormatError, ValueError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return sql_error_exit_code("input")
+    except (OSError, UnicodeEncodeError):
+        return _emit_command_error(
+            "evidence-preflight",
+            "preflight_local_io",
+            sql_error_exit_code("local_io"),
+        )
+    except EvidenceFormatError:
+        return _emit_command_error(
+            "evidence-preflight",
+            "preflight_contract_invalid",
+            sql_error_exit_code("input"),
+        )
+    except ValueError:
+        return _emit_command_error(
+            "evidence-preflight",
+            "preflight_input_invalid",
+            sql_error_exit_code("input"),
+        )
     if args.json:
         print(json_output.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
@@ -503,7 +498,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     from ..cli_stdio import configure_utf8_stdio
 
     configure_utf8_stdio()
-    configured_products, workspace_error = _configured_products()
+    configured_products, workspace_invalid = _configured_products()
     parser = build_parser(configured_products)
     args = parser.parse_args(argv)
 
@@ -516,7 +511,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run_credentials(args)
     if args.command == "explorer":
         return dispatch_sql_explorer(args)
-    missing_products = _missing_products_error(configured_products, workspace_error)
+    missing_products = _missing_products_error(
+        configured_products, workspace_invalid, args.command
+    )
     if missing_products is not None:
         return missing_products
     if args.command == "products":

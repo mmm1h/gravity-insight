@@ -542,6 +542,12 @@ relation/function allowlist、timeout、VM step、row 与 byte budget 共同失�
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
 前进入稳定 Journey、Skill、Dashboard 或 Action。
 
+`gravity sql credentials`、SQL product 启动发现、`status` 和 `evidence-preflight` 的失败使用
+`gravity-sql.command-error.v1` stderr JSON。顶层包含 `command/exit_code`，`error` 包含
+`category/code/field/message/stage/retryable/reached_upstream/reached_sql_engine/upstream_error/
+execution_evidence/next_action`；异常原文不进入收据。成功输出、registered query 与 verify 继续使用
+各自既有 schema。自动化按 code 和决策字段分支，不解析 message。
+
 `gravity sql verify --date YYYY-MM-DD [--publish]` 固定按登记顺序单并发验证全部产品。最终 429
 返回 typed `RATE_LIMITED` checkpoint（`readiness_achieved=false`）并保留已成功的严格前缀；
 `--resume` 只在日期、datasource、产品顺序及组件 SQL/contract hash 全部仍匹配时从失败产品继续。
