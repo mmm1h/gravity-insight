@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from ._field_policy_conditions import (
@@ -11,18 +12,31 @@ from ._field_policy_conditions import (
 from ._field_policy_shared import (
     ANALYSIS_FORMULA_RE,
     ANALYSIS_TARGET_METHODS,
+    RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE,
+    RETENTION_ADDITIVE_FOLLOWUP_NEXT_ACTION,
     AnalysisReferences,
     require_exact_mapping,
     validate_optional_label,
 )
 from .actionable_error_values import actual_value
-from .errors import InputValidationError
+from .errors import InputValidationError, UnsupportedOperationError
+
+
+class RetentionAdditiveFollowupUnavailableError(UnsupportedOperationError):
+    """A locally recognizable Retention shape with no verified value semantics."""
+
+    code = RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE
+    retryable = False
 
 
 def validate_retention_before_after(
-    value: Any, references: AnalysisReferences
+    value: Any,
+    references: AnalysisReferences,
+    *,
+    query_items: Any = (),
 ) -> None:
     if value in (None, {}):
+        _reject_unverified_additive_followup(query_items, value)
         return
     require_exact_mapping(
         value,
@@ -52,6 +66,42 @@ def validate_retention_before_after(
             validate_retention_custom_item(
                 item, references, before=field_name == "before_custom"
             )
+    _reject_unverified_additive_followup(query_items, value)
+
+
+def _reject_unverified_additive_followup(
+    query_items: Any, before_after: Any
+) -> None:
+    field = _additive_followup_field(query_items, before_after)
+    if field is None:
+        return
+    raise RetentionAdditiveFollowupUnavailableError(
+        'actual value: {"aggregation":"SumCount","measurement_status":"unmeasured"}; '
+        "Retention additive follow-up has no verified native cohort measurement "
+        "path; request was not sent",
+        field=field,
+        next_action=RETENTION_ADDITIVE_FOLLOWUP_NEXT_ACTION,
+    )
+
+
+def _additive_followup_field(query_items: Any, before_after: Any) -> str | None:
+    if isinstance(before_after, Mapping):
+        after = before_after.get("after")
+        if isinstance(after, Mapping) and _sumcount_target(after.get("target")):
+            return "query_item_before_after.after.target.name"
+    if (
+        isinstance(query_items, Sequence)
+        and not isinstance(query_items, (str, bytes))
+        and len(query_items) >= 2
+    ):
+        second = query_items[1]
+        if isinstance(second, Mapping) and _sumcount_target(second.get("target")):
+            return "query_item_list[1].target.name"
+    return None
+
+
+def _sumcount_target(value: Any) -> bool:
+    return isinstance(value, Mapping) and value.get("name") == "SumCount"
 
 
 def _validate_before_after_controls(value: Any) -> None:

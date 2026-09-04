@@ -75,6 +75,14 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   `gravity batch read` payload for one equality-filtered query per observed
   string event-property group, with cross-group aggregation explicitly disabled.
   A zero `init_num` now yields null percentages instead of a fabricated 0% rate.
+- Retention no longer compiles or retries two native `SumCount` follow-up
+  shapes whose cohort value semantics are unverified. The compact/raw
+  preflight stops before metadata or query dispatch with the named
+  `RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED` gap; ordinary Retention
+  counts remain executable, while additive placeholders are represented as
+  `unmeasured`/`null` rather than a plausible zero. Result notes and the
+  [cohort alternatives guide](docs/guides/retention-cohort-alternatives.md)
+  distinguish count, sum, per-cohort-user, and per-returning-user denominators.
 
 ## [0.3.7] - 2026-09-04
 
