@@ -52,6 +52,15 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   variance, window, grouping, causal-claim and same-run self-validation failures
   remain distinct fail-closed outcomes.
 
+### Changed
+
+- Local validation now has one explainable `scripts/run_changed_tests.py`
+  entry point. It derives changed files from Git, selects every test reached by
+  the bounded reverse dependency closure, and promotes broad impact to Full
+  instead of silently truncating. Eight repository-wide scan/build checks are
+  marked `full_gate` and excluded only from Focused runs; raw pytest, unittest,
+  and CI remain complete, with shard conservation and slow-test marker gates.
+
 ## [0.3.7] - 2026-09-04
 
 ### Breaking changes

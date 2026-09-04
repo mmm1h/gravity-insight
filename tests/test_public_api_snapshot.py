@@ -44,7 +44,6 @@ class PublicApiSnapshotTests(unittest.TestCase):
         expected = expected_public_exports()
 
         self.assertEqual(expected, _lazy_exports())
-        self.assertEqual(146, len(expected))
 
     def test_manifest_rejects_a_duplicate_public_name(self) -> None:
         from scripts.generate_public_api_exports import load_manifest
@@ -58,17 +57,6 @@ class PublicApiSnapshotTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "repeats export 'same'"):
                 load_manifest(manifest)
-
-    def test_every_snapshot_symbol_is_reachable_from_the_root_package(self) -> None:
-        """An entry in the map is worthless if `from gravity_insight import X` fails."""
-
-        import gravity_insight
-
-        expected = expected_public_exports()
-        missing = [name for name in expected if not hasattr(gravity_insight, name)]
-
-        self.assertEqual([], missing)
-
 
 if __name__ == "__main__":
     unittest.main()

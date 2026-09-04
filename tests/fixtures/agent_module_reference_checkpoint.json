@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "8eb748164281d711faed8b3bb37084130f45122e1585e21ed588cd289cb49ca8",
-    "manual_review_sha256": "307f9cac11d43908a5d3e7d6a6a66b3cbf8a0ecc9e7a494dbcdb2367f7c677bf",
+    "reference_evidence_sha256": "98801ff1a77d074ef678f53264c4a25a5f8535f7c88cd0d3119afb95e8acc893",
+    "manual_review_sha256": "91de610bf54d00890b33c746330a3f729f8728171b9b4f41465d049a40d627ef",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3130,
-    "scanned_file_count": 3123,
+    "version_controlled_file_count": 3134,
+    "scanned_file_count": 3127,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -692,7 +692,7 @@
     "dispositions": {
       "no_migration_effect": 227
     },
-    "sites_sha256": "e66ccdfb82247f0375e852566c4548757afc678c7278cd6b4cb37acb352ae84d"
+    "sites_sha256": "8d4fdeabc959eeb7c6de406c7a3688075b49d3af4d4d5de785c9b2726d9f2c8e"
   },
   "blockers": [],
   "site_fields": [
@@ -800,7 +800,7 @@
       }
     ],
     [
-      "scripts/repository_map.py:991:5:from import",
+      "scripts/repository_map.py:1012:5:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -995,7 +995,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22122:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22117:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1010,7 +1010,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63088:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63038:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1970,7 +1970,7 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:20:24:python string literal",
+      "tests/test_agent_concept_deletions.py:22:24:python string literal",
       "r",
       "exact_reference",
       "gravity_insight.agent_pagination",
@@ -1985,7 +1985,7 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:22:27:python string literal",
+      "tests/test_agent_concept_deletions.py:24:27:python string literal",
       "r",
       "exact_reference",
       "gravity_insight.agent_sources",
@@ -2000,7 +2000,7 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:24:22:python string literal",
+      "tests/test_agent_concept_deletions.py:26:22:python string literal",
       "r",
       "exact_reference",
       "gravity_insight.agent_batch_sources",
@@ -2015,7 +2015,7 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:826:17:python string literal",
+      "tests/test_agent_concept_deletions.py:828:17:python string literal",
       "r",
       "exact_reference",
       "gravity_insight.agent_batch_sources",
@@ -2030,7 +2030,7 @@
       }
     ],
     [
-      "tests/test_agent_concept_deletions.py:858:17:python string literal",
+      "tests/test_agent_concept_deletions.py:860:17:python string literal",
       "r",
       "exact_reference",
       "gravity_insight.agent_batch_sources",
@@ -2045,7 +2045,7 @@
       }
     ],
     [
-      "tests/test_agent_host_selection.py:143:14:patch.object",
+      "tests/test_agent_host_selection.py:140:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client._executor._transport",
@@ -2570,7 +2570,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_cli.py:214:33:patch.object",
+      "tests/test_gravity_insight_cli.py:216:33:patch.object",
       "rm",
       "non_string_patch_expression",
       "sys",
@@ -2585,7 +2585,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_cli.py:276:13:patch.object",
+      "tests/test_gravity_insight_cli.py:278:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "runtime",
@@ -2600,7 +2600,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_cli.py:277:13:patch.object",
+      "tests/test_gravity_insight_cli.py:279:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "runtime",

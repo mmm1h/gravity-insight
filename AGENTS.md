@@ -151,6 +151,11 @@ Do not let the list become an archive.
 `python scripts/task_context.py ...` 返回的 `risk_assessment` 是唯一分级入口；命中多条规则时取
 最高风险，未知路径按高风险处理。验证节奏如下：
 
+日常从 Git 改动自动选择并执行门禁时，运行
+`python scripts/run_changed_tests.py`；可用 `--base-ref <ref>` 改基线，或先加 `--dry-run`
+只看改动、反向依赖影响、风险理由、Full-only 排除项与将执行的命令。Focused 使用两层有界
+反向依赖闭包并执行集合内全部测试文件；超过图扇出或文件预算时显式升级为 Full，不截断后冒充绿色。
+
 - 低风险：Self-review + `focused_gate`。
 - 中风险：Independent Review + `risk_assessment.selected_commands` 中的 Surface/Consumer 门禁。
 - 高风险：Adversarial Review + 下列 Full Gate；干净提交再跑 selected commands 中的 Integrated
