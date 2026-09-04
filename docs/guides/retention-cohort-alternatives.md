@@ -10,6 +10,65 @@ retention`。下面两类复合 cohort 不发送 Retention endpoint 已拒绝的
 只有分群创建是 mutation，必须审查预览后把同一命令的 `--dry-run` 改为
 `--execute`。
 
+## 加性后续指标的当前边界
+
+本节只裁决 Retention 的两个精确 `SumCount` 后续形状，不裁决 Event、Property、
+受治理 SQL 产品或其他加性指标：
+
+- `query_item_before_after.after.target.name=SumCount` 的合法载荷能通过旧编译，
+  但消费方的配对执行被上游拒绝；补齐 `before`、`formula` 与格式化控制仍失败。
+- 普通两事件 Retention 把第二步 `target.name` 改成 `SumCount` 时请求能完成，
+  但 `values` 仍是回访人数，`values_another_event` 的零没有测量语义证据。
+- 普通两事件 Retention、同起始事件和用户属性过滤已有成功边界。当前证据不能把
+  前两项外推为“所有加性指标不支持”，也不能确定拒绝发生在 Retention 服务、
+  查询规划器或其他上游组件。
+
+因此这两个 `SumCount` 形状现在于编译/FieldPolicy 预检返回
+`RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED`，`retryable=false`，且在
+metadata 或最终查询请求之前停止。`--dry-run` 返回 `status=capability_gap`、
+`network_called=false`，其中 `measurement.status=unmeasured`、`value=null`。
+不得把未测量写成 0。
+
+### cohort、offset、计数与分母
+
+日 cohort 行位于 `data.y["<cohort-date>"][row]`；`row.group_cols` 是该行的
+分组边界。`data.total[row]` 是所选窗口/聚合控制下的汇总行，不得与某个日 cohort
+的分子或分母混用。本文示例的 `YYYY-MM-DD` 以项目登记的北京时间自然日解释；
+其他时区必须由调用项目显式绑定，SDK 不从事件名猜时区。
+
+- cohort 人数是同一行的 `row.init_num`。
+- offset `k` 的回访人数是同一行的 `row.values[k]`；其人数留存分母是该行
+  `row.init_num`，对应率槽是 `row.percent_values[k]`。这里的合法 `0` 是已测量的
+  人数 0。
+- 加性后续值的线槽是同一行的 `row.values_another_event[k]`。当前投影登记了标量
+  以及对象中的 `period_event_total`、`cumulative_total`、`per_user`、
+  `period_event_total_average` 等候选字段，但没有已验证证据把其中任一字段确认为
+  该 cohort/offset 的金额或时长。因此这些路径当前不可消费；特别是标量 0 只表示
+  未测量占位，不能解释为金额 0 或时长 0。
+
+拿到独立验证的聚合 `sum_value` 后，必须显式选择分母：
+
+- `per_cohort_user = sum_value / row.init_num`，回答“每个起始 cohort 用户”；
+- `per_returning_user = sum_value / row.values[k]`，回答“offset k 每个回访用户”。
+
+两者不能互换；分母为 0 时结果是未定义的 `null`，不是 0。金额还必须绑定同一币种，
+时长必须绑定同一单位。这里的“加性”只表示同单位、同口径且用户/事件集合互斥时
+总量可以求和，不表示可以跨币种、重叠 cohort 或不同时间窗直接相加，也不自动赋予
+任何人均含义。
+
+### 为什么现有替代路径不能补出加性值
+
+下面已有的 Funnel→matched Segment 和属性 Segment 路径能得到聚合人口
+`part/percent/total`，所以能构造人数分母与回访人数。它们不能返回金额或时长总和。
+仓库当前也没有已验证的“历史固定 Segment membership → 指定 offset 的 Event
+`SumCount`”绑定，无法证明成员版本、自然日边界、单位/币种和结果完整性同时保持。
+因此不能从这些步骤拼出一条本仓已验证的纯聚合加性后续路径。
+
+调用项目已有的 registered custom-sql 聚合产品在其不可变 readiness 通过时可以作为
+项目侧绕行；它不是原 Retention 接口的修复，也不会关闭这个 capability gap。本节不提供
+一个伪装成已验证路径的 Event/Segment spec，更不会用回访人数、付费率或其他事件人数
+替代金额、时长或 ARPU。
+
 ## 同日首次注册与支付的交集
 
 分母 cohort 是同一自然日内依次完成首次注册和支付、并满足用户属性条件的用户。
@@ -254,5 +313,7 @@ cohort 日的用户，分子是该集合与 D1 启动用户的交集。代价是
 `INPUT_INVALID`，不会发请求。普通单起始事件 Retention、空列表和
 `query_item_before_after` 的其他已登记控制不受影响。
 
-当前证据不把自定义 SQL 当成替代：用户表与事件表 aggregate join 仍是 draft，仓库没有
-上游 join 成功合同。也不使用用户明细拼接；那会引入用户级数据、分页完整性和每用户请求成本。
+当前通用路径不把未登记的 raw/custom SQL 当成自动替代；这不表示 aggregate join
+本身不支持。调用项目已登记且 readiness 通过的 SQL 产品可以成功聚合，但它保持项目侧
+产品身份，不能证明原 Retention 表达已修复。也不使用用户明细拼接；那会引入用户级数据、
+分页完整性和每用户请求成本。

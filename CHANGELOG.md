@@ -52,6 +52,17 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   variance, window, grouping, causal-claim and same-run self-validation failures
   remain distinct fail-closed outcomes.
 
+### Fixed
+
+- Retention no longer compiles or retries two native `SumCount` follow-up
+  shapes whose cohort value semantics are unverified. The compact/raw
+  preflight stops before metadata or query dispatch with the named
+  `RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED` gap; ordinary Retention
+  counts remain executable, while additive placeholders are represented as
+  `unmeasured`/`null` rather than a plausible zero. Result notes and the
+  [cohort alternatives guide](docs/guides/retention-cohort-alternatives.md)
+  distinguish count, sum, per-cohort-user, and per-returning-user denominators.
+
 ## [0.3.7] - 2026-09-04
 
 ### Breaking changes
