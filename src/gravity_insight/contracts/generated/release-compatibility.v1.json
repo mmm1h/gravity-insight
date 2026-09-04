@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "1cab50b0d1076957d54ed28ed4393dac4d14a65d34e34bbada1fdb85709d9f3c"
+    "compatibility_sha256": "3694090582aa312352b5f836a6f68d1988af06e3dd668cdf9af1b15c98ef49dc"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -123,7 +123,12 @@
       "hard_breaks": [
         {
           "id": "0.3.8-hard-break-1",
-          "description": "The checked-in Repository Map moves from `contracts/generated/repository-map.v1.json` to `repository-map.v2.json`. Its whole-file JSON transport now tables repeated entry strings, issue paths, and module-graph nodes; raw JSON consumers must decode those tables. The repository loader and task-context surface still return the complete v1 fact shape, and generation proves decoded v2 is field-for-field identical. Migration guide: [0.3.8](docs/migration/0.3.8.md)",
+          "description": "The checked-in Repository Map moves from `contracts/generated/repository-map.v1.json` to `repository-map.v2.json`. Its whole-file JSON transport now tables repeated entry strings, issue paths, and module-graph nodes; raw JSON consumers must decode those tables. The repository loader and task-context surface still return the complete v1 fact shape, and generation proves decoded v2 is field-for-field identical.",
+          "migration_guide": "docs/migration/0.3.8.md"
+        },
+        {
+          "id": "0.3.8-hard-break-2",
+          "description": "Segment evaluation no longer maps an upstream rejection of the locally valid static custom-event count shape to generic `INPUT_INVALID field=input`. It now returns `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`, `category=upstream`, `retryable=false`, and the exact `user_event_rules` path. The public Segment spec schema advances from `gravity-insight.segment-rule-spec.v1` to `v2` and changes `event_support.default_status` to `requires_live_metadata_and_event_specific_acceptance`; metadata validity is necessary but no longer presented as endpoint-acceptance evidence. Migration guide: [0.3.8](docs/migration/0.3.8.md)",
           "migration_guide": "docs/migration/0.3.8.md"
         }
       ],

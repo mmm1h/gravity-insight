@@ -1,0 +1,121 @@
+{
+  "schema_version": "gravity-insight.test.segment-custom-event-boundary.v1",
+  "known_unsupported_presets": [
+    "$MPShow",
+    "$PayEvent"
+  ],
+  "positive_custom_event": {
+    "name": "fixture-positive",
+    "start": "2030-01-08",
+    "end": "2030-01-08",
+    "event_rules": {
+      "logic": "AND",
+      "groups": [
+        {
+          "logic": "AND",
+          "rules": [
+            {
+              "event": "fixture_custom_event_accepted",
+              "did": true,
+              "target": {
+                "field": "PresetAllCount",
+                "aggregation": "PresetAllCount"
+              },
+              "did_condition": {
+                "operator": "GTE",
+                "values": [1]
+              },
+              "date_range": {
+                "type": "static",
+                "start": "2030-01-08",
+                "end": "2030-01-08"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "rejected_custom_event": {
+    "name": "fixture-rejected",
+    "start": "2030-01-08",
+    "end": "2030-01-08",
+    "event_rules": {
+      "logic": "AND",
+      "groups": [
+        {
+          "logic": "AND",
+          "rules": [
+            {
+              "event": "fixture_custom_event_rejected",
+              "did": true,
+              "target": {
+                "field": "PresetAllCount",
+                "aggregation": "PresetAllCount"
+              },
+              "did_condition": {
+                "operator": "GTE",
+                "values": [1]
+              },
+              "date_range": {
+                "type": "static",
+                "start": "2030-01-08",
+                "end": "2030-01-08"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "two_static_windows": {
+    "name": "fixture-first",
+    "start": "2030-01-01",
+    "end": "2030-01-08",
+    "logic": "AND",
+    "event_rules": {
+      "logic": "AND",
+      "groups": [
+        {
+          "logic": "AND",
+          "rules": [
+            {
+              "event": "fixture_custom_event_accepted",
+              "did": true,
+              "target": {
+                "field": "PresetAllCount",
+                "aggregation": "PresetAllCount"
+              },
+              "did_condition": {
+                "operator": "GTE",
+                "values": [1]
+              },
+              "date_range": {
+                "type": "static",
+                "start": "2030-01-08",
+                "end": "2030-01-08"
+              }
+            },
+            {
+              "event": "fixture_custom_event_accepted",
+              "did": false,
+              "target": {
+                "field": "PresetAllCount",
+                "aggregation": "PresetAllCount"
+              },
+              "did_condition": {
+                "operator": "GTE",
+                "values": [1]
+              },
+              "date_range": {
+                "type": "static",
+                "start": "2030-01-01",
+                "end": "2030-01-07"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,16 +1,26 @@
 from __future__ import annotations
 
+import json
 import unittest
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Mapping
 
 from gravity_insight.errors import InputValidationError
+from gravity_insight.plan_segment_adapter import safe_segment_envelope
 from gravity_insight.segment_spec import (
     compile_segment_spec,
     prepare_segment_spec,
     validate_segment_spec,
 )
 from gravity_insight.segment_spec_schema import segment_rule_spec_schema
+
+
+BOUNDARY_FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures/segment_custom_event_boundary.json").read_text(
+        encoding="utf-8"
+    )
+)
 
 
 def minimal_spec() -> dict[str, Any]:
@@ -86,6 +96,23 @@ class SegmentRuleSpecTests(unittest.TestCase):
         self.assertEqual(
             {"$MPShow", "$PayEvent"}, set(schema["event_support"]["events"])
         )
+        self.assertEqual(
+            "requires_live_metadata_and_event_specific_acceptance",
+            schema["event_support"]["default_status"],
+        )
+        self.assertFalse(
+            schema["event_support"][
+                "metadata_validity_proves_endpoint_acceptance"
+            ]
+        )
+        self.assertEqual(
+            "SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN",
+            schema["event_support"]["acceptance_gap"]["code"],
+        )
+        self.assertIn(
+            "neither an all-custom-event exclusion",
+            schema["event_support"]["acceptance_gap"]["reason"],
+        )
         self.assertEqual({"unsupported"}, {item["status"] for item in schema["event_support"]["events"].values()})
         allowed = {"array", "boolean", "integer", "null", "number", "object", "string"}
 
@@ -147,7 +174,7 @@ class SegmentRuleSpecTests(unittest.TestCase):
                 self.assertIn("actual value", str(caught.exception))
 
     def test_known_unsupported_preset_events_fail_with_public_field_path(self) -> None:
-        for event_name in ("$MPShow", "$PayEvent"):
+        for event_name in BOUNDARY_FIXTURE["known_unsupported_presets"]:
             candidate = rich_spec()
             candidate["event_rules"]["groups"][0]["rules"][0]["event"] = event_name
             with self.subTest(event=event_name), self.assertRaises(InputValidationError) as caught:
@@ -155,8 +182,53 @@ class SegmentRuleSpecTests(unittest.TestCase):
             self.assertEqual("event_rules.groups[0].rules[0].event", caught.exception.field)
             self.assertIn("actual value", str(caught.exception))
             self.assertIn(event_name, str(caught.exception))
-            self.assertIn("gravity metadata events", str(caught.exception.next_action))
+            self.assertIn("successful Segment-evaluation receipt", str(caught.exception.next_action))
+            self.assertIn("metadata listing alone", str(caught.exception.next_action))
             self.assertIn("do not retry", str(caught.exception.next_action))
+
+    def test_two_static_windows_preserve_positive_and_negative_rules(self) -> None:
+        compiled = compile_segment_spec(
+            BOUNDARY_FIXTURE["two_static_windows"], app=101
+        )
+        rules = compiled.inputs["user_event_rules"]["groups"][0]["conditions"]
+        self.assertEqual([True, False], [rule["did"] for rule in rules])
+        self.assertEqual(
+            [
+                ["2030-01-08", "2030-01-08"],
+                ["2030-01-01", "2030-01-07"],
+            ],
+            [rule["date_range"]["date"] for rule in rules],
+        )
+        self.assertEqual(
+            {"fixture_custom_event_accepted"},
+            {rule["event_name"] for rule in rules},
+        )
+
+    def test_plan_preserves_named_gap_without_raw_upstream_text(self) -> None:
+        result = safe_segment_envelope(
+            {
+                "operation_id": "analysis.segment.evaluate_percent",
+                "ok": False,
+                "status": "semantic_error",
+                "error": {
+                    "code": "SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN",
+                    "category": "upstream",
+                    "field": "user_event_rules.groups[0].conditions[0]",
+                    "retryable": False,
+                    "message": "private upstream text",
+                    "next_action": "private upstream action",
+                },
+            }
+        )
+        self.assertEqual(
+            "SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN", result["error"]["code"]
+        )
+        self.assertEqual(
+            "user_event_rules.groups[0].conditions[0]", result["error"]["field"]
+        )
+        self.assertIn("metadata validity does not establish", result["error"]["message"])
+        self.assertIn("paired Segment receipt", result["error"]["next_action"])
+        self.assertNotIn("private upstream", repr(result))
 
     def test_validation_delegates_metadata_and_preview_redacts_values(self) -> None:
         client = FakeClient()

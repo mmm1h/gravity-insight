@@ -1,4 +1,4 @@
-"""Thin CLI bridge for compact Segment Rule Spec v1."""
+"""Thin CLI bridge for compact Segment Rule Spec v2."""
 
 from __future__ import annotations
 

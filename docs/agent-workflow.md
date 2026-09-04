@@ -32,6 +32,8 @@ gravity agent-catalog describe <selector>
 选择规则：
 
 - product 优先于 raw operation；gap 不可执行。
+- `gap:SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN` 对应 `custom event first exposure cohort` /
+  `自定义事件首次暴露 cohort`；它不把普通事件日 Retention 当等价结果。
 - `required_inputs` 是调用方必须补齐的决策，不用默认值掩盖。
 - `schema_argv` 给出紧凑输入合同；`next.argv` 给出执行交接。
 - 多意图必须拆分或显式选择；weak match 和未排序 raw 候选不得直接执行。
