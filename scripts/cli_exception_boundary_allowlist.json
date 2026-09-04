@@ -18,18 +18,26 @@
     },
     {
       "detector": "flattened-exception-escape",
-      "handler_sha256": "141cea48ed6cc37574f7ce1de8abe02d2868b771ee1f97ed0432a4508341db83",
-      "line": 322,
-      "path": "src/gravity_insight/governance/stable_privacy.py",
-      "reason": "The privacy registry loader combines plain JSON or filesystem exceptions with the exact registry path for a developer-only gate; none of the caught types carries actionable structured fields.",
+      "handler_sha256": "ca70dad7c1925a2b867a3068ff94048796c836b9383dc46f6ae0d0df79e481c8",
+      "line": 374,
+      "path": "src/gravity_insight/governance/domain_boundary.py",
+      "reason": "The domain-boundary maintainer gate returns the exact invalid-baseline parsing message; its caught filesystem, Unicode, and JSON exceptions expose no stable action fields beyond that diagnostic.",
       "review_expires": "2027-03-31"
     },
     {
       "detector": "flattened-exception-escape",
-      "handler_sha256": "ca70dad7c1925a2b867a3068ff94048796c836b9383dc46f6ae0d0df79e481c8",
-      "line": 361,
-      "path": "src/gravity_insight/governance/domain_boundary.py",
-      "reason": "The domain-boundary maintainer gate returns the exact invalid-baseline parsing message; its caught filesystem, Unicode, and JSON exceptions expose no stable action fields beyond that diagnostic.",
+      "handler_sha256": "b6316a592a34ba37a20607a41ff79f214d0c9bf2d74e011471745b4c12d1ff72",
+      "line": 438,
+      "path": "src/gravity_insight/governance/envelope_obligation_gate.py",
+      "reason": "The gate reads its own baseline file; a corrupt or unreadable baseline has no richer classification behind it, and the decoder's own message names the offending byte. The consumer is a maintainer reading gate output, not an Agent choosing a next step.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "141cea48ed6cc37574f7ce1de8abe02d2868b771ee1f97ed0432a4508341db83",
+      "line": 322,
+      "path": "src/gravity_insight/governance/stable_privacy.py",
+      "reason": "The privacy registry loader combines plain JSON or filesystem exceptions with the exact registry path for a developer-only gate; none of the caught types carries actionable structured fields.",
       "review_expires": "2027-03-31"
     },
     {
