@@ -65,6 +65,17 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   variance, window, grouping, causal-claim and same-run self-validation failures
   remain distinct fail-closed outcomes.
 
+### Fixed
+
+- Grouped two-step user-count Retention no longer returns an arithmetically
+  impossible total as `success`. Total offsets with negative counts, a numerator
+  above `init_num`, or retained/loss percentages outside `[0, 100]` are nulled
+  and returned as `status=partial` with `RETENTION_TOTAL_INVALID`; valid group
+  rows remain available. The result also carries a directly executable
+  `gravity batch read` payload for one equality-filtered query per observed
+  string event-property group, with cross-group aggregation explicitly disabled.
+  A zero `init_num` now yields null percentages instead of a fabricated 0% rate.
+
 ## [0.3.7] - 2026-09-04
 
 ### Breaking changes
