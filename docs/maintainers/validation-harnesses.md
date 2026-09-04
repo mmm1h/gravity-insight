@@ -23,7 +23,7 @@ Release 固定按高风险处理。非 changed-files 查询按匹配实体判定
 
 | Harness | purpose | load-bearing evidence | cost | ablation method | removal trigger |
 | --- | --- | --- | --- | --- | --- |
-| Task Context + Focused | 用机器图只读最小上下文，并在分钟内反馈受影响回归 | 本趟新增 observation 模块后，Focused 的 graph regression 立即拒绝 665→666 节点漂移 | N11 26.501s；本趟 Map 13.450s + characterization 13.929s = 27.379s；N11 task pack 10,816 tokens | 保留目标测试、去掉 Map check 后制造 stale map；再反向操作，比较哪类漂移未被发现 | 连续 3 个重大模型/工具版本没有独有检出，且相同错误已由更便宜门禁稳定拦截 |
+| Task Context + Focused | 用机器图只读最小上下文，并在分钟内反馈受影响回归 | Focused 运行 registry tests 加改动模块的两层反向依赖闭包，而不是第一个测试文件；命中高扇出或超过 80 个测试文件时升级 Full | `run_changed_tests.py` 对每条命令计时；Focused 合计硬上限 100s | 保留目标测试、去掉 Map check 或闭包中的非首个测试后注入漂移，比较哪类错误未被发现 | 连续 3 个重大模型/工具版本没有独有检出，且相同错误已由更便宜门禁稳定拦截 |
 | Full 双 collector | 高风险/Release 同时覆盖 pytest CI 语义与原生 unittest discovery/import 顺序 | `tests/__init__.py` 隔离真实 cache；历史 `f3c9a849` 修复 repository-tree 并发，说明 collector 行为曾暴露维护陷阱 | 未改代码基线：原生 collector 1005.172s；CI collector 142.290s；精确项数留在机器 receipt，不写进 current docs | `validation_observability.py --gate full --ablate unittest_collector ...`，其余五条不变；比较失败集与计数 | **删除候选**：连续 3 个版本 pytest 覆盖集合为超集且消融无唯一失败，就从默认 Full 移除独立 unittest，保留按需兼容诊断 |
 | Compiler + Quality | 验证 manifest/provenance 确定性及复杂度、文档、治理基线 | 本趟第一次消融运行实际拦下新函数 complexity 21/16 与 broken local link | compiler 5.640s；quality 27.140s；合计 32.780s | 分别省略一个命令，注入 stale generated artifact、复杂函数或断链，再跑其余门禁 | 只有替代门禁能拦下同一 mutation 集，且成本更低，才移除旧 owner |
 | High Integrated + usability + canary | 在 clean exact HEAD 汇合 release、wheel、consumer、runtime 与 Agent 使用路径；canary 只验证离线生命周期合同 | `test_canary_failure_leaves_prior_complete_snapshot_active` 锁住 canary 失败不激活候选；agent usability 检查真实任务选择 | N11 Full 1,164.842s；agent usability 41.270s；offline canary 4.245s | `run_integrated_validation.py --trial --only ...` 逐个省略 gate，运行该 gate 的 fault fixture 并比较 receipt | 某 gate 连续 3 个重大版本没有独有失败，且 fault fixture 被另一更便宜 gate 拦截 |
@@ -32,11 +32,23 @@ Release 固定按高风险处理。非 changed-files 查询按匹配实体判定
 | Census + drift | 区分上游扩张、破坏性漂移、circuit/transport failure，避免错误晋升 route | `8f47c925` 与 `895d5c97` 修复 circuit/drift failure taxonomy，现有 fixtures 复现这些错误类 | 四个 census modules，15.760s | 关闭 diff/failure taxonomy tests，对对应 fixture 做 category mutation，再跑其余 census tests | 上游提供版本化 schema 且替代合同覆盖所有当前 mutation fixture |
 | Privacy + consumer-output safety | 防止未审查字段、URL/标识或受限内容进入稳定投影和 Agent 输出 | `1a0c70cb` 实际删除 stale URL privacy entries；当前测试锁住 stable registry 与 consumer output inventory | targeted privacy suite 7.840s | 去掉 privacy tests，向 fixture 加未知敏感字段/URL，运行 quality 与 consumer tests比较 | 替代投影器能在更低成本下拦住完整 mutation corpus，且没有双 owner |
 | Provenance + installed wheel + canonical consumer | 验证非 editable wheel 的五 surface parity、离线 provenance 与真实 pinned consumer | 本趟 wheel matrix 通过五 surface；work-dashboard pinned suite 实跑通过，network_calls=0 | provenance 0.378s；wheel surface 20.540s；consumer 74.032s；合计 94.950s | 分别移除 wheel/provenance/consumer gate，使用 tampered fixture、editable escape 与旧 envelope consumer fixture | 三类失败全部被单一 installed-artifact gate 以同等隔离度和更低成本覆盖 |
-| Test duration budget | 阻止单项测试吞掉 CI 20 分钟预算 | `fc3efa9d` 建立 240s immutable ceiling；超时 nodeid 会成为 fail-closed 诊断 | 与完整 pytest collector 同量级；本趟基线 collector 142.29s，budget recorder 的独立总耗时由 integrated receipt记录 | 从 Integrated 省略 duration gate，注入超过 240s 的受控 fake report，验证普通 pytest 不拒绝时该 gate是否唯一承重 | pytest 主 collector直接实施同一 per-item ceiling并输出相同 nodeid 后，删除第二次全量收集 |
+| Test duration budget | 阻止慢测试重新混回本地高频层 | 40s 以上必须标 `full_gate`，标记集合由 quality baseline 锁定；240s 仍是任何单项不可越过的绝对上限 | 与完整 pytest collector 同量级；CI shard receipt 记录 marker，汇总审计证明 9 项和完整 collection 都守恒 | 去掉 marker 后对受控 40.001s report 运行 duration gate；删一片 shard 或过滤 collection 再运行 audit | 主 pytest collector直接实施同一 marker/时长/集合守恒后，删除第二次全量收集 |
 
 Repository Map v2 仍是单个可直接 `json.load` 的 JSON 文件；它只把重复值换成确定性表。
 生成器先校验 compact v2 transport，loader 再还原并校验完整 v1 fact contract，逐字段
 round-trip 测试锁住 entry、issue location、模块节点和边不丢失；255,000 字节门槛不变。
+
+Focused 的反向闭包取两层：一层只能看到直接 importer，容易漏掉 service 后的公开 surface；三层在当前
+canonical 图中会经 package-parent / lazy-export hub 扩散到大半仓库。当前反向 fanout 的 P95 为 12，
+所以 40 只截住显著 hub；若改动模块本身超过 40，或最终命中超过 80/275 个 runnable 测试文件，风险
+升级到 Full。测试绑定使用 AST import 与 `gravity_insight...` 字面量模块引用，不再用子串命中。
+
+时间 ratchet 放在既有 `quality-baseline.json`：本地 Focused 上限 100s，来自剔除八项后的 83s 实测加
+20% 调度余量（99.6s 向上取整）；duration gate 首轮实测未标记项最慢 30.366s，当前最短
+Full-only 项为 41s，故阈值取 40s：给普通项保留 9.634s 余量，同时仍覆盖已知慢项。
+阈值只能收紧，`full_gate` 名额只能减少。裸 `pytest -q` 与 unittest 仍是完整集合；只有 Focused 命令
+使用 `-m "not full_gate"`。CI duration runner 显式清空本地 `addopts`，四片 receipt audit 再证明完整
+collection、选择集与实际执行集相等，防止默认过滤造成假绿。
 
 第一次 unittest 消融运行不是有效“绿色证据”：pytest 在 414.170s 后报告 5 failures，其中 broken link 与
 complexity 是真实实现缺陷，另一个 isolated import 受同机并发影响超时。修复缺陷后必须重跑；不得把这次失败

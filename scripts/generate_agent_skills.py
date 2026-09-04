@@ -231,7 +231,7 @@ def _retention(card: dict[str, Any], contract: dict[str, Any], preview: dict[str
         ],
         preview,
         exits,
-        "`status=empty` 且 `total/x/y` 全空是合法空信封，先换回访事件再写「没能力」。同事件回访 D0=分母、D1+=0 只能证明产品通了，不能当次日留存读。跨事件 `init_num` 应对上同期起始事件 UV；漏斗步 1 整窗应对上同事件留存 `init_num`。",
+        "`status=empty` 且 `total/x/y` 全空是合法空信封，先换回访事件再写「没能力」。同事件回访 D0=分母、D1+=0 只能证明产品通了，不能当次日留存读。跨事件 `init_num` 应对上同期起始事件 UV；漏斗步 1 整窗应对上同事件留存 `init_num`。分组用户数留存若返回 `status=partial`、`error.code=RETENTION_TOTAL_INVALID`，无效总计 offset 已置 null，逐组行仍可用；直接执行顶层 `next_action.input` 的 `gravity batch read` 批次并逐组消费，禁止跨重叠组求和。`init_num=0` 时百分比为 null，不能解释成 0% 留存。Retention 的 `SumCount` 后续形状会在请求前返回 `RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED`；`values_another_event` 的零不是实测金额/时长，精确分母与替代边界见 [复合 cohort 留存替代路径](../guides/retention-cohort-alternatives.md)。",
     )
 
 

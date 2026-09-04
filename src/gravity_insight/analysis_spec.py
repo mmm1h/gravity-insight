@@ -13,10 +13,16 @@ from typing import Any
 
 from ._field_policy_analysis import validate_analysis_shape
 from .actionable_error_values import actual_value, allowed_values
-from .analysis_spec_preview import redact_analysis_values
+from .analysis_spec_preview import prepare_query_spec_preview
 from .analysis_execution_support import reject_unsupported_property_groups
 from .analysis_spec_schema import (
-    ANALYSIS_SPEC_KINDS, ANALYSIS_TIME_GROUPS_BY_KIND, analysis_query_spec_schema,
+    ANALYSIS_SPEC_KINDS,
+    ANALYSIS_TIME_GROUPS_BY_KIND,
+    RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE,
+    RETENTION_ADDITIVE_FOLLOWUP_JOURNEY,
+    RETENTION_ADDITIVE_FOLLOWUP_NEXT_ACTION,
+    RETENTION_ADDITIVE_FOLLOWUP_REASON,
+    analysis_query_spec_schema,
 )
 from .analysis_spec_controls import (
     apply_scatter_zone,
@@ -36,7 +42,7 @@ from .analysis_spec_validation import (
     reject_keys as _reject_keys,
 )
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
-from .errors import InputValidationError
+from .errors import InputValidationError, UnsupportedOperationError
 from .workspace import Workspace, load_workspace
 
 
@@ -188,37 +194,20 @@ def prepare_query_spec(
 ) -> dict[str, Any]:
     """Compile, validate, and return a caller-safe offline preview."""
 
-    compiled, validation = validate_query_spec(client, kind, spec, **options)
-    preview, values_redacted = redact_analysis_values(compiled.inputs)
-    plan_node = None if values_redacted else compiled.plan_node()
-    next_action = (
-        "Execute the original compact spec directly; value-bearing compiled "
-        "input and Plan node were intentionally redacted from this preview."
-        if values_redacted
-        else (
-            "Execute compiled_input through this operation, or place plan_node "
-            "inside a gravity plan run input."
-        )
+    return prepare_query_spec_preview(
+        client,
+        kind,
+        spec,
+        validate_query_spec=validate_query_spec,
+        schema_version=COMPILED_SCHEMA_VERSION,
+        gap_error_type=UnsupportedOperationError,
+        gap_code=RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE,
+        gap_journey=RETENTION_ADDITIVE_FOLLOWUP_JOURNEY,
+        gap_reason=RETENTION_ADDITIVE_FOLLOWUP_REASON,
+        gap_next_action=RETENTION_ADDITIVE_FOLLOWUP_NEXT_ACTION,
+        gap_operation_id=ANALYSIS_QUERY_OPERATIONS["retention"],
+        **options,
     )
-    return {
-        "schema_version": COMPILED_SCHEMA_VERSION,
-        "ok": True,
-        "status": "compiled",
-        "offline": True,
-        "network_called": False,
-        "kind": compiled.kind,
-        "operation_id": compiled.operation_id,
-        "compiled_input": preview,
-        "input_values_redacted": values_redacted,
-        "validation": {
-            "status": validation.get("status"),
-            "live_metadata_dependencies": validation.get(
-                "live_metadata_dependencies", []
-            ),
-        },
-        "plan_node": plan_node,
-        "next_action": next_action,
-    }
 
 
 def validate_query_spec(

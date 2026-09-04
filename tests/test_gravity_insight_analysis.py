@@ -4,6 +4,7 @@ import json
 import re
 import threading
 import unittest
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -20,6 +21,11 @@ except ModuleNotFoundError:  # source checkout before editable installation
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_DIR = ROOT / "src" / "gravity_insight" / "manifests"
 QUERY_ID = "1723000000000Abcdefghijk12345678"
+RETENTION_TOTAL_FIXTURE = json.loads(
+    (ROOT / "tests" / "fixtures" / "retention_overlapping_groups.json").read_text(
+        encoding="utf-8"
+    )
+)["cases"]
 
 
 class RoutingTransport:
@@ -141,6 +147,42 @@ def event_inputs(**overrides: Any) -> dict[str, Any]:
     }
     values.update(overrides)
     return values
+
+
+def grouped_retention_inputs() -> dict[str, Any]:
+    step = {
+        "event_name": "cohort_start",
+        "event_label": "cohort_start",
+        "custom_name": "cohort_start",
+        "target": {"name": "PresetUserCount", "field": "PresetUserCount"},
+        "conditions": [],
+        "cond_logic": "AND",
+        "event_index": 0,
+    }
+    return {
+        "query_id": QUERY_ID,
+        "app_id": "101",
+        "query_item_list": [
+            step,
+            {
+                **step,
+                "event_name": "cohort_return",
+                "event_label": "cohort_return",
+                "custom_name": "cohort_return",
+                "event_index": 1,
+            },
+        ],
+        "group_by_list": [
+            {"type": "default_event", "field": "create_time", "group_by": "day"},
+            {"type": "event", "field": "variant", "group_by": "variant"},
+        ],
+        "date_list": [{"start_date": "2026-01-01", "end_date": "2026-01-01"}],
+        "offset": 1,
+        "period_calc_method": "SUM",
+        "custom_before_method": "SUM",
+        "total_calc_type": "DAY",
+        "week_first_day": 1,
+    }
 
 
 class GravityInsightAnalysisTests(unittest.TestCase):
@@ -1142,6 +1184,225 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         self.assertEqual(
             1,
             sum(path.endswith("user/retention/") for _, path, _ in transport.calls),
+        )
+
+    def test_overlapping_retention_total_is_partial_and_group_rows_survive(
+        self,
+    ) -> None:
+        from gravity_insight.export_batch import validate_batch_item
+        from gravity_insight.plan_analysis_adapter import safe_analysis_envelope
+
+        payload = RETENTION_TOTAL_FIXTURE["overlapping_groups"]
+
+        def handler(_method: str, _path: str, kwargs: Mapping[str, Any]):
+            body = kwargs["body"]
+            if len(body["group_by_list"]) == 2:
+                return deepcopy(payload)
+            group_value = body["query_item_list"][0]["conditions"][-1]["value"][0]
+            grouped_row = next(
+                row
+                for row in payload["data"]["total"][1:]
+                if row["group_cols"] == [group_value]
+            )
+            scalar_row = {**deepcopy(grouped_row), "group_cols": [], "is_total": 1}
+            return {
+                "code": 0,
+                "data": {
+                    "total": [scalar_row],
+                    "x": deepcopy(payload["data"]["x"]),
+                    "y": {},
+                    "date_to_week": {},
+                    "date_to_month": {},
+                },
+            }
+
+        client, transport = client_for(
+            "analysis.retention.query",
+            handler=handler,
+        )
+        client._executor._field_validator = lambda *_args: None
+
+        result = client.read("analysis.retention.query", grouped_retention_inputs())
+
+        self.assertEqual((False, "partial"), (result["ok"], result["status"]))
+        self.assertEqual(
+            ("RETENTION_TOTAL_INVALID", "data.total", False),
+            (
+                result["error"]["code"],
+                result["error"]["field"],
+                result["error"]["retryable"],
+            ),
+        )
+        total = result["data"]["total"][0]
+        self.assertEqual([5, None], total["values"])
+        self.assertEqual([0, None], total["values_loss"])
+        self.assertEqual([100.0, None], total["percent_values"])
+        self.assertEqual([0.0, None], total["percent_values_loss"])
+        self.assertEqual(
+            payload["data"]["total"][1:], result["data"]["total"][1:]
+        )
+        self.assertTrue(
+            any(
+                item["type"] == "numerator_exceeds_denominator"
+                for item in result["error"]["unsupported_items"]
+            )
+        )
+        self.assertTrue(
+            any(
+                item["type"] == "loss_percent_out_of_range"
+                for item in result["error"]["unsupported_items"]
+            )
+        )
+
+        action = result["next_action"]
+        self.assertEqual(
+            (
+                "gravity-insight.retention-safe-next-action.v1",
+                "ready",
+                "execute_independent_group_queries",
+                False,
+            ),
+            (
+                action["schema_version"],
+                action["status"],
+                action["action"],
+                action["result_policy"]["aggregate_across_groups"],
+            ),
+        )
+        requests = action["input"]["requests"]
+        self.assertEqual(2, len(requests))
+        self.assertEqual(2, len({item["input"]["query_id"] for item in requests}))
+        operation = client._registry.get("analysis.retention.query")
+        for request, expected_group in zip(requests, ("alpha", "beta")):
+            validate_batch_item(request)
+            operation.validate_inputs(request["input"])
+            self.assertEqual(
+                [
+                    {
+                        "type": "default_event",
+                        "field": "create_time",
+                        "group_by": "day",
+                    }
+                ],
+                request["input"]["group_by_list"],
+            )
+            self.assertEqual(
+                {
+                    "operator": "EQUALS",
+                    "field": "variant",
+                    "type": "event",
+                    "value": [expected_group],
+                },
+                request["input"]["query_item_list"][0]["conditions"][-1],
+            )
+        safe = safe_analysis_envelope(result)
+        self.assertEqual("partial", safe["status"])
+        self.assertEqual(result["data"], safe["data"])
+        self.assertEqual(result["next_action"], safe["next_action"])
+        self.assertEqual(
+            result["error"]["unsupported_items"],
+            safe["error"]["unsupported_items"],
+        )
+        alternatives = client.batch(requests, max_workers=1)
+        self.assertEqual(
+            [(True, "success"), (True, "success")],
+            [(item["ok"], item["status"]) for item in alternatives],
+        )
+        self.assertEqual(3, len(transport.calls))
+
+    def test_disjoint_retention_groups_remain_successful(self) -> None:
+        payload = RETENTION_TOTAL_FIXTURE["disjoint_groups"]
+        client, transport = client_for(
+            "analysis.retention.query",
+            handler=lambda *_args: deepcopy(payload),
+        )
+        client._executor._field_validator = lambda *_args: None
+
+        result = client.read("analysis.retention.query", grouped_retention_inputs())
+
+        self.assertEqual((True, "success"), (result["ok"], result["status"]))
+        self.assertEqual(payload["data"], result["data"])
+        self.assertIsNone(result["error"])
+        self.assertNotIn("next_action", result)
+        self.assertEqual(1, len(transport.calls))
+
+    def test_empty_retention_cohort_is_not_an_invariant_failure(self) -> None:
+        payload = RETENTION_TOTAL_FIXTURE["empty_cohort"]
+        client, transport = client_for(
+            "analysis.retention.query",
+            handler=lambda *_args: deepcopy(payload),
+        )
+        client._executor._field_validator = lambda *_args: None
+
+        result = client.read("analysis.retention.query", grouped_retention_inputs())
+
+        self.assertEqual((True, "empty"), (result["ok"], result["status"]))
+        self.assertIsNone(result["error"])
+        self.assertNotIn("next_action", result)
+        self.assertEqual(1, len(transport.calls))
+
+    def test_zero_retention_denominator_makes_rates_null_not_zero(self) -> None:
+        payload = RETENTION_TOTAL_FIXTURE["zero_denominator"]
+        client, transport = client_for(
+            "analysis.retention.query",
+            handler=lambda *_args: deepcopy(payload),
+        )
+        client._executor._field_validator = lambda *_args: None
+
+        result = client.read("analysis.retention.query", grouped_retention_inputs())
+
+        self.assertEqual((True, "success"), (result["ok"], result["status"]))
+        total = result["data"]["total"][0]
+        self.assertEqual([0, 0], total["values"])
+        self.assertEqual([None, None], total["percent_values"])
+        self.assertEqual([None, None], total["percent_values_loss"])
+        self.assertIsNone(result["error"])
+        self.assertTrue(any("undefined" in item for item in result["warnings"]))
+        self.assertEqual(1, len(transport.calls))
+
+    def test_grouped_retention_direct_arithmetic_violations_are_invalid(self) -> None:
+        mutations = (
+            ("percent_values", 101.0, "retention_percent_out_of_range"),
+            ("percent_values_loss", -0.01, "loss_percent_out_of_range"),
+            ("values", -1, "negative_numerator"),
+            ("values_loss", 8, "loss_count_out_of_range"),
+        )
+        for field, value, reason in mutations:
+            with self.subTest(field=field):
+                payload = deepcopy(RETENTION_TOTAL_FIXTURE["disjoint_groups"])
+                payload["data"]["total"][0][field][1] = value
+                client, _transport = client_for(
+                    "analysis.retention.query",
+                    handler=lambda *_args, payload=payload: deepcopy(payload),
+                )
+                client._executor._field_validator = lambda *_args: None
+
+                result = client.read(
+                    "analysis.retention.query", grouped_retention_inputs()
+                )
+
+                self.assertEqual("partial", result["status"])
+                self.assertIsNone(result["data"]["total"][0]["values"][1])
+                self.assertIn(
+                    reason,
+                    {item["type"] for item in result["error"]["unsupported_items"]},
+                )
+
+        payload = deepcopy(RETENTION_TOTAL_FIXTURE["disjoint_groups"])
+        payload["data"]["total"][0]["init_num"] = -1
+        client, _transport = client_for(
+            "analysis.retention.query",
+            handler=lambda *_args: deepcopy(payload),
+        )
+        client._executor._field_validator = lambda *_args: None
+
+        result = client.read("analysis.retention.query", grouped_retention_inputs())
+
+        self.assertEqual("partial", result["status"])
+        self.assertIsNone(result["data"]["total"][0]["init_num"])
+        self.assertIn(
+            "negative_denominator",
+            {item["type"] for item in result["error"]["unsupported_items"]},
         )
 
     def test_segment_codec_hides_raw_filters_and_uses_exact_get_query(self) -> None:

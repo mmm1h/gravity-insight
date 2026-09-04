@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib, json, os, subprocess, sys, tempfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -13,6 +14,59 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+QUALITY_BASELINE_PATH = ROOT / "src/gravity_insight/governance/quality-baseline.json"
+# The ratchet opened once, from 8 to 9, when this gate first met CI hardware.
+# `test_compact_pagination_output_contract_is_locked` reads every repository
+# module twice and loads two isolated functions, which is the marker's own
+# definition of a full-gate item, but it measured under the local budget and so
+# was never marked. It takes 55.471s on a CI Windows runner.
+#
+# That is a calibration mismatch, not a regression: `slow_test_seconds` is a
+# local measurement while the gate compares it against CI durations, and this
+# file already scales its other threshold by a measured 716/364 local-to-CI
+# ratio. Until that unit is reconciled, every repository-wide scan will drift
+# across the line in turn. Admitting the ninth member is the correction that
+# does not weaken a threshold; it is not licence to keep opening the ratchet.
+MAX_FULL_GATE_TESTS = 9
+MAX_LOCAL_FOCUSED_WALL_SECONDS = 100.0
+MAX_SLOW_TEST_SECONDS = 40.0
+
+
+def _test_tier_baseline() -> dict[str, Any]:
+    document = json.loads(QUALITY_BASELINE_PATH.read_text(encoding="utf-8"))
+    tiers = document.get("test_tiers")
+    required = {
+        "full_gate_nodeids", "local_focused_wall_seconds", "slow_test_seconds",
+    }
+    if not isinstance(tiers, dict) or set(tiers) != required:
+        raise ValueError(f"test_tiers must contain exactly {sorted(required)}")
+    nodeids = tiers["full_gate_nodeids"]
+    if (
+        not isinstance(nodeids, list)
+        or not nodeids
+        or not all(isinstance(value, str) and value for value in nodeids)
+        or len(nodeids) != len(set(nodeids))
+    ):
+        raise ValueError("test_tiers.full_gate_nodeids must be a non-empty unique list")
+    for field in ("local_focused_wall_seconds", "slow_test_seconds"):
+        if type(tiers[field]) not in {int, float} or tiers[field] <= 0:
+            raise ValueError(f"test_tiers.{field} must be positive")
+    if len(nodeids) > MAX_FULL_GATE_TESTS:
+        raise ValueError(
+            f"test_tiers.full_gate_nodeids exceeds its {MAX_FULL_GATE_TESTS}-item ratchet"
+        )
+    if tiers["local_focused_wall_seconds"] > MAX_LOCAL_FOCUSED_WALL_SECONDS:
+        raise ValueError("test_tiers.local_focused_wall_seconds may not exceed 100")
+    if tiers["slow_test_seconds"] > MAX_SLOW_TEST_SECONDS:
+        raise ValueError("test_tiers.slow_test_seconds may not exceed 40")
+    return tiers
+
+
+_TEST_TIERS = _test_tier_baseline()
+FULL_GATE_NODEIDS = tuple(_TEST_TIERS["full_gate_nodeids"])
+LOCAL_FOCUSED_WALL_LIMIT_SECONDS = _TEST_TIERS["local_focused_wall_seconds"]
+SLOW_TEST_LIMIT_SECONDS = _TEST_TIERS["slow_test_seconds"]
+FULL_GATE_MARKER = "full_gate"
 CI_JOB_TIMEOUT_SECONDS = 20 * 60
 # Calibration deliberately uses the slower environment instead of assuming
 # local and CI item durations match. Three unchanged loadscope runs measured a
@@ -34,8 +88,12 @@ TEST_DURATION_LIMIT_SECONDS = 4 * 60.0
 MAX_SINGLE_TEST_JOB_SHARE = TEST_DURATION_LIMIT_SECONDS / CI_JOB_TIMEOUT_SECONDS
 # Match direct developer runs and integrated validation. Repository tree readers
 # and writers still coordinate through the shared cross-process test gate.
-PYTEST_ARGUMENTS = ("-q", "-n", "auto", "--dist", "load")
-PYTEST_COLLECTION_ARGUMENTS = ("--collect-only", "-q", "-n", "0")
+PYTEST_ARGUMENTS = (
+    "-q", "-o", "addopts=", "-n", "auto", "--dist", "load",
+)
+PYTEST_COLLECTION_ARGUMENTS = (
+    "--collect-only", "-q", "-o", "addopts=", "-n", "0",
+)
 SHARD_RECEIPT_SCHEMA = "gravity.pytest-shard-receipt.v1"
 SHARD_AUDIT_SCHEMA = "gravity.pytest-shard-audit.v1"
 
@@ -44,6 +102,7 @@ SHARD_AUDIT_SCHEMA = "gravity.pytest-shard-audit.v1"
 class DurationMeasurement:
     nodeid: str
     seconds: float
+    full_gate: bool = False
 
 
 class DurationRecorder:
@@ -52,6 +111,7 @@ class DurationRecorder:
     def __init__(self) -> None:
         self._seconds_by_nodeid: dict[str, float] = {}
         self._phase_counts: dict[tuple[str, str], int] = {}
+        self._full_gate_nodeids: set[str] = set()
 
     def pytest_runtest_logreport(self, report: Any) -> None:
         if report.when not in {"setup", "call", "teardown"}:
@@ -61,10 +121,12 @@ class DurationRecorder:
         self._seconds_by_nodeid[report.nodeid] = (
             self._seconds_by_nodeid.get(report.nodeid, 0.0) + report.duration
         )
+        if FULL_GATE_MARKER in getattr(report, "keywords", {}):
+            self._full_gate_nodeids.add(report.nodeid)
 
     def durations(self) -> tuple[DurationMeasurement, ...]:
         return tuple(
-            DurationMeasurement(nodeid, seconds)
+            DurationMeasurement(nodeid, seconds, nodeid in self._full_gate_nodeids)
             for nodeid, seconds in sorted(
                 self._seconds_by_nodeid.items(),
                 key=lambda item: (-item[1], item[0]),
@@ -90,6 +152,27 @@ class CollectionRecorder:
 
     def pytest_collection_finish(self, session: Any) -> None:
         self.nodeids = tuple(item.nodeid for item in session.items)
+
+
+def declared_full_gate_nodeids(root: Path = ROOT) -> tuple[str, ...]:
+    """Return method nodeids carrying the repository's full_gate marker."""
+
+    marked: list[str] = []
+    for path in sorted((root / "tests").glob("test_*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for owner in tree.body:
+            if not isinstance(owner, ast.ClassDef):
+                continue
+            for member in owner.body:
+                if not isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                if any(
+                    isinstance(decorator, ast.Attribute)
+                    and decorator.attr == FULL_GATE_MARKER
+                    for decorator in member.decorator_list
+                ):
+                    marked.append(f"tests/{path.name}::{owner.name}::{member.name}")
+    return tuple(marked)
 
 
 def _duplicates(values: Sequence[str]) -> tuple[str, ...]:
@@ -187,14 +270,22 @@ def _collect_in_subprocess(targets: Sequence[str]) -> tuple[str, ...]:
 def duration_budget_errors(
     durations: Sequence[DurationMeasurement],
 ) -> tuple[str, ...]:
-    return tuple(
-        f"test={item.nodeid} duration={item.seconds:.3f}s "
-        f"limit={TEST_DURATION_LIMIT_SECONDS:.3f}s; one test may consume at "
-        f"most {MAX_SINGLE_TEST_JOB_SHARE:.2%} of the "
-        f"{CI_JOB_TIMEOUT_SECONDS}s CI test-job timeout"
-        for item in durations
-        if item.seconds > TEST_DURATION_LIMIT_SECONDS
-    )
+    errors: list[str] = []
+    for item in durations:
+        if item.seconds > TEST_DURATION_LIMIT_SECONDS:
+            errors.append(
+                f"test={item.nodeid} duration={item.seconds:.3f}s "
+                f"limit={TEST_DURATION_LIMIT_SECONDS:.3f}s; one test may consume at "
+                f"most {MAX_SINGLE_TEST_JOB_SHARE:.2%} of the "
+                f"{CI_JOB_TIMEOUT_SECONDS}s CI test-job timeout"
+            )
+        elif item.seconds > SLOW_TEST_LIMIT_SECONDS and not item.full_gate:
+            errors.append(
+                f"test={item.nodeid} duration={item.seconds:.3f}s exceeds "
+                f"slow_test_limit={SLOW_TEST_LIMIT_SECONDS:.3f}s without "
+                f"@pytest.mark.{FULL_GATE_MARKER}"
+            )
+    return tuple(errors)
 
 
 def run_gate(
@@ -234,6 +325,9 @@ def run_gate(
         )
 
     actual_nodeids = recorder.nodeids()
+    full_gate_nodeids = tuple(
+        sorted(item.nodeid for item in durations if item.full_gate)
+    )
     errors = list(duration_budget_errors(durations))
     if exit_code != int(pytest.ExitCode.OK):
         errors.append(
@@ -255,6 +349,11 @@ def run_gate(
     duplicate_items = recorder.duplicate_items()
     if duplicate_items:
         errors.append(f"pytest repeated test items: {duplicate_items}")
+    if not targets and shard_count is None and set(full_gate_nodeids) != set(FULL_GATE_NODEIDS):
+        errors.append(
+            "full_gate marker set differs from the quality baseline: "
+            f"expected={sorted(FULL_GATE_NODEIDS)} actual={list(full_gate_nodeids)}"
+        )
     if receipt is not None:
         slowest = durations[0] if durations else None
         _write_json(
@@ -273,6 +372,7 @@ def run_gate(
                 "actual_count": len(actual_nodeids),
                 "actual_sha256": _nodeids_sha256(actual_nodeids),
                 "actual_nodeids": list(actual_nodeids),
+                "full_gate_nodeids": list(full_gate_nodeids),
                 "max_test_duration_seconds": (
                     round(slowest.seconds, 6) if slowest is not None else None
                 ),
@@ -289,7 +389,8 @@ def run_gate(
         return 1
     print(
         "PASS test-duration-budget: every test stayed within the immutable "
-        f"{TEST_DURATION_LIMIT_SECONDS:.3f}s limit",
+        f"{TEST_DURATION_LIMIT_SECONDS:.3f}s limit; tests above "
+        f"{SLOW_TEST_LIMIT_SECONDS:.3f}s were in the full_gate tier",
         file=stream,
     )
     return 0
@@ -305,7 +406,10 @@ def _string_list(payload: dict[str, Any], key: str) -> tuple[str, ...] | None:
 
 
 def audit_shard_receipts(
-    receipt_root: Path, expected_shards: int
+    receipt_root: Path,
+    expected_shards: int,
+    *,
+    expected_full_gate_nodeids: Sequence[str] = FULL_GATE_NODEIDS,
 ) -> tuple[dict[str, Any], tuple[str, ...]]:
     if expected_shards < 1:
         raise ValueError("expected_shards must be at least 1")
@@ -345,11 +449,13 @@ def audit_shard_receipts(
     canonical: tuple[str, ...] = ()
     selected_by_index: dict[int, tuple[str, ...]] = {}
     actual_by_index: dict[int, tuple[str, ...]] = {}
+    full_gate_by_index: dict[int, tuple[str, ...]] = {}
     for index, payload in sorted(payloads.items()):
         collected = _string_list(payload, "collected_nodeids")
         selected = _string_list(payload, "selected_nodeids")
         actual = _string_list(payload, "actual_nodeids")
-        if collected is None or selected is None or actual is None:
+        full_gate = _string_list(payload, "full_gate_nodeids")
+        if collected is None or selected is None or actual is None or full_gate is None:
             errors.append(f"shard {index} receipt has an invalid nodeid list")
             continue
         if payload.get("shard_count") != expected_shards:
@@ -367,6 +473,7 @@ def audit_shard_receipts(
             errors.append(f"shard {index} collection differs from shard 1")
         selected_by_index[index] = selected
         actual_by_index[index] = actual
+        full_gate_by_index[index] = full_gate
 
     if canonical and len(payloads) == expected_shards:
         expected_partitions = partition_nodeids(canonical, expected_shards)
@@ -409,6 +516,16 @@ def audit_shard_receipts(
                     f"missing={missing} unexpected={unexpected} "
                     f"duplicates={list(duplicates)}"
                 )
+        marked_all = sorted(
+            nodeid
+            for index in sorted(full_gate_by_index)
+            for nodeid in full_gate_by_index[index]
+        )
+        if set(marked_all) != set(expected_full_gate_nodeids):
+            errors.append(
+                "full_gate marker union differs from the quality baseline: "
+                f"expected={sorted(expected_full_gate_nodeids)} actual={marked_all}"
+            )
 
     summary = {
         "schema_version": SHARD_AUDIT_SCHEMA,
@@ -419,6 +536,7 @@ def audit_shard_receipts(
         "collection_sha256": _nodeids_sha256(canonical),
         "selected_total": sum(len(value) for value in selected_by_index.values()),
         "actual_total": sum(len(value) for value in actual_by_index.values()),
+        "full_gate_total": sum(len(value) for value in full_gate_by_index.values()),
         "shard_selected_counts": {
             str(index): len(value) for index, value in sorted(selected_by_index.items())
         },

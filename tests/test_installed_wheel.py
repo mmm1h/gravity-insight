@@ -11,6 +11,8 @@ import unittest
 import zipfile
 from pathlib import Path, PurePosixPath
 
+import pytest
+
 from tests.agent_migration_characterization import module_inventory
 
 
@@ -71,6 +73,7 @@ def _require_build_backend() -> None:
 
 
 class InstalledWheelTests(unittest.TestCase):
+    @pytest.mark.full_gate
     def test_built_wheel_contains_and_imports_every_source_module_and_resource(
         self,
     ) -> None:

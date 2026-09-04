@@ -23,6 +23,15 @@ Target release: `0.3.8`
   and module-graph nodes; raw JSON consumers must decode those tables. The
   repository loader and task-context surface still return the complete v1 fact
   shape, and generation proves decoded v2 is field-for-field identical.
+- **Hard break:** Segment evaluation no longer maps an upstream rejection of the
+  locally valid static custom-event count shape to generic
+  `INPUT_INVALID field=input`. It now returns
+  `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`, `category=upstream`,
+  `retryable=false`, and the exact `user_event_rules` path. The public Segment
+  spec schema advances from `gravity-insight.segment-rule-spec.v1` to `v2` and
+  changes `event_support.default_status` to
+  `requires_live_metadata_and_event_specific_acceptance`; metadata validity is
+  necessary but no longer presented as endpoint-acceptance evidence.
 - **Soft break:** Registered SQL Evidence verification is now fixed at one product
   in flight; direct `verify_all(..., max_workers=N)` callers must remove values
   other than `1`, and direct `build_evidence()` callers must supply the ordered
@@ -31,6 +40,25 @@ Target release: `0.3.8`
   existing read capability is retained while strict raw-output consumers migrate.
 
 Migration guide: [0.3.8](docs/migration/0.3.8.md)
+
+### Changed
+
+- The Agent install contract now defaults to the latest published version
+  instead of requiring an exact one. Pinning needed someone to supply a version
+  number; with nobody supplying it an Agent reused whatever version the example
+  or its own memory carried, and the startup update check is disabled while a
+  pin is in effect — so the install silently stayed on a long-superseded
+  release. `pin_when_asked` keeps exact pinning available for a stated
+  reproducibility requirement, and the contract now also says to read the
+  resolved version back as an observation rather than as the input to the next
+  install. Project `requirements.txt` / `pyproject.toml` pins are unaffected and
+  deliberately left exact.
+- Local validation now has one explainable `scripts/run_changed_tests.py`
+  entry point. It derives changed files from Git, selects every test reached by
+  the bounded reverse dependency closure, and promotes broad impact to Full
+  instead of silently truncating. Eight repository-wide scan/build checks are
+  marked `full_gate` and excluded only from Focused runs; raw pytest, unittest,
+  and CI remain complete, with shard conservation and slow-test marker gates.
 
 ### Added
 
@@ -60,6 +88,28 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
 ### Fixed
 
+- Grouped two-step user-count Retention no longer returns an arithmetically
+  impossible total as `success`. Total offsets with negative counts, a numerator
+  above `init_num`, or retained/loss percentages outside `[0, 100]` are nulled
+  and returned as `status=partial` with `RETENTION_TOTAL_INVALID`; valid group
+  rows remain available. The result also carries a directly executable
+  `gravity batch read` payload for one equality-filtered query per observed
+  string event-property group, with cross-group aggregation explicitly disabled.
+  A zero `init_num` now yields null percentages instead of a fabricated 0% rate.
+- Retention no longer compiles or retries two native `SumCount` follow-up
+  shapes whose cohort value semantics are unverified. The compact/raw
+  preflight stops before metadata or query dispatch with the named
+  `RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED` gap; ordinary Retention
+  counts remain executable, while additive placeholders are represented as
+  `unmeasured`/`null` rather than a plausible zero. Result notes and the
+  [cohort alternatives guide](docs/guides/retention-cohort-alternatives.md)
+  distinguish count, sum, per-cohort-user, and per-returning-user denominators.
+- Custom-event first-exposure discovery now returns a named capability gap with
+  the exact known cross-product boundary and the bounded paired receipt needed
+  to close it. The aggregate alternatives guide includes the positive/negative
+  static-window definition, explains why Funnel cannot supply the NOT-before
+  set without forbidden persistence, and explicitly rejects ordinary
+  event-date Retention as an equivalent estimator.
 - Registered SQL product results now separate execution status from data
   completeness. Each successful item reports whether its declared `max_rows` was
   reached and returns canonical `complete|unknown` completeness; an exact cap hit

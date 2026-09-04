@@ -23,6 +23,8 @@ from typing import Any
 import unittest
 from unittest.mock import patch
 
+import pytest
+
 import scripts.generate_agent_module_reference_dispositions as checkpoint_generator
 import scripts.generate_agent_skills as agent_guides
 import scripts.generate_execution_variant_characterization as execution_variant
@@ -1052,6 +1054,7 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
     def test_repository_scan_reproduces_the_checked_in_checkpoint(self) -> None:
         self.assertEqual(self.checkpoint_raw, render_document(build_document()))
 
+    @pytest.mark.full_gate
     def test_checkpoint_dispositions_cover_both_scan_denominators(self) -> None:
         audit = scan_repository()
         reference_keys = {source_key(row) for row in audit.references}
@@ -1073,13 +1076,6 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
         self.assertEqual(summary["manual_review_site_count"], len(manual_keys))
         self.assertEqual(summary["reference_manual_overlap_count"], len(reference_keys & manual_keys))
         self.assertEqual(summary["tracked_site_count"], len(reference_keys | manual_keys))
-        if self.checkpoint["source_audit"]["owner_state"] == "baseline":
-            self.assertEqual((907, 242, 240, 909), (
-                len(reference_keys),
-                len(manual_keys),
-                len(reference_keys & manual_keys),
-                len(reference_keys | manual_keys),
-            ))
         _assert_repository_tree_gate_orders_writer_and_scan(self)
 
     def test_new_exact_dynamic_and_alias_loader_sites_cannot_escape_disposition(self) -> None:

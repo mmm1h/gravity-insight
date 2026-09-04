@@ -1,4 +1,4 @@
-"""Validation and normalization helpers for compact Segment Rule Spec v1."""
+"""Validation and normalization helpers for compact Segment Rule Spec v2."""
 
 from __future__ import annotations
 
@@ -8,7 +8,12 @@ from datetime import date
 from typing import Any
 
 from .actionable_error_values import actual_value, allowed_values
-from .analysis_execution_support import reject_unsupported_segment_event
+from .analysis_execution_support import (
+    SEGMENT_EVENT_RULE_GAP_CODE,
+    SEGMENT_EVENT_RULE_GAP_MESSAGE,
+    SEGMENT_EVENT_RULE_GAP_NEXT_ACTION,
+    reject_unsupported_segment_event,
+)
 from ._field_policy_segment import SEGMENT_QUICK_RANGES, SEGMENT_RULE_OPERATORS
 from ._field_policy_shared import (
     ANALYSIS_CONDITION_OPERATORS,
@@ -458,6 +463,9 @@ def day_offset(value: Any, field: str) -> int:
 
 
 __all__ = [
+    "SEGMENT_EVENT_RULE_GAP_CODE",
+    "SEGMENT_EVENT_RULE_GAP_MESSAGE",
+    "SEGMENT_EVENT_RULE_GAP_NEXT_ACTION",
     "compile_rule_set",
     "logic",
     "mapping",

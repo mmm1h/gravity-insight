@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from .actionable_error_values import actual_value
-from .domains import ANALYSIS_QUERY_OPERATIONS
+from .domains import ANALYSIS_QUERY_OPERATIONS, ANALYSIS_SEGMENT_OPERATIONS
 from .errors import SemanticRejectedError, UpstreamContradictedRequestError
 
 
@@ -76,9 +76,23 @@ _RETENTION_PROPERTY_CONDITION_UNRESOLVED = (
     "property_condition request or a paired current-main probe is required "
     "before the SDK can choose or reject a wire encoding"
 )
+SEGMENT_EVENT_RULE_GAP_CODE = "SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN"
+SEGMENT_EVENT_RULE_GAP_MESSAGE = (
+    "Gravity rejected a locally valid Segment static-count event rule; metadata "
+    "validity does not establish event-specific Segment acceptance."
+)
+SEGMENT_EVENT_RULE_GAP_NEXT_ACTION = (
+    "Do not retry unchanged or infer that all custom events fail. Close this gap "
+    "with a sanitized current-main paired Segment receipt using identical "
+    "did=true, PresetAllCount/GTE 1, and static windows: one metadata-valid "
+    "custom event accepted and the target event rejected, plus metadata kind, "
+    "HTTP status, and sanitized extra.error. Event or ordinary Retention success "
+    "is a different product boundary, not an equivalent first-exposure result."
+)
 
 _FALLBACK_MESSAGE = "Gravity rejected the read operation"
 _RETENTION_QUERY = ANALYSIS_QUERY_OPERATIONS["retention"]
+_SEGMENT_EVALUATE = ANALYSIS_SEGMENT_OPERATIONS["evaluate"]
 _ANALYSIS_QUERIES = frozenset(ANALYSIS_QUERY_OPERATIONS.values())
 _ANALYSIS_KIND_BY_QUERY = {
     operation_id: kind for kind, operation_id in ANALYSIS_QUERY_OPERATIONS.items()
@@ -127,6 +141,13 @@ def classify_read_rejection(
             f"Gravity rejected the read operation; classified extra.error={field}",
             next_action,
         )
+    segment_gap_field = _segment_event_rule_gap_field(operation_id, request_inputs)
+    if segment_gap_field is not None:
+        return (
+            segment_gap_field,
+            SEGMENT_EVENT_RULE_GAP_MESSAGE,
+            SEGMENT_EVENT_RULE_GAP_NEXT_ACTION,
+        )
     unverified_grain = _unverified_time_grain(operation_id, request_inputs)
     if unverified_grain is not None:
         kind, grain = unverified_grain
@@ -154,6 +175,16 @@ def raise_read_rejection(
     field, message, next_action = classify_read_rejection(
         payload, operation_id=operation_id, request_inputs=request_inputs
     )
+    if (
+        _segment_event_rule_gap_field(operation_id, request_inputs) is not None
+        and _reviewed_remedy(_extra_error_text(payload)) is None
+    ):
+        raise _SegmentEventRuleAcceptanceGapError(
+            f"actual value: {actual_value(field)}; {message}",
+            field=field,
+            next_action=next_action,
+            http_receipts=http_receipts,
+        )
     if (
         operation_id in _ANALYSIS_QUERIES
         and _reviewed_remedy(_extra_error_text(payload)) is None
@@ -198,6 +229,89 @@ def _reviewed_remedy(extra_error: str) -> tuple[str, str] | None:
         if extra_error.startswith(prefix):
             return field, next_action
     return None
+
+
+def _segment_event_rule_gap_field(
+    operation_id: str | None,
+    request_inputs: Mapping[str, Any] | None,
+) -> str | None:
+    if operation_id != _SEGMENT_EVALUATE:
+        return None
+    if not isinstance(request_inputs, Mapping) or not _bounded_segment_range(
+        request_inputs.get("date_range")
+    ):
+        return None
+    for group_index, group in enumerate(_segment_rule_groups(request_inputs)):
+        for event_index, event in enumerate(_segment_group_events(group)):
+            if _is_static_count_event_rule(event):
+                return (
+                    f"user_event_rules.groups[{group_index}]."
+                    f"conditions[{event_index}]"
+                )
+    return None
+
+
+def _bounded_segment_range(value: Any) -> bool:
+    return isinstance(value, Mapping) and all(
+        isinstance(value.get(key), str) and bool(value.get(key))
+        for key in ("start_date", "end_date")
+    )
+
+
+def _segment_rule_groups(inputs: Mapping[str, Any]) -> Any:
+    rules = inputs.get("user_event_rules")
+    groups = rules.get("groups") if isinstance(rules, Mapping) else None
+    return groups if isinstance(groups, (list, tuple)) else ()
+
+
+def _segment_group_events(group: Any) -> Any:
+    events = group.get("conditions") if isinstance(group, Mapping) else None
+    return events if isinstance(events, (list, tuple)) else ()
+
+
+def _is_static_count_event_rule(event: Any) -> bool:
+    if not isinstance(event, Mapping) or event.get("did") is not True:
+        return False
+    return (
+        _has_event_name(event)
+        and _is_all_count_target(event.get("target"))
+        and _is_gte_one(event.get("did_condition"))
+        and _is_static_event_range(event.get("date_range"))
+        and event.get("conditions") == []
+    )
+
+
+def _has_event_name(event: Mapping[str, Any]) -> bool:
+    value = event.get("event_name")
+    return isinstance(value, str) and bool(value)
+
+
+def _is_all_count_target(value: Any) -> bool:
+    return isinstance(value, Mapping) and (
+        value.get("field"), value.get("name")
+    ) == ("PresetAllCount", "PresetAllCount")
+
+
+def _is_gte_one(value: Any) -> bool:
+    if not isinstance(value, Mapping) or value.get("operator") != "GTE":
+        return False
+    items = value.get("value")
+    return (
+        isinstance(items, (list, tuple))
+        and len(items) == 1
+        and not isinstance(items[0], bool)
+        and isinstance(items[0], (int, float))
+        and items[0] == 1
+    )
+
+
+def _is_static_event_range(value: Any) -> bool:
+    if not isinstance(value, Mapping) or value.get("date_type") != "static":
+        return False
+    dates = value.get("date")
+    return isinstance(dates, (list, tuple)) and len(dates) == 2 and all(
+        isinstance(item, str) and bool(item) for item in dates
+    )
 
 
 def _create_time_already_grouped(
@@ -384,6 +498,14 @@ class _UnclassifiedReadRejectionError(UpstreamContradictedRequestError):
 class _UnverifiedTimeGrainRejectionError(UpstreamContradictedRequestError):
     """An unverified grain rejection is upstream-owned but not safe to auto-retry."""
 
+    retryable = False
+
+
+class _SegmentEventRuleAcceptanceGapError(SemanticRejectedError):
+    """The endpoint rejected a locally valid shape whose accepted events are unknown."""
+
+    code = SEGMENT_EVENT_RULE_GAP_CODE
+    category = "upstream"
     retryable = False
 
 

@@ -1,0 +1,55 @@
+import importlib
+import importlib.util
+import json
+import sys
+
+expected = json.load(sys.stdin)
+
+
+def fresh_package():
+    for module in list(sys.modules):
+        if module == "gravity_insight" or module.startswith("gravity_insight."):
+            del sys.modules[module]
+    return importlib.import_module("gravity_insight")
+
+
+for name, (owner, attribute) in expected.items():
+    gravity_insight = fresh_package()
+    absolute_owner = importlib.util.resolve_name(owner, gravity_insight.__name__)
+    assert absolute_owner not in sys.modules, (
+        f"owner loaded with package for {name}: {absolute_owner}"
+    )
+    assert name not in gravity_insight.__dict__, f"root export was eager: {name}"
+    first = getattr(gravity_insight, name)
+    owner_module = sys.modules.get(absolute_owner)
+    assert owner_module is not None, (
+        f"owner was not imported for {name}: {absolute_owner}"
+    )
+    assert first is getattr(owner_module, attribute), (
+        f"wrong owner identity for {name}: {absolute_owner}.{attribute}"
+    )
+
+    del sys.modules[absolute_owner]
+    try:
+        second = getattr(gravity_insight, name)
+        assert second is first, f"cached identity changed for {name}"
+        assert absolute_owner not in sys.modules, (
+            f"owner reloaded on cached access for {name}: {absolute_owner}"
+        )
+    finally:
+        sys.modules[absolute_owner] = owner_module
+
+gravity_insight = fresh_package()
+missing = "__characterization_missing_export__"
+try:
+    getattr(gravity_insight, missing)
+except AttributeError as error:
+    assert str(error) == f"module 'gravity_insight' has no attribute {missing!r}"
+else:
+    raise AssertionError("unknown root export did not raise AttributeError")
+
+assert len(gravity_insight.__all__) == len(expected) + 1, (
+    f"runtime __all__ count changed: {len(gravity_insight.__all__)}"
+)
+assert set(gravity_insight.__all__) == {*expected, "__version__"}
+assert set(gravity_insight.__all__) <= set(dir(gravity_insight))

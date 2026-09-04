@@ -33,6 +33,60 @@ ANALYSIS_TARGET_METHODS = frozenset(
         "ListElementDistinctCount",
     }
 )
+RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE = (
+    "RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED"
+)
+RETENTION_ADDITIVE_FOLLOWUP_JOURNEY = "retention_additive_followup"
+RETENTION_ADDITIVE_FOLLOWUP_REASON = (
+    "Ordinary two-event Retention with the same start event and user-property "
+    "filtering has succeeded, but the native additive follow-up boundary has not: "
+    "query_item_before_after.after with SumCount was rejected, while a second-step "
+    "SumCount response still carried return-user counts and unverified zeros in "
+    "values_another_event. The rejecting component is not known from current "
+    "sanitized evidence."
+)
+RETENTION_ADDITIVE_FOLLOWUP_NEXT_ACTION = (
+    "Do not retry this native Retention shape. If the calling project has an exact "
+    "registered custom-sql aggregate product and its immutable readiness passes, "
+    "run that product for one fixed cohort day and offset; otherwise stop and "
+    "report this named gap. Do not substitute return-user counts, retention rates, "
+    "or values_another_event zeros for duration or amount."
+)
+RETENTION_RESULT_NOTES = {
+    "cohort_rows": {
+        "daily": "data.y[cohort_date][row]",
+        "aggregate": "data.total[row]",
+        "scope": "each row keeps its own group_cols; never mix row denominators",
+    },
+    "count_measurement": {
+        "status": "measured",
+        "cohort_size": "row.init_num",
+        "offset_count": "row.values[offset]",
+        "offset_rate": "row.percent_values[offset]",
+        "denominator": "the same cohort row's init_num",
+    },
+    "additive_followup_measurement": {
+        "status": "unmeasured",
+        "capability_gap_code": RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE,
+        "wire_slot": "row.values_another_event[offset]",
+        "candidate_sum_paths": [
+            "row.values_another_event[offset]",
+            "row.values_another_event[offset].period_event_total",
+            "row.values_another_event[offset].cumulative_total",
+        ],
+        "candidate_per_user_paths": [
+            "row.values_another_event[offset].per_user",
+            "row.values_another_event[offset].period_event_total_average",
+        ],
+        "candidate_paths_verified": False,
+        "zero_means_measured_zero": False,
+        "per_user_denominators": {
+            "per_cohort_user": "verified sum / the same row's init_num",
+            "per_returning_user": "verified sum / the same row's values[offset]",
+        },
+        "zero_denominator_result": None,
+    },
+}
 ANALYSIS_CONDITION_OPERATORS = frozenset(
     {
         "EQUALS",
