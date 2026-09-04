@@ -4,10 +4,20 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from datetime import date, datetime, timezone
+from typing import Any, NoReturn
 
-from .errors import ErrorCategory, GravityInsightError, ManifestError
-from ._field_policy_operations import REPORT_MULTIDIM_QUERY, REPORT_MULTIDIM_TOTAL
+from .errors import (
+    ErrorCategory,
+    GravityInsightError,
+    InputValidationError,
+    ManifestError,
+)
+from ._field_policy_operations import (
+    ANALYSIS_RETENTION_QUERY,
+    REPORT_MULTIDIM_QUERY,
+    REPORT_MULTIDIM_TOTAL,
+)
 from .models import load_operation_manifest
 from .paths import MANIFEST_ROOT
 
@@ -15,11 +25,43 @@ from .paths import MANIFEST_ROOT
 MULTIDIM_COHORT_HORIZON_GAP_CODE = (
     "MULTIDIM_COHORT_HORIZON_CONTRACT_MISSING"
 )
+STANDARD_RETENTION_DENOMINATOR_GAP_CODE = (
+    "STANDARD_RETENTION_DENOMINATOR_COHORT_RULE_UNVERIFIED"
+)
+STANDARD_RETENTION_DENOMINATOR_SCHEMA_VERSION = (
+    "gravity.retention-denominator-reconciliation.v1"
+)
 MULTI_KEYS_FIELD = "multi_keys"
 QUERY_OPERATION = REPORT_MULTIDIM_QUERY
 TOTAL_OPERATION = REPORT_MULTIDIM_TOTAL
 _MALFORMED = "malformed"
 _HORIZON_GAP = "horizon_gap"
+_READING_FIELDS = frozenset({"status", "value", "fetched_at"})
+_READING_STATUSES = frozenset(
+    {
+        "success",
+        "empty",
+        "partial",
+        "error",
+        "contract_changed",
+        "capability_gap",
+        "unknown",
+    }
+)
+_MAX_DENOMINATOR = 9_223_372_036_854_775_807
+_STANDARD_DENOMINATOR_GAP_REASON = (
+    "registered contracts and sanitized probe evidence establish the two aggregate "
+    "field paths but do not define standard_activate_cnt cohort inclusion, exclusion, "
+    "time-boundary, attribution, or late-event rules, so equality cannot establish "
+    f"semantic equivalence with {ANALYSIS_RETENTION_QUERY} init_num"
+)
+_STANDARD_DENOMINATOR_NEXT_ACTION = (
+    "Add one reviewed, sanitized evidence artifact that binds report.multidim.query "
+    "standard_activate_cnt to its exact source event, inclusion and exclusion rules, "
+    "cohort timezone/day boundary, acquisition attribution or re-attribution, and "
+    "late-event/backfill behavior; then register that definition in a Semantic contract "
+    "and rerun compiler, projection/privacy, and denominator-reconciliation gates."
+)
 
 
 @dataclass(frozen=True)
@@ -164,6 +206,184 @@ def malformed_multi_keys_message(
     return f"{subject} must be {contract.validation_text}"
 
 
+def standard_retention_denominator_gap() -> dict[str, Any]:
+    """Return the named gap while the native cohort rule remains unproven."""
+
+    return {
+        "kind": "capability_gap",
+        "code": STANDARD_RETENTION_DENOMINATOR_GAP_CODE,
+        "journey": "standard_retention_denominator_reconciliation",
+        "query": "standard_activate_cnt versus init_num ordinary retention denominator",
+        "reason": _STANDARD_DENOMINATOR_GAP_REASON,
+        "next_action": _STANDARD_DENOMINATOR_NEXT_ACTION,
+        "weak_matches": [],
+        "network_called": False,
+    }
+
+
+def reconcile_standard_retention_denominators(
+    *,
+    cohort_date: str,
+    offset: int,
+    multidim: Mapping[str, Any],
+    analysis: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Compare two already-fetched aggregate denominators without doing I/O."""
+
+    selected_date = _cohort_date(cohort_date)
+    selected_offset = _offset(offset)
+    sources = {
+        "multidim": _denominator_reading(
+            multidim,
+            "multidim",
+            operation_id=QUERY_OPERATION,
+            field="standard_activate_cnt",
+        ),
+        "analysis": _denominator_reading(
+            analysis,
+            "analysis",
+            operation_id=ANALYSIS_RETENTION_QUERY,
+            field="init_num",
+        ),
+    }
+    status, cohort_status, drift, reason_codes = _denominator_comparison(sources)
+    return {
+        "schema_version": STANDARD_RETENTION_DENOMINATOR_SCHEMA_VERSION,
+        "kind": "retention_denominator_reconciliation",
+        "status": status,
+        "cohort_status": cohort_status,
+        "cohort_date": selected_date,
+        "offset": selected_offset,
+        "sources": sources,
+        "drift": drift,
+        "drift_expression": "standard_activate_cnt - init_num",
+        "comparison_basis": "reported_aggregate_values_only",
+        "semantic_equivalence": "unknown",
+        "reason_codes": reason_codes,
+        "capability_gap": standard_retention_denominator_gap(),
+        "privacy": {
+            "classification": "aggregate_only",
+            "contains_user_or_device_rows": False,
+        },
+        "network_called": False,
+    }
+
+
+def _denominator_reading(
+    value: Mapping[str, Any],
+    name: str,
+    *,
+    operation_id: str,
+    field: str,
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        _denominator_input_error(f"{name} must be an object", name)
+    unknown = sorted(set(value) - _READING_FIELDS)
+    if unknown:
+        _denominator_input_error(
+            f"{name} contains fields outside the aggregate reading contract: "
+            f"{', '.join(unknown)}",
+            name,
+        )
+    status = value.get("status")
+    if status not in _READING_STATUSES:
+        _denominator_input_error(
+            f"{name}.status must be a registered source status",
+            f"{name}.status",
+        )
+    count = value.get("value")
+    if count is not None and (
+        type(count) is not int or not 0 <= count <= _MAX_DENOMINATOR
+    ):
+        _denominator_input_error(
+            f"{name}.value must be a non-negative 64-bit integer or null",
+            f"{name}.value",
+        )
+    if status == "empty" and count is not None:
+        _denominator_input_error(
+            f"{name}.value must be null when status is empty",
+            f"{name}.value",
+        )
+    return {
+        "operation_id": operation_id,
+        "field": field,
+        "status": status,
+        "value_present": count is not None,
+        "value": count,
+        "fetched_at": _fetched_at(value.get("fetched_at"), f"{name}.fetched_at"),
+    }
+
+
+def _denominator_comparison(
+    sources: Mapping[str, Mapping[str, Any]],
+) -> tuple[str, str, int | None, list[str]]:
+    multidim, analysis = sources["multidim"], sources["analysis"]
+    if multidim["status"] == analysis["status"] == "empty":
+        return "unknown", "empty", None, ["EMPTY_COHORT"]
+    if multidim["status"] != "success" or analysis["status"] != "success":
+        return "unknown", "unknown", None, ["SOURCE_STATUS_NOT_COMPARABLE"]
+    if not multidim["value_present"] or not analysis["value_present"]:
+        return "unknown", "unknown", None, ["DENOMINATOR_VALUE_MISSING"]
+    drift = multidim["value"] - analysis["value"]
+    return (
+        "match" if drift == 0 else "drift",
+        "observed",
+        drift,
+        [],
+    )
+
+
+def _cohort_date(value: Any) -> str:
+    try:
+        parsed = date.fromisoformat(value) if isinstance(value, str) else None
+    except ValueError:
+        parsed = None
+    if parsed is None or parsed.isoformat() != value:
+        _denominator_input_error(
+            "cohort_date must be an ISO calendar date in YYYY-MM-DD form",
+            "cohort_date",
+        )
+    return value
+
+
+def _offset(value: Any) -> int:
+    if type(value) is not int or not 0 <= value <= 3_650:
+        _denominator_input_error(
+            "offset must be an integer from 0 through 3650",
+            "offset",
+        )
+    return value
+
+
+def _fetched_at(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > 64:
+        _denominator_input_error(
+            f"{field} must be a timezone-aware ISO timestamp",
+            field,
+        )
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00" if value.endswith("Z") else value)
+    except ValueError:
+        parsed = None
+    if parsed is None or parsed.tzinfo is None or parsed.utcoffset() is None:
+        _denominator_input_error(
+            f"{field} must be a timezone-aware ISO timestamp",
+            field,
+        )
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _denominator_input_error(message: str, field: str) -> NoReturn:
+    raise InputValidationError(
+        message,
+        field=field,
+        next_action=(
+            "Pass only status, aggregate value, and fetched_at for each source to "
+            "reconcile_standard_retention_denominators; do not pass raw rows."
+        ),
+    )
+
+
 def _multi_key_contract(operation: Mapping[str, Any]) -> MultidimMultiKeyContract:
     input_fields = operation.get("input_fields")
     field = input_fields.get(MULTI_KEYS_FIELD) if isinstance(input_fields, Mapping) else None
@@ -205,10 +425,14 @@ def _valid_item_bounds(min_items: Any, max_items: Any) -> bool:
 
 __all__ = [
     "MULTIDIM_COHORT_HORIZON_GAP_CODE",
+    "STANDARD_RETENTION_DENOMINATOR_GAP_CODE",
+    "STANDARD_RETENTION_DENOMINATOR_SCHEMA_VERSION",
     "MultidimCohortHorizonGapError",
     "MultidimMultiKeyContract",
     "classify_multi_keys",
     "malformed_multi_keys_message",
     "multidim_horizon_gap_error",
     "multidim_multi_key_contract",
+    "reconcile_standard_retention_denominators",
+    "standard_retention_denominator_gap",
 ]

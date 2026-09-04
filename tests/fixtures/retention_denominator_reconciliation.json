@@ -1,0 +1,26 @@
+{
+  "match": {
+    "cohort_date": "2026-08-01",
+    "offset": 1,
+    "multidim": {"status": "success", "value": 120, "fetched_at": "2026-08-10T01:00:00Z"},
+    "analysis": {"status": "success", "value": 120, "fetched_at": "2026-08-10T01:02:00Z"}
+  },
+  "drift": {
+    "cohort_date": "2026-08-02",
+    "offset": 7,
+    "multidim": {"status": "success", "value": 127, "fetched_at": "2026-08-10T02:00:00Z"},
+    "analysis": {"status": "success", "value": 120, "fetched_at": "2026-08-10T02:03:00Z"}
+  },
+  "empty": {
+    "cohort_date": "2026-08-03",
+    "offset": 1,
+    "multidim": {"status": "empty", "value": null, "fetched_at": "2026-08-10T03:00:00Z"},
+    "analysis": {"status": "empty", "value": null, "fetched_at": "2026-08-10T03:04:00Z"}
+  },
+  "missing": {
+    "cohort_date": "2026-08-04",
+    "offset": 1,
+    "multidim": {"status": "success", "value": 0, "fetched_at": "2026-08-10T04:00:00Z"},
+    "analysis": {"status": "success", "fetched_at": "2026-08-10T04:05:00Z"}
+  }
+}
