@@ -92,22 +92,99 @@ class GravityProductTests(unittest.TestCase):
             latest_safe_date(datetime(2026, 7, 23, 2, 0, 0, tzinfo=BEIJING)),
         )
 
-    def test_workspace_product_projects_only_declared_aggregate_fields(self):
+    def test_registered_product_below_cap_is_complete_without_row_cap_warning(self):
         start_at, end_at = day_window(date(2026, 7, 22))
+        client = _AggregateClient()
         result = run_product(
-            _AggregateClient(), "daily-event-summary", start_at, end_at
+            client, "daily-event-summary", start_at, end_at
         )
 
         self.assertEqual("complete", result["status"])
+        self.assertEqual("complete", result["completeness"])
+        self.assertEqual("below_row_cap", result["completeness_reason"])
+        self.assertFalse(result["row_cap_reached"])
         self.assertEqual([], result["warnings"])
         self.assertTrue(result["forbidden_claims"])
         self.assertEqual(
             [{"app_id": 1001, "event_name": "DemoEvent", "event_count": 2}],
             result["summary"]["rows"],
         )
+        self.assertEqual(100, result["summary"]["max_rows"])
+        self.assertIsNone(result["summary"]["total_row_count"])
         self.assertEqual("observed event name", result["summary"]["output_semantics"]["event_name"])
+        self.assertIn("LIMIT 101", client.sql)
 
-    def test_generic_summary_rejects_rows_above_workspace_limit(self):
+    def test_registered_product_at_cap_without_total_is_unknown(self):
+        class CapClient:
+            def execute_sql(self, _sql):
+                return [
+                    {"app_id": 1001, "event_name": f"event-{index}", "event_count": 1}
+                    for index in range(100)
+                ]
+
+        day = date(2026, 7, 22)
+        start_at, end_at = day_window(day)
+        result = run_product(
+            CapClient(), "daily-event-summary", start_at, end_at
+        )
+
+        self.assertEqual("complete", result["status"])
+        self.assertEqual("unknown", result["completeness"])
+        self.assertEqual("possible_truncation", result["completeness_reason"])
+        self.assertTrue(result["row_cap_reached"])
+        self.assertEqual(100, result["summary"]["row_count"])
+        self.assertEqual(100, result["summary"]["max_rows"])
+        self.assertIsNone(result["summary"]["total_row_count"])
+        self.assertEqual(1, len(result["warnings"]))
+        self.assertTrue(result["warnings"][0].startswith("POSSIBLE_TRUNCATION:"))
+        evidence = build_evidence(
+            day,
+            [result],
+            verification=_single_run_verification("daily-event-summary"),
+        )
+        self.assertEqual("verified_with_gaps", evidence["verification_status"])
+        with mock.patch(
+            "gravity_insight.sql.products.datasource_verification_status",
+            return_value="verified_with_gaps",
+        ):
+            readiness = readiness_status(
+                evidence, datetime(2026, 7, 23, 12, tzinfo=BEIJING)
+            )
+        self.assertTrue(readiness["query_ready"])
+        self.assertEqual(
+            "unknown",
+            evidence["products"]["daily-event-summary"]["completeness"],
+        )
+
+    def test_registered_product_at_cap_with_matching_total_is_proven_complete(self):
+        start_at, end_at = day_window(date(2026, 7, 22))
+        summary, status, warnings, notes, completeness = (
+            products._summarize_custom_result(
+                [{"app_id": 1001}, {"app_id": 1002}],
+                (1001,),
+                start_at,
+                end_at,
+                output_fields=["app_id"],
+                max_rows=2,
+                measurement="aggregate",
+                total_row_count=2,
+            )
+        )
+
+        self.assertEqual("complete", status)
+        self.assertEqual([], warnings)
+        self.assertEqual([], notes)
+        self.assertEqual(2, summary["total_row_count"])
+        self.assertEqual(
+            {
+                "row_cap_reached": True,
+                "completeness": "complete",
+                "completeness_reason": "total_row_count_match",
+            },
+            completeness,
+        )
+
+    def test_registered_product_source_above_cap_fails_closed(self):
         start_at, end_at = day_window(date(2026, 7, 22))
         with self.assertRaisesRegex(EvidenceFormatError, "max_rows=1"):
             summarize_custom(
@@ -136,7 +213,21 @@ class GravityProductTests(unittest.TestCase):
         legacy = copy.deepcopy(evidence)
         legacy["schema_version"] = 1
         legacy.pop("verification")
+        legacy_product = legacy["products"]["daily-event-summary"]
+        for field in ("row_cap_reached", "completeness", "completeness_reason"):
+            legacy_product.pop(field)
+        legacy_product["summary"].pop("max_rows")
+        legacy_product["summary"].pop("total_row_count")
+        legacy["hashes"]["result_sha256"] = products._sha256_json(
+            legacy["products"]
+        )
         products.validate_evidence(legacy)
+        incomplete = copy.deepcopy(evidence)
+        incomplete["products"]["daily-event-summary"].pop("completeness")
+        with self.assertRaisesRegex(
+            EvidenceFormatError, "incomplete product completeness signal"
+        ):
+            products.validate_evidence(incomplete)
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "gravity-latest.json"
             publish_evidence(evidence, path)

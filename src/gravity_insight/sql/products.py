@@ -33,15 +33,16 @@ from gravity_insight.sql.provenance import (
     write_verification_checkpoint,
 )
 from gravity_insight.sql.evidence_validation import (
-    EvidenceFormatError, evidence_aggregate_lists,
+    evidence_aggregate_lists,
     validate_evidence_document, validate_product_evidence,
     validate_resume_checkpoint, validate_verification_history,
     verification_resume_state,
 )
 from gravity_insight.sql.time_window import (
-    BEIJING, VERIFICATION_CONCURRENCY, VERIFICATION_MAX_BACKOFF_MS,
+    BEIJING, EvidenceFormatError, VERIFICATION_CONCURRENCY, VERIFICATION_MAX_BACKOFF_MS,
     VERIFICATION_MIN_BACKOFF_MS, day_window, execute_sql_verification,
     latest_safe_date, normalize_window, parse_timestamp,
+    summarize_custom, summarize_custom_result as _summarize_custom_result,
     verification_now, verification_resume_delay_ms,
     verification_segment, verification_timestamp,
 )
@@ -140,7 +141,9 @@ def run_product(
     definition = _product_definition(product, selected)
     sql = build_sql(product, start_at, end_at, apps, selected)
     rows = client.execute_sql(sql)
-    summary, status, warnings, notes = _summarize_rows(definition, rows, apps, start_at, end_at)
+    summary, status, warnings, notes, completeness = _summarize_rows(
+        definition, rows, apps, start_at, end_at
+    )
     if semantics := definition.get("output_semantics"):
         summary["output_semantics"] = dict(semantics)
     result: dict[str, Any] = {
@@ -150,6 +153,7 @@ def run_product(
         "app_ids": list(apps),
         "summary": summary,
         "warnings": warnings,
+        **completeness,
         "forbidden_claims": list(definition["forbidden_claims"]),
         "hashes": {
             "sql_sha256": _sha256_text(sql),
@@ -162,39 +166,14 @@ def run_product(
     return result
 
 
-def summarize_custom(
-    rows: list[dict[str, Any]],
-    app_ids: tuple[int, ...],
-    _start_at: datetime,
-    _end_at: datetime,
-    *,
-    output_fields: list[str],
-    max_rows: int,
-    measurement: str,
-) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    if len(rows) > max_rows:
-        raise EvidenceFormatError(f"custom SQL product exceeded max_rows={max_rows}")
-    projected: list[dict[str, Any]] = []
-    for row in rows:
-        if not isinstance(row, Mapping):
-            raise EvidenceFormatError("custom SQL product returned a non-object row")
-        projected.append({field: row.get(field) for field in output_fields})
-    return {
-        "rows": projected,
-        "row_count": len(projected),
-        "app_ids": list(app_ids),
-        "measurement": measurement,
-    }, "complete", [], []
-
-
 def _summarize_rows(
     definition: Mapping[str, Any],
     rows: list[dict[str, Any]],
     app_ids: tuple[int, ...],
     start_at: datetime,
     end_at: datetime,
-) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    return summarize_custom(
+) -> tuple[dict[str, Any], str, list[str], list[str], dict[str, Any]]:
+    return _summarize_custom_result(
         rows,
         app_ids,
         start_at,

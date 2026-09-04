@@ -529,6 +529,14 @@ App 归属或“当前版本”。
 relation/function allowlist、timeout、VM step、row 与 byte budget 共同失败关闭。VM step 是可执行资源
 预算，不是 scan-byte 证明，因此结果固定为 `trust=exploratory`、`completeness=unknown`、no claims。
 
+登记 product 的成功项把执行与数据完整性分开：既有 `status=complete` 只表示执行完成；顶层
+`row_cap_reached` 表示返回行数是否等于声明的 `summary.max_rows`，`completeness` 只取
+`complete|unknown`。未撞 cap 时为 `complete/below_row_cap`；撞 cap 且没有独立总行数时为
+`unknown/possible_truncation`，并返回一条 `POSSIBLE_TRUNCATION` warning。只有独立
+`summary.total_row_count` 与返回行数相等，才可在撞 cap 时给出
+`complete/total_row_count_match`。多取的一行仍只用于发现源结果超过 cap；不得把 readiness、HTTP
+成功或正好 N 行本身解释为下游 cohort 完整。
+
 探索行只交给显式调用方，不成为持久 Runtime evidence。`promote` 校验并原子安装 reviewed definition，
 但 SQLite 探索与 Registered SQL 的语义等价性必须由外部 review 证明；安装本身不授予 stable Trust。
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
@@ -539,7 +547,10 @@ Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/re
 `--resume` 只在日期、datasource、产品顺序及组件 SQL/contract hash 全部仍匹配时从失败产品继续。
 非 429 不可续跑，partial checkpoint 不能发布。新建完整 Evidence 的 schema version 是 2，
 `verification.mode` 区分 `single_run` 与 `resumed_after_rate_limit`，`segments` 记录每段时间、产品范围
-和中断产品；Runtime 仍可读取已经发布的 v1 Evidence。
+和中断产品；Runtime 仍可读取已经发布的 v1 Evidence。失败的公开输出为
+`gravity.sql-verification-result.v1`：`failure` 与 `sql query` 共用 SQL stage/class/code、重试性、
+是否到达引擎、脱敏 protocol status 及有界执行证据；`progress` 只暴露计数和失败产品。完整前缀只写
+workspace 私有 checkpoint，不回显到终端，也不会更新 Evidence latest 或 readiness。
 
 CLI 的 `sql explorer inspect|execute` 仍是离线 SQLite 路径。联网 Gravity SQL Fast Lane 目前只由 SDK
 模块 `gravity_insight.sql.verification.GravitySqlExplorerAdapter` 显式暴露；它不会被 Agent、Plan 或
