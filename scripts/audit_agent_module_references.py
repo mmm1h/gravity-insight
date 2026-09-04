@@ -1128,7 +1128,7 @@ def refresh_module_graph_baseline(path: Path = MODULE_GRAPH_DEBT_PATH) -> dict[s
         MODULE_GRAPH_BASELINE_END,
         baseline,
     )
-    path.write_text(source, encoding="utf-8")
+    path.write_text(source, encoding="utf-8", newline="\n")
     return baseline
 
 

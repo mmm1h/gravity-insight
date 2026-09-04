@@ -5,31 +5,30 @@ from __future__ import annotations
 from typing import Any
 
 from gravity_insight.find import query_match
-from gravity_insight.sql.products import (
-    _product_apps,
-    _product_definition,
-    product_names,
-)
 from gravity_insight.workspace import Workspace, load_workspace
 
 
 def describe_products(workspace: Workspace | None = None) -> list[dict[str, Any]]:
     """Return callable product contracts without exposing implementation SQL."""
 
+    from gravity_insight.sql import products
+
     selected = load_workspace() if workspace is None else workspace
     return [
         _describe_product(name, selected)
-        for name in product_names(selected)
+        for name in products.product_names(selected)
     ]
 
 
 def _describe_product(name: str, workspace: Workspace) -> dict[str, Any]:
-    definition = _product_definition(name, workspace)
+    from gravity_insight.sql import products
+
+    definition = products._product_definition(name, workspace)
     return {
         "name": name,
         "kind": definition["kind"],
         "datasource": definition["datasource"],
-        "app_ids": list(_product_apps(name, workspace)),
+        "app_ids": list(products._product_apps(name, workspace)),
         "privacy": definition["privacy"],
         "output_fields": list(definition["output_fields"]),
         "output_semantics": dict(definition.get("output_semantics", {})),

@@ -6,7 +6,15 @@ from datetime import date
 from typing import Any
 
 from gravity_insight.http_runtime import SQL_PROFILE
-from gravity_insight.sql import products
+from gravity_insight.sql.provenance import (
+    VERIFICATION_RESUME_POLICY,
+    VERIFICATION_RUN_VERSION,
+)
+from gravity_insight.sql.time_window import (
+    VERIFICATION_CONCURRENCY,
+    VERIFICATION_MAX_BACKOFF_MS,
+    VERIFICATION_MIN_BACKOFF_MS,
+)
 from gravity_insight.workspace import Workspace, load_workspace
 
 import copy
@@ -24,23 +32,18 @@ from sqlglot import exp
 from sqlglot.errors import ErrorLevel, ParseError, SqlglotError
 
 
-VERIFICATION_RUN_VERSION = products.VERIFICATION_RUN_VERSION
-VERIFICATION_RESUME_POLICY = products.VERIFICATION_RESUME_POLICY
-VERIFICATION_CONCURRENCY = products.VERIFICATION_CONCURRENCY
-VERIFICATION_MIN_BACKOFF_MS = products.VERIFICATION_MIN_BACKOFF_MS
-VERIFICATION_MAX_BACKOFF_MS = products.VERIFICATION_MAX_BACKOFF_MS
-
-
 def verify_all(
     client: Any,
     day: date,
     *,
-    max_workers: int = products.VERIFICATION_CONCURRENCY,
+    max_workers: int = VERIFICATION_CONCURRENCY,
     workspace: Workspace | None = None,
     resume: Mapping[str, Any] | None = None,
     sleeper: Any = time.sleep,
     clock: Any = None,
 ) -> dict[str, Any]:
+    from gravity_insight.sql import products
+
     selected = load_workspace() if workspace is None else workspace
     return products.execute_sql_verification(
         products, client, day, max_workers=max_workers, workspace=selected,
@@ -51,6 +54,8 @@ def verify_all(
 def write_verification_checkpoint(
     value: Mapping[str, Any], day: date, *, workspace: Workspace | None = None
 ) -> Path:
+    from gravity_insight.sql import products
+
     selected = load_workspace() if workspace is None else workspace
     return products.write_verification_checkpoint(products, value, day, selected)
 
@@ -58,6 +63,8 @@ def write_verification_checkpoint(
 def read_verification_checkpoint(
     day: date, *, workspace: Workspace | None = None
 ) -> dict[str, Any]:
+    from gravity_insight.sql import products
+
     selected = load_workspace() if workspace is None else workspace
     return products.read_verification_checkpoint(products, day, selected)
 
@@ -65,6 +72,8 @@ def read_verification_checkpoint(
 def clear_verification_checkpoint(
     day: date, *, workspace: Workspace | None = None
 ) -> None:
+    from gravity_insight.sql import products
+
     selected = load_workspace() if workspace is None else workspace
     products.clear_verification_checkpoint(products, day, selected)
 
@@ -72,23 +81,31 @@ def clear_verification_checkpoint(
 def verification_checkpoint_path(
     day: date, *, workspace: Workspace | None = None
 ) -> Path:
+    from gravity_insight.sql import products
+
     selected = load_workspace() if workspace is None else workspace
     return products.verification_checkpoint_path(products, day, selected)
 
 
 def is_incomplete_verification(value: Any) -> bool:
+    from gravity_insight.sql import products
+
     return products.is_incomplete_verification(value)
 
 
 def run_verification_cli(
     client: Any, day: date, workspace: Workspace, **options: Any
 ) -> int:
+    from gravity_insight.sql import products
+
     return products.run_verification_cli(
         products, client, day, workspace, **options
     )
 
 
 def run_verification_boundary_error_cli(error: BaseException, **options: Any) -> int:
+    from gravity_insight.sql import products
+
     return products.run_verification_cli.boundary_error(
         products, error, **options
     )
