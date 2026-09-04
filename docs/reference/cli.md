@@ -542,6 +542,12 @@ relation/function allowlist、timeout、VM step、row 与 byte budget 共同失�
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
 前进入稳定 Journey、Skill、Dashboard 或 Action。
 
+`gravity sql credentials`、SQL product 启动发现、`status` 和 `evidence-preflight` 的失败使用
+`gravity-sql.command-error.v1` stderr JSON。顶层包含 `command/exit_code`，`error` 包含
+`category/code/field/message/stage/retryable/reached_upstream/reached_sql_engine/upstream_error/
+execution_evidence/next_action`；异常原文不进入收据。成功输出、registered query 与 verify 继续使用
+各自既有 schema。自动化按 code 和决策字段分支，不解析 message。
+
 `gravity sql verify --date YYYY-MM-DD [--publish]` 固定按登记顺序单并发验证全部产品。最终 429
 返回 typed `RATE_LIMITED` checkpoint（`readiness_achieved=false`）并保留已成功的严格前缀；
 `--resume` 只在日期、datasource、产品顺序及组件 SQL/contract hash 全部仍匹配时从失败产品继续。
@@ -576,6 +582,12 @@ gap 不创建/替换目标，partial 产品写入完整 partial envelope 并保�
 
 调用方至少检查 `schema_version/status/error`。`success` 仍需检查产品 completeness/claims；`empty` 只
 证明该 scope/window 合法为空；`partial/error/capability_gap/blocked/uncertain` 都不能作为完整结论。
+
+已经迁移的结果另带 `obligations`（`gravity.envelope-obligations.v1`），其中 execution、data
+completeness、semantic validity、diagnostic evidence 与 mutation certainty 是五个独立结论；字段
+始终齐全，`unknown` 与 `not_applicable` 不互换。当前先覆盖 Registered SQL Product 与 Analysis Plan
+安全投影，其他存量 envelope 由质量门禁中的只降不升基线管理；调用方在迁移期仍按各产品现有字段
+消费，不从 `status=complete` 推导数据完整。
 
 CLI 退出码为成功 `0`、caller `2`、upstream `3`、local `4`；组合结果按 `4 > 3 > 2 > 0` 聚合。业务
 空结果可为成功；不要用进程退出码替代 envelope 的 completeness、组件状态或 claims。

@@ -17,6 +17,12 @@ Target release: `0.3.8`
 
 ### Breaking changes
 
+- **Soft break:** Failure-only output from `gravity sql credentials`, SQL product
+  discovery, `sql status`, and `sql evidence-preflight` is now the structured
+  `gravity-sql.command-error.v1` JSON receipt on stderr instead of an `ERROR:`
+  text line. Existing exit codes and all success, `sql query`, and `sql verify`
+  schemas are unchanged; consumers that parsed failure text must migrate to the
+  receipt fields.
 - **Hard break:** The checked-in Repository Map moves from
   `contracts/generated/repository-map.v1.json` to `repository-map.v2.json`.
   Its whole-file JSON transport now tables repeated entry strings, issue paths,
@@ -49,6 +55,11 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   TCP/TLS connection establishments on a typical 500-candidate crawl without
   changing the four-worker ceiling, request budget, completeness definition,
   transport-failure classification, or non-capacity fail-closed behavior.
+- The version-tag release path now proves tag/current-main/CI commit identity,
+  runs a fresh zero-skip Integrated Validation receipt, checks the intended wheel
+  across five surfaces and the pinned canonical consumer, validates changelog and
+  migration declarations, and aggregates every pre-publish result into one
+  artifact-bound release receipt before the unchanged OIDC publisher can run.
 - The Agent install contract now defaults to the latest published version
   instead of requiring an exact one. Pinning needed someone to supply a version
   number; with nobody supplying it an Agent reused whatever version the example
@@ -156,6 +167,11 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   sanitized protocol status, and a fixed safe next action. Internal resume checkpoints
   retain the full strict prefix, while terminal output exposes only progress counts;
   failed verification still cannot publish Evidence or claim readiness.
+- Remaining SQL CLI boundary failures no longer discard command stage,
+  retryability, upstream/engine reachability, bounded zero-request evidence, or
+  the safe next action. An AST-enforced repository gate now rejects new
+  exception-to-plain-text CLI handlers; reviewed no-benefit cases require an
+  exact path, line, detector, handler hash, reason, and review expiry.
 
 ## [0.3.7] - 2026-09-04
 

@@ -9,6 +9,7 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from .actionable_error_values import actual_value
+from .contracts.envelope_obligations import classify_data_completeness
 from .errors import ErrorCategory, ErrorDetail, ManifestError, exit_code_for_error
 
 
@@ -103,13 +104,7 @@ def force_prefix(result: dict[str, Any], truncated: bool) -> None:
 def aggregate_completeness(value: Any) -> str:
     """Propagate any nested result completeness into an aggregate envelope."""
 
-    observed: list[str] = []
-    _collect_completeness(value, observed)
-    if PREFIX in observed:
-        return PREFIX
-    if UNKNOWN in observed or not observed:
-        return UNKNOWN
-    return COMPLETE
+    return classify_data_completeness(value).state.value
 
 
 def require_complete_product(
@@ -153,19 +148,6 @@ def collection_claims(completeness: str) -> tuple[list[str], list[str]]:
     else:
         forbidden.extend(["complete_collection", "complete_collection_count"])
     return allowed, forbidden
-
-
-def _collect_completeness(value: Any, observed: list[str]) -> None:
-    if isinstance(value, Mapping):
-        status = value.get("completeness")
-        if isinstance(status, str) and status in COMPLETENESS_VALUES:
-            observed.append(str(status))
-        for nested in value.values():
-            if isinstance(nested, (Mapping, list, tuple)):
-                _collect_completeness(nested, observed)
-    elif isinstance(value, (list, tuple)):
-        for nested in value:
-            _collect_completeness(nested, observed)
 
 
 def _nonnegative_int(value: Any) -> bool:

@@ -180,6 +180,9 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 "actions/download-artifact",
                 "actions/upload-artifact",
                 "actions/upload-artifact",
+                "actions/download-artifact",
+                "actions/download-artifact",
+                "actions/upload-artifact",
                 "actions/upload-artifact",
                 "actions/download-artifact",
                 "pypa/gh-action-pypi-publish",
@@ -243,19 +246,54 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("head_sha=\"$GITHUB_SHA\"", verify)
         self.assertIn('expected_event="push"', verify)
         self.assertIn('expected_branch="main"', verify)
-        self.assertIn('.name == \"ci-required\"', verify)
+        self.assertIn("scripts/check_release_ci.py", verify)
+        self.assertIn("--expected-sha \"$GITHUB_SHA\"", verify)
+        self.assertIn("--expected-event \"$expected_event\"", verify)
+        self.assertIn("--expected-branch \"$expected_branch\"", verify)
+        self.assertIn("Require release tag to equal protected main", verify)
+        self.assertIn("+refs/heads/main:refs/remotes/origin/main", verify)
+        self.assertIn("scripts/check_release_main.py", verify)
+        self.assertIn("--main-ref refs/remotes/origin/main", verify)
+        self.assertIn('gh api "repos/$GITHUB_REPOSITORY/branches/main"', verify)
+        self.assertIn("--branch-metadata \"$RUNNER_TEMP/main-branch.json\"", verify)
         self.assertIn("name: ci-secret-scan", verify)
         self.assertIn("run-id: ${{ steps.ci.outputs.run_id }}", verify)
         self.assertIn('receipt.get("history_included") is True', verify)
         self.assertIn('receipt.get("repository_head") == expected', verify)
         self.assertIn("name: release-secret-scan", verify)
+        self.assertIn("name: release-ci-evidence", verify)
         self.assertIn("contents: read", build)
+        self.assertIn("needs: verify_ci", build)
+        self.assertIn("timeout-minutes: 60", build)
+        self.assertIn("fetch-depth: 0", build)
         self.assertIn("name: python-distributions", build)
         self.assertIn("path: dist/", build)
         self.assertIn("name: release-supply-chain", build)
         self.assertIn("path: release-evidence/", build)
         self.assertIn("scripts/generate_release_sbom.py", build)
         self.assertIn("scripts/audit_release_dependencies.py", build)
+        self.assertIn("scripts/run_integrated_validation.py", build)
+        self.assertIn("--receipt release-evidence/integrated-validation.json", build)
+        self.assertIn('git switch --force-create main "$GITHUB_SHA"', build)
+        self.assertIn("GRAVITY_REQUIRE_CANONICAL_CONSUMER: \"1\"", build)
+        self.assertIn("PYTEST_XDIST_AUTO_NUM_WORKERS: \"4\"", build)
+        self.assertIn("scripts/check_installed_wheel_surface_matrix.py", build)
+        self.assertIn("scripts/check_installed_wheel_consumer.py", build)
+        self.assertIn("--strict-prerequisites", build)
+        self.assertIn("scripts/check_changelog.py", build)
+        self.assertIn("scripts/build_release_gate_receipt.py", build)
+        self.assertIn("--output release-evidence/release-gate.json", build)
+        for step_name in (
+            "Download exact-SHA release CI evidence",
+            "Download exact-SHA secret-history evidence",
+            "Prepare exact-main Integrated Validation environment",
+            "Run exact-tag Integrated Validation",
+            "Check intended wheel surface matrix",
+            "Check intended wheel canonical consumer",
+            "Check release changelog and migration declaration",
+            "Aggregate pre-publish release receipt",
+        ):
+            self.assertIn("if: github.event_name == 'push'", self._step(build, step_name))
         publish_index = self.workflow.index("  publish:")
         for fragment in (
             "scripts/generate_release_sbom.py",
@@ -287,6 +325,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
                 "--receipt release-evidence/dependency-audit.json",
                 "release-evidence/dependency-audit.json",
             ),
+            ("path: tmp/release-input/", "tmp/release-input/probe.json"),
         )
         for workflow_fragment, output in outputs:
             with self.subTest(output=output):

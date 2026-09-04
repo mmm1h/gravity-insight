@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from gravity_insight.paths import EVIDENCE_ROOT, PACKAGE_ROOT
+from gravity_insight.contracts.envelope_obligations import serialize_envelope
 from gravity_insight.support.documents import DocumentError, load_document, replace_atomic_durable, write_document_atomic
 from gravity_insight.support.evidence import (
     EvidenceBinding,
@@ -32,6 +33,7 @@ from gravity_insight.sql.provenance import (
     verification_failure_run, verification_resume_contract,
     write_verification_checkpoint,
 )
+from gravity_insight.sql.product_result import product_envelope_parts, summarize_product_rows
 from gravity_insight.sql.evidence_validation import (
     evidence_aggregate_lists,
     validate_evidence_document, validate_product_evidence,
@@ -42,7 +44,7 @@ from gravity_insight.sql.time_window import (
     BEIJING, EvidenceFormatError, VERIFICATION_CONCURRENCY, VERIFICATION_MAX_BACKOFF_MS,
     VERIFICATION_MIN_BACKOFF_MS, day_window, execute_sql_verification,
     latest_safe_date, normalize_window, parse_timestamp,
-    summarize_custom, summarize_custom_result as _summarize_custom_result,
+    summarize_custom,
     verification_now, verification_resume_delay_ms,
     verification_segment, verification_timestamp,
 )
@@ -141,19 +143,17 @@ def run_product(
     definition = _product_definition(product, selected)
     sql = build_sql(product, start_at, end_at, apps, selected)
     rows = client.execute_sql(sql)
-    summary, status, warnings, notes, completeness = _summarize_rows(
+    summary, execution, warnings, notes, completeness = summarize_product_rows(
         definition, rows, apps, start_at, end_at
     )
     if semantics := definition.get("output_semantics"):
         summary["output_semantics"] = dict(semantics)
-    result: dict[str, Any] = {
+    payload: dict[str, Any] = {
         "product": product,
-        "status": status,
         "window": _window_dict(start_at, end_at),
         "app_ids": list(apps),
         "summary": summary,
         "warnings": warnings,
-        **completeness,
         "forbidden_claims": list(definition["forbidden_claims"]),
         "hashes": {
             "sql_sha256": _sha256_text(sql),
@@ -162,26 +162,9 @@ def run_product(
         },
     }
     if notes:
-        result["notes"] = notes
-    return result
-
-
-def _summarize_rows(
-    definition: Mapping[str, Any],
-    rows: list[dict[str, Any]],
-    app_ids: tuple[int, ...],
-    start_at: datetime,
-    end_at: datetime,
-) -> tuple[dict[str, Any], str, list[str], list[str], dict[str, Any]]:
-    return _summarize_custom_result(
-        rows,
-        app_ids,
-        start_at,
-        end_at,
-        output_fields=list(definition["output_fields"]),
-        max_rows=int(definition.get("max_rows", 1000)),
-        measurement=str(definition.get("measurement", "workspace aggregate")),
-    )
+        payload["notes"] = notes
+    result, obligations = product_envelope_parts(payload, execution, completeness)
+    return serialize_envelope(result, obligations)
 
 
 def build_evidence(
@@ -532,7 +515,7 @@ def dry_run_checks() -> None:
         sql = build_sql(product, start_at, end_at, apps)
         if "2026-07-22 00:00:00" not in sql or "2026-07-23 00:00:00" not in sql:
             raise AssertionError(f"{product}: rendered SQL has the wrong window")
-        summary = _summarize_rows(definition, [], apps, start_at, end_at)[0]
+        summary = summarize_product_rows(definition, [], apps, start_at, end_at)[0]
         if "user_id" in summary:
             raise AssertionError(f"{product}: aggregate summary leaked a user-level key")
     if latest_safe_date(datetime(2026, 7, 23, 1, 59, tzinfo=BEIJING)) != date(2026, 7, 21):

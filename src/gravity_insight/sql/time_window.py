@@ -7,6 +7,13 @@ from collections.abc import Mapping, Sequence
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Callable
 
+from gravity_insight.contracts.envelope_obligations import (
+    CompletenessState,
+    DataCompleteness,
+    ExecutionState,
+    ExecutionStatus,
+)
+
 
 BEIJING = timezone(timedelta(hours=8), name="Asia/Shanghai")
 VERIFICATION_CONCURRENCY = 1
@@ -38,7 +45,7 @@ def summarize_custom(
     measurement: str,
     total_row_count: int | None = None,
 ) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    summary, status, warnings, notes, _signal = summarize_custom_result(
+    summary, execution, warnings, notes, _completeness = summarize_custom_result(
         rows,
         app_ids,
         start_at,
@@ -48,7 +55,7 @@ def summarize_custom(
         measurement=measurement,
         total_row_count=total_row_count,
     )
-    return summary, status, warnings, notes
+    return summary, execution.state.value, warnings, notes
 
 
 def summarize_custom_result(
@@ -61,7 +68,9 @@ def summarize_custom_result(
     max_rows: int,
     measurement: str,
     total_row_count: int | None = None,
-) -> tuple[dict[str, Any], str, list[str], list[str], dict[str, Any]]:
+) -> tuple[
+    dict[str, Any], ExecutionStatus, list[str], list[str], DataCompleteness
+]:
     row_count = len(rows)
     _validate_summary_counts(row_count, max_rows, total_row_count)
     projected = _project_rows(rows, output_fields)
@@ -74,7 +83,13 @@ def summarize_custom_result(
         "app_ids": list(app_ids),
         "measurement": measurement,
     }
-    return summary, "complete", warnings, [], signal
+    return (
+        summary,
+        ExecutionStatus(ExecutionState.COMPLETE, "SQL_QUERY_RETURNED"),
+        warnings,
+        [],
+        signal,
+    )
 
 
 def validate_product_completeness(
@@ -119,21 +134,30 @@ def _project_rows(
 
 def _classify_rows(
     row_count: int, max_rows: int, total_row_count: int | None
-) -> tuple[dict[str, Any], list[str]]:
+) -> tuple[DataCompleteness, list[str]]:
     row_cap_reached = row_count == max_rows
     if total_row_count is not None:
-        completeness, reason, warnings = "complete", "total_row_count_match", []
+        state = CompletenessState.COMPLETE
+        evidence_code = "TOTAL_ROW_COUNT_MATCH"
+        warnings = []
     elif row_cap_reached:
-        completeness = "unknown"
-        reason = "possible_truncation"
+        state = CompletenessState.UNKNOWN
+        evidence_code = "ROW_CAP_REACHED_WITHOUT_TOTAL"
         warnings = [POSSIBLE_TRUNCATION_WARNING]
     else:
-        completeness, reason, warnings = "complete", "below_row_cap", []
-    return {
-        "row_cap_reached": row_cap_reached,
-        "completeness": completeness,
-        "completeness_reason": reason,
-    }, warnings
+        state = CompletenessState.COMPLETE
+        evidence_code = "BELOW_ROW_CAP"
+        warnings = []
+    return DataCompleteness(
+        state,
+        evidence_code,
+        {
+            "returned_items": row_count,
+            "max_rows": max_rows,
+            "total_items": total_row_count,
+            "row_cap_reached": row_cap_reached,
+        },
+    ), warnings
 
 
 def _validated_signal_fields(

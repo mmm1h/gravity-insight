@@ -233,7 +233,12 @@ app_input = "app_id"
             )
 
         assert exit_code == 2
-        assert "no SQL products are configured" in stderr.getvalue()
+        payload = json.loads(stderr.getvalue())
+        assert payload["schema_version"] == "gravity-sql.command-error.v1"
+        assert payload["command"] == "query"
+        assert payload["error"]["code"] == "SQL_WORKSPACE_INVALID"
+        assert payload["error"]["stage"] == "bind"
+        assert payload["error"]["reached_upstream"] == "no"
 
 
     def test_custom_sql_product_is_added_only_by_workspace_data(self):

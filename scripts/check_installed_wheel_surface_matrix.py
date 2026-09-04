@@ -296,14 +296,23 @@ def _run(command: list[str], *, cwd: Path, timeout: int = 300) -> str:
     return completed.stdout
 
 
-def run_surface_matrix() -> dict[str, Any]:
+def _selected_wheel(wheel: Path | None, wheelhouse: Path) -> Path:
+    if wheel is None:
+        return build_or_reuse_offline_wheel(ROOT, wheelhouse)
+    resolved = wheel.resolve()
+    if not resolved.is_file() or resolved.suffix != ".whl":
+        raise SurfaceMatrixError(f"installed-wheel input is not a wheel file: {resolved}")
+    return resolved
+
+
+def run_surface_matrix(wheel: Path | None = None) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="gravity-surface-matrix-") as raw:
         temporary = Path(raw).resolve()
         wheelhouse = temporary / "wheelhouse"
         site = temporary / "site"
         wheelhouse.mkdir()
         site.mkdir()
-        wheel = build_or_reuse_offline_wheel(ROOT, wheelhouse)
+        selected_wheel = _selected_wheel(wheel, wheelhouse)
         install_command = [
             sys.executable,
             "-m",
@@ -316,7 +325,7 @@ def run_surface_matrix() -> dict[str, Any]:
         # Maintainer gates may run above the public <3.13 compatibility range.
         if sys.version_info >= (3, 13):
             install_command.append("--ignore-requires-python")
-        install_command.extend(["--target", str(site), str(wheel)])
+        install_command.extend(["--target", str(site), str(selected_wheel)])
         _run(install_command, cwd=temporary)
         output = _run(
             [sys.executable, "-I", "-c", _PROBE, str(site)],
@@ -326,17 +335,27 @@ def run_surface_matrix() -> dict[str, Any]:
             result = json.loads(output)
         except json.JSONDecodeError as exc:
             raise SurfaceMatrixError("surface matrix probe returned invalid JSON") from exc
-        result["wheel"] = wheel.name
-        result["wheel_sha256"] = hashlib.sha256(wheel.read_bytes()).hexdigest()
+        result["wheel"] = selected_wheel.name
+        result["wheel_sha256"] = hashlib.sha256(selected_wheel.read_bytes()).hexdigest()
         return result
 
 
 def main(argv: list[str] | None = None) -> int:
-    argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description="Run five-surface Journey parity against one installed wheel."
-    ).parse_args(argv)
+    )
+    parser.add_argument("--wheel", type=Path)
+    parser.add_argument("--receipt", type=Path)
+    args = parser.parse_args(argv)
     try:
-        result = run_surface_matrix()
+        result = run_surface_matrix(args.wheel)
+        if args.receipt is not None:
+            args.receipt.parent.mkdir(parents=True, exist_ok=True)
+            args.receipt.write_text(
+                json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
     except (OSError, SurfaceMatrixError, subprocess.SubprocessError) as exc:
         print(f"installed wheel surface matrix failed: {exc}", file=sys.stderr)
         return 1

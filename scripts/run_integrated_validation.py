@@ -45,8 +45,9 @@ PACKAGE_REFERENCE_STALE_GUIDANCE = "\n".join(
         "disappears or changes classification, any blocker/actionable count "
         "changes, or scanner/generator logic changed.",
         "After that review approves a rebind: run `python "
-        "scripts/refresh_validation_harnesses.py`; this refreshes Repository Map first, "
-        "then the package-reference checkpoint. Inspect the "
+        "scripts/refresh_validation_harnesses.py`; this refreshes the module-graph and "
+        "domain-boundary baselines before Repository Map, then refreshes the "
+        "package-reference checkpoint. Inspect the "
         "candidate receipt diff; do not modify or rebind the immutable baseline "
         "fixture, Canonical Architecture directive, or component index. Run the "
         "orchestrator once more with `--check` to confirm both fixed points; "

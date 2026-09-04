@@ -9,7 +9,7 @@ from gravity_insight import GravityInsightClient
 from gravity_insight import runtime
 from gravity_insight.models import ReadResult
 from gravity_insight.pagination_audit import pagination_audit
-from gravity_insight.pagination_completeness import page_completeness
+from gravity_insight.pagination_completeness import aggregate_completeness, page_completeness
 from gravity_insight.pagination_policy import has_next_page
 
 
@@ -137,6 +137,21 @@ def _page(page: int, rows: list[dict], total_pages: int | None) -> ReadResult:
 
 
 class GravityInsightPaginationTests(unittest.TestCase):
+    def test_aggregate_completeness_consumes_object_shaped_pagination_audit(self) -> None:
+        result = {
+            "pagination_audit": {
+                "completeness": {
+                    "criterion": "has_more=false and returned_items=total_items",
+                    "status": "complete",
+                    "has_more": False,
+                    "returned_items": 2,
+                    "total_items": 2,
+                }
+            }
+        }
+
+        self.assertEqual("complete", aggregate_completeness(result))
+
     def test_complete_contract_without_runtime_page_evidence_stays_unknown(self) -> None:
         self.assertEqual(
             "unknown",

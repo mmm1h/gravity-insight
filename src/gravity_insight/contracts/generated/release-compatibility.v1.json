@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "2dc1eba98205562d0aed4ea78b3f86dc9f762c9ad6df3b1731425389ae9dc7d9"
+    "compatibility_sha256": "05e5cbb10acae7482657f0e0398c7ad4f9b1d72e6f08e63c4d49b50905e547e7"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -135,6 +135,11 @@
       "soft_breaks": [
         {
           "id": "0.3.8-soft-break-1",
+          "description": "Failure-only output from `gravity sql credentials`, SQL product discovery, `sql status`, and `sql evidence-preflight` is now the structured `gravity-sql.command-error.v1` JSON receipt on stderr instead of an `ERROR:` text line. Existing exit codes and all success, `sql query`, and `sql verify` schemas are unchanged; consumers that parsed failure text must migrate to the receipt fields.",
+          "migration_guide": "docs/migration/0.3.8.md"
+        },
+        {
+          "id": "0.3.8-soft-break-2",
           "description": "Registered SQL Evidence verification is now fixed at one product in flight; direct `verify_all(..., max_workers=N)` callers must remove values other than `1`, and direct `build_evidence()` callers must supply the ordered verification history. New Evidence is schema v2 and adds that history as a required field. Runtime readers continue to accept immutable v1 Evidence, so existing read capability is retained while strict raw-output consumers migrate. Migration guide: [0.3.8](docs/migration/0.3.8.md)",
           "migration_guide": "docs/migration/0.3.8.md"
         }

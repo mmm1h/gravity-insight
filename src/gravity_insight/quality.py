@@ -14,7 +14,7 @@ import sys
 import tokenize
 from typing import Any, Iterable, Mapping, Sequence
 
-from .documentation_status import integrated_documentation_errors as documentation_errors, load_json_object
+from .governance.integrated_quality import integrated_errors as documentation_errors, load_json_object
 from .paths import CONTRACT_ROOT as PACKAGE_CONTRACT_ROOT
 from .paths import MANIFEST_ROOT as PACKAGE_MANIFEST_ROOT
 from .paths import PROJECT_ROOT
