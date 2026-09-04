@@ -158,7 +158,7 @@ members = [
 select = ["F"]
 
 [tool.pytest.ini_options]
-addopts = "-n auto --dist load"
+addopts = "-n auto --dist loadfile"
 markers = [
   "full_gate: repository-wide scans, builds, or subprocess gates excluded from Focused validation",
 ]

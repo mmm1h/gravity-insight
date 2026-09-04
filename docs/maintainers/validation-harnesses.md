@@ -24,7 +24,7 @@ Release 固定按高风险处理。非 changed-files 查询按匹配实体判定
 | Harness | purpose | load-bearing evidence | cost | ablation method | removal trigger |
 | --- | --- | --- | --- | --- | --- |
 | Task Context + Focused | 用机器图只读最小上下文，并在分钟内反馈受影响回归 | Focused 运行 registry tests 加改动模块的两层反向依赖闭包，而不是第一个测试文件；命中高扇出或超过 80 个测试文件时升级 Full | `run_changed_tests.py` 对每条命令计时；Focused 合计硬上限 100s | 保留目标测试、去掉 Map check 或闭包中的非首个测试后注入漂移，比较哪类错误未被发现 | 连续 3 个重大模型/工具版本没有独有检出，且相同错误已由更便宜门禁稳定拦截 |
-| Full 双 collector | 高风险/Release 同时覆盖 pytest CI 语义与原生 unittest discovery/import 顺序 | `tests/__init__.py` 隔离真实 cache；历史 `f3c9a849` 修复 repository-tree 并发，说明 collector 行为曾暴露维护陷阱 | 未改代码基线：原生 collector 1005.172s；CI collector 142.290s；精确项数留在机器 receipt，不写进 current docs | `validation_observability.py --gate full --ablate unittest_collector ...`，其余五条不变；比较失败集与计数 | **删除候选**：连续 3 个版本 pytest 覆盖集合为超集且消融无唯一失败，就从默认 Full 移除独立 unittest，保留按需兼容诊断 |
+| Full 双 collector | 高风险/Release 同时覆盖 pytest CI 语义与原生 unittest discovery/import 顺序 | `tests/__init__.py` 隔离真实 cache；历史 `f3c9a849` 修复 repository-tree 并发，说明 collector 行为曾暴露维护陷阱 | J5 同一 HEAD：原生 collector 503.208s；pytest `load` 224.502s；pytest 多出的唯一项是 `test_workspace.py` 的原生 pytest 函数。精确项数留在本轮 receipt | `validation_observability.py --gate full --ablate unittest_collector ...`，其余五条不变；比较失败集与计数 | **本轮结论：留**。pytest 当前是执行集合超集且本轮无独有失败，但尚无连续 3 个重大版本的有效消融收据；原生 discovery/import 顺序已有历史独有检出。满足原 trigger 后删除串行 collector，保留按需兼容诊断 |
 | Compiler + Quality | 验证 manifest/provenance 确定性及复杂度、文档、治理基线 | 本趟第一次消融运行实际拦下新函数 complexity 21/16 与 broken local link | compiler 5.640s；quality 27.140s；合计 32.780s | 分别省略一个命令，注入 stale generated artifact、复杂函数或断链，再跑其余门禁 | 只有替代门禁能拦下同一 mutation 集，且成本更低，才移除旧 owner |
 | High Integrated + usability + canary | 在 clean exact HEAD 汇合 release、wheel、consumer、runtime 与 Agent 使用路径；canary 只验证离线生命周期合同 | `test_canary_failure_leaves_prior_complete_snapshot_active` 锁住 canary 失败不激活候选；agent usability 检查真实任务选择 | N11 Full 1,164.842s；agent usability 41.270s；offline canary 4.245s | `run_integrated_validation.py --trial --only ...` 逐个省略 gate，运行该 gate 的 fault fixture 并比较 receipt | 某 gate 连续 3 个重大版本没有独有失败，且 fault fixture 被另一更便宜 gate 拦截 |
 | Ordered generators + package checkpoint | 让生成物固定点、package reference 分母与 disposition 坐标一致 | 反序实测会令两个 checkpoint tests 以 `7b5d… != 3176…` 失败；本趟编排测试锁住 Map→checkpoint 顺序 | 五个普通 generator checks 2.596s；Map→checkpoint check 33.048s | `test_validation_harness_refresh.py` 把第一步设为失败，断言第二步绝不执行；在临时 clone 反序重建确认 checkpoint stale | Map 不再是 checkpoint 扫描输入，或 checkpoint 改为直接消费同一次内存 projection 后删除编排约束 |
@@ -32,7 +32,7 @@ Release 固定按高风险处理。非 changed-files 查询按匹配实体判定
 | Census + drift | 区分上游扩张、破坏性漂移、circuit/transport failure，避免错误晋升 route | `8f47c925` 与 `895d5c97` 修复 circuit/drift failure taxonomy，现有 fixtures 复现这些错误类 | 四个 census modules，15.760s | 关闭 diff/failure taxonomy tests，对对应 fixture 做 category mutation，再跑其余 census tests | 上游提供版本化 schema 且替代合同覆盖所有当前 mutation fixture |
 | Privacy + consumer-output safety | 防止未审查字段、URL/标识或受限内容进入稳定投影和 Agent 输出 | `1a0c70cb` 实际删除 stale URL privacy entries；当前测试锁住 stable registry 与 consumer output inventory | targeted privacy suite 7.840s | 去掉 privacy tests，向 fixture 加未知敏感字段/URL，运行 quality 与 consumer tests比较 | 替代投影器能在更低成本下拦住完整 mutation corpus，且没有双 owner |
 | Provenance + installed wheel + canonical consumer | 验证非 editable wheel 的五 surface parity、离线 provenance 与真实 pinned consumer | 本趟 wheel matrix 通过五 surface；work-dashboard pinned suite 实跑通过，network_calls=0 | provenance 0.378s；wheel surface 20.540s；consumer 74.032s；合计 94.950s | 分别移除 wheel/provenance/consumer gate，使用 tampered fixture、editable escape 与旧 envelope consumer fixture | 三类失败全部被单一 installed-artifact gate 以同等隔离度和更低成本覆盖 |
-| Test duration budget | 阻止慢测试重新混回本地高频层 | 40s 以上必须标 `full_gate`，标记集合由 quality baseline 锁定；240s 仍是任何单项不可越过的绝对上限 | 与完整 pytest collector 同量级；CI shard receipt 记录 marker，汇总审计证明 9 项和完整 collection 都守恒 | 去掉 marker 后对受控 40.001s report 运行 duration gate；删一片 shard 或过滤 collection 再运行 audit | 主 pytest collector直接实施同一 marker/时长/集合守恒后，删除第二次全量收集 |
+| Test duration budget | 阻止慢测试重新混回本地高频层 | 40s 本地当量以上必须标 `full_gate`，标记集合由 quality baseline 锁定；240s 仍按原始 CI 墙钟执行，是任何单项不可越过的绝对上限 | 与完整 pytest collector 同量级；CI shard receipt 记录 marker、测量坐标与换算比率，汇总审计证明 9 项和完整 collection 都守恒 | 去掉 marker 后对受控本地当量 40.001s report 运行 duration gate；删一片 shard 或过滤 collection 再运行 audit | 主 pytest collector直接实施同一 marker/时长/集合守恒后，删除第二次全量收集 |
 
 Repository Map v2 仍是单个可直接 `json.load` 的 JSON 文件；它只把重复值换成确定性表。
 生成器先校验 compact v2 transport，loader 再还原并校验完整 v1 fact contract，逐字段
@@ -46,9 +46,18 @@ canonical 图中会经 package-parent / lazy-export hub 扩散到大半仓库。
 时间 ratchet 放在既有 `quality-baseline.json`：本地 Focused 上限 100s，来自剔除八项后的 83s 实测加
 20% 调度余量（99.6s 向上取整）；duration gate 首轮实测未标记项最慢 30.366s，当前最短
 Full-only 项为 41s，故阈值取 40s：给普通项保留 9.634s 余量，同时仍覆盖已知慢项。
+`slow_test_seconds` 始终是本地坐标；GitHub Actions report 先除以唯一的
+`LOCAL_TO_CI_DURATION_RATIO = 716/364` 再比较。240s 绝对上限的校准包络也只引用该比率，
+但仍直接约束原始 CI 墙钟。标定修复后 9 项均按 scan/build/isolated-subprocess 语义成立，
+没有可从 `full_gate` 减去的误分类成员。
 阈值只能收紧，`full_gate` 名额只能减少。裸 `pytest -q` 与 unittest 仍是完整集合；只有 Focused 命令
 使用 `-m "not full_gate"`。CI duration runner 显式清空本地 `addopts`，四片 receipt audit 再证明完整
 collection、选择集与实际执行集相等，防止默认过滤造成假绿。
+
+J5 在同机、固定 4 workers 连续实测 `load=224.502s`、`loadscope=227.025s`、
+`loadfile=188.213s`，三次收集集合与通过集合相同；因此默认改为 `loadfile`。
+仓库扫描模块已在进程内缓存输入，`loadfile` 让同文件用例复用这些缓存；跨 worker 的 session fixture
+既不能共享 Python 对象，也会让会修改临时仓库树的负向用例读到过期快照，所以不新增全局可变 fixture。
 
 第一次 unittest 消融运行不是有效“绿色证据”：pytest 在 414.170s 后报告 5 failures，其中 broken link 与
 complexity 是真实实现缺陷，另一个 isolated import 受同机并发影响超时。修复缺陷后必须重跑；不得把这次失败

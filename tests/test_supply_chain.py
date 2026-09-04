@@ -123,6 +123,37 @@ class SecretScanTests(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertEqual("history", receipt["unreviewed_findings"][0]["scope"])
 
+    def test_incremental_history_finds_a_secret_added_then_removed_in_the_range(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            repository(root)
+            (root / "safe.txt").write_text("safe\n", encoding="utf-8")
+            git(root, "add", "safe.txt")
+            git(root, "commit", "--quiet", "-m", "safe base")
+            base = subprocess.check_output(
+                ("git", "rev-parse", "HEAD"), cwd=root, text=True
+            ).strip()
+            fake_key = "AKIA" + "7K4P9N2Q6R8T1V3X"
+            secret = root / "removed.txt"
+            secret.write_text(fake_key + "\n", encoding="utf-8")
+            git(root, "add", "removed.txt")
+            git(root, "commit", "--quiet", "-m", "add synthetic secret")
+            secret.unlink()
+            git(root, "add", "-u")
+            git(root, "commit", "--quiet", "-m", "remove synthetic secret")
+            code, receipt = scan_repository(
+                root,
+                include_history=False,
+                history_since=base,
+                allowlist_path=empty_allowlist(root),
+            )
+        self.assertEqual(1, code)
+        self.assertEqual("incremental", receipt["history_scope"])
+        self.assertFalse(receipt["history_included"])
+        self.assertEqual(base, receipt["history_base"])
+        self.assertEqual(2, receipt["history_commit_count"])
+        self.assertEqual("history", receipt["unreviewed_findings"][0]["scope"])
+
     def test_allowlist_requires_reason_and_unexpired_review(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             path = Path(raw) / "allowlist.json"

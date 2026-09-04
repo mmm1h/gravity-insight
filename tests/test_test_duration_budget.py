@@ -17,6 +17,7 @@ from scripts.check_test_duration_budget import (
     DurationRecorder,
     FULL_GATE_NODEIDS,
     LOCAL_FOCUSED_WALL_LIMIT_SECONDS,
+    LOCAL_TO_CI_DURATION_RATIO,
     MAX_FULL_GATE_TESTS,
     MAX_LOCAL_FOCUSED_WALL_SECONDS,
     MAX_SLOW_TEST_SECONDS,
@@ -27,9 +28,11 @@ from scripts.check_test_duration_budget import (
     SLOW_TEST_LIMIT_SECONDS,
     TEST_DURATION_LIMIT_SECONDS,
     DurationMeasurement,
+    active_duration_coordinate,
     audit_shard_receipts,
     declared_full_gate_nodeids,
     duration_budget_errors,
+    local_equivalent_seconds,
     partition_nodeids,
     run_gate,
 )
@@ -100,7 +103,7 @@ class TestDurationBudgetTests(unittest.TestCase):
 
     def test_gate_uses_parallel_collector_and_fails_closed_on_pytest_error(self) -> None:
         self.assertEqual(
-            ("-q", "-o", "addopts=", "-n", "auto", "--dist", "load"),
+            ("-q", "-o", "addopts=", "-n", "auto", "--dist", "loadfile"),
             PYTEST_ARGUMENTS,
         )
         captured: list[str] = []
@@ -124,6 +127,35 @@ class TestDurationBudgetTests(unittest.TestCase):
         )
         self.assertEqual([*PYTEST_ARGUMENTS, "tests/test_broken.py"], captured)
         self.assertIn("pytest exit_code=1", output.getvalue())
+
+    def test_ci_duration_is_normalized_before_applying_the_local_slow_policy(self) -> None:
+        ci_at_local_limit = 40.0 * LOCAL_TO_CI_DURATION_RATIO
+        self.assertAlmostEqual(
+            40.0,
+            local_equivalent_seconds(
+                ci_at_local_limit, duration_coordinate="ci"
+            ),
+        )
+        self.assertEqual(
+            (),
+            duration_budget_errors(
+                (DurationMeasurement("tests/test_scan.py::test_scan", 55.471),),
+                duration_coordinate="ci",
+            ),
+        )
+        errors = duration_budget_errors(
+            (
+                DurationMeasurement(
+                    "tests/test_scan.py::test_scan",
+                    ci_at_local_limit + 0.001,
+                ),
+            ),
+            duration_coordinate="ci",
+        )
+        self.assertIn("local_equivalent=40.001s", errors[0])
+        self.assertIn("local_slow_test_limit=40.000s", errors[0])
+        self.assertEqual("local", active_duration_coordinate({}))
+        self.assertEqual("ci", active_duration_coordinate({"GITHUB_ACTIONS": "true"}))
 
     def test_collection_recorder_and_partition_preserve_exact_nodeids(self) -> None:
         recorder = CollectionRecorder()
@@ -166,6 +198,9 @@ class TestDurationBudgetTests(unittest.TestCase):
             root = Path(raw)
             receipt = {
                 "schema_version": SHARD_RECEIPT_SCHEMA,
+                "duration_coordinate": "ci",
+                "local_to_ci_duration_ratio": LOCAL_TO_CI_DURATION_RATIO,
+                "local_slow_test_limit_seconds": SLOW_TEST_LIMIT_SECONDS,
                 "status": "passed",
                 "shard_index": 1,
                 "shard_count": 2,
@@ -198,6 +233,9 @@ class TestDurationBudgetTests(unittest.TestCase):
             for index, selected in enumerate(partitions, 1):
                 receipt = {
                     "schema_version": SHARD_RECEIPT_SCHEMA,
+                    "duration_coordinate": "ci",
+                    "local_to_ci_duration_ratio": LOCAL_TO_CI_DURATION_RATIO,
+                    "local_slow_test_limit_seconds": SLOW_TEST_LIMIT_SECONDS,
                     "status": "passed",
                     "shard_index": index,
                     "shard_count": 2,
@@ -233,7 +271,9 @@ class TestDurationBudgetTests(unittest.TestCase):
         self.assertIn("python scripts/check_test_duration_budget.py", workflow)
         self.assertIn("--audit-receipts tmp/pytest-shards", workflow)
         self.assertGreaterEqual(
-            workflow.count('run: python -m pytest -q -o addopts="" -n auto --dist load'),
+            workflow.count(
+                'run: python -m pytest -q -o addopts="" -n auto --dist loadfile'
+            ),
             2,
         )
         self.assertIn("addopts=", PYTEST_ARGUMENTS)
