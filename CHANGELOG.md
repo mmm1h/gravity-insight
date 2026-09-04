@@ -43,6 +43,12 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
 ### Changed
 
+- The public-static-graph Census crawl now keeps one bounded worker pool for the
+  full recursive traversal, allowing each worker to reuse its HTTP session and
+  keep-alive connection across batches. This removes hundreds of avoidable
+  TCP/TLS connection establishments on a typical 500-candidate crawl without
+  changing the four-worker ceiling, request budget, completeness definition,
+  transport-failure classification, or non-capacity fail-closed behavior.
 - The Agent install contract now defaults to the latest published version
   instead of requiring an exact one. Pinning needed someone to supply a version
   number; with nobody supplying it an Agent reused whatever version the example
