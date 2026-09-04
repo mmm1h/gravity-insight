@@ -168,6 +168,25 @@ class ReportSdkMixin:
             max_workers=max_workers,
         )
 
+    @staticmethod
+    def reconcile_standard_retention_denominators(
+        *,
+        cohort_date: str,
+        offset: int,
+        multidim: Mapping[str, Any],
+        analysis: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Reconcile two already-fetched aggregate denominator readings offline."""
+
+        from .multidim_product import reconcile_standard_retention_denominators
+
+        return reconcile_standard_retention_denominators(
+            cohort_date=cohort_date,
+            offset=offset,
+            multidim=multidim,
+            analysis=analysis,
+        )
+
     def company_usage(
         self,
         *,

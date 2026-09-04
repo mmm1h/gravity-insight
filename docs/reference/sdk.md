@@ -69,7 +69,7 @@ methods = sorted(
 | 经营与投放 | `business_pulse()`、`company_usage()`、`advertiser_profile()`、`bilibili_account_performance()`、`custom_audiences()` |
 | 素材 | `material_performance()`、`fetch_material_asset()`、`title_packages()` |
 | Promotion | `promotion_performance()` |
-| Multidim / Semantic | `multidim_input_schema()`、`prepare_multidim_query()`、`validate_multidim_query()`、`multidim_query()`、`semantic_compose_input_schema()`、`prepare_semantic_compose()`、`semantic_compose()` |
+| Multidim / Semantic | `multidim_input_schema()`、`prepare_multidim_query()`、`validate_multidim_query()`、`multidim_query()`、`reconcile_standard_retention_denominators()`、`semantic_compose_input_schema()`、`prepare_semantic_compose()`、`semantic_compose()` |
 | 本地派生与 playbook | `derive_metrics()`、`metric_anomaly_playbook_schema()`、`prepare_metric_anomaly_playbook()`、`metric_anomaly_playbook()` |
 | Metadata | `sync_metadata_app()`、`metadata_status()`、`table_lineage()`、`metadata_cache_stats()`、`clear_metadata_cache()`、`bypass_metadata_cache()` |
 | Metadata template | `metadata_template_mutation_schema()`、`metadata_template_mutation()`、`create_metadata_template()`、`append_metadata_template_members()`、`remove_metadata_template_members()`、`delete_metadata_template()` |
@@ -153,6 +153,19 @@ Semantic Compose 都要求显式结构化输入；自然语言不填业务字段
 产品之间不要互相替代：Dashboard snapshot 不执行图表；Segment snapshot 不返回成员；Saved Analysis
 prepare 不执行最终查询；Order Split Trace 必须先唯一匹配父行；Material/Promotion 不跨平台归一或
 生成业务判断。
+
+### 普通留存分母对账
+
+`reconcile_standard_retention_denominators()` 只接收两侧已取得的聚合读数：`status`、`value`、
+`fetched_at`，以及共同的 `cohort_date` 和 `offset`。它不访问网络，也不接收 App、账号或明细行。
+结果用 `status=match|drift|unknown` 区分算术相等、非零有符号差值和证据不足；两侧成功但空的
+cohort 也是 `unknown`，另以 `cohort_status=empty` 和 `EMPTY_COHORT` 标明，绝不补成 0。
+
+每条结果都保留 `standard_activate_cnt`、`init_num` 及各自 `fetched_at`，并携带
+`STANDARD_RETENTION_DENOMINATOR_COHORT_RULE_UNVERIFIED` capability gap。当前合同和脱敏探针只证明
+字段存在，未证明两者共享同一 cohort 纳入、日界线、归因和迟到回补语义；因此即使
+`status=match`，`semantic_equivalence` 仍是 `unknown`，不得用 Retention `values[0]` 替代
+`init_num`。稳定输出合同是 `gravity.retention-denominator-reconciliation.v1`。
 
 ## 写入与效果
 

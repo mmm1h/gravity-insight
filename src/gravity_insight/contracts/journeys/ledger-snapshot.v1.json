@@ -41,7 +41,7 @@
       }
     },
     {
-      "blocker_note": "2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。2026-08-19 #219：同类本地校验现带 `actual value`（类型/长度/传入值），条件值仍不回显。2026-08-30：非空 `before_custom` 和 Retention `property_conditions` 已按生产拒绝证据改为编译期 fail-closed；同日注册∩支付走单日 Funnel→matched Segment→D1 Segment 规则，set-once 首付属性走两次聚合 Segment 规则，完整 spec 与代价见[替代路径](guides/retention-cohort-alternatives.md)。普通单起始事件 Retention 不变。",
+      "blocker_note": "2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。2026-08-19 #219：同类本地校验现带 `actual value`（类型/长度/传入值），条件值仍不回显。2026-08-30：非空 `before_custom` 和 Retention `property_conditions` 已按生产拒绝证据改为编译期 fail-closed；同日注册∩支付走单日 Funnel→matched Segment→D1 Segment 规则，set-once 首付属性走两次聚合 Segment 规则，完整 spec 与代价见[替代路径](guides/retention-cohort-alternatives.md)。普通单起始事件 Retention 不变。2026-09-04 #104：`standard_activate_cnt` 与 `init_num` 的精确 cohort 纳入、日界线、归因及迟到回补规则没有已登记证据，现以 `STANDARD_RETENTION_DENOMINATOR_COHORT_RULE_UNVERIFIED` 机器 gap 明示；SDK 可对两侧已取聚合值输出带 cohort/offset/双 `fetched_at` 的 `match|drift|unknown` 记录，成功空 cohort 与缺值均不补 0，算术 match 不声明语义等价。本趟零生产请求。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "看起始行为后的用户留存",
@@ -50,7 +50,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "f9f8aa79751d50979c7bc7133c1001fb60945e15d0f0d4db8e5b16b81ab3c823",
+      "row_digest": "80f71de30b3bc61e26af4ad53fc25d584e9802fca5a9549790544a37c5c45cea",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "c256bc68018065d37b187182d1563bd5a33a39072e9c4ea1db235fd8b8bada3c",
+  "snapshot_digest": "cb0011f947cd391b1bc20500632712f5c2db45c464518f14a6f47fa13c5e6ba2",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "615e8c8bbe9f60dca40b6309a1d072d66a8caa286a8434f45d1e5a2099663067"
+  "source_sha256": "830c347a04e43e9fa5484b8b54e4061fb6481148b6241c05767a3b035318079d"
 }
