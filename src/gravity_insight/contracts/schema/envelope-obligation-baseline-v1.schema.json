@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.envelope-obligation-baseline.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "required_obligations",
+    "legacy_violations",
+    "exemptions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.envelope-obligation-baseline.v1"},
+    "required_obligations": {
+      "const": [
+        "execution_status",
+        "data_completeness",
+        "semantic_validity",
+        "diagnostic_evidence",
+        "mutation_certainty"
+      ]
+    },
+    "legacy_violations": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/violation"}
+    },
+    "exemptions": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/exemption"}
+    }
+  },
+  "$defs": {
+    "structural_keys": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "violation": {
+      "type": "object",
+      "required": ["path", "qualname", "structural_keys"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 512},
+        "qualname": {"type": "string", "minLength": 1, "maxLength": 512},
+        "structural_keys": {"$ref": "#/$defs/structural_keys"}
+      }
+    },
+    "exemption": {
+      "type": "object",
+      "required": [
+        "path",
+        "qualname",
+        "structural_keys",
+        "classification",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 512},
+        "qualname": {"type": "string", "minLength": 1, "maxLength": 512},
+        "structural_keys": {"$ref": "#/$defs/structural_keys"},
+        "classification": {
+          "enum": ["schema_document", "internal_state", "non_consumer_transport"]
+        },
+        "reason": {"type": "string", "minLength": 8, "maxLength": 512}
+      }
+    }
+  }
+}

@@ -37,6 +37,7 @@ from gravity_insight.sql.products import (
     summarize_custom,
     verify_all,
 )
+from gravity_insight.sql.time_window import summarize_custom_result
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,6 +114,12 @@ class GravityProductTests(unittest.TestCase):
         self.assertIsNone(result["summary"]["total_row_count"])
         self.assertEqual("observed event name", result["summary"]["output_semantics"]["event_name"])
         self.assertIn("LIMIT 101", client.sql)
+        self.assertEqual(
+            "complete", result["obligations"]["execution_status"]["state"]
+        )
+        self.assertEqual(
+            "complete", result["obligations"]["data_completeness"]["state"]
+        )
 
     def test_registered_product_at_cap_without_total_is_unknown(self):
         class CapClient:
@@ -159,7 +166,7 @@ class GravityProductTests(unittest.TestCase):
     def test_registered_product_at_cap_with_matching_total_is_proven_complete(self):
         start_at, end_at = day_window(date(2026, 7, 22))
         summary, status, warnings, notes, completeness = (
-            products._summarize_custom_result(
+            summarize_custom_result(
                 [{"app_id": 1001}, {"app_id": 1002}],
                 (1001,),
                 start_at,
@@ -171,18 +178,13 @@ class GravityProductTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual("complete", status)
+        self.assertEqual("complete", status.state.value)
         self.assertEqual([], warnings)
         self.assertEqual([], notes)
         self.assertEqual(2, summary["total_row_count"])
-        self.assertEqual(
-            {
-                "row_cap_reached": True,
-                "completeness": "complete",
-                "completeness_reason": "total_row_count_match",
-            },
-            completeness,
-        )
+        self.assertEqual("complete", completeness.state.value)
+        self.assertEqual("TOTAL_ROW_COUNT_MATCH", completeness.evidence_code)
+        self.assertEqual(True, completeness.facts["row_cap_reached"])
 
     def test_registered_product_source_above_cap_fails_closed(self):
         start_at, end_at = day_window(date(2026, 7, 22))

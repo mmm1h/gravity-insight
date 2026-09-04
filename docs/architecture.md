@@ -88,6 +88,8 @@ Restricted Context 默认不进入模型上下文。Receipt 记录 URI、revisio
 
 正式结果必须区分 success、empty、partial、error、capability gap 与 uncertain，并传播解析范围、来源、completeness、component failures、Data Quality、warnings、diagnostics、allowed/forbidden claims 和 Receipt 引用。HTTP 状态不能替代业务语义状态。
 
+内层判定通过类型化 `EnvelopeObligations` 交付 execution、data completeness、semantic validity、diagnostic evidence 与 mutation certainty 五个正交事实；消费边界只能调用统一 serializer，不能从字面量、异常文本或相邻字段重猜。五项在 envelope 中始终显式存在，不适用与未知是不同状态；精确字段由 `envelope-obligations-v1.schema.json` 定义。存量迁移范围由 envelope obligation AST ratchet 管理。
+
 Finding 必须区分事实、贡献因素、受支持关联、排除因素、假设与未知。强因果措辞只允许由受控实验、已登记且假设成立的因果模型，或方法合同允许的等价证据支持；全域 Context 不会把相关性自动升级为因果。
 
 预测必须绑定 Operator/Model 版本、训练或拟合窗口、安全 horizon、评测/校准和场景假设。无验证时不得生成虚假置信度、收益或恢复幅度。最终部门模板与经营语言由宿主和调用项目负责。
@@ -139,6 +141,7 @@ Runtime 不能下载、安装或替换自己。External Control Plane 生成完�
 | Context/Provider/RPC | Context、Provider 与 RPC schemas | [Security](../SECURITY.md) |
 | Action/Experiment/Receipt | Action、Experiment、Outcome 与 Receipt schemas | [CLI](reference/cli.md) |
 | Artifact/Analysis delivery | Artifact Transfer、Analysis Artifact/Rendering/Dashboard schemas | [CLI](reference/cli.md) |
+| Result envelope obligations | `envelope-obligations-v1.schema.json` 与 typed serializer | [CLI](reference/cli.md#result-and-errors) |
 | Governor/Variant | Governor observation/snapshot 与 Execution Variant schemas | [Technical debt](maintainers/technical-debt.md) |
 | SQL Explorer | SQL Explorer request/result/promotion schemas 与 SQL product catalog | [CLI](reference/cli.md#sql) |
 | MCP | `gravity_insight.mcp` schemas、tool catalog 与 parity fixtures | [MCP](reference/mcp.md) |
