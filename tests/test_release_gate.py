@@ -4,6 +4,7 @@ import hashlib
 import json
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from scripts.build_release_gate_receipt import (
     ReleaseGateError,
     build_release_gate_receipt,
 )
-from scripts.check_changelog import release_declaration
+from scripts.check_changelog import PYPROJECT_PATH, release_declaration
 from scripts.check_installed_wheel_consumer import DEFAULT_REVISION
 from scripts.check_release_ci import ReleaseCIError, check_release_ci
 from scripts.check_release_main import ReleaseMainError, check_release_main
@@ -21,6 +22,12 @@ from scripts.run_integrated_validation import gate_specs
 ROOT = Path(__file__).resolve().parents[1]
 SHA = "a" * 40
 TAG = "v0.3.8"
+
+
+def _project_version() -> str:
+    return tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8"))["project"][
+        "version"
+    ]
 
 
 def _git(root: Path, *arguments: str) -> str:
@@ -338,11 +345,59 @@ class AggregateReleaseGateTests(unittest.TestCase):
 
 
 class ReleaseChangelogReceiptTests(unittest.TestCase):
-    def test_current_release_declares_breaks_and_bound_migration(self) -> None:
-        receipt = release_declaration("0.3.8")
+    def test_current_release_declaration_and_migration_agree(self) -> None:
+        """Assert the invariant, not one release's contents.
+
+        This used to pin `release_declaration("0.3.8")` to "declared" plus a
+        bound migration guide, which was a snapshot of whatever the in-flight
+        release happened to contain. Cutting 0.3.8 and opening an Unreleased
+        0.3.9 with no breaks turned it red without anything being wrong -- the
+        assertion carried a version-dependent fact with no version in it.
+        What actually has to hold is that the declaration and the migration
+        binding agree with the number of declared breaks, whichever it is.
+        """
+        version = _project_version()
+        receipt = release_declaration(version)
+        self.assertEqual(version, receipt["release_version"])
+        migration = receipt["migration"]
+
+        if receipt["breaking_entries"]:
+            self.assertEqual("declared", receipt["breaking_change_declaration"])
+            self.assertEqual("required_and_present", migration["status"])
+            self.assertEqual(64, len(migration["sha256"]))
+            self.assertTrue(str(migration["path"]).endswith(f"{version}.md"))
+        else:
+            self.assertEqual("none_declared", receipt["breaking_change_declaration"])
+            self.assertEqual("not_required", migration["status"])
+            self.assertIsNone(migration["sha256"])
+            self.assertIsNone(migration["path"])
+
+    def test_release_with_declared_breaks_binds_its_migration_guide(self) -> None:
+        """Keep the has-breaks branch covered once the current release has none.
+
+        `release_declaration` refuses a version other than the project version,
+        so reaching that branch means presenting a pyproject that names one.
+        0.3.8 is a real released section with real breaks; nothing synthetic.
+        """
+        source = PYPROJECT_PATH.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as raw:
+            pyproject = Path(raw) / "pyproject.toml"
+            pyproject.write_text(
+                source.replace(
+                    f'version = "{_project_version()}"', 'version = "0.3.8"', 1
+                ),
+                encoding="utf-8",
+            )
+            receipt = release_declaration("0.3.8", pyproject_path=pyproject)
+
+        self.assertEqual("released", receipt["section_state"])
         self.assertEqual("declared", receipt["breaking_change_declaration"])
+        self.assertEqual(4, receipt["breaking_entries"])
         self.assertEqual("required_and_present", receipt["migration"]["status"])
         self.assertEqual(64, len(receipt["migration"]["sha256"]))
+        self.assertEqual(
+            "docs/migration/0.3.8.md", receipt["migration"]["path"]
+        )
 
 
 if __name__ == "__main__":
