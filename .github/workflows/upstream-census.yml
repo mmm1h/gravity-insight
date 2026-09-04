@@ -95,7 +95,31 @@ jobs:
               }
               workflow_attempt = $attempt
             }
+            $fallbackFailure = $fallback.failure
+            $startedSnapshot = [ordered]@{
+              schema_version = 1
+              fetched_at = [DateTimeOffset]::UtcNow.ToString("yyyy-MM-ddTHH:mm:sszzz")
+              site_url = "https://web.gravity-engine.com/"
+              html = $null
+              build_info = [ordered]@{}
+              entry_urls = @()
+              modulepreload_urls = @()
+              ignored_nonmodule_scripts = @()
+              manifest_probes = @()
+              bundle_id = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              files = @()
+              summary = [ordered]@{
+                bundle_files = 0
+                complete = $false
+                completeness_reason = "workflow attempt started without terminal Census output"
+                request_attempts = 0
+                request_limit = 800
+              }
+              discovery = [ordered]@{ failures = @(); pending_urls = @() }
+            }
             $fallback | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $stepResult
+            $fallbackFailure | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $failure
+            $startedSnapshot | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $snapshot
             Write-Host "Complete crawl attempt $attempt of $attemptLimit"
             gravity census fetch --raw-dir $raw --output $snapshot --require-complete --max-attempts 1 --local-capacity-retries 2 --failure-output $failure --step-output $stepResult
             $fetchExit = $LASTEXITCODE
@@ -224,9 +248,9 @@ jobs:
           $classes = @($step.failure.failures | ForEach-Object { $_.status_class } | Sort-Object -Unique) -join ", "
           Write-Output "::warning title=Gravity upstream census capacity blocked::A required complete crawl remained blocked after ${{ steps.fetch.outputs.crawl_attempts }} attempts. Failure classes: $classes. No route-drift conclusion was made; inspect the uploaded fetch-failure.json before retrying."
           "### Gravity upstream census capacity warning" >> $env:GITHUB_STEP_SUMMARY
-          "Upstream capacity prevented a required complete graph after ${{ steps.fetch.outputs.crawl_attempts }} bounded attempts. No route-drift conclusion was made. Inspect the uploaded sanitized diagnostic artifact before retrying." >> $env:GITHUB_STEP_SUMMARY
+          "Upstream capacity prevented a required complete graph after ${{ steps.fetch.outputs.crawl_attempts }} bounded attempts. No route-drift conclusion was made. Inspect the uploaded fetch-failure.json before retrying." >> $env:GITHUB_STEP_SUMMARY
 
       - name: Reject an incomplete changed bundle crawl
         if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class != 'upstream_capacity'
         shell: pwsh
-        run: throw "A required complete public static graph could not be proven for a non-capacity reason. Inspect the uploaded snapshot and fetch-failure.json, correct that cause, and rerun the workflow."
+        run: throw "A required complete public static graph could not be proven for a non-capacity reason. Inspect the uploaded current-snapshot.json and fetch-failure.json, correct that cause, and rerun the workflow."

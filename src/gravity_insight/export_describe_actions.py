@@ -22,8 +22,10 @@ def describe_next_action(operation_id: str, effect: str, currently_callable: boo
         return "Run `gravity export task-types` to list verified export task types."
     if currently_callable and effect in {"export_status", "export_cancel"}:
         return (
-            "Use `gravity export status|wait|download|cancel|list` with a job_id "
-            "from a create operation; this route is not `gravity run`."
+            "Use `gravity export status <job-id>`, `gravity export wait <job-id>`, "
+            "`gravity export download <job-id>`, `gravity export cancel <job-id>`, "
+            "or `gravity export list` with a job_id from a create operation; this "
+            "route is not `gravity run`."
         )
     return (
         "Run `gravity export list-capabilities` "
