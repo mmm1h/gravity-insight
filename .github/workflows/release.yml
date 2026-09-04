@@ -194,9 +194,25 @@ jobs:
           path: tmp/release-input/
       - name: Prepare exact-main Integrated Validation environment
         if: github.event_name == 'push'
+        env:
+          CONSUMER_REPO_DEPLOY_KEY: ${{ secrets.CONSUMER_REPO_DEPLOY_KEY }}
         run: |
+          # The canonical consumer is a private repository, so an anonymous
+          # clone fails with git's "could not read Username" before any gate
+          # runs. GITHUB_TOKEN is scoped to this repository and cannot read it
+          # either. The credential here is a read-only deploy key bound to that
+          # one repository -- the narrowest thing that can satisfy the check.
+          if [ -z "$CONSUMER_REPO_DEPLOY_KEY" ]; then
+            echo "CONSUMER_REPO_DEPLOY_KEY is required to verify the canonical consumer" >&2
+            exit 1
+          fi
+          install -d -m 700 "$RUNNER_TEMP/consumer-ssh"
+          printf '%s\n' "$CONSUMER_REPO_DEPLOY_KEY" > "$RUNNER_TEMP/consumer-ssh/id_ed25519"
+          chmod 600 "$RUNNER_TEMP/consumer-ssh/id_ed25519"
+          ssh-keyscan -t ed25519 github.com > "$RUNNER_TEMP/consumer-ssh/known_hosts" 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/consumer-ssh/id_ed25519 -o IdentitiesOnly=yes -o UserKnownHostsFile=$RUNNER_TEMP/consumer-ssh/known_hosts"
           git clone --quiet --filter=blob:none --no-tags \
-            https://github.com/mmm1h/work-dashboard.git "$RUNNER_TEMP/work-dashboard"
+            git@github.com:mmm1h/work-dashboard.git "$RUNNER_TEMP/work-dashboard"
           git -C "$RUNNER_TEMP/work-dashboard" rev-parse --verify refs/heads/main
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -e ".[dev]"
