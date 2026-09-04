@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "40cdf97c96dfe14eaa88bd80e84d876a182c865c8d8956d1e8d1a6cf40885587",
-    "manual_review_sha256": "7e968d8666db03f6f1c282d7d852b9267b7e91b02a7688e197cdbc279bba3ec2",
+    "reference_evidence_sha256": "bd676e1a255bc68523bc5cf345f6be690a5dec2d3984658cff9bef74b22f3cbf",
+    "manual_review_sha256": "1f69f3298b1e3629a035a5d43e946c53e2358d06fa852ffb8a72bf17cf549ec1",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3165,
-    "scanned_file_count": 3158,
+    "version_controlled_file_count": 3168,
+    "scanned_file_count": 3161,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -700,7 +700,7 @@
     "dispositions": {
       "no_migration_effect": 238
     },
-    "sites_sha256": "12bf4785d600634b464747fda50114aef5111725d3610138e6357657730ebf8d"
+    "sites_sha256": "423435d91e43828f976ed2ee17008a927ad70859be3355bf7787f838e3b26fe0"
   },
   "blockers": [],
   "site_fields": [
@@ -1018,7 +1018,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22132:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22127:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1033,7 +1033,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63572:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63528:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1108,7 +1108,7 @@
       }
     ],
     [
-      "src/gravity_insight/error_models.py:431:5:__module__",
+      "src/gravity_insight/error_models.py:435:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",
@@ -1978,7 +1978,7 @@
       }
     ],
     [
-      "tests/locked_skill_fixture.py:9:1:from import",
+      "tests/locked_skill_fixture.py:8:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3598,7 +3598,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:292:14:patch.object",
+      "tests/test_provider_subprocess.py:261:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "SubprocessProviderTransport",
@@ -3613,7 +3613,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:297:12:patch.object",
+      "tests/test_provider_subprocess.py:266:12:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module",
@@ -3628,7 +3628,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:392:13:patch.object",
+      "tests/test_provider_subprocess.py:361:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module.os",
@@ -3643,7 +3643,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:393:13:patch.object",
+      "tests/test_provider_subprocess.py:362:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module",
@@ -3658,7 +3658,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:398:13:patch.object",
+      "tests/test_provider_subprocess.py:367:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module.subprocess",

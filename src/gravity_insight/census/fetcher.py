@@ -490,6 +490,7 @@ class StaticFetcher:
         started = time.monotonic()
         site_url = site_url if site_url.endswith("/") else site_url + "/"
         raw_dir.mkdir(parents=True, exist_ok=True)
+        write_json(snapshot_path, {"schema_version": 1, "site_url": site_url, "files": [], "summary": {"complete": False, "completeness_reason": "crawl started without a terminal static graph", "request_attempts": self.attempts, "request_limit": self.max_requests}})
         entry = self._entry_seeds(site_url, raw_dir, probe_manifests)
         seeds = entry["entry_urls"] + entry["preload_urls"] + entry["manifest_seed_urls"]
         snapshot = self._build_snapshot(

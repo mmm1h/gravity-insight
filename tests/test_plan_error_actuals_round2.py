@@ -307,6 +307,7 @@ class PlanErrorActualRound2Tests(unittest.TestCase):
 
     def test_run_sql_cli_and_shape_summaries_are_structural(self):
         from gravity_insight.plan_adapters import build_plan_adapters
+        from gravity_insight.errors import ContractChangedError
         from gravity_insight.plan_multidim_adapter import _product_schema
         from gravity_insight.plan_promotion_performance_adapter import _literal_metrics
         from gravity_insight.plan_pulse_adapter import validate_business_pulse
@@ -432,8 +433,9 @@ class PlanErrorActualRound2Tests(unittest.TestCase):
         with patch(
             "gravity_insight.multidim_product.multidim_input_schema",
             return_value={"properties": []},
-        ):
-            self.assertIn('actual value: "list"', _caught(_product_schema))
+        ), self.assertRaises(ContractChangedError) as schema_error:
+            _product_schema()
+        self.assertIn('actual value: "list"', str(schema_error.exception))
         metric_shape = _caught(lambda: _literal_metrics([secret + " metric"]))
         self.assertIn('actual value: {"count":1,"item_types":["str"]}', metric_shape)
         self.assertNotIn(secret, metric_shape)

@@ -6,11 +6,24 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Any
 
-from .errors import InputValidationError
+from .errors import ContractChangedError, InputValidationError
 from .actionable_error_values import actual_value
 
 
 MAX_OUTPUT_FIELDS = 128
+_OUTPUT_SHAPE_REPAIR = (
+    "Repair owner: undetermined between the upstream operation owner and the "
+    "Gravity Runtime contract maintainer, not the caller. Next step: capture "
+    "the operation_id and response-shape evidence and hand them to those "
+    "maintainers. Stop condition: do not retry the unchanged caller input "
+    "until the response contract is re-verified."
+)
+_PROJECTION_CONTRACT_REPAIR = (
+    "Repair owner: Gravity Runtime operation-contract maintainer. Next step: "
+    "compile and register a valid response_projection; callers may omit "
+    "output_fields as the bounded alternative. Stop condition: do not retry "
+    "field selection until that contract is available."
+)
 
 
 def validate_output_fields(
@@ -59,9 +72,9 @@ def apply_output_fields(
     """
 
     if not isinstance(envelope, Mapping):
-        raise InputValidationError(
+        raise ContractChangedError(
             "operation output must be an object",
-            field="result",
+            next_action=_OUTPUT_SHAPE_REPAIR,
         )
     if output_fields is None:
         return deepcopy(dict(envelope))
@@ -135,16 +148,15 @@ def _field_list(value: Sequence[str]) -> tuple[str, ...]:
 
 def _projection(schema: Mapping[str, Any]) -> Mapping[str, Any]:
     if not isinstance(schema, Mapping):
-        raise InputValidationError(
+        raise ContractChangedError(
             "operation schema must be an object",
-            field="schema",
+            next_action=_PROJECTION_CONTRACT_REPAIR,
         )
     value = schema.get("response_projection")
     if not isinstance(value, Mapping):
-        raise InputValidationError(
+        raise ContractChangedError(
             "operation schema has no response projection",
-            field="schema",
-            next_action="Use a stable operation with a compiled projection contract.",
+            next_action=_PROJECTION_CONTRACT_REPAIR,
         )
     return value
 

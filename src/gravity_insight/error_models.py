@@ -166,6 +166,10 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
         f"{operation}` and retry with the documented input."
     )
     actions = {
+        "HUB_SKILL_MISSING": (
+            "Run `gravity skills list --state-root <state-root>` and retry with "
+            "an exact skill_uri from the results."
+        ),
         ErrorCode.UNKNOWN_OPERATION.value: (
             "Run `gravity insight operations search <query>` "
             "and use an operation_id from the results."
