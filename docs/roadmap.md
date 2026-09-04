@@ -46,7 +46,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - Kanban 单动作 schema 同时暴露 JSON-Schema 形状与集合边界；`dashboard.report.link` 的一次请求为 `1..20`，解码后整个 dashboard layout 独立为最多 20 项并跨 link 请求累计。整板 prepare 在首写前只读编译全部 saved artifact、判定 reuse/create/update/link、返回延迟 ID DAG 和快照写次数上界；它不新增整板执行器，不改变任何 mutation 的 preview/execute、owner、幂等、锁或写后读回。仓库只证明 20 是当前 SDK 治理 wire 合同；保留取证明确未在生产强制触发容量拒绝，无法证明 Gravity 上游也实施相同数字限制。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。Repository Map v2 只将 entry string、issue path 和 module node 换成确定性表；loader 解码后仍校验完整 v1 fact schema，逐字段往返测试证明 entry、issue location、节点和边不丢失。仓库内 task-context、validation observation 与有序 checkpoint 已同步；外部 raw JSON 消费方按 0.3.8 迁移，读取能力没有损失。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。
-- issue #110 将 registered SQL verification 固定为登记顺序单并发，并用严格前缀 checkpoint 续跑最终 429；不能选择或跳过产品。新 Evidence v2 记录单次或分段完成，reader 继续接受已发布 v1，因此六个产品的读取与历史 readiness 能力均未删除；变化只移除 verification 的并发调度并增加可审计续跑。
+- issue #110 将 registered SQL verification 固定为登记顺序单并发，并用严格前缀 checkpoint 续跑最终 429；不能选择或跳过产品。新 Evidence v2 记录单次或分段完成，reader 继续接受已发布 v1，因此六个产品的读取与历史 readiness 能力均未删除；变化只移除 verification 的并发调度并增加可审计续跑。issue #115 又将执行状态与数据完整性拆开：结果加性返回 cap 命中、`complete|unknown` 和判定原因；正好命中 cap 且无独立总数时是 `possible_truncation`，N+1 多出一行仍失败关闭；本地传输不裁行，但上游是否另有响应行上限无合同证据，readiness 和正好 N 行均不提升 cohort 完整性。
 - `analysis.event.query` 不再接受 `$device_id + Count`：生产对照证明该组合始终被拒，而同字段
   `DistinctCount` 与事件次数 `PresetAllCount` 均可读取；因此 schema 收窄没有损失读取能力，并阻止 Agent 把
   caller 输入错误当作 retryable upstream 故障无限重试。

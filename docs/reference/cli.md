@@ -529,6 +529,14 @@ App 归属或“当前版本”。
 relation/function allowlist、timeout、VM step、row 与 byte budget 共同失败关闭。VM step 是可执行资源
 预算，不是 scan-byte 证明，因此结果固定为 `trust=exploratory`、`completeness=unknown`、no claims。
 
+登记 product 的成功项把执行与数据完整性分开：既有 `status=complete` 只表示执行完成；顶层
+`row_cap_reached` 表示返回行数是否等于声明的 `summary.max_rows`，`completeness` 只取
+`complete|unknown`。未撞 cap 时为 `complete/below_row_cap`；撞 cap 且没有独立总行数时为
+`unknown/possible_truncation`，并返回一条 `POSSIBLE_TRUNCATION` warning。只有独立
+`summary.total_row_count` 与返回行数相等，才可在撞 cap 时给出
+`complete/total_row_count_match`。多取的一行仍只用于发现源结果超过 cap；不得把 readiness、HTTP
+成功或正好 N 行本身解释为下游 cohort 完整。
+
 探索行只交给显式调用方，不成为持久 Runtime evidence。`promote` 校验并原子安装 reviewed definition，
 但 SQLite 探索与 Registered SQL 的语义等价性必须由外部 review 证明；安装本身不授予 stable Trust。
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
