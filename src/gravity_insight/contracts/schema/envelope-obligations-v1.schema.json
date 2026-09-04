@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.envelope-obligations.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "execution_status",
+    "data_completeness",
+    "semantic_validity",
+    "diagnostic_evidence",
+    "mutation_certainty"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.envelope-obligations.v1"},
+    "execution_status": {"$ref": "#/$defs/execution_status"},
+    "data_completeness": {"$ref": "#/$defs/data_completeness"},
+    "semantic_validity": {"$ref": "#/$defs/semantic_validity"},
+    "diagnostic_evidence": {"$ref": "#/$defs/diagnostic_evidence"},
+    "mutation_certainty": {"$ref": "#/$defs/mutation_certainty"}
+  },
+  "$defs": {
+    "evidence_code": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 128,
+      "pattern": "^[A-Z][A-Z0-9_]+$"
+    },
+    "evidence_codes": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidence_code"}
+    },
+    "execution_status": {
+      "type": "object",
+      "required": ["state", "evidence_code"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"enum": ["complete", "partial", "failed", "not_started"]},
+        "evidence_code": {"$ref": "#/$defs/evidence_code"}
+      }
+    },
+    "data_completeness": {
+      "type": "object",
+      "required": ["state", "evidence_code", "facts"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"enum": ["complete", "prefix", "unknown", "not_applicable"]},
+        "evidence_code": {"$ref": "#/$defs/evidence_code"},
+        "facts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["boolean", "integer", "number", "string", "null"]
+          }
+        }
+      }
+    },
+    "semantic_validity": {
+      "type": "object",
+      "required": ["state", "evidence_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"enum": ["valid", "invalid", "unknown", "not_applicable"]},
+        "evidence_codes": {"$ref": "#/$defs/evidence_codes"}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "state": {"const": "not_applicable"},
+            "evidence_codes": {"maxItems": 0}
+          }
+        },
+        {
+          "properties": {
+            "state": {"enum": ["valid", "invalid", "unknown"]},
+            "evidence_codes": {"minItems": 1}
+          }
+        }
+      ]
+    },
+    "diagnostic_evidence": {
+      "type": "object",
+      "required": ["state", "evidence_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"enum": ["none", "available", "incomplete"]},
+        "code": {"$ref": "#/$defs/evidence_code"},
+        "category": {"enum": ["caller", "upstream", "local"]},
+        "retryable": {"type": "boolean"},
+        "field": {"type": "string", "minLength": 1, "maxLength": 512},
+        "evidence_codes": {"$ref": "#/$defs/evidence_codes"}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "state": {"const": "none"},
+            "evidence_codes": {"maxItems": 0}
+          },
+          "not": {
+            "anyOf": [
+              {"required": ["code"]},
+              {"required": ["category"]},
+              {"required": ["retryable"]},
+              {"required": ["field"]}
+            ]
+          }
+        },
+        {
+          "required": ["code", "category", "retryable"],
+          "properties": {
+            "state": {"const": "available"},
+            "evidence_codes": {"minItems": 1}
+          }
+        },
+        {
+          "properties": {
+            "state": {"const": "incomplete"},
+            "evidence_codes": {"minItems": 1}
+          }
+        }
+      ]
+    },
+    "mutation_certainty": {
+      "type": "object",
+      "required": ["state", "evidence_code"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "not_applicable",
+            "not_attempted",
+            "applied",
+            "confirmed",
+            "uncertain"
+          ]
+        },
+        "evidence_code": {"$ref": "#/$defs/evidence_code"}
+      }
+    }
+  }
+}

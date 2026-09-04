@@ -37,6 +37,20 @@ from . import plan_derived_metrics_adapter as derived_plan
 from . import plan_monetization_adapter as monetization_plan
 from . import plan_realtime_event_catalog_adapter as realtime_catalog_plan
 from .actionable_error_values import actual_value
+from .contracts.envelope_obligations import (
+    DiagnosticEvidence,
+    DiagnosticState,
+    EnvelopeObligations,
+    ExecutionState,
+    ExecutionStatus,
+    MutationCertainty,
+    MutationState,
+    SemanticState,
+    SemanticValidity,
+    classify_data_completeness,
+    diagnostic_evidence,
+    serialize_envelope,
+)
 
 
 COMPOSITE_NAMES = frozenset(
@@ -317,23 +331,71 @@ def safe_analysis_envelope(
         selected["data"] = {}
         selected["operation_id"] = expected_operation
         selected["error"] = _safe_drift_error(selected, "contract_changed")
-        return selected
+        obligations = _analysis_obligations(result, selected)
+        return serialize_envelope(selected, obligations)
     if status in _DRIFT_STATUSES:
         selected["ok"] = False
         selected["status"] = status
         selected["data"] = {}
         selected["error"] = _safe_drift_error(result, status)
-        return selected
+        obligations = _analysis_obligations(result, selected)
+        return serialize_envelope(selected, obligations)
     if status in _RUNTIME_FAILURE_STATUSES:
         selected["ok"] = False
         selected["status"] = status
         selected["data"] = {}
         selected["error"] = _safe_runtime_error(result)
-        return selected
+        obligations = _analysis_obligations(result, selected)
+        return serialize_envelope(selected, obligations)
     error = result.get("error")
     if isinstance(error, Mapping):
         selected["error"] = _copy_safe_error(error)
-    return selected
+    obligations = _analysis_obligations(result, selected)
+    return serialize_envelope(selected, obligations)
+
+
+def _analysis_obligations(
+    source: Mapping[str, Any], projected: Mapping[str, Any]
+) -> EnvelopeObligations:
+    existing = source.get("obligations")
+    if isinstance(existing, Mapping) and source.get("status") == projected.get("status"):
+        return EnvelopeObligations.from_dict(existing)
+    status = str(projected.get("status", "")).casefold()
+    if status in {"success", "empty"}:
+        execution = ExecutionStatus(ExecutionState.COMPLETE, "ANALYSIS_READ_FINISHED")
+    elif status == "partial":
+        execution = ExecutionStatus(ExecutionState.PARTIAL, "ANALYSIS_READ_PARTIAL")
+    else:
+        execution = ExecutionStatus(ExecutionState.FAILED, "ANALYSIS_READ_FAILED")
+    if status in _DRIFT_STATUSES:
+        semantics = SemanticValidity(
+            SemanticState.INVALID, ("ANALYSIS_CONTRACT_DRIFT",)
+        )
+    elif status in {"success", "empty"} and isinstance(
+        projected.get("interpretation"), Mapping
+    ):
+        semantics = SemanticValidity(
+            SemanticState.VALID, ("ANALYSIS_INTERPRETATION_ATTACHED",)
+        )
+    else:
+        semantics = SemanticValidity(
+            SemanticState.UNKNOWN, ("ANALYSIS_SEMANTICS_NOT_ESTABLISHED",)
+        )
+    error = projected.get("error")
+    diagnostics = diagnostic_evidence(error)
+    if status in _BREAKING_STATUSES and diagnostics.state is DiagnosticState.NONE:
+        diagnostics = DiagnosticEvidence(
+            DiagnosticState.INCOMPLETE, ("ANALYSIS_FAILURE_WITHOUT_STRUCTURED_ERROR",)
+        )
+    return EnvelopeObligations(
+        execution_status=execution,
+        data_completeness=classify_data_completeness(projected),
+        semantic_validity=semantics,
+        diagnostic_evidence=diagnostics,
+        mutation_certainty=MutationCertainty(
+            MutationState.NOT_APPLICABLE, "READ_ONLY_PATH"
+        ),
+    )
 
 
 def _copy_safe_error(error: Mapping[str, Any]) -> dict[str, Any]:

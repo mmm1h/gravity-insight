@@ -577,6 +577,12 @@ gap 不创建/替换目标，partial 产品写入完整 partial envelope 并保�
 调用方至少检查 `schema_version/status/error`。`success` 仍需检查产品 completeness/claims；`empty` 只
 证明该 scope/window 合法为空；`partial/error/capability_gap/blocked/uncertain` 都不能作为完整结论。
 
+已经迁移的结果另带 `obligations`（`gravity.envelope-obligations.v1`），其中 execution、data
+completeness、semantic validity、diagnostic evidence 与 mutation certainty 是五个独立结论；字段
+始终齐全，`unknown` 与 `not_applicable` 不互换。当前先覆盖 Registered SQL Product 与 Analysis Plan
+安全投影，其他存量 envelope 由质量门禁中的只降不升基线管理；调用方在迁移期仍按各产品现有字段
+消费，不从 `status=complete` 推导数据完整。
+
 CLI 退出码为成功 `0`、caller `2`、upstream `3`、local `4`；组合结果按 `4 > 3 > 2 > 0` 聚合。业务
 空结果可为成功；不要用进程退出码替代 envelope 的 completeness、组件状态或 claims。
 

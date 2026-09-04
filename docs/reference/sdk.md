@@ -284,6 +284,10 @@ Evidence、聚合隐私或输出投影。团队产品和 Agent 使用 `query_sql
 没有独立 `summary.total_row_count` 时，结果保持 `completeness=unknown` 并给出
 `possible_truncation`，而不是猜成完整或确定截断。
 
+该结果同时携带 `obligations`：`execution_status` 来自 SQL 执行结论，`data_completeness` 来自 row-cap/
+独立总行数判定；`semantic_validity` 在本层未评估时明确为 `unknown`，读路径的
+`mutation_certainty` 为 `not_applicable`。这些值由内层类型对象序列化，调用方不得用旧顶层状态覆盖。
+
 `gravity.sql_explorer.inspect()` / `execute()` 保留为显式本地 SQLite 合同测试路径，使用 AST、只读数据库
 身份、authorizer 和资源预算。联网 SQL Fast Lane 的 owner 是
 `gravity_insight.sql.verification.GravitySqlExplorerAdapter`；调用方用 `runtime_factory` 延迟提供既有

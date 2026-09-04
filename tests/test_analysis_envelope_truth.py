@@ -9,6 +9,19 @@ from gravity_insight.plan_analysis_adapter import (
     execute_analysis_query_plan,
     safe_analysis_envelope,
 )
+from gravity_insight.contracts.envelope_obligations import (
+    CompletenessState,
+    DataCompleteness,
+    DiagnosticEvidence,
+    DiagnosticState,
+    EnvelopeObligations,
+    ExecutionState,
+    ExecutionStatus,
+    MutationCertainty,
+    MutationState,
+    SemanticState,
+    SemanticValidity,
+)
 from gravity_insight.plan_execution import execute_plan
 from gravity_insight.plan_adapters import build_plan_adapters
 from gravity_insight.sdk import GravitySDK
@@ -193,6 +206,37 @@ class AnalysisEnvelopeTruthTests(unittest.TestCase):
                 context,
             ),
         )
+
+    def test_plan_preserves_inner_typed_obligations_without_reclassifying(self) -> None:
+        facts = EnvelopeObligations(
+            execution_status=ExecutionStatus(
+                ExecutionState.COMPLETE, "DIRECT_ANALYSIS_FINISHED"
+            ),
+            data_completeness=DataCompleteness(
+                CompletenessState.COMPLETE,
+                "PAGINATION_AUDIT_COMPLETE",
+                {"returned_items": 1, "total_items": 1},
+            ),
+            semantic_validity=SemanticValidity(
+                SemanticState.VALID, ("RETENTION_SET_INVARIANTS_SATISFIED",)
+            ),
+            diagnostic_evidence=DiagnosticEvidence(DiagnosticState.NONE),
+            mutation_certainty=MutationCertainty(
+                MutationState.NOT_APPLICABLE, "READ_ONLY_PATH"
+            ),
+        )
+        raw = {
+            "schema_version": "gravity-insight.read.v1",
+            "ok": True,
+            "status": "success",
+            "operation_id": "analysis.retention.query",
+            "data": {"total": []},
+            "obligations": facts.to_dict(),
+        }
+
+        result = safe_analysis_envelope(raw)
+
+        self.assertEqual(facts.to_dict(), result["obligations"])
 
 
 if __name__ == "__main__":
