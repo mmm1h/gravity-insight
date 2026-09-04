@@ -7,12 +7,19 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .census.status import census_status
 from .documentation_status import documentation_report
-from .evidence_common import dimension, git_state, load_object, metric
+from .evidence_common import (
+    context_bound_measurement,
+    dimension,
+    git_state,
+    load_object,
+    metric,
+)
 from .journey_certification import journey_certifications
 from .maturity_dimensions_core import (
     census_evidence,
@@ -166,6 +173,7 @@ def _evidence_sets(
     docs: Mapping[str, Any],
     evaluation: Mapping[str, Any] | None,
     evaluation_observed: Mapping[str, Any],
+    repository: Mapping[str, Any],
 ) -> Sequence[list[dict[str, Any]]]:
     docs_metric = metric(
         source="gravity docs check --json",
@@ -183,7 +191,7 @@ def _evidence_sets(
         skill_evidence(root, health),
         census_evidence(census),
         performance_evidence(certifications, census, evaluation),
-        ci_evidence(root, git_state(root)),
+        ci_evidence(root, repository),
         architecture_evidence(
             root, profile, certifications, profile_failure=profile_failure
         ),
@@ -214,6 +222,7 @@ def _total(dimensions: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     unmeasured_max = sum(int(item["max"]) for item in dimensions if not item["measured"])
     upper = round(measured_score + unmeasured_max, 2)
     return {
+        "status": "measured" if all_measured else "partially_measured",
         "score": measured_score if all_measured else None,
         "max": sum(item[2] for item in DIMENSIONS),
         "measured": all_measured,
@@ -223,6 +232,13 @@ def _total(dimensions: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "score_upper_bound": upper,
         "minimum_gap_to_90": round(max(0.0, 90 - upper), 2),
         "normalized_estimate": None,
+        "unavailable_evidence_statuses": sorted(
+            {
+                str(item.get("status", "not_measured"))
+                for item in dimensions
+                if not item["measured"]
+            }
+        ),
     }
 
 
@@ -245,6 +261,7 @@ def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         docs=docs,
         evaluation=evaluation,
         evaluation_observed=observed,
+        repository=repository,
     )
     dimensions = [
         dimension(dimension_id=item[0], name=item[1], maximum=item[2], evidence=evidence)
@@ -253,6 +270,13 @@ def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     total = _total(dimensions)
     gates = _blocking_gates(health, docs, evaluation, total["measured"])
     threshold = _threshold(dimensions, total, gates)
+    repository["measurement"] = _maturity_measurement(
+        root,
+        repository,
+        status="measured" if total["measured"] else "partially_measured",
+        total=total,
+        captured_at=datetime.now(timezone.utc),
+    )
     return {
         "schema_version": "gravity.maturity-score.v1",
         "status": "measured" if total["measured"] else "partially_measured",
@@ -263,6 +287,30 @@ def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "repository": repository,
         "network_called": False,
     }
+
+
+def _maturity_measurement(
+    root: Path,
+    repository: Mapping[str, Any],
+    *,
+    status: str,
+    total: Mapping[str, Any],
+    captured_at: datetime,
+) -> dict[str, Any]:
+    return context_bound_measurement(
+        {"status": status, "total": dict(total)},
+        coordinate={
+            "kind": "maturity_score",
+            "commit_sha": repository["commit"],
+            "worktree_state": "dirty" if repository["dirty"] else "clean",
+        },
+        scope={"kind": "git_worktree", "root": root.resolve().as_posix()},
+        captured_at=captured_at,
+        binds_to={
+            "commit_sha": repository["commit"],
+            "branch": repository["branch"],
+        },
+    )
 
 
 def _threshold(

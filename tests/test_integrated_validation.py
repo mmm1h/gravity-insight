@@ -23,6 +23,7 @@ from scripts.run_integrated_validation import (
     _cumulative_capability_base,
     _display_path,
     _gate_environment,
+    _receipt_measurement,
     _summary,
     gate_specs,
     integrated_green,
@@ -30,6 +31,7 @@ from scripts.run_integrated_validation import (
     run_gate,
     summarize_gate_results,
 )
+from gravity_insight.maturity_dimensions_ops import _receipt_measurement_matches
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -521,6 +523,63 @@ class IntegratedValidationTests(unittest.TestCase):
         self.assertTrue(
             integrated_green(before, after, [skipped_gate], complete_gate_set=True)
         )
+
+    def test_receipt_measurement_carries_exact_validation_coordinate(self) -> None:
+        head = "d" * 40
+        before = {"head": head}
+        after = {"clean": True}
+        results = [
+            {"name": "unittest_collector", "exit_code": 0},
+            {"name": "pytest_collector", "exit_code": 0},
+        ]
+        summary = {
+            "gate_status_counts": {"pass": 2, "skipped": 0, "fail": 0}
+        }
+
+        measurement = _receipt_measurement(
+            before,
+            after,
+            results,
+            summary,
+            green=True,
+            overall="passed",
+            complete_gate_set=True,
+            trial=False,
+            finished_at="2026-09-05T02:03:04.123456Z",
+        )
+
+        self.assertEqual("gravity.context-bound-measurement.v1", measurement["schema_version"])
+        self.assertEqual(
+            {
+                "kind": "integrated_validation",
+                "commit_sha": head,
+                "worktree_state": "clean",
+                "complete_gate_set": True,
+                "trial": False,
+            },
+            measurement["coordinate"],
+        )
+        self.assertEqual(
+            {"commit_sha": head, "gate_names": ["unittest_collector", "pytest_collector"]},
+            measurement["binds_to"],
+        )
+        self.assertEqual(
+            "2026-09-05T02:03:04.123456+00:00", measurement["captured_at"]
+        )
+        self.assertEqual(2, measurement["value"]["gate_count"])
+        receipt = {
+            "commit_sha": head,
+            "finished_at": "2026-09-05T02:03:04.123456Z",
+            "trial": False,
+            "complete_gate_set": True,
+            "preconditions_after": {"clean": True},
+            "gates": results,
+            "integrated_validation_green": True,
+            "overall": "passed",
+        }
+        self.assertTrue(_receipt_measurement_matches(receipt, measurement))
+        receipt["preconditions_after"] = None
+        self.assertFalse(_receipt_measurement_matches(receipt, measurement))
 
     def test_live_pypi_provenance_is_only_a_post_release_exclusion(self) -> None:
         names = [

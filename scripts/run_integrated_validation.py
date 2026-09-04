@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from gravity_insight.evidence_common import context_bound_measurement
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFINITION = (
@@ -577,6 +579,41 @@ def _display_path(path: Path) -> str:
         return resolved.as_posix()
 
 
+def _receipt_measurement(
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+    results: Sequence[Mapping[str, Any]],
+    gate_summary: Mapping[str, Any],
+    *,
+    green: bool,
+    overall: str,
+    complete_gate_set: bool,
+    trial: bool,
+    finished_at: str,
+) -> dict[str, Any]:
+    return context_bound_measurement(
+        {
+            "gate_count": len(results),
+            "gate_status_counts": gate_summary["gate_status_counts"],
+            "integrated_validation_green": green,
+            "overall": overall,
+        },
+        coordinate={
+            "kind": "integrated_validation",
+            "commit_sha": before["head"],
+            "worktree_state": "clean" if after["clean"] else "dirty",
+            "complete_gate_set": complete_gate_set,
+            "trial": trial,
+        },
+        scope={"kind": "git_worktree", "root": ROOT.resolve().as_posix()},
+        captured_at=finished_at,
+        binds_to={
+            "commit_sha": before["head"],
+            "gate_names": [gate["name"] for gate in results],
+        },
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run and receipt exact-HEAD integrated validation."
@@ -681,14 +718,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     gate_summary = summarize_gate_results(results)
     has_skips = bool(gate_summary["skipped_gates"])
+    trial = bool(args.trial or args.only)
+    finished_at = _utc_now()
+    overall = (
+        "passed_with_skips" if green and has_skips else "passed" if green else "failed"
+    )
     receipt = {
         "schema_version": "gravity.integrated-validation-receipt.v2",
         "definition": DEFINITION,
         "commit_sha": before["head"],
         "branch": before["branch"],
         "started_at": started_at,
-        "finished_at": _utc_now(),
-        "trial": bool(args.trial or args.only),
+        "finished_at": finished_at,
+        "trial": trial,
         "complete_gate_set": complete_gate_set,
         "preconditions_before": before,
         "preconditions_after": after,
@@ -696,8 +738,17 @@ def main(argv: list[str] | None = None) -> int:
         **gate_summary,
         "excluded_post_release_gates": list(POST_RELEASE_GATES),
         "integrated_validation_green": green,
-        "overall": (
-            "passed_with_skips" if green and has_skips else "passed" if green else "failed"
+        "overall": overall,
+        "measurement": _receipt_measurement(
+            before,
+            after,
+            results,
+            gate_summary,
+            green=green,
+            overall=overall,
+            complete_gate_set=complete_gate_set,
+            trial=trial,
+            finished_at=finished_at,
         ),
     }
     receipt_path = args.receipt or run_root / "receipt.json"

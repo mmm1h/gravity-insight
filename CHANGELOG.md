@@ -33,6 +33,20 @@ Target release: `0.3.9`
 
 Migration guide: [0.3.9](docs/migration/0.3.9.md)
 
+### Added
+
+- Context-bound measurements (`gravity.context-bound-measurement.v1`). A
+  measurement whose meaning depends on where it was taken now carries that
+  context — coordinate, scope, capture time, and the commit or artefact it
+  binds to — instead of having it inferred from the environment at the reading
+  site. Resolving one against an expected context yields `measured`,
+  `not_measured`, `expired`, `not_applicable`, or `invalid` with a reason code,
+  so "the evidence aged out", "it was taken somewhere else", and "it was never
+  taken" stop collapsing into a single silent `unmeasured`.
+- Each `gravity maturity score --json` dimension gains a `status` field naming
+  which of those five states it is in. Purely additive: no existing key was
+  removed or repurposed, and `measured` keeps its meaning.
+
 ## [0.3.8] - 2026-09-05
 
 ### Breaking changes
