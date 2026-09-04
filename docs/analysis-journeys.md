@@ -19,7 +19,7 @@
 | 看事件指标之间的散点关系 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
 | 用同一分析定义比较两个时期 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-19 #225：同一 Plan 的 `compare_by_os` 节点带 `compare_start`/`compare_end` 生产 success，信封含 `windows` 与 `delta`（按日绝对变化）。CLI `--compare-* --dry-run` 仍拒绝（`field=dry_run`）。`plan schema` 的 `request_fields` 含这对字段。不改状态、不改冻结 case。 |
 | 在已有结果上执行调用方绑定的派生算术与声明集合对账 | 不计独立动线（调用方派生便利面） | 有 / 有 / 有 / 有（未声明公式返回目标 gap） | 1 / 2（公式未知；workspace 声明后） | `gravity.derived-metrics.v1` 只变换调用方提供的已有结果，不独立取得上游数据；业务公式、总体、单位和声明集合权威性由调用方负责。 |
-| 评估一组人群规则命中的人数与占比 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
+| 评估一组人群规则命中的人数与占比 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | I107 外部证据只证明两个元数据合法自定义事件在 `did=true`、`PresetAllCount/GTE [1]`、静态窗口形状下被 Segment evaluate 拒绝；同事件的 Event 与普通 Retention 聚合成功。#15 另证明 `$MPShow`/`$PayEvent` 不支持，并留有一个 metadata-backed custom event 的 Segment 成功控制。当前代码没有可本地判定的自定义事件接受集，故不做全称判断；目标形状被实际拒绝后返回 `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`（upstream、不可重试、精确规则路径），Agent 对“自定义事件首次暴露 cohort”返回同名 capability gap。关闭需 current-main 同形、同窗的一个成功自定义事件与目标失败事件配对脱敏收据。禁止持久化分群和用户明细时，Funnel 不能表达 NOT-before，普通 Retention 不是等价估计量；完整边界与 spec 见[替代路径](guides/retention-cohort-alternatives.md)。本轮生产请求 0。 |
 | 一次取得构造分析所需的事件、属性、指标和模板上下文 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（实测） | - |
 | 一次查看 App 的容量、角色、权限菜单和实时事件治理快照 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（控制流） | - |
 | 一次查看 App 已登记的归因配置、映射与回溯设置 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（控制流） | - |

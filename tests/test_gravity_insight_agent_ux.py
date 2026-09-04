@@ -1051,7 +1051,7 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual("composite", card["plan_node"]["kind"])
                 spec = card["input_schema"]["spec"]
                 self.assertEqual(
-                    "gravity-insight.segment-rule-spec.v1",
+                    "gravity-insight.segment-rule-spec.v2",
                     spec["schema_version"],
                 )
                 self.assertIn("event_rule", spec["definitions"])

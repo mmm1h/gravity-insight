@@ -14,6 +14,7 @@ _REGISTERED_GAP_QUERIES = (
     "platform specific creative fields",
     "registered sql analysis product",
     "query multidim cohort horizon D60",
+    "custom event first exposure cohort",
 )
 
 

@@ -23,6 +23,15 @@ Target release: `0.3.8`
   and module-graph nodes; raw JSON consumers must decode those tables. The
   repository loader and task-context surface still return the complete v1 fact
   shape, and generation proves decoded v2 is field-for-field identical.
+- **Hard break:** Segment evaluation no longer maps an upstream rejection of the
+  locally valid static custom-event count shape to generic
+  `INPUT_INVALID field=input`. It now returns
+  `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`, `category=upstream`,
+  `retryable=false`, and the exact `user_event_rules` path. The public Segment
+  spec schema advances from `gravity-insight.segment-rule-spec.v1` to `v2` and
+  changes `event_support.default_status` to
+  `requires_live_metadata_and_event_specific_acceptance`; metadata validity is
+  necessary but no longer presented as endpoint-acceptance evidence.
 
 Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
@@ -45,6 +54,15 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
   Bonferroni family handling, observed risk difference and uncertainty; sample,
   variance, window, grouping, causal-claim and same-run self-validation failures
   remain distinct fail-closed outcomes.
+
+### Fixed
+
+- Custom-event first-exposure discovery now returns a named capability gap with
+  the exact known cross-product boundary and the bounded paired receipt needed
+  to close it. The aggregate alternatives guide includes the positive/negative
+  static-window definition, explains why Funnel cannot supply the NOT-before
+  set without forbidden persistence, and explicitly rejects ordinary
+  event-date Retention as an equivalent estimator.
 
 ## [0.3.7] - 2026-09-04
 

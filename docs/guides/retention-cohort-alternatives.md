@@ -247,6 +247,89 @@ else { $d1 = [decimal]$numerator.data.part / [decimal]$denominator.data.part }
 cohort 日的用户，分子是该集合与 D1 启动用户的交集。代价是两次聚合读取与一次本地
 除法，且只返回所选观察日，不返回 Retention endpoint 的整条 offset 矩阵。
 
+## 自定义事件首次暴露 cohort
+
+I107 要求的集合不是普通事件日 Retention。它的分母必须同时满足：cohort 日发生目标
+事件，并且在 cohort 日之前从未发生目标事件。若目标事件已有 Segment endpoint 的成功
+收据，下面的两个静态规则能在一次只读聚合中表达这个交集；前置窗口的 `start` 必须是
+该项目可证明的事件历史起点，否则只能声称“在这个有界窗口内首次”，不能声称生命周期
+首次。
+
+`custom-event-first-exposure.json`：
+
+```json
+{
+  "name": "first-exposure",
+  "start": "<event-history-start>",
+  "end": "<cohort-date>",
+  "logic": "AND",
+  "event_rules": {
+    "logic": "AND",
+    "groups": [
+      {
+        "logic": "AND",
+        "rules": [
+          {
+            "event": "<target-custom-event>",
+            "did": true,
+            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
+            "did_condition": {"operator": "GTE", "values": [1]},
+            "date_range": {
+              "type": "static",
+              "start": "<cohort-date>",
+              "end": "<cohort-date>"
+            }
+          },
+          {
+            "event": "<target-custom-event>",
+            "did": false,
+            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
+            "did_condition": {"operator": "GTE", "values": [1]},
+            "date_range": {
+              "type": "static",
+              "start": "<event-history-start>",
+              "end": "<day-before-cohort>"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+```powershell
+gravity analysis segment evaluate --app main `
+  --spec custom-event-first-exposure.json --dry-run
+gravity analysis segment evaluate --app main `
+  --spec custom-event-first-exposure.json --fields part
+```
+
+这段 spec 是目标集合定义和正/负静态窗口控制，不是 I107 已拒绝事件的绕行：当前外部证据
+是两个元数据合法的自定义事件在同一 `did=true`、`PresetAllCount/GTE [1]`、静态窗口形状
+下都被 Segment evaluate 拒绝，而 Event 与普通 Retention 产品接受了这些事件。仓库另有
+#15 的一个元数据支持自定义事件成功控制，但没有保存足以在本地判定事件接受集的公开标识。
+因此 SDK 只能在上游实际拒绝后返回
+`SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`，不能在请求前断言某个未登记事件会成功或失败，
+也不能据此下“所有自定义事件都不支持”的结论。
+
+在“不持久化分群、不导出用户明细”的约束下，当前没有覆盖已拒绝事件的通用聚合替代：
+
+- 单日 Funnel 能取得 cohort 日参与人数，但不能表达“前置窗口没有发生”；matched Segment
+  还会创建持久化分群，已经超出约束。
+- 即使允许创建 cohort 日与前置窗口两个分群，当前 Segment 的分群引用只接受 `TRUE`，没有
+  已登记的分群差集/补集读取面，两个聚合人数也不能推出交集。
+- 只有项目已经维护了语义受治理、set-once 的目标事件首次发生时间属性时，才能复用上节
+  “首次付费日属性 cohort”的两次聚合规则，把该属性换成目标事件的首次发生时间。I107 未给出
+  这个前提，SDK 不会假设它存在或要求调用方新增写入。
+
+要计算 D1-D7 从未回访，可在上述可执行前提成立时再 AND 一条 `did=false` 的静态
+`<return-event>` 规则，窗口为 D1 到 D7；`part` 是首次暴露 cohort 中七日零回访人数。对当前
+已拒绝事件，这一步仍由同一个 Segment event-rule acceptance gap 阻断。
+
+普通事件日 Retention 会复用重复参与者且不定义首次暴露，明确不是这个集合的等价替代，
+不得把它的结果标成首次暴露留存。
+
 ## 已知失败边界
 
 非空 `retention.property_conditions` 与

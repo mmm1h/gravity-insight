@@ -1,4 +1,4 @@
-"""Intent-first Agent handoff for compact Segment Rule Spec v1."""
+"""Intent-first Agent handoff for compact Segment Rule Spec v2."""
 
 from __future__ import annotations
 
