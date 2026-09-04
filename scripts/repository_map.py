@@ -15,9 +15,15 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAP_PATH = ROOT / "src/gravity_insight/contracts/generated/repository-map.v1.json"
-MAP_SCHEMA = "repository-map-v1.schema.json"
+MAP_PATH = ROOT / "src/gravity_insight/contracts/generated/repository-map.v2.json"
+MAP_SCHEMA = "repository-map-v2.schema.json"
+MAP_FACT_SCHEMA = "repository-map-v1.schema.json"
 PACK_SCHEMA = "task-context-pack-v1.schema.json"
+MAP_ENCODINGS = {
+    "entries": "columnar-string-table-negative-index.v1",
+    "issue_index": "path-table-location-tuples.v1",
+    "module_graph": "node-table-adjacency-index.v1",
+}
 COMPONENT_INDEX = ROOT / "specs/agent-runtime/index.json"
 DEBT_PATH = ROOT / "docs/maintainers/technical-debt.md"
 ARCHITECTURE_PATH = ROOT / "docs/architecture.md"
@@ -122,6 +128,213 @@ def canonical_json_bytes(value: Any, *, pretty: bool = False) -> bytes:
 
 def canonical_sha256(value: Any) -> str:
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+
+
+def _string_values(value: Any) -> Iterable[str]:
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, list):
+        for item in value:
+            yield from _string_values(item)
+    elif isinstance(value, Mapping):
+        for item in value.values():
+            yield from _string_values(item)
+
+
+def _encode_entry_value(value: Any, indexes: Mapping[str, int]) -> Any:
+    if isinstance(value, str):
+        return -(indexes[value] + 1)
+    if isinstance(value, list):
+        return [_encode_entry_value(item, indexes) for item in value]
+    if isinstance(value, Mapping):
+        return {
+            key: _encode_entry_value(item, indexes)
+            for key, item in value.items()
+        }
+    return value
+
+
+def _decode_entry_value(value: Any, strings: Sequence[str]) -> Any:
+    if isinstance(value, int) and not isinstance(value, bool) and value < 0:
+        index = -value - 1
+        if index >= len(strings):
+            raise RepositoryMapError(f"entry string index is out of range: {index}")
+        return strings[index]
+    if isinstance(value, list):
+        return [_decode_entry_value(item, strings) for item in value]
+    if isinstance(value, Mapping):
+        return {
+            key: _decode_entry_value(item, strings)
+            for key, item in value.items()
+        }
+    return value
+
+
+def encode_repository_map(document: Mapping[str, Any]) -> dict[str, Any]:
+    """Encode the v1 fact model as the compact v2 whole-file transport."""
+
+    if document.get("schema_version") != "gravity.repository-map.v1":
+        raise RepositoryMapError("repository map facts must use gravity.repository-map.v1")
+    entries = list(document["entries"])
+    fields = sorted(entries[0]) if entries else []
+    if any(sorted(entry) != fields for entry in entries):
+        raise RepositoryMapError("repository map entries do not share one field set")
+    strings = sorted(set(_string_values(entries)))
+    string_indexes = {value: index for index, value in enumerate(strings)}
+
+    issue_index = document["issue_index"]
+    paths = sorted(
+        {
+            location["path"]
+            for locations in issue_index.values()
+            for location in locations
+        }
+    )
+    path_indexes = {value: index for index, value in enumerate(paths)}
+
+    graph = document["module_graph"]
+    adjacency = graph["edges"]
+    nodes = sorted(adjacency)
+    node_indexes = {value: index for index, value in enumerate(nodes)}
+    missing_targets = sorted(
+        {
+            target
+            for targets in adjacency.values()
+            for target in targets
+            if target not in node_indexes
+        }
+    )
+    if missing_targets:
+        raise RepositoryMapError(
+            "module graph targets are absent from the node table: "
+            + ", ".join(missing_targets)
+        )
+
+    return {
+        **{
+            key: value
+            for key, value in document.items()
+            if key not in {"entries", "issue_index", "module_graph", "schema_version"}
+        },
+        "schema_version": "gravity.repository-map.v2",
+        "encoding": dict(MAP_ENCODINGS),
+        "entries": {
+            "fields": fields,
+            "strings": strings,
+            "rows": [
+                [_encode_entry_value(entry[field], string_indexes) for field in fields]
+                for entry in entries
+            ],
+        },
+        "issue_index": {
+            "paths": paths,
+            "issues": {
+                issue: [
+                    [path_indexes[location["path"]], location["line"]]
+                    for location in locations
+                ]
+                for issue, locations in issue_index.items()
+            },
+        },
+        "module_graph": {
+            **{key: value for key, value in graph.items() if key != "edges"},
+            "nodes": nodes,
+            "edges": [
+                [node_indexes[target] for target in adjacency[node]]
+                for node in nodes
+            ],
+        },
+    }
+
+
+def decode_repository_map(document: Mapping[str, Any]) -> dict[str, Any]:
+    """Restore every v1 fact from a compact v2 Repository Map transport."""
+
+    if document.get("schema_version") != "gravity.repository-map.v2":
+        raise RepositoryMapError("repository map transport must use gravity.repository-map.v2")
+    if document.get("encoding") != MAP_ENCODINGS:
+        raise RepositoryMapError("repository map transport encoding is unsupported")
+
+    encoded_entries = document["entries"]
+    fields = encoded_entries["fields"]
+    strings = encoded_entries["strings"]
+    if fields != sorted(set(fields)):
+        raise RepositoryMapError("entry fields must be sorted and unique")
+    if strings != sorted(set(strings)):
+        raise RepositoryMapError("entry strings must be sorted and unique")
+    entries: list[dict[str, Any]] = []
+    for row in encoded_entries["rows"]:
+        if len(row) != len(fields):
+            raise RepositoryMapError("entry row length differs from the field table")
+        entries.append(
+            {
+                field: _decode_entry_value(value, strings)
+                for field, value in zip(fields, row, strict=True)
+            }
+        )
+
+    encoded_issues = document["issue_index"]
+    paths = encoded_issues["paths"]
+    if paths != sorted(set(paths)):
+        raise RepositoryMapError("issue paths must be sorted and unique")
+    issue_index: dict[str, list[dict[str, Any]]] = {}
+    for issue, locations in encoded_issues["issues"].items():
+        decoded_locations: list[dict[str, Any]] = []
+        for path_index, line in locations:
+            if path_index < 0 or path_index >= len(paths):
+                raise RepositoryMapError(
+                    f"issue path index is out of range: {path_index}"
+                )
+            decoded_locations.append({"path": paths[path_index], "line": line})
+        issue_index[issue] = decoded_locations
+
+    encoded_graph = document["module_graph"]
+    nodes = encoded_graph["nodes"]
+    rows = encoded_graph["edges"]
+    if nodes != sorted(set(nodes)):
+        raise RepositoryMapError("module graph nodes must be sorted and unique")
+    if len(rows) != len(nodes):
+        raise RepositoryMapError("module graph row count differs from the node table")
+    adjacency: dict[str, list[str]] = {}
+    for node, targets in zip(nodes, rows, strict=True):
+        decoded_targets: list[str] = []
+        for target_index in targets:
+            if target_index < 0 or target_index >= len(nodes):
+                raise RepositoryMapError(
+                    f"module graph target index is out of range: {target_index}"
+                )
+            decoded_targets.append(nodes[target_index])
+        adjacency[node] = decoded_targets
+    if encoded_graph["node_count"] != len(adjacency):
+        raise RepositoryMapError("module graph node count differs from decoded nodes")
+    if encoded_graph["edge_count"] != sum(len(values) for values in adjacency.values()):
+        raise RepositoryMapError("module graph edge count differs from decoded edges")
+
+    return {
+        **{
+            key: value
+            for key, value in document.items()
+            if key
+            not in {
+                "encoding",
+                "entries",
+                "issue_index",
+                "module_graph",
+                "schema_version",
+            }
+        },
+        "schema_version": "gravity.repository-map.v1",
+        "entries": entries,
+        "issue_index": issue_index,
+        "module_graph": {
+            **{
+                key: value
+                for key, value in encoded_graph.items()
+                if key not in {"nodes", "edges"}
+            },
+            "edges": adjacency,
+        },
+    }
 
 
 def estimate_tokens(data: bytes | str) -> int:
@@ -784,13 +997,15 @@ def write_repository_map(
     root: Path = ROOT,
     output: Path | None = None,
 ) -> tuple[dict[str, Any], bytes]:
-    document = build_repository_map(root)
+    facts = build_repository_map(root)
+    validate_contract(facts, MAP_FACT_SCHEMA)
+    document = encode_repository_map(facts)
     validate_contract(document, MAP_SCHEMA)
     payload = canonical_json_bytes(document) + b"\n"
     selected = output or (root / MAP_PATH.relative_to(ROOT))
     selected.parent.mkdir(parents=True, exist_ok=True)
     selected.write_bytes(payload)
-    return document, payload
+    return facts, payload
 
 
 def load_repository_map(
@@ -801,7 +1016,10 @@ def load_repository_map(
     document = _json(path)
     if validate:
         validate_contract(document, MAP_SCHEMA)
-    return document
+    facts = decode_repository_map(document)
+    if validate:
+        validate_contract(facts, MAP_FACT_SCHEMA)
+    return facts
 
 
 def _normalize_input_path(value: str, root: Path) -> str:
@@ -1499,6 +1717,8 @@ __all__ = [
     "canonical_json_bytes",
     "canonical_sha256",
     "classify_change_risk",
+    "decode_repository_map",
+    "encode_repository_map",
     "estimate_tokens",
     "load_repository_map",
     "validate_contract",

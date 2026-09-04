@@ -17,7 +17,14 @@ Target release: `0.3.8`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** The checked-in Repository Map moves from
+  `contracts/generated/repository-map.v1.json` to `repository-map.v2.json`.
+  Its whole-file JSON transport now tables repeated entry strings, issue paths,
+  and module-graph nodes; raw JSON consumers must decode those tables. The
+  repository loader and task-context surface still return the complete v1 fact
+  shape, and generation proves decoded v2 is field-for-field identical.
+
+Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
 ### Added
 

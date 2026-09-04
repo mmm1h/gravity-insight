@@ -64,7 +64,12 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         self.assertEqual("released", releases["0.3.7"]["release_status"])
         self.assertEqual("none", releases["0.3.7"]["breaking_status"])
         self.assertEqual("unreleased", releases["0.3.8"]["release_status"])
-        self.assertEqual("none", releases["0.3.8"]["breaking_status"])
+        self.assertEqual("breaking", releases["0.3.8"]["breaking_status"])
+        self.assertEqual(1, len(releases["0.3.8"]["hard_breaks"]))
+        self.assertEqual([], releases["0.3.8"]["soft_breaks"])
+        self.assertEqual(
+            "docs/migration/0.3.8.md", releases["0.3.8"]["migration_guide"]
+        )
         for version in ("0.3.1", "0.3.2"):
             with self.subTest(version=version):
                 self.assertEqual("unknown", releases[version]["breaking_status"])
@@ -95,15 +100,12 @@ class ReleaseCompatibilityTests(unittest.TestCase):
                     f"# Synthetic {version} migration\n", encoding="utf-8"
                 )
             source = CHANGELOG_PATH.read_text(encoding="utf-8")
-            marker = "Target release: `0.3.8`\n\n### Breaking changes\n\n- None."
+            marker = "Target release: `0.3.8`\n\n### Breaking changes\n\n"
             self.assertIn(marker, source)
             changelog.write_text(
                 source.replace(
                     marker,
-                    "Target release: `0.3.8`\n\n"
-                    "Migration guide: [0.3.8](docs/migration/0.3.8.md)\n\n"
-                    "### Breaking changes\n\n"
-                    "- **Hard break:** synthetic stale-contract proof.",
+                    marker + "- **Hard break:** synthetic stale-contract proof.\n",
                     1,
                 ),
                 encoding="utf-8",
