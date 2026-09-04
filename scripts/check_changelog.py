@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from dataclasses import dataclass
@@ -64,6 +65,26 @@ class ChangelogReport:
     released_versions: tuple[str, ...]
     breaking_entries: int
     migration_guides: int
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _repository_head(root: Path) -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+        check=False,
+    )
+    value = completed.stdout.strip()
+    if completed.returncode != 0 or re.fullmatch(r"[0-9a-f]{40}", value) is None:
+        raise ChangelogError("cannot bind changelog receipt to repository HEAD")
+    return value
 
 
 def _read_text(path: Path, label: str) -> str:
@@ -307,6 +328,78 @@ def validate_changelog(
     )
 
 
+def release_declaration(
+    release_version: str,
+    *,
+    root: Path = ROOT,
+    changelog_path: Path = CHANGELOG_PATH,
+    pyproject_path: Path = PYPROJECT_PATH,
+    lock_path: Path = LOCK_PATH,
+) -> dict[str, Any]:
+    if _VERSION_RE.fullmatch(release_version) is None:
+        raise ChangelogError(f"invalid release version {release_version!r}")
+    report = validate_changelog(
+        root=root,
+        changelog_path=changelog_path,
+        pyproject_path=pyproject_path,
+        lock_path=lock_path,
+    )
+    if report.project_version != release_version:
+        raise ChangelogError(
+            f"release version {release_version} does not equal project version "
+            f"{report.project_version}"
+        )
+    sections = _sections(_read_text(changelog_path, "CHANGELOG.md"))
+    released = next(
+        (section for section in sections if section.label == release_version), None
+    )
+    if released is not None:
+        section = released
+        section_state = "released"
+    elif sections[0].label == "Unreleased" and _target_version(sections[0]) == release_version:
+        section = sections[0]
+        section_state = "unreleased_target"
+    else:
+        raise ChangelogError(
+            f"release version {release_version} has no matching changelog section"
+        )
+
+    breaking_lines = _subsection_lines(section, _BREAKING_HEADING)
+    breaking_entries = [
+        line for line in breaking_lines if line.startswith(_BREAKING_MARKERS)
+    ]
+    migration_path = _migration_path(section)
+    if breaking_entries:
+        if migration_path is None:
+            raise ChangelogError(
+                f"release version {release_version} has breaking changes but no migration guide"
+            )
+        migration_file = (root / migration_path).resolve()
+        migration = {
+            "status": "required_and_present",
+            "path": migration_path,
+            "sha256": _sha256(migration_file),
+        }
+    else:
+        migration = {"status": "not_required", "path": None, "sha256": None}
+    return {
+        "schema_version": "gravity.release-changelog.v1",
+        "status": "passed",
+        "release_version": release_version,
+        "project_version": report.project_version,
+        "repository_head": _repository_head(root),
+        "section": section.label,
+        "section_state": section_state,
+        "changelog_sha256": _sha256(changelog_path),
+        "released_section_lock_sha256": _sha256(lock_path),
+        "breaking_change_declaration": (
+            "declared" if breaking_entries else "none_declared"
+        ),
+        "breaking_entries": len(breaking_entries),
+        "migration": migration,
+    }
+
+
 def _path(value: str) -> Path:
     return Path(value).resolve()
 
@@ -319,6 +412,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--changelog", type=_path, default=CHANGELOG_PATH)
     parser.add_argument("--pyproject", type=_path, default=PYPROJECT_PATH)
     parser.add_argument("--lock", type=_path, default=LOCK_PATH)
+    parser.add_argument("--release-version")
+    parser.add_argument("--receipt", type=_path)
     parser.add_argument(
         "--print-digests",
         action="store_true",
@@ -341,9 +436,35 @@ def main(argv: Sequence[str] | None = None) -> int:
             }
             print(json.dumps(sections, indent=2, sort_keys=True))
             return 0
+        declaration = None
+        if args.receipt is not None and args.release_version is None:
+            raise ChangelogError("--receipt requires --release-version")
+        if args.release_version is not None:
+            declaration = release_declaration(
+                args.release_version,
+                root=args.root,
+                changelog_path=args.changelog,
+                pyproject_path=args.pyproject,
+                lock_path=args.lock,
+            )
+            if args.receipt is not None:
+                args.receipt.parent.mkdir(parents=True, exist_ok=True)
+                args.receipt.write_text(
+                    json.dumps(declaration, ensure_ascii=False, indent=2, sort_keys=True)
+                    + "\n",
+                    encoding="utf-8",
+                    newline="\n",
+                )
     except ChangelogError as exc:
         print(f"FAIL changelog: {exc}", file=sys.stderr)
         return 1
+    suffix = ""
+    if declaration is not None:
+        suffix = (
+            f", release_version={declaration['release_version']}, "
+            f"section_state={declaration['section_state']}, "
+            f"migration={declaration['migration']['status']}"
+        )
     print(
         "PASS changelog: "
         f"project_version={report.project_version}, "
@@ -351,7 +472,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"released={len(report.released_versions)}, "
         f"locked={len(report.released_versions)}, "
         f"breaking_entries={report.breaking_entries}, "
-        f"migration_guides={report.migration_guides}"
+        f"migration_guides={report.migration_guides}{suffix}"
     )
     return 0
 

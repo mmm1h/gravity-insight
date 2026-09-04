@@ -1,8 +1,14 @@
 # Release Gate
 
-The tag workflow is the publication boundary. Supply-chain controls run in the
-Ubuntu `release-supply-chain` job, and the tagged commit's CI evidence is
-re-checked by `verify-ci`; both gate the OIDC `publish` job. They are hard
+The tag workflow is the publication boundary. `verify-ci` requires GitHub to
+report `main` as protected, proves that the tag, checkout, branch API commit,
+and current `origin/main` are the same commit, then re-validates the
+identical commit's successful `push`/`main` CI run and unique `ci-required` job.
+Supply-chain controls and a fresh exact-tag Integrated Validation run execute in
+the Ubuntu `release-supply-chain` job. That job validates the intended wheel on
+all five surfaces and against the pinned canonical consumer, checks the
+release-version changelog and migration declaration, and emits
+`release-gate.json`. Both jobs gate the unchanged OIDC `publish` job. They are hard
 failures: a missing scanner/tool, incomplete Git history, unreviewed secret
 candidate, failed artifact install, invalid or incomplete SBOM, unreachable
 advisory service, incomplete audit response, or reported vulnerability blocks
@@ -14,7 +20,24 @@ mismatched run fails the release rather than publishing on stale evidence.
 `ci-required` is the single aggregated branch-protection check; individual
 failures still surface in their own named jobs.
 
-## J5 timing receipt
+Integrated Validation runs again on the tag commit rather than reusing a local
+pre-tag receipt. After exact protected-main equivalence is established, the tag
+SHA is checked out as a local `main` branch solely to satisfy IV's clean-main
+precondition; the receipt must bind that SHA, contain the complete gate set, and
+have zero skips. This deliberately adds release latency and avoids a race in
+which `main` advances between a pre-tag IV run and tag creation. The tag path
+also uses an independent `.venv`; `workflow_dispatch` measurement/recovery never
+executes these publish-only gates.
+
+The aggregate pre-publish receipt re-parses every source receipt, recomputes the
+wheel/sdist hashes, and requires the SBOM, dependency audit, installed-wheel
+matrix, consumer, changelog, migration, CI, secret-history, protected-main, and
+IV facts to agree on the release inputs. Provenance remains explicitly
+`deferred_post_publish` in that receipt because OIDC attestations do not exist
+until publication; `finalize-release` continues to verify them before creating
+or reconciling the GitHub Release.
+
+## Measured release timing
 
 The v0.3.7 tag run `33794176327` (2026-09-03) reached PyPI's recorded wheel
 upload in 76s and sdist upload in 78s. `verify-ci` and `release-supply-chain`
@@ -75,23 +98,24 @@ specific reason plus review expiry.
 
 ## Section 5.9 status
 
-This is a current implementation audit, not a claim that the full release gate
-is complete.
+This is the current executable enforcement audit. `implemented` means the tag
+workflow either runs the check or consumes and re-validates an exact-SHA receipt
+before the unchanged `publish` job becomes eligible.
 
 | Required item | Status | Evidence / missing enforcement |
 | --- | --- | --- |
-| protected `main` | partial | Branch policy is recorded, but `release.yml` does not prove the tagged commit equals protected `main`. |
-| Integrated Validation | partial | `run_integrated_validation.py` receipts exact-HEAD gates and now includes all three supply controls; `release.yml` does not consume a green receipt. |
+| protected `main` | implemented | `check_release_main.py` requires GitHub branch metadata to report `main` as protected and requires its API commit, the checked-out HEAD, pushed version tag, and freshly fetched `origin/main` to resolve to the identical `GITHUB_SHA`; `check_release_ci.py` separately requires the successful exact-SHA `push`/`main` CI run and unique successful `ci-required` job. |
+| Integrated Validation | implemented | The tag job creates an independent `.venv`, runs the complete IV set on the proven tag/main SHA, and the aggregate gate requires an exact-SHA non-trial green receipt with zero skipped gates. |
 | wheel + sdist | implemented | `python -m build`, Twine check, and artifact upload require both distributions. |
-| non-editable install | partial | SBOM generation installs both artifacts non-editably; the release job does not run the installed-wheel surface matrix. |
-| canonical consumer | partial | Installed canonical-consumer validation exists in Integrated Validation but is not invoked or receipted by `release.yml`. |
-| journey certifications | partial | Journey ledger/checks exist in Integrated Validation; the tag workflow has no explicit certification artifact. |
+| non-editable install | implemented | SBOM generation still installs both intended artifacts non-editably; the tag job additionally runs and receipts the five-surface matrix against the exact intended wheel hash. |
+| canonical consumer | implemented | The public pinned `work-dashboard` revision is checked on `main`, run with strict prerequisites against the exact intended wheel, and bound into both its own receipt and the aggregate release receipt. |
+| journey certifications | implemented | The IV artifact explicitly receipts the component index, journey ledger generator, installed-wheel matrix, and promotion readiness; the aggregate receipt requires all four named gates to pass. |
 | provenance | implemented | OIDC Trusted Publishing emits attestations and the post-publish job verifies both PyPI file classes; GitHub Release waits for that verification. |
 | SBOM | implemented | Separate artifact-bound CycloneDX 1.6 documents are generated for wheel and sdist and attached to GitHub Release. |
 | dependency audit | implemented | The isolated wheel runtime closure is audited against OSV before publish; unavailable data or findings block. |
-| changelog | partial | GitHub generates release notes, but no maintained changelog or pre-publish changelog check exists. |
-| migration | partial | Consumer migration policy and tests exist; the tag workflow does not require a migration declaration/result. |
-| release receipt | partial | Integrated Validation and supply checks produce receipts, but no aggregate pre-publish release receipt binds every required item. |
+| changelog | implemented | `check_changelog.py --release-version` requires the tag version to equal the project version, validates the matching section and immutable released-section lock, and emits an artifact-bound receipt before publish. |
+| migration | implemented | Every release explicitly declares breaking changes or none; a breaking release must provide the version-matched migration guide, whose SHA-256 is bound into the changelog and aggregate receipts. |
+| release receipt | implemented | `build_release_gate_receipt.py` fails closed unless every pre-publish item agrees on the exact SHA and intended distribution hashes; the single `release-gate.json` is uploaded with release evidence. |
 
 ## R16 owner review
 
