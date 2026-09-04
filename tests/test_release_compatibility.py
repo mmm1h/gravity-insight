@@ -63,7 +63,7 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         self.assertEqual("none", releases["0.3.6"]["breaking_status"])
         self.assertEqual("released", releases["0.3.7"]["release_status"])
         self.assertEqual("none", releases["0.3.7"]["breaking_status"])
-        self.assertEqual("unreleased", releases["0.3.8"]["release_status"])
+        self.assertEqual("released", releases["0.3.8"]["release_status"])
         self.assertEqual("breaking", releases["0.3.8"]["breaking_status"])
         self.assertEqual(2, len(releases["0.3.8"]["hard_breaks"]))
         self.assertEqual(2, len(releases["0.3.8"]["soft_breaks"]))
@@ -95,17 +95,25 @@ class ReleaseCompatibilityTests(unittest.TestCase):
             changelog = root / "CHANGELOG.md"
             migration_dir = root / "docs/migration"
             migration_dir.mkdir(parents=True)
-            for version in ("0.3.3", "0.3.4", "0.3.5", "0.3.6", "0.3.7", "0.3.8"):
+            for version in (
+                "0.3.3", "0.3.4", "0.3.5", "0.3.6", "0.3.7", "0.3.8", "0.3.9",
+            ):
                 (migration_dir / f"{version}.md").write_text(
                     f"# Synthetic {version} migration\n", encoding="utf-8"
                 )
             source = CHANGELOG_PATH.read_text(encoding="utf-8")
-            marker = "Target release: `0.3.8`\n\n### Breaking changes\n\n"
+            # Replace the placeholder rather than prepending to it. A freshly cut
+            # release leaves `- None.` as the only breaking entry, and a section
+            # holding both that and a synthetic break fails the marker rule
+            # before it can reach the staleness check this test is about.
+            marker = "Target release: `0.3.9`\n\n### Breaking changes\n\n- None.\n"
             self.assertIn(marker, source)
             changelog.write_text(
                 source.replace(
                     marker,
-                    marker + "- **Hard break:** synthetic stale-contract proof.\n",
+                    "Target release: `0.3.9`\n\n### Breaking changes\n\n"
+                    "- **Hard break:** synthetic stale-contract proof.\n"
+                    "\nMigration guide: [0.3.9](docs/migration/0.3.9.md)\n",
                     1,
                 ),
                 encoding="utf-8",
