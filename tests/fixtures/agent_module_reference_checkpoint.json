@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "a1faf5ffc0c5b432d6050f26eb3a2a9dd8eca34b0cab2dc958e4a9026ea1895a",
+    "reference_evidence_sha256": "c6d19f8345205e86fe94746870db3af7b6ff332ccc46eb5c96c4babce9765898",
     "manual_review_sha256": "f81c04e4d4ba9c67bbffceff164a7c872c58943bcd12771c95436ac950ab09ee",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3143,
-    "scanned_file_count": 3136,
+    "version_controlled_file_count": 3147,
+    "scanned_file_count": 3140,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -663,12 +663,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 229,
-    "reference_site_count": 227,
+    "tracked_site_count": 230,
+    "reference_site_count": 228,
     "manual_review_site_count": 145,
     "reference_manual_overlap_count": 143,
     "manual_only_site_count": 2,
-    "unique_source_keys": 229,
+    "unique_source_keys": 230,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -679,7 +679,7 @@
       "entrypoint_config": 3,
       "manual_patch_expression": 123,
       "module_qualname_dependency": 7,
-      "static_import": 76,
+      "static_import": 77,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -690,9 +690,9 @@
       "non_string_patch_expression": 123
     },
     "dispositions": {
-      "no_migration_effect": 229
+      "no_migration_effect": 230
     },
-    "sites_sha256": "608e42d6e3572c24a8622ed4d4157b480877060b17ccb3cf2dd6faf93c2f1912"
+    "sites_sha256": "26dd438d5b436daddec0ee484510fc28a16624ab8e82136b40b29598bb1b15bf"
   },
   "blockers": [],
   "site_fields": [
@@ -765,6 +765,21 @@
       "no_migration_effect",
       "direct_object_patch",
       17,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "scripts/check_surface_parity.py:17:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      62,
       {
         "kind": "none"
       }

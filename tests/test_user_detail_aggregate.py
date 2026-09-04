@@ -35,6 +35,17 @@ from gravity_insight.user_detail_aggregate_contract import (
     normalize_user_detail_aggregate_inputs,
 )
 from gravity_insight.user_detail_aggregate_product import run_user_detail_aggregate
+from scripts.check_surface_parity import (
+    SURFACES as PARITY_SURFACES,
+    analyze_operation_row,
+    build_surface_matrix,
+    compare_baselines as compare_surface_parity_baselines,
+    gate_errors as surface_parity_gate_errors,
+    load_baseline as load_surface_parity_baseline,
+    load_operation_registry,
+    stable_excluded_operations,
+    stable_read_operations,
+)
 
 
 SENTINEL = "ISSUE39-USER-ROW-SENTINEL-7f3c"
@@ -647,6 +658,121 @@ class SurfaceParityHarnessTests(unittest.TestCase):
                 error["code"], error["category"], error["stage"],
                 error["cause"], error["retryable"],
             ),
+        )
+
+
+class RegistrySurfaceParityMatrixTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.baseline = load_surface_parity_baseline()
+        cls.matrix = build_surface_matrix(baseline=cls.baseline)
+
+    def test_registry_drives_five_surface_full_envelope_matrix(self) -> None:
+        registry = load_operation_registry()
+        expected = {
+            f"operation:{operation.operation_id}"
+            for operation in stable_read_operations(registry)
+        }
+        excluded = {
+            operation.operation_id
+            for operation in stable_excluded_operations(registry)
+        }
+        self.assertEqual(expected, {row["row_id"] for row in self.matrix["rows"]})
+        self.assertEqual(
+            excluded,
+            {
+                item["operation_id"]
+                for item in self.baseline["excluded_operations"]
+            },
+        )
+        self.assertEqual([], self.matrix["scope_exclusions"]["unregistered_operation_ids"])
+        self.assertEqual(list(PARITY_SURFACES), self.matrix["surfaces"])
+        for row in self.matrix["rows"]:
+            with self.subTest(operation=row["operation_id"]):
+                cells = row["cells"]
+                self.assertEqual(set(PARITY_SURFACES), set(cells))
+                for surface in ("direct_sdk", "cli", "sdk_wrapper", "plan"):
+                    self.assertEqual(
+                        {"empty", "upstream_error"}, set(cells[surface]["samples"])
+                    )
+                    self.assertIsInstance(cells[surface]["samples"]["empty"], dict)
+                    self.assertIsInstance(
+                        cells[surface]["samples"]["upstream_error"], dict
+                    )
+                self.assertIsInstance(
+                    cells["cli"]["samples"]["empty"]["pagination_audit"][
+                        "completeness"
+                    ],
+                    dict,
+                )
+                self.assertIn("results", cells["plan"]["samples"]["empty"])
+                self.assertIn("structuredContent", cells["mcp"]["samples"]["unsupported"]["result"])
+
+    def test_current_registry_surface_matrix_passes_the_ratchet(self) -> None:
+        self.assertEqual([], self.matrix["findings"])
+        self.assertEqual([], surface_parity_gate_errors(self.matrix, self.baseline))
+
+    def test_rejects_new_sdk_envelope_field_loss(self) -> None:
+        row = copy.deepcopy(self.matrix["rows"][0])
+        del row["cells"]["sdk_wrapper"]["samples"]["empty"]["data"]
+        findings, _applications = analyze_operation_row(
+            row, self.baseline["allowances"]
+        )
+        mutated = {"findings": findings}
+        self.assertTrue(
+            any(
+                item["surface"] == "sdk_wrapper"
+                and item["outcome"] == "empty"
+                and item["path"] == "/data"
+                for item in findings
+            )
+        )
+        self.assertTrue(surface_parity_gate_errors(mutated, self.baseline))
+
+    def test_rejects_removed_cli_pagination_audit_allowance(self) -> None:
+        allowances = [
+            item
+            for item in self.baseline["allowances"]
+            if item["allowance_id"] != "cli-empty-pagination-audit-v1"
+        ]
+        findings, _applications = analyze_operation_row(
+            self.matrix["rows"][0], allowances
+        )
+        self.assertTrue(
+            any(
+                item["surface"] == "cli"
+                and item["difference_kind"] == "extra"
+                and item["path"] == "/pagination_audit"
+                for item in findings
+            )
+        )
+
+    def test_surface_parity_finding_baseline_can_only_decrease(self) -> None:
+        existing = {
+            "finding_id": "operation:fixture:plan:empty:missing:~data",
+            "severity": "high",
+            "rationale": "A fixture finding retained only to exercise the subset ratchet.",
+            "owner_question": "Should this fixture remain?",
+        }
+        base = {"allowed_findings": [existing]}
+        self.assertEqual([], compare_surface_parity_baselines({"allowed_findings": []}, base))
+        added = copy.deepcopy(existing)
+        added["finding_id"] = "operation:new:plan:empty:missing:~data"
+        self.assertTrue(
+            compare_surface_parity_baselines(
+                {"allowed_findings": [existing, added]}, base
+            )
+        )
+        self.assertTrue(
+            compare_surface_parity_baselines(
+                {
+                    "allowed_findings": [existing],
+                    "excluded_operations": [
+                        {"operation_id": "operation:new", "reason": "new exclusion"}
+                    ],
+                },
+                {"allowed_findings": [existing], "excluded_operations": []},
+            )
         )
 
 

@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.surface-parity-matrix.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "registry",
+    "surfaces",
+    "probe",
+    "row_count",
+    "rows",
+    "scope_exclusions",
+    "allowance_application_count",
+    "findings",
+    "severity_counts",
+    "matrix_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "gravity.surface-parity-matrix.v1"},
+    "registry": {
+      "type": "object",
+      "required": [
+        "source",
+        "operation_count",
+        "stable_operation_count",
+        "stable_read_operation_count",
+        "stable_non_read_operation_count",
+        "contract_digest"
+      ],
+      "properties": {
+        "source": {"const": "compiled OperationSpec registry"},
+        "operation_count": {"type": "integer", "minimum": 1},
+        "stable_operation_count": {"type": "integer", "minimum": 1},
+        "stable_read_operation_count": {"type": "integer", "minimum": 1},
+        "stable_non_read_operation_count": {"type": "integer", "minimum": 0},
+        "contract_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "surfaces": {
+      "const": ["direct_sdk", "cli", "sdk_wrapper", "plan", "mcp"]
+    },
+    "probe": {
+      "type": "object",
+      "required": ["network_called", "field_policy", "empty_outcome", "upstream_error_outcome", "sample_shape"],
+      "properties": {
+        "network_called": {"const": false},
+        "field_policy": {"type": "string", "minLength": 1},
+        "empty_outcome": {"type": "string", "minLength": 1},
+        "upstream_error_outcome": {"type": "string", "minLength": 1},
+        "sample_shape": {"const": "complete surface output; no reduced envelope fixtures"}
+      },
+      "additionalProperties": false
+    },
+    "row_count": {"type": "integer", "minimum": 1},
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "row_id",
+          "row_kind",
+          "operation_id",
+          "effect",
+          "source_contract",
+          "input_sample",
+          "cells",
+          "findings",
+          "legal_differences"
+        ],
+        "properties": {
+          "row_id": {"type": "string", "pattern": "^operation:.*$"},
+          "row_kind": {"const": "operation"},
+          "operation_id": {"type": "string", "minLength": 1},
+          "effect": {"const": "read"},
+          "source_contract": {"type": "object"},
+          "input_sample": {"type": "object"},
+          "cells": {
+            "type": "object",
+            "required": ["direct_sdk", "cli", "sdk_wrapper", "plan", "mcp"],
+            "properties": {
+              "direct_sdk": {"$ref": "#/$defs/cell"},
+              "cli": {"$ref": "#/$defs/cell"},
+              "sdk_wrapper": {"$ref": "#/$defs/cell"},
+              "plan": {"$ref": "#/$defs/cell"},
+              "mcp": {"$ref": "#/$defs/cell"}
+            },
+            "additionalProperties": false
+          },
+          "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+          "legal_differences": {"type": "array", "items": {"type": "object"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "scope_exclusions": {
+      "type": "object",
+      "required": [
+        "policy",
+        "observed_count",
+        "registered_count",
+        "unregistered_operation_ids",
+        "stale_operation_ids"
+      ],
+      "properties": {
+        "policy": {"type": "string", "minLength": 20},
+        "observed_count": {"type": "integer", "minimum": 0},
+        "registered_count": {"type": "integer", "minimum": 0},
+        "unregistered_operation_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "stale_operation_ids": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": false
+    },
+    "allowance_application_count": {"type": "integer", "minimum": 0},
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "severity_counts": {
+      "type": "object",
+      "required": ["critical", "high", "medium"],
+      "properties": {
+        "critical": {"type": "integer", "minimum": 0},
+        "high": {"type": "integer", "minimum": 0},
+        "medium": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "matrix_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "cell": {
+      "type": "object",
+      "required": ["availability", "published_contract", "semantic_contract", "samples"],
+      "properties": {
+        "availability": {"enum": ["available", "unsupported"]},
+        "published_contract": {"type": "object"},
+        "semantic_contract": {"type": "object"},
+        "samples": {"type": "object"},
+        "schema_exit_code": {"type": "integer"},
+        "sample_exit_codes": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "finding_id",
+        "severity",
+        "row_id",
+        "surface",
+        "outcome",
+        "difference_kind",
+        "difference_digest",
+        "path",
+        "expected_type",
+        "actual_type"
+      ],
+      "properties": {
+        "finding_id": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["critical", "high", "medium"]},
+        "row_id": {"type": "string", "minLength": 1},
+        "surface": {"enum": ["direct_sdk", "cli", "sdk_wrapper", "plan", "mcp"]},
+        "outcome": {"enum": ["contract", "empty", "upstream_error", "availability"]},
+        "difference_kind": {"type": "string", "minLength": 1},
+        "difference_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "path": {"type": "string", "pattern": "^/.*$"},
+        "expected_type": {"type": "string", "minLength": 1},
+        "actual_type": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

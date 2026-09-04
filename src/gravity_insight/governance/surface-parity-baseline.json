@@ -1,0 +1,92 @@
+{
+  "allowed_findings": [],
+  "allowances": [
+    {
+      "allowance_id": "cli-empty-pagination-audit-v1",
+      "difference_kind": "extra",
+      "outcome": "empty",
+      "path": "/pagination_audit",
+      "rationale": "The CLI adds a request-bound audit object; its completeness status is validated against the native envelope and the complete object is still walked.",
+      "row_kind": "operation",
+      "surface": "cli"
+    },
+    {
+      "allowance_id": "cli-error-pagination-audit-v1",
+      "difference_kind": "extra",
+      "outcome": "upstream_error",
+      "path": "/pagination_audit",
+      "rationale": "The CLI serializes the same native failure plus a request-bound pagination audit; error identity and the full remaining envelope must stay equal.",
+      "row_kind": "operation",
+      "surface": "cli"
+    },
+    {
+      "allowance_id": "plan-empty-result-wrapper-v1",
+      "difference_kind": "wrapper",
+      "outcome": "empty",
+      "path": "/results/0/result",
+      "rationale": "Plan owns a node/result envelope, but the complete native operation envelope must remain at this exact pointer.",
+      "row_kind": "operation",
+      "surface": "plan"
+    },
+    {
+      "allowance_id": "plan-error-detail-wrapper-v1",
+      "difference_kind": "wrapper",
+      "outcome": "upstream_error",
+      "path": "/results/0/error",
+      "rationale": "Plan moves a native failure into the node error slot; the complete ErrorDetail and derived exit code must remain equal.",
+      "row_kind": "operation",
+      "surface": "plan"
+    },
+    {
+      "allowance_id": "mcp-raw-operations-unsupported-v1",
+      "difference_kind": "unsupported",
+      "outcome": "availability",
+      "path": "/",
+      "rationale": "The MCP gravity.execute contract accepts registered Journey IDs and explicitly rejects raw operation IDs.",
+      "row_kind": "operation",
+      "surface": "mcp"
+    }
+  ],
+  "baseline_policy": "allowed finding and scope-exclusion identities may only be removed; legal differences require an exact reason-coded allowance",
+  "excluded_operations": [
+    {"operation_id": "analysis.dataanalysis.segment.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.dashboard.copy", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.dashboard.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.dashboard.dc7858a7.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.dashboard.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.dashboard.move", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.dashboard.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.folder.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.folder.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.folder.move", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.folder.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.note.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.space.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.space.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.space.move", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.datamanageconfig.kanban.space.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.engine.datamanageconfig.kanban.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.from.history.version.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.from.tmp.segment.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.kanban.dashboard.folder.move", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.kanban.dashboard.order.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.report_config.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.segment.by.manual.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.segment.from.analysis.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.segment.from.rule.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "analysis.segment.from.rule.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "app.user.realtime.event.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "metadata.event.property.template.079c8246.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "metadata.event.property.template.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "metadata.property.template.event.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "metadata.property.template.property.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "report.confmetric.custom.metric.8ef6d12d.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "report.confmetric.custom.metric.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "report.report.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "report.subscribe.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "report.subscribe.delete", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "report.template.create", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."},
+    {"operation_id": "report.template.update", "reason": "Stable mutation operations use action-specific authorization, preview, execution, and readback surfaces; generic read parity is not applicable."}
+  ],
+  "schema_version": "gravity.surface-parity-baseline.v1"
+}
