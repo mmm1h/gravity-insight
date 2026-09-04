@@ -35,6 +35,32 @@ MULTIDIM_REQUEST_FIELDS = frozenset(
 )
 _PRODUCT_SCALAR_INPUTS = frozenset({"time_dims"})
 _SWITCH_TARGETS = frozenset({"/include_total", "/read_all"})
+_MULTIDIM_SCHEMA_REPAIR = (
+    "Repair owner: Gravity Runtime Multidim contract maintainer. Next step: "
+    "repair and republish the multidim_input_schema properties contract. "
+    "Alternative selector: `report.multidim.query` remains an expert raw-operation "
+    "route after `gravity agent-catalog describe report.multidim.query`; it is not "
+    "product-equivalent. Stop condition: do not retry `composite:multidim` until "
+    "the product schema is re-verified."
+)
+_MULTIDIM_PREFLIGHT_REPAIR = (
+    "Repair owner: Gravity Runtime Multidim product maintainer. Next step: repair "
+    "the zero-network preflight outcome contract. Alternative selector: "
+    "`report.multidim.query` may be used only as an explicitly reviewed expert "
+    "raw-operation route. Stop condition: do not retry `composite:multidim` until "
+    "preflight again returns ok=true and network_called=false."
+)
+_MULTIDIM_RESULT_REPAIR = (
+    "Repair owner: undetermined between the upstream Multidim operation owner and "
+    "the Gravity Runtime product maintainer, not the caller. Next step: capture "
+    "the result contract evidence and re-verify the product wrapper. Stop condition: "
+    "do not retry the unchanged Plan node until the contract is re-verified."
+)
+_MULTIDIM_BUDGET_REPAIR = (
+    "Repair owner: caller. Next step: narrow the Multidim request or raise the Plan "
+    "node limits.max_items within the governed bound. Stop condition: stop instead "
+    "of retrying when the required result cannot fit within that bound."
+)
 MULTIDIM_OUTPUT_FIELDS = frozenset(
     {
         "app_id",
@@ -131,9 +157,16 @@ def execute_multidim_plan(
     )
     safe = sanitize_multidim_result(native, str(app_id))
     if safe.get("input_schema_version") != MULTIDIM_INPUT_SCHEMA_VERSION:
-        raise ContractChangedError("multidim input schema identity changed")
+        raise ContractChangedError(
+            "multidim input schema identity changed",
+            next_action=_MULTIDIM_RESULT_REPAIR,
+        )
     if multidim_result_item_count(safe) > context.max_items:
-        raise PaginationError("multidimensional query exceeded its Plan item budget")
+        raise PaginationError(
+            "multidimensional query exceeded its Plan item budget",
+            field="limits.max_items",
+            next_action=_MULTIDIM_BUDGET_REPAIR,
+        )
     return safe
 
 
@@ -141,11 +174,24 @@ def _product_schema() -> dict[str, Any]:
     from .multidim_product import multidim_input_schema
 
     schema = multidim_input_schema()
-    if not isinstance(schema.get("properties"), Mapping):
-        raise input_error(
-            f"actual value: {actual_value(type(schema.get('properties')).__name__)}; "
-            "multidim product schema is invalid; must match the current Multidim contract",
-            "name",
+    properties = schema.get("properties") if isinstance(schema, Mapping) else None
+    missing = (
+        sorted(_PRODUCT_SCALAR_INPUTS - set(properties))
+        if isinstance(properties, Mapping)
+        else []
+    )
+    if not isinstance(properties, Mapping) or missing:
+        observed = (
+            {"missing_plan_fields": missing}
+            if missing
+            else type(properties).__name__
+            if isinstance(schema, Mapping)
+            else type(schema).__name__
+        )
+        raise ContractChangedError(
+            f"actual value: {actual_value(observed)}; multidim product schema is "
+            "invalid; must match the current Multidim contract",
+            next_action=_MULTIDIM_SCHEMA_REPAIR,
         )
     return schema
 
@@ -160,11 +206,20 @@ def _validate_product_inputs(inputs: Mapping[str, Any], app_id: int) -> None:
     normalized = normalize_multidim_inputs(inputs)
     bound = bind_multidim_app(normalized, app_id)
     preview = prepare_multidim_query(None, bound, app_id=app_id)
-    if preview.get("ok") is not True or preview.get("network_called") is not False:
-        raise input_error(
-            f"actual value: {actual_value({'ok': preview.get('ok'), 'network_called': preview.get('network_called')})}; "
-            "multidim product preflight failed; must correct inputs and retry",
-            "inputs",
+    observed = (
+        {"ok": preview.get("ok"), "network_called": preview.get("network_called")}
+        if isinstance(preview, Mapping)
+        else {"result_type": type(preview).__name__}
+    )
+    if (
+        not isinstance(preview, Mapping)
+        or preview.get("ok") is not True
+        or preview.get("network_called") is not False
+    ):
+        raise ContractChangedError(
+            f"actual value: {actual_value(observed)}; multidim product preflight "
+            "failed its internal outcome contract",
+            next_action=_MULTIDIM_PREFLIGHT_REPAIR,
         )
 
 

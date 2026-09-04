@@ -22,8 +22,8 @@ class ChangelogGateTests(unittest.TestCase):
             ("0.3.8", "0.3.7", "0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2", "0.3.1"),
             report.released_versions,
         )
-        self.assertEqual(9, report.breaking_entries)
-        self.assertEqual(4, report.migration_guides)
+        self.assertEqual(10, report.breaking_entries)
+        self.assertEqual(5, report.migration_guides)
 
     def test_version_bump_without_matching_entry_fails(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

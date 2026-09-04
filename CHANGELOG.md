@@ -17,7 +17,21 @@ Target release: `0.3.9`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** Five runtime failures that originate upstream or inside the
+  Runtime no longer present as caller input errors. A non-object operation
+  output, a non-object operation schema, a missing `response_projection`, an
+  invalid Multidim product schema, and a schema missing its dynamic binding
+  field now raise `CONTRACT_CHANGED` with `category=upstream`, `field=null`,
+  and **exit code 3**, where they previously raised `INPUT_INVALID` with
+  `category=caller`, a `field` naming a caller input, and **exit code 2**.
+  Consumers branching on exit code 2 or on `INPUT_INVALID` for these paths must
+  recognise `CONTRACT_CHANGED`. `ContractChangedError` is not a subclass of
+  `ValueError`, so handlers catching `ValueError` alone no longer catch them;
+  both types remain under `GravityInsightError`. The messages themselves are
+  unchanged — only the classification and the `next_action`, which now names a
+  repair owner, a next step, and a stop condition.
+
+Migration guide: [0.3.9](docs/migration/0.3.9.md)
 
 ## [0.3.8] - 2026-09-05
 

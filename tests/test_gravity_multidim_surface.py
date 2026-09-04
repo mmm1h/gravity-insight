@@ -11,9 +11,15 @@ from unittest.mock import patch
 
 from gravity_insight import GravitySDK, InputValidationError
 from gravity_insight.composite_result import multidim_envelope
-from gravity_insight.errors import ContractChangedError, PaginationError
+from gravity_insight.errors import (
+    ContractChangedError,
+    PaginationError,
+    error_detail_from_exception,
+)
 from gravity_insight.plan import AdapterContext
 from gravity_insight.plan_multidim_adapter import (
+    _product_schema,
+    _validate_product_inputs,
     execute_multidim_plan,
     multidim_result_item_count,
     validate_multidim_plan,
@@ -240,7 +246,7 @@ class MultidimSurfaceTests(unittest.TestCase):
         with patch(
             "gravity_insight.multidim_product.run_multidim_query", return_value=native
         ) as run:
-            with self.assertRaises(PaginationError):
+            with self.assertRaises(PaginationError) as caught:
                 execute_multidim_plan(
                     SDK(), PRODUCT_REQUEST, context
                 )
@@ -252,6 +258,13 @@ class MultidimSurfaceTests(unittest.TestCase):
         self.assertEqual(201, multidim_result_item_count(native))
         self.assertNotIn("next_page_input", repr(safe))
         self.assertNotIn("token=secret", repr(safe))
+        detail = error_detail_from_exception(caught.exception)
+        self.assertEqual(("caller", "limits.max_items"), (
+            detail.category, detail.field,
+        ))
+        self.assertIn("Repair owner: caller", detail.next_action)
+        self.assertIn("Next step:", detail.next_action)
+        self.assertIn("Stop condition:", detail.next_action)
 
     def test_plan_failure_drops_raw_error_paths_and_values(self):
         native = {
@@ -508,6 +521,51 @@ class MultidimSurfaceTests(unittest.TestCase):
             InputValidationError, "current input schema version"
         ):
             execute_multidim_plan(SDK(), legacy, base)
+
+    def test_invalid_multidim_schema_names_owner_alternative_and_stop(self):
+        invalid_schemas = (
+            {"properties": []},
+            {"properties": {}},
+            [],
+        )
+        for schema in invalid_schemas:
+            with self.subTest(schema=schema), patch(
+                "gravity_insight.multidim_product.multidim_input_schema",
+                return_value=schema,
+            ), self.assertRaises(ContractChangedError) as caught:
+                _product_schema()
+
+            detail = error_detail_from_exception(caught.exception)
+            self.assertEqual(("CONTRACT_CHANGED", "upstream"), (
+                detail.code, detail.category,
+            ))
+            self.assertIsNone(detail.field)
+            self.assertIn(
+                "Repair owner: Gravity Runtime Multidim contract maintainer.",
+                detail.next_action,
+            )
+            self.assertIn("Next step:", detail.next_action)
+            self.assertIn(
+                "Alternative selector: `report.multidim.query`",
+                detail.next_action,
+            )
+            self.assertIn("Stop condition:", detail.next_action)
+
+    def test_invalid_multidim_preflight_is_internal_contract_drift(self):
+        with patch(
+            "gravity_insight.multidim_product.prepare_multidim_query",
+            return_value={"ok": False, "network_called": False},
+        ), self.assertRaises(ContractChangedError) as caught:
+            _validate_product_inputs(PRODUCT_INPUT, 17)
+
+        detail = error_detail_from_exception(caught.exception)
+        self.assertEqual(("CONTRACT_CHANGED", "upstream", None), (
+            detail.code, detail.category, detail.field,
+        ))
+        self.assertIn("Repair owner:", detail.next_action)
+        self.assertIn("Next step:", detail.next_action)
+        self.assertIn("Alternative selector:", detail.next_action)
+        self.assertIn("Stop condition:", detail.next_action)
 
     def test_plan_projector_fails_closed_on_discriminator_drift(self):
         native = {
