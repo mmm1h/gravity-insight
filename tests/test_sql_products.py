@@ -44,6 +44,24 @@ EXAMPLE_WORKSPACE = ROOT / "examples" / "workspace" / "gravity.toml"
 JOIN_FAILURE_WORKSPACE = ROOT / "tests" / "fixtures" / "sql-user-event-join-failure.toml"
 
 
+def _single_run_verification(*product_names: str) -> dict[str, object]:
+    observed_at = datetime(2026, 7, 23, 12, tzinfo=BEIJING).isoformat()
+    return {
+        "mode": "single_run",
+        "segment_count": 1,
+        "segments": [
+            {
+                "sequence": 1,
+                "started_at": observed_at,
+                "completed_at": observed_at,
+                "products": list(product_names),
+                "status": "complete",
+                "failure_product": None,
+            }
+        ],
+    }
+
+
 class _AggregateClient:
     def execute_sql(self, sql):
         self.sql = sql
@@ -110,7 +128,15 @@ class GravityProductTests(unittest.TestCase):
             run_product(client, product, start_at, end_at)
             for product in ("daily-event-summary",)
         ]
-        evidence = build_evidence(day, results)
+        evidence = build_evidence(
+            day,
+            results,
+            verification=_single_run_verification("daily-event-summary"),
+        )
+        legacy = copy.deepcopy(evidence)
+        legacy["schema_version"] = 1
+        legacy.pop("verification")
+        products.validate_evidence(legacy)
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "gravity-latest.json"
             publish_evidence(evidence, path)
@@ -160,7 +186,11 @@ class GravityProductTests(unittest.TestCase):
             self.assertEqual("stale", readiness_status(evidence, now)["status"])
 
         with self.assertRaises(EvidenceFormatError):
-            build_evidence(day, results + [results[0]])
+            build_evidence(
+                day,
+                results + [results[0]],
+                verification=_single_run_verification("daily-event-summary"),
+            )
 
     def test_canonical_publish_keeps_rolling_compatibility_and_creates_snapshot(self):
         day = date(2026, 7, 22)
@@ -172,6 +202,7 @@ class GravityProductTests(unittest.TestCase):
                 run_product(client, product, start_at, end_at)
                 for product in ("daily-event-summary",)
             ],
+            verification=_single_run_verification("daily-event-summary"),
         )
         with tempfile.TemporaryDirectory() as temporary:
             rolling = Path(temporary) / "gravity-latest.json"
@@ -212,6 +243,7 @@ class GravityProductTests(unittest.TestCase):
                 run_product(client, product, start_at, end_at)
                 for product in ("daily-event-summary",)
             ],
+            verification=_single_run_verification("daily-event-summary"),
         )
         with tempfile.TemporaryDirectory() as temporary:
             rolling = Path(temporary) / "gravity-latest.json"
@@ -836,23 +868,21 @@ class GravityProductTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual([1001], result["results"][0]["app_ids"])
 
-    def test_verify_all_runs_independent_products_concurrently(self):
-        lock, rendezvous = threading.Lock(), Barrier(2, timeout=20)
+    def test_verify_all_runs_products_sequentially(self):
         active = 0
         max_active = 0
+        order = []
 
         def fake_run(_client, product, start_at, end_at, *, workspace=None):
             self.assertIsNotNone(workspace)
             nonlocal active, max_active
-            with lock:
-                active += 1
-                max_active = max(max_active, active)
+            active += 1
+            max_active = max(max_active, active)
+            order.append(product)
             try:
-                rendezvous.wait()
                 return {"product": product, "window": [start_at, end_at]}
             finally:
-                with lock:
-                    active -= 1
+                active -= 1
 
         with mock.patch(
             "gravity_insight.sql.products.product_names", return_value=("one", "two")
@@ -867,7 +897,10 @@ class GravityProductTests(unittest.TestCase):
         self.assertEqual(
             ["one", "two"], [item["product"] for item in result["results"]]
         )
-        self.assertEqual(2, max_active)
+        self.assertEqual(["one", "two"], order)
+        self.assertEqual(1, max_active)
+        with self.assertRaisesRegex(ValueError, "exactly 1"):
+            verify_all(mock.Mock(), date(2026, 7, 22), max_workers=2)
 
     def test_query_and_verify_bind_ambient_workspace_once(self):
         from gravity_insight.workspace import load_workspace

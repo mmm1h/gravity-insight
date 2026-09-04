@@ -1,11 +1,11 @@
-"""Concurrent Evidence verification over configured SQL products."""
+"""Sequential, resumable Evidence verification over configured SQL products."""
 
 from __future__ import annotations
 
 from datetime import date
 from typing import Any
 
-from gravity_insight.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
+from gravity_insight.http_runtime import SQL_PROFILE
 from gravity_insight.sql import products
 from gravity_insight.workspace import Workspace, load_workspace
 
@@ -24,57 +24,68 @@ from sqlglot import exp
 from sqlglot.errors import ErrorLevel, ParseError, SqlglotError
 
 
+VERIFICATION_RUN_VERSION = products.VERIFICATION_RUN_VERSION
+VERIFICATION_RESUME_POLICY = products.VERIFICATION_RESUME_POLICY
+VERIFICATION_CONCURRENCY = products.VERIFICATION_CONCURRENCY
+VERIFICATION_MIN_BACKOFF_MS = products.VERIFICATION_MIN_BACKOFF_MS
+VERIFICATION_MAX_BACKOFF_MS = products.VERIFICATION_MAX_BACKOFF_MS
+
+
 def verify_all(
     client: Any,
     day: date,
     *,
-    max_workers: int = MAX_SQL_CONCURRENCY,
+    max_workers: int = products.VERIFICATION_CONCURRENCY,
     workspace: Workspace | None = None,
+    resume: Mapping[str, Any] | None = None,
+    sleeper: Any = time.sleep,
+    clock: Any = None,
 ) -> dict[str, Any]:
-    _validate_concurrency(max_workers)
     selected = load_workspace() if workspace is None else workspace
-    start_at, end_at = products.day_window(day)
-    names = products.product_names(selected)
-    results = _run_all(client, names, start_at, end_at, max_workers, selected)
-    return products.build_evidence(day, results, workspace=selected)
+    return products.execute_sql_verification(
+        products, client, day, max_workers=max_workers, workspace=selected,
+        resume=resume, sleeper=sleeper, clock=clock,
+    )
 
 
-def _run_all(
-    client: Any,
-    names: tuple[str, ...],
-    start_at: Any,
-    end_at: Any,
-    max_workers: int,
-    workspace: Workspace,
-) -> list[dict[str, Any]]:
-    if len(names) == 1 or max_workers == 1:
-        return [
-            products.run_product(
-                client, product, start_at, end_at, workspace=workspace
-            )
-            for product in names
-        ]
-    from concurrent.futures import ThreadPoolExecutor
-
-    with ThreadPoolExecutor(
-        max_workers=min(max_workers, len(names)),
-        thread_name_prefix="gravity-sql-verify",
-    ) as pool:
-        return list(
-            pool.map(
-                lambda product: products.run_product(
-                    client, product, start_at, end_at, workspace=workspace
-                ),
-                names,
-            )
-        )
+def write_verification_checkpoint(
+    value: Mapping[str, Any], day: date, *, workspace: Workspace | None = None
+) -> Path:
+    selected = load_workspace() if workspace is None else workspace
+    return products.write_verification_checkpoint(products, value, day, selected)
 
 
-def _validate_concurrency(value: int) -> None:
-    if type(value) is not int or not 1 <= value <= MAX_SQL_CONCURRENCY:
-        raise ValueError(
-            f"SQL product concurrency must be between 1 and {MAX_SQL_CONCURRENCY}"
-        )
+def read_verification_checkpoint(
+    day: date, *, workspace: Workspace | None = None
+) -> dict[str, Any]:
+    selected = load_workspace() if workspace is None else workspace
+    return products.read_verification_checkpoint(products, day, selected)
+
+
+def clear_verification_checkpoint(
+    day: date, *, workspace: Workspace | None = None
+) -> None:
+    selected = load_workspace() if workspace is None else workspace
+    products.clear_verification_checkpoint(products, day, selected)
+
+
+def verification_checkpoint_path(
+    day: date, *, workspace: Workspace | None = None
+) -> Path:
+    selected = load_workspace() if workspace is None else workspace
+    return products.verification_checkpoint_path(products, day, selected)
+
+
+def is_incomplete_verification(value: Any) -> bool:
+    return products.is_incomplete_verification(value)
+
+
+def run_verification_cli(
+    client: Any, day: date, workspace: Workspace, **options: Any
+) -> int:
+    return products.run_verification_cli(
+        products, client, day, workspace, **options
+    )
 
 
 FAST_LANE_REQUEST_VERSION = "gravity.sql-fast-lane-request.v1"
@@ -554,3 +565,8 @@ def _digest(value: Any) -> str:
 # verification import site. Tests can discover the new owner without growing
 # the import graph; normal SDK callers import GravitySqlExplorerAdapter here.
 verify_all.GravitySqlExplorerAdapter = GravitySqlExplorerAdapter
+verify_all.clear_verification_checkpoint = clear_verification_checkpoint
+verify_all.is_incomplete_verification = is_incomplete_verification
+verify_all.read_verification_checkpoint = read_verification_checkpoint
+verify_all.run_cli = run_verification_cli
+verify_all.write_verification_checkpoint = write_verification_checkpoint

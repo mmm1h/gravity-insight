@@ -358,11 +358,13 @@ class GravitySqlClientTests(unittest.TestCase):
             runtime.request.return_value = SimpleNamespace(
                 status_code=status,
                 payload={"code": "HTTP_FIXTURE", "msg": "PRIVATE_EVENT_SENTINEL"},
+                retry_after_ms=2_500 if status == 429 else None,
             )
             with self.subTest(status=status), self.assertRaises(TransportError) as caught:
                 GravityClient(runtime).execute_sql("SELECT fixture")
             failure = classify_sql_failure(caught.exception, request_count=1)
             self.assertEqual((code, retryable), (failure.code, failure.retryable))
+            self.assertEqual(2_500 if status == 429 else None, failure.retry_after_ms)
             rendered = str(failure.protocol_status)
             self.assertNotIn("PRIVATE_EVENT_SENTINEL", rendered)
 

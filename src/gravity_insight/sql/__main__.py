@@ -131,6 +131,7 @@ def build_parser(
     verify_parser.set_defaults(network_required=True)
     verify_parser.add_argument("--date", help="Beijing calendar day (YYYY-MM-DD).")
     verify_parser.add_argument("--publish", action="store_true", help="Atomically update rolling aggregate evidence.")
+    verify_parser.add_argument("--resume", action="store_true", help="Resume the exact rate-limited prefix checkpoint for this date.")
     query_parser = commands.add_parser("query", help="Run an aggregate product only when Insight cannot express equivalent semantics.")
     query_parser.set_defaults(network_required=True)
     query_parser.add_argument("product", nargs="?")
@@ -424,12 +425,11 @@ def _run_verify_command(args: argparse.Namespace) -> int:
         if args.publish and target_day != safe_day:
             raise ValueError("--publish only accepts the latest safe date")
         workspace = load_workspace()
-        evidence = verify_all(_client(), target_day, workspace=workspace)
-        if args.publish:
-            publish_evidence(evidence, workspace=workspace)
-            print(f"PUBLISHED {EVIDENCE_PATH}", file=sys.stderr)
-        print(json_output.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True))
-        return 0
+        return verify_all.run_cli(
+            _client(), target_day, workspace, resume=args.resume,
+            publish=args.publish, publisher=publish_evidence,
+            evidence_path=EVIDENCE_PATH, serializer=json_output.dumps,
+        )
     except (OSError, UnicodeEncodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return sql_error_exit_code("local_io")
