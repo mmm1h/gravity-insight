@@ -136,7 +136,7 @@
       }
     },
     {
-      "blocker_note": "-",
+      "blocker_note": "I107 外部证据只证明两个元数据合法自定义事件在 `did=true`、`PresetAllCount/GTE [1]`、静态窗口形状下被 Segment evaluate 拒绝；同事件的 Event 与普通 Retention 聚合成功。#15 另证明 `$MPShow`/`$PayEvent` 不支持，并留有一个 metadata-backed custom event 的 Segment 成功控制。当前代码没有可本地判定的自定义事件接受集，故不做全称判断；目标形状被实际拒绝后返回 `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`（upstream、不可重试、精确规则路径），Agent 对“自定义事件首次暴露 cohort”返回同名 capability gap。关闭需 current-main 同形、同窗的一个成功自定义事件与目标失败事件配对脱敏收据。禁止持久化分群和用户明细时，Funnel 不能表达 NOT-before，普通 Retention 不是等价估计量；完整边界与 spec 见[替代路径](guides/retention-cohort-alternatives.md)。本轮生产请求 0。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "评估一组人群规则命中的人数与占比",
@@ -145,7 +145,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "b109592f8591b2e761a5628f0f63bbe4095e0f6abe6f099441526f1fb67aaf8a",
+      "row_digest": "f4643303cf42b3c4438e896fec5e15e6ede409486d29c60beb7c8135ff12fc94",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "dbd665f29c0d5d0683f22dd95200322491093f90dbea290133a10cf7d04c6577",
+  "snapshot_digest": "d391d2ee8cf1dff79b2e1ea0cb97c79e2fcdd4b53689f1d2189c2dde8d2babb0",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "bf613d0fd2ab483530121aaac6fd1741871e95e49141f3ddefd040e3191941fa"
+  "source_sha256": "51b375c73bae13ba26428247ef68bff2aea65cb8c564309749039fa9562b6096"
 }

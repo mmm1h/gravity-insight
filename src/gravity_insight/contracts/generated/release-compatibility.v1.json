@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "3694090582aa312352b5f836a6f68d1988af06e3dd668cdf9af1b15c98ef49dc"
+    "compatibility_sha256": "2dc1eba98205562d0aed4ea78b3f86dc9f762c9ad6df3b1731425389ae9dc7d9"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -128,11 +128,17 @@
         },
         {
           "id": "0.3.8-hard-break-2",
-          "description": "Segment evaluation no longer maps an upstream rejection of the locally valid static custom-event count shape to generic `INPUT_INVALID field=input`. It now returns `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`, `category=upstream`, `retryable=false`, and the exact `user_event_rules` path. The public Segment spec schema advances from `gravity-insight.segment-rule-spec.v1` to `v2` and changes `event_support.default_status` to `requires_live_metadata_and_event_specific_acceptance`; metadata validity is necessary but no longer presented as endpoint-acceptance evidence. Migration guide: [0.3.8](docs/migration/0.3.8.md)",
+          "description": "Segment evaluation no longer maps an upstream rejection of the locally valid static custom-event count shape to generic `INPUT_INVALID field=input`. It now returns `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`, `category=upstream`, `retryable=false`, and the exact `user_event_rules` path. The public Segment spec schema advances from `gravity-insight.segment-rule-spec.v1` to `v2` and changes `event_support.default_status` to `requires_live_metadata_and_event_specific_acceptance`; metadata validity is necessary but no longer presented as endpoint-acceptance evidence.",
           "migration_guide": "docs/migration/0.3.8.md"
         }
       ],
-      "soft_breaks": [],
+      "soft_breaks": [
+        {
+          "id": "0.3.8-soft-break-1",
+          "description": "Registered SQL Evidence verification is now fixed at one product in flight; direct `verify_all(..., max_workers=N)` callers must remove values other than `1`, and direct `build_evidence()` callers must supply the ordered verification history. New Evidence is schema v2 and adds that history as a required field. Runtime readers continue to accept immutable v1 Evidence, so existing read capability is retained while strict raw-output consumers migrate. Migration guide: [0.3.8](docs/migration/0.3.8.md)",
+          "migration_guide": "docs/migration/0.3.8.md"
+        }
+      ],
       "migration_guide": "docs/migration/0.3.8.md"
     }
   ]
