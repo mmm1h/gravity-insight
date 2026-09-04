@@ -10,6 +10,65 @@ retention`。下面两类复合 cohort 不发送 Retention endpoint 已拒绝的
 只有分群创建是 mutation，必须审查预览后把同一命令的 `--dry-run` 改为
 `--execute`。
 
+## 加性后续指标的当前边界
+
+本节只裁决 Retention 的两个精确 `SumCount` 后续形状，不裁决 Event、Property、
+受治理 SQL 产品或其他加性指标：
+
+- `query_item_before_after.after.target.name=SumCount` 的合法载荷能通过旧编译，
+  但消费方的配对执行被上游拒绝；补齐 `before`、`formula` 与格式化控制仍失败。
+- 普通两事件 Retention 把第二步 `target.name` 改成 `SumCount` 时请求能完成，
+  但 `values` 仍是回访人数，`values_another_event` 的零没有测量语义证据。
+- 普通两事件 Retention、同起始事件和用户属性过滤已有成功边界。当前证据不能把
+  前两项外推为“所有加性指标不支持”，也不能确定拒绝发生在 Retention 服务、
+  查询规划器或其他上游组件。
+
+因此这两个 `SumCount` 形状现在于编译/FieldPolicy 预检返回
+`RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED`，`retryable=false`，且在
+metadata 或最终查询请求之前停止。`--dry-run` 返回 `status=capability_gap`、
+`network_called=false`，其中 `measurement.status=unmeasured`、`value=null`。
+不得把未测量写成 0。
+
+### cohort、offset、计数与分母
+
+日 cohort 行位于 `data.y["<cohort-date>"][row]`；`row.group_cols` 是该行的
+分组边界。`data.total[row]` 是所选窗口/聚合控制下的汇总行，不得与某个日 cohort
+的分子或分母混用。本文示例的 `YYYY-MM-DD` 以项目登记的北京时间自然日解释；
+其他时区必须由调用项目显式绑定，SDK 不从事件名猜时区。
+
+- cohort 人数是同一行的 `row.init_num`。
+- offset `k` 的回访人数是同一行的 `row.values[k]`；其人数留存分母是该行
+  `row.init_num`，对应率槽是 `row.percent_values[k]`。这里的合法 `0` 是已测量的
+  人数 0。
+- 加性后续值的线槽是同一行的 `row.values_another_event[k]`。当前投影登记了标量
+  以及对象中的 `period_event_total`、`cumulative_total`、`per_user`、
+  `period_event_total_average` 等候选字段，但没有已验证证据把其中任一字段确认为
+  该 cohort/offset 的金额或时长。因此这些路径当前不可消费；特别是标量 0 只表示
+  未测量占位，不能解释为金额 0 或时长 0。
+
+拿到独立验证的聚合 `sum_value` 后，必须显式选择分母：
+
+- `per_cohort_user = sum_value / row.init_num`，回答“每个起始 cohort 用户”；
+- `per_returning_user = sum_value / row.values[k]`，回答“offset k 每个回访用户”。
+
+两者不能互换；分母为 0 时结果是未定义的 `null`，不是 0。金额还必须绑定同一币种，
+时长必须绑定同一单位。这里的“加性”只表示同单位、同口径且用户/事件集合互斥时
+总量可以求和，不表示可以跨币种、重叠 cohort 或不同时间窗直接相加，也不自动赋予
+任何人均含义。
+
+### 为什么现有替代路径不能补出加性值
+
+下面已有的 Funnel→matched Segment 和属性 Segment 路径能得到聚合人口
+`part/percent/total`，所以能构造人数分母与回访人数。它们不能返回金额或时长总和。
+仓库当前也没有已验证的“历史固定 Segment membership → 指定 offset 的 Event
+`SumCount`”绑定，无法证明成员版本、自然日边界、单位/币种和结果完整性同时保持。
+因此不能从这些步骤拼出一条本仓已验证的纯聚合加性后续路径。
+
+调用项目已有的 registered custom-sql 聚合产品在其不可变 readiness 通过时可以作为
+项目侧绕行；它不是原 Retention 接口的修复，也不会关闭这个 capability gap。本节不提供
+一个伪装成已验证路径的 Event/Segment spec，更不会用回访人数、付费率或其他事件人数
+替代金额、时长或 ARPU。
+
 ## 同日首次注册与支付的交集
 
 分母 cohort 是同一自然日内依次完成首次注册和支付、并满足用户属性条件的用户。
@@ -247,6 +306,89 @@ else { $d1 = [decimal]$numerator.data.part / [decimal]$denominator.data.part }
 cohort 日的用户，分子是该集合与 D1 启动用户的交集。代价是两次聚合读取与一次本地
 除法，且只返回所选观察日，不返回 Retention endpoint 的整条 offset 矩阵。
 
+## 自定义事件首次暴露 cohort
+
+I107 要求的集合不是普通事件日 Retention。它的分母必须同时满足：cohort 日发生目标
+事件，并且在 cohort 日之前从未发生目标事件。若目标事件已有 Segment endpoint 的成功
+收据，下面的两个静态规则能在一次只读聚合中表达这个交集；前置窗口的 `start` 必须是
+该项目可证明的事件历史起点，否则只能声称“在这个有界窗口内首次”，不能声称生命周期
+首次。
+
+`custom-event-first-exposure.json`：
+
+```json
+{
+  "name": "first-exposure",
+  "start": "<event-history-start>",
+  "end": "<cohort-date>",
+  "logic": "AND",
+  "event_rules": {
+    "logic": "AND",
+    "groups": [
+      {
+        "logic": "AND",
+        "rules": [
+          {
+            "event": "<target-custom-event>",
+            "did": true,
+            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
+            "did_condition": {"operator": "GTE", "values": [1]},
+            "date_range": {
+              "type": "static",
+              "start": "<cohort-date>",
+              "end": "<cohort-date>"
+            }
+          },
+          {
+            "event": "<target-custom-event>",
+            "did": false,
+            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
+            "did_condition": {"operator": "GTE", "values": [1]},
+            "date_range": {
+              "type": "static",
+              "start": "<event-history-start>",
+              "end": "<day-before-cohort>"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+```powershell
+gravity analysis segment evaluate --app main `
+  --spec custom-event-first-exposure.json --dry-run
+gravity analysis segment evaluate --app main `
+  --spec custom-event-first-exposure.json --fields part
+```
+
+这段 spec 是目标集合定义和正/负静态窗口控制，不是 I107 已拒绝事件的绕行：当前外部证据
+是两个元数据合法的自定义事件在同一 `did=true`、`PresetAllCount/GTE [1]`、静态窗口形状
+下都被 Segment evaluate 拒绝，而 Event 与普通 Retention 产品接受了这些事件。仓库另有
+#15 的一个元数据支持自定义事件成功控制，但没有保存足以在本地判定事件接受集的公开标识。
+因此 SDK 只能在上游实际拒绝后返回
+`SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`，不能在请求前断言某个未登记事件会成功或失败，
+也不能据此下“所有自定义事件都不支持”的结论。
+
+在“不持久化分群、不导出用户明细”的约束下，当前没有覆盖已拒绝事件的通用聚合替代：
+
+- 单日 Funnel 能取得 cohort 日参与人数，但不能表达“前置窗口没有发生”；matched Segment
+  还会创建持久化分群，已经超出约束。
+- 即使允许创建 cohort 日与前置窗口两个分群，当前 Segment 的分群引用只接受 `TRUE`，没有
+  已登记的分群差集/补集读取面，两个聚合人数也不能推出交集。
+- 只有项目已经维护了语义受治理、set-once 的目标事件首次发生时间属性时，才能复用上节
+  “首次付费日属性 cohort”的两次聚合规则，把该属性换成目标事件的首次发生时间。I107 未给出
+  这个前提，SDK 不会假设它存在或要求调用方新增写入。
+
+要计算 D1-D7 从未回访，可在上述可执行前提成立时再 AND 一条 `did=false` 的静态
+`<return-event>` 规则，窗口为 D1 到 D7；`part` 是首次暴露 cohort 中七日零回访人数。对当前
+已拒绝事件，这一步仍由同一个 Segment event-rule acceptance gap 阻断。
+
+普通事件日 Retention 会复用重复参与者且不定义首次暴露，明确不是这个集合的等价替代，
+不得把它的结果标成首次暴露留存。
+
 ## 已知失败边界
 
 非空 `retention.property_conditions` 与
@@ -254,5 +396,7 @@ cohort 日的用户，分子是该集合与 D1 启动用户的交集。代价是
 `INPUT_INVALID`，不会发请求。普通单起始事件 Retention、空列表和
 `query_item_before_after` 的其他已登记控制不受影响。
 
-当前证据不把自定义 SQL 当成替代：用户表与事件表 aggregate join 仍是 draft，仓库没有
-上游 join 成功合同。也不使用用户明细拼接；那会引入用户级数据、分页完整性和每用户请求成本。
+当前通用路径不把未登记的 raw/custom SQL 当成自动替代；这不表示 aggregate join
+本身不支持。调用项目已登记且 readiness 通过的 SQL 产品可以成功聚合，但它保持项目侧
+产品身份，不能证明原 Retention 表达已修复。也不使用用户明细拼接；那会引入用户级数据、
+分页完整性和每用户请求成本。

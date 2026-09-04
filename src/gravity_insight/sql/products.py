@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from gravity_insight.paths import EVIDENCE_ROOT, PACKAGE_ROOT
-from gravity_insight.support.documents import replace_atomic_durable
+from gravity_insight.support.documents import DocumentError, load_document, replace_atomic_durable, write_document_atomic
 from gravity_insight.support.evidence import (
     EvidenceBinding,
     publish_json_snapshot,
@@ -22,21 +22,28 @@ from gravity_insight.support.evidence import (
 from gravity_insight.sql.credential_source import credential_source as _credential_source
 from gravity_insight.sql.provenance import (
     ROOT,
-    git_state,
-    git_toplevel,
-    preflight_git_report,
-    provenance_root,
+    VERIFICATION_RESUME_POLICY,
+    VERIFICATION_RUN_VERSION,
+    clear_verification_checkpoint, git_state, git_toplevel,
+    is_incomplete_verification, preflight_git_report, provenance_root,
+    read_verification_checkpoint, run_verification_cli,
+    verification_checkpoint_digest, verification_checkpoint_path,
+    verification_failure, verification_failure_is_rate_limited,
+    verification_failure_run, verification_resume_contract,
+    write_verification_checkpoint,
 )
 from gravity_insight.sql.evidence_validation import (
-    EvidenceFormatError,
-    validate_evidence_document,
+    EvidenceFormatError, evidence_aggregate_lists,
+    validate_evidence_document, validate_product_evidence,
+    validate_resume_checkpoint, validate_verification_history,
+    verification_resume_state,
 )
 from gravity_insight.sql.time_window import (
-    BEIJING,
-    day_window,
-    latest_safe_date,
-    normalize_window,
-    parse_timestamp,
+    BEIJING, VERIFICATION_CONCURRENCY, VERIFICATION_MAX_BACKOFF_MS,
+    VERIFICATION_MIN_BACKOFF_MS, day_window, execute_sql_verification,
+    latest_safe_date, normalize_window, parse_timestamp,
+    verification_now, verification_resume_delay_ms,
+    verification_segment, verification_timestamp,
 )
 from gravity_insight.workspace import Workspace, WorkspaceError, load_workspace, require_products
 
@@ -202,6 +209,7 @@ def build_evidence(
     day: date,
     product_results: list[dict[str, Any]],
     *,
+    verification: Mapping[str, Any],
     workspace: Workspace | None = None,
 ) -> dict[str, Any]:
     selected = load_workspace() if workspace is None else workspace
@@ -213,25 +221,17 @@ def build_evidence(
     start_at, end_at = day_window(day)
     by_name = {result["product"]: result for result in product_results}
     products = {product: by_name[product] for product in configured_products}
-    warnings = [
-        f"{product}: {warning}"
-        for product, result in products.items()
-        for warning in result.get("warnings", [])
-    ]
-    forbidden = list(
-        dict.fromkeys(
-            claim
-            for product in configured_products
-            for claim in products[product].get("forbidden_claims", [])
-        )
-    )
+    warnings, forbidden = evidence_aggregate_lists(products, configured_products)
+    generated_at = datetime.now(BEIJING).isoformat(timespec="microseconds")
+    verification_history = {**verification}
     evidence: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "datasource_id": _datasource_id(workspace=selected),
-        "generated_at": datetime.now(BEIJING).isoformat(timespec="microseconds"),
+        "generated_at": generated_at,
         "verified_for_date": day.isoformat(),
         "window": _window_dict(start_at, end_at),
         "verification_status": "verified_with_gaps" if warnings else "verified",
+        "verification": verification_history,
         "products": products,
         "warnings": warnings,
         "forbidden_claims": forbidden,
@@ -604,5 +604,5 @@ def _sha256_json(value: Any) -> str:
 # Public compatibility exports live here after the product core is fully defined;
 # the focused modules import core helpers without creating import-time cycles.
 from gravity_insight.sql.catalog import describe_products as describe_products
-from gravity_insight.sql.query import run_product_queries as run_product_queries
+from gravity_insight.sql.query import run_product_queries as run_product_queries, sql_error_exit_code as sql_error_exit_code
 from gravity_insight.sql.verification import verify_all as verify_all

@@ -4,6 +4,7 @@ from io import StringIO
 import json
 from pathlib import Path
 import tempfile
+import tomllib
 from types import SimpleNamespace
 import unittest
 
@@ -14,12 +15,20 @@ from scripts.check_test_duration_budget import (
     CI_JOB_TIMEOUT_SECONDS,
     CollectionRecorder,
     DurationRecorder,
+    FULL_GATE_NODEIDS,
+    LOCAL_FOCUSED_WALL_LIMIT_SECONDS,
+    MAX_FULL_GATE_TESTS,
+    MAX_LOCAL_FOCUSED_WALL_SECONDS,
+    MAX_SLOW_TEST_SECONDS,
     MAX_SINGLE_TEST_JOB_SHARE,
     PYTEST_ARGUMENTS,
+    PYTEST_COLLECTION_ARGUMENTS,
     SHARD_RECEIPT_SCHEMA,
+    SLOW_TEST_LIMIT_SECONDS,
     TEST_DURATION_LIMIT_SECONDS,
     DurationMeasurement,
     audit_shard_receipts,
+    declared_full_gate_nodeids,
     duration_budget_errors,
     partition_nodeids,
     run_gate,
@@ -27,15 +36,6 @@ from scripts.check_test_duration_budget import (
 
 
 class TestDurationBudgetTests(unittest.TestCase):
-    def test_limit_is_four_minutes_and_covers_the_calibrated_ci_envelope(self) -> None:
-        self.assertEqual(
-            CI_JOB_TIMEOUT_SECONDS * MAX_SINGLE_TEST_JOB_SHARE,
-            TEST_DURATION_LIMIT_SECONDS,
-        )
-        self.assertEqual(240.0, TEST_DURATION_LIMIT_SECONDS)
-        self.assertAlmostEqual(0.20, MAX_SINGLE_TEST_JOB_SHARE)
-        self.assertLess(CALIBRATED_CI_ENVELOPE_SECONDS, TEST_DURATION_LIMIT_SECONDS)
-
     def test_recorder_sums_phases_and_orders_slowest_first(self) -> None:
         recorder = DurationRecorder()
         for nodeid, phase, duration in (
@@ -56,12 +56,41 @@ class TestDurationBudgetTests(unittest.TestCase):
         )
 
     def test_threshold_is_inclusive_and_failure_names_the_test(self) -> None:
+        self.assertLessEqual(
+            LOCAL_FOCUSED_WALL_LIMIT_SECONDS, MAX_LOCAL_FOCUSED_WALL_SECONDS
+        )
+        self.assertLessEqual(SLOW_TEST_LIMIT_SECONDS, MAX_SLOW_TEST_SECONDS)
+        self.assertLessEqual(len(FULL_GATE_NODEIDS), MAX_FULL_GATE_TESTS)
+        self.assertEqual(
+            CI_JOB_TIMEOUT_SECONDS * MAX_SINGLE_TEST_JOB_SHARE,
+            TEST_DURATION_LIMIT_SECONDS,
+        )
+        self.assertEqual(240.0, TEST_DURATION_LIMIT_SECONDS)
+        self.assertAlmostEqual(0.20, MAX_SINGLE_TEST_JOB_SHARE)
+        self.assertLess(CALIBRATED_CI_ENVELOPE_SECONDS, TEST_DURATION_LIMIT_SECONDS)
         self.assertEqual(
             (),
             duration_budget_errors(
-                (DurationMeasurement("tests/test_at_limit.py::test_at_limit", 240.0),)
+                (
+                    DurationMeasurement(
+                        "tests/test_at_slow_limit.py::test_at_slow_limit",
+                        SLOW_TEST_LIMIT_SECONDS,
+                    ),
+                    DurationMeasurement(
+                        "tests/test_marked_slow.py::test_marked_slow", 40.0, True
+                    ),
+                )
             ),
         )
+        unmarked = duration_budget_errors(
+            (
+                DurationMeasurement(
+                    "tests/test_slow.py::test_slow",
+                    SLOW_TEST_LIMIT_SECONDS + 0.001,
+                ),
+            )
+        )
+        self.assertIn("without @pytest.mark.full_gate", unmarked[0])
         errors = duration_budget_errors(
             (DurationMeasurement("tests/test_slow.py::test_slow", 240.001),)
         )
@@ -70,7 +99,10 @@ class TestDurationBudgetTests(unittest.TestCase):
         self.assertIn("duration=240.001s limit=240.000s", errors[0])
 
     def test_gate_uses_parallel_collector_and_fails_closed_on_pytest_error(self) -> None:
-        self.assertEqual(("-q", "-n", "auto", "--dist", "load"), PYTEST_ARGUMENTS)
+        self.assertEqual(
+            ("-q", "-o", "addopts=", "-n", "auto", "--dist", "load"),
+            PYTEST_ARGUMENTS,
+        )
         captured: list[str] = []
 
         def failed_runner(arguments: list[str], *, plugins: list[object]) -> int:
@@ -146,7 +178,9 @@ class TestDurationBudgetTests(unittest.TestCase):
                 json.dumps(receipt), encoding="utf-8"
             )
 
-            summary, errors = audit_shard_receipts(root, 2)
+            summary, errors = audit_shard_receipts(
+                root, 2, expected_full_gate_nodeids=()
+            )
 
         self.assertEqual("failed", summary["status"])
         self.assertTrue(any("missing=[2]" in error for error in errors))
@@ -170,19 +204,42 @@ class TestDurationBudgetTests(unittest.TestCase):
                     "collected_nodeids": collected,
                     "selected_nodeids": list(selected),
                     "actual_nodeids": list(selected),
+                    "full_gate_nodeids": [],
                     "errors": [],
                 }
                 (root / f"pytest-shard-{index}.json").write_text(
                     json.dumps(receipt), encoding="utf-8"
                 )
 
-            summary, errors = audit_shard_receipts(root, 2)
+            summary, errors = audit_shard_receipts(
+                root, 2, expected_full_gate_nodeids=()
+            )
 
         self.assertEqual((), errors)
         self.assertEqual("passed", summary["status"])
         self.assertEqual(4, summary["collection_count"])
         self.assertEqual(4, summary["selected_total"])
         self.assertEqual(4, summary["actual_total"])
+
+    def test_ci_full_suite_does_not_inherit_focused_filter(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        self.assertEqual(set(FULL_GATE_NODEIDS), set(declared_full_gate_nodeids(root)))
+        config = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        self.assertTrue(
+            any("full_gate:" in marker for marker in config["tool"]["pytest"]["ini_options"]["markers"])
+        )
+        workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        self.assertNotIn("not full_gate", workflow)
+        self.assertIn("python scripts/check_test_duration_budget.py", workflow)
+        self.assertIn("--audit-receipts tmp/pytest-shards", workflow)
+        self.assertGreaterEqual(
+            workflow.count('run: python -m pytest -q -o addopts="" -n auto --dist load'),
+            2,
+        )
+        self.assertIn("addopts=", PYTEST_ARGUMENTS)
+        self.assertIn("addopts=", PYTEST_COLLECTION_ARGUMENTS)
+        self.assertNotIn("-m", PYTEST_ARGUMENTS)
+        self.assertNotIn("-m", PYTEST_COLLECTION_ARGUMENTS)
 
 
 if __name__ == "__main__":

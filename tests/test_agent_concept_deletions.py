@@ -12,6 +12,8 @@ import tempfile
 from typing import Any
 import unittest
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "src/gravity_insight"
@@ -983,6 +985,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
             ):
                 _metadata_inventory_contract(_repository_modules(package))
 
+    @pytest.mark.full_gate
     def test_compact_pagination_output_contract_is_locked(self) -> None:
         frozen_modules = _frozen_repository_modules()
         _, frozen_definition = _compact_pagination_contract(frozen_modules)
@@ -1048,6 +1051,7 @@ class AgentConceptDeletionTests(unittest.TestCase):
             scope["consolidate_delete"],
         )
 
+    @pytest.mark.full_gate
     def test_frozen_concept_baseline_and_current_residue_gate_both_hold(self) -> None:
         frozen_modules = _frozen_repository_modules()
         _compact_pagination_contract(frozen_modules)

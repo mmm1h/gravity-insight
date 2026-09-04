@@ -35,7 +35,13 @@
     "impact_scope": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["graph_definition_id", "profile", "seed_modules", "direct_dependencies", "direct_dependents", "transitive_dependents", "impacted_test_files"],
+      "required": [
+        "graph_definition_id", "profile", "seed_modules", "direct_dependencies",
+        "direct_dependents", "transitive_dependents", "selection_strategy",
+        "closure_depth", "reverse_fanout_limit", "test_file_limit",
+        "bounded_dependents", "fanout_boundaries", "overflow_reason",
+        "test_binding", "impacted_test_files"
+      ],
       "properties": {
         "graph_definition_id": {"type": "string"},
         "profile": {"const": "canonical"},
@@ -43,6 +49,25 @@
         "direct_dependencies": {"type": "array", "items": {"type": "string"}},
         "direct_dependents": {"type": "array", "items": {"type": "string"}},
         "transitive_dependents": {"$ref": "#/$defs/bounded_set"},
+        "selection_strategy": {"const": "bounded_reverse_dependency_closure"},
+        "closure_depth": {"const": 2},
+        "reverse_fanout_limit": {"const": 40},
+        "test_file_limit": {"const": 80},
+        "bounded_dependents": {"$ref": "#/$defs/bounded_set"},
+        "fanout_boundaries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["module", "dependent_count"],
+            "properties": {
+              "module": {"type": "string", "minLength": 1},
+              "dependent_count": {"type": "integer", "minimum": 41}
+            }
+          }
+        },
+        "overflow_reason": {"type": ["string", "null"]},
+        "test_binding": {"const": "ast_imports_and_literal_module_references"},
         "impacted_test_files": {"type": "array", "items": {"type": "string"}}
       }
     },

@@ -168,6 +168,10 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "gap:MULTIDIM_COHORT_HORIZON_CONTRACT_MISSING": (
         "查询超出当前合同窗口的 Multidim 获客队列累计收入、付费留存或激活 ARPU",
     ),
+    "gap:SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN": (
+        "custom event first exposure cohort",
+        "自定义事件首次暴露 cohort",
+    ),
     "material.asset.fetch": (
         "按精确平台素材引用预览或下载图片/视频",
     ),

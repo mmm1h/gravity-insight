@@ -1,4 +1,4 @@
-"""Machine-readable contract for compact Segment Rule Spec v1."""
+"""Machine-readable contract for compact Segment Rule Spec v2."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from ._field_policy_shared import ANALYSIS_CONDITION_OPERATORS, ANALYSIS_TARGET_
 from .domains import ANALYSIS_SEGMENT_OPERATIONS
 
 
-SEGMENT_SPEC_SCHEMA_VERSION = "gravity-insight.segment-rule-spec.v1"
+SEGMENT_SPEC_SCHEMA_VERSION = "gravity-insight.segment-rule-spec.v2"
 
 
 def segment_rule_spec_schema() -> dict[str, Any]:

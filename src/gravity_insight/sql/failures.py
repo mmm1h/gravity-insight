@@ -18,6 +18,7 @@ from gravity_insight.semantic_status import protocol_status_evidence
 
 
 MAX_DIAGNOSTIC_ELAPSED_MS = 900_000
+MAX_SQL_RETRY_AFTER_MS = 30_000
 _CONTEXT_ATTRIBUTE = "_gravity_sql_failure_context"
 _SAFE_CODE = re.compile(r"^(?:[A-Z][A-Z0-9_.:-]{0,63}|[0-9]{1,9})$")
 _REVIEWED_PROTOCOL_TOKENS = frozenset({"SUCCESS", "OK", "ERROR", "FAILED", "REJECTED"})
@@ -35,6 +36,7 @@ class SqlFailure:
     next_action: str
     http_status: int | None = None
     protocol_status: Mapping[str, Any] | None = None
+    retry_after_ms: int | None = None
 
 
 _FAILURES = {
@@ -94,18 +96,31 @@ def annotate_sql_failure(
     kind: str,
     http_status: int | None = None,
     protocol_status: Mapping[str, Any] | None = None,
+    retry_after_ms: int | None = None,
 ) -> Exception:
     """Attach only reviewed structural facts to an existing SQL exception type."""
 
-    setattr(
-        error,
-        _CONTEXT_ATTRIBUTE,
-        {
-            "kind": kind,
-            "http_status": http_status,
-            "protocol_status": dict(protocol_status) if protocol_status is not None else None,
-        },
-    )
+    context = {
+        "kind": kind,
+        "http_status": http_status,
+        "protocol_status": dict(protocol_status) if protocol_status is not None else None,
+        "retry_after_ms": retry_after_ms,
+    }
+    setattr(error, _CONTEXT_ATTRIBUTE, context)
+    failure = classify_sql_failure(error, request_count=1)
+    for field, value in {
+        "sql_stage": failure.stage,
+        "sql_category": failure.upstream_category,
+        "safe_message": failure.message,
+        "retryable": failure.retryable,
+        "reached_sql_engine": failure.reached_sql_engine,
+        "next_action": failure.next_action,
+        "http_status": failure.http_status,
+        "protocol_status": failure.protocol_status,
+        "retry_after_ms": failure.retry_after_ms,
+    }.items():
+        setattr(error, field, value)
+    setattr(error, "code", failure.code)
     return error
 
 
@@ -193,6 +208,21 @@ def _structured_stage_failure(error: BaseException) -> SqlFailure | None:
         retryable=bool(getattr(error, "retryable", False)),
         reached_sql_engine=reached,
         next_action=next_action,
+        http_status=(
+            getattr(error, "http_status", None)
+            if type(getattr(error, "http_status", None)) is int
+            else None
+        ),
+        protocol_status=(
+            dict(getattr(error, "protocol_status"))
+            if isinstance(getattr(error, "protocol_status", None), Mapping)
+            else None
+        ),
+        retry_after_ms=(
+            getattr(error, "retry_after_ms", None)
+            if type(getattr(error, "retry_after_ms", None)) is int
+            else None
+        ),
     )
 
 
@@ -213,7 +243,7 @@ def diagnostic_fields(
         upstream["http_status_class"] = f"{failure.http_status // 100}xx"
     if failure.protocol_status is not None:
         upstream["protocol_status"] = dict(failure.protocol_status)
-    return {
+    result = {
         "stage": failure.stage,
         "retryable": failure.retryable,
         "reached_sql_engine": failure.reached_sql_engine,
@@ -224,6 +254,9 @@ def diagnostic_fields(
             request_count_bound=request_count_bound,
         ),
     }
+    if failure.retry_after_ms is not None:
+        result["retry_after_ms"] = failure.retry_after_ms
+    return result
 
 
 def execution_evidence(
@@ -277,11 +310,19 @@ def _with_context(
         return failure
     status = context.get("http_status")
     protocol = context.get("protocol_status")
+    retry_after = context.get("retry_after_ms")
     return SqlFailure(
         **{
             **failure.__dict__,
             "http_status": status if type(status) is int else failure.http_status,
             "protocol_status": dict(protocol) if isinstance(protocol, Mapping) else None,
+            "retry_after_ms": (
+                retry_after
+                if failure.code == "SQL_HTTP_RATE_LIMITED"
+                and type(retry_after) is int
+                and 0 <= retry_after <= MAX_SQL_RETRY_AFTER_MS
+                else None
+            ),
         }
     )
 
@@ -329,6 +370,7 @@ def _safe_scalar_field(value: Any, *, field: str, present: bool) -> dict[str, An
 
 __all__ = [
     "MAX_DIAGNOSTIC_ELAPSED_MS",
+    "MAX_SQL_RETRY_AFTER_MS",
     "SqlFailure",
     "annotate_sql_failure",
     "classify_sql_failure",

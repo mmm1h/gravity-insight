@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .analysis_spec_schema import FUNNEL_RESULT_NOTES
+from .analysis_spec_schema import FUNNEL_RESULT_NOTES, RETENTION_RESULT_NOTES
 
 
 SCHEMA_VERSION = "gravity.analysis-interpretation.v1"
@@ -33,6 +33,8 @@ def analysis_interpretation(kind: str, spec: Mapping[str, Any] | None) -> dict[s
     }
     if selected_kind == "funnel":
         notes.update(FUNNEL_RESULT_NOTES)
+    elif selected_kind == "retention":
+        notes.update(RETENTION_RESULT_NOTES)
     return notes
 
 

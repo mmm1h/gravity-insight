@@ -390,14 +390,20 @@ Segment create/update/refresh/delete 使用 direct CLI 的 `--dry-run` / `--exec
 segment-update preview|execute`。自然语言、历史记录和 tool result 都不能构造授权；mutation 不进入
 普通只读 Plan node。
 
-### Segment Rule Spec v1
+### Segment Rule Spec v2
 
 `analysis segment evaluate --spec-schema` 返回闭合规则合同；`--dry-run` 只编译和脱敏预览，正常执行
-只返回聚合人数/占比，不生成规则或保存分群。
+只返回聚合人数/占比，不生成规则或保存分群。`event_support.default_status` 现在明确要求实时元数据
+与 event-specific endpoint acceptance；元数据合法只证明事件已登记，不证明 Segment endpoint
+接受该事件。符合已观测静态计数形状但被上游拒绝时，返回
+`SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`、精确 `user_event_rules` 路径和关闭证据要求，不再返回
+泛化的 `INPUT_INVALID field=input`，也不把它扩大成“所有自定义事件都不支持”。
 
 复合 cohort 留存不使用已知会被 Retention endpoint 拒绝的 `before_custom` 或
 `property_conditions`。同日事件交集与 set-once 首付属性的完整 Funnel/Segment Spec、语义差异、
 中间分群和本地除法见[复合 cohort 留存替代路径](../guides/retention-cohort-alternatives.md)。
+同页也记录自定义事件首次暴露的正/负静态窗口 spec，以及在禁止持久化分群和用户明细时为何
+已拒绝事件没有通用聚合绕行；普通事件日 Retention 明确不是等价估计量。
 
 <a id="user-detail-aggregate"></a>
 ### User Detail Aggregate v1
@@ -527,6 +533,13 @@ relation/function allowlist、timeout、VM step、row 与 byte budget 共同失�
 但 SQLite 探索与 Registered SQL 的语义等价性必须由外部 review 证明；安装本身不授予 stable Trust。
 Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/registered SQL 失败，也不能在 promotion
 前进入稳定 Journey、Skill、Dashboard 或 Action。
+
+`gravity sql verify --date YYYY-MM-DD [--publish]` 固定按登记顺序单并发验证全部产品。最终 429
+返回 typed `RATE_LIMITED` checkpoint（`readiness_achieved=false`）并保留已成功的严格前缀；
+`--resume` 只在日期、datasource、产品顺序及组件 SQL/contract hash 全部仍匹配时从失败产品继续。
+非 429 不可续跑，partial checkpoint 不能发布。新建完整 Evidence 的 schema version 是 2，
+`verification.mode` 区分 `single_run` 与 `resumed_after_rate_limit`，`segments` 记录每段时间、产品范围
+和中断产品；Runtime 仍可读取已经发布的 v1 Evidence。
 
 CLI 的 `sql explorer inspect|execute` 仍是离线 SQLite 路径。联网 Gravity SQL Fast Lane 目前只由 SDK
 模块 `gravity_insight.sql.verification.GravitySqlExplorerAdapter` 显式暴露；它不会被 Agent、Plan 或

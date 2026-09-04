@@ -13,6 +13,11 @@ from ._field_policy_shared import (
     ANALYSIS_TARGET_METHODS,
     ANALYSIS_TIME_GROUPS,
     ANALYSIS_USER_TYPES,
+    RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE,
+    RETENTION_ADDITIVE_FOLLOWUP_JOURNEY,
+    RETENTION_ADDITIVE_FOLLOWUP_NEXT_ACTION,
+    RETENTION_ADDITIVE_FOLLOWUP_REASON,
+    RETENTION_RESULT_NOTES,
 )
 
 
@@ -42,8 +47,6 @@ FUNNEL_RESULT_NOTES = {
     ),
     "window_funnel_mode": 4,
 }
-
-
 def analysis_query_spec_schema() -> dict[str, Any]:
     """Return the complete offline contract used by CLI and Agent discovery."""
 
@@ -126,6 +129,7 @@ def _kind_schemas() -> dict[str, Any]:
                         ),
                     },
                 },
+                notes=RETENTION_RESULT_NOTES,
             ),
             "property": _property_schema(),
             "scatter": _dated_spec(
@@ -519,6 +523,11 @@ def _enum(*values: str) -> dict[str, Any]:
 __all__ = [
     "ANALYSIS_SPEC_KINDS",
     "FUNNEL_RESULT_NOTES",
+    "RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE",
+    "RETENTION_ADDITIVE_FOLLOWUP_JOURNEY",
+    "RETENTION_ADDITIVE_FOLLOWUP_NEXT_ACTION",
+    "RETENTION_ADDITIVE_FOLLOWUP_REASON",
+    "RETENTION_RESULT_NOTES",
     "SPEC_SCHEMA_VERSION",
     "analysis_query_spec_schema",
 ]

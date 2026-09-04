@@ -11,6 +11,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from gravity_insight import cli, runtime
 from gravity_insight.actionable_error_values import (
     ALTERNATIVE_DISPLAY_LIMIT,
@@ -2038,6 +2040,7 @@ class GravityInsightCliTests(unittest.TestCase):
         )
         self.assertIn("team", derived.multidim_template_scopes)
 
+    @pytest.mark.full_gate
     def test_domain_and_cli_modules_have_no_compiled_operation_literals(self):
         with repository_tree_read(
             root=ROOT,
