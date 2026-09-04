@@ -10,9 +10,11 @@ import sys
 
 from repository_map import (
     MAP_PATH,
+    MAP_FACT_SCHEMA,
     MAP_SCHEMA,
     build_repository_map,
     canonical_json_bytes,
+    encode_repository_map,
     validate_contract,
 )
 
@@ -23,7 +25,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=MAP_PATH)
     args = parser.parse_args(argv)
 
-    document = build_repository_map()
+    facts = build_repository_map()
+    validate_contract(facts, MAP_FACT_SCHEMA)
+    document = encode_repository_map(facts)
     validate_contract(document, MAP_SCHEMA)
     payload = canonical_json_bytes(document) + b"\n"
     if args.check:
@@ -39,9 +43,9 @@ def main(argv: list[str] | None = None) -> int:
         json.dumps(
             {
                 "bytes": len(payload),
-                "entries": len(document["entries"]),
-                "module_graph_edges": document["module_graph"]["edge_count"],
-                "module_graph_nodes": document["module_graph"]["node_count"],
+                "entries": len(facts["entries"]),
+                "module_graph_edges": facts["module_graph"]["edge_count"],
+                "module_graph_nodes": facts["module_graph"]["node_count"],
                 "output": str(args.output),
                 "sha256": hashlib.sha256(payload).hexdigest(),
                 "status": status,

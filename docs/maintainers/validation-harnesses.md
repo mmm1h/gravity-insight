@@ -34,6 +34,10 @@ Release 固定按高风险处理。非 changed-files 查询按匹配实体判定
 | Provenance + installed wheel + canonical consumer | 验证非 editable wheel 的五 surface parity、离线 provenance 与真实 pinned consumer | 本趟 wheel matrix 通过五 surface；work-dashboard pinned suite 实跑通过，network_calls=0 | provenance 0.378s；wheel surface 20.540s；consumer 74.032s；合计 94.950s | 分别移除 wheel/provenance/consumer gate，使用 tampered fixture、editable escape 与旧 envelope consumer fixture | 三类失败全部被单一 installed-artifact gate 以同等隔离度和更低成本覆盖 |
 | Test duration budget | 阻止单项测试吞掉 CI 20 分钟预算 | `fc3efa9d` 建立 240s immutable ceiling；超时 nodeid 会成为 fail-closed 诊断 | 与完整 pytest collector 同量级；本趟基线 collector 142.29s，budget recorder 的独立总耗时由 integrated receipt记录 | 从 Integrated 省略 duration gate，注入超过 240s 的受控 fake report，验证普通 pytest 不拒绝时该 gate是否唯一承重 | pytest 主 collector直接实施同一 per-item ceiling并输出相同 nodeid 后，删除第二次全量收集 |
 
+Repository Map v2 仍是单个可直接 `json.load` 的 JSON 文件；它只把重复值换成确定性表。
+生成器先校验 compact v2 transport，loader 再还原并校验完整 v1 fact contract，逐字段
+round-trip 测试锁住 entry、issue location、模块节点和边不丢失；255,000 字节门槛不变。
+
 第一次 unittest 消融运行不是有效“绿色证据”：pytest 在 414.170s 后报告 5 failures，其中 broken link 与
 complexity 是真实实现缺陷，另一个 isolated import 受同机并发影响超时。修复缺陷后必须重跑；不得把这次失败
 包装成“unittest 承重”或“可以删除”。修复后第二次以同一 ablation receipt 重跑：CI collector 225.100s、compiler
