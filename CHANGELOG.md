@@ -28,6 +28,12 @@ Migration guide: [0.3.8](docs/migration/0.3.8.md)
 
 ### Added
 
+- `GravitySDK.reconcile_standard_retention_denominators()` now produces a bounded,
+  offline `match|drift|unknown` record from already-fetched Multidim
+  `standard_activate_cnt` and Analysis Retention `init_num` aggregates. It preserves
+  both field names and retrieval timestamps, keeps empty or missing evidence out of
+  zero, and reports the named native-cohort semantic gap instead of treating
+  `values[0]` as a substitute denominator.
 - Six stable page-info operations now declare complete collection semantics from
   bounded production observations that reached the echoed final page, returned
   SDK `has_more=false`, and reconciled every returned item with the reported
