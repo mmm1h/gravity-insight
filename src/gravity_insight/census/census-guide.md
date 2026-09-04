@@ -134,10 +134,14 @@ gravity maturity score --json
 ```
 
 An observation is current through 26 hours after `observed_at`, allowing the daily schedule up to
-two hours of runner delay. At 26 hours plus one second it is expired and the dimension becomes
-`unmeasured`; artifact retention does not extend freshness. A timestamp more than five minutes in
-the future also becomes `unmeasured`. Downloading an artifact does not rewrite its observation
-time.
+two hours of runner delay. At 26 hours plus one second its measurement resolution is `expired`,
+not `not_measured`; artifact retention does not extend freshness. A timestamp more than five
+minutes in the future is `invalid`. A complete chain bound to another reviewed baseline is
+`not_applicable`, while an absent chain is `not_measured`. All four unavailable states keep the
+dimension at `measured=false` and block the gate, but the specific status and reason code remain in
+`current.measurement`. Malformed JSON evidence is `invalid`, not absent. Context objects match
+exactly, so an unrecognized producer context field cannot be silently ignored. Downloading an
+artifact does not rewrite its observation time.
 
 To reproduce the one-time comparison with the previous partial census, retain its routes file and
 pass it explicitly:

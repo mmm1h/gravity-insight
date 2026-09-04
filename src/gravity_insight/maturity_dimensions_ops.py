@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from .evidence_common import load_object, metric, relative
+from .evidence_common import (
+    load_object,
+    metric,
+    relative,
+    resolve_context_bound_measurement,
+)
 
 
 def performance_evidence(
@@ -112,10 +118,18 @@ def _cost_metric(evaluation: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def ci_evidence(root: Path, repository: Mapping[str, Any]) -> list[dict[str, Any]]:
-    receipt_path = root / "tmp/integrated-validation" / str(repository["commit"]) / "receipt.json"
-    receipt = load_object(receipt_path) if receipt_path.is_file() else None
+    receipt_path, receipt, resolution = _integrated_validation_measurement(
+        root, repository
+    )
     gates = receipt.get("gates", []) if receipt else []
-    measured = _receipt_is_current(receipt, repository) and bool(gates)
+    measured = resolution["status"] == "measured" and bool(gates)
+    missing = (
+        ()
+        if measured
+        else (
+            "an integrated-validation receipt applicable to the expected clean exact-HEAD context",
+        )
+    )
     evidence = [
         metric(
             source=relative(root, receipt_path),
@@ -123,23 +137,157 @@ def ci_evidence(root: Path, repository: Mapping[str, Any]) -> list[dict[str, Any
             measured=measured,
             passed=sum(item.get("exit_code") == 0 for item in gates) if measured else None,
             total=len(gates) if measured else None,
-            observed={"receipt_present": receipt is not None, "commit": repository["commit"], "dirty": repository["dirty"]},
-            missing=() if measured else ("a complete integrated-validation receipt for the exact clean HEAD",),
+            observed={
+                "receipt_present": receipt is not None,
+                "commit": repository["commit"],
+                "dirty": repository["dirty"],
+                "measurement_status": resolution["status"],
+                "reason_code": resolution["reason_code"],
+                "mismatches": resolution["mismatches"],
+            },
+            missing=missing,
+            measurement_resolution=resolution,
         )
     ]
     evidence.append(_workflow_metric(root))
     return evidence
 
 
-def _receipt_is_current(
-    receipt: Mapping[str, Any] | None, repository: Mapping[str, Any]
-) -> bool:
-    return bool(
-        receipt
-        and receipt.get("commit_sha") == repository["commit"]
-        and receipt.get("complete_gate_set") is True
-        and receipt.get("preconditions_after", {}).get("clean") is True
+def _integrated_validation_measurement(
+    root: Path, repository: Mapping[str, Any]
+) -> tuple[Path, Mapping[str, Any] | None, dict[str, Any]]:
+    expected_path = (
+        root / "tmp/integrated-validation" / str(repository["commit"]) / "receipt.json"
     )
+    candidates = []
+    for path in sorted((root / "tmp/integrated-validation").glob("*/receipt.json")):
+        try:
+            receipt = load_object(path)
+        except (OSError, UnicodeError, ValueError):
+            resolution = resolve_context_bound_measurement(
+                {}, **_receipt_expectation(root, repository)
+            )
+            candidates.append((path, None, resolution))
+            continue
+        measurement = _receipt_measurement(receipt)
+        resolution = resolve_context_bound_measurement(
+            measurement, **_receipt_expectation(root, repository, receipt)
+        )
+        candidates.append((path, receipt, resolution))
+    exact = [item for item in candidates if item[0] == expected_path]
+    if exact:
+        return exact[0]
+    measured = [item for item in candidates if item[2]["status"] == "measured"]
+    if measured:
+        return max(measured, key=_receipt_candidate_time)
+    if candidates:
+        return max(candidates, key=_receipt_candidate_time)
+    return (
+        expected_path,
+        None,
+        resolve_context_bound_measurement(
+            None, **_receipt_expectation(root, repository)
+        ),
+    )
+
+
+def _receipt_expectation(
+    root: Path,
+    repository: Mapping[str, Any],
+    receipt: Mapping[str, Any] | None = None,
+) -> dict[str, dict[str, Any]]:
+    bindings: dict[str, Any] = {"commit_sha": repository["commit"]}
+    gates = receipt.get("gates") if receipt is not None else None
+    if isinstance(gates, list) and all(isinstance(gate, Mapping) for gate in gates):
+        bindings["gate_names"] = [gate.get("name") for gate in gates]
+    return {
+        "expected_coordinate": {
+            "kind": "integrated_validation",
+            "commit_sha": repository["commit"],
+            "worktree_state": "dirty" if repository["dirty"] else "clean",
+            "complete_gate_set": True,
+            "trial": False,
+        },
+        "expected_scope": {
+            "kind": "git_worktree",
+            "root": root.resolve().as_posix(),
+        },
+        "expected_bindings": bindings,
+    }
+
+
+def _receipt_measurement(receipt: Mapping[str, Any]) -> Mapping[str, Any]:
+    gates = receipt.get("gates")
+    if (
+        not isinstance(gates, list)
+        or not gates
+        or any(not isinstance(gate, Mapping) for gate in gates)
+    ):
+        return {}
+    measurement = receipt.get("measurement")
+    return (
+        measurement
+        if isinstance(measurement, Mapping)
+        and _receipt_measurement_matches(receipt, measurement)
+        else {}
+    )
+
+
+def _receipt_measurement_matches(
+    receipt: Mapping[str, Any], measurement: Mapping[str, Any]
+) -> bool:
+    coordinate = measurement.get("coordinate")
+    binds_to = measurement.get("binds_to")
+    value = measurement.get("value")
+    gates = receipt.get("gates", [])
+    after = receipt.get("preconditions_after")
+    clean = isinstance(after, Mapping) and after.get("clean") is True
+    expected_coordinate = {
+        "commit_sha": receipt.get("commit_sha"),
+        "worktree_state": "clean" if clean else "dirty",
+        "complete_gate_set": receipt.get("complete_gate_set"),
+        "trial": bool(receipt.get("trial")),
+    }
+    expected_bindings = {
+        "commit_sha": receipt.get("commit_sha"),
+        "gate_names": [gate.get("name") for gate in gates],
+    }
+    expected_value = {
+        "gate_count": len(gates),
+        "integrated_validation_green": receipt.get("integrated_validation_green"),
+        "overall": receipt.get("overall"),
+    }
+    return bool(
+        _contains_expected(coordinate, expected_coordinate)
+        and _contains_expected(binds_to, expected_bindings)
+        and _contains_expected(value, expected_value)
+        and isinstance(gates, list)
+        and _same_timestamp(measurement.get("captured_at"), receipt.get("finished_at"))
+    )
+
+
+def _contains_expected(value: Any, expected: Mapping[str, Any]) -> bool:
+    return isinstance(value, Mapping) and all(
+        value.get(key) == expected_value for key, expected_value in expected.items()
+    )
+
+
+def _same_timestamp(left: Any, right: Any) -> bool:
+    try:
+        first = datetime.fromisoformat(str(left).replace("Z", "+00:00"))
+        second = datetime.fromisoformat(str(right).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if first.tzinfo is None or second.tzinfo is None:
+        return False
+    return first.astimezone(timezone.utc) == second.astimezone(timezone.utc)
+
+
+def _receipt_candidate_time(
+    candidate: tuple[Path, Mapping[str, Any] | None, Mapping[str, Any]],
+) -> str:
+    context = candidate[2].get("context")
+    return str(context.get("captured_at", "")) if isinstance(context, Mapping) else ""
 
 
 def _workflow_metric(root: Path) -> dict[str, Any]:

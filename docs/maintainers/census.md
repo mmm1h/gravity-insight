@@ -125,6 +125,17 @@ Draft selector 只消费 `uncovered_read`，因此不会再把弱 POST 变成 re
 
 生产页面确认仍受 [探测安全](probing.md) 约束。
 
+## Current evidence 语境
+
+当前 fetch receipt、snapshot 与 diff 只在同一完整证据链内组成一个
+`gravity.context-bound-measurement.v1`。值同时携带 Census 坐标、证据目录 scope、
+`observed_at`，以及新旧 bundle 绑定；`census status` 必须用当前 checked-in baseline 和 UTC
+时钟显式解析。解析结果区分 `not_measured`、`expired`、`not_applicable` 与 `invalid`，这些状态
+都保持 fail-closed，但不得再改写成同一个 `unmeasured`。26 小时 TTL 保持现值；当前指南把它
+解释为每日任务最多两小时延迟余量，除此之外的最初定值依据不确定。损坏的 JSON 是
+`invalid`，不是“从未测量”；coordinate、scope 与 bindings 均精确匹配，消费方不得忽略生产方
+新增的语境字段。
+
 ## 请求提取器的已知诊断边界
 
 `route-params.json` 的 `analysis.unresolved_reasons` 只保留 occurrence 级原因。表达式级

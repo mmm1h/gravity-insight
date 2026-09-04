@@ -15,9 +15,16 @@ from gravity_insight.documentation_status import (
     documentation_report,
     integrated_documentation_errors,
 )
-from gravity_insight.evidence_common import dimension, metric
+from gravity_insight.evidence_common import (
+    context_bound_measurement,
+    dimension,
+    metric,
+    resolve_context_bound_measurement,
+)
 from gravity_insight.journey_certification import journey_certifications
 from gravity_insight.maturity_dimensions_core import census_evidence
+from gravity_insight.maturity import _maturity_measurement
+from gravity_insight.maturity_dimensions_ops import ci_evidence
 from gravity_insight.runtime_health import runtime_health_report
 
 
@@ -120,6 +127,82 @@ class EvidenceCollectorTests(unittest.TestCase):
         self.assertIsNone(result["score"])
         self.assertIsNone(result["calculation"])
 
+    def test_metric_rejects_a_resolution_that_conflicts_with_measured(self) -> None:
+        measurement = context_bound_measurement(
+            {"changed": False},
+            coordinate={"kind": "census_drift_observation", "clock": "UTC"},
+            scope={"kind": "census_evidence_chain"},
+            captured_at="2026-09-05T00:00:00+00:00",
+            binds_to={"baseline_bundle_id": "a" * 64},
+        )
+        expired = resolve_context_bound_measurement(
+            measurement,
+            expected_coordinate=measurement["coordinate"],
+            expected_scope=measurement["scope"],
+            expected_bindings=measurement["binds_to"],
+            now=datetime(2026, 9, 5, 0, 0, 2, tzinfo=timezone.utc),
+            max_age=timedelta(seconds=1),
+        )
+
+        with self.assertRaisesRegex(ValueError, "measured flag conflicts"):
+            metric(
+                source="Census receipt",
+                claim="Census evidence is current",
+                measured=True,
+                passed=1,
+                total=1,
+                measurement_resolution=expired,
+            )
+
+    def test_resolver_rejects_a_context_field_the_consumer_did_not_declare(self) -> None:
+        measurement = context_bound_measurement(
+            {"changed": False},
+            coordinate={"kind": "census_drift_observation", "clock": "UTC"},
+            scope={"kind": "census_evidence_chain", "directory": "tmp/census-current"},
+            captured_at="2026-09-05T00:00:00+00:00",
+            binds_to={
+                "baseline_bundle_id": "a" * 64,
+                "observed_bundle_id": "b" * 64,
+            },
+        )
+        resolution = resolve_context_bound_measurement(
+            measurement,
+            expected_coordinate=measurement["coordinate"],
+            expected_scope={"kind": "census_evidence_chain"},
+            expected_bindings=measurement["binds_to"],
+        )
+
+        self.assertEqual("not_applicable", resolution["status"])
+        self.assertEqual(
+            {
+                "field": "scope.directory",
+                "expected": None,
+                "observed": "tmp/census-current",
+            },
+            resolution["mismatches"][0],
+        )
+        self.assertIsNone(resolution["value"])
+
+    def test_resolver_rejects_a_measurement_without_a_value_field(self) -> None:
+        measurement = context_bound_measurement(
+            {"gate_count": 2},
+            coordinate={"kind": "integrated_validation", "commit_sha": "a" * 40},
+            scope={"kind": "git_worktree", "root": ROOT.as_posix()},
+            captured_at="2026-09-05T00:00:00+00:00",
+            binds_to={"commit_sha": "a" * 40},
+        )
+        measurement.pop("value")
+
+        resolution = resolve_context_bound_measurement(
+            measurement,
+            expected_coordinate={"kind": "integrated_validation", "commit_sha": "a" * 40},
+            expected_scope={"kind": "git_worktree", "root": ROOT.as_posix()},
+            expected_bindings={"commit_sha": "a" * 40},
+        )
+
+        self.assertEqual("invalid", resolution["status"])
+        self.assertEqual("MEASUREMENT_CONTEXT_INVALID", resolution["reason_code"])
+
     def test_journey_certifications_account_for_every_source_contract(self) -> None:
         result = journey_certifications(ROOT)
         source_count = 0
@@ -143,6 +226,10 @@ class EvidenceCollectorTests(unittest.TestCase):
         )
         self.assertTrue(result["baseline"]["complete"])
         self.assertFalse(result["current"]["measured"])
+        self.assertEqual("not_measured", result["current"]["status"])
+        self.assertEqual(
+            "MEASUREMENT_NOT_CAPTURED", result["current"]["reason_code"]
+        )
         self.assertIsNone(result["current"]["changed"])
 
     def test_census_observation_is_current_through_the_26_hour_boundary(self) -> None:
@@ -167,7 +254,7 @@ class EvidenceCollectorTests(unittest.TestCase):
         )
         self.assertEqual((True, 10.0), (scored["measured"], scored["score"]))
 
-    def test_expired_census_observation_becomes_unmeasured(self) -> None:
+    def test_expired_census_observation_stays_distinct_from_never_measured(self) -> None:
         observed_at = datetime(2026, 9, 3, 1, tzinfo=timezone.utc)
         baseline = census_status(ROOT, evidence_paths=())["baseline"]["bundle_id"]
         with tempfile.TemporaryDirectory() as temporary:
@@ -179,10 +266,24 @@ class EvidenceCollectorTests(unittest.TestCase):
             )
 
         self.assertFalse(result["current"]["measured"])
-        self.assertEqual("unmeasured", result["current"]["status"])
+        self.assertEqual("expired", result["current"]["status"])
+        self.assertEqual("MEASUREMENT_EXPIRED", result["current"]["reason_code"])
         self.assertEqual("expired", result["current"]["freshness"]["status"])
+        self.assertEqual("expired", result["current"]["measurement"]["status"])
+        self.assertEqual(93601.0, result["current"]["freshness"]["age_seconds"])
         self.assertIsNone(result["current"]["changed"])
         self.assertIn("no older than 26 hours", result["current"]["missing"][0])
+        never = census_status(ROOT, evidence_paths=())
+        self.assertEqual("not_measured", never["current"]["status"])
+        self.assertNotEqual(result["current"]["status"], never["current"]["status"])
+
+        scored = dimension(
+            dimension_id="upstream_drift_reliability_operations",
+            name="Census",
+            maximum=10,
+            evidence=census_evidence(result),
+        )
+        self.assertEqual("expired", scored["status"])
 
     def test_census_observation_rejects_future_time_and_baseline_mismatch(self) -> None:
         now = datetime(2026, 9, 3, 1, tzinfo=timezone.utc)
@@ -216,11 +317,36 @@ class EvidenceCollectorTests(unittest.TestCase):
             )
 
         self.assertFalse(future["current"]["measured"])
+        self.assertEqual("invalid", future["current"]["status"])
+        self.assertEqual(
+            "MEASUREMENT_CAPTURED_IN_FUTURE", future["current"]["reason_code"]
+        )
         self.assertEqual("future", future["current"]["freshness"]["status"])
         self.assertFalse(mismatch["current"]["measured"])
+        self.assertEqual("not_applicable", mismatch["current"]["status"])
+        self.assertEqual(
+            "MEASUREMENT_CONTEXT_MISMATCH", mismatch["current"]["reason_code"]
+        )
+        self.assertEqual(
+            "binds_to.baseline_bundle_id",
+            mismatch["current"]["measurement"]["mismatches"][0]["field"],
+        )
         self.assertIn("reviewed baseline", mismatch["current"]["missing"][0])
         self.assertFalse(receipt_mismatch["current"]["measured"])
         self.assertIn("same current bundle", receipt_mismatch["current"]["missing"][0])
+
+    def test_malformed_census_evidence_is_invalid_instead_of_not_measured(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "fetch-step.json"
+            path.write_text("{not-json", encoding="utf-8")
+            result = census_status(ROOT, (path,))
+
+        self.assertFalse(result["current"]["measured"])
+        self.assertEqual("invalid", result["current"]["status"])
+        self.assertEqual(
+            "MEASUREMENT_CONTEXT_INVALID", result["current"]["reason_code"]
+        )
+        self.assertIn("valid JSON", result["current"]["missing"][0])
 
     def test_legacy_step_receipt_requires_a_same_directory_snapshot_binding(self) -> None:
         observed_at = datetime(2026, 9, 3, 1, tzinfo=timezone.utc)
@@ -240,6 +366,229 @@ class EvidenceCollectorTests(unittest.TestCase):
 
         self.assertTrue(result["current"]["measured"])
         self.assertIn("current-snapshot.json", result["current"]["evidence"][2])
+
+    def test_integrated_validation_head_mismatch_is_not_missing(self) -> None:
+        old_head = "a" * 40
+        current_head = "b" * 40
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            receipt_path = (
+                root / "tmp/integrated-validation" / old_head / "receipt.json"
+            )
+            receipt_path.parent.mkdir(parents=True)
+            receipt = {
+                "schema_version": "gravity.integrated-validation-receipt.v2",
+                "commit_sha": old_head,
+                "finished_at": "2026-09-05T01:02:03+00:00",
+                "trial": False,
+                "complete_gate_set": True,
+                "preconditions_after": {"clean": True},
+                "gates": [{"name": "pytest_collector", "exit_code": 0}],
+                "integrated_validation_green": True,
+                "overall": "passed",
+            }
+            receipt["measurement"] = context_bound_measurement(
+                {
+                    "gate_count": 1,
+                    "integrated_validation_green": True,
+                    "overall": "passed",
+                },
+                coordinate={
+                    "kind": "integrated_validation",
+                    "commit_sha": old_head,
+                    "worktree_state": "clean",
+                    "complete_gate_set": True,
+                    "trial": False,
+                },
+                scope={"kind": "git_worktree", "root": root.resolve().as_posix()},
+                captured_at=receipt["finished_at"],
+                binds_to={
+                    "commit_sha": old_head,
+                    "gate_names": ["pytest_collector"],
+                },
+            )
+            receipt_path.write_text(
+                json.dumps(receipt),
+                encoding="utf-8",
+            )
+            evidence = ci_evidence(
+                root,
+                {"commit": current_head, "branch": "main", "dirty": False},
+            )[0]
+
+        self.assertFalse(evidence["measured"])
+        self.assertEqual("not_applicable", evidence["measurement"]["status"])
+        self.assertEqual(
+            "MEASUREMENT_CONTEXT_MISMATCH",
+            evidence["measurement"]["reason_code"],
+        )
+        self.assertEqual(
+            {
+                "field": "coordinate.commit_sha",
+                "expected": current_head,
+                "observed": old_head,
+            },
+            evidence["measurement"]["mismatches"][0],
+        )
+        self.assertEqual(
+            f"tmp/integrated-validation/{old_head}/receipt.json", evidence["source"]
+        )
+
+    def test_integrated_validation_without_embedded_context_is_invalid(self) -> None:
+        head = "1" * 40
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            receipt_path = root / "tmp/integrated-validation" / head / "receipt.json"
+            receipt_path.parent.mkdir(parents=True)
+            receipt_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "gravity.integrated-validation-receipt.v2",
+                        "commit_sha": head,
+                        "finished_at": "2026-09-05T01:02:03+00:00",
+                        "trial": False,
+                        "complete_gate_set": True,
+                        "preconditions_after": {"clean": True},
+                        "gates": [{"name": "pytest_collector", "exit_code": 0}],
+                        "integrated_validation_green": True,
+                        "overall": "passed",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            evidence = ci_evidence(
+                root, {"commit": head, "branch": "main", "dirty": False}
+            )[0]
+
+        self.assertFalse(evidence["measured"])
+        self.assertEqual("invalid", evidence["measurement"]["status"])
+        self.assertEqual(
+            "MEASUREMENT_CONTEXT_INVALID", evidence["measurement"]["reason_code"]
+        )
+
+    def test_integrated_validation_from_another_worktree_is_not_applicable(self) -> None:
+        head = "2" * 40
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            receipt_path = root / "tmp/integrated-validation" / head / "receipt.json"
+            receipt_path.parent.mkdir(parents=True)
+            receipt = {
+                "schema_version": "gravity.integrated-validation-receipt.v2",
+                "commit_sha": head,
+                "finished_at": "2026-09-05T01:02:03+00:00",
+                "trial": False,
+                "complete_gate_set": True,
+                "preconditions_after": {"clean": True},
+                "gates": [{"name": "pytest_collector", "exit_code": 0}],
+                "integrated_validation_green": True,
+                "overall": "passed",
+            }
+            receipt["measurement"] = context_bound_measurement(
+                {
+                    "gate_count": 1,
+                    "integrated_validation_green": True,
+                    "overall": "passed",
+                },
+                coordinate={
+                    "kind": "integrated_validation",
+                    "commit_sha": head,
+                    "worktree_state": "clean",
+                    "complete_gate_set": True,
+                    "trial": False,
+                },
+                scope={
+                    "kind": "git_worktree",
+                    "root": (root.parent / "other-worktree").as_posix(),
+                },
+                captured_at=receipt["finished_at"],
+                binds_to={
+                    "commit_sha": head,
+                    "gate_names": ["pytest_collector"],
+                },
+            )
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            evidence = ci_evidence(
+                root, {"commit": head, "branch": "main", "dirty": False}
+            )[0]
+
+        self.assertFalse(evidence["measured"])
+        self.assertEqual("not_applicable", evidence["measurement"]["status"])
+        self.assertEqual(
+            "scope.root", evidence["measurement"]["mismatches"][0]["field"]
+        )
+
+    def test_integrated_validation_rejects_disagreement_with_nested_context(self) -> None:
+        head = "e" * 40
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            receipt_path = root / "tmp/integrated-validation" / head / "receipt.json"
+            receipt_path.parent.mkdir(parents=True)
+            receipt = {
+                "schema_version": "gravity.integrated-validation-receipt.v2",
+                "commit_sha": head,
+                "finished_at": "2026-09-05T01:02:03+00:00",
+                "trial": False,
+                "complete_gate_set": True,
+                "preconditions_after": {"clean": True},
+                "gates": [{"name": "pytest_collector", "exit_code": 0}],
+                "integrated_validation_green": True,
+                "overall": "passed",
+            }
+            receipt["measurement"] = context_bound_measurement(
+                {"gate_count": 1, "integrated_validation_green": True, "overall": "passed"},
+                coordinate={
+                    "kind": "integrated_validation",
+                    "commit_sha": "f" * 40,
+                    "worktree_state": "clean",
+                    "complete_gate_set": True,
+                    "trial": False,
+                },
+                scope={"kind": "git_worktree", "root": root.as_posix()},
+                captured_at=receipt["finished_at"],
+                binds_to={"commit_sha": head, "gate_names": ["pytest_collector"]},
+            )
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            evidence = ci_evidence(
+                root, {"commit": head, "branch": "main", "dirty": False}
+            )[0]
+
+        self.assertFalse(evidence["measured"])
+        self.assertEqual("invalid", evidence["measurement"]["status"])
+        self.assertEqual(
+            "MEASUREMENT_CONTEXT_INVALID", evidence["measurement"]["reason_code"]
+        )
+
+    def test_maturity_value_carries_its_worktree_scope(self) -> None:
+        captured_at = datetime(2026, 9, 5, 1, tzinfo=timezone.utc)
+        repository = {"commit": "c" * 40, "branch": "main", "dirty": False}
+        first_root = ROOT
+        second_root = ROOT.parent / "gi-wt-ctx-secondary"
+        total = {"score": 90.0, "max": 100, "measured": True}
+        first = _maturity_measurement(
+            first_root,
+            repository,
+            status="measured",
+            total=total,
+            captured_at=captured_at,
+        )
+        second = _maturity_measurement(
+            second_root,
+            repository,
+            status="measured",
+            total=total,
+            captured_at=captured_at,
+        )
+
+        self.assertEqual(first["value"], second["value"])
+        self.assertNotEqual(first["scope"]["root"], second["scope"]["root"])
+        resolution = resolve_context_bound_measurement(
+            first,
+            expected_coordinate=second["coordinate"],
+            expected_scope=second["scope"],
+            expected_bindings=second["binds_to"],
+        )
+        self.assertEqual("not_applicable", resolution["status"])
+        self.assertEqual("scope.root", resolution["mismatches"][0]["field"])
 
     def test_runtime_health_and_documentation_gates_pass(self) -> None:
         health = runtime_health_report(ROOT)
