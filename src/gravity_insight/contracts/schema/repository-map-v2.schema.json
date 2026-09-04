@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.repository-map.v2",
+  "title": "Gravity Repository Map Compact Transport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "encoding",
+    "generation_metadata",
+    "field_derivation",
+    "estimate_method",
+    "counts",
+    "entries",
+    "issue_index",
+    "module_graph"
+  ],
+  "properties": {
+    "schema_version": {"const": "gravity.repository-map.v2"},
+    "encoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entries", "issue_index", "module_graph"],
+      "properties": {
+        "entries": {"const": "columnar-string-table-negative-index.v1"},
+        "issue_index": {"const": "path-table-location-tuples.v1"},
+        "module_graph": {"const": "node-table-adjacency-index.v1"}
+      }
+    },
+    "generation_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deterministic", "generated_at", "generated_at_reason"],
+      "properties": {
+        "deterministic": {"const": true},
+        "generated_at": {"type": "null"},
+        "generated_at_reason": {"const": "volatile timestamps are excluded from the reproducible projection"}
+      }
+    },
+    "field_derivation": {
+      "type": "object",
+      "minProperties": 15,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sources", "method", "null_reason"],
+        "properties": {
+          "sources": {"type": "array", "items": {"type": "string"}},
+          "method": {"type": "string", "minLength": 1},
+          "null_reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "estimate_method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "tokens", "expected_error"],
+      "properties": {
+        "bytes": {"type": "string", "minLength": 1},
+        "tokens": {"type": "string", "minLength": 1},
+        "expected_error": {"type": "string", "minLength": 1}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "entries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fields", "strings", "rows"],
+      "properties": {
+        "fields": {
+          "const": [
+            "byte_estimate",
+            "capability",
+            "current_docs",
+            "debt",
+            "dependencies",
+            "domain",
+            "entity_kind",
+            "id",
+            "issue",
+            "journey",
+            "maturity",
+            "owner",
+            "public_surfaces",
+            "schema",
+            "skill",
+            "source_files",
+            "source_spans",
+            "tests",
+            "token_estimate",
+            "unavailable"
+          ]
+        },
+        "strings": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 20,
+            "maxItems": 20,
+            "items": {"$ref": "#/$defs/encodedValue"}
+          }
+        }
+      }
+    },
+    "issue_index": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paths", "issues"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "issues": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "module_graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "definition_id",
+        "definition_sha256",
+        "profile",
+        "node_count",
+        "edge_count",
+        "graph_sha256",
+        "nodes",
+        "edges"
+      ],
+      "properties": {
+        "definition_id": {"type": "string"},
+        "definition_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "profile": {"const": "canonical"},
+        "node_count": {"type": "integer", "minimum": 1},
+        "edge_count": {"type": "integer", "minimum": 0},
+        "graph_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "encodedValue": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "integer"},
+        {"type": "array", "items": {"$ref": "#/$defs/encodedValue"}},
+        {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/encodedValue"}
+        }
+      ]
+    }
+  }
+}

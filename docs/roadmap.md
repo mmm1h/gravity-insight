@@ -44,7 +44,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - Kanban 单动作 schema 同时暴露 JSON-Schema 形状与集合边界；`dashboard.report.link` 的一次请求为 `1..20`，解码后整个 dashboard layout 独立为最多 20 项并跨 link 请求累计。整板 prepare 在首写前只读编译全部 saved artifact、判定 reuse/create/update/link、返回延迟 ID DAG 和快照写次数上界；它不新增整板执行器，不改变任何 mutation 的 preview/execute、owner、幂等、锁或写后读回。仓库只证明 20 是当前 SDK 治理 wire 合同；保留取证明确未在生产强制触发容量拒绝，无法证明 Gravity 上游也实施相同数字限制。
-- 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
+- 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。Repository Map v2 只将 entry string、issue path 和 module node 换成确定性表；loader 解码后仍校验完整 v1 fact schema，逐字段往返测试证明 entry、issue location、节点和边不丢失。仓库内 task-context、validation observation 与有序 checkpoint 已同步；外部 raw JSON 消费方按 0.3.8 迁移，读取能力没有损失。
 - issue #28 将受治理 SQL 的泛化失败 code 直接升级为 stage/类别细分；固定 route、workspace SQL、
   聚合投影、并发上限和结果能力均未改变，因此没有读取能力损失，旧 generic code 不保留别名。
 - `analysis.event.query` 不再接受 `$device_id + Count`：生产对照证明该组合始终被拒，而同字段
