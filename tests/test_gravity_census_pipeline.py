@@ -858,6 +858,28 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             self.assertEqual("unclassified", step["failure_class"])
             self.assertEqual(failure, step["failure"])
 
+    def test_fetch_writes_incomplete_snapshot_before_entry_fetch_can_escape(self) -> None:
+        class FailingEntryFetcher(StaticFetcher):
+            def _entry_seeds(self, *args, **kwargs):
+                raise RuntimeError("entry failed")
+
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temporary:
+            root = Path(temporary)
+            snapshot_path = root / "snapshot.json"
+            fetcher = FailingEntryFetcher(max_requests=3)
+            with self.assertRaisesRegex(RuntimeError, "entry failed"):
+                fetcher.fetch(
+                    site_url="https://example.test/",
+                    raw_dir=root / "raw",
+                    snapshot_path=snapshot_path,
+                )
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(1, snapshot["schema_version"])
+        self.assertFalse(snapshot["summary"]["complete"])
+        self.assertEqual([], snapshot["files"])
+        self.assertIn("without a terminal", snapshot["summary"]["completeness_reason"])
+
     def test_success_step_output_binds_snapshot_time_and_bundle(self) -> None:
         with tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temporary:
             target = Path(temporary) / "step-output.json"
@@ -920,6 +942,11 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         self.assertIn(
             "workflow_attempt_started_without_terminal_cli_output", workflow
         )
+        self.assertLess(
+            workflow.index("Set-Content -Encoding utf8 -LiteralPath $snapshot"),
+            workflow.index("gravity census fetch"),
+        )
+        self.assertIn("uploaded current-snapshot.json", workflow)
         self.assertIn("ConvertFrom-Json -ErrorAction Stop", workflow)
         self.assertIn("Start-Sleep -Seconds $delaySeconds", workflow)
         self.assertIn(
