@@ -71,6 +71,12 @@ class TestDurationBudgetTests(unittest.TestCase):
         self.assertEqual(240.0, TEST_DURATION_LIMIT_SECONDS)
         self.assertAlmostEqual(0.20, MAX_SINGLE_TEST_JOB_SHARE)
         self.assertLess(CALIBRATED_CI_ENVELOPE_SECONDS, TEST_DURATION_LIMIT_SECONDS)
+        # These measurements are synthetic, so they belong to no environment.
+        # `duration_budget_errors` resolves the coordinate from GITHUB_ACTIONS
+        # when the caller does not name one, which would silently reinterpret
+        # 40.001s as a 20.336s local equivalent on a CI runner and let the
+        # threshold assertion below pass vacuously. Pin the coordinate so this
+        # test measures the threshold logic and nothing about where it runs.
         self.assertEqual(
             (),
             duration_budget_errors(
@@ -82,7 +88,8 @@ class TestDurationBudgetTests(unittest.TestCase):
                     DurationMeasurement(
                         "tests/test_marked_slow.py::test_marked_slow", 40.0, True
                     ),
-                )
+                ),
+                duration_coordinate="local",
             ),
         )
         unmarked = duration_budget_errors(
@@ -91,11 +98,13 @@ class TestDurationBudgetTests(unittest.TestCase):
                     "tests/test_slow.py::test_slow",
                     SLOW_TEST_LIMIT_SECONDS + 0.001,
                 ),
-            )
+            ),
+            duration_coordinate="local",
         )
         self.assertIn("without @pytest.mark.full_gate", unmarked[0])
         errors = duration_budget_errors(
-            (DurationMeasurement("tests/test_slow.py::test_slow", 240.001),)
+            (DurationMeasurement("tests/test_slow.py::test_slow", 240.001),),
+            duration_coordinate="local",
         )
         self.assertEqual(1, len(errors))
         self.assertIn("tests/test_slow.py::test_slow", errors[0])
