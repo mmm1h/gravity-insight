@@ -6,7 +6,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from gravity_insight.evidence_common import load_object, relative
+from gravity_insight.evidence_common import (
+    context_bound_measurement,
+    load_object,
+    relative,
+    resolve_context_bound_measurement,
+)
 from gravity_insight.paths import PROJECT_ROOT
 
 from .diffing import CensusFailureClass
@@ -18,15 +23,18 @@ CURRENT_FUTURE_SKEW = timedelta(minutes=5)
 _HEX = frozenset("0123456789abcdef")
 
 
-def _documents(paths: Iterable[Path]) -> list[tuple[Path, dict[str, Any]]]:
+def _documents(
+    paths: Iterable[Path],
+) -> tuple[list[tuple[Path, dict[str, Any]]], list[Path]]:
     result: list[tuple[Path, dict[str, Any]]] = []
+    invalid = []
     for path in paths:
         if path.is_file():
             try:
                 result.append((path, load_object(path)))
             except (OSError, UnicodeError, ValueError):
-                continue
-    return result
+                invalid.append(path)
+    return result, invalid
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -100,12 +108,12 @@ def _complete_step(step: Mapping[str, Any]) -> bool:
     )
 
 
-def _matching_diff(
+def _matching_diffs(
     step_path: Path,
     bundle_id: str,
-    baseline_bundle_id: str,
     documents: list[tuple[Path, dict[str, Any]]],
-) -> tuple[Path, dict[str, Any]] | None:
+) -> list[tuple[Path, dict[str, Any]]]:
+    result = []
     for path, diff in documents:
         if path.parent != step_path.parent:
             continue
@@ -117,15 +125,15 @@ def _matching_diff(
             and diff.get("failure_class") is None
             and diff.get("old_bundle_complete") is True
             and diff.get("new_bundle_complete") is True
-            and diff.get("old_bundle_id") == baseline_bundle_id
+            and _valid_bundle_id(diff.get("old_bundle_id"))
             and diff.get("new_bundle_id") == bundle_id
         ):
-            return path, diff
-    return None
+            result.append((path, diff))
+    return result
 
 
 def _observation_candidates(
-    documents: list[tuple[Path, dict[str, Any]]], baseline_bundle_id: str
+    root: Path, documents: list[tuple[Path, dict[str, Any]]]
 ) -> list[dict[str, Any]]:
     candidates = []
     for step_path, step in _fetch_steps(documents):
@@ -133,55 +141,85 @@ def _observation_candidates(
         if not _complete_step(step) or identity is None:
             continue
         bundle_id, observed_at, snapshot_path = identity
-        matched = _matching_diff(
-            step_path, bundle_id, baseline_bundle_id, documents
-        )
-        if matched is None:
-            continue
-        diff_path, diff = matched
-        summary = diff.get("summary", {})
-        changed = any(type(value) is int and value > 0 for value in summary.values())
-        paths = [step_path, diff_path, snapshot_path]
-        candidates.append(
-            {
-                "observed_at": observed_at,
-                "bundle_id": bundle_id,
-                "changed": changed,
-                "paths": paths,
-            }
-        )
+        for diff_path, diff in _matching_diffs(step_path, bundle_id, documents):
+            summary = diff.get("summary", {})
+            changed = any(
+                type(value) is int and value > 0 for value in summary.values()
+            )
+            paths = [step_path, diff_path, snapshot_path]
+            candidates.append(
+                {
+                    "observed_at": observed_at,
+                    "bundle_id": bundle_id,
+                    "changed": changed,
+                    "paths": paths,
+                    "measurement": context_bound_measurement(
+                        {
+                            "bundle_id": bundle_id,
+                            "changed": changed,
+                            "drift_conclusion_available": True,
+                            "failure_class": None,
+                        },
+                        coordinate={
+                            "kind": "census_drift_observation",
+                            "clock": "UTC",
+                        },
+                        scope={
+                            "kind": "census_evidence_chain",
+                            "directory": relative(root, step_path.parent),
+                        },
+                        captured_at=observed_at,
+                        binds_to={
+                            "baseline_bundle_id": diff["old_bundle_id"],
+                            "observed_bundle_id": bundle_id,
+                        },
+                    ),
+                }
+            )
     return candidates
 
 
-def _freshness(observed_at: datetime, now: datetime) -> dict[str, Any]:
-    age = (now - observed_at).total_seconds()
-    if age < -CURRENT_FUTURE_SKEW.total_seconds():
-        status = "future"
-    elif age > CURRENT_MAX_AGE.total_seconds():
-        status = "expired"
-    else:
-        status = "current"
-    return {
-        "status": status,
-        "observed_at": observed_at.isoformat(timespec="seconds"),
-        "age_seconds": round(age, 3),
-        "max_age_seconds": int(CURRENT_MAX_AGE.total_seconds()),
-        "future_clock_skew_seconds": int(CURRENT_FUTURE_SKEW.total_seconds()),
-    }
+def _resolve_candidate(
+    root: Path,
+    candidate: Mapping[str, Any] | None,
+    *,
+    baseline_bundle_id: str,
+    now: datetime,
+) -> dict[str, Any]:
+    scope = {"kind": "census_evidence_chain"}
+    bindings = {"baseline_bundle_id": baseline_bundle_id}
+    if candidate is not None:
+        scope["directory"] = relative(root, candidate["paths"][0].parent)
+        bindings["observed_bundle_id"] = candidate["bundle_id"]
+    return resolve_context_bound_measurement(
+        candidate.get("measurement") if candidate is not None else None,
+        expected_coordinate={"kind": "census_drift_observation", "clock": "UTC"},
+        expected_scope=scope,
+        expected_bindings=bindings,
+        now=now,
+        max_age=CURRENT_MAX_AGE,
+        future_skew=CURRENT_FUTURE_SKEW,
+    )
 
 
 def _missing_observation(
     root: Path,
     documents: list[tuple[Path, dict[str, Any]]],
     candidate: Mapping[str, Any] | None,
-    freshness: Mapping[str, Any] | None,
+    resolution: Mapping[str, Any],
+    invalid_paths: Iterable[Path] = (),
 ) -> dict[str, Any]:
-    if candidate is not None and freshness is not None:
-        missing = [
-            "a complete Census observation no older than 26 hours"
-            if freshness["status"] == "expired"
-            else "a Census observation timestamp no more than 5 minutes in the future"
-        ]
+    if candidate is not None:
+        if resolution["status"] == "expired":
+            missing = ["a complete Census observation no older than 26 hours"]
+        elif resolution["status"] == "not_applicable":
+            missing = [
+                "a fetch receipt, snapshot, and complete diff bound to the reviewed baseline"
+            ]
+        else:
+            missing = [
+                "a Census observation timestamp no more than 5 minutes in the future"
+            ]
         evidence = [relative(root, path) for path in candidate["paths"]]
     else:
         steps = _fetch_steps(documents)
@@ -191,6 +229,9 @@ def _missing_observation(
             if value.get("kind") in {"route_diff", "bundle_snapshot_diff"}
         ]
         missing = []
+        invalid = list(invalid_paths)
+        if invalid:
+            missing.append("valid JSON Census evidence documents")
         if not steps:
             missing.append("a current gravity-census.step-output.v1 fetch receipt")
         if not diffs:
@@ -199,15 +240,20 @@ def _missing_observation(
             missing.append(
                 "a fetch receipt, snapshot, and complete diff bound to the same current bundle and reviewed baseline"
             )
-        evidence = [relative(root, path) for path, _value in documents]
+        evidence = [
+            *[relative(root, path) for path, _value in documents],
+            *[relative(root, path) for path in invalid],
+        ]
     return {
         "measured": False,
-        "status": "unmeasured",
+        "status": resolution["status"],
+        "reason_code": resolution["reason_code"],
         "failure_class": None,
         "drift_conclusion_available": False,
         "changed": None,
         "bundle_id": candidate.get("bundle_id") if candidate else None,
-        "freshness": dict(freshness) if freshness else None,
+        "freshness": resolution["freshness"],
+        "measurement": dict(resolution),
         "missing": missing,
         "evidence": evidence,
     }
@@ -218,31 +264,66 @@ def _current_observation(
     documents: list[tuple[Path, dict[str, Any]]],
     baseline_bundle_id: str,
     now: datetime,
+    invalid_paths: Iterable[Path] = (),
 ) -> dict[str, Any]:
-    candidates = _observation_candidates(documents, baseline_bundle_id)
-    current = [
-        (item, _freshness(item["observed_at"], now))
+    candidates = _observation_candidates(root, documents)
+    resolved = [
+        (
+            item,
+            _resolve_candidate(
+                root, item, baseline_bundle_id=baseline_bundle_id, now=now
+            ),
+        )
         for item in candidates
-        if _freshness(item["observed_at"], now)["status"] == "current"
     ]
+    current = [item for item in resolved if item[1]["status"] == "measured"]
     if current:
-        candidate, freshness = max(current, key=lambda item: item[0]["observed_at"])
+        candidate, resolution = max(
+            current, key=lambda item: item[0]["observed_at"]
+        )
         return {
             "measured": True,
             "status": "changed" if candidate["changed"] else "unchanged",
+            "reason_code": None,
             "failure_class": None,
             "drift_conclusion_available": True,
             "changed": candidate["changed"],
             "bundle_id": candidate["bundle_id"],
-            "freshness": freshness,
+            "freshness": resolution["freshness"],
+            "measurement": resolution,
             "missing": [],
             "evidence": [relative(root, path) for path in candidate["paths"]],
         }
     if not candidates:
-        return _missing_observation(root, documents, None, None)
+        invalid = list(invalid_paths)
+        resolution = _resolve_candidate(
+            root, None, baseline_bundle_id=baseline_bundle_id, now=now
+        )
+        if invalid:
+            resolution = resolve_context_bound_measurement(
+                {},
+                expected_coordinate={
+                    "kind": "census_drift_observation",
+                    "clock": "UTC",
+                },
+                expected_scope={"kind": "census_evidence_chain"},
+                expected_bindings={"baseline_bundle_id": baseline_bundle_id},
+            )
+        return _missing_observation(
+            root,
+            documents,
+            None,
+            resolution,
+            invalid,
+        )
     candidate = max(candidates, key=lambda item: item["observed_at"])
     return _missing_observation(
-        root, documents, candidate, _freshness(candidate["observed_at"], now)
+        root,
+        documents,
+        candidate,
+        _resolve_candidate(
+            root, candidate, baseline_bundle_id=baseline_bundle_id, now=now
+        ),
     )
 
 
@@ -269,8 +350,13 @@ def census_status(
     if selected_now.tzinfo is None:
         raise ValueError("Census status now must include a timezone")
     selected_now = selected_now.astimezone(timezone.utc)
+    documents, invalid_paths = _documents(supplied)
     current = _current_observation(
-        root, _documents(supplied), str(snapshot.get("bundle_id")), selected_now
+        root,
+        documents,
+        str(snapshot.get("bundle_id")),
+        selected_now,
+        invalid_paths,
     )
     summary = snapshot.get("summary", {})
     route_source = routes.get("source", {})

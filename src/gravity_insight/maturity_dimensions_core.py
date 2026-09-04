@@ -338,6 +338,7 @@ def census_evidence(status: Mapping[str, Any]) -> list[dict[str, Any]]:
                 measured=False,
                 observed=current,
                 missing=current["missing"],
+                measurement_resolution=current["measurement"],
             )
         ]
     baseline = status["baseline"]
@@ -364,6 +365,7 @@ def census_evidence(status: Mapping[str, Any]) -> list[dict[str, Any]]:
             passed=sum(checks),
             total=len(checks),
             observed=current,
+            measurement_resolution=current["measurement"],
         ),
     ]
 
