@@ -1,0 +1,109 @@
+{
+  "entries": [
+    {
+      "detector": "exception-to-plain-output",
+      "handler_sha256": "9b43d7518baf09fc119cb008b5484c28eb5dc3973577759a3bcf7819fb734988",
+      "line": 130,
+      "path": "src/gravity_insight/__main__.py",
+      "reason": "Workspace argument parsing raises a plain ValueError with no structured fields beyond its bounded caller-safe message; the exit code already classifies it as caller input.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "exception-to-plain-output",
+      "handler_sha256": "cf27fc1e560dc1914aec289a826f8f926542bfaa12fab04654ea95c21f5bc1a0",
+      "line": 716,
+      "path": "src/gravity_insight/compiler.py",
+      "reason": "ContractError is a developer compiler diagnostic whose complete contract is its single bounded validation message; it has no retry, stage, or upstream metadata to preserve.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "141cea48ed6cc37574f7ce1de8abe02d2868b771ee1f97ed0432a4508341db83",
+      "line": 322,
+      "path": "src/gravity_insight/governance/stable_privacy.py",
+      "reason": "The privacy registry loader combines plain JSON or filesystem exceptions with the exact registry path for a developer-only gate; none of the caught types carries actionable structured fields.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "ca70dad7c1925a2b867a3068ff94048796c836b9383dc46f6ae0d0df79e481c8",
+      "line": 361,
+      "path": "src/gravity_insight/governance/domain_boundary.py",
+      "reason": "The domain-boundary maintainer gate returns the exact invalid-baseline parsing message; its caught filesystem, Unicode, and JSON exceptions expose no stable action fields beyond that diagnostic.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "opaque-exception-to-plain-output",
+      "handler_sha256": "73c4665a054085d6e7e150e1726919daeb26c8e40538acf1d8e7e0e16fae4126",
+      "line": 310,
+      "path": "src/gravity_insight/mcp/server.py",
+      "reason": "MCP startup has no established JSON-RPC connection on which to return an error envelope, and the fixed stderr line intentionally prevents arbitrary initialization exceptions or captured stdout from leaking into protocol output.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "f78dc5c3395a70eb0f6b060c90004443908554dd56ef0163b42af31782fb6bfb",
+      "line": 387,
+      "path": "src/gravity_insight/quality.py",
+      "reason": "The quality profiler records an unexpected compiler-check exception as a developer gate failure; arbitrary exceptions provide no stable decision fields that the profiler can preserve.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "e349293598868f672d9825f97720889536d52cffa6d0d285f28905bb4c554729",
+      "line": 789,
+      "path": "src/gravity_insight/quality.py",
+      "reason": "Baseline validation returns a plain TypeError or ValueError diagnostic to the developer quality report; those exception classes expose no additional actionable protocol fields.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "3e4473bfa8f3adaae97e3e7b98174a5d828667a0ffd7581e4e3ee2c3b09d12ae",
+      "line": 794,
+      "path": "src/gravity_insight/quality.py",
+      "reason": "Base-baseline validation returns a plain TypeError or ValueError diagnostic to the developer quality report; those exception classes expose no additional actionable protocol fields.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "0b8dff7903493a2ccb48a6a1f21c576e012eba6f0519e522fb2be8f7be7a4a12",
+      "line": 862,
+      "path": "src/gravity_insight/quality.py",
+      "reason": "The contract-expansion slope checker returns a developer remediation together with a plain Git, JSON, or filesystem exception; the caught types have no stable retry or stage fields.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "91b57e4ee2ac7d086fd6d7a24ebe828d7c5368fe7b41fe799172a600cba01991",
+      "line": 904,
+      "path": "src/gravity_insight/quality.py",
+      "reason": "Quality-baseline loading reports a plain local parsing exception to repository maintainers; the caught standard exceptions carry no structured consumer decision metadata.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "flattened-exception-escape",
+      "handler_sha256": "919f15ac5557567ff911d06164426ff0a6277e15f5765f85ee7d56b39b3d1806",
+      "line": 909,
+      "path": "src/gravity_insight/quality.py",
+      "reason": "Invalid quality-baseline content is represented only by a plain TypeError or ValueError plus a fixed maintainer command; no richer exception contract exists to retain.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "exception-to-plain-output",
+      "handler_sha256": "751d189b3646e43ba7a41afa2ec48904c5e3e5039e67ed90d2c91b6c67dcb643",
+      "line": 1093,
+      "path": "src/gravity_insight/quality.py",
+      "reason": "Baseline-write failure is a developer-only local gate diagnostic over plain standard exceptions; no stage, retryability, or upstream contract is available below this boundary.",
+      "review_expires": "2027-03-31"
+    },
+    {
+      "detector": "opaque-exception-to-plain-output",
+      "handler_sha256": "e12af259ab6ffe1ede15ae2db3473fadd3ccf0652be040bc0873b10af6f3bc38",
+      "line": 494,
+      "path": "src/gravity_insight/sql/provenance.py",
+      "reason": "After Evidence is durably published, checkpoint cleanup failure is a warning rather than command failure; the fixed text already preserves the only decision fact and intentionally omits raw local OSError text.",
+      "review_expires": "2027-03-31"
+    }
+  ],
+  "schema_version": "gravity.cli-exception-boundary-allowlist.v1"
+}

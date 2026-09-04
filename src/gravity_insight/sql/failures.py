@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Mapping, TextIO
 
 from gravity_insight.errors import (
     AuthenticationError,
@@ -22,6 +22,7 @@ MAX_SQL_RETRY_AFTER_MS = 30_000
 _CONTEXT_ATTRIBUTE = "_gravity_sql_failure_context"
 _SAFE_CODE = re.compile(r"^(?:[A-Z][A-Z0-9_.:-]{0,63}|[0-9]{1,9})$")
 _REVIEWED_PROTOCOL_TOKENS = frozenset({"SUCCESS", "OK", "ERROR", "FAILED", "REJECTED"})
+SQL_COMMAND_ERROR_SCHEMA_VERSION = "gravity-sql.command-error.v1"
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,18 @@ class SqlFailure:
     http_status: int | None = None
     protocol_status: Mapping[str, Any] | None = None
     retry_after_ms: int | None = None
+
+
+@dataclass(frozen=True)
+class _SqlCommandFailure:
+    category: str
+    code: str
+    field: str
+    message: str
+    stage: str
+    retryable: bool
+    reached_upstream: str
+    next_action: str
 
 
 _FAILURES = {
@@ -88,6 +101,159 @@ _FAILURES = {
         "Retry the same query once; if it fails again, report the stable error code to the SDK maintainer.",
     ),
 }
+
+
+_COMMAND_FAILURES = {
+    "credential_not_ready": _SqlCommandFailure(
+        "authentication", "SQL_CREDENTIAL_SYNC_NOT_READY", "credentials", "Credential sync is not configured", "bind", False, "no",
+        "Configure the local Gravity credential file, then retry this sync command.",
+    ),
+    "credential_sync_failed": _SqlCommandFailure(
+        "authentication", "SQL_CREDENTIAL_SYNC_FAILED", "credentials", "Credential sync failed", "execute", False, "unknown",
+        "Inspect credential-sync prerequisites and GitHub authentication; do not retry until corrected.",
+    ),
+    "workspace_invalid": _SqlCommandFailure(
+        "input", "SQL_WORKSPACE_INVALID", "workspace", "Gravity workspace SQL product configuration is invalid", "bind", False, "no",
+        "Correct the selected gravity.toml workspace, then rerun the failed SQL command.",
+    ),
+    "products_not_configured": _SqlCommandFailure(
+        "input", "SQL_PRODUCTS_NOT_CONFIGURED", "workspace.products", "No SQL products are configured", "bind", False, "no",
+        "Add a reviewed [products.<name>] entry to gravity.toml, then rerun `gravity sql products`.",
+    ),
+    "status_evidence_invalid": _SqlCommandFailure(
+        "contract", "SQL_STATUS_EVIDENCE_INVALID", "evidence", "Current SQL Evidence violates its local contract", "shape", False, "no",
+        "Run `gravity sql evidence-preflight`, then regenerate reviewed Evidence before using status.",
+    ),
+    "preflight_local_io": _SqlCommandFailure(
+        "local_io", "SQL_EVIDENCE_PREFLIGHT_LOCAL_IO", "workspace.state", "SQL Evidence preflight could not read local state", "bind", False, "no",
+        "Inspect the workspace state path and permissions, then rerun the offline preflight.",
+    ),
+    "preflight_contract_invalid": _SqlCommandFailure(
+        "contract", "SQL_EVIDENCE_PREFLIGHT_CONTRACT_INVALID", "evidence", "SQL Evidence violates its local contract", "shape", False, "no",
+        "Repair or regenerate reviewed SQL Evidence, then rerun the offline preflight.",
+    ),
+    "preflight_input_invalid": _SqlCommandFailure(
+        "input", "SQL_EVIDENCE_PREFLIGHT_INPUT_INVALID", "date_or_workspace", "SQL Evidence preflight input is invalid", "bind", False, "no",
+        "Correct the requested date or workspace input, then rerun the offline preflight.",
+    ),
+}
+
+
+def command_failure_fields(kind: str) -> dict[str, Any]:
+    """Return one fixed pre-query SQL failure classification."""
+
+    failure = _COMMAND_FAILURES[kind]
+    reached = failure.reached_upstream
+    return {
+        "category": failure.category,
+        "code": failure.code,
+        "field": failure.field,
+        "message": failure.message,
+        "stage": failure.stage,
+        "retryable": failure.retryable,
+        "reached_upstream": reached,
+        "reached_sql_engine": "no",
+        "upstream_error": {
+            "category": "not_reached" if reached == "no" else "unknown",
+            "code": failure.code,
+        },
+        "execution_evidence": {
+            **execution_evidence(
+                elapsed_seconds=0, request_count=0, request_count_bound=0
+            ),
+            "request_scope": "gravity_sql_engine",
+        },
+        "next_action": failure.next_action,
+    }
+
+
+def emit_command_error(
+    command: str,
+    kind: str,
+    exit_code: int,
+    *,
+    serializer: Any,
+    source: Mapping[str, Any],
+    stream: TextIO,
+) -> int:
+    """Serialize one pre-query command failure through the CLI-owned transport."""
+
+    payload = {
+        "schema_version": SQL_COMMAND_ERROR_SCHEMA_VERSION,
+        "result_source": dict(source),
+        "ok": False,
+        "status": "error",
+        "command": command,
+        "exit_code": exit_code,
+        "error": command_failure_fields(kind),
+    }
+    print(
+        serializer(payload, ensure_ascii=False, indent=2, sort_keys=True),
+        file=stream,
+    )
+    return exit_code
+
+
+def query_boundary_failure_fields(
+    message: str, *, category: str, code: str, field: str | None = None
+) -> dict[str, Any]:
+    """Return the established direct-query boundary error shape."""
+
+    stage = "shape" if category == "contract" else (
+        "execute" if category == "runtime" else "bind"
+    )
+    return {
+        "category": category,
+        "code": code,
+        "field": field,
+        "message": message,
+        "stage": stage,
+        "retryable": category == "runtime",
+        "reached_sql_engine": "unknown" if category == "runtime" else "no",
+        "upstream_error": {
+            "category": "unexpected_failure" if category == "runtime" else "not_reached",
+            "code": code,
+        },
+        "execution_evidence": execution_evidence(
+            elapsed_seconds=0, request_count=0, request_count_bound=1
+        ),
+        "next_action": (
+            "Run `gravity auth status`; refresh or configure credentials, then retry."
+            if category == "authentication"
+            else "Run `gravity sql products`, correct this request, and retry."
+            if category == "input"
+            else "Inspect the governed SQL product contract and local state."
+            if category in {"contract", "local_io"}
+            else "Retry the same query once; if it fails again, run `gravity doctor --live`."
+        ),
+    }
+
+
+def emit_query_boundary_error(
+    message: str,
+    *,
+    category: str,
+    code: str,
+    field: str | None,
+    exit_code: int,
+    serializer: Any,
+    source: Mapping[str, Any],
+    stream: TextIO,
+) -> int:
+    """Serialize the established query failure through the CLI-owned transport."""
+
+    payload = {
+        "schema_version": "gravity-sql.query.v1",
+        "result_source": dict(source),
+        "ok": False,
+        "status": "error",
+        "exit_code": exit_code,
+        "error": query_boundary_failure_fields(
+            message, category=category, code=code, field=field
+        ),
+    }
+    print(serializer(payload, ensure_ascii=False, sort_keys=True), file=stream)
+    return exit_code
 
 
 def annotate_sql_failure(
@@ -371,10 +537,15 @@ def _safe_scalar_field(value: Any, *, field: str, present: bool) -> dict[str, An
 __all__ = [
     "MAX_DIAGNOSTIC_ELAPSED_MS",
     "MAX_SQL_RETRY_AFTER_MS",
+    "SQL_COMMAND_ERROR_SCHEMA_VERSION",
     "SqlFailure",
     "annotate_sql_failure",
     "classify_sql_failure",
+    "command_failure_fields",
     "diagnostic_fields",
+    "emit_command_error",
+    "emit_query_boundary_error",
     "execution_evidence",
+    "query_boundary_failure_fields",
     "sql_protocol_status",
 ]
