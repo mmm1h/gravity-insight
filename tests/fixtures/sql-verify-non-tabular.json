@@ -1,0 +1,45 @@
+{
+  "name": "sql_verify_non_tabular",
+  "responses": [
+    {
+      "status_code": 200,
+      "payload": {
+        "status": "SUCCESS",
+        "code": 200,
+        "msg": "OK",
+        "data": {
+          "result": {
+            "columns": [{"name": "metric"}],
+            "rows": [["BUSINESS_ROW_SENTINEL"]]
+          }
+        }
+      }
+    },
+    {
+      "status_code": 200,
+      "payload": {
+        "status": "SUCCESS",
+        "code": 200,
+        "msg": "OK",
+        "data": {
+          "unexpected_rows": [
+            {
+              "user_id": "USER_ID_SENTINEL",
+              "account_id": "ACCOUNT_ID_SENTINEL",
+              "value": "BUSINESS_ROW_SENTINEL"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "forbidden_output": [
+    "SQL_TEXT_SENTINEL",
+    "CREDENTIAL_SENTINEL",
+    "ACCOUNT_ID_SENTINEL",
+    "76543210",
+    "USER_ID_SENTINEL",
+    "BUSINESS_ROW_SENTINEL",
+    "FIXTURE_DATASOURCE_ID"
+  ]
+}

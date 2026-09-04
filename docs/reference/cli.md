@@ -547,7 +547,10 @@ Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/re
 `--resume` 只在日期、datasource、产品顺序及组件 SQL/contract hash 全部仍匹配时从失败产品继续。
 非 429 不可续跑，partial checkpoint 不能发布。新建完整 Evidence 的 schema version 是 2，
 `verification.mode` 区分 `single_run` 与 `resumed_after_rate_limit`，`segments` 记录每段时间、产品范围
-和中断产品；Runtime 仍可读取已经发布的 v1 Evidence。
+和中断产品；Runtime 仍可读取已经发布的 v1 Evidence。失败的公开输出为
+`gravity.sql-verification-result.v1`：`failure` 与 `sql query` 共用 SQL stage/class/code、重试性、
+是否到达引擎、脱敏 protocol status 及有界执行证据；`progress` 只暴露计数和失败产品。完整前缀只写
+workspace 私有 checkpoint，不回显到终端，也不会更新 Evidence latest 或 readiness。
 
 CLI 的 `sql explorer inspect|execute` 仍是离线 SQLite 路径。联网 Gravity SQL Fast Lane 目前只由 SDK
 模块 `gravity_insight.sql.verification.GravitySqlExplorerAdapter` 显式暴露；它不会被 Agent、Plan 或
