@@ -83,9 +83,10 @@
 
 ## 已关闭
 
-- 2026-08-31：#48 Direct/Plan result-envelope 结构债关闭：稳定产品 surface 由单一机器 registry 生成
-  Empty/Partial/Error 六维 parity 矩阵，Plan preflight 离线执行该门禁；递归 completeness 只消费字符串状态，
-  producer pagination/source/result audit 与 unknown claims 由 request-bound projector 保留。
+- 2026-08-31：#48 Direct/Plan result-envelope 崩溃已修复；2026-09-04 的 J10 复核确认当时的
+  `surface-parity` 只覆盖手写的 8 个 Direct/Plan 产品声明与缩减样本，不能视为通用 registry parity。
+  现由编译后 operation registry 派生 190 行五面矩阵，在完整真实 envelope 上锁住 schema、字段/类型、
+  completeness walker 与错误身份；当前未登记 finding 为 0。
 - Compact Agent package migration 已关闭；当前 facade/owner 约束保留在公开 API、module disposition 与 wheel 门禁，施工证据由 Git 保存。
 - 2026-08-26：#13 公开符号遮蔽债关闭：`gravity_sdk.__init__` 把模块 `__class__` 换装为
   `_ExportAwareModule`，`__getattribute__` 对 8 个碰撞符号每次访问都重查 `_EXPORTS`，

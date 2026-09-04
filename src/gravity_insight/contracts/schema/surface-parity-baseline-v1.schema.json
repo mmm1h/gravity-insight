@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.surface-parity-baseline.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "baseline_policy",
+    "allowances",
+    "allowed_findings",
+    "excluded_operations"
+  ],
+  "properties": {
+    "schema_version": {"const": "gravity.surface-parity-baseline.v1"},
+    "baseline_policy": {"type": "string", "minLength": 1},
+    "allowances": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "allowance_id",
+          "row_kind",
+          "surface",
+          "outcome",
+          "difference_kind",
+          "path",
+          "rationale"
+        ],
+        "properties": {
+          "allowance_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]+$"},
+          "row_kind": {"const": "operation"},
+          "surface": {"enum": ["direct_sdk", "cli", "sdk_wrapper", "plan", "mcp"]},
+          "outcome": {"enum": ["contract", "empty", "upstream_error", "availability"]},
+          "difference_kind": {"enum": ["missing", "extra", "type", "value", "length", "wrapper", "unsupported"]},
+          "path": {"type": "string", "pattern": "^/.*$"},
+          "rationale": {"type": "string", "minLength": 20}
+        },
+        "additionalProperties": false
+      }
+    },
+    "allowed_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "difference_digest", "severity", "rationale", "owner_question"],
+        "properties": {
+          "finding_id": {"type": "string", "minLength": 1},
+          "difference_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "severity": {"enum": ["critical", "high", "medium"]},
+          "rationale": {"type": "string", "minLength": 20},
+          "owner_question": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "excluded_operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["operation_id", "reason"],
+        "properties": {
+          "operation_id": {"type": "string", "minLength": 1},
+          "reason": {"type": "string", "minLength": 20}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
