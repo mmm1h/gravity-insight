@@ -295,32 +295,32 @@ class StaticFetcher:
         fetched: set[str],
         failures: list[dict[str, Any]],
         rejected: list[dict[str, Any]],
+        executor: ThreadPoolExecutor,
     ) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
-        with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
-            futures = {executor.submit(self._fetch_js, url, raw_dir): url for url in batch}
-            for future in as_completed(futures):
-                url = futures[future]
-                try:
-                    results.append(future.result())
-                except _FetchError as exc:
-                    if exc.status_code == 404 and not _looks_like_vite_chunk(url):
-                        rejected.append(
-                            {"url": url, "status_code": 404,
-                             "reason": "lexical .js candidate is not a deployed Vite hash chunk"}
-                        )
-                        fetched.add(url)
-                    else:
-                        failures.append(
-                            {
-                                "url": url,
-                                "host": exc.host,
-                                "status_class": exc.status_class,
-                                "status_code": exc.status_code,
-                                "exception_type": exc.exception_type,
-                                "error": str(exc),
-                            }
-                        )
+        futures = {executor.submit(self._fetch_js, url, raw_dir): url for url in batch}
+        for future in as_completed(futures):
+            url = futures[future]
+            try:
+                results.append(future.result())
+            except _FetchError as exc:
+                if exc.status_code == 404 and not _looks_like_vite_chunk(url):
+                    rejected.append(
+                        {"url": url, "status_code": 404,
+                         "reason": "lexical .js candidate is not a deployed Vite hash chunk"}
+                    )
+                    fetched.add(url)
+                else:
+                    failures.append(
+                        {
+                            "url": url,
+                            "host": exc.host,
+                            "status_class": exc.status_class,
+                            "status_code": exc.status_code,
+                            "exception_type": exc.exception_type,
+                            "error": str(exc),
+                        }
+                    )
         return sorted(results, key=lambda item: item["requested_url"])
 
     def _crawl_static_graph(self, seeds: Sequence[str], raw_dir: Path) -> dict[str, Any]:
@@ -333,39 +333,44 @@ class StaticFetcher:
         rejected: list[dict[str, Any]] = []
         files: list[dict[str, Any]] = []
         signals = {"vite_map_deps": False, "webpack_chunk_loader": False}
-        while queue:
-            batch: list[str] = []
-            while queue and len(batch) < self.concurrency:
-                url = queue.popleft()
-                if url not in fetched:
-                    batch.append(url)
-            if not batch:
-                continue
-            for result in self._fetch_batch(batch, raw_dir, fetched, failures, rejected):
-                url = result["requested_url"]
-                final_url = result["url"]
-                text = result.pop("text")
-                signals["vite_map_deps"] |= "__vite__mapDeps" in text
-                signals["webpack_chunk_loader"] |= any(
-                    signal in text for signal in ("__webpack_require__.u", ".miniCssF=", "webpackChunk")
-                )
-                references = []
-                for reference in _extract_js_references(text, final_url):
-                    parsed_reference = urlsplit(reference)
-                    if (parsed_reference.scheme, parsed_reference.netloc) in allowed_origins:
-                        references.append(reference)
-                    else:
-                        external_references.add(reference)
-                for reference in references:
-                    if reference not in discovered:
-                        discovered.add(reference)
-                        queue.append(reference)
-                fetched.add(url)
-                result.pop("requested_url")
-                result["references"] = references
-                files.append(result)
-            if self.attempts >= self.max_requests and queue:
-                break
+        with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
+            while queue:
+                batch: list[str] = []
+                while queue and len(batch) < self.concurrency:
+                    url = queue.popleft()
+                    if url not in fetched:
+                        batch.append(url)
+                if not batch:
+                    continue
+                for result in self._fetch_batch(
+                    batch, raw_dir, fetched, failures, rejected, executor
+                ):
+                    url = result["requested_url"]
+                    final_url = result["url"]
+                    text = result.pop("text")
+                    signals["vite_map_deps"] |= "__vite__mapDeps" in text
+                    signals["webpack_chunk_loader"] |= any(
+                        signal in text for signal in (
+                            "__webpack_require__.u", ".miniCssF=", "webpackChunk"
+                        )
+                    )
+                    references = []
+                    for reference in _extract_js_references(text, final_url):
+                        parsed_reference = urlsplit(reference)
+                        if (parsed_reference.scheme, parsed_reference.netloc) in allowed_origins:
+                            references.append(reference)
+                        else:
+                            external_references.add(reference)
+                    for reference in references:
+                        if reference not in discovered:
+                            discovered.add(reference)
+                            queue.append(reference)
+                    fetched.add(url)
+                    result.pop("requested_url")
+                    result["references"] = references
+                    files.append(result)
+                if self.attempts >= self.max_requests and queue:
+                    break
         files.sort(key=lambda item: item["url"])
         return {
             "files": files, "discovered": discovered, "fetched": fetched,

@@ -62,6 +62,11 @@ Governor 的阈值 3 和冷却 30 秒按实际 HTTP attempt、同一 scope/host/
 数百个独立上游容量域。CLI 遇到熔断会终止本轮 crawl，所以冷却由定时 workflow 的有界退避承接。
 若未来需要在单进程内续跑，应先实现显式 checkpoint/resume 和全局请求预算，不能单纯抬高阈值。
 
+抓取器在整次静态图遍历中只建立一个有界线程池；每个常驻 worker 复用自己的 HTTP Session 和
+keep-alive 连接。不要把线程池下沉到每个四 URL batch，否则约 500 个资源会反复新建 worker、
+Session 与 TCP/TLS 连接，增加 `ConnectTimeout` 风险。这个连接复用不增加请求量、不改变四并发
+上限，也不改变 transport failure 的分类或 non-capacity fail-closed 判据。
+
 ## 解释 coverage
 
 ### 强制覆盖边界
