@@ -47,7 +47,7 @@
 同时给出可证伪的全集信号才另行修正合同；短页、空页、HTTP 200 和 `returned_items=reported_total` 本身
 都不能证明完整。没有终止信号时将该 operation 转入永久 `unknown`。
 
-## P0：App 内核心批次（最多 58）
+## P0：App 内核心批次（最多 58；其中 6 条已于 2026-09-04 结案，见「执行结果」）
 
 需要一个获批的只读 evidence App，并预先确认表中 parent source 能返回合法父项。含敏感输入的
 `client_id`、`device_id`、订单 trace 等只在内存中绑定，证据仅记“由哪个 parent 字段取得”。
@@ -69,14 +69,12 @@
 | `analysis.retention.query` | `none` / `template` | app_id, date_list, query_id, query_item_list | analysis.event.list |
 | `analysis.scatter.query` | `none` / `template` | app_id, date_list, query_id, query_item_list | analysis.event.list |
 | `analysis.segment.history_version.list` | `page_info` / `template` | segment_id | analysis.segment.list |
-| `analysis.segment.list` | `page_info` / `template` | app_id | app.list |
 | `analysis.segment.uid_result.list` | `page_info` / `template` | date, segment_id | analysis.segment.list |
 | `analysis.segment.user_detail.list` | `none` / `template` | app_id, segment_id | analysis.segment.list |
 | `analysis.task.other_event.list` | `page_info` / `template` | app_id | app.list |
 | `analysis.task.pay_event.list` | `page_info` / `template` | app_id | app.list |
 | `analysis.template.internal.list` | `page_info` / `wire` | none | none |
 | `analysis.template.own.list` | `page_info` / `wire` | none | none |
-| `analysis.template.share.list` | `page_info` / `wire` | none | none |
 | `analysis.template.subject.internal.list` | `none` / `template` | none | none |
 | `analysis.template.subject.own.list` | `none` / `template` | none | none |
 | `analysis.template.subject.share.list` | `none` / `template` | none | none |
@@ -90,8 +88,6 @@
 | `attribution.attr_impress_click.list` | `none` / `template` | app_id | app.list |
 | `attribution.attribution_detail.query` | `none` / `template` | app_id, device_id | app.testing_tool.list |
 | `attribution.post_backtrack.list` | `none` / `template` | app_id | app.list |
-| `attribution.postback_map_collect.list` | `page_info` / `template` | app_id | app.list |
-| `attribution.postback_map.list` | `page_info` / `template` | app_id | app.list |
 | `attribution.postback_mode.list` | `none` / `template` | app_id | app.list |
 | `attribution.reattribution.list` | `none` / `template` | app_id | app.list |
 | `material.bytedance_asset_material.list` | `page_info` / `production` | advertiser_id | promotion.bytedance.account.list |
@@ -100,13 +96,11 @@
 | `material.local.list` | `page_info` / `production` | none | none |
 | `material.recycle.list` | `page_info` / `template` | none | none |
 | `material.review.list` | `page_info` / `template` | none | none |
-| `material.tag_category.list` | `page_info` / `template` | none | none |
 | `material.tag.list` | `page_info` / `template` | none | none |
 | `material.tencent.list` | `page_info` / `wire` | advertiser_id | promotion.tencent.advertiser.list |
 | `report.business.metric.list` | `none` / `template` | none | none |
 | `report.multidim.calc_total` | `none` / `template` | date_list, metrics_list, time_dims | report.multidim.query |
 | `report.multidim.custom_metric.list` | `page_info` / `template` | none | none |
-| `report.multidim.metric_tag_category.list` | `page_info` / `template` | none | none |
 | `report.multidim.metric_tag.list` | `page_info` / `template` | none | none |
 | `report.multidim.template.mine.list` | `page_info` / `template` | none | none |
 | `report.multidim.template.preset.list` | `page_info` / `template` | none | none |
@@ -198,3 +192,24 @@ wire/production 合同出现总数或终止信号时才重开；重复采短页�
 `candidate.material.kuaishou.list`, `candidate.material.platform.list`,
 `candidate.promotion_object.click_url_edit_log.list`, `candidate.promotion_object.click_url.list`,
 `candidate.promotion_object.extra_info.list`。它们只有在先取得独立的稳定性/权限裁决后才能重新排期。
+
+## 执行结果（2026-09-04）
+
+复核 `tmp/pagination-evidence/operations/` 的只读生产观测后，仅以下 6 条满足统一 `complete`
+判据。每条记录的 `conclusion` 均为 `complete`，`criterion` 均为
+`last_page_echo_matches_total_page_sdk_has_more_false_and_sum_matches_total_number`；终页回显
+`page=total_page`、SDK `has_more=false`，且完整页序列的 `returned_items` 合计与
+`total_number` 相等。合同据此将 `completeness` 升级为 `complete`，并把证据来源声明为
+`production`。
+
+| operation | 终页 `page/total_page` | 终页 `has_more` | `sum(returned_items)/total_number` |
+| --- | ---: | --- | ---: |
+| `analysis.segment.list` | 11/11 | false | 11/11 |
+| `analysis.template.share.list` | 3/3 | false | 3/3 |
+| `attribution.postback_map.list` | 8/8 | false | 8/8 |
+| `attribution.postback_map_collect.list` | 1/1 | false | 1/1 |
+| `material.tag_category.list` | 3/3 | false | 3/3 |
+| `report.multidim.metric_tag_category.list` | 8/8 | false | 8/8 |
+
+本轮只消费既有证据，新增生产请求为 0；其余 `prefix`、`unknown`、`permanent_unknown` 与
+`failure` 裁决均未改动。

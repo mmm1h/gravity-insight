@@ -21,6 +21,11 @@ Target release: `0.3.8`
 
 ### Added
 
+- Six stable page-info operations now declare complete collection semantics from
+  bounded production observations that reached the echoed final page, returned
+  SDK `has_more=false`, and reconciled every returned item with the reported
+  total: segment list, shared analysis templates, both attribution postback-map
+  lists, material tag categories, and multidimensional metric-tag categories.
 - Two previously human-ledger-only closed analysis journeys now have versioned
   machine Journey contracts. Each contract binds its existing ledger title,
   governed operation dependencies, four reachable surfaces, bounded request

@@ -758,7 +758,7 @@
       },
       "operation_id": "attribution.postback_map_collect.list",
       "pagination": {
-        "completeness": "unknown",
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -766,7 +766,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
-        "pagination_evidence": "template",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/user/postback_map_collect/list/",
@@ -1379,7 +1379,7 @@
       },
       "operation_id": "material.tag_category.list",
       "pagination": {
-        "completeness": "unknown",
+        "completeness": "complete",
         "default_page_size": 100,
         "kind": "page_info",
         "list_path": "data.list",
@@ -1387,7 +1387,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
-        "pagination_evidence": "template",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/asset/material_tag/tag_category/list/",

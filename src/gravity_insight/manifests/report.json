@@ -952,7 +952,7 @@
       },
       "operation_id": "report.multidim.metric_tag_category.list",
       "pagination": {
-        "completeness": "unknown",
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -960,7 +960,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
-        "pagination_evidence": "template",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/report/api/v3/confmetric/tag_category/list/",
