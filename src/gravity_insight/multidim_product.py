@@ -17,6 +17,7 @@ from .multidim_contract import (
     malformed_multi_keys_message,
     multidim_horizon_gap_error,
     multidim_multi_key_contract,
+    reconcile_standard_retention_denominators,
 )
 from .multidim_service import (
     MAX_MULTIDIM_WORKERS,
@@ -541,5 +542,6 @@ __all__ = [
     "multidim_input_schema",
     "normalize_multidim_inputs",
     "prepare_multidim_query",
+    "reconcile_standard_retention_denominators",
     "run_multidim_query",
 ]

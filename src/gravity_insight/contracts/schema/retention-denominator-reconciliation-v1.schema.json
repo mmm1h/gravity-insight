@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.retention-denominator-reconciliation.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "kind", "status", "cohort_status", "cohort_date",
+    "offset", "sources", "drift", "drift_expression", "comparison_basis",
+    "semantic_equivalence", "reason_codes", "capability_gap", "privacy",
+    "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.retention-denominator-reconciliation.v1"},
+    "kind": {"const": "retention_denominator_reconciliation"},
+    "status": {"enum": ["match", "drift", "unknown"]},
+    "cohort_status": {"enum": ["observed", "empty", "unknown"]},
+    "cohort_date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "offset": {"type": "integer", "minimum": 0, "maximum": 3650},
+    "sources": {
+      "type": "object",
+      "required": ["multidim", "analysis"],
+      "additionalProperties": false,
+      "properties": {
+        "multidim": {
+          "allOf": [
+            {"$ref": "#/$defs/source"},
+            {
+              "properties": {
+                "operation_id": {"const": "report.multidim.query"},
+                "field": {"const": "standard_activate_cnt"}
+              }
+            }
+          ]
+        },
+        "analysis": {
+          "allOf": [
+            {"$ref": "#/$defs/source"},
+            {
+              "properties": {
+                "operation_id": {"const": "analysis.retention.query"},
+                "field": {"const": "init_num"}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "drift": {"type": ["integer", "null"], "minimum": -9223372036854775807, "maximum": 9223372036854775807},
+    "drift_expression": {"const": "standard_activate_cnt - init_num"},
+    "comparison_basis": {"const": "reported_aggregate_values_only"},
+    "semantic_equivalence": {"const": "unknown"},
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "EMPTY_COHORT",
+          "SOURCE_STATUS_NOT_COMPARABLE",
+          "DENOMINATOR_VALUE_MISSING"
+        ]
+      }
+    },
+    "capability_gap": {"$ref": "#/$defs/capability_gap"},
+    "privacy": {
+      "type": "object",
+      "required": ["classification", "contains_user_or_device_rows"],
+      "additionalProperties": false,
+      "properties": {
+        "classification": {"const": "aggregate_only"},
+        "contains_user_or_device_rows": {"const": false}
+      }
+    },
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": [
+        "operation_id", "field", "status", "value_present", "value", "fetched_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {"type": "string"},
+        "field": {"type": "string"},
+        "status": {
+          "enum": [
+            "success", "empty", "partial", "error", "contract_changed",
+            "capability_gap", "unknown"
+          ]
+        },
+        "value_present": {"type": "boolean"},
+        "value": {"type": ["integer", "null"], "minimum": 0, "maximum": 9223372036854775807},
+        "fetched_at": {"type": "string", "minLength": 20, "maxLength": 64}
+      }
+    },
+    "capability_gap": {
+      "type": "object",
+      "required": [
+        "kind", "code", "journey", "query", "reason", "next_action",
+        "weak_matches", "network_called"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "capability_gap"},
+        "code": {"const": "STANDARD_RETENTION_DENOMINATOR_COHORT_RULE_UNVERIFIED"},
+        "journey": {"const": "standard_retention_denominator_reconciliation"},
+        "query": {"type": "string", "minLength": 1, "maxLength": 256},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "next_action": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "weak_matches": {"type": "array", "maxItems": 0},
+        "network_called": {"const": false}
+      }
+    }
+  }
+}
