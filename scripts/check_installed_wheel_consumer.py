@@ -382,6 +382,11 @@ def check_installed_wheel_consumer(
         package_path = Path(lines[0]).resolve()
         if not package_path.is_relative_to(site):
             raise ConsumerCheckError(f"installed import escaped wheel: {package_path}")
+        # This gate installs the wheel it just built, which is a pre-release the
+        # index has never seen. Declaring it as the consumer's explicit pin keeps
+        # the consumer's freshness check meaningful without asking PyPI to
+        # confirm a version that is not published yet.
+        environment["WORK_DASHBOARD_GRAVITY_EXPLICIT_PIN"] = lines[1]
         tested = _run(
             [sys.executable, "-m", "unittest", *CONSUMER_TESTS],
             cwd=consumer,

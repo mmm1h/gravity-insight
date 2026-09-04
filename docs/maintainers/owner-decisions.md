@@ -63,7 +63,11 @@ Trusted Publishing 加 PEP 740 attestation 已经提供来源证明，且是 PyP
 
 Stage B 是"外部 Installer 执行更新"的阶段（见 `src/gravity_insight/control_plane/lifecycle.py`）。当前 Runtime 只生成 Plan，不执行。
 
-当前的两个消费场景都不需要它：本机开发直接用 editable 安装；work-dashboard 已有显式的开发/发布双模式切换，且升级工具默认只 preview、`--apply` 才改钉版与 digest lock。**这个显式设计是被认可的，不应被自动更新取代。**
+当前的两个消费场景都不需要它：本机开发直接用 editable 安装；work-dashboard 由自己的升级工具安装，不需要 Runtime 代劳。
+
+**2026-09-04 修正：** 本节原先还写着"work-dashboard 升级工具默认只 preview、`--apply` 才改钉版与 digest lock，这个显式设计是被认可的"。**该论据已被实际结果推翻**——正因为默认什么都不做，没人记得跑它：work-dashboard 的 HEAD 一直钉在 0.3.2，仓库自带 venv 停在 0.3.3，而 PyPI 已经到 0.3.7。Owner 据此改判"默认取最新，只有明确要求时才固定版本"，消费方已改为下限约束加安装后记录实际版本。
+
+**被推翻的只是这条论据，不是本节的决定。** Stage B 仍然保持未激活：消费方现在自己就能跟上最新，Runtime 依旧只生成 Plan、不自我替换 wheel。
 
 **重新评估的条件：** 出现一个无人值守的部署场景，其更新频率高到显式操作成为瓶颈。
 
