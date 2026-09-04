@@ -41,7 +41,7 @@
       }
     },
     {
-      "blocker_note": "2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。2026-08-19 #219：同类本地校验现带 `actual value`（类型/长度/传入值），条件值仍不回显。2026-08-30：非空 `before_custom` 和 Retention `property_conditions` 已按生产拒绝证据改为编译期 fail-closed；同日注册∩支付走单日 Funnel→matched Segment→D1 Segment 规则，set-once 首付属性走两次聚合 Segment 规则，完整 spec 与代价见[替代路径](guides/retention-cohort-alternatives.md)。普通单起始事件 Retention 不变。2026-09-04 #104：`standard_activate_cnt` 与 `init_num` 的精确 cohort 纳入、日界线、归因及迟到回补规则没有已登记证据，现以 `STANDARD_RETENTION_DENOMINATOR_COHORT_RULE_UNVERIFIED` 机器 gap 明示；SDK 可对两侧已取聚合值输出带 cohort/offset/双 `fetched_at` 的 `match|drift|unknown` 记录，成功空 cohort 与缺值均不补 0，算术 match 不声明语义等价。本趟零生产请求。",
+      "blocker_note": "2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。2026-08-19 #219：同类本地校验现带 `actual value`（类型/长度/传入值），条件值仍不回显。2026-08-30：非空 `before_custom` 和 Retention `property_conditions` 已按生产拒绝证据改为编译期 fail-closed；同日注册∩支付走单日 Funnel→matched Segment→D1 Segment 规则，set-once 首付属性走两次聚合 Segment 规则，完整 spec 与代价见[替代路径](guides/retention-cohort-alternatives.md)。普通单起始事件 Retention 不变。2026-09-04 #104：`standard_activate_cnt` 与 `init_num` 的精确 cohort 纳入、日界线、归因及迟到回补规则没有已登记证据，现以 `STANDARD_RETENTION_DENOMINATOR_COHORT_RULE_UNVERIFIED` 机器 gap 明示；SDK 可对两侧已取聚合值输出带 cohort/offset/双 `fetched_at` 的 `match|drift|unknown` 记录，成功空 cohort 与缺值均不补 0，算术 match 不声明语义等价。本趟零生产请求。2026-09-04 #108：仅对 `query_item_before_after.after.target.name=SumCount` 与 Retention 第二步 `target.name=SumCount` 两个已观测缺口做请求前 fail-closed，返回 `RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED` 且不重试；普通两事件 Retention 和其他加性查询不外推为不支持。`values` 的 cohort/offset 人数与 `init_num` 分母继续可读，`values_another_event` 的零标成未测量而非金额/时长 0；现有 Funnel/Segment 替代只能给人数，registered custom-sql 仍只是项目侧绕行。完整边界见[替代路径](guides/retention-cohort-alternatives.md)。本趟零生产请求。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "看起始行为后的用户留存",
@@ -50,7 +50,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "80f71de30b3bc61e26af4ad53fc25d584e9802fca5a9549790544a37c5c45cea",
+      "row_digest": "36e47be9ae54f7aa86484cdf281d7722b7104c2c03cf1f4a55627c4c0a81e0c6",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -136,7 +136,7 @@
       }
     },
     {
-      "blocker_note": "-",
+      "blocker_note": "I107 外部证据只证明两个元数据合法自定义事件在 `did=true`、`PresetAllCount/GTE [1]`、静态窗口形状下被 Segment evaluate 拒绝；同事件的 Event 与普通 Retention 聚合成功。#15 另证明 `$MPShow`/`$PayEvent` 不支持，并留有一个 metadata-backed custom event 的 Segment 成功控制。当前代码没有可本地判定的自定义事件接受集，故不做全称判断；目标形状被实际拒绝后返回 `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`（upstream、不可重试、精确规则路径），Agent 对“自定义事件首次暴露 cohort”返回同名 capability gap。关闭需 current-main 同形、同窗的一个成功自定义事件与目标失败事件配对脱敏收据。禁止持久化分群和用户明细时，Funnel 不能表达 NOT-before，普通 Retention 不是等价估计量；完整边界与 spec 见[替代路径](guides/retention-cohort-alternatives.md)。本轮生产请求 0。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "评估一组人群规则命中的人数与占比",
@@ -145,7 +145,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "b109592f8591b2e761a5628f0f63bbe4095e0f6abe6f099441526f1fb67aaf8a",
+      "row_digest": "f4643303cf42b3c4438e896fec5e15e6ede409486d29c60beb7c8135ff12fc94",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "ad803f8c12c4e68c22c4fbf89712bede085a73421878958f44424db6220a685b",
+  "snapshot_digest": "d391d2ee8cf1dff79b2e1ea0cb97c79e2fcdd4b53689f1d2189c2dde8d2babb0",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "12263f110b51264227ad65bc59ed05f7df94f085e011b8e977c34b4089286211"
+  "source_sha256": "51b375c73bae13ba26428247ef68bff2aea65cb8c564309749039fa9562b6096"
 }

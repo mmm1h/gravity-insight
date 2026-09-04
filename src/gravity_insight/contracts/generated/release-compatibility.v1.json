@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "a54fd9657d422114e675c763ce0ee6fd615aea15f196cc90a2b5d6d7dc20adc9"
+    "compatibility_sha256": "2dc1eba98205562d0aed4ea78b3f86dc9f762c9ad6df3b1731425389ae9dc7d9"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -124,6 +124,11 @@
         {
           "id": "0.3.8-hard-break-1",
           "description": "The checked-in Repository Map moves from `contracts/generated/repository-map.v1.json` to `repository-map.v2.json`. Its whole-file JSON transport now tables repeated entry strings, issue paths, and module-graph nodes; raw JSON consumers must decode those tables. The repository loader and task-context surface still return the complete v1 fact shape, and generation proves decoded v2 is field-for-field identical.",
+          "migration_guide": "docs/migration/0.3.8.md"
+        },
+        {
+          "id": "0.3.8-hard-break-2",
+          "description": "Segment evaluation no longer maps an upstream rejection of the locally valid static custom-event count shape to generic `INPUT_INVALID field=input`. It now returns `SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`, `category=upstream`, `retryable=false`, and the exact `user_event_rules` path. The public Segment spec schema advances from `gravity-insight.segment-rule-spec.v1` to `v2` and changes `event_support.default_status` to `requires_live_metadata_and_event_specific_acceptance`; metadata validity is necessary but no longer presented as endpoint-acceptance evidence.",
           "migration_guide": "docs/migration/0.3.8.md"
         }
       ],

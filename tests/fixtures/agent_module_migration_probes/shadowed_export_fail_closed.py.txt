@@ -1,0 +1,17 @@
+import importlib
+from types import ModuleType
+
+gravity_insight = importlib.import_module("gravity_insight")
+owner = importlib.import_module("gravity_insight.business_pulse")
+name = "__shadow_probe__"
+setattr(owner, name, ModuleType(f"gravity_insight.{name}"))
+gravity_insight._EXPORTS[name] = (".business_pulse", name)
+
+try:
+    getattr(gravity_insight, name)
+except TypeError as error:
+    assert str(error) == (
+        "public export gravity_insight.__shadow_probe__ resolved to its shadowing module"
+    )
+else:
+    raise AssertionError("shadowing owner module was returned silently")

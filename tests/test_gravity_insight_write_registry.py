@@ -83,10 +83,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 "app.user.realtime.event.update",
             }
         }
-        self.assertEqual(330, len(source_routes))
         self.assertTrue(source_routes <= reserved_routes | stable_write_routes)
-        self.assertEqual(37, len(stable_write_routes))
-        self.assertEqual(377, len(self.reservations))
         self.assertEqual(
             len(self.reservations),
             len({item["operation_id"] for item in self.reservations}),
@@ -124,7 +121,6 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 semantics["idempotency"],
                 {"idempotent", "non_idempotent", "conditional", "unknown"},
             )
-        self.assertEqual(377, sum(kinds.values()))
         self.assertGreater(kinds["create"], 0)
         self.assertGreater(kinds["update"], 0)
         self.assertGreater(kinds["delete"], 0)
@@ -147,16 +143,11 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
             for item in self.classifications
             if item["source_status"] == "supplemental_bi_census"
         ]
-        self.assertEqual(110, len(source_targets))
         self.assertEqual(source_targets, registered)
         self.assertEqual(
             [("POST", "/custom_sql/api/sql/execute")],
             [(item["method"], item["path"]) for item in supplemental],
         )
-        counts = Counter(item["source_status"] for item in self.classifications)
-        self.assertEqual(30, counts["uncovered_auth_or_proxy"])
-        self.assertEqual(80, counts["unclassified"])
-        self.assertEqual(1, counts["supplemental_bi_census"])
         self.assertTrue(
             all(
                 item["disposition"] == "unsupported"

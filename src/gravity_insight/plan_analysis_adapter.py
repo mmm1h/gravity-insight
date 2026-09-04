@@ -81,6 +81,8 @@ _SAFE_ERROR_FIELDS = frozenset(
         "retry_after_ms",
         "message",
         "next_action",
+        "unsupported_items",
+        "unsupported_items_truncated",
     }
 )
 _DRIFT_STATUSES = frozenset({"contract_changed", "upstream_changed"})

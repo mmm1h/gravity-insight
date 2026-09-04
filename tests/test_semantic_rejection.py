@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import unittest
+from copy import deepcopy
+from typing import Any
 
-from gravity_insight.domains import ANALYSIS_QUERY_OPERATIONS
+from gravity_insight.domains import ANALYSIS_QUERY_OPERATIONS, ANALYSIS_SEGMENT_OPERATIONS
+from gravity_insight.analysis_execution_support import segment_event_support_metadata
 from gravity_insight.semantic_rejection import (
     classify_read_rejection,
     raise_read_rejection,
@@ -10,7 +13,102 @@ from gravity_insight.semantic_rejection import (
 from gravity_insight.errors import SemanticRejectedError, UpstreamContradictedRequestError
 
 
+def segment_static_count_inputs() -> dict[str, Any]:
+    return {
+        "date_range": {
+            "start_date": "2030-01-08",
+            "end_date": "2030-01-08",
+        },
+        "user_event_rules": {
+            "groups": [{
+                "conditions": [{
+                    "event_name": "fixture_custom_event_rejected",
+                    "did": True,
+                    "target": {
+                        "field": "PresetAllCount",
+                        "name": "PresetAllCount",
+                    },
+                    "did_condition": {"operator": "GTE", "value": [1]},
+                    "date_range": {
+                        "date_type": "static",
+                        "date": ["2030-01-08", "2030-01-08"],
+                    },
+                    "conditions": [],
+                }]
+            }]
+        },
+    }
+
+
 class SemanticRejectionTests(unittest.TestCase):
+    def test_segment_static_count_rejection_is_a_named_nonretryable_gap(self) -> None:
+        with self.assertRaises(SemanticRejectedError) as caught:
+            raise_read_rejection(
+                {"extra": {"error": "private upstream rejection"}},
+                operation_id=ANALYSIS_SEGMENT_OPERATIONS["evaluate"],
+                request_inputs=segment_static_count_inputs(),
+            )
+
+        detail = caught.exception.to_error_detail(
+            operation_id=ANALYSIS_SEGMENT_OPERATIONS["evaluate"]
+        ).to_dict()
+        self.assertEqual(
+            (
+                "SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN",
+                "upstream",
+                "user_event_rules.groups[0].conditions[0]",
+                False,
+            ),
+            (
+                detail["code"],
+                detail["category"],
+                detail["field"],
+                detail["retryable"],
+            ),
+        )
+        self.assertIn("actual value:", detail["message"])
+        self.assertIn("paired Segment receipt", detail["next_action"])
+        support = segment_event_support_metadata()["acceptance_gap"]
+        self.assertEqual(support["code"], detail["code"])
+        self.assertEqual(support["next_action"], detail["next_action"])
+        self.assertNotIn("fixture_custom_event_rejected", repr(detail))
+        self.assertNotIn("private upstream rejection", repr(detail))
+
+    def test_segment_gap_does_not_generalize_beyond_the_observed_shape(self) -> None:
+        cases = []
+        dynamic = segment_static_count_inputs()
+        dynamic["user_event_rules"]["groups"][0]["conditions"][0]["date_range"] = {
+            "date_type": "dynamic",
+            "quick_select": "last7day",
+        }
+        cases.append(("dynamic window", dynamic))
+        conditioned = segment_static_count_inputs()
+        conditioned["user_event_rules"]["groups"][0]["conditions"][0]["conditions"] = [
+            {"field": "fixture_property", "operator": "EQUALS", "value": [1]}
+        ]
+        cases.append(("event property condition", conditioned))
+        different_target = segment_static_count_inputs()
+        different_target["user_event_rules"]["groups"][0]["conditions"][0]["target"] = {
+            "field": "fixture_metric",
+            "name": "SUM",
+        }
+        cases.append(("different target", different_target))
+
+        for label, inputs in cases:
+            with self.subTest(label=label), self.assertRaises(
+                SemanticRejectedError
+            ) as caught:
+                raise_read_rejection(
+                    {"extra": {"error": "private upstream rejection"}},
+                    operation_id=ANALYSIS_SEGMENT_OPERATIONS["evaluate"],
+                    request_inputs=deepcopy(inputs),
+                )
+            detail = caught.exception.to_error_detail().to_dict()
+            self.assertEqual("INPUT_INVALID", detail["code"])
+            self.assertNotEqual(
+                "SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN", detail["code"]
+            )
+
     def test_unverified_grain_rejection_is_diagnostic_and_not_auto_retryable(self) -> None:
         cases = (
             ("event", "week"),

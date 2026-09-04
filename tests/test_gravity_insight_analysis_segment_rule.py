@@ -9,10 +9,12 @@ from typing import Any, Mapping
 try:
     from gravity_insight import GravityInsightClient
     from gravity_insight.errors import InputValidationError
+    from gravity_insight.segment_spec import compile_segment_spec
     from gravity_insight.transport import TransportResponse
 except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_insight import GravityInsightClient
     from gravity_insight.errors import InputValidationError
+    from gravity_insight.segment_spec import compile_segment_spec
     from gravity_insight.transport import TransportResponse
 
 
@@ -20,6 +22,11 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_DIR = ROOT / "src" / "gravity_insight" / "manifests"
 SEGMENT_RULE_MANIFEST = MANIFEST_DIR / "analysis_segment_rule.json"
 TARGET_PATH = "/report/api/v3/dataanalysis/segment/from_rule/evaluate_percent/"
+BOUNDARY_FIXTURE = json.loads(
+    (ROOT / "tests" / "fixtures" / "segment_custom_event_boundary.json").read_text(
+        encoding="utf-8"
+    )
+)
 
 
 class RoutingTransport:
@@ -338,6 +345,88 @@ class GravityInsightAnalysisSegmentRuleTests(unittest.TestCase):
         result = client.read("analysis.segment.evaluate_percent", inputs)
         self.assertEqual("success", result["status"])
         self.assertTrue(any(path == TARGET_PATH for _, path, _ in transport.calls))
+
+    def test_positive_custom_event_control_reaches_aggregate_success(self) -> None:
+        compiled = compile_segment_spec(
+            BOUNDARY_FIXTURE["positive_custom_event"], app=101
+        )
+        event_name = compiled.inputs["user_event_rules"]["groups"][0][
+            "conditions"
+        ][0]["event_name"]
+
+        def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
+            if path.endswith("user_property_list/"):
+                return page([])
+            if path.endswith("event_list/"):
+                return page([{"name": event_name, "cname": "fixture", "visible": True}])
+            if path.endswith("event_property_list/"):
+                return page([])
+            if path.endswith("event_info/"):
+                return event_info()
+            if path == TARGET_PATH:
+                return {"code": 0, "data": {"part": 3, "percent": 30, "total": 10}}
+            raise AssertionError(f"unexpected path: {path}")
+
+        client, transport = client_for(
+            "analysis.segment.evaluate_percent", handler=handler
+        )
+        result = client.read(compiled.operation_id, compiled.inputs)
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual({"part": 3, "percent": 30, "total": 10}, result["data"])
+        self.assertEqual(1, sum(path == TARGET_PATH for _, path, _ in transport.calls))
+
+    def test_rejected_static_count_custom_event_returns_named_gap_error(self) -> None:
+        compiled = compile_segment_spec(
+            BOUNDARY_FIXTURE["rejected_custom_event"], app=101
+        )
+        event_name = compiled.inputs["user_event_rules"]["groups"][0][
+            "conditions"
+        ][0]["event_name"]
+
+        def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
+            if path.endswith("user_property_list/"):
+                return page([])
+            if path.endswith("event_list/"):
+                return page([{"name": event_name, "cname": "fixture", "visible": True}])
+            if path.endswith("event_property_list/"):
+                return page([])
+            if path.endswith("event_info/"):
+                return event_info()
+            if path == TARGET_PATH:
+                return {
+                    "code": 400,
+                    "extra": {"error": "fixture-private-upstream-rejection"},
+                }
+            raise AssertionError(f"unexpected path: {path}")
+
+        client, transport = client_for(
+            "analysis.segment.evaluate_percent", handler=handler
+        )
+        result = client.read(compiled.operation_id, compiled.inputs)
+
+        error = result["error"]
+        self.assertEqual("semantic_error", result["status"])
+        self.assertEqual(
+            (
+                "SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN",
+                "upstream",
+                "user_event_rules.groups[0].conditions[0]",
+                False,
+            ),
+            (
+                error["code"],
+                error["category"],
+                error["field"],
+                error["retryable"],
+            ),
+        )
+        self.assertIn("metadata validity does not establish", error["message"])
+        self.assertIn("sanitized current-main paired Segment receipt", error["next_action"])
+        self.assertIn("not an equivalent first-exposure result", error["next_action"])
+        self.assertNotIn(event_name, repr(result))
+        self.assertNotIn("fixture-private-upstream-rejection", repr(result))
+        self.assertEqual(1, sum(path == TARGET_PATH for _, path, _ in transport.calls))
 
     def test_raw_fe_config_and_unknown_nested_keys_fail_before_evaluation(self) -> None:
         client, transport = client_for(

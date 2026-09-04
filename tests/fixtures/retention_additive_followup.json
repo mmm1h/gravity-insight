@@ -1,0 +1,143 @@
+{
+  "before_after_sumcount": {
+    "start": "2026-08-01",
+    "end": "2026-08-01",
+    "steps": [
+      {
+        "event": "$MPLaunch",
+        "metric": {
+          "field": "PresetUserCount",
+          "aggregation": "PresetUserCount"
+        }
+      },
+      {
+        "event": "$MPLaunch",
+        "metric": {
+          "field": "PresetUserCount",
+          "aggregation": "PresetUserCount"
+        }
+      }
+    ],
+    "offset": 2,
+    "period_calc_method": "SUM",
+    "custom_before_method": "SUM",
+    "total_calc_type": "DAY",
+    "week_first_day": 1,
+    "query_item_before_after": {
+      "after": {
+        "event_name": "$PayEvent",
+        "target": {
+          "field": "pay_amount",
+          "name": "SumCount"
+        },
+        "conditions": [
+          {
+            "field": "pay_channel",
+            "type": "event",
+            "operator": "EQUALS",
+            "value": [
+              "fixture-private-value"
+            ]
+          }
+        ],
+        "cond_logic": "AND",
+        "prop_to_calc": "pay_amount",
+        "prop_to_calc_target": "pay_amount"
+      },
+      "formula": "+",
+      "decimal_point": "two_point",
+      "before_decimal_point": "integer",
+      "a_to_b": true,
+      "name": "pay followup"
+    }
+  },
+  "second_step_sumcount": {
+    "start": "2026-08-01",
+    "end": "2026-08-01",
+    "steps": [
+      {
+        "event": "$MPLaunch",
+        "metric": {
+          "field": "PresetUserCount",
+          "aggregation": "PresetUserCount"
+        }
+      },
+      {
+        "event": "$PayEvent",
+        "metric": {
+          "field": "pay_amount",
+          "aggregation": "SumCount"
+        }
+      }
+    ],
+    "offset": 2,
+    "period_calc_method": "SUM",
+    "custom_before_method": "SUM",
+    "total_calc_type": "DAY",
+    "week_first_day": 1
+  },
+  "ordinary_count": {
+    "start": "2026-08-01",
+    "end": "2026-08-01",
+    "steps": [
+      {
+        "event": "$MPLaunch",
+        "metric": {
+          "field": "PresetUserCount",
+          "aggregation": "PresetUserCount"
+        }
+      },
+      {
+        "event": "$MPLaunch",
+        "metric": {
+          "field": "PresetUserCount",
+          "aggregation": "PresetUserCount"
+        }
+      }
+    ],
+    "offset": 2,
+    "period_calc_method": "SUM",
+    "custom_before_method": "SUM",
+    "total_calc_type": "DAY",
+    "week_first_day": 1
+  },
+  "ordinary_zero_response": {
+    "schema_version": "gravity-insight.read.v1",
+    "ok": true,
+    "status": "success",
+    "operation_id": "analysis.retention.query",
+    "data": {
+      "total": [
+        {
+          "group_cols": [],
+          "init_num": 4,
+          "values": [
+            4,
+            0
+          ],
+          "percent_values": [
+            "100.00%",
+            "0.00%"
+          ]
+        }
+      ],
+      "y": {
+        "2026-08-01": [
+          {
+            "group_cols": [],
+            "init_num": 4,
+            "values": [
+              4,
+              0
+            ],
+            "percent_values": [
+              "100.00%",
+              "0.00%"
+            ]
+          }
+        ]
+      }
+    },
+    "warnings": []
+  }
+}

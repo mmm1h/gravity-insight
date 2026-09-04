@@ -245,7 +245,9 @@ def _validate_retention_controls(
     inputs: Mapping[str, Any], references: AnalysisReferences
 ) -> None:
     validate_retention_before_after(
-        inputs.get("query_item_before_after", {}), references
+        inputs.get("query_item_before_after", {}),
+        references,
+        query_items=inputs.get("query_item_list", ()),
     )
     validate_analysis_filter_map(
         inputs.get("user_filtering", {}), references.user_fields, "user_filtering"

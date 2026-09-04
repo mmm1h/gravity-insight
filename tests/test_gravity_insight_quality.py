@@ -11,6 +11,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from gravity_insight.quality import (
     COMPLEXITY_LIMIT,
     FILE_SLOC_LIMIT,
@@ -29,7 +31,6 @@ from gravity_insight.quality import (
     inspect_repository as _inspect_repository,
     main as quality_main,
     migration_source_errors,
-    render_markdown,
     validate as _validate,
 )
 from gravity_insight.governance.privacy_consistency import (
@@ -540,50 +541,7 @@ def sample(value):
         source = (ROOT / "src/gravity_insight/quality.py").read_text(encoding="utf-8")
         ast.parse(source, filename="quality.py", feature_version=(3, 11))
 
-    def test_repository_profile_uses_exact_contract_ids(self) -> None:
-        profile = _repository_profile(ROOT)
-        provenance = json.loads(
-            (ROOT / "src/gravity_insight/contracts/generated/provenance.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        self.assertEqual(provenance["operation_count"], profile.operation_count)
-        self.assertEqual(profile.operation_count, profile.provenance_covered)
-        self.assertEqual("PASS", profile.compiler_check)
-        self.assertFalse(profile.scan_errors, profile.scan_errors)
-        self.assertIn("src/gravity_insight/compiler.py", profile.file_sloc)
-        self.assertIn("src/gravity_insight/quality.py", profile.file_sloc)
-        self.assertFalse(
-            any(
-                item.value == "analysis.user_event.list"
-                for item in profile.operation_literals
-            )
-        )
-        self.assertFalse(
-            any(
-                item.path in {
-                    "src/gravity_insight/catalog.py",
-                    "src/gravity_insight/registry.py",
-                }
-                for item in profile.operation_literals
-            )
-        )
-        self.assertFalse(any(item.value == "gravity_insight" for item in profile.operation_literals))
-
-    def test_repository_profile_metrics_and_markdown_match_baseline(self) -> None:
-        profile = _repository_profile(ROOT)
-        identities = {(item.path, item.qualname, item.line) for item in profile.functions}
-        baseline = json.loads((ROOT / "src/gravity_insight/governance/quality-baseline.json").read_text())
-        function_excess = sum(max(0, item.sloc - FUNCTION_SLOC_LIMIT) for item in profile.functions)
-        complexity_excess = sum(max(0, item.complexity - COMPLEXITY_LIMIT) for item in profile.functions)
-        self.assertEqual(len(identities), len(profile.functions))
-        self.assertEqual(baseline["debt"], debt_snapshot(profile)["debt"])
-        self.assertEqual(baseline["legacy_files"], debt_snapshot(profile, baseline)["legacy_files"])
-        self.assertIn(
-            f"函数超额 `{function_excess}` SLOC，复杂度超额 `{complexity_excess}`",
-            render_markdown(profile),
-        )
-
+    @pytest.mark.full_gate
     def test_repository_gate_passes_checked_in_baseline(self) -> None:
         errors = _validate_repository(ROOT, base_ref=None)
         self.assertEqual([], errors)

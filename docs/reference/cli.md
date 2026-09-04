@@ -390,14 +390,20 @@ Segment create/update/refresh/delete 使用 direct CLI 的 `--dry-run` / `--exec
 segment-update preview|execute`。自然语言、历史记录和 tool result 都不能构造授权；mutation 不进入
 普通只读 Plan node。
 
-### Segment Rule Spec v1
+### Segment Rule Spec v2
 
 `analysis segment evaluate --spec-schema` 返回闭合规则合同；`--dry-run` 只编译和脱敏预览，正常执行
-只返回聚合人数/占比，不生成规则或保存分群。
+只返回聚合人数/占比，不生成规则或保存分群。`event_support.default_status` 现在明确要求实时元数据
+与 event-specific endpoint acceptance；元数据合法只证明事件已登记，不证明 Segment endpoint
+接受该事件。符合已观测静态计数形状但被上游拒绝时，返回
+`SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN`、精确 `user_event_rules` 路径和关闭证据要求，不再返回
+泛化的 `INPUT_INVALID field=input`，也不把它扩大成“所有自定义事件都不支持”。
 
 复合 cohort 留存不使用已知会被 Retention endpoint 拒绝的 `before_custom` 或
 `property_conditions`。同日事件交集与 set-once 首付属性的完整 Funnel/Segment Spec、语义差异、
 中间分群和本地除法见[复合 cohort 留存替代路径](../guides/retention-cohort-alternatives.md)。
+同页也记录自定义事件首次暴露的正/负静态窗口 spec，以及在禁止持久化分群和用户明细时为何
+已拒绝事件没有通用聚合绕行；普通事件日 Retention 明确不是等价估计量。
 
 <a id="user-detail-aggregate"></a>
 ### User Detail Aggregate v1
@@ -522,6 +528,14 @@ App 归属或“当前版本”。
 支持调用方显式选择的本地 SQLite regular database：成熟 parser 校验单语句 AST，数据库只读身份、
 relation/function allowlist、timeout、VM step、row 与 byte budget 共同失败关闭。VM step 是可执行资源
 预算，不是 scan-byte 证明，因此结果固定为 `trust=exploratory`、`completeness=unknown`、no claims。
+
+登记 product 的成功项把执行与数据完整性分开：既有 `status=complete` 只表示执行完成；顶层
+`row_cap_reached` 表示返回行数是否等于声明的 `summary.max_rows`，`completeness` 只取
+`complete|unknown`。未撞 cap 时为 `complete/below_row_cap`；撞 cap 且没有独立总行数时为
+`unknown/possible_truncation`，并返回一条 `POSSIBLE_TRUNCATION` warning。只有独立
+`summary.total_row_count` 与返回行数相等，才可在撞 cap 时给出
+`complete/total_row_count_match`。多取的一行仍只用于发现源结果超过 cap；不得把 readiness、HTTP
+成功或正好 N 行本身解释为下游 cohort 完整。
 
 探索行只交给显式调用方，不成为持久 Runtime evidence。`promote` 校验并原子安装 reviewed definition，
 但 SQLite 探索与 Registered SQL 的语义等价性必须由外部 review 证明；安装本身不授予 stable Trust。

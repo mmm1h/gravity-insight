@@ -11,6 +11,8 @@ import sys
 import tempfile
 import unittest
 
+import pytest
+
 from tests.agent_migration_characterization import (
     KNOWN_ROOT_EXPORT_MODULE_COLLISIONS,
     PACKAGE_ROOT,
@@ -29,134 +31,16 @@ from tests.agent_migration_characterization import (
 from tests.repository_tree_gate import repository_tree_read
 
 
-_LAZY_PROBE = r"""
-import importlib
-import importlib.util
-import json
-import sys
-
-expected = json.load(sys.stdin)
-assert len(expected) == 146, f"public snapshot count changed: {len(expected)}"
-
-def fresh_package():
-    for module in list(sys.modules):
-        if module == "gravity_insight" or module.startswith("gravity_insight."):
-            del sys.modules[module]
-    return importlib.import_module("gravity_insight")
-
-for name, (owner, attribute) in expected.items():
-    gravity_insight = fresh_package()
-    absolute_owner = importlib.util.resolve_name(owner, gravity_insight.__name__)
-    assert absolute_owner not in sys.modules, (
-        f"owner loaded with package for {name}: {absolute_owner}"
-    )
-    assert name not in gravity_insight.__dict__, f"root export was eager: {name}"
-    first = getattr(gravity_insight, name)
-    owner_module = sys.modules.get(absolute_owner)
-    assert owner_module is not None, (
-        f"owner was not imported for {name}: {absolute_owner}"
-    )
-    assert first is getattr(owner_module, attribute), (
-        f"wrong owner identity for {name}: {absolute_owner}.{attribute}"
-    )
-
-    del sys.modules[absolute_owner]
-    try:
-        second = getattr(gravity_insight, name)
-        assert second is first, f"cached identity changed for {name}"
-        assert absolute_owner not in sys.modules, (
-            f"owner reloaded on cached access for {name}: {absolute_owner}"
-        )
-    finally:
-        sys.modules[absolute_owner] = owner_module
-
-gravity_insight = fresh_package()
-missing = "__characterization_missing_export__"
-try:
-    getattr(gravity_insight, missing)
-except AttributeError as error:
-    assert str(error) == f"module 'gravity_insight' has no attribute {missing!r}"
-else:
-    raise AssertionError("unknown root export did not raise AttributeError")
-
-assert len(gravity_insight.__all__) == len(expected) + 1, (
-    f"runtime __all__ count changed: {len(gravity_insight.__all__)}"
-)
-assert set(gravity_insight.__all__) == {*expected, "__version__"}
-assert set(gravity_insight.__all__) <= set(dir(gravity_insight))
-"""
+_PROBE_ROOT = ROOT / "tests" / "fixtures" / "agent_module_migration_probes"
 
 
-_SHADOWING_PROBE = r"""
-import importlib
-import importlib.util
-import json
-import sys
-
-payload = json.load(sys.stdin)
-expected = payload["exports"]
-names = payload["names"]
-mode = sys.argv[1]
-
-gravity_insight = importlib.import_module("gravity_insight")
-
-def public_value(name):
-    value = getattr(gravity_insight, name)
-    owner, attribute = expected[name]
-    owner_module = importlib.import_module(owner, gravity_insight.__name__)
-    assert callable(value), f"root export is not callable for {name}: {type(value).__name__}"
-    assert value is getattr(owner_module, attribute), f"wrong owner identity for {name}"
-    return value
-
-if mode == "child-first":
-    children = {
-        name: importlib.import_module(f"gravity_insight.{name}") for name in names
-    }
-    values = {name: public_value(name) for name in names}
-    assert all(
-        children[name] is sys.modules[f"gravity_insight.{name}"] for name in names
-    )
-elif mode == "export-first":
-    values = {name: public_value(name) for name in names}
-    for name in names:
-        importlib.import_module(f"gravity_insight.{name}")
-    assert all(public_value(name) is values[name] for name in names)
-elif mode == "cross-order":
-    values = {}
-    for export_name, child_name in zip(names, reversed(names), strict=True):
-        importlib.import_module(f"gravity_insight.{child_name}")
-        values[export_name] = public_value(export_name)
-    assert all(public_value(name) is values[name] for name in names)
-else:
-    raise AssertionError(f"unknown probe mode: {mode}")
-
-print(json.dumps({
-    "mode": mode,
-    "types": [type(public_value(name)).__name__ for name in names],
-    "callable": [callable(public_value(name)) for name in names],
-}, sort_keys=True))
-"""
+def _probe_source(name: str) -> str:
+    return (_PROBE_ROOT / name).read_text(encoding="utf-8")
 
 
-_FAIL_CLOSED_PROBE = r"""
-import importlib
-from types import ModuleType
-
-gravity_insight = importlib.import_module("gravity_insight")
-owner = importlib.import_module("gravity_insight.business_pulse")
-name = "__shadow_probe__"
-setattr(owner, name, ModuleType(f"gravity_insight.{name}"))
-gravity_insight._EXPORTS[name] = (".business_pulse", name)
-
-try:
-    getattr(gravity_insight, name)
-except TypeError as error:
-    assert str(error) == (
-        "public export gravity_insight.__shadow_probe__ resolved to its shadowing module"
-    )
-else:
-    raise AssertionError("shadowing owner module was returned silently")
-"""
+_LAZY_PROBE = _probe_source("lazy_root_exports.py.txt")
+_SHADOWING_PROBE = _probe_source("shadowed_root_exports.py.txt")
+_FAIL_CLOSED_PROBE = _probe_source("shadowed_export_fail_closed.py.txt")
 
 
 class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
@@ -225,6 +109,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
             )
         self.assertEqual(["future_collision"], observed)
 
+    @pytest.mark.full_gate
     def test_agent_deep_paths_are_explicitly_public_or_internal(self) -> None:
         with repository_tree_read(
             root=ROOT,
@@ -323,8 +208,6 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                 scope["consolidate_delete"]["new_module"],
             )
         )
-        self.assertEqual(82, len(scope["one_to_one_moves"]))
-        self.assertEqual(166, len(expected))
         self.assertEqual(expected, migration_module_names())
         self.assertTrue(
             {

@@ -16,6 +16,9 @@ from .plan_adapter_support import (
     validate_exact_targets,
 )
 from .segment_spec import (
+    SEGMENT_EVENT_RULE_GAP_CODE,
+    SEGMENT_EVENT_RULE_GAP_MESSAGE,
+    SEGMENT_EVENT_RULE_GAP_NEXT_ACTION,
     SEGMENT_EVALUATE_OPERATION,
     compile_segment_spec,
     validate_segment_spec,
@@ -162,12 +165,21 @@ def _safe_failure(result: Mapping[str, Any]) -> dict[str, Any]:
         if isinstance(error, Mapping)
         else {}
     )
+    is_event_rule_gap = selected.get("code") == SEGMENT_EVENT_RULE_GAP_CODE
     return {
         **selected,
         "category": selected.get("category", "upstream"),
         "code": selected.get("code", "CONTRACT_CHANGED"),
-        "message": "The Segment evaluation no longer matches its governed contract.",
-        "next_action": "Inspect contract drift before retrying this Plan node.",
+        "message": (
+            SEGMENT_EVENT_RULE_GAP_MESSAGE
+            if is_event_rule_gap
+            else "The Segment evaluation no longer matches its governed contract."
+        ),
+        "next_action": (
+            SEGMENT_EVENT_RULE_GAP_NEXT_ACTION
+            if is_event_rule_gap
+            else "Inspect contract drift before retrying this Plan node."
+        ),
         "retryable": bool(selected.get("retryable", False)),
     }
 

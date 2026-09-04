@@ -17,6 +17,9 @@ from .domains import ANALYSIS_SEGMENT_OPERATIONS
 from .errors import InputValidationError
 from .segment_spec_schema import segment_rule_spec_schema
 from .segment_spec_support import (
+    SEGMENT_EVENT_RULE_GAP_CODE,
+    SEGMENT_EVENT_RULE_GAP_MESSAGE,
+    SEGMENT_EVENT_RULE_GAP_NEXT_ACTION,
     compile_rule_set,
     logic,
     mapping,
@@ -179,6 +182,9 @@ def _validate_date_overrides(start: str | None, end: str | None) -> None:
 
 __all__ = [
     "COMPILED_SEGMENT_SCHEMA_VERSION",
+    "SEGMENT_EVENT_RULE_GAP_CODE",
+    "SEGMENT_EVENT_RULE_GAP_MESSAGE",
+    "SEGMENT_EVENT_RULE_GAP_NEXT_ACTION",
     "CompiledSegmentSpec",
     "compile_segment_spec",
     "prepare_segment_spec",

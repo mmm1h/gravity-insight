@@ -51,7 +51,7 @@ jobs:
           cache: pip
       - name: Install SDK and test runner
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
-      - name: Run complete Windows test shard with duration budget
+      - name: Run complete Windows test shard with duration budget (includes full_gate)
         run: >-
           python scripts/check_test_duration_budget.py
           --shard-index ${{ matrix.shard }}
@@ -222,7 +222,7 @@ jobs:
       - name: Install SDK and test runner
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
       - name: Run core tests
-        run: python -m pytest -q
+        run: python -m pytest -q -o addopts="" -n auto --dist load
       - name: Check deterministic contracts
         run: python -m gravity_insight.compiler check
       - name: Check quality ratchet
@@ -245,7 +245,7 @@ jobs:
       - name: Import installed SDK
         run: python -c "import gravity_insight; print(gravity_insight.__version__)"
       - name: Run core tests
-        run: python -m pytest -q
+        run: python -m pytest -q -o addopts="" -n auto --dist load
 
   installed_wheel_linux_python312:
     name: installed-wheel-linux-python312

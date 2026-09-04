@@ -17,6 +17,7 @@ from gravity_insight.multidim_contract import (
     MULTIDIM_COHORT_HORIZON_GAP_CODE,
     multidim_multi_key_contract,
 )
+from gravity_insight.segment_spec_schema import segment_rule_spec_schema
 
 
 def _args(action: str, **values: object) -> SimpleNamespace:
@@ -73,7 +74,7 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])
         self.assertEqual("discover_and_describe", result["mode"])
 
-    def test_registered_gap_inventory_has_eight_unique_machine_codes(self) -> None:
+    def test_registered_gap_inventory_has_nine_unique_machine_codes(self) -> None:
         """Issue #19 adds a fail-closed gap for its unproved five-state contract.
 
         The existing single-role transfer stays callable, while the complete
@@ -81,8 +82,29 @@ class AgentCatalogTests(unittest.TestCase):
         """
 
         gaps = registered_unavailable_gaps()
-        self.assertEqual(8, len(gaps))
-        self.assertEqual(8, len({gap["code"] for gap in gaps}))
+        self.assertEqual(9, len(gaps))
+        self.assertEqual(9, len({gap["code"] for gap in gaps}))
+
+    def test_custom_event_first_exposure_returns_narrow_evidence_gap(self) -> None:
+        for query in (
+            "Build a custom event first exposure cohort without exporting users.",
+            "构造自定义事件首次暴露分群，不导出用户明细。",
+        ):
+            with self.subTest(query=query):
+                gap = unavailable_journey_gap(query)
+                self.assertIsNotNone(gap)
+                self.assertEqual("SEGMENT_EVENT_RULE_ACCEPTANCE_UNPROVEN", gap["code"])
+                self.assertEqual("segment_custom_event_first_exposure", gap["journey"])
+                self.assertFalse(gap["network_called"])
+                self.assertNotIn("next", gap)
+                self.assertIn("Event and ordinary Retention accepted", gap["reason"])
+                self.assertIn("neither an all-custom-event exclusion", gap["reason"])
+                support = segment_rule_spec_schema()["event_support"]["acceptance_gap"]
+                self.assertEqual(support["code"], gap["code"])
+                self.assertEqual(support["reason"], gap["reason"])
+                self.assertIn("sanitized current-main paired Segment receipt", gap["next_action"])
+                self.assertIn("without one", gap["next_action"])
+                self.assertIn("Do not substitute ordinary event-date Retention", gap["next_action"])
 
     def test_exact_platform_image_and_video_journey_returns_evidence_gap(self) -> None:
         gap = unavailable_journey_gap(

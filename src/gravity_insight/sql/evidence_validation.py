@@ -8,7 +8,12 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime
 from typing import Any
 
-from gravity_insight.sql.time_window import day_window, normalize_window
+from gravity_insight.sql.time_window import (
+    EvidenceFormatError,
+    day_window,
+    normalize_window,
+    validate_product_completeness,
+)
 
 
 _HASH_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -59,10 +64,6 @@ _CHECKPOINT_FIELDS = frozenset(
 )
 
 
-class EvidenceFormatError(ValueError):
-    pass
-
-
 def validate_evidence_document(
     evidence: Any,
     *,
@@ -74,7 +75,12 @@ def validate_evidence_document(
     _validate_identity(root, datasource_id)
     window = _validate_window(root)
     products = _product_map(root, configured_products)
-    _validate_products(products, configured_products, window)
+    _validate_products(
+        products,
+        configured_products,
+        window,
+        require_completeness=root["schema_version"] == 2,
+    )
     _validate_aggregate(root, products, configured_products, hash_json)
     if root["schema_version"] == 2:
         validate_verification_history(
@@ -147,13 +153,24 @@ def _validate_products(
     products: Mapping[str, Any],
     configured: tuple[str, ...],
     window: Mapping[str, Any],
+    *,
+    require_completeness: bool,
 ) -> None:
     for product in configured:
-        _validate_product(product, products[product], window)
+        _validate_product(
+            product,
+            products[product],
+            window,
+            require_completeness=require_completeness,
+        )
 
 
 def _validate_product(
-    product: str, result: Any, window: Mapping[str, Any]
+    product: str,
+    result: Any,
+    window: Mapping[str, Any],
+    *,
+    require_completeness: bool,
 ) -> None:
     if not isinstance(result, Mapping) or result.get("product") != product:
         raise EvidenceFormatError(f"invalid product evidence: {product}")
@@ -161,6 +178,9 @@ def _validate_product(
         raise EvidenceFormatError(f"invalid product status: {product}")
     if not isinstance(result.get("summary"), Mapping):
         raise EvidenceFormatError(f"missing product summary: {product}")
+    validate_product_completeness(
+        product, result, require_completeness=require_completeness
+    )
     _validate_claims(product, result)
     if result.get("window") != window:
         raise EvidenceFormatError(f"product window differs from evidence window: {product}")
@@ -173,7 +193,7 @@ def validate_product_evidence(
 ) -> None:
     """Validate one reusable component without claiming aggregate readiness."""
 
-    _validate_product(product, result, window)
+    _validate_product(product, result, window, require_completeness=True)
 
 
 def validate_verification_history(
