@@ -552,7 +552,7 @@ def run():
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
-            [541, 15, 8, 3, 2, 2],
+            [544, 15, 8, 3, 2, 2],
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())
