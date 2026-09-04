@@ -8,6 +8,7 @@ from pathlib import Path
 
 from gravity_insight.compiler import JsonSchemaValidator
 from gravity_insight.contracts import load_release_compatibility
+from scripts.check_changelog import validate_changelog
 from scripts.build_offline_wheel import build_offline_wheel
 from scripts.generate_release_compatibility import (
     CHANGELOG_PATH,
@@ -26,6 +27,34 @@ SCHEMA_PATH = (
 WHEEL_CONTRACT_PATH = (
     "gravity_insight/contracts/generated/release-compatibility.v1.json"
 )
+_PLACEHOLDER = "- None.\n"
+_SYNTHETIC = "- **Hard break:** synthetic stale-contract proof.\n"
+
+
+def _with_extra_hard_break(source: str, target: str) -> str:
+    """Add one hard break to the Unreleased section, whichever state it is in.
+
+    A freshly cut release leaves `- None.` as the only breaking entry, and a
+    section holding both that and a real break fails the marker rule before it
+    can reach the staleness check this test is about -- so the placeholder has
+    to be replaced, not prepended to. Once real breaks are declared there is no
+    placeholder and no migration line to add. Pinning either shape means the
+    test goes red on the next release cut for no reason, which is what the
+    hardcoded `0.3.9` marker did here.
+    """
+    heading = f"Target release: `{target}`\n\n### Breaking changes\n\n"
+    if heading not in source:
+        raise AssertionError(f"no Unreleased breaking section for {target}")
+    start = source.index(heading) + len(heading)
+    if source.startswith(_PLACEHOLDER, start):
+        migration = f"\nMigration guide: [{target}](docs/migration/{target}.md)\n"
+        return (
+            source[:start]
+            + _SYNTHETIC
+            + migration
+            + source[start + len(_PLACEHOLDER) :]
+        )
+    return source[:start] + _SYNTHETIC + source[start:]
 
 
 class ReleaseCompatibilityTests(unittest.TestCase):
@@ -90,33 +119,21 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         )
 
     def test_new_hard_break_without_regeneration_is_rejected(self) -> None:
+        target = validate_changelog().target_version
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             changelog = root / "CHANGELOG.md"
             migration_dir = root / "docs/migration"
             migration_dir.mkdir(parents=True)
             for version in (
-                "0.3.3", "0.3.4", "0.3.5", "0.3.6", "0.3.7", "0.3.8", "0.3.9",
+                "0.3.3", "0.3.4", "0.3.5", "0.3.6", "0.3.7", "0.3.8", target,
             ):
                 (migration_dir / f"{version}.md").write_text(
                     f"# Synthetic {version} migration\n", encoding="utf-8"
                 )
             source = CHANGELOG_PATH.read_text(encoding="utf-8")
-            # Replace the placeholder rather than prepending to it. A freshly cut
-            # release leaves `- None.` as the only breaking entry, and a section
-            # holding both that and a synthetic break fails the marker rule
-            # before it can reach the staleness check this test is about.
-            marker = "Target release: `0.3.9`\n\n### Breaking changes\n\n- None.\n"
-            self.assertIn(marker, source)
             changelog.write_text(
-                source.replace(
-                    marker,
-                    "Target release: `0.3.9`\n\n### Breaking changes\n\n"
-                    "- **Hard break:** synthetic stale-contract proof.\n"
-                    "\nMigration guide: [0.3.9](docs/migration/0.3.9.md)\n",
-                    1,
-                ),
-                encoding="utf-8",
+                _with_extra_hard_break(source, target), encoding="utf-8"
             )
 
             with self.assertRaisesRegex(
