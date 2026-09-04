@@ -84,7 +84,7 @@ def run_agent_catalog_command(args: Any, client: Any) -> dict[str, Any]:
         return _category_response(inventory, str(args.name), args.limit, args.offset)
     if action == "describe":
         return _describe_response(inventory, str(args.selector), client)
-    raise InputValidationError("unknown agent catalog action", field="agent_catalog_command", next_action="Run `gravity agent catalog --help` and pick a documented action.")
+    raise InputValidationError("unknown agent catalog action", field="agent_catalog_command", next_action="Run `gravity agent-catalog --help` and pick a documented action.")
 
 
 def _inventory(client: Any) -> tuple[dict[str, Any], ...]:
