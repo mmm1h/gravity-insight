@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import io, json, sys, tempfile, unittest
+import io, json, sys, tempfile, threading, unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -379,6 +379,58 @@ class GravityCensusFetcherTests(unittest.TestCase):
                 result["discovery"]["ignored_cross_origin_js"],
             )
             self.assertTrue((root / "snapshot.json").is_file())
+
+    def test_multibatch_fixture_reuses_worker_sessions_across_entire_crawl(self) -> None:
+        fixture = json.loads(
+            (REPO_ROOT / "tests" / "fixtures" / "census_multibatch_graph.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        site_url = fixture["site_url"]
+        entry = fixture["entry_html"].encode("utf-8")
+        resources = {
+            url: content.encode("utf-8") for url, content in fixture["resources"].items()
+        }
+        session_ids: set[int] = set()
+        sessions: list[object] = []
+        session_lock = threading.Lock()
+        batch_barrier = threading.Barrier(2, timeout=5)
+
+        def session_factory() -> object:
+            session = SimpleNamespace(headers={})
+            with session_lock:
+                sessions.append(session)
+            return session
+
+        class FixtureFetcher(StaticFetcher):
+            def _get(self, url):
+                self._reserve_attempt()
+                content = entry if url == site_url else resources[url]
+                return SimpleNamespace(content=content, encoding="utf-8", url=url, headers={})
+
+            def _fetch_js(self, url, raw_dir):
+                session = self._session()
+                with session_lock:
+                    session_ids.add(id(session))
+                batch_barrier.wait()
+                return super()._fetch_js(url, raw_dir)
+
+        with (
+            tempfile.TemporaryDirectory(dir=REPO_ROOT / "tmp") as temp,
+            patch("gravity_insight.census.fetcher.requests.Session", side_effect=session_factory),
+        ):
+            root = Path(temp)
+            result = FixtureFetcher(max_requests=20, concurrency=2).fetch(
+                site_url=site_url,
+                raw_dir=root,
+                snapshot_path=root / "snapshot.json",
+                probe_manifests=False,
+            )
+
+        self.assertTrue(result["summary"]["complete"])
+        self.assertEqual(6, result["summary"]["bundle_files"])
+        self.assertEqual(2, len(session_ids))
+        self.assertEqual(2, len(sessions))
 
     def test_fetch_marks_snapshot_incomplete_when_entry_changes(self) -> None:
         initial = b'<script type="module" src="/assets/index-ABCDEFGH.js"></script>'

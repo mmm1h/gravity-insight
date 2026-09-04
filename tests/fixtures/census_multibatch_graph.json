@@ -1,0 +1,12 @@
+{
+  "site_url": "https://example.test/",
+  "entry_html": "<link rel=\"modulepreload\" href=\"/assets/vendor-ABCDEFGH.js\"><script type=\"module\" src=\"/assets/index-ABCDEFGH.js\"></script>",
+  "resources": {
+    "https://example.test/assets/index-ABCDEFGH.js": "import './chunk-one-ABCDEFGH.js';import './chunk-two-ABCDEFGH.js';",
+    "https://example.test/assets/vendor-ABCDEFGH.js": "export const vendor = true;",
+    "https://example.test/assets/chunk-one-ABCDEFGH.js": "import './chunk-three-ABCDEFGH.js';import './chunk-four-ABCDEFGH.js';",
+    "https://example.test/assets/chunk-two-ABCDEFGH.js": "export const two = 2;",
+    "https://example.test/assets/chunk-three-ABCDEFGH.js": "export const three = 3;",
+    "https://example.test/assets/chunk-four-ABCDEFGH.js": "export const four = 4;"
+  }
+}
