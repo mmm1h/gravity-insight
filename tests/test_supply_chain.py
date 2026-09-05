@@ -131,7 +131,7 @@ class SecretScanTests(unittest.TestCase):
             git(root, "add", "safe.txt")
             git(root, "commit", "--quiet", "-m", "safe base")
             base = subprocess.check_output(
-                ("git", "rev-parse", "HEAD"), cwd=root, text=True
+                ("git", "rev-parse", "HEAD"), cwd=root, text=True, encoding="utf-8"
             ).strip()
             fake_key = "AKIA" + "7K4P9N2Q6R8T1V3X"
             secret = root / "removed.txt"

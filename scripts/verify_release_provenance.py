@@ -638,6 +638,7 @@ def _git_commit(repository: Path, revision: str) -> str:
         ["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
         cwd=repository,
         text=True,
+        encoding="utf-8",
         capture_output=True,
         check=False,
     )
@@ -726,7 +727,11 @@ class GhCliGateway:
         self, arguments: Sequence[str], *, allow_not_found: bool = False
     ) -> subprocess.CompletedProcess[str]:
         completed = subprocess.run(
-            ["gh", *arguments], text=True, capture_output=True, check=False
+            ["gh", *arguments],
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+            check=False,
         )
         if completed.returncode == 0:
             return completed

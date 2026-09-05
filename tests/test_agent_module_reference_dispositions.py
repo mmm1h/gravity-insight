@@ -248,6 +248,7 @@ def _assert_repository_tree_gate_orders_writer_and_scan(
             [sys.executable, "-c", _DETERMINISTIC_WRITER, str(ROOT), str(state)],
             cwd=ROOT,
             text=True,
+            encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )

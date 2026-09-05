@@ -40,7 +40,7 @@ PROVENANCE_FIXTURES = ROOT / "tests" / "fixtures" / "release_provenance"
 
 def _run(command: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        command, cwd=cwd, text=True, capture_output=True, check=False
+        command, cwd=cwd, text=True, encoding="utf-8", capture_output=True, check=False
     )
 
 
@@ -686,13 +686,14 @@ class ReleaseRecoveryStateTests(unittest.TestCase):
                 ["git", "tag", "v0.3.2"],
             ):
                 completed = subprocess.run(
-                    command, cwd=root, text=True, capture_output=True, check=False
+                    command, cwd=root, text=True, encoding="utf-8", capture_output=True, check=False
                 )
                 self.assertEqual(0, completed.returncode, completed.stderr)
             commit = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
                 cwd=root,
                 text=True,
+                encoding="utf-8",
                 capture_output=True,
                 check=True,
             ).stdout.strip()

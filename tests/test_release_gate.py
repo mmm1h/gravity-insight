@@ -35,6 +35,7 @@ def _git(root: Path, *arguments: str) -> str:
         ["git", *arguments],
         cwd=root,
         text=True,
+        encoding="utf-8",
         capture_output=True,
         check=True,
     ).stdout.strip()

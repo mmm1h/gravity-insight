@@ -205,6 +205,7 @@ app_input = "app_id"
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         paths = json.loads(completed.stdout)
 
@@ -321,6 +322,7 @@ app_input = "app_id"
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
 
         assert completed.returncode == 0, completed.stderr

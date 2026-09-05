@@ -202,7 +202,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             self.assertNotEqual(0, tracked.returncode)
         tracked_keys = subprocess.run(
             ["git", "ls-files", "*.key"], cwd=ROOT, check=True,
-            capture_output=True, text=True,
+            capture_output=True, text=True, encoding="utf-8",
         )
         self.assertEqual("", tracked_keys.stdout.strip())
 

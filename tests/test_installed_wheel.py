@@ -41,7 +41,7 @@ def _resource_inventory(package: Path) -> set[str]:
 
 def _run(command: list[str], *, cwd: Path, timeout: int = 300) -> None:
     completed = subprocess.run(
-        command, cwd=cwd, text=True, capture_output=True, timeout=timeout,
+        command, cwd=cwd, text=True, encoding="utf-8", capture_output=True, timeout=timeout,
     )
     assert completed.returncode == 0, (
         f"command failed ({completed.returncode}): {' '.join(command)}\n"
@@ -188,7 +188,7 @@ print(json.dumps(failures))
 """
             completed = subprocess.run(
                 [sys.executable, "-I", "-c", probe, str(extracted)],
-                input=json.dumps(sorted(expected_modules)), text=True,
+                input=json.dumps(sorted(expected_modules)), text=True, encoding="utf-8",
                 capture_output=True, cwd=temporary, timeout=300,
             )
             self.assertEqual(0, completed.returncode, completed.stderr)

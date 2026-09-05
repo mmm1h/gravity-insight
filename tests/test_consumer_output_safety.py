@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 import math
+import os
 import subprocess
 import sys
 import unittest
@@ -134,6 +135,8 @@ class ConsumerOutputSafetyTests(unittest.TestCase):
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
         result = json.loads(completed.stdout)
         self.assertFalse(result["method"]["network_called"])
