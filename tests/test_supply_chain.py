@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import os
 import sys
 import tempfile
 import unittest
@@ -67,7 +68,7 @@ class SecretScanTests(unittest.TestCase):
             git(root, "commit", "--quiet", "-m", "synthetic credential fixture")
             completed = subprocess.run(
                 (
-                    sys.executable,
+                    sys.executable, "--",
                     str(SCANNER),
                     "--root",
                     str(root),
@@ -77,6 +78,7 @@ class SecretScanTests(unittest.TestCase):
                 cwd=ROOT,
                 text=True,
                 encoding="utf-8",
+                env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
                 capture_output=True,
                 check=False,
             )

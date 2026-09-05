@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import shlex
 import subprocess
+import os
 import sys
 import time
 from typing import Any, Mapping, Sequence
@@ -84,6 +85,7 @@ def run_gate(
             cwd=ROOT,
             text=True,
             encoding="utf-8",
+            env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             errors="replace",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

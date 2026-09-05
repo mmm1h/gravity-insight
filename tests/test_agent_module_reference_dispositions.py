@@ -249,6 +249,7 @@ def _assert_repository_tree_gate_orders_writer_and_scan(
             cwd=ROOT,
             text=True,
             encoding="utf-8",
+            env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )

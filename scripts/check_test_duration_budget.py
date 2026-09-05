@@ -262,14 +262,14 @@ def _collect_in_subprocess(targets: Sequence[str]) -> tuple[str, ...]:
         output = Path(raw) / "collection.json"
         completed = subprocess.run(
             [
-                sys.executable,
+                sys.executable, "--",
                 str(Path(__file__).resolve()),
                 "--write-collection",
                 str(output),
                 *(targets or ("tests",)),
             ],
             cwd=ROOT,
-            env=os.environ.copy(),
+            env={**os.environ.copy(), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             text=True,
             encoding="utf-8",
             capture_output=True,

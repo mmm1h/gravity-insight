@@ -466,7 +466,7 @@ def run_gate(
             completed = subprocess.run(
                 list(gate.command),
                 cwd=ROOT,
-                env=dict(environment),
+                env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
                 text=True,
                 encoding="utf-8",
                 errors="replace",

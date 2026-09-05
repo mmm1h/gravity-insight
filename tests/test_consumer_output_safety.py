@@ -130,13 +130,13 @@ class ConsumerOutputSafetyTests(unittest.TestCase):
 
     def test_inventory_is_offline_and_covers_current_authoritative_sets(self) -> None:
         completed = subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "consumer_output_inventory.py")],
+            [sys.executable, "--", str(ROOT / "scripts" / "consumer_output_inventory.py")],
             cwd=ROOT,
             check=True,
             capture_output=True,
             text=True,
             encoding="utf-8",
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
         )
         result = json.loads(completed.stdout)
         self.assertFalse(result["method"]["network_called"])
