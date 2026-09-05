@@ -55,6 +55,7 @@ DOMAIN_PACKAGE_LAYER_DEFAULTS = {
 DOMAIN_MODULE_LAYER_OVERRIDES = {
     "gravity_insight": "facade_cli_mcp",
     "gravity_insight.__main__": "facade_cli_mcp",
+    "gravity_insight._auto_upgrade_install": "facade_cli_mcp",
     "gravity_insight.agent": "facade_cli_mcp",
     "gravity_insight.cli": "facade_cli_mcp",
     "gravity_insight.sdk": "facade_cli_mcp",

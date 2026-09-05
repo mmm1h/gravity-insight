@@ -101,7 +101,9 @@ def fake_target_python(root: Path) -> Path:
 
 
 class UpdateStateTests(unittest.TestCase):
-    def test_state_path_uses_the_existing_cross_platform_cache_root_top_level(self) -> None:
+    def test_state_path_uses_the_existing_cross_platform_cache_root_top_level(
+        self,
+    ) -> None:
         scope = upgrade._runtime_scope_id()
         cases = (
             (
@@ -114,15 +116,20 @@ class UpdateStateTests(unittest.TestCase):
             ),
         )
         for environment, expected in cases:
-            with self.subTest(environment=environment), patch.dict(
-                os.environ, environment, clear=True
+            with (
+                self.subTest(environment=environment),
+                patch.dict(os.environ, environment, clear=True),
             ):
                 self.assertEqual(
                     expected.with_name(f"update-check-{scope}.json"),
                     update_state_path(),
                 )
-        with patch.dict(os.environ, {}, clear=True), patch(
-            "gravity_insight.runtime_scope.Path.home", return_value=Path("/Users/analyst")
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch(
+                "gravity_insight.runtime_scope.Path.home",
+                return_value=Path("/Users/analyst"),
+            ),
         ):
             self.assertEqual(
                 Path(
@@ -131,10 +138,14 @@ class UpdateStateTests(unittest.TestCase):
                 update_state_path(),
             )
 
-    def test_successful_check_writes_release_facts_and_cached_check_reuses_version(self) -> None:
+    def test_successful_check_writes_release_facts_and_cached_check_reuses_version(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as raw:
             path = Path(raw) / "update-check.json"
-            request = Mock(return_value=FakeResponse(200, pypi(__version__), etag='"release"'))
+            request = Mock(
+                return_value=FakeResponse(200, pypi(__version__), etag='"release"')
+            )
             first = check_latest_version(state_path=path, now=NOW, request=request)
             second = check_latest_version(
                 state_path=path,
@@ -208,7 +219,9 @@ class UpdateStateTests(unittest.TestCase):
             stored = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual('W/"release-etag"', observed["If-None-Match"])
         self.assertEqual(f"gravity-insight/{__version__}", observed["User-Agent"])
-        self.assertEqual(("not_modified", "0.3.2"), (result.status, result.latest_version))
+        self.assertEqual(
+            ("not_modified", "0.3.2"), (result.status, result.latest_version)
+        )
         self.assertEqual(
             (3, timestamp(NOW), 'W/"release-etag"', "0.3.2"),
             (
@@ -246,9 +259,13 @@ class UpdateStateTests(unittest.TestCase):
             self.assertEqual("failed", result.status)
             self.assertEqual(previous, stored)
 
-    def test_distribution_request_enters_authoritative_boundary_without_production_count(self) -> None:
+    def test_distribution_request_enters_authoritative_boundary_without_production_count(
+        self,
+    ) -> None:
         response = FakeResponse(200, pypi(__version__))
-        with patch("gravity_insight.auto_upgrade.requests.get", return_value=response) as network:
+        with patch(
+            "gravity_insight.auto_upgrade.requests.get", return_value=response
+        ) as network:
             with count_http_requests() as counter:
                 actual = upgrade._distribution_get({"If-None-Match": '"known"'})
         self.assertIs(response, actual)
@@ -321,7 +338,9 @@ class UpdateStateTests(unittest.TestCase):
             {"busy", "cached"},
         )
 
-    def test_concurrent_stale_lease_takeover_has_one_inspector_and_one_holder(self) -> None:
+    def test_concurrent_stale_lease_takeover_has_one_inspector_and_one_holder(
+        self,
+    ) -> None:
         first_inspector = Event()
         release_inspector = Event()
         counter_lock = Lock()
@@ -385,14 +404,19 @@ class UpdateStateTests(unittest.TestCase):
                     first_result = first.result(timeout=2)
             finally:
                 upgrade_state._lease_is_expired = original_expiry
-        self.assertEqual(("checked", "busy"), (first_result.status, second_result.status))
+        self.assertEqual(
+            ("checked", "busy"), (first_result.status, second_result.status)
+        )
         self.assertEqual(1, expired_checks)
         self.assertEqual(1, maximum_holders)
 
     def test_success_state_is_published_with_atomic_replace(self) -> None:
-        with tempfile.TemporaryDirectory() as raw, patch(
-            "gravity_insight._auto_upgrade_state.os.replace", wraps=os.replace
-        ) as replace:
+        with (
+            tempfile.TemporaryDirectory() as raw,
+            patch(
+                "gravity_insight._auto_upgrade_state.os.replace", wraps=os.replace
+            ) as replace,
+        ):
             path = Path(raw) / "update-check.json"
             result = check_latest_version(
                 state_path=path,
@@ -409,59 +433,124 @@ class UpdateStateTests(unittest.TestCase):
 class StartupInstallTests(unittest.TestCase):
     def setUp(self) -> None:
         from gravity_insight import _auto_upgrade_install as installer
+
         self.installer = installer
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.output = io.StringIO()
         self.request = Mock(return_value=FakeResponse(200, pypi("99.0.0")))
-        self.python = patch.object(installer, "_python", return_value=Mock(
-            returncode=0, stdout="Successfully installed gravity-insight-99.0.0\n", stderr="",
-        )).start()
+        self.python = patch.object(
+            installer,
+            "_python",
+            return_value=Mock(
+                returncode=0,
+                stdout="Successfully installed gravity-insight-99.0.0\n",
+                stderr="",
+            ),
+        ).start()
         self.addCleanup(patch.stopall)
 
     def install(self, **kwargs):
         return maybe_auto_upgrade(
-            ["agent"], environ=kwargs.pop("environ", {}),
-            state_path=self.root / "update-check.json", now=kwargs.pop("now", NOW),
-            request=self.request, stderr=self.output, **kwargs,
+            ["agent"],
+            environ=kwargs.pop("environ", {}),
+            state_path=self.root / "update-check.json",
+            now=kwargs.pop("now", NOW),
+            request=self.request,
+            stderr=self.output,
+            **kwargs,
         )
 
     def test_default_is_on_and_all_explicit_off_values_skip_every_side_effect(self):
         self.assertTrue(startup_update_enabled(["agent"], environ={}))
         for value in ("0", "false", "no", "off", " FALSE "):
-            self.assertEqual("disabled", self.install(environ={AUTO_UPGRADE_ENV: value}).status)
+            self.assertEqual(
+                "disabled", self.install(environ={AUTO_UPGRADE_ENV: value}).status
+            )
         self.request.assert_not_called()
         self.python.assert_not_called()
         self.assertEqual([], list(self.root.iterdir()))
 
     def test_new_environment_names_take_effect_for_all_inputs(self):
-        self.assertEqual(("GRAVITY_INSIGHT_AUTO_UPGRADE", "GRAVITY_INSIGHT_PINNED_VERSION",
-                          "GRAVITY_INSIGHT_AUTO_UPGRADE_TARGET_PYTHON"),
-                         (AUTO_UPGRADE_ENV, PINNED_VERSION_ENV, TARGET_PYTHON_ENV))
-        self.assertEqual("chosen", upgrade._target_python_from_environment({TARGET_PYTHON_ENV: "chosen"}))
+        self.assertEqual(
+            (
+                "GRAVITY_INSIGHT_AUTO_UPGRADE",
+                "GRAVITY_INSIGHT_PINNED_VERSION",
+                "GRAVITY_INSIGHT_AUTO_UPGRADE_TARGET_PYTHON",
+            ),
+            (AUTO_UPGRADE_ENV, PINNED_VERSION_ENV, TARGET_PYTHON_ENV),
+        )
+        self.assertEqual(
+            "chosen",
+            upgrade._target_python_from_environment({TARGET_PYTHON_ENV: "chosen"}),
+        )
 
     def test_legacy_environment_names_remain_effective_for_all_inputs(self):
-        self.assertTrue(startup_update_enabled(["agent"], environ={"GRAVITY_SDK_AUTO_UPGRADE": "1"}))
-        self.assertFalse(startup_update_enabled(["agent"], environ={"GRAVITY_SDK_PINNED_VERSION": __version__}))
-        self.assertEqual("old", upgrade._target_python_from_environment({"GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON": "old"}))
+        self.assertTrue(
+            startup_update_enabled(["agent"], environ={"GRAVITY_SDK_AUTO_UPGRADE": "1"})
+        )
+        self.assertFalse(
+            startup_update_enabled(
+                ["agent"], environ={"GRAVITY_SDK_PINNED_VERSION": __version__}
+            )
+        )
+        self.assertEqual(
+            "old",
+            upgrade._target_python_from_environment(
+                {"GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON": "old"}
+            ),
+        )
 
     def test_new_environment_names_win_when_both_names_are_set(self):
-        self.assertFalse(startup_update_enabled(["agent"], environ={AUTO_UPGRADE_ENV: "0", "GRAVITY_SDK_AUTO_UPGRADE": "1"}))
-        self.assertTrue(startup_update_enabled(["agent"], environ={PINNED_VERSION_ENV: "99.0.0", "GRAVITY_SDK_PINNED_VERSION": __version__}))
-        self.assertEqual("new", upgrade._target_python_from_environment({TARGET_PYTHON_ENV: "new", "GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON": "old"}))
+        self.assertFalse(
+            startup_update_enabled(
+                ["agent"],
+                environ={AUTO_UPGRADE_ENV: "0", "GRAVITY_SDK_AUTO_UPGRADE": "1"},
+            )
+        )
+        self.assertTrue(
+            startup_update_enabled(
+                ["agent"],
+                environ={
+                    PINNED_VERSION_ENV: "99.0.0",
+                    "GRAVITY_SDK_PINNED_VERSION": __version__,
+                },
+            )
+        )
+        self.assertEqual(
+            "new",
+            upgrade._target_python_from_environment(
+                {
+                    TARGET_PYTHON_ENV: "new",
+                    "GRAVITY_SDK_AUTO_UPGRADE_TARGET_PYTHON": "old",
+                }
+            ),
+        )
 
     def test_doctor_pin_and_test_evaluation_paths_remain_offline(self):
         for argv in (["doctor"], ["insight", "doctor"]):
-            self.assertFalse(startup_update_enabled(argv, environ={AUTO_UPGRADE_ENV: "1"}))
-        self.assertFalse(startup_update_enabled(["agent"], environ={PINNED_VERSION_ENV: __version__}))
+            self.assertFalse(
+                startup_update_enabled(argv, environ={AUTO_UPGRADE_ENV: "1"})
+            )
+        self.assertFalse(
+            startup_update_enabled(["agent"], environ={PINNED_VERSION_ENV: __version__})
+        )
         root = Path(__file__).resolve().parents[1]
-        self.assertIn('"GRAVITY_INSIGHT_AUTO_UPGRADE": "0"', (root / "tests/__init__.py").read_text(encoding="utf-8"))
-        self.assertIn('os.environ["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"', (root / "scripts/agent_usability_eval.py").read_text(encoding="utf-8"))
+        self.assertIn(
+            '"GRAVITY_INSIGHT_AUTO_UPGRADE": "0"',
+            (root / "tests/__init__.py").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            'os.environ["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"',
+            (root / "scripts/agent_usability_eval.py").read_text(encoding="utf-8"),
+        )
 
     def test_invalid_or_mismatched_pin_does_not_disable_the_check(self):
         for value in ("invalid", "99.0.0"):
-            self.assertTrue(startup_update_enabled(["agent"], environ={PINNED_VERSION_ENV: value}))
+            self.assertTrue(
+                startup_update_enabled(["agent"], environ={PINNED_VERSION_ENV: value})
+            )
 
     def test_default_interpreter_installs_exact_version_in_separate_stage(self):
         result = self.install()
@@ -494,11 +583,21 @@ class StartupInstallTests(unittest.TestCase):
         result = self.install()
         receipt = result.state
         self.assertEqual(self.installer.RECEIPT_SCHEMA, receipt["schema_version"])
-        self.assertEqual((__version__, "99.0.0", __version__),
-                         (receipt["from_version"], receipt["to_version"], receipt["running_version"]))
-        self.assertEqual({"kind": "cli_startup", "pid": os.getpid()}, receipt["trigger"])
+        self.assertEqual(
+            (__version__, "99.0.0", __version__),
+            (
+                receipt["from_version"],
+                receipt["to_version"],
+                receipt["running_version"],
+            ),
+        )
+        self.assertEqual(
+            {"kind": "cli_startup", "pid": os.getpid()}, receipt["trigger"]
+        )
         self.assertTrue(receipt["captured_at"].endswith("Z"))
-        journal = Path(receipt["stage"]).parent / f"receipt-{receipt['receipt_id']}.json"
+        journal = (
+            Path(receipt["stage"]).parent / f"receipt-{receipt['receipt_id']}.json"
+        )
         self.assertEqual(receipt, json.loads(journal.read_text(encoding="utf-8")))
 
     def test_success_cache_reuses_install_without_network_or_second_pip(self):
@@ -509,20 +608,33 @@ class StartupInstallTests(unittest.TestCase):
         self.assertEqual(2, self.python.call_count)  # pip and isolated validation
 
     def test_failed_pip_is_diagnosable_and_retry_is_throttled(self):
-        self.python.return_value = Mock(returncode=1, stdout="", stderr="Permission denied")
+        self.python.return_value = Mock(
+            returncode=1, stdout="", stderr="Permission denied"
+        )
         first = self.install()
         second = self.install(now=NOW + timedelta(seconds=1))
         self.assertEqual(("failed", "suppressed"), (first.status, second.status))
         self.assertIn("pip exited 1", self.output.getvalue())
         self.assertIn("permissions", self.output.getvalue())
         self.assertEqual(1, self.python.call_count)
-        self.assertIn("Permission denied", next(self.root.rglob("pip-*.log")).read_text(encoding="utf-8"))
+        self.assertIn(
+            "Permission denied",
+            next(self.root.rglob("pip-*.log")).read_text(encoding="utf-8"),
+        )
 
     def test_network_failure_continues_actual_cli_help(self):
         stdout, stderr = io.StringIO(), io.StringIO()
-        with patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}), patch.object(
-            upgrade, "update_state_path", return_value=self.root / "update-check.json"
-        ), patch.object(upgrade, "_distribution_get", side_effect=OSError("offline")), redirect_stdout(stdout), redirect_stderr(stderr):
+        with (
+            patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
+            patch.object(
+                upgrade,
+                "update_state_path",
+                return_value=self.root / "update-check.json",
+            ),
+            patch.object(upgrade, "_distribution_get", side_effect=OSError("offline")),
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
             code = entry.main(["--help"])
         self.assertEqual(0, code)
         self.assertIn("Gravity SDK", stdout.getvalue())
@@ -531,11 +643,21 @@ class StartupInstallTests(unittest.TestCase):
         self.python.assert_not_called()
 
     def test_pip_failure_continues_actual_cli_help(self):
-        self.python.return_value = Mock(returncode=1, stdout="", stderr="injected pip failure")
+        self.python.return_value = Mock(
+            returncode=1, stdout="", stderr="injected pip failure"
+        )
         stdout, stderr = io.StringIO(), io.StringIO()
-        with patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}), patch.object(
-            upgrade, "update_state_path", return_value=self.root / "update-check.json"
-        ), patch.object(upgrade, "_distribution_get", self.request), redirect_stdout(stdout), redirect_stderr(stderr):
+        with (
+            patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
+            patch.object(
+                upgrade,
+                "update_state_path",
+                return_value=self.root / "update-check.json",
+            ),
+            patch.object(upgrade, "_distribution_get", self.request),
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
             code = entry.main(["--help"])
         self.assertEqual(0, code)
         self.assertIn("Gravity SDK", stdout.getvalue())
@@ -543,14 +665,19 @@ class StartupInstallTests(unittest.TestCase):
         self.assertIn("Continuing this command", stderr.getvalue())
 
     def test_state_write_failure_is_nonfatal_and_no_install_occurs(self):
-        with patch.object(upgrade_state, "_write_state_file", side_effect=PermissionError("read only")):
+        with patch.object(
+            upgrade_state, "_write_state_file", side_effect=PermissionError("read only")
+        ):
             result = self.install()
         self.assertEqual("failed", result.status)
         self.python.assert_not_called()
         self.assertIn("permissions", self.output.getvalue())
 
     def test_validation_failure_does_not_publish_installed_stage(self):
-        self.python.side_effect = [Mock(returncode=0, stdout="ok", stderr=""), Mock(returncode=1)]
+        self.python.side_effect = [
+            Mock(returncode=0, stdout="ok", stderr=""),
+            Mock(returncode=1),
+        ]
         self.assertEqual("failed", self.install().status)
         self.assertEqual([], list(self.root.rglob("installed-*.json")))
         self.assertIn("validation", self.output.getvalue())
@@ -570,41 +697,64 @@ class StartupInstallTests(unittest.TestCase):
         self.assertEqual(before, dict(os.environ))
         self.assertEqual('{"locked":true}', lock.read_text(encoding="utf-8"))
 
-    def test_parallel_installers_share_target_lock_even_with_different_check_files(self):
+    def test_parallel_installers_share_target_lock_even_with_different_check_files(
+        self,
+    ):
         entered, release = Event(), Event()
         original = self.python.return_value
+
         def run(*args, **kwargs):
             if "pip" in args[1]:
                 entered.set()
                 if not release.wait(5):
                     raise RuntimeError("test synchronization timeout")
             return original
+
         self.python.side_effect = run
         with ThreadPoolExecutor(max_workers=2) as pool:
             first = pool.submit(self.install)
             self.assertTrue(entered.wait(5))
             try:
-                second = maybe_auto_upgrade(["agent"], environ={}, state_path=self.root / "other.json",
-                    now=NOW + timedelta(minutes=2), request=self.request, stderr=self.output)
+                second = maybe_auto_upgrade(
+                    ["agent"],
+                    environ={},
+                    state_path=self.root / "other.json",
+                    now=NOW + timedelta(minutes=2),
+                    request=self.request,
+                    stderr=self.output,
+                )
                 self.assertEqual("busy", second.status)
             finally:
                 release.set()
             self.assertEqual("installed", first.result().status)
-        self.assertEqual(1, sum("pip" in call.args[1] for call in self.python.call_args_list))
+        self.assertEqual(
+            1, sum("pip" in call.args[1] for call in self.python.call_args_list)
+        )
 
-    def test_activation_disables_recursion_passes_argv_and_propagates_business_exit(self):
+    def test_activation_disables_recursion_passes_argv_and_propagates_business_exit(
+        self,
+    ):
         result = self.install()
         self.python.reset_mock()
         self.python.side_effect = [Mock(returncode=0), Mock(returncode=7)]
-        code = self.installer.activate_install(result.state, ["agent", "private query"], output=self.output)
+        code = self.installer.activate_install(
+            result.state, ["agent", "private query"], output=self.output
+        )
         self.assertEqual(7, code)
         call = self.python.call_args
         self.assertEqual(["agent", "private query"], call.args[1][-2:])
         self.assertFalse(call.kwargs["capture"])
         self.assertIsNone(call.kwargs["timeout"])
         self.assertEqual("0", call.kwargs["environment"][AUTO_UPGRADE_ENV])
-        receipt = json.loads(Path(call.kwargs["environment"][self.installer.RECEIPT_ENV]).read_text(encoding="utf-8"))
-        self.assertEqual(("process_exited", 7, "99.0.0"), (receipt["status"], receipt["exit_code"], receipt["running_version"]))
+        receipt = json.loads(
+            Path(call.kwargs["environment"][self.installer.RECEIPT_ENV]).read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            ("process_exited", 7, "99.0.0"),
+            (receipt["status"], receipt["exit_code"], receipt["running_version"]),
+        )
         self.assertNotIn("private query", json.dumps(receipt))
         self.assertEqual(2, self.python.call_count)
 
@@ -612,28 +762,81 @@ class StartupInstallTests(unittest.TestCase):
         result = self.install()
         self.python.reset_mock()
         self.python.return_value = Mock(returncode=1)
-        self.assertIsNone(self.installer.activate_install(result.state, ["agent"], output=self.output))
+        self.assertIsNone(
+            self.installer.activate_install(result.state, ["agent"], output=self.output)
+        )
         self.assertEqual(1, self.python.call_count)
         self.assertIn("Continuing this command", self.output.getvalue())
 
     def test_child_spawn_failure_allows_current_command(self):
         result = self.install()
         self.python.side_effect = [Mock(returncode=0), PermissionError("denied")]
-        self.assertIsNone(self.installer.activate_install(result.state, ["agent"], output=self.output))
+        self.assertIsNone(
+            self.installer.activate_install(result.state, ["agent"], output=self.output)
+        )
         self.assertIn("Check target permissions", self.output.getvalue())
 
     def test_entry_hands_off_before_importing_command_owners(self):
-        with patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}), patch.object(
-            upgrade, "maybe_auto_upgrade", return_value=upgrade.UpdateCheck("installed", state={"test": True})
-        ), patch.object(self.installer, "activate_install", return_value=17) as activate:
-            self.assertEqual(17, entry.main(["--workspace", "example", "agent", "query"]))
+        with (
+            patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
+            patch.object(
+                upgrade,
+                "maybe_auto_upgrade",
+                return_value=upgrade.UpdateCheck("installed", state={"test": True}),
+            ),
+            patch.object(
+                self.installer, "activate_install", return_value=17
+            ) as activate,
+        ):
+            self.assertEqual(
+                17, entry.main(["--workspace", "example", "agent", "query"])
+            )
         self.assertEqual(["agent", "query"], activate.call_args.args[1])
 
     def test_external_plan_contract_remains_available_without_mutation(self):
         target = fake_target_python(self.root)
-        result = upgrade._plan_checked_update(upgrade.UpdateCheck("checked", "99.0.0"),
-                                              target_python=target, output=self.output)
-        self.assertEqual("external-installer", result.plan.to_dict()["activation_owner"])
+        result = upgrade._plan_checked_update(
+            upgrade.UpdateCheck("checked", "99.0.0"),
+            target_python=target,
+            output=self.output,
+        )
+        self.assertEqual(
+            "external-installer", result.plan.to_dict()["activation_owner"]
+        )
+        self.python.assert_not_called()
+
+    def test_unexpected_startup_state_failure_is_nonfatal(self):
+        with (
+            patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
+            patch.object(
+                upgrade,
+                "update_state_path",
+                side_effect=PermissionError("cache unavailable"),
+            ),
+            redirect_stdout(io.StringIO()),
+            redirect_stderr(self.output),
+        ):
+            self.assertEqual(0, entry.main(["--help"]))
+        self.assertIn("cache permissions", self.output.getvalue())
+        self.python.assert_not_called()
+
+    def test_actual_doctor_and_exact_pin_never_touch_update_state(self):
+        with (
+            patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
+            patch.object(
+                upgrade,
+                "update_state_path",
+                side_effect=AssertionError("must stay offline"),
+            ) as state_path,
+            redirect_stdout(io.StringIO()),
+            redirect_stderr(self.output),
+        ):
+            with self.assertRaises(SystemExit) as completed:
+                entry.main(["doctor", "--help"])
+            self.assertEqual(0, completed.exception.code)
+            with patch.dict(os.environ, {PINNED_VERSION_ENV: __version__}):
+                self.assertEqual(0, entry.main(["--help"]))
+        state_path.assert_not_called()
         self.python.assert_not_called()
 
 

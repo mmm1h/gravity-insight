@@ -5,6 +5,7 @@ GitHub 自动生成仍可保留，但不能替代这份维护型记录。
 
 ## 版本指南
 
+- [0.3.10：默认安装启动更新与隔离进程换版](0.3.10.md)
 - [0.3.9：上游/内部故障不再归类为调用方输入错误](0.3.9.md)
 - [0.3.8：Repository Map v2 传输编码](0.3.8.md)
 - [0.3.5：从 0.3.4 迁移](0.3.5.md)
@@ -56,7 +57,9 @@ from gravity_insight.contracts import load_release_compatibility
 contract = load_release_compatibility()
 ```
 
-自动更新逻辑按以下步骤执行，不读取 `CHANGELOG.md`：
+下列步骤属于显式接入兼容性契约的外部 Installer，不是 CLI 默认启动更新策略。
+从 0.3.10 开始，CLI 按 Owner 裁定自动安装新版，包括 Hard break；退出方式见
+[0.3.10 迁移指南](0.3.10.md)。外部 Installer 按以下步骤执行，不读取 `CHANGELOG.md`：
 
 1. 校验 `schema_version == "gravity.release-compatibility.v1"`。
 2. `releases` 已按 SemVer 升序排列。按 `version` 找到当前版本 A 与目标版本 B；任一版本

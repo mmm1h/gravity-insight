@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "27ef954cd8aae26e6d89727ee061401a9841b27ff3a0792a89321ad8144a061f"
+    "compatibility_sha256": "98d837419f9ef9fd9dbb0b366df87d90f083eadcbb4b8ec41aa2ac51c49b390b"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -166,11 +166,23 @@
       "version": "0.3.10",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
-      "soft_breaks": [],
-      "migration_guide": null
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.10-hard-break-1",
+          "description": "CLI startup updates are now enabled when `GRAVITY_INSIGHT_AUTO_UPGRADE` is unset, and install newer releases rather than only producing an external Installer notification. This includes releases containing Hard breaks: startup does not consult the external compatibility policy to skip breaking versions. Consumers requiring a controlled lifecycle must set `GRAVITY_INSIGHT_AUTO_UPGRADE=0` (also `false`, `no`, `off`) or pin the exact running version. Doctor, diagnostic/test/evaluation opt-outs remain. A successful installation re-launches the command in a fresh Python process from an isolated immutable pip stage; the imported environment and project lock are not overwritten. Python SDK imports alone do not activate updates.",
+          "migration_guide": "docs/migration/0.3.10.md"
+        }
+      ],
+      "soft_breaks": [
+        {
+          "id": "0.3.10-soft-break-1",
+          "description": "Startup check, installation and activation-preflight failures no longer stop the requested command with update-policy exit code 75. They warn with a reason and remedy, then run the current version. Once the updated business command starts, its exit code is returned without retrying it. Migration guide: [0.3.10](docs/migration/0.3.10.md)",
+          "migration_guide": "docs/migration/0.3.10.md"
+        }
+      ],
+      "migration_guide": "docs/migration/0.3.10.md"
     }
   ]
 }

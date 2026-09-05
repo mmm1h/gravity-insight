@@ -17,7 +17,31 @@ Target release: `0.3.10`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** CLI startup updates are now enabled when
+  `GRAVITY_INSIGHT_AUTO_UPGRADE` is unset, and install newer releases rather than
+  only producing an external Installer notification. This includes releases
+  containing Hard breaks: startup does not consult the external compatibility
+  policy to skip breaking versions. Consumers requiring a controlled lifecycle
+  must set `GRAVITY_INSIGHT_AUTO_UPGRADE=0` (also `false`, `no`, `off`) or pin the
+  exact running version. Doctor, diagnostic/test/evaluation opt-outs remain.
+  A successful installation re-launches the command in a fresh Python process
+  from an isolated immutable pip stage; the imported environment and project
+  lock are not overwritten. Python SDK imports alone do not activate updates.
+- **Soft break:** Startup check, installation and activation-preflight failures
+  no longer stop the requested command with update-policy exit code 75. They
+  warn with a reason and remedy, then run the current version. Once the updated
+  business command starts, its exit code is returned without retrying it.
+
+Migration guide: [0.3.10](docs/migration/0.3.10.md)
+
+### Added
+
+- Private `gravity.runtime-update-receipt.v1` JSON installation and activation
+  records bind old/new versions, UTC time, process trigger, interpreter and
+  installed stage. The re-launched process receives its activation receipt path
+  in `GRAVITY_INSIGHT_UPDATE_RECEIPT`. Release checks reuse the 24-hour cache;
+  target-scoped OS locks serialize installation and failed attempts back off
+  for 24 hours. Pip output remains in a private diagnostic log.
 
 ## [0.3.9] - 2026-09-05
 
