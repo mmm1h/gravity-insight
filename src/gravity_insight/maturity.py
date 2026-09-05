@@ -283,6 +283,7 @@ def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     root = root.resolve()
     repository = git_state(root)
     profile, profile_failure = _quality_profile(root)
+    repository["quality_profile"] = _profile_measurement(root, repository, profile, profile_failure)
     certifications = journey_certifications(root)
     census = census_status(root)
     health = runtime_health_report(root, include_compiler=False)
@@ -323,7 +324,6 @@ def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
         "blocking_gates": gates,
         "repository": repository,
         "network_called": False,
-        "quality_profile": _profile_measurement(root, repository, profile, profile_failure),
     }
 
 

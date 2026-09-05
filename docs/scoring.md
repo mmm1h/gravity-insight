@@ -32,7 +32,7 @@ mathematical best case, not to award those points. The maturity result's
 branch, completion-time capture, and worktree root so equal numbers from different
 worktrees are not context-free.
 
-The isolated quality collector also exposes a `quality_profile` receipt:
+The isolated quality collector also exposes a `repository.quality_profile` receipt:
 `measurement` is the captured context-bound profile (or null), `resolution`
 uses the shared five-state vocabulary, and `collection_failure` explains a
 failed launch, timeout, nonzero exit, or missing/malformed stdout. A collection

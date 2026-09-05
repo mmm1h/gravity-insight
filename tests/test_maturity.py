@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from gravity_insight.maturity import _profile_measurement, _quality_profile, _total
-from gravity_insight.evidence_common import dimension
+from gravity_insight.maturity import _profile_measurement, _quality_profile, _total, maturity_score
+from gravity_insight.evidence_common import dimension, metric
 from gravity_insight.maturity_dimensions_core import _operation_evidence
 from gravity_insight.maturity_dimensions_ops import _quality_metrics
 from scripts import generate_method_gap_report
@@ -19,6 +19,34 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class QualityProfileCollectionTests(unittest.TestCase):
+    def test_score_exposes_failed_collection_without_awarding_zero(self) -> None:
+        known = [metric(source="fixture", claim="measured", measured=True, passed=1, total=1)]
+        def evidence_sets(root, **observed):
+            self.assertIsNone(observed["profile"])
+            failure = observed["profile_failure"]
+            return (
+                _operation_evidence(None, profile_failure=failure),
+                known, known, known, known, known,
+                _quality_metrics(None, profile_failure=failure), known,
+            )
+        with (
+            mock.patch("gravity_insight.maturity.git_state", return_value={"commit": "a" * 40, "dirty": False, "branch": "test"}),
+            mock.patch("gravity_insight.maturity._quality_profile", return_value=(None, "process exited with code 7")),
+            mock.patch("gravity_insight.maturity.journey_certifications", return_value={}),
+            mock.patch("gravity_insight.maturity.census_status", return_value={}),
+            mock.patch("gravity_insight.maturity.runtime_health_report", return_value={"ok": True}),
+            mock.patch("gravity_insight.maturity.documentation_report", return_value={"ok": True}),
+            mock.patch("gravity_insight.maturity._evaluation", return_value=({"security_hard_gate_passed": True}, {})),
+            mock.patch("gravity_insight.maturity._evidence_sets", side_effect=evidence_sets),
+        ):
+            result = maturity_score(ROOT)
+        self.assertEqual("not_measured", result["repository"]["quality_profile"]["resolution"]["status"])
+        for index in (0, 6):
+            self.assertEqual("not_measured", result["dimensions"][index]["status"])
+            self.assertIsNone(result["dimensions"][index]["score"])
+        self.assertIsNone(result["total"]["score"])
+        self.assertFalse(result["threshold"]["satisfied"])
+
     def test_child_overrides_host_gbk_on_both_streams(self) -> None:
         script = (
             "import json,sys; "
