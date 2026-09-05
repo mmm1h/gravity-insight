@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "b9d2e61dc26d115e6adec38cca58a96a8801d5e79166ad7123076fd99cf03f71",
-    "manual_review_sha256": "5b00dc979134ef44f11ff5b0810d0707600a02e3b984a4e7cb4a5c744466b820",
+    "reference_evidence_sha256": "6f9bbaa58454921ba1c8ee50c9896e9dd7cf24f9c715cecdbdd7799270ee8a16",
+    "manual_review_sha256": "7b6ee7d66d443b3b83d2cdc675519066d19420abd57ed0eca7133ea635897fa1",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3172,
     "scanned_file_count": 3165,
@@ -700,7 +700,7 @@
     "dispositions": {
       "no_migration_effect": 238
     },
-    "sites_sha256": "134f6968b387ace9a67b8cd85d2659c6e6c99b527a1d95f98b5e9e364e4b4fac"
+    "sites_sha256": "53060851025b08a2fb5f9f687ad91c2c6c8256d0d6532ef7ab15bbc713f061c2"
   },
   "blockers": [],
   "site_fields": [
@@ -2323,7 +2323,7 @@
       }
     ],
     [
-      "tests/test_execution_variant.py:391:21:patch.object",
+      "tests/test_execution_variant.py:392:21:patch.object",
       "rm",
       "non_string_patch_expression",
       "service",
@@ -2338,7 +2338,7 @@
       }
     ],
     [
-      "tests/test_execution_variant.py:394:21:patch.object",
+      "tests/test_execution_variant.py:395:21:patch.object",
       "rm",
       "non_string_patch_expression",
       "sdk",
@@ -2353,7 +2353,7 @@
       }
     ],
     [
-      "tests/test_execution_variant.py:448:17:patch.object",
+      "tests/test_execution_variant.py:449:17:patch.object",
       "rm",
       "non_string_patch_expression",
       "sdk",
@@ -3538,7 +3538,7 @@
       }
     ],
     [
-      "tests/test_maturity.py:30:13:mock.patch.object",
+      "tests/test_maturity.py:108:13:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "generate_method_gap_report",

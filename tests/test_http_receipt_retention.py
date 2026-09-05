@@ -32,28 +32,28 @@ class HttpReceiptRetentionTests(unittest.TestCase):
         for number in range(3):
             _old_receipt(directory, f"old-{number}.json")
         completed = subprocess.run([sys.executable, "-c", REQUEST_SCRIPT, str(count_root), "count.new"],
-            env=_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="2", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500"), check=True, capture_output=True, text=True, encoding="utf-8")
+            env={**_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="2", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500"), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, check=True, capture_output=True, text=True, encoding="utf-8")
         assert json.loads(completed.stdout) == {"status": 200}
         remaining = [json.loads(path.read_text()) for path in directory.glob("*.json")]
         assert len(remaining) == 2 and any(item.get("operation_id") == "count.new" for item in remaining)
         age_root = self.tmp_path / "age"; expired = _old_receipt(age_root / "receipts" / "http", "expired.json", days=2)
         subprocess.run([sys.executable, "-c", REQUEST_SCRIPT, str(age_root), "age.new"],
-            env=_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="100", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="1"), check=True, capture_output=True, text=True, encoding="utf-8")
+            env={**_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="100", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="1"), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, check=True, capture_output=True, text=True, encoding="utf-8")
         assert not expired.exists()
         command = "import json;from gravity_insight.receipt_retention import http_receipt_retention_policy as p;x=p();print(json.dumps([x.max_files,x.max_age_days]))"; environment = _environment()
         environment.pop("GRAVITY_HTTP_RECEIPT_MAX_FILES", None); environment.pop("GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS", None)
-        defaults = subprocess.run([sys.executable, "-c", command], env=environment, check=True, capture_output=True, text=True, encoding="utf-8")
+        defaults = subprocess.run([sys.executable, "-c", command], env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, check=True, capture_output=True, text=True, encoding="utf-8")
         assert json.loads(defaults.stdout) == [10_000, 7]
         default_root = self.tmp_path / "default"; default_expired = _old_receipt(default_root / "receipts" / "http", "expired.json", days=8)
         subprocess.run([sys.executable, "-c", REQUEST_SCRIPT, str(default_root), "default.new"],
-            env=environment, check=True, capture_output=True, text=True, encoding="utf-8")
+            env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, check=True, capture_output=True, text=True, encoding="utf-8")
         assert not default_expired.exists()
     def test_undeletable_target_only_warns_and_keeps_request_result(self):
         blocked = self.tmp_path / "receipts" / "http" / "blocked.json"
         blocked.mkdir(parents=True)
         script = "import logging;logging.basicConfig(level=logging.WARNING);" + REQUEST_SCRIPT
         completed = subprocess.run([sys.executable, "-c", script, str(self.tmp_path), "blocked.new"],
-            env=_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="1", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500"), check=True, capture_output=True, text=True, encoding="utf-8")
+            env={**_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="1", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500"), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, check=True, capture_output=True, text=True, encoding="utf-8")
         assert json.loads(completed.stdout) == {"status": 200}
         assert blocked.is_dir()
         assert "gravity_http_receipt_prune_failed" in completed.stderr
@@ -66,13 +66,13 @@ while not Path(sys.argv[4]).exists() and time.time()<deadline: time.sleep(.01)
 """
         environment = _environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="1", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500")
         first = subprocess.Popen([sys.executable, "-c", first_script, str(self.tmp_path), "concurrent.first", str(ready), str(release)],
-            env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
+            env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
         deadline = time.monotonic() + 10
         while not ready.exists() and first.poll() is None and time.monotonic() < deadline:
             time.sleep(.01)
         assert ready.is_file()
         second = subprocess.run([sys.executable, "-c", REQUEST_SCRIPT, str(self.tmp_path), "concurrent.second"],
-            env=environment, check=True, capture_output=True, text=True, encoding="utf-8")
+            env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, check=True, capture_output=True, text=True, encoding="utf-8")
         operations = {json.loads(path.read_text())["operation_id"] for path in (self.tmp_path / "receipts" / "http").glob("*.json")}
         assert operations == {"concurrent.first", "concurrent.second"}
         assert json.loads(second.stdout) == {"status": 200}
@@ -93,7 +93,7 @@ while not Path(sys.argv[4]).exists() and time.time()<deadline: time.sleep(.01)
         stale.write_text(json.dumps({"schema_version":"gravity.http-receipt.v1","receipt_id":identifier,"completed_at":"2026-01-16T00:00:00.000001Z","operation_id":"app.list","method":"GET","path":"/account_center/api/v1/app/list/","http_status":200,"page_number":1,"attempt":1,"retry":False,"request_shape_fingerprint":"a"*64}), encoding="utf-8")
         listed = list_http_receipts(self.tmp_path)
         completed = subprocess.run([sys.executable, "-c", REQUEST_SCRIPT, str(self.tmp_path), "alive.new"],
-            env=_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="1", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500"), check=True, capture_output=True, text=True, encoding="utf-8")
+            env={**_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="1", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500"), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, check=True, capture_output=True, text=True, encoding="utf-8")
         assert json.loads(completed.stdout) == {"status": 200} and stale.exists() and child.poll() is None
         assert listed["items"][0]["run_status"] == "run_in_progress"
         if os.name != "nt":

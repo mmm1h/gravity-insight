@@ -59,12 +59,12 @@ class HostSelectorPluginTests(unittest.TestCase):
             _request(), ensure_ascii=False, sort_keys=True, separators=(",", ":")
         )
         completed = subprocess.run(
-            [sys.executable, str(PLUGIN)],
+            [sys.executable, "--", str(PLUGIN)],
             input=payload,
             capture_output=True,
             text=True,
             encoding="utf-8",
-            env=env,
+            env={**env, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             check=False,
         )
         self.assertNotEqual(0, completed.returncode)

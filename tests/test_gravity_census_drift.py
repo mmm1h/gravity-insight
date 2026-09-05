@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import subprocess
+import os
 import sys
 import tempfile
 import unittest
@@ -130,6 +131,7 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
                 check=False,
             )
             self.assertEqual(0, diff_process.returncode, diff_process.stderr)
@@ -150,6 +152,7 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
                 check=False,
             )
             self.assertEqual(0, impact_process.returncode, impact_process.stderr)

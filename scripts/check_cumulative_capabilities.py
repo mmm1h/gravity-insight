@@ -160,7 +160,7 @@ def collect_revision_snapshot(revision: str) -> tuple[str, dict[str, list[str]]]
         environment.pop("PYTHONPATH", None)
         environment["PYTHONNOUSERSITE"] = "1"
         probe = subprocess.run(
-            [sys.executable, "-I", "-c", _SNAPSHOT_PROBE, str(checkout)],
+            [sys.executable, "-X", "utf8", "-I", "-c", _SNAPSHOT_PROBE, str(checkout)],
             cwd=temporary,
             env=environment,
             text=True,

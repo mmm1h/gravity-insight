@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -19,6 +20,7 @@ from .evidence_common import (
     git_state,
     load_object,
     metric,
+    resolve_context_bound_measurement,
 )
 from .journey_certification import journey_certifications
 from .maturity_dimensions_core import (
@@ -116,6 +118,7 @@ def _run_evaluation(
         cwd=root,
         check=False,
         capture_output=True,
+        env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
         timeout=600,
     )
     candidates = sorted(output.glob("result-development-*.json"))
@@ -136,20 +139,26 @@ def _run_evaluation(
 
 
 def _quality_profile(root: Path) -> tuple[dict[str, Any] | None, str | None]:
-    completed = subprocess.run(
-        (sys.executable, "-c", _QUALITY_PROFILE_SCRIPT, str(root)),
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        timeout=120,
-    )
+    try:
+        completed = subprocess.run(
+            (sys.executable, "-c", _QUALITY_PROFILE_SCRIPT, str(root)),
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
+            timeout=120,
+        )
+    except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
+        return None, f"isolated quality-profile collection failed: {type(exc).__name__}"
     if completed.returncode:
         return (
             None,
             f"isolated quality-profile process exited with code {completed.returncode}",
         )
+    if not isinstance(completed.stdout, str) or not completed.stdout.strip():
+        return None, "isolated quality-profile stdout was missing or empty"
     try:
         value = json.loads(completed.stdout)
     except json.JSONDecodeError as exc:
@@ -161,6 +170,33 @@ def _quality_profile(root: Path) -> tuple[dict[str, Any] | None, str | None]:
     if not isinstance(value, dict):
         return None, "isolated quality-profile stdout JSON root was not an object"
     return value, None
+
+
+def _profile_measurement(
+    root: Path,
+    repository: Mapping[str, Any],
+    profile: Mapping[str, Any] | None,
+    failure: str | None,
+) -> dict[str, Any]:
+    context = {
+        "coordinate": {"kind": "repository_quality_profile"},
+        "scope": {"kind": "git_worktree", "root": root.resolve().as_posix()},
+        "binds_to": {
+            "commit_sha": repository["commit"],
+            "worktree_state": "dirty" if repository["dirty"] else "clean",
+        },
+    }
+    captured = (
+        context_bound_measurement(profile, captured_at=datetime.now(timezone.utc), **context)
+        if profile is not None else None
+    )
+    resolution = resolve_context_bound_measurement(
+        captured,
+        expected_coordinate=context["coordinate"],
+        expected_scope=context["scope"],
+        expected_bindings=context["binds_to"],
+    )
+    return {"measurement": captured, "resolution": resolution, "collection_failure": failure}
 
 
 def _evidence_sets(
@@ -247,6 +283,7 @@ def maturity_score(root: Path = PROJECT_ROOT) -> dict[str, Any]:
     root = root.resolve()
     repository = git_state(root)
     profile, profile_failure = _quality_profile(root)
+    repository["quality_profile"] = _profile_measurement(root, repository, profile, profile_failure)
     certifications = journey_certifications(root)
     census = census_status(root)
     health = runtime_health_report(root, include_compiler=False)
