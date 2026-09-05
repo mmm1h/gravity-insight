@@ -46,6 +46,32 @@ class RecoveryInstructionGateTests(unittest.TestCase):
                 self.assertIsNone(result.error)
                 self.assertEqual(expected, result.command_path)
 
+    def test_options_and_structured_input_placeholders_match_the_parser(self) -> None:
+        valid = (
+            "gravity agent-catalog describe <selector>",
+            "gravity agent --input <questions.json>",
+        )
+        for command in valid:
+            with self.subTest(command=command):
+                self.assertIsNone(resolve_cli_command(command).error)
+
+        unknown = resolve_cli_command("gravity agent --not-a-real-option value")
+        self.assertIn("not a registered option", str(unknown.error))
+
+        missing = resolve_cli_command(
+            "gravity agent --routing host_catalog --host-selection"
+        )
+        self.assertIn("requires one value", str(missing.error))
+
+        wrong_shape = resolve_cli_command("gravity agent --input <selector>")
+        self.assertIn("structured input", str(wrong_shape.error))
+        self.assertIn("placeholder '<selector>'", str(wrong_shape.error))
+
+        literal_selector = resolve_cli_command(
+            "gravity agent --input metadata:search"
+        )
+        self.assertIn("selector-like value 'metadata:search'", str(literal_selector.error))
+
     def test_unknown_top_level_command_is_not_accepted_by_optional_root(self) -> None:
         result = resolve_cli_command("gravity definitely-not-a-command")
         self.assertEqual((), result.command_path)
@@ -73,6 +99,45 @@ structured = {"next": {"argv": ["gravity", "agent-catalog", "categories"]}}
                 (4, "gravity agent-catalog categories"),
             ],
             commands,
+        )
+
+    def test_ast_scan_includes_unquoted_next_action_and_fallback_argv(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as raw:
+            path = Path(raw) / "fixture.py"
+            path.write_text(
+                """\
+next_action = "Call gravity agent --input <selector> independently; then stop."
+fallbacks = [{"argv": ["gravity", "agent-catalog", "describe", "<selector>"]}]
+""",
+                encoding="utf-8",
+                newline="\n",
+            )
+            commands = recovery_commands(path)
+        self.assertEqual(
+            [
+                (1, "gravity agent --input <selector> independently"),
+                (2, "gravity agent-catalog describe <selector>"),
+            ],
+            commands,
+        )
+
+    def test_repository_gate_rejects_selector_as_agent_input(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as raw:
+            root = Path(raw)
+            source = root / "src" / "gravity_insight" / "fixture.py"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                'next_action = "Call gravity agent --input <selector>; then stop."\n',
+                encoding="utf-8",
+                newline="\n",
+            )
+            code, receipt = check_repository(root)
+        self.assertEqual(1, code)
+        self.assertEqual(1, receipt["scanned"]["command_suggestions"])
+        self.assertEqual(1, receipt["finding_count"])
+        self.assertIn(
+            "placeholder '<selector>' does not describe that input",
+            receipt["findings"][0]["detail"],
         )
 
     def test_imperative_error_message_is_an_equivalent_recovery_field(self) -> None:

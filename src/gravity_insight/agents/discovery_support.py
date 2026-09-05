@@ -20,8 +20,8 @@ UNRANKED_OPERATIONS = "UNRANKED_OPERATIONS"
 UNRANKED_OPERATIONS_NEXT_ACTION = (
     "The recognizer did not select one product; it only ranked distinct raw "
     "operations. Browse `gravity agent-catalog host`, return one "
-    "gravity.host-product-selection.v1, then call gravity agent --routing "
-    "host_catalog --host-selection; do not execute a ranked raw operation."
+    "gravity.host-product-selection.v1 document, then run `gravity agent --routing "
+    "host_catalog --host-selection <selection.json>`; do not execute a ranked raw operation."
 )
 _MIN_UNRANKED_OPERATIONS = 3
 

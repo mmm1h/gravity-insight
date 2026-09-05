@@ -453,7 +453,10 @@ class DiscoveryUxTests(unittest.TestCase):
                 gap = result["capability_gaps"][0]
                 self.assertEqual(("capability_gap", 0, "MULTIPLE_INTENTS"), (result["status"], result["count"], gap["code"]))
                 self.assertEqual(list(selectors), gap["candidate_selectors"])
-                self.assertIn("gravity agent --input <selector>", gap["next_action"])
+                self.assertIn(
+                    "gravity agent-catalog describe <selector>", gap["next_action"]
+                )
+                self.assertNotIn("gravity agent --input", gap["next_action"])
                 self.assertFalse(any(card.get("kind") == "operation" for card in result["candidates"]))
 
     def test_registered_gap_does_not_swallow_a_sibling_answerable_intent(self) -> None:

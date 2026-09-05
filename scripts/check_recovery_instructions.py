@@ -15,10 +15,13 @@ from typing import Iterable, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_VERSION = "gravity.recovery-instruction-gate.v1"
+SCHEMA_VERSION = "gravity.recovery-instruction-gate.v2"
 _PYTHON_ROOTS = ("src/gravity_insight", "scripts")
 _WORKFLOW_ROOT = ".github/workflows"
 _COMMAND_RE = re.compile(r"`(?P<command>gravity(?:\s+[^`]+)?)`")
+_INLINE_COMMAND_START_RE = re.compile(r"\bgravity\s+")
+_COMMAND_END_RE = re.compile(r";|[!?](?=\s|$)|\.(?=\s|$)|\n")
+_SELECTOR_VALUE_RE = re.compile(r"[a-z][a-z0-9_-]+:[^\s/\\]+", re.IGNORECASE)
 _EXACT_FILE_RE = re.compile(
     r"(?<![A-Za-z0-9_-])([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.[A-Za-z0-9]{1,12})(?![A-Za-z0-9_-])"
 )
@@ -36,6 +39,7 @@ _RECOVERY_FIELDS = frozenset(
         "command",
         "commands",
         "default_command",
+        "fallbacks",
         "recovery",
         "recovery_action",
         "recovery_instruction",
@@ -125,14 +129,28 @@ def _recovery_expressions(tree: ast.AST) -> Iterable[ast.AST]:
                 yield node.value
 
 
+def _commands_in_text(text: str) -> Iterable[str]:
+    quoted = list(_COMMAND_RE.finditer(text))
+    for match in quoted:
+        yield match.group("command")
+    for match in _INLINE_COMMAND_START_RE.finditer(text):
+        if any(item.start() <= match.start() < item.end() for item in quoted):
+            continue
+        tail = text[match.start():]
+        end = _COMMAND_END_RE.search(tail)
+        command = tail[: end.start() if end else None].strip().rstrip("`")
+        if command:
+            yield command
+
+
 def recovery_commands(path: Path) -> list[tuple[int, str]]:
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(path))
     commands: set[tuple[int, str]] = set()
     for expression in _recovery_expressions(tree):
         for text in _render(expression):
-            for match in _COMMAND_RE.finditer(text):
-                commands.add((expression.lineno, match.group("command")))
+            for command in _commands_in_text(text):
+                commands.add((expression.lineno, command))
             stripped = text.strip().rstrip(".")
             if stripped.startswith("gravity ") and "`" not in stripped:
                 commands.add((expression.lineno, stripped))
@@ -187,27 +205,85 @@ def _option_actions(parser: argparse.ArgumentParser) -> dict[str, argparse.Actio
     }
 
 
-def _skip_option(
+def _structured_input_error(
+    action: argparse.Action, option: str, value: str
+) -> str | None:
+    help_text = action.help if isinstance(action.help, str) else ""
+    normalized_help = help_text.casefold()
+    if "json" not in normalized_help or not any(
+        term in normalized_help for term in ("document", "file", "object", "stdin")
+    ):
+        return None
+    placeholder = re.fullmatch(r"<([^<>]+)>", value)
+    if placeholder is None:
+        if _SELECTOR_VALUE_RE.fullmatch(value):
+            return (
+                f"option {option!r} accepts the structured input described by its CLI "
+                f"help ({help_text}); selector-like value {value!r} is not that input"
+            )
+        return None
+    if value == "<value>":
+        return None
+    label = placeholder.group(1).casefold().replace("_", "-")
+    accepted_hints = ("json", "file", "document", "stdin", "input")
+    destination = action.dest.casefold().replace("_", "-")
+    if destination in label.split("-") or any(
+        hint in label for hint in accepted_hints
+    ):
+        return None
+    return (
+        f"option {option!r} accepts the structured input described by its CLI help "
+        f"({help_text}); placeholder {value!r} does not describe that input"
+    )
+
+
+def _consume_option(
     parser: argparse.ArgumentParser, tokens: Sequence[str], index: int
-) -> int:
+) -> tuple[int, str | None]:
     token = tokens[index]
-    if token in {"--help", "-h"}:
-        return index + 1
-    if token == "--workspace" and parser.prog == "gravity":
-        return min(len(tokens), index + 2)
-    action = _option_actions(parser).get(token.split("=", 1)[0])
-    if action is None or "=" in token:
-        return index + 1
+    option, separator, attached = token.partition("=")
+    action = _option_actions(parser).get(option)
+    if action is None:
+        return index + 1, f"{option!r} is not a registered option of {parser.prog}"
+    if separator:
+        if action.nargs == 0:
+            return index + 1, f"option {option!r} does not accept a value"
+        return index + 1, _structured_input_error(action, option, attached)
     if action.nargs == 0:
-        return index + 1
-    if action.nargs in (None, 1, "?"):
-        return min(len(tokens), index + 2)
+        return index + 1, None
+    if action.nargs in (None, 1):
+        if index + 1 >= len(tokens) or (
+            tokens[index + 1].startswith("-") and tokens[index + 1] != "-"
+        ):
+            return index + 1, f"option {option!r} requires one value"
+        value = tokens[index + 1]
+        return index + 2, _structured_input_error(action, option, value)
+    if action.nargs == "?":
+        if index + 1 >= len(tokens) or (
+            tokens[index + 1].startswith("-") and tokens[index + 1] != "-"
+        ):
+            return index + 1, None
+        value = tokens[index + 1]
+        return index + 2, _structured_input_error(action, option, value)
     if isinstance(action.nargs, int):
-        return min(len(tokens), index + 1 + action.nargs)
+        end = index + 1 + action.nargs
+        if end > len(tokens):
+            return index + 1, f"option {option!r} requires {action.nargs} values"
+        for value in tokens[index + 1:end]:
+            error = _structured_input_error(action, option, value)
+            if error:
+                return end, error
+        return end, None
     cursor = index + 1
     while cursor < len(tokens) and not tokens[cursor].startswith("-"):
         cursor += 1
-    return cursor
+    if action.nargs == "+" and cursor == index + 1:
+        return cursor, f"option {option!r} requires at least one value"
+    for value in tokens[index + 1:cursor]:
+        error = _structured_input_error(action, option, value)
+        if error:
+            return cursor, error
+    return cursor, None
 
 
 def _literal_positionals_before_help(
@@ -220,7 +296,7 @@ def _literal_positionals_before_help(
         if token in {"--help", "-h"}:
             break
         if token.startswith("-"):
-            index = _skip_option(parser, tokens, index)
+            index, _error = _consume_option(parser, tokens, index)
             continue
         values.append(token)
         index += 1
@@ -258,7 +334,9 @@ def resolve_cli_command(command: str) -> CommandResolution:
         while index < len(remaining) and remaining[index].startswith("-"):
             if remaining[index] in {"--help", "-h"}:
                 return CommandResolution(tuple(command_path))
-            index = _skip_option(parser, remaining, index)
+            index, error = _consume_option(parser, remaining, index)
+            if error:
+                return CommandResolution(tuple(command_path), error)
         if subparser is None:
             if any(token in {"--help", "-h"} for token in remaining[index:]):
                 positional = _literal_positionals_before_help(
@@ -270,6 +348,14 @@ def resolve_cli_command(command: str) -> CommandResolution:
                         "help target contains non-command token(s): "
                         + ", ".join(positional),
                     )
+            while index < len(remaining):
+                token = remaining[index]
+                if token.startswith("-") and token != "-":
+                    index, error = _consume_option(parser, remaining, index)
+                    if error:
+                        return CommandResolution(tuple(command_path), error)
+                else:
+                    index += 1
             return CommandResolution(tuple(command_path))
         if index >= len(remaining):
             if subparser.required:
@@ -289,9 +375,10 @@ def resolve_cli_command(command: str) -> CommandResolution:
         )
 
 
-def _python_findings(root: Path) -> tuple[list[Finding], int]:
+def _python_findings(root: Path) -> tuple[list[Finding], int, int]:
     findings: list[Finding] = []
     scanned = 0
+    command_suggestions = 0
     for relative_root in _PYTHON_ROOTS:
         base = root / relative_root
         if not base.is_dir():
@@ -306,6 +393,7 @@ def _python_findings(root: Path) -> tuple[list[Finding], int]:
                     Finding(relative, 1, "recovery-source-unreadable", relative, str(exc))
                 )
                 continue
+            command_suggestions += len(commands)
             for line, command in commands:
                 resolution = resolve_cli_command(command)
                 if resolution.error:
@@ -318,7 +406,7 @@ def _python_findings(root: Path) -> tuple[list[Finding], int]:
                             resolution.error,
                         )
                     )
-    return findings, scanned
+    return findings, scanned, command_suggestions
 
 
 def _step_blocks(lines: list[str]) -> list[tuple[int, int]]:
@@ -455,7 +543,7 @@ def _semantic_findings(root: Path) -> list[Finding]:
 
 
 def check_repository(root: Path = ROOT) -> tuple[int, dict[str, object]]:
-    python_findings, python_files = _python_findings(root)
+    python_findings, python_files, command_suggestions = _python_findings(root)
     workflow_findings, workflow_files = _workflow_findings(root)
     semantic_findings = _semantic_findings(root)
     findings = sorted([*python_findings, *workflow_findings, *semantic_findings])
@@ -465,6 +553,7 @@ def check_repository(root: Path = ROOT) -> tuple[int, dict[str, object]]:
         "finding_count": len(findings),
         "findings": [asdict(finding) for finding in findings],
         "scanned": {
+            "command_suggestions": command_suggestions,
             "python_files": python_files,
             "workflow_files": workflow_files,
         },

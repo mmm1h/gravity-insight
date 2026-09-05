@@ -72,14 +72,17 @@ class DiscoveryNextFieldsTests(unittest.TestCase):
             [{
                 "code": "MULTIPLE_INTENTS",
                 "next_action": (
-                    "For each candidate_selectors value, call gravity agent "
-                    "--input <selector> independently; execute only after each "
-                    "discovery returns one authoritative product card."
+                    "For each candidate_selectors value, run `gravity agent-catalog "
+                    "describe <selector>` independently; execute only a returned "
+                    "authoritative product card marked executable."
                 ),
             }],
         )
 
-        self.assertIn("gravity agent --input <selector>", fields["next_action"])
+        self.assertIn(
+            "gravity agent-catalog describe <selector>", fields["next_action"]
+        )
+        self.assertNotIn("gravity agent --input", fields["next_action"])
         self.assertNotIn("next", fields)
 
     def test_candidates_keep_the_recipe_preference(self) -> None:
