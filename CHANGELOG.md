@@ -46,6 +46,24 @@ Migration guide: [0.3.9](docs/migration/0.3.9.md)
 - Each `gravity maturity score --json` dimension gains a `status` field naming
   which of those five states it is in. Purely additive: no existing key was
   removed or repurposed, and `measured` keeps its meaning.
+- `gravity maturity score --json` gains a `repository.quality_profile` receipt
+  reporting whether that measurement was actually captured. Purely additive.
+
+### Fixed
+
+- Subprocess output is no longer decoded with whatever locale the caller
+  happened to run under. Every call that reads a child as text now states its
+  encoding, and calls that launch a Python child pin the child's encoder as
+  well, since pinning only the reader turns a working call into a failing one.
+  On a non-UTF-8 console this previously killed the reader thread on the first
+  incompatible byte while the command still exited 0, so the output was lost
+  rather than reported. Children run with `-I` or `-E` ignore the environment
+  and are pinned with `-X utf8` instead.
+- A `gravity maturity score --json` dimension whose measurement subprocess
+  failed silently degraded to an unmeasured dimension with no signal saying so.
+  The capture failure is now reported as `not_measured` with a reason, so
+  "measured and scored zero" and "never measured" are distinguishable in the
+  output.
 
 ## [0.3.8] - 2026-09-05
 
