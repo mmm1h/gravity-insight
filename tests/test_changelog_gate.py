@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,10 +17,20 @@ class ChangelogGateTests(unittest.TestCase):
     def test_repository_changelog_contract_passes(self) -> None:
         report = validate_changelog()
 
-        self.assertEqual("0.3.9", report.project_version)
-        self.assertEqual("0.3.9", report.target_version)
+        self.assertEqual("0.3.10", report.project_version)
+        self.assertEqual("0.3.10", report.target_version)
         self.assertEqual(
-            ("0.3.8", "0.3.7", "0.3.6", "0.3.5", "0.3.4", "0.3.3", "0.3.2", "0.3.1"),
+            (
+                "0.3.9",
+                "0.3.8",
+                "0.3.7",
+                "0.3.6",
+                "0.3.5",
+                "0.3.4",
+                "0.3.3",
+                "0.3.2",
+                "0.3.1",
+            ),
             report.released_versions,
         )
         self.assertEqual(10, report.breaking_entries)
@@ -29,9 +40,9 @@ class ChangelogGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw:
             pyproject = Path(raw) / "pyproject.toml"
             source = PYPROJECT_PATH.read_text(encoding="utf-8")
-            self.assertIn('version = "0.3.9"', source)
+            self.assertIn('version = "0.3.10"', source)
             pyproject.write_text(
-                source.replace('version = "0.3.9"', 'version = "9.9.9"', 1),
+                source.replace('version = "0.3.10"', 'version = "9.9.9"', 1),
                 encoding="utf-8",
             )
 
@@ -96,10 +107,18 @@ class ChangelogGateTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
+            # Derived from the changelog, not listed. The property is that every
+            # released section except the one the fixture locks is reported as
+            # missing; spelling the versions out means this goes red on the next
+            # release cut for no reason, which is what it just did.
+            expected = [
+                version
+                for version in validate_changelog().released_versions
+                if version != "0.3.2"
+            ]
             with self.assertRaisesRegex(
                 ChangelogError,
-                r"lock inventory mismatch: missing=\['0.3.8', '0.3.7', '0.3.6', "
-                r"'0.3.5', '0.3.4', '0.3.3', '0.3.1'\]",
+                r"lock inventory mismatch: missing=" + re.escape(repr(expected)),
             ):
                 validate_changelog(lock_path=lock)
 
