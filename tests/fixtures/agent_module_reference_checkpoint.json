@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "2e9be972a8d4d16aac30e7935bec6c5c4fc1262985a19f8e8dae492e397a414d",
-    "manual_review_sha256": "e8b57d8d9ea5972e974af716faf7b5fa8c58afcf28b9281e352fce8cc3014cc9",
+    "reference_evidence_sha256": "b9d2e61dc26d115e6adec38cca58a96a8801d5e79166ad7123076fd99cf03f71",
+    "manual_review_sha256": "5b00dc979134ef44f11ff5b0810d0707600a02e3b984a4e7cb4a5c744466b820",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3168,
-    "scanned_file_count": 3161,
+    "version_controlled_file_count": 3170,
+    "scanned_file_count": 3163,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -700,7 +700,7 @@
     "dispositions": {
       "no_migration_effect": 238
     },
-    "sites_sha256": "4b848b23557b551d80104566daba8588ab79a5c2362bbd249e967453da6f0303"
+    "sites_sha256": "134f6968b387ace9a67b8cd85d2659c6e6c99b527a1d95f98b5e9e364e4b4fac"
   },
   "blockers": [],
   "site_fields": [
@@ -748,7 +748,7 @@
       }
     ],
     [
-      "scripts/agent_usability_eval.py:708:29:patch.object",
+      "scripts/agent_usability_eval.py:715:29:patch.object",
       "rm",
       "non_string_patch_expression",
       "socket.socket",
@@ -2323,7 +2323,7 @@
       }
     ],
     [
-      "tests/test_execution_variant.py:390:21:patch.object",
+      "tests/test_execution_variant.py:391:21:patch.object",
       "rm",
       "non_string_patch_expression",
       "service",
@@ -2338,7 +2338,7 @@
       }
     ],
     [
-      "tests/test_execution_variant.py:393:21:patch.object",
+      "tests/test_execution_variant.py:394:21:patch.object",
       "rm",
       "non_string_patch_expression",
       "sdk",
@@ -2353,7 +2353,7 @@
       }
     ],
     [
-      "tests/test_execution_variant.py:447:17:patch.object",
+      "tests/test_execution_variant.py:448:17:patch.object",
       "rm",
       "non_string_patch_expression",
       "sdk",
