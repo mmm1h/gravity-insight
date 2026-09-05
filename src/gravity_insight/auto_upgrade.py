@@ -1,4 +1,4 @@
-"""Opt-in startup release checks that emit external update plan requests."""
+"""Default-on startup release checks and immutable installation handoff."""
 
 from __future__ import annotations
 
@@ -106,14 +106,8 @@ def startup_update_enabled(
     ).strip()
     if version_tuple(pinned) is not None and pinned == __version__:
         return False
-    return str(
-        _environment_value(env, AUTO_UPGRADE_ENV, _LEGACY_AUTO_UPGRADE_ENV) or ""
-    ).strip().casefold() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    configured = _environment_value(env, AUTO_UPGRADE_ENV, _LEGACY_AUTO_UPGRADE_ENV)
+    return configured is None or configured.strip().casefold() in {"1", "true", "yes", "on"}
 
 
 def maybe_auto_upgrade(
@@ -126,23 +120,41 @@ def maybe_auto_upgrade(
     stderr: TextIO | None = None,
     target_python: str | os.PathLike[str] | None = None,
 ) -> UpdateCheck:
-    """Check for a release and produce data for an external Installer only."""
+    """Install a newer release into an isolated stage before command dispatch."""
 
     env = os.environ if environ is None else environ
     if not startup_update_enabled(argv, environ=env):
         return UpdateCheck("disabled")
     output = sys.stderr if stderr is None else stderr
-    selected_now = utc(now)
-    path = update_state_path() if state_path is None else Path(state_path)
-    checked = _safe_check(state_path=path, now=selected_now, request=request)
+    try:
+        selected_now = utc(now)
+        path = update_state_path() if state_path is None else Path(state_path)
+        checked = _safe_check(state_path=path, now=selected_now, request=request)
+    except Exception as exc:
+        checked = UpdateCheck("failed", detail=f"{type(exc).__name__}: {exc}")
     if checked.status == "failed":
         _warn_check_failure(checked, output)
         return checked
-    return _plan_checked_update(
-        checked,
-        target_python=target_python,
-        output=output,
-    )
+    if not _upgrade_is_due(checked):
+        return checked
+    from ._auto_upgrade_install import prepare_install
+
+    try:
+        status, receipt, detail = prepare_install(
+            checked.latest_version,
+            target_python=target_python or _target_python_from_environment(env),
+            cache_root=path.parent, now=selected_now, environment=env,
+        )
+        result = UpdateCheck(status, latest_version=checked.latest_version, state=receipt, detail=detail)
+    except Exception as exc:
+        result = UpdateCheck("failed", latest_version=checked.latest_version,
+                             detail=f"{type(exc).__name__}: {exc}")
+    if result.status == "installed":
+        print(f"Gravity SDK installed {result.latest_version} in an isolated stage; "
+              f"this process still runs {__version__}; CLI will re-exec before dispatch.", file=output)
+    else:
+        _warn_check_failure(result, output)
+    return result
 
 
 def _plan_checked_update(
@@ -214,8 +226,9 @@ def _safe_check(
 
 def _warn_check_failure(checked: UpdateCheck, output: TextIO) -> None:
     print(
-        f"error: Gravity SDK update check failed ({checked.detail}). "
-        "This command was not run.",
+        f"warning: Gravity SDK startup update {checked.status} ({checked.detail}). "
+        f"Continuing this command with {__version__}. Check network/index and cache "
+        "permissions, then retry; set GRAVITY_INSIGHT_AUTO_UPGRADE=0 to disable updates.",
         file=output,
     )
 
