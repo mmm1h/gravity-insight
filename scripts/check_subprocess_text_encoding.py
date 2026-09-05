@@ -26,8 +26,14 @@ EXEMPT_FILES = {
         "the parent decodes the CLI's UTF-8 contract explicitly."
     )
 }
+# Keyed by the enclosing function, not by a line number. A line number describes
+# the file's current layout rather than the call: inserting a line anywhere above
+# shifts it, the exemption stops matching, and a fail-closed gate then goes red
+# for an edit that had nothing to do with it -- and shifts differently on each
+# branch, so it can also go red only at merge time. Renaming the enclosing
+# function does break the key, which is a change worth re-reading.
 EXEMPT_CALLS = {
-    ("src/gravity_insight/provider_rpc_transport.py", 254): (
+    ("src/gravity_insight/provider_rpc_transport.py", "_launch_subprocess"): (
         "Binary provider RPC: stdin/stdout/stderr are byte pipes and the expanded "
         "keywords contain only platform-specific process-creation flags."
     )
@@ -97,6 +103,29 @@ def _text_mode(call: ast.Call) -> tuple[bool, bool]:
     return may_be_enabled, unknown
 
 
+def _enclosing_functions(tree: ast.AST) -> dict[ast.Call, str]:
+    """Map every call to the dotted name of the scope that encloses it.
+
+    Module-level calls map to the empty string.
+    """
+
+    mapping: dict[ast.Call, str] = {}
+
+    def visit(node: ast.AST, scope: tuple[str, ...]) -> None:
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, ast.Call):
+                mapping[child] = ".".join(scope)
+            if isinstance(
+                child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            ):
+                visit(child, scope + (child.name,))
+            else:
+                visit(child, scope)
+
+    visit(tree, ())
+    return mapping
+
+
 def _source_findings(
     path: Path, relative: str
 ) -> tuple[list[Finding], list[dict[str, object]]]:
@@ -107,6 +136,7 @@ def _source_findings(
         return [Finding(relative, 1, "subprocess-source-unreadable", str(exc))], []
 
     modules, functions = _subprocess_imports(tree)
+    enclosing = _enclosing_functions(tree)
     findings: list[Finding] = []
     exemptions: list[dict[str, object]] = []
     for node in ast.walk(tree):
@@ -116,7 +146,8 @@ def _source_findings(
         text_enabled, text_unknown = _text_mode(node)
         direct_subprocess = _is_direct_subprocess_call(node, modules, functions)
         dynamic_keywords = any(keyword.arg is None for keyword in node.keywords)
-        exemption_reason = EXEMPT_CALLS.get((relative, node.lineno))
+        function = enclosing.get(node, "")
+        exemption_reason = EXEMPT_CALLS.get((relative, function))
         if (
             exemption_reason is not None
             and direct_subprocess
@@ -125,7 +156,12 @@ def _source_findings(
             and not text_unknown
         ):
             exemptions.append(
-                {"path": relative, "line": node.lineno, "reason": exemption_reason}
+                {
+                    "path": relative,
+                    "function": function,
+                    "line": node.lineno,
+                    "reason": exemption_reason,
+                }
             )
             continue
         if text_enabled and not has_contract:

@@ -36,6 +36,60 @@ class SubprocessTextEncodingGateTests(unittest.TestCase):
             [item["path"] for item in receipt["exemptions"]],
         )
 
+    def test_call_exemption_survives_a_line_shift(self) -> None:
+        """The call exemption keys on the enclosing function, not on where it sits.
+
+        A line number describes the file's current layout rather than the call.
+        Pinning one means an unrelated edit above shifts it, the exemption stops
+        matching, and this fail-closed gate goes red for a change that had
+        nothing to do with it -- and shifts differently per branch, so it can go
+        red only at merge time.
+        """
+        exempted = (
+            "import subprocess\n"
+            "\n"
+            "def _launch_subprocess(command, flags):\n"
+            "    return subprocess.Popen(command, **flags)\n"
+        )
+        for padding in (0, 40):
+            with self.subTest(padding=padding):
+                root = self._fixture()
+                target = (
+                    root / "src" / "gravity_insight" / "provider_rpc_transport.py"
+                )
+                target.parent.mkdir(parents=True)
+                target.write_text("\n" * padding + exempted, encoding="utf-8")
+
+                code, receipt = check_repository(root)
+
+                self.assertEqual(0, code)
+                self.assertEqual("pass", receipt["status"])
+                self.assertEqual(
+                    ["_launch_subprocess"],
+                    [item["function"] for item in receipt["exemptions"]],
+                )
+
+    def test_call_exemption_does_not_cover_a_renamed_function(self) -> None:
+        """Renaming the enclosing function is a change worth re-reading."""
+        root = self._fixture()
+        target = root / "src" / "gravity_insight" / "provider_rpc_transport.py"
+        target.parent.mkdir(parents=True)
+        target.write_text(
+            "import subprocess\n"
+            "\n"
+            "def _spawn(command, flags):\n"
+            "    return subprocess.Popen(command, **flags)\n",
+            encoding="utf-8",
+        )
+
+        code, receipt = check_repository(root)
+
+        self.assertEqual(1, code)
+        self.assertEqual("fail", receipt["status"])
+        self.assertEqual(
+            "subprocess-keywords-unresolved", receipt["findings"][0]["detector"]
+        )
+
     def test_missing_encoding_fails_with_file_and_line(self) -> None:
         root = self._fixture()
         source = root / "scripts" / "bad.py"
