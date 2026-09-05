@@ -171,9 +171,7 @@ class ReleaseCoverageTests(unittest.TestCase):
                 Path(raw) / "release-gate.json", {"status": "passed"}
             )
             args["coverage_receipt"].unlink()
-            command = [
-                sys.executable,
-                "scripts/build_release_gate_receipt.py",
+            flags = [
                 "--expected-sha",
                 fixtures.SHA,
                 "--release-tag",
@@ -182,8 +180,18 @@ class ReleaseCoverageTests(unittest.TestCase):
                 str(output),
             ]
             for key, value in args.items():
-                command.extend(["--" + key.replace("_", "-"), str(value)])
-            result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+                flags.extend(["--" + key.replace("_", "-"), str(value)])
+            # argv stays literal at the call so the encoding gate can see the
+            # child is Python; only the flags are built up. Both halves of the
+            # contract are pinned -- decoding here, encoding in the child.
+            result = subprocess.run(
+                [sys.executable, "scripts/build_release_gate_receipt.py", *flags],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            )
             self.assertEqual(1, result.returncode)
             self.assertIn("cannot read release coverage", result.stderr)
             self.assertFalse(output.exists())
