@@ -436,29 +436,41 @@ class ProviderSubprocessTests(unittest.TestCase):
 
         self.assertEqual(["PROVIDER_RPC_TIMEOUT"], result["reason_codes"])
         port = int(child_ready.read_text(encoding="ascii"))
-        # A bare assertRaises(OSError) here reports "a connection succeeded"
-        # for two causes that need opposite fixes: a descendant outlived the
-        # kill, or the descendant is gone and the kernel had not finished
-        # tearing its listening socket down. The grandchild writes `escaped`
-        # only if it actually returns from accept(), so it separates them --
-        # but only if we wait long enough for a live one to get there.
+        # The property under test is that no descendant outlived the kill, not
+        # that the kernel has already reclaimed the port. Asserting the port is
+        # closed asserts on a race: the listening socket is torn down after the
+        # process dies, and in between the backlog still completes a handshake
+        # with nobody behind it. Measured on the CI Windows runner, that window
+        # is wide enough to fail reproducibly while the descendant is provably
+        # gone (escaped_marker=False).
+        #
+        # Connecting is instead how a survivor is made to reveal itself: the
+        # grandchild blocks in accept() and writes `escaped` the moment it
+        # returns from one. A connection served from a dead process's backlog
+        # leaves no marker, so this distinguishes the two.
+        #
+        # Do not turn this into a poll that retries create_connection until it
+        # raises. The grandchild calls accept() once, so repeated probes fill
+        # the backlog; every later connect then hangs to its timeout and raises
+        # TimeoutError, which is an OSError. Such a loop reports success whether
+        # or not the tree died.
         try:
             socket.create_connection(("127.0.0.1", port), timeout=1).close()
-            accepted = True
+            reached = True
         except OSError:
-            accepted = False
-        if accepted:
+            reached = False
+        if reached:
+            # Only a connection that was actually established can make a
+            # survivor reveal itself, so there is nothing to wait for when the
+            # port refused us -- refusal already means nothing is in accept().
             deadline = time.monotonic() + 5
             while not escaped.exists() and time.monotonic() < deadline:
                 time.sleep(0.05)
         self.assertFalse(
-            accepted,
-            f"port {port} accepted a connection after the tree was terminated; "
-            f"escaped_marker={escaped.exists()} "
-            "(true: a descendant outlived the kill; "
-            "false: the listening socket had not been torn down yet)",
+            escaped.exists(),
+            f"a descendant survived the kill and accepted on port {port} "
+            f"(connect_succeeded={reached})",
         )
-        self.assertFalse(escaped.exists())
 
     def test_windows_job_binding_failure_is_local_and_reaps_before_rpc(self) -> None:
         process = FakeWindowsProcess()
