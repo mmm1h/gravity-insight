@@ -45,6 +45,7 @@ EXEMPT_CALLS = {
 # the encoder check. Keys remain stable across line shifts. Mixed runners must
 # pin Python stdio too; their isolated Python argv must explicitly use -X utf8.
 COMMAND_EXEMPTIONS = {
+    ("src/gravity_insight/_auto_upgrade_install.py", "_python"): ("python", "Validated target Python runs pip/isolated validation/re-exec; argv always pins -X utf8, environment pins stdio"),
     ("scripts/audit_release_dependencies.py", "audit_site_packages"): ("python", "python parameter selects the pip-audit interpreter"),
     ("scripts/check_installed_wheel_consumer.py", "_run"): ("python", "Git and Python install/probe/test commands; isolated probes use -X utf8"),
     ("scripts/check_installed_wheel_surface_matrix.py", "_run"): ("python", "Python pip install and isolated -X utf8 probe"),

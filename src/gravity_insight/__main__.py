@@ -98,8 +98,6 @@ def ensure_first_run_credentials(*, requires_credentials: bool) -> bool:
 
 def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
     from .auto_upgrade import (
-        TERMINAL_UPGRADE_STATUSES,
-        UPDATE_POLICY_EXIT_CODE,
         _target_python_from_environment,
         maybe_auto_upgrade,
         startup_update_enabled,
@@ -108,7 +106,11 @@ def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
     if not startup_update_enabled(args):
         return None
     result = maybe_auto_upgrade(args, target_python=_target_python_from_environment())
-    return UPDATE_POLICY_EXIT_CODE if result.status in TERMINAL_UPGRADE_STATUSES else None
+    if result.status == "installed" and result.state is not None:
+        from ._auto_upgrade_install import activate_install
+
+        return activate_install(result.state, args, output=sys.stderr)
+    return None
 
 
 def main(argv: Sequence[str] | None = None) -> int:
