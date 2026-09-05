@@ -70,93 +70,179 @@ def _expect(actual: Any, expected: Any, label: str, remedy: str) -> None:
     )
 
 
-def _fields(document: Mapping[str, Any], expected: Mapping[str, Any],
-            label: str, remedy: str) -> None:
+def _fields(
+    document: Mapping[str, Any], expected: Mapping[str, Any], label: str, remedy: str
+) -> None:
     for key, value in expected.items():
         _expect(document.get(key), value, f"{label}.{key}", remedy)
 
 
 def _typed(value: Any, kind: type, label: str, remedy: str) -> None:
-    _require(isinstance(value, kind),
-             f"{label}: expected {kind.__name__}; observed {value!r}; next: {remedy}")
+    _require(
+        isinstance(value, kind),
+        f"{label}: expected {kind.__name__}; observed {value!r}; next: {remedy}",
+    )
 
 
 def _positive(value: Any, label: str, remedy: str) -> None:
-    _require(type(value) is int and value > 0,
-             f"{label}: expected positive integer (not bool); observed {value!r}; next: {remedy}")
+    _require(
+        type(value) is int and value > 0,
+        f"{label}: expected positive integer (not bool); observed {value!r}; next: {remedy}",
+    )
 
 
 def _choice(value: Any, choices: Sequence[str], label: str, remedy: str) -> None:
-    _require(value in choices,
-             f"{label}: expected one of {tuple(choices)!r}; observed {value!r}; next: {remedy}")
+    _require(
+        value in choices,
+        f"{label}: expected one of {tuple(choices)!r}; observed {value!r}; next: {remedy}",
+    )
 
 
 def _validate_main(document: Mapping[str, Any], expected_sha: str, tag: str) -> None:
-    _fields(document, {
-        "schema_version": MAIN_SCHEMA, "status": "passed", "event_name": "push",
-        "release_tag": tag, "commit_sha": expected_sha, "protected_branch": "main",
-        "branch_protected": True, "checked_out_head": expected_sha,
-        "tag_commit": expected_sha, "main_commit": expected_sha,
-        "branch_api_commit": expected_sha,
-    }, "main", "rerun check_release_main.py against the exact tag and protected main")
+    _fields(
+        document,
+        {
+            "schema_version": MAIN_SCHEMA,
+            "status": "passed",
+            "event_name": "push",
+            "release_tag": tag,
+            "commit_sha": expected_sha,
+            "protected_branch": "main",
+            "branch_protected": True,
+            "checked_out_head": expected_sha,
+            "tag_commit": expected_sha,
+            "main_commit": expected_sha,
+            "branch_api_commit": expected_sha,
+        },
+        "main",
+        "rerun check_release_main.py against the exact tag and protected main",
+    )
 
 
 def _validate_ci(document: Mapping[str, Any], expected_sha: str) -> None:
-    remedy = "select a successful exact-SHA push/main CI run and rerun check_release_ci.py"
-    _fields(document, {
-        "schema_version": CI_SCHEMA, "status": "passed", "commit_sha": expected_sha,
-        "event_name": "push", "branch": "main", "workflow_path": ".github/workflows/ci.yml",
-        "conclusion": "success",
-    }, "CI", remedy)
+    remedy = (
+        "select a successful exact-SHA push/main CI run and rerun check_release_ci.py"
+    )
+    _fields(
+        document,
+        {
+            "schema_version": CI_SCHEMA,
+            "status": "passed",
+            "commit_sha": expected_sha,
+            "event_name": "push",
+            "branch": "main",
+            "workflow_path": ".github/workflows/ci.yml",
+            "conclusion": "success",
+        },
+        "CI",
+        remedy,
+    )
     _positive(document.get("run_id"), "CI.run_id", remedy)
     required = document.get("required_job")
     _typed(required, Mapping, "CI.required_job", remedy)
-    _fields(required, {"name": "ci-required", "conclusion": "success"}, "CI.required_job", remedy)
+    _fields(
+        required,
+        {"name": "ci-required", "conclusion": "success"},
+        "CI.required_job",
+        remedy,
+    )
 
 
 def _validate_iv(document: Mapping[str, Any], expected_sha: str) -> list[str]:
     remedy = "rerun complete Integrated Validation on clean exact-SHA main in this worktree's independent venv"
-    _fields(document, {
-        "schema_version": "gravity.integrated-validation-receipt.v2",
-        "commit_sha": expected_sha, "branch": "main", "trial": False,
-        "complete_gate_set": True, "integrated_validation_green": True, "overall": "passed",
-    }, "IV", remedy)
+    _fields(
+        document,
+        {
+            "schema_version": "gravity.integrated-validation-receipt.v2",
+            "commit_sha": expected_sha,
+            "branch": "main",
+            "trial": False,
+            "complete_gate_set": True,
+            "integrated_validation_green": True,
+            "overall": "passed",
+        },
+        "IV",
+        remedy,
+    )
     for phase in ("preconditions_before", "preconditions_after"):
         preconditions = document.get(phase)
         _typed(preconditions, Mapping, f"IV.{phase}", remedy)
-        _fields(preconditions, {"head": expected_sha, "branch_is_main": True,
-                               "clean": True, "independent_venv": True}, f"IV.{phase}", remedy)
+        _fields(
+            preconditions,
+            {
+                "head": expected_sha,
+                "branch_is_main": True,
+                "clean": True,
+                "independent_venv": True,
+            },
+            f"IV.{phase}",
+            remedy,
+        )
     gates = document.get("gates")
     _typed(gates, list, "IV.gates", remedy)
-    expected_names = [gate.name for gate in gate_specs(Path(sys.executable), ROOT / "tmp/release-gate-inventory")]
+    expected_names = [
+        gate.name
+        for gate in gate_specs(
+            Path(sys.executable), ROOT / "tmp/release-gate-inventory"
+        )
+    ]
     observed: dict[str, Mapping[str, Any]] = {}
     for gate in gates:
         _typed(gate, Mapping, "IV.gate", remedy)
         name = gate.get("name")
         _typed(name, str, "IV.gate.name", remedy)
-        _require(name not in observed,
-                 f"IV.gate.name: expected unique name; observed duplicate {name!r}; next: {remedy}")
+        _require(
+            name not in observed,
+            f"IV.gate.name: expected unique name; observed duplicate {name!r}; next: {remedy}",
+        )
         observed[name] = gate
     _expect(sorted(observed), sorted(expected_names), "IV.gate_inventory", remedy)
     for name in expected_names:
-        _fields(observed[name], {"status": "pass", "passed": True, "exit_code": 0}, f"IV.gates.{name}", remedy)
+        _fields(
+            observed[name],
+            {"status": "pass", "passed": True, "exit_code": 0},
+            f"IV.gates.{name}",
+            remedy,
+        )
     _expect(document.get("skipped_gates"), [], "IV.skipped_gates", remedy)
     return expected_names
 
 
 def _validate_secret(document: Mapping[str, Any], expected_sha: str) -> None:
-    _expect(document.get("status"), "passed", "secret.status",
-            "resolve scanner failures and rerun scan_repository_secrets.py --history")
-    _expect(document.get("history_included"), True, "secret.history_included",
-            "fetch complete Git history and rerun scan_repository_secrets.py --history")
-    _expect(document.get("repository_head"), expected_sha, "secret.repository_head",
-            "check out the intended release SHA and regenerate its secret-history receipt")
-    _positive(document.get("history_commit_count"), "secret.history_commit_count",
-              "fetch complete Git history and rerun the history scan; do not use a shallow/range receipt")
-    _positive(document.get("scanned_tracked_file_count"), "secret.scanned_tracked_file_count",
-              "verify the checkout has tracked files and rerun the scanner from that repository root")
-    _expect(document.get("unreviewed_findings"), [], "secret.unreviewed_findings",
-            "review each finding, remove or rotate confirmed secrets, then rerun the history scan")
+    _expect(
+        document.get("status"),
+        "passed",
+        "secret.status",
+        "resolve scanner failures and rerun scan_repository_secrets.py --history",
+    )
+    _expect(
+        document.get("history_included"),
+        True,
+        "secret.history_included",
+        "fetch complete Git history and rerun scan_repository_secrets.py --history",
+    )
+    _expect(
+        document.get("repository_head"),
+        expected_sha,
+        "secret.repository_head",
+        "check out the intended release SHA and regenerate its secret-history receipt",
+    )
+    _positive(
+        document.get("history_commit_count"),
+        "secret.history_commit_count",
+        "fetch complete Git history and rerun the history scan; do not use a shallow/range receipt",
+    )
+    _positive(
+        document.get("scanned_tracked_file_count"),
+        "secret.scanned_tracked_file_count",
+        "verify the checkout has tracked files and rerun the scanner from that repository root",
+    )
+    _expect(
+        document.get("unreviewed_findings"),
+        [],
+        "secret.unreviewed_findings",
+        "review each finding, remove or rotate confirmed secrets, then rerun the history scan",
+    )
 
 
 def _sbom_binding(document: Mapping[str, Any]) -> tuple[str, str, str]:
@@ -168,55 +254,95 @@ def _sbom_binding(document: Mapping[str, Any]) -> tuple[str, str, str]:
     _typed(component, Mapping, "SBOM.component", remedy)
     properties = component.get("properties")
     _typed(properties, list, "SBOM.properties", remedy)
-    bound = {item.get("name"): item.get("value") for item in properties
-             if isinstance(item, Mapping) and isinstance(item.get("name"), str)
-             and item["name"].startswith("gravity:distribution:")}
+    bound = {
+        item.get("name"): item.get("value")
+        for item in properties
+        if isinstance(item, Mapping)
+        and isinstance(item.get("name"), str)
+        and item["name"].startswith("gravity:distribution:")
+    }
     filename = bound.get("gravity:distribution:filename")
     kind = bound.get("gravity:distribution:kind")
     digest = bound.get("gravity:distribution:sha256")
     _typed(filename, str, "SBOM.filename", remedy)
     _choice(kind, ("wheel", "sdist"), "SBOM.kind", remedy)
     _typed(digest, str, "SBOM.sha256", remedy)
-    _require(re.fullmatch(r"[0-9a-f]{64}", digest) is not None,
-             f"SBOM.sha256: expected 64 lowercase hex digits; observed {digest!r}; next: {remedy}")
+    _require(
+        re.fullmatch(r"[0-9a-f]{64}", digest) is not None,
+        f"SBOM.sha256: expected 64 lowercase hex digits; observed {digest!r}; next: {remedy}",
+    )
     hashes = component.get("hashes")
     _typed(hashes, list, "SBOM.hashes", remedy)
-    observed_hashes = [item.get("content") for item in hashes
-                       if isinstance(item, Mapping) and item.get("alg") == "SHA-256"]
+    observed_hashes = [
+        item.get("content")
+        for item in hashes
+        if isinstance(item, Mapping) and item.get("alg") == "SHA-256"
+    ]
     _expect(observed_hashes, [digest], "SBOM.root_sha256", remedy)
     return kind, filename, digest
 
 
-def _validate_sboms(sbom_dir: Path, *, wheel: Path, sdist: Path) -> dict[str, dict[str, str]]:
+def _validate_sboms(
+    sbom_dir: Path, *, wheel: Path, sdist: Path
+) -> dict[str, dict[str, str]]:
     remedy = "regenerate exactly one SBOM per intended distribution"
     paths = sorted(sbom_dir.glob("*.cdx.json"))
     _expect(len(paths), 2, "SBOM.document_count", remedy)
-    expected = {"wheel": (wheel.name, _sha256(wheel)), "sdist": (sdist.name, _sha256(sdist))}
+    expected = {
+        "wheel": (wheel.name, _sha256(wheel)),
+        "sdist": (sdist.name, _sha256(sdist)),
+    }
     observed: dict[str, dict[str, str]] = {}
     for path in paths:
         kind, filename, digest = _sbom_binding(_load(path, f"{path.name} SBOM"))
-        _require(kind not in observed,
-                 f"SBOM.kind: expected unique kind; observed duplicate {kind!r}; next: {remedy}")
+        _require(
+            kind not in observed,
+            f"SBOM.kind: expected unique kind; observed duplicate {kind!r}; next: {remedy}",
+        )
         _expect(filename, expected[kind][0], f"SBOM.{kind}.filename", remedy)
         _expect(digest, expected[kind][1], f"SBOM.{kind}.sha256", remedy)
-        observed[kind] = {"filename": filename, "artifact_sha256": digest, **_source(path)}
+        observed[kind] = {
+            "filename": filename,
+            "artifact_sha256": digest,
+            **_source(path),
+        }
     _expect(sorted(observed), ["sdist", "wheel"], "SBOM.kinds", remedy)
     return observed
 
 
 def _validate_dependency(document: Mapping[str, Any], *, wheel: Path) -> None:
     remedy = "resolve audit findings/errors and rerun audit_release_dependencies.py for the intended wheel"
-    _fields(document, {"status": "passed", "artifact": wheel.name,
-                       "artifact_sha256": _sha256(wheel), "vulnerability_count": 0,
-                       "findings": [], "service": "OSV"}, "dependency", remedy)
+    _fields(
+        document,
+        {
+            "status": "passed",
+            "artifact": wheel.name,
+            "artifact_sha256": _sha256(wheel),
+            "vulnerability_count": 0,
+            "findings": [],
+            "service": "OSV",
+        },
+        "dependency",
+        remedy,
+    )
     _positive(document.get("dependency_count"), "dependency.dependency_count", remedy)
 
 
 def _validate_surface(document: Mapping[str, Any], *, wheel: Path) -> None:
     remedy = "rerun check_installed_wheel_surface_matrix.py for the intended wheel and all five surfaces"
-    _fields(document, {"schema_version": "gravity.installed-wheel-surface-matrix.v1",
-                       "passed": True, "wheel": wheel.name, "wheel_sha256": _sha256(wheel),
-                       "surface_count": len(_SURFACES), "network_calls": 0}, "surface", remedy)
+    _fields(
+        document,
+        {
+            "schema_version": "gravity.installed-wheel-surface-matrix.v1",
+            "passed": True,
+            "wheel": wheel.name,
+            "wheel_sha256": _sha256(wheel),
+            "surface_count": len(_SURFACES),
+            "network_calls": 0,
+        },
+        "surface",
+        remedy,
+    )
     cases = document.get("cases")
     _typed(cases, list, "surface.cases", remedy)
     _positive(len(cases), "surface.cases.length", remedy)
@@ -225,49 +351,125 @@ def _validate_surface(document: Mapping[str, Any], *, wheel: Path) -> None:
         _typed(case, Mapping, f"surface.cases[{index}]", remedy)
         surfaces = case.get("surfaces")
         _typed(surfaces, Mapping, f"surface.cases[{index}].surfaces", remedy)
-        _expect(sorted(surfaces), sorted(_SURFACES), f"surface.cases[{index}].inventory", remedy)
-        _fields(surfaces, {name: "passed" for name in sorted(_SURFACES)}, f"surface.cases[{index}]", remedy)
+        _expect(
+            sorted(surfaces),
+            sorted(_SURFACES),
+            f"surface.cases[{index}].inventory",
+            remedy,
+        )
+        _fields(
+            surfaces,
+            {name: "passed" for name in sorted(_SURFACES)},
+            f"surface.cases[{index}]",
+            remedy,
+        )
 
 
 def _validate_consumer(document: Mapping[str, Any], *, wheel: Path) -> None:
     remedy = "rerun check_installed_wheel_consumer.py --strict-prerequisites for the intended wheel and pinned consumer"
-    _fields(document, {"schema_version": "gravity.installed-wheel-consumer-gate.v1",
-                       "status": "pass", "passed": True, "exit_code": 0,
-                       "strict_prerequisites": True, "revision": DEFAULT_REVISION}, "consumer", remedy)
+    _fields(
+        document,
+        {
+            "schema_version": "gravity.installed-wheel-consumer-gate.v1",
+            "status": "pass",
+            "passed": True,
+            "exit_code": 0,
+            "strict_prerequisites": True,
+            "revision": DEFAULT_REVISION,
+        },
+        "consumer",
+        remedy,
+    )
     check = document.get("check")
     _typed(check, Mapping, "consumer.check", remedy)
-    _fields(check, {"schema_version": "gravity.installed-wheel-consumer-check.v2",
-                   "passed": True, "consumer_commit": DEFAULT_REVISION,
-                   "wheel": wheel.name, "wheel_sha256": _sha256(wheel), "network_calls": 0}, "consumer.check", remedy)
+    _fields(
+        check,
+        {
+            "schema_version": "gravity.installed-wheel-consumer-check.v2",
+            "passed": True,
+            "consumer_commit": DEFAULT_REVISION,
+            "wheel": wheel.name,
+            "wheel_sha256": _sha256(wheel),
+            "network_calls": 0,
+        },
+        "consumer.check",
+        remedy,
+    )
     summary = check.get("summary")
     _typed(summary, Mapping, "consumer.summary", remedy)
     _expect(summary.get("ok"), True, "consumer.summary.ok", remedy)
     _positive(summary.get("tests_run"), "consumer.summary.tests_run", remedy)
 
 
-def _validate_changelog(document: Mapping[str, Any], *, release_version: str, expected_sha: str) -> dict[str, Any]:
+def _validate_changelog(
+    document: Mapping[str, Any], *, release_version: str, expected_sha: str
+) -> dict[str, Any]:
     remedy = "correct the release declaration/migration and rerun check_changelog.py for the intended version and SHA"
-    _fields(document, {"schema_version": "gravity.release-changelog.v1", "status": "passed",
-                       "release_version": release_version, "project_version": release_version,
-                       "repository_head": expected_sha}, "changelog", remedy)
-    _choice(document.get("section_state"), ("unreleased_target", "released"), "changelog.section_state", remedy)
-    _choice(document.get("breaking_change_declaration"), ("declared", "none_declared"), "changelog.breaking_change_declaration", remedy)
+    _fields(
+        document,
+        {
+            "schema_version": "gravity.release-changelog.v1",
+            "status": "passed",
+            "release_version": release_version,
+            "project_version": release_version,
+            "repository_head": expected_sha,
+        },
+        "changelog",
+        remedy,
+    )
+    _choice(
+        document.get("section_state"),
+        ("unreleased_target", "released"),
+        "changelog.section_state",
+        remedy,
+    )
+    _choice(
+        document.get("breaking_change_declaration"),
+        ("declared", "none_declared"),
+        "changelog.breaking_change_declaration",
+        remedy,
+    )
     migration = document.get("migration")
     _typed(migration, Mapping, "migration", remedy)
-    _choice(migration.get("status"), ("required_and_present", "not_required"), "migration.status", remedy)
+    _choice(
+        migration.get("status"),
+        ("required_and_present", "not_required"),
+        "migration.status",
+        remedy,
+    )
     if document.get("breaking_change_declaration") == "declared":
-        _positive(document.get("breaking_entries"), "changelog.breaking_entries", remedy)
-        _expect(migration.get("status"), "required_and_present", "migration.status", remedy)
+        _positive(
+            document.get("breaking_entries"), "changelog.breaking_entries", remedy
+        )
+        _expect(
+            migration.get("status"), "required_and_present", "migration.status", remedy
+        )
         path = migration.get("path")
         _typed(path, str, "migration.path", remedy)
-        _require((ROOT / path).is_file(),
-                 f"migration.path: expected existing guide; observed {path!r}; next: {remedy}")
-        _expect(migration.get("sha256"), _sha256(ROOT / path), "migration.sha256", remedy)
+        _require(
+            (ROOT / path).is_file(),
+            f"migration.path: expected existing guide; observed {path!r}; next: {remedy}",
+        )
+        _expect(
+            migration.get("sha256"), _sha256(ROOT / path), "migration.sha256", remedy
+        )
     else:
-        _expect(document.get("breaking_entries"), 0, "changelog.breaking_entries", remedy)
+        _expect(
+            document.get("breaking_entries"), 0, "changelog.breaking_entries", remedy
+        )
         _expect(migration.get("status"), "not_required", "migration.status", remedy)
-    _expect(document.get("changelog_sha256"), _sha256(ROOT / "CHANGELOG.md"), "changelog.changelog_sha256", remedy)
-    _expect(document.get("released_section_lock_sha256"), _sha256(ROOT / "scripts/changelog_release_lock.json"), "changelog.released_section_lock_sha256", remedy)
+    _expect(
+        document.get("changelog_sha256"),
+        _sha256(ROOT / "CHANGELOG.md"),
+        "changelog.changelog_sha256",
+        remedy,
+    )
+    _expect(
+        document.get("released_section_lock_sha256"),
+        _sha256(ROOT / "scripts/changelog_release_lock.json"),
+        "changelog.released_section_lock_sha256",
+        remedy,
+    )
     return dict(migration)
 
 
@@ -289,14 +491,19 @@ def build_release_gate_receipt(
     run_id: str,
     run_attempt: str,
 ) -> dict[str, Any]:
-    _require(_SHA_RE.fullmatch(expected_sha) is not None, "expected SHA must be a full commit SHA")
+    _require(
+        _SHA_RE.fullmatch(expected_sha) is not None,
+        "expected SHA must be a full commit SHA",
+    )
     tag_match = _TAG_RE.fullmatch(release_tag)
     _require(tag_match is not None, "release tag must be vMAJOR.MINOR.PATCH")
     release_version = tag_match.group("version")
     try:
         coverage = require_release_coverage(
-            _load(coverage_receipt, "release coverage"), sha=expected_sha,
-            run_id=run_id, run_attempt=run_attempt,
+            _load(coverage_receipt, "release coverage"),
+            sha=expected_sha,
+            run_id=run_id,
+            run_attempt=run_attempt,
         )
     except ValueError as exc:
         raise ReleaseGateError(str(exc)) from exc

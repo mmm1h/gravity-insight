@@ -45,7 +45,8 @@ run ID and attempt, before it reads any other release inputs. Its fixed
 prerequisite inventory is checked against the workflow by a drift test.
 The aggregate step runs with `always()`: a measure dispatch with skipped gates
 fails aggregation and cannot produce `release-gate.json`. The read-only
-`measure_release` tail consequently does not run after this refusal.
+`measure_release` tail may still inspect existing published assets when
+`verify_ci` succeeded and the run was not cancelled; it cannot authorize publish.
 
 `release_step_coverage.py` records raw `steps.*.outcome`, not the adjusted
 `conclusion` that can turn a continue-on-error failure into success. Each

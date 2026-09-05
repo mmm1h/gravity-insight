@@ -407,7 +407,7 @@ jobs:
 
   measure_release:
     name: release-measurement
-    if: inputs.measure
+    if: inputs.measure && !cancelled() && needs.verify_ci.result == 'success'
     needs: [verify_ci, release_supply_chain]
     runs-on: ubuntu-latest
     timeout-minutes: 10

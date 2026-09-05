@@ -22,8 +22,6 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 
 ## 已定决策
 
-- 发布收据显式绑定当前 run/attempt 的步骤覆盖，逐字段给出拒绝判据；measure 的跳过步骤不能形成发布级通过。收据 CLI 新增必需覆盖输入，同步迁移 release workflow 与测试，不变更 SDK/CLI 数据读取能力；覆盖观测不替代发布后 provenance。
-
 - Insight-first；SQL 只执行 workspace 已登记产品。
 - Workspace SQL 的间接问法必须同时具备审核、跨表聚合、登记名称、日期窗和运行意图；发现只按精确登记名选择 product，无匹配返回既有配置缺口，绝不降级为 Insight、raw operation 或裸 SQL。
 - 调用方能选择目录时使用 host catalog；没有 selection 时 recognizer 保持离线地板。
@@ -41,7 +39,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - Skill Library build receipt schema 直接升级到 v2，将完整本地 QA tree 与 GitHub Release 的扁平 `release_assets` 分开；receipt schema v1 从未发布且没有当前消费者，因此该破坏性升级不损失读取或安装能力。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。
-- 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。
+- 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。发布收据逐字段解释拒绝，并绑定当前 run/attempt 的步骤覆盖，measure 跳过不能形成发布级通过；收据 CLI 必需覆盖输入已同步迁移 workflow/tests，不损失数据读取或只读 measure 能力，不替代发布后 provenance。
 - Probe 语义只使用六态机器模型；`unknown` 不等于 read，静态 read candidate 不构成授权，未证实 POST
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
