@@ -436,8 +436,28 @@ class ProviderSubprocessTests(unittest.TestCase):
 
         self.assertEqual(["PROVIDER_RPC_TIMEOUT"], result["reason_codes"])
         port = int(child_ready.read_text(encoding="ascii"))
-        with self.assertRaises(OSError):
-            socket.create_connection(("127.0.0.1", port), timeout=1)
+        # A bare assertRaises(OSError) here reports "a connection succeeded"
+        # for two causes that need opposite fixes: a descendant outlived the
+        # kill, or the descendant is gone and the kernel had not finished
+        # tearing its listening socket down. The grandchild writes `escaped`
+        # only if it actually returns from accept(), so it separates them --
+        # but only if we wait long enough for a live one to get there.
+        try:
+            socket.create_connection(("127.0.0.1", port), timeout=1).close()
+            accepted = True
+        except OSError:
+            accepted = False
+        if accepted:
+            deadline = time.monotonic() + 5
+            while not escaped.exists() and time.monotonic() < deadline:
+                time.sleep(0.05)
+        self.assertFalse(
+            accepted,
+            f"port {port} accepted a connection after the tree was terminated; "
+            f"escaped_marker={escaped.exists()} "
+            "(true: a descendant outlived the kill; "
+            "false: the listening socket had not been torn down yet)",
+        )
         self.assertFalse(escaped.exists())
 
     def test_windows_job_binding_failure_is_local_and_reaps_before_rpc(self) -> None:
