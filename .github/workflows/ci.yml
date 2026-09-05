@@ -146,6 +146,8 @@ jobs:
         run: python scripts/check_recovery_instructions.py
       - name: Check subprocess text decoding contracts
         run: python scripts/check_subprocess_text_encoding.py
+      - name: Check Skill-Journey contract consistency
+        run: python scripts/check_skill_journey_contracts.py
       - name: Check release tag matches package version
         if: github.event_name != 'workflow_dispatch'
         run: python scripts/check_release_tag.py
