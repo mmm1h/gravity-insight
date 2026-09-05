@@ -98,7 +98,7 @@ def _text_mode(call: ast.Call) -> tuple[bool, bool]:
 
 
 def _source_findings(
-    path: Path, relative: str, *, exempt_text_contracts: bool = False
+    path: Path, relative: str
 ) -> tuple[list[Finding], list[dict[str, object]]]:
     try:
         source = path.read_text(encoding="utf-8")
@@ -127,8 +127,6 @@ def _source_findings(
             exemptions.append(
                 {"path": relative, "line": node.lineno, "reason": exemption_reason}
             )
-            continue
-        if exempt_text_contracts:
             continue
         if text_enabled and not has_contract:
             findings.append(
@@ -177,9 +175,7 @@ def check_repository(root: Path = ROOT) -> tuple[int, dict[str, object]]:
             if reason is not None:
                 exemptions.append({"path": relative, "reason": reason})
             scanned += 1
-            source_findings, source_exemptions = _source_findings(
-                path, relative, exempt_text_contracts=reason is not None
-            )
+            source_findings, source_exemptions = _source_findings(path, relative)
             findings.extend(source_findings)
             exemptions.extend(source_exemptions)
 

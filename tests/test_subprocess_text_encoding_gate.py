@@ -23,7 +23,7 @@ class SubprocessTextEncodingGateTests(unittest.TestCase):
             encoding="utf-8",
         )
         (root / "tests" / "test_gravity_cli_stdio.py").write_text(
-            "import subprocess\nsubprocess.run(['python'], text=True)\n",
+            "import subprocess\nsubprocess.run(['python'], capture_output=True).stdout.decode('utf-8')\n",
             encoding="utf-8",
         )
 
