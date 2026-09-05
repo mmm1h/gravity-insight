@@ -95,10 +95,16 @@ elif mode == "tree-timeout":
     marker = Path(sys.argv[2])
     parent_ready = Path(sys.argv[3])
     child_ready = Path(sys.argv[4])
+    # The port is published by writing a sibling file and renaming it over the
+    # target. write_text is not atomic: the path appears before the bytes land,
+    # so a waiter that only checks exists() can read an empty file and fail on
+    # int(''). os.replace makes existence imply complete content.
     child = (
-        "import socket; from pathlib import Path; "
+        "import os, socket; from pathlib import Path; "
         "listener=socket.socket(); listener.bind(('127.0.0.1', 0)); listener.listen(); "
-        "Path(r'" + str(child_ready) + "').write_text(str(listener.getsockname()[1]), encoding='ascii'); "
+        "staged=Path(r'" + str(child_ready) + "').with_suffix('.staged'); "
+        "staged.write_text(str(listener.getsockname()[1]), encoding='ascii'); "
+        "os.replace(staged, r'" + str(child_ready) + "'); "
         "listener.accept(); Path(r'" + str(marker) + "').write_text('escaped', encoding='utf-8')"
     )
     subprocess.Popen([sys.executable, "-c", child])
