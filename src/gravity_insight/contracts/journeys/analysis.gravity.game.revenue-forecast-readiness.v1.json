@@ -32,7 +32,11 @@
     "runtime_additional_requests": 0
   },
   "claim_policy": {
-    "allowed": [],
+    "allowed": [
+      "observed-revenue-driver",
+      "scenario-revenue-projection",
+      "bounded-target-path"
+    ],
     "forbidden": ["unvalidated-revenue-forecast", "invented-confidence", "causality"]
   },
   "execution": {"mode": "unavailable", "owner": "model://gravity/game-revenue-forecast@1", "path": []},
