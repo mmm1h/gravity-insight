@@ -8,6 +8,7 @@ import itertools
 import json
 from pathlib import Path
 import subprocess
+import os
 import sys
 import tempfile
 import unittest
@@ -56,7 +57,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
     def test_root_exports_are_lazy_cached_and_owned_in_an_isolated_process(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             completed = subprocess.run(
-                [sys.executable, "-I", "-c", _LAZY_PROBE],
+                [sys.executable, "-X", "utf8", "-I", "-c", _LAZY_PROBE],
                 input=json.dumps(expected_public_exports()),
                 text=True,
                 encoding="utf-8",
@@ -79,7 +80,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                 tempfile.TemporaryDirectory() as temporary,
             ):
                 completed = subprocess.run(
-                    [sys.executable, "-I", "-c", _SHADOWING_PROBE, mode],
+                    [sys.executable, "-X", "utf8", "-I", "-c", _SHADOWING_PROBE, mode],
                     input=payload,
                     text=True,
                     encoding="utf-8",
@@ -94,7 +95,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             completed = subprocess.run(
-                [sys.executable, "-I", "-c", _FAIL_CLOSED_PROBE],
+                [sys.executable, "-X", "utf8", "-I", "-c", _FAIL_CLOSED_PROBE],
                 text=True,
                 encoding="utf-8",
                 capture_output=True,
@@ -533,6 +534,7 @@ def run():
             capture_output=True,
             text=True,
             encoding="utf-8",
+            env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             timeout=120,
         )
         self.assertEqual(0, completed.returncode, completed.stderr)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import os
 import sys
 import tempfile
 import unittest
@@ -241,6 +242,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
+                env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
                 check=False,
             )
         self.assertEqual(4, process.returncode, process.stderr)

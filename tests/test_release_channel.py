@@ -5,6 +5,7 @@ import copy
 import json
 import re
 import subprocess
+import os
 import sys
 import tempfile
 import tomllib
@@ -40,7 +41,7 @@ PROVENANCE_FIXTURES = ROOT / "tests" / "fixtures" / "release_provenance"
 
 def _run(command: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        command, cwd=cwd, text=True, encoding="utf-8", capture_output=True, check=False
+        command, cwd=cwd, text=True, encoding="utf-8", env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, capture_output=True, check=False
     )
 
 

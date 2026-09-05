@@ -201,7 +201,7 @@ app_input = "app_id"
         completed = subprocess.run(
             [sys.executable, "-c", command],
             cwd=project,
-            env=environment,
+            env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             check=True,
             capture_output=True,
             text=True,
@@ -318,7 +318,7 @@ app_input = "app_id"
                 "--dry-run",
             ],
             cwd=self.tmp_path,
-            env=environment,
+            env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             check=False,
             capture_output=True,
             text=True,

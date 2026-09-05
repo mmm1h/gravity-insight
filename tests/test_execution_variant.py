@@ -139,7 +139,7 @@ class ExecutionVariantCharacterizationTests(unittest.TestCase):
     def test_generated_corpus_is_current_value_free_and_nine_dimensional(self) -> None:
         result = subprocess.run(
             [
-                sys.executable,
+                sys.executable, "--",
                 str(ROOT / "scripts" / "generate_execution_variant_characterization.py"),
                 "--check",
             ],
@@ -148,6 +148,7 @@ class ExecutionVariantCharacterizationTests(unittest.TestCase):
             capture_output=True,
             text=True,
             encoding="utf-8",
+            env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
         )
         self.assertEqual(0, result.returncode, result.stderr)
         artifact = load_execution_variant_characterization()

@@ -91,7 +91,7 @@ def _run(
     return subprocess.run(
         command,
         cwd=cwd,
-        env=environment,
+        env={**(os.environ if environment is None else environment), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
         text=True,
         encoding="utf-8",
         errors="replace",
@@ -378,6 +378,8 @@ def check_installed_wheel_consumer(
             [
                 sys.executable,
                 "-I",
+                "-X",
+                "utf8",
                 "-c",
                 "import pathlib,sys; sys.path.insert(0, sys.argv[1]); "
                 "import gravity_insight; print(pathlib.Path(gravity_insight.__file__).resolve()); "

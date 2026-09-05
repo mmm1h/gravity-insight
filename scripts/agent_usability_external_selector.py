@@ -202,12 +202,12 @@ def _invoke_plugin(
     try:
         request_text = canonical_request_text(request)
         completed = subprocess.run(
-            [sys.executable, str(plugin_path)],
+            [sys.executable, "--", str(plugin_path)],
             input=request_text,
             capture_output=True,
             text=True,
             encoding="utf-8",
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
             timeout=timeout_seconds,
             check=False,
         )

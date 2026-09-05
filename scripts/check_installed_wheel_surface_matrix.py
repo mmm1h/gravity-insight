@@ -280,7 +280,7 @@ def _run(command: list[str], *, cwd: Path, timeout: int = 300) -> str:
     completed = subprocess.run(
         command,
         cwd=cwd,
-        env=environment,
+        env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
         text=True,
         encoding="utf-8",
         errors="replace",
@@ -328,7 +328,7 @@ def run_surface_matrix(wheel: Path | None = None) -> dict[str, Any]:
         install_command.extend(["--target", str(site), str(selected_wheel)])
         _run(install_command, cwd=temporary)
         output = _run(
-            [sys.executable, "-I", "-c", _PROBE, str(site)],
+            [sys.executable, "-I", "-X", "utf8", "-c", _PROBE, str(site)],
             cwd=temporary,
         )
         try:

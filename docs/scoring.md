@@ -32,6 +32,15 @@ mathematical best case, not to award those points. The maturity result's
 branch, completion-time capture, and worktree root so equal numbers from different
 worktrees are not context-free.
 
+The isolated quality collector also exposes a `repository.quality_profile` receipt:
+`measurement` is the captured context-bound profile (or null), `resolution`
+uses the shared five-state vocabulary, and `collection_failure` explains a
+failed launch, timeout, nonzero exit, or missing/malformed stdout. A collection
+failure is `not_measured` with `MEASUREMENT_NOT_CAPTURED`, not a measured zero.
+The affected dimensions and total keep null scores. Process exit zero alone
+does not certify a complete maturity measurement; consumers must inspect the
+measurement states and blocking gates.
+
 ## Evidence commands
 
 - `gravity journey certifications --json` checks each versioned Journey against

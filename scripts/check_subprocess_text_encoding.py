@@ -1,11 +1,13 @@
-"""Require an explicit decoding contract for subprocess text mode."""
+"""Require matching parent decoding and Python child stdio encoding."""
 
 from __future__ import annotations
 
 import argparse
 import ast
+import codecs
 from dataclasses import asdict, dataclass
 import json
+import re
 from pathlib import Path
 import sys
 from typing import Sequence
@@ -39,6 +41,22 @@ EXEMPT_CALLS = {
     )
 }
 
+# Audited dynamic argv boundaries. These waive only executable inference, never
+# the encoder check. Keys remain stable across line shifts. Mixed runners must
+# pin Python stdio too; their isolated Python argv must explicitly use -X utf8.
+COMMAND_EXEMPTIONS = {
+    ("scripts/audit_release_dependencies.py", "audit_site_packages"): ("python", "python parameter selects the pip-audit interpreter"),
+    ("scripts/check_installed_wheel_consumer.py", "_run"): ("python", "Git and Python install/probe/test commands; isolated probes use -X utf8"),
+    ("scripts/check_installed_wheel_surface_matrix.py", "_run"): ("python", "Python pip install and isolated -X utf8 probe"),
+    ("scripts/run_integrated_validation.py", "run_gate"): ("python", "GateSpec inventory includes Python and external commands"),
+    ("scripts/supply_chain_common.py", "run_checked"): ("python", "Build, venv, pip and release tool command boundary"),
+    ("scripts/validation_observability.py", "run_gate"): ("python", "Task-context gate commands include Python and git"),
+    ("tests/test_installed_wheel.py", "_run"): ("python", "Python pip/build argv assembled by wheel test"),
+    ("tests/test_release_channel.py", "_run"): ("python", "Python release probes and git fixtures"),
+    ("scripts/scan_repository_secrets.py", "_history_lines"): ("external", "Locally assembled git log argv"),
+    ("tests/test_release_channel.py", "ReleaseRecoveryStateTests.test_missing_github_release_is_created_from_verified_tag"): ("external", "Loop contains only literal git fixture commands"),
+}
+
 
 @dataclass(frozen=True, order=True)
 class Finding:
@@ -60,6 +78,15 @@ def _subprocess_imports(tree: ast.AST) -> tuple[set[str], set[str]]:
             for alias in node.names:
                 if alias.name in _SUBPROCESS_CALLS:
                     functions.add(alias.asname or alias.name)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            arguments = node.args.posonlyargs + node.args.args
+            defaults = list(zip(arguments[-len(node.args.defaults):], node.args.defaults))
+            defaults.extend(zip(node.args.kwonlyargs, node.args.kw_defaults))
+            for argument, default in defaults:
+                if isinstance(default, ast.Attribute) and isinstance(default.value, ast.Name):
+                    if default.value.id in modules and default.attr in _SUBPROCESS_CALLS:
+                        functions.add(argument.arg)
     return modules, functions
 
 
@@ -124,6 +151,94 @@ def _enclosing_functions(tree: ast.AST) -> dict[ast.Call, str]:
 
     visit(tree, ())
     return mapping
+
+
+def _utf8_literal(node: ast.expr | None) -> bool:
+    if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+        return False
+    try:
+        return codecs.lookup(node.value).name == "utf-8"
+    except LookupError:
+        return False
+
+
+def _command_kind(call: ast.Call) -> tuple[str, list[ast.expr]]:
+    command = call.args[0] if call.args else _keyword(call, "args")
+    if not isinstance(command, (ast.List, ast.Tuple)) or not command.elts:
+        return "unknown", []
+    first = command.elts[0]
+    if isinstance(first, ast.Attribute) and isinstance(first.value, ast.Name):
+        if first.value.id == "sys" and first.attr == "executable":
+            return "python", command.elts[1:]
+    if isinstance(first, ast.Constant) and isinstance(first.value, str):
+        executable = first.value.replace("\\", "/").rsplit("/", 1)[-1].lower()
+        if re.fullmatch(r"(?:pythonw?(?:[23](?:\.\d+)*)?|pypy[23]?)(?:\.exe)?", executable):
+            return "python", command.elts[1:]
+        # Do not treat an arbitrary literal executable as proof of non-Python:
+        # console scripts and launchers can themselves be Python entry points.
+        if executable in {"git", "git.exe", "gh", "gh.exe", "node", "node.exe"}:
+            return "external", []
+    return "unknown", command.elts[1:]
+
+
+def _python_flags(arguments: list[ast.expr]) -> tuple[bool, bool, str | None]:
+    isolated = False
+    utf8 = False
+    index = 0
+    while index < len(arguments):
+        argument = arguments[index]
+        if not isinstance(argument, ast.Constant) or not isinstance(argument.value, str):
+            return isolated, utf8, "Python flags are dynamic before the script/module boundary"
+        value = argument.value
+        if value in {"-c", "-m", "--", "-"} or not value.startswith("-"):
+            break
+        if value == "-X":
+            index += 1
+            if index >= len(arguments) or not isinstance(arguments[index], ast.Constant):
+                return isolated, utf8, "Python -X option is unresolved"
+            option = arguments[index].value
+        elif value.startswith("-X"):
+            option = value[2:]
+        else:
+            option = None
+            if re.fullmatch(r"-[IEsSuBOqbvd]+", value):
+                isolated |= "I" in value or "E" in value
+            else:
+                return isolated, utf8, f"unrecognized Python interpreter flag: {value}"
+        if option in {"utf8", "utf8=1", "utf8=0"}:
+            utf8 = option != "utf8=0"
+        index += 1
+    return isolated, utf8, None
+
+
+def _environment_pins_stdio(call: ast.Call) -> bool:
+    environment = _keyword(call, "env")
+    if not isinstance(environment, ast.Dict):
+        return False
+    pinned = False
+    for key, value in zip(environment.keys, environment.values):
+        if key is None or not isinstance(key, ast.Constant):
+            pinned = False
+        elif key.value == "PYTHONIOENCODING":
+            pinned = _utf8_literal(value)
+    return pinned
+
+
+def _encoder_failure(call: ast.Call, arguments: list[ast.expr]) -> str | None:
+    shell = _keyword(call, "shell")
+    if shell is not None and not (isinstance(shell, ast.Constant) and shell.value is False):
+        return "shell execution cannot prove Python argv/encoding; require shell=False"
+    if not _utf8_literal(_keyword(call, "encoding")):
+        return "Python text capture requires a literal UTF-8 parent encoding"
+    isolated, utf8, unknown = _python_flags(arguments)
+    if unknown:
+        return unknown
+    if isolated:
+        if not utf8:
+            return "Python -I/-E ignores PYTHON* environment; require interpreter -X utf8"
+    elif not _environment_pins_stdio(call):
+        return "Python child encoder is unpinned: require env with final PYTHONIOENCODING='utf-8' (inherited locale/overrides are not proof)"
+    return None
 
 
 def _source_findings(
@@ -191,6 +306,23 @@ def _source_findings(
                     "expanded subprocess keywords cannot prove text mode is disabled or encoding is explicit",
                 )
             )
+        if direct_subprocess and (text_enabled or text_unknown or has_contract):
+            kind, arguments = _command_kind(node)
+            declared = COMMAND_EXEMPTIONS.get((relative, function))
+            if kind == "unknown" and declared is not None:
+                kind, reason = declared
+                arguments = []
+                exemptions.append({"path": relative, "function": function, "line": node.lineno, "reason": reason})
+            if kind == "unknown":
+                detail = "cannot prove executable is Python or an approved external tool; use literal argv/sys.executable or a reviewed function-keyed command exemption"
+                detector = "subprocess-command-unresolved"
+            elif kind == "python":
+                detail = _encoder_failure(node, arguments)
+                detector = "subprocess-python-encoder-unpinned"
+            else:
+                detail = None
+            if detail:
+                findings.append(Finding(relative, node.lineno, detector, f"{function or '<module>'}: {detail}"))
     return findings, exemptions
 
 

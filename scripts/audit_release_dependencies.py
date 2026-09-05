@@ -5,6 +5,7 @@ import hashlib
 import importlib.metadata
 import json
 import subprocess
+import os
 import sys
 from pathlib import Path
 from typing import Any, Sequence
@@ -95,6 +96,7 @@ def audit_site_packages(
         cwd=ROOT,
         text=True,
         encoding="utf-8",
+        env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
         errors="replace",
         capture_output=True,
         check=False,

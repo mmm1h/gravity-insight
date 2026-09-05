@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import os
 import sys
 import tempfile
 import unittest
@@ -41,7 +42,7 @@ def _resource_inventory(package: Path) -> set[str]:
 
 def _run(command: list[str], *, cwd: Path, timeout: int = 300) -> None:
     completed = subprocess.run(
-        command, cwd=cwd, text=True, encoding="utf-8", capture_output=True, timeout=timeout,
+        command, cwd=cwd, text=True, encoding="utf-8", env={**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}, capture_output=True, timeout=timeout,
     )
     assert completed.returncode == 0, (
         f"command failed ({completed.returncode}): {' '.join(command)}\n"
@@ -187,7 +188,7 @@ assert leaks == [], f"imports escaped extracted wheel: {leaks}"
 print(json.dumps(failures))
 """
             completed = subprocess.run(
-                [sys.executable, "-I", "-c", probe, str(extracted)],
+                [sys.executable, "-X", "utf8", "-I", "-c", probe, str(extracted)],
                 input=json.dumps(sorted(expected_modules)), text=True, encoding="utf-8",
                 capture_output=True, cwd=temporary, timeout=300,
             )
