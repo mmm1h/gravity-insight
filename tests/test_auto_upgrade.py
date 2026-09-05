@@ -817,7 +817,7 @@ class StartupInstallTests(unittest.TestCase):
             redirect_stderr(self.output),
         ):
             self.assertEqual(0, entry.main(["--help"]))
-        self.assertIn("cache permissions", self.output.getvalue())
+        self.assertIn("permissions", self.output.getvalue())
         self.python.assert_not_called()
 
     def test_actual_doctor_and_exact_pin_never_touch_update_state(self):

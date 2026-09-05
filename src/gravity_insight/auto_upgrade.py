@@ -126,9 +126,12 @@ def maybe_auto_upgrade(
     if not startup_update_enabled(argv, environ=env):
         return UpdateCheck("disabled")
     output = sys.stderr if stderr is None else stderr
-    selected_now = utc(now)
-    path = update_state_path() if state_path is None else Path(state_path)
-    checked = _safe_check(state_path=path, now=selected_now, request=request)
+    try:
+        selected_now = utc(now)
+        path = update_state_path() if state_path is None else Path(state_path)
+        checked = _safe_check(state_path=path, now=selected_now, request=request)
+    except Exception as exc:
+        checked = UpdateCheck("failed", detail=f"{type(exc).__name__}: {exc}")
     if checked.status == "failed":
         _warn_check_failure(checked, output)
         return checked

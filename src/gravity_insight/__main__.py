@@ -105,13 +105,7 @@ def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
 
     if not startup_update_enabled(args):
         return None
-    try:
-        result = maybe_auto_upgrade(args, target_python=_target_python_from_environment())
-    except Exception as exc:
-        print(f"warning: startup update unavailable ({type(exc).__name__}: {exc}); "
-              "continuing with the current version. Check cache permissions or set "
-              "GRAVITY_INSIGHT_AUTO_UPGRADE=0.", file=sys.stderr)
-        return None
+    result = maybe_auto_upgrade(args, target_python=_target_python_from_environment())
     if result.status == "installed" and result.state is not None:
         from ._auto_upgrade_install import activate_install
 
