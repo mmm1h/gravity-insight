@@ -12,7 +12,9 @@ gravity --help
 gravity insight auth status
 ```
 
-首次运行会在交互终端引导登录。凭据只留在用户私有状态目录；认证失败时停止，不把 token、cookie、用户名或密码写进命令、日志或 Plan。
+首次运行会在交互终端引导登录；账号由团队发放。凭据只留在用户私有状态目录；认证失败时停止，不把 token、cookie、用户名或密码写进命令、日志或 Plan。
+
+**自动更新全团队默认开启**，不要逐机关闭。`GRAVITY_INSIGHT_AUTO_UPGRADE` 未设置即为开启，启动时安装更新版本（含破坏性变更）并在新进程重跑命令；破坏性变更靠[迁移说明](migration/)传达，不靠停留旧版躲避。因此 `pip show` 显示的是基础安装版本而非实际执行版本，要认实际版本读 `gravity.runtime-update-receipt.v1` 收据。取证需临时钉版时设 `GRAVITY_INSIGHT_PINNED_VERSION`，**必须在第一条命令之前**。从 `0.3.9` 及更早升上来的人要手动装一次 `0.3.10`：执行更新的代码在 `0.3.10` 里，旧运行时没有它。
 
 只有修改源码时才在当前 worktree 的独立虚拟环境安装 editable 包：
 
@@ -27,10 +29,13 @@ python -m venv .venv
 ## 2. 发现能力
 
 ```powershell
+gravity metadata sync --all-apps
 gravity agent-catalog categories
 gravity agent-catalog category analysis --limit 20
 gravity agent-catalog describe analysis.query.spec:event
 ```
+
+未同步过 metadata catalog 时，metadata 发现返回 `The default local metadata catalog is unavailable`。
 
 按 `categories → category → describe` 浏览当前机器的真实目录，优先选择 `identity_kind=product`。Raw operation 只用于已知 wire 的专家调用；`capability_gap` 只能报告，不能执行。
 
@@ -39,10 +44,13 @@ gravity agent-catalog describe analysis.query.spec:event
 已知 Skill 先从明确 Hub Source 同步，再离线检查版本：
 
 ```powershell
+curl -sL -o source.json https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v4/source.json
 gravity skills sync --source source.json --state-root <state-root>
 gravity skills list --state-root <state-root>
 gravity skills show <skill_uri> --state-root <state-root>
 ```
+
+`source.json` 是 Skill Library 的发布产物，公开可取。同步前 `list` 返回 `count: 0` 且退出码 `0`，与"Source 里没有 Skill"无法区分；同步成功以 `sync` 返回的 `skill_count` 和 `snapshot_digest` 为准。
 
 Skill 不替代选路、Journey、权限或执行合同；`blocked` 必须停止，`validated` 不代表当前可执行。
 Runtime wheel 不内置业务 Skill；所有方法统一通过明确的 Hub Source 完成
