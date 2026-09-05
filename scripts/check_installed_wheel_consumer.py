@@ -19,7 +19,10 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONSUMER = ROOT.parent / "work-dashboard"
-DEFAULT_REVISION = "6c740a5660c087b733f752e4bf9c1a5edfdd04b2"
+# Nothing checks that this pin still tracks the consumer's HEAD, so it only moves
+# when someone moves it. A stale pin does not fail — it quietly verifies the wheel
+# against a consumer that no longer exists, which is worse than not checking.
+DEFAULT_REVISION = "03d57598d601909da1297fcc0d9f31184d0f4da9"
 STRICT_PREREQUISITES_ENV = "GRAVITY_REQUIRE_CANONICAL_CONSUMER"
 CONSUMER_REPOSITORY_ENV = "GRAVITY_CANONICAL_CONSUMER_REPOSITORY"
 CONSUMER_TESTS = (
