@@ -98,7 +98,7 @@ def _text_mode(call: ast.Call) -> tuple[bool, bool]:
 
 
 def _source_findings(
-    path: Path, relative: str
+    path: Path, relative: str, *, exempt_text_contracts: bool = False
 ) -> tuple[list[Finding], list[dict[str, object]]]:
     try:
         source = path.read_text(encoding="utf-8")
@@ -117,10 +117,18 @@ def _source_findings(
         direct_subprocess = _is_direct_subprocess_call(node, modules, functions)
         dynamic_keywords = any(keyword.arg is None for keyword in node.keywords)
         exemption_reason = EXEMPT_CALLS.get((relative, node.lineno))
-        if exemption_reason is not None:
+        if (
+            exemption_reason is not None
+            and direct_subprocess
+            and dynamic_keywords
+            and not text_enabled
+            and not text_unknown
+        ):
             exemptions.append(
                 {"path": relative, "line": node.lineno, "reason": exemption_reason}
             )
+            continue
+        if exempt_text_contracts:
             continue
         if text_enabled and not has_contract:
             findings.append(
@@ -168,9 +176,10 @@ def check_repository(root: Path = ROOT) -> tuple[int, dict[str, object]]:
             reason = EXEMPT_FILES.get(relative)
             if reason is not None:
                 exemptions.append({"path": relative, "reason": reason})
-                continue
             scanned += 1
-            source_findings, source_exemptions = _source_findings(path, relative)
+            source_findings, source_exemptions = _source_findings(
+                path, relative, exempt_text_contracts=reason is not None
+            )
             findings.extend(source_findings)
             exemptions.extend(source_exemptions)
 
@@ -189,9 +198,14 @@ def check_repository(root: Path = ROOT) -> tuple[int, dict[str, object]]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     code, receipt = check_repository(args.root.resolve())
-    sys.stdout.write(json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+    rendered = json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(rendered, encoding="utf-8", newline="\n")
+    sys.stdout.write(rendered)
     return code
 
 
