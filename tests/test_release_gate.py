@@ -11,8 +11,10 @@ from pathlib import Path
 from scripts.build_release_gate_receipt import (
     ReleaseGateError,
     build_release_gate_receipt,
+    _validate_secret,
 )
 from scripts.check_changelog import PYPROJECT_PATH, release_declaration
+from scripts.release_step_coverage import PREREQUISITES, capture_coverage
 from scripts.check_installed_wheel_consumer import DEFAULT_REVISION
 from scripts.check_release_ci import ReleaseCIError, check_release_ci
 from scripts.check_release_main import ReleaseMainError, check_release_main
@@ -159,7 +161,7 @@ class ReleaseCIGateTests(unittest.TestCase):
 
 
 class AggregateReleaseGateTests(unittest.TestCase):
-    def _fixture(self, root: Path) -> dict[str, Path]:
+    def _fixture(self, root: Path) -> dict[str, object]:
         dist = root / "dist"
         sbom = root / "sbom"
         dist.mkdir()
@@ -306,6 +308,12 @@ class AggregateReleaseGateTests(unittest.TestCase):
         })
         return {
             "dist_dir": dist,
+            "coverage_receipt": _write(root / "coverage.json", capture_coverage(
+                {step: {"outcome": "success"} for step in PREREQUISITES},
+                sha=SHA, run_id="123", run_attempt="1", event="push",
+            )),
+            "run_id": "123",
+            "run_attempt": "1",
             "sbom_dir": sbom,
             "main_receipt": main,
             "ci_receipt": ci,
@@ -337,12 +345,51 @@ class AggregateReleaseGateTests(unittest.TestCase):
             iv = json.loads(iv_path.read_text(encoding="utf-8"))
             iv["commit_sha"] = "b" * 40
             _write(iv_path, iv)
-            with self.assertRaisesRegex(ReleaseGateError, "not an unqualified green"):
+            with self.assertRaisesRegex(ReleaseGateError, "IV.commit_sha: expected"):
                 build_release_gate_receipt(
                     expected_sha=SHA,
                     release_tag=TAG,
                     **arguments,
                 )
+
+
+class SecretReceiptDiagnosticsTests(unittest.TestCase):
+    def _reject(self, field: str, value: object) -> None:
+        document = {
+            "status": "passed", "history_included": True, "repository_head": SHA,
+            "history_commit_count": 2, "scanned_tracked_file_count": 3,
+            "unreviewed_findings": [],
+        }
+        document[field] = value
+        with self.assertRaises(ReleaseGateError) as caught:
+            _validate_secret(document, SHA)
+        message = str(caught.exception)
+        self.assertIn(f"secret.{field}: expected", message)
+        self.assertIn(f"observed {value!r}; next:", message)
+
+    def test_scan_failure(self) -> None:
+        self._reject("status", "failed")
+
+    def test_history_not_scanned(self) -> None:
+        self._reject("history_included", False)
+
+    def test_wrong_sha(self) -> None:
+        self._reject("repository_head", "b" * 40)
+
+    def test_no_history_commits(self) -> None:
+        self._reject("history_commit_count", 0)
+
+    def test_no_tracked_files(self) -> None:
+        self._reject("scanned_tracked_file_count", 0)
+
+    def test_unreviewed_findings(self) -> None:
+        self._reject("unreviewed_findings", ["synthetic finding ID"])
+
+    def test_counts_reject_booleans_and_malformed_values(self) -> None:
+        for field in ("history_commit_count", "scanned_tracked_file_count"):
+            for value in (True, False, None, "2", -1, 1.5):
+                with self.subTest(field=field, value=value):
+                    self._reject(field, value)
 
 
 class ReleaseChangelogReceiptTests(unittest.TestCase):

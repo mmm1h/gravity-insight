@@ -37,6 +37,42 @@ IV facts to agree on the release inputs. Provenance remains explicitly
 until publication; `finalize-release` continues to verify them before creating
 or reconciling the GitHub Release.
 
+## Declared step coverage
+
+Job success alone is not release evidence. Every supply-chain step has a stable
+ID. The builder requires `coverage-prepublish.json` plus the current Actions
+run ID and attempt, before it reads any other release inputs. Its fixed
+prerequisite inventory is checked against the workflow by a drift test.
+The aggregate step runs with `always()`: a measure dispatch with skipped gates
+fails aggregation and cannot produce `release-gate.json`. The read-only
+`measure_release` tail may still inspect existing published assets when
+`verify_ci` succeeded and the run was not cancelled; it cannot authorize publish.
+
+`release_step_coverage.py` records raw `steps.*.outcome`, not the adjusted
+`conclusion` that can turn a continue-on-error failure into success. Each
+observation uses `gravity.context-bound-measurement.v1` and the existing
+measurement resolver, bound to workflow/job/step, checkpoint scope, SHA, event,
+run ID and attempt. Coverage uses the existing five states: missing/skipped is
+`not_measured`; failed, cancelled, malformed or future-dated is `invalid`;
+wrong context is `not_applicable`; evidence older than 24 hours is `expired`.
+The underlying measurement may validly measure a skipped/failed outcome; the
+coverage status describes whether the required successful execution happened.
+Only every prerequisite `measured` with outcome `success` in a push run passes.
+Declared green summaries are not trusted; the builder re-resolves observations.
+
+Both checkpoints explicitly list expected, ran, skipped, missing and excluded
+step IDs. Prepublish coverage excludes its observer and subsequent operations.
+`coverage-final.json` includes aggregation and distribution upload outcomes,
+but explicitly excludes its own observer and the later evidence upload; neither
+can truthfully attest its own future completion. Diagnostic evidence upload uses
+`always()`, so a refused measure run still explains its omissions. If checkout,
+Python or upload itself fails, the workflow can fail without delivering a
+diagnostic artifact; absence is never a passing release receipt.
+
+These are trusted-workflow observations, not cryptographic attestations of
+runner execution. They do not replace source receipt validation or post-publish
+provenance. Collectors cannot prove execution if the trusted workflow lies.
+
 ## Measured release timing
 
 The v0.3.7 tag run `33794176327` (2026-09-03) reached PyPI's recorded wheel
