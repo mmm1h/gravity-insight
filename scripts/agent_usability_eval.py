@@ -565,7 +565,14 @@ def recovery_score(client: Any) -> tuple[dict[str, Any], int]:
 
 
 def _git(*args: str) -> str:
-    result = subprocess.run(["git", *args], cwd=ROOT, check=True, capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
     return result.stdout.strip()
 
 

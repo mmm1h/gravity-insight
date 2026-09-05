@@ -271,6 +271,7 @@ def _collect_in_subprocess(targets: Sequence[str]) -> tuple[str, ...]:
             cwd=ROOT,
             env=os.environ.copy(),
             text=True,
+            encoding="utf-8",
             capture_output=True,
             check=False,
         )

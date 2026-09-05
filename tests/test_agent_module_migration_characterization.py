@@ -59,6 +59,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                 [sys.executable, "-I", "-c", _LAZY_PROBE],
                 input=json.dumps(expected_public_exports()),
                 text=True,
+                encoding="utf-8",
                 capture_output=True,
                 cwd=temporary,
                 timeout=_PROBE_HANG_GUARD_SECONDS,
@@ -81,6 +82,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
                     [sys.executable, "-I", "-c", _SHADOWING_PROBE, mode],
                     input=payload,
                     text=True,
+                    encoding="utf-8",
                     capture_output=True,
                     cwd=temporary,
                     timeout=_PROBE_HANG_GUARD_SECONDS,
@@ -94,6 +96,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
             completed = subprocess.run(
                 [sys.executable, "-I", "-c", _FAIL_CLOSED_PROBE],
                 text=True,
+                encoding="utf-8",
                 capture_output=True,
                 cwd=temporary,
                 timeout=_PROBE_HANG_GUARD_SECONDS,
@@ -529,6 +532,7 @@ def run():
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=120,
         )
         self.assertEqual(0, completed.returncode, completed.stderr)

@@ -142,6 +142,7 @@ def _quality_profile(root: Path) -> tuple[dict[str, Any] | None, str | None]:
         check=False,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=120,
     )
     if completed.returncode:

@@ -144,6 +144,8 @@ jobs:
         run: python -m gravity_insight.quality check
       - name: Check recovery instruction resolvability
         run: python scripts/check_recovery_instructions.py
+      - name: Check subprocess text decoding contracts
+        run: python scripts/check_subprocess_text_encoding.py
       - name: Check release tag matches package version
         if: github.event_name != 'workflow_dispatch'
         run: python scripts/check_release_tag.py

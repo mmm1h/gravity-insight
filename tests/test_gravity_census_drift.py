@@ -129,6 +129,7 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
                 check=False,
             )
             self.assertEqual(0, diff_process.returncode, diff_process.stderr)
@@ -148,6 +149,7 @@ class GravityCensusDriftPipelineTests(unittest.TestCase):
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
                 check=False,
             )
             self.assertEqual(0, impact_process.returncode, impact_process.stderr)

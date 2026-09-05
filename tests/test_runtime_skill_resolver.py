@@ -228,6 +228,7 @@ class RuntimeSkillResolverTests(unittest.TestCase):
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         ).stdout.strip()
         return SimpleNamespace(
             root=root,
