@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "0972e5f96c8b020be75de0e19a6bfbaa7948bb88520e233477895340dde3141f",
-    "manual_review_sha256": "9eb8adac5516daab254b0d4a7c58b81c9d966240a86b14106b3fe536aafd0629",
+    "reference_evidence_sha256": "fc0ab681c3ca77bcb282e9a08c04ffed24b25fe1bec5c0f757eb046eee887ddd",
+    "manual_review_sha256": "504095c1d24b4c762ec415cc454603467aca673ed5ee4ceb7187124cea862e2e",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3174,
     "scanned_file_count": 3167,
@@ -716,7 +716,7 @@
     "dispositions": {
       "no_migration_effect": 248
     },
-    "sites_sha256": "3ace9294e42012b55a021e75af83135e4ae28fb621c3e2427442ec85e507ae4a"
+    "sites_sha256": "7102d19c501858555e0184ffcd2eb4ab1f9eb62f64dee73aa2beefe73c6d1ebb"
   },
   "blockers": [],
   "site_fields": [
@@ -3764,7 +3764,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:292:14:patch.object",
+      "tests/test_provider_subprocess.py:298:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "SubprocessProviderTransport",
@@ -3779,37 +3779,7 @@
       }
     ],
     [
-      "tests/test_provider_subprocess.py:297:12:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "transport_module",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      9,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_provider_subprocess.py:392:13:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "transport_module.os",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      47,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_provider_subprocess.py:393:13:patch.object",
+      "tests/test_provider_subprocess.py:303:12:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module",
@@ -3825,6 +3795,36 @@
     ],
     [
       "tests/test_provider_subprocess.py:398:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "transport_module.os",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      47,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_provider_subprocess.py:399:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "transport_module",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      9,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_provider_subprocess.py:404:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "transport_module.subprocess",
