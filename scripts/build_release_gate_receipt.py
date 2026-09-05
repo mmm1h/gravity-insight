@@ -13,12 +13,14 @@ try:
     from scripts.check_release_ci import SCHEMA_VERSION as CI_SCHEMA
     from scripts.check_release_main import SCHEMA_VERSION as MAIN_SCHEMA
     from scripts.run_integrated_validation import gate_specs
+    from scripts.release_step_coverage import require_release_coverage
     from scripts.supply_chain_common import SupplyChainError, select_distributions
 except ModuleNotFoundError:
     from check_installed_wheel_consumer import DEFAULT_REVISION
     from check_release_ci import SCHEMA_VERSION as CI_SCHEMA
     from check_release_main import SCHEMA_VERSION as MAIN_SCHEMA
     from run_integrated_validation import gate_specs
+    from release_step_coverage import require_release_coverage
     from supply_chain_common import SupplyChainError, select_distributions
 
 
@@ -283,11 +285,21 @@ def build_release_gate_receipt(
     surface_receipt: Path,
     consumer_receipt: Path,
     changelog_receipt: Path,
+    coverage_receipt: Path,
+    run_id: str,
+    run_attempt: str,
 ) -> dict[str, Any]:
     _require(_SHA_RE.fullmatch(expected_sha) is not None, "expected SHA must be a full commit SHA")
     tag_match = _TAG_RE.fullmatch(release_tag)
     _require(tag_match is not None, "release tag must be vMAJOR.MINOR.PATCH")
     release_version = tag_match.group("version")
+    try:
+        coverage = require_release_coverage(
+            _load(coverage_receipt, "release coverage"), sha=expected_sha,
+            run_id=run_id, run_attempt=run_attempt,
+        )
+    except ValueError as exc:
+        raise ReleaseGateError(str(exc)) from exc
     wheel, sdist = select_distributions(dist_dir.resolve())
 
     main = _load(main_receipt, "protected-main")
@@ -312,6 +324,7 @@ def build_release_gate_receipt(
     )
 
     sources = {
+        "step_coverage": _source(coverage_receipt),
         "protected_main": _source(main_receipt),
         "ci": _source(ci_receipt),
         "integrated_validation": _source(integrated_validation_receipt),
@@ -389,6 +402,7 @@ def build_release_gate_receipt(
         "post_publish_deferred_count": post_publish_deferred_count,
         "artifacts": artifacts,
         "source_receipts": sources,
+        "coverage": coverage,
         "required_items": required_items,
     }
 
@@ -413,9 +427,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--surface-receipt", type=_path, required=True)
     parser.add_argument("--consumer-receipt", type=_path, required=True)
     parser.add_argument("--changelog-receipt", type=_path, required=True)
+    parser.add_argument("--coverage-receipt", type=_path, required=True)
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--run-attempt", required=True)
     parser.add_argument("--output", type=_path, required=True)
     args = parser.parse_args(argv)
     try:
+        # A failed rebuild must not leave an earlier passing output to upload.
+        args.output.unlink(missing_ok=True)
         receipt = build_release_gate_receipt(
             expected_sha=args.expected_sha,
             release_tag=args.release_tag,
@@ -429,6 +448,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             surface_receipt=args.surface_receipt,
             consumer_receipt=args.consumer_receipt,
             changelog_receipt=args.changelog_receipt,
+            coverage_receipt=args.coverage_receipt,
+            run_id=args.run_id,
+            run_attempt=args.run_attempt,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(

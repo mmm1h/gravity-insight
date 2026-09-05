@@ -164,35 +164,45 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        id: checkout
         with:
           fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        id: setup_python
         with:
           python-version: "3.11"
           cache: pip
       - name: Install SDK and release tooling
+        id: install_tooling
         run: python -m pip install --disable-pip-version-check -e ".[dev]" twine
       - name: Build wheel and source distribution
+        id: build_distributions
         run: python -m build
       - name: Check distributions
+        id: check_distributions
         run: python -m twine check dist/*
       - name: Generate wheel and sdist SBOMs
+        id: generate_sboms
         run: python scripts/generate_release_sbom.py --dist-dir dist --output-dir release-evidence
       - name: Audit isolated wheel runtime dependencies
+        id: audit_dependencies
         run: python scripts/audit_release_dependencies.py --dist-dir dist --receipt release-evidence/dependency-audit.json
       - name: Download exact-SHA release CI evidence
+        id: download_ci
         if: github.event_name == 'push'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: release-ci-evidence
           path: tmp/release-input/
       - name: Download exact-SHA secret-history evidence
+        id: download_secret
         if: github.event_name == 'push'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: release-secret-scan
           path: tmp/release-input/
       - name: Prepare exact-main Integrated Validation environment
+        id: prepare_iv
         if: github.event_name == 'push'
         env:
           CONSUMER_REPO_DEPLOY_KEY: ${{ secrets.CONSUMER_REPO_DEPLOY_KEY }}
@@ -238,6 +248,7 @@ jobs:
           .venv/bin/python -m pip install --disable-pip-version-check -e ".[dev]"
           git switch --force-create main "$GITHUB_SHA"
       - name: Run exact-tag Integrated Validation
+        id: integrated_validation
         if: github.event_name == 'push'
         env:
           GRAVITY_CANONICAL_CONSUMER_REPOSITORY: ${{ runner.temp }}/work-dashboard
@@ -247,12 +258,14 @@ jobs:
           .venv/bin/python scripts/run_integrated_validation.py
           --receipt release-evidence/integrated-validation.json
       - name: Check intended wheel surface matrix
+        id: wheel_surface
         if: github.event_name == 'push'
         run: >-
           .venv/bin/python scripts/check_installed_wheel_surface_matrix.py
           --wheel dist/*.whl
           --receipt release-evidence/installed-wheel-surface.json
       - name: Check intended wheel canonical consumer
+        id: canonical_consumer
         if: github.event_name == 'push'
         run: >-
           .venv/bin/python scripts/check_installed_wheel_consumer.py
@@ -262,17 +275,27 @@ jobs:
           --strict-prerequisites
           --receipt release-evidence/canonical-consumer.json
       - name: Check release changelog and migration declaration
+        id: changelog
         if: github.event_name == 'push'
         run: >-
           .venv/bin/python scripts/check_changelog.py
           --release-version "${GITHUB_REF_NAME#v}"
           --receipt release-evidence/changelog.json
+      - name: Record prepublish step coverage
+        id: coverage_pre
+        if: always()
+        env:
+          RELEASE_STEPS_JSON: ${{ toJSON(steps) }}
+        run: python scripts/release_step_coverage.py --output release-evidence/coverage-prepublish.json
       - name: Aggregate pre-publish release receipt
-        if: github.event_name == 'push'
+        id: aggregate
+        if: always()
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
         run: >-
-          .venv/bin/python scripts/build_release_gate_receipt.py
+          python scripts/build_release_gate_receipt.py
           --expected-sha "$GITHUB_SHA"
-          --release-tag "$GITHUB_REF_NAME"
+          --release-tag "$RELEASE_TAG"
           --dist-dir dist
           --sbom-dir release-evidence
           --main-receipt tmp/release-input/main-equivalence.json
@@ -283,14 +306,26 @@ jobs:
           --surface-receipt release-evidence/installed-wheel-surface.json
           --consumer-receipt release-evidence/canonical-consumer.json
           --changelog-receipt release-evidence/changelog.json
+          --coverage-receipt release-evidence/coverage-prepublish.json
+          --run-id "$GITHUB_RUN_ID"
+          --run-attempt "$GITHUB_RUN_ATTEMPT"
           --output release-evidence/release-gate.json
       - name: Upload checked distributions
+        id: upload_distributions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-distributions
           path: dist/
           if-no-files-found: error
+      - name: Record final step coverage
+        id: coverage_final
+        if: always()
+        env:
+          RELEASE_STEPS_JSON: ${{ toJSON(steps) }}
+        run: python scripts/release_step_coverage.py --phase final --output release-evidence/coverage-final.json
       - name: Upload release supply-chain evidence
+        id: upload_evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: release-supply-chain

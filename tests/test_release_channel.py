@@ -291,9 +291,9 @@ class ReleaseWorkflowTests(unittest.TestCase):
             "Check intended wheel surface matrix",
             "Check intended wheel canonical consumer",
             "Check release changelog and migration declaration",
-            "Aggregate pre-publish release receipt",
         ):
             self.assertIn("if: github.event_name == 'push'", self._step(build, step_name))
+        self.assertIn("if: always()", self._step(build, "Aggregate pre-publish release receipt"))
         publish_index = self.workflow.index("  publish:")
         for fragment in (
             "scripts/generate_release_sbom.py",

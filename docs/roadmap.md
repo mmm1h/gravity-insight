@@ -22,6 +22,8 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 
 ## 已定决策
 
+- 发布收据显式绑定当前 run/attempt 的步骤覆盖，逐字段给出拒绝判据；measure 的跳过步骤不能形成发布级通过。收据 CLI 新增必需覆盖输入，同步迁移 release workflow 与测试，不变更 SDK/CLI 数据读取能力；覆盖观测不替代发布后 provenance。
+
 - Insight-first；SQL 只执行 workspace 已登记产品。
 - Workspace SQL 的间接问法必须同时具备审核、跨表聚合、登记名称、日期窗和运行意图；发现只按精确登记名选择 product，无匹配返回既有配置缺口，绝不降级为 Insight、raw operation 或裸 SQL。
 - 调用方能选择目录时使用 host catalog；没有 selection 时 recognizer 保持离线地板。

@@ -14,6 +14,7 @@ from scripts.build_release_gate_receipt import (
     _validate_secret,
 )
 from scripts.check_changelog import PYPROJECT_PATH, release_declaration
+from scripts.release_step_coverage import PREREQUISITES, capture_coverage
 from scripts.check_installed_wheel_consumer import DEFAULT_REVISION
 from scripts.check_release_ci import ReleaseCIError, check_release_ci
 from scripts.check_release_main import ReleaseMainError, check_release_main
@@ -160,7 +161,7 @@ class ReleaseCIGateTests(unittest.TestCase):
 
 
 class AggregateReleaseGateTests(unittest.TestCase):
-    def _fixture(self, root: Path) -> dict[str, Path]:
+    def _fixture(self, root: Path) -> dict[str, object]:
         dist = root / "dist"
         sbom = root / "sbom"
         dist.mkdir()
@@ -307,6 +308,12 @@ class AggregateReleaseGateTests(unittest.TestCase):
         })
         return {
             "dist_dir": dist,
+            "coverage_receipt": _write(root / "coverage.json", capture_coverage(
+                {step: {"outcome": "success"} for step in PREREQUISITES},
+                sha=SHA, run_id="123", run_attempt="1", event="push",
+            )),
+            "run_id": "123",
+            "run_attempt": "1",
             "sbom_dir": sbom,
             "main_receipt": main,
             "ci_receipt": ci,
