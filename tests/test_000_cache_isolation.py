@@ -24,6 +24,26 @@ class CacheIsolationTests(unittest.TestCase):
             GravityInsightClient.from_env()._operation_catalog._state_path,
         )
 
+    def test_isolation_outlives_a_process_wide_patch_stopall(self) -> None:
+        """`patch.stopall()` must not be able to switch the cache back on.
+
+        It ends every patch started anywhere in the process. While isolation was
+        installed with ``patch.dict(...).start()`` it was one of them, so a
+        single ``addCleanup(patch.stopall)`` in an unrelated module redirected
+        every later test in that worker at the developer's real cache root --
+        silently, because the tests that then read and wrote it still passed.
+        The case above only catches this when test distribution happens to run
+        it after the offender, which is why the regression reached main.
+        """
+
+        from unittest.mock import patch
+
+        from gravity_insight.workspace import user_cache_root
+
+        patch.stopall()
+
+        self.assertEqual(_cache_root, user_cache_root())
+
     def test_the_default_catalog_sits_under_a_principal_scope_segment(self) -> None:
         """The segment skipped by `parents[2]` above is the isolation itself.
 

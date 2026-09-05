@@ -17,32 +17,51 @@ class ChangelogGateTests(unittest.TestCase):
     def test_repository_changelog_contract_passes(self) -> None:
         report = validate_changelog()
 
-        self.assertEqual("0.3.10", report.project_version)
-        self.assertEqual("0.3.10", report.target_version)
+        # Every expectation is re-derived from the source files instead of being
+        # spelled out. A literal here is a snapshot of the release state, so it
+        # goes stale the moment a version is cut, and the failure then lands on
+        # the release -- far from anyone who would recognise it as a stale
+        # constant rather than a real contract break. 0.3.8, 0.3.9 and 0.3.10
+        # each had to hand-edit numbers in this file for exactly that reason.
+        # This is not circular: the right-hand side comes from check_changelog's
+        # parser and the left from an independent scan of the same text, so a
+        # parser that miscounts or misorders still fails the case.
+        changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
+        pyproject = PYPROJECT_PATH.read_text(encoding="utf-8")
+
         self.assertEqual(
-            (
-                "0.3.9",
-                "0.3.8",
-                "0.3.7",
-                "0.3.6",
-                "0.3.5",
-                "0.3.4",
-                "0.3.3",
-                "0.3.2",
-                "0.3.1",
-            ),
+            re.search(r'(?m)^version = "([^"]+)"', pyproject).group(1),
+            report.project_version,
+        )
+        self.assertEqual(
+            re.search(r"(?m)^Target release: `([^`]+)`", changelog).group(1),
+            report.target_version,
+        )
+        self.assertEqual(
+            tuple(re.findall(r"(?m)^## \[(\d+\.\d+\.\d+)\] - ", changelog)),
             report.released_versions,
         )
-        self.assertEqual(12, report.breaking_entries)
-        self.assertEqual(6, report.migration_guides)
+        self.assertEqual(
+            len(re.findall(r"(?m)^- \*\*(?:Hard|Soft) break:\*\*", changelog)),
+            report.breaking_entries,
+        )
+        self.assertEqual(
+            len(re.findall(r"(?m)^Migration guide: ", changelog)),
+            report.migration_guides,
+        )
 
     def test_version_bump_without_matching_entry_fails(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             pyproject = Path(raw) / "pyproject.toml"
             source = PYPROJECT_PATH.read_text(encoding="utf-8")
-            self.assertIn('version = "0.3.10"', source)
+            # Read the version out rather than naming it. The literal it
+            # replaces was a second place every release had to hand-edit; the
+            # assertIn guard that used to sit here caught the drift, but it
+            # caught it during the release, which is the worst time to discover
+            # that a test only needed a constant bumped.
+            current = re.search(r'(?m)^version = "([^"]+)"', source).group(1)
             pyproject.write_text(
-                source.replace('version = "0.3.10"', 'version = "9.9.9"', 1),
+                source.replace(f'version = "{current}"', 'version = "9.9.9"', 1),
                 encoding="utf-8",
             )
 

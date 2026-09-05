@@ -440,7 +440,7 @@ class StartupInstallTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.output = io.StringIO()
         self.request = Mock(return_value=FakeResponse(200, pypi("99.0.0")))
-        self.python = patch.object(
+        python_patcher = patch.object(
             installer,
             "_python",
             return_value=Mock(
@@ -448,8 +448,14 @@ class StartupInstallTests(unittest.TestCase):
                 stdout="Successfully installed gravity-insight-99.0.0\n",
                 stderr="",
             ),
-        ).start()
-        self.addCleanup(patch.stopall)
+        )
+        self.python = python_patcher.start()
+        # Stop this patcher, not every patcher. patch.stopall() ends every patch
+        # started anywhere in the process, and it used to end the cache
+        # isolation that tests/__init__ installs at import time. Nothing failed
+        # here; the damage landed on whichever tests this worker ran next, which
+        # is why it surfaced as an intermittent failure in an unrelated module.
+        self.addCleanup(python_patcher.stop)
 
     def install(self, **kwargs):
         return maybe_auto_upgrade(

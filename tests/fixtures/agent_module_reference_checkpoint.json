@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "fc0ab681c3ca77bcb282e9a08c04ffed24b25fe1bec5c0f757eb046eee887ddd",
-    "manual_review_sha256": "504095c1d24b4c762ec415cc454603467aca673ed5ee4ceb7187124cea862e2e",
+    "reference_evidence_sha256": "2f6501c30855373986ff68d53597ef288518dc18be9c7948f9cb00221dc70c21",
+    "manual_review_sha256": "97cd456dc2ef05381da747e491e21c76cf39c3ab8cf96d08f2370f92a277efe1",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3174,
     "scanned_file_count": 3167,
@@ -716,7 +716,7 @@
     "dispositions": {
       "no_migration_effect": 248
     },
-    "sites_sha256": "7102d19c501858555e0184ffcd2eb4ab1f9eb62f64dee73aa2beefe73c6d1ebb"
+    "sites_sha256": "30d418acdab01500ddaf9e7500eeee304cd90681926f22f0210f99a4ac051ec2"
   },
   "blockers": [],
   "site_fields": [
@@ -2219,7 +2219,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:443:23:patch.object",
+      "tests/test_auto_upgrade.py:443:26:patch.object",
       "rm",
       "non_string_patch_expression",
       "installer",
@@ -2234,7 +2234,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:629:13:patch.object",
+      "tests/test_auto_upgrade.py:635:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2249,7 +2249,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:634:13:patch.object",
+      "tests/test_auto_upgrade.py:640:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2264,7 +2264,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:652:13:patch.object",
+      "tests/test_auto_upgrade.py:658:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2279,7 +2279,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:657:13:patch.object",
+      "tests/test_auto_upgrade.py:663:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2294,7 +2294,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:668:14:patch.object",
+      "tests/test_auto_upgrade.py:674:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade_state",
@@ -2309,7 +2309,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:782:13:patch.object",
+      "tests/test_auto_upgrade.py:788:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2324,7 +2324,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:787:13:patch.object",
+      "tests/test_auto_upgrade.py:793:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.installer",
@@ -2339,7 +2339,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:811:13:patch.object",
+      "tests/test_auto_upgrade.py:817:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2354,7 +2354,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:826:13:patch.object",
+      "tests/test_auto_upgrade.py:832:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
