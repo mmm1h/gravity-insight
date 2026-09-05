@@ -119,15 +119,18 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         )
 
     def test_new_hard_break_without_regeneration_is_rejected(self) -> None:
-        target = validate_changelog().target_version
+        report = validate_changelog()
+        target = report.target_version
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             changelog = root / "CHANGELOG.md"
             migration_dir = root / "docs/migration"
             migration_dir.mkdir(parents=True)
-            for version in (
-                "0.3.3", "0.3.4", "0.3.5", "0.3.6", "0.3.7", "0.3.8", target,
-            ):
+            # Derived, not listed. A hardcoded set silently stops covering the
+            # newest release the moment one is cut, and the synthetic changelog
+            # then fails the missing-guide rule before it ever reaches the
+            # staleness check this test exists to prove.
+            for version in (*report.released_versions, target):
                 (migration_dir / f"{version}.md").write_text(
                     f"# Synthetic {version} migration\n", encoding="utf-8"
                 )
