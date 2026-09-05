@@ -110,8 +110,9 @@ def multiple_gap(query: str, selectors: Sequence[str]) -> dict[str, Any]:
             "multiple authoritative intents"
         ),
         "next_action": (
-            "Split the request and discover each candidate_selectors value independently; "
-            "do not execute either candidate from this response."
+            "Split the request and run `gravity agent-catalog describe <selector>` for "
+            "each candidate_selectors value independently; execute only a returned "
+            "authoritative product card marked executable."
         ),
         "candidate_selectors": list(dict.fromkeys(selectors)),
         "weak_matches": [],

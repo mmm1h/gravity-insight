@@ -325,9 +325,9 @@ def product_selection_gap(
         "query": query,
         "reason": reason,
         "next_action": (
-            "For each candidate_selectors value, call gravity agent --input "
-            "<selector> independently; execute only after each discovery returns "
-            "one authoritative product card."
+            "For each candidate_selectors value, run `gravity agent-catalog describe "
+            "<selector>` independently; follow a returned gap card's own next_action, "
+            "and execute only a returned authoritative product card marked executable."
         ),
         "candidate_selectors": list(dict.fromkeys(map(str, selectors))),
         "weak_matches": [],

@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "2f6501c30855373986ff68d53597ef288518dc18be9c7948f9cb00221dc70c21",
-    "manual_review_sha256": "97cd456dc2ef05381da747e491e21c76cf39c3ab8cf96d08f2370f92a277efe1",
+    "reference_evidence_sha256": "e0991de25e2cf8a34c49b1d3d9343b6dda7639e2a210b6978e8f2a6b8732ca50",
+    "manual_review_sha256": "2e7282b89a15cef469faf73a1c2826f52608567b684e6aff91872a2dd319b487",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3174,
     "scanned_file_count": 3167,
@@ -716,7 +716,7 @@
     "dispositions": {
       "no_migration_effect": 248
     },
-    "sites_sha256": "30d418acdab01500ddaf9e7500eeee304cd90681926f22f0210f99a4ac051ec2"
+    "sites_sha256": "b2c135e51644e5989208eeea783777a821a0038da99ef30c66ec8f52885dc7ab"
   },
   "blockers": [],
   "site_fields": [
@@ -2744,7 +2744,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_agent_ux.py:674:14:patch.object",
+      "tests/test_gravity_insight_agent_ux.py:677:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -2759,7 +2759,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_agent_ux.py:736:14:patch.object",
+      "tests/test_gravity_insight_agent_ux.py:739:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",

@@ -85,7 +85,8 @@ def derived_metric_gap(query: str) -> dict[str, Any]:
         ),
         next_action=(
             "Declare one [[semantic_context.derived_metrics]] binding in gravity.toml, "
-            "or supply a gravity.derived-metrics-spec.v1 request to `gravity derive --input`."
+            "or supply a gravity.derived-metrics-spec.v1 request to "
+            "`gravity derive --input <request.json>`."
         ),
         argv=["gravity", "derive", "--input", "<request.json>"],
     )

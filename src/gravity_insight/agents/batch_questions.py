@@ -60,7 +60,8 @@ def validate_questions(
                 next_action=(
                     "Replace the document with "
                     '{"questions":[{"id":"q1","query":"<text>"}]} or a JSON '
-                    "array of query strings, then retry `gravity agent --input`."
+                    "array of query strings, then retry `gravity agent --input "
+                    "<questions.json>`."
                 ),
             )
         value = value.get("questions")
@@ -71,7 +72,7 @@ def validate_questions(
             field="input",
             next_action=(
                 "Pass {\"questions\":[...]} or a non-empty JSON array, then "
-                "retry `gravity agent --input`."
+                "retry `gravity agent --input <questions.json>`."
             ),
         )
     if not value:
