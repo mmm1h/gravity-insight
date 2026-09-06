@@ -11637,7 +11637,13 @@
           "cid",
           "name",
           "create_time",
-          "modify_time"
+          "modify_time",
+          "create_user_id",
+          "create_user_name",
+          "operator_id",
+          "operator_name",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -17579,6 +17585,10 @@
           "advertiser_name",
           "advertiser_remark",
           "company",
+          "delay",
+          "download_url",
+          "operator_id",
+          "operator_name",
           "project_list"
         ],
         "known_omitted_data_item_keys": {},
@@ -27787,7 +27797,9 @@
         "empty_object_as_empty_result": false,
         "item_keys": [],
         "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
+        "known_omitted_data_keys": [
+          "dy_mini_game"
+        ],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},

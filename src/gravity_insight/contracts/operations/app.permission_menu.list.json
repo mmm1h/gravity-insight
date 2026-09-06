@@ -93,6 +93,7 @@
       },
       "nested_item_keys": {
         "children": [
+          "children",
           "id",
           "name",
           "parent_id",
