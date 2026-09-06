@@ -1440,6 +1440,8 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "total": ["stat_cost"]
                 },
                 "promotion.bytedance.project.list": {"total": ["stat_cost"]},
+                "promotion.kuaishou.ad_unit.list": {"total": ["charge"]},
+                "promotion.kuaishou.advertiser.list": {"total": ["charge"]},
                 "promotion.tencent.advertiser.list": {"total": ["cost"]},
                 "promotion.tencent.tencent_adgroup_v2.list": {"total": ["cost"]},
                 "promotion.taptap.group.list": {"total": []},
