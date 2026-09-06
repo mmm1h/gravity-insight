@@ -14,6 +14,7 @@ from .response_projection import (
     _is_json_scalar,
     _project_nested_item_value,
     _project_scalar_list,
+    _record_scalar_list_drift,
 )
 
 
@@ -84,6 +85,7 @@ def _collect_projected_list_rows(
             # List contracts are row/object contracts.  Scalars and nested arrays
             # have no field-level policy surface, so fail closed on schema drift.
             non_object_items += 1
+            recorder.add_breaking_field(row_path, "object", row)
             continue
         row_keys = {str(key) for key in row}
         row_unknown = row_keys - allowed - known_omitted
@@ -189,13 +191,27 @@ def _project_list_row(
                 projected[name] = value
             else:
                 invalid_scalars += 1
+                recorder.add_breaking_field(
+                    (*row_path, name), "json_scalar", value
+                )
             continue
         if name in projection.opaque_json_item_keys:
             normalized, valid = _copy_json_value(value)
+            if not valid:
+                recorder.add_breaking_field(
+                    (*row_path, name), "json", value
+                )
         elif name in projection.scalar_list_item_types:
             normalized, valid = _project_scalar_list(
                 value, projection.scalar_list_item_types[name]
             )
+            if not valid:
+                _record_scalar_list_drift(
+                    value,
+                    projection.scalar_list_item_types[name],
+                    recorder,
+                    (*row_path, name),
+                )
         else:
             normalized, nested_unknown, nested_breaking, valid = (
                 _project_nested_item_value(
@@ -217,5 +233,4 @@ def _project_list_row(
         else:
             containers += 1
     return projected, (unknown, containers, invalid_scalars, breaking)
-
 

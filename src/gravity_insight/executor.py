@@ -207,15 +207,17 @@ def _project(
     data = _normalize_empty_page(operation, data, values)
     if operation.response_projection.data_shape == "list":
         if not isinstance(data, list):
+            recorder.add_breaking_field(("data",), "array", data)
             return [], (
                 "response data shape changed; the uncontracted value was omitted",
-            ), ProjectionDrift.BREAKING, None
+            ), ProjectionDrift.BREAKING, recorder.to_contract()
         result = _project_list_rows(operation, data, values, recorder)
         return *result, recorder.to_contract()
     if not isinstance(data, Mapping):
+        recorder.add_breaking_field(("data",), "object", data)
         return {}, (
             "response data shape changed; the uncontracted value was omitted",
-        ), ProjectionDrift.BREAKING, None
+        ), ProjectionDrift.BREAKING, recorder.to_contract()
     result = _project_mapping_data(operation, data, values, recorder)
     return *result, recorder.to_contract()
 
@@ -250,6 +252,11 @@ def _project_mapping_data(
     projection = operation.response_projection
     required = set(projection.required_data_keys)
     missing = [key for key in required if _path_get(data, key) is _ABSENT]
+    for key in missing:
+        recorder.add_breaking_field(
+            ("data", *key.split(".")),
+            _required_data_expected_type(operation, key),
+        )
     drift = ProjectionDrift.BREAKING if missing else ProjectionDrift.NONE
     warnings = (
         [f"required response data keys are absent (count={len(missing)})"]
@@ -285,6 +292,24 @@ def _project_mapping_data(
     )
     warnings.extend(nested_warnings)
     return projected, tuple(warnings), max(drift, nested_drift)
+
+
+def _required_data_expected_type(operation: OperationSpec, key: str) -> str:
+    projection = operation.response_projection
+    root = key.split(".", 1)[0]
+    primary = operation.pagination.list_path.rsplit(".", 1)[-1]
+    if not primary and "list" in projection.data_keys:
+        primary = "list"
+    if root == primary or root in projection.data_scalar_list_types:
+        return "array"
+    page_info = operation.pagination.page_info_path.rsplit(".", 1)[-1]
+    if root == page_info or any(
+        path.split(".", 1)[0] == root for path in projection.data_path_item_keys
+    ):
+        return "object"
+    if root in projection.data_item_keys:
+        return "object_or_array"
+    return "json"
 
 
 def _project_analysis_aggregate(

@@ -182,11 +182,21 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
         error_message = "ERROR_MESSAGE_MUST_NOT_PERSIST"
         exception_message = "EXCEPTION_MESSAGE_MUST_NOT_PERSIST"
         drift = {
-            "schema_version": "gravity.response-drift.v1",
+            "schema_version": "gravity.response-drift.v2",
             "direction": "response",
-            "classification": "additive",
+            "classification": "breaking",
             "fields": [
-                {"path": "/data/new_field", "observed_type": "string"}
+                {
+                    "classification": "breaking",
+                    "path": "/data/config",
+                    "expected_type": "json_scalar",
+                    "observed_type": "object",
+                },
+                {
+                    "classification": "additive",
+                    "path": "/data/new_field",
+                    "observed_type": "string",
+                },
             ],
         }
         failed = result(

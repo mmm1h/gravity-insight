@@ -55,7 +55,9 @@ def _project_data_container_field(
 ) -> tuple[dict[str, Any], tuple[str, ...], ProjectionDrift]:
     scalar_list_type = operation.response_projection.data_scalar_list_types.get(name)
     if scalar_list_type is not None:
-        return _apply_data_scalar_list(copied, name, value, scalar_list_type)
+        return _apply_data_scalar_list(
+            copied, name, value, scalar_list_type, recorder
+        )
     if name == primary_list and isinstance(value, list):
         return copied, (), ProjectionDrift.NONE
     if name == page_info_name and isinstance(value, Mapping):
@@ -64,23 +66,37 @@ def _project_data_container_field(
         return copied, (), ProjectionDrift.NONE
     if not isinstance(value, (Mapping, list, tuple)):
         copied.pop(name, None)
+        recorder.add_breaking_field(("data", name), "json_scalar", value)
         return copied, ("non-JSON response data values were omitted (count=1)",), ProjectionDrift.BREAKING
     recursive_allowed = operation.response_projection.recursive_data_item_keys.get(name)
     if recursive_allowed is not None:
         return _apply_recursive_data_collection(
             copied, name, value, recursive_allowed, recorder
         )
-    return _apply_nested_data_container(operation, copied, name, value, values, recorder)
+    expected_type = (
+        "array" if name == primary_list else "object" if name == page_info_name
+        else "json_scalar"
+    )
+    return _apply_nested_data_container(
+        operation, copied, name, value, values, recorder, expected_type
+    )
 
 
 def _apply_data_scalar_list(
-    copied: dict[str, Any], name: str, value: Any, scalar_list_type: str
+    copied: dict[str, Any],
+    name: str,
+    value: Any,
+    scalar_list_type: str,
+    recorder: ResponseDriftRecorder,
 ) -> tuple[dict[str, Any], tuple[str, ...], ProjectionDrift]:
     scalar_list, valid = _project_scalar_list(value, scalar_list_type)
     if valid:
         copied[name] = scalar_list
         return copied, (), ProjectionDrift.NONE
     copied.pop(name, None)
+    _record_scalar_list_drift(
+        value, scalar_list_type, recorder, ("data", name)
+    )
     return copied, ("invalid contracted response scalar list was omitted",), ProjectionDrift.BREAKING
 
 
@@ -133,6 +149,7 @@ def _apply_nested_data_container(
     value: Any,
     values: Mapping[str, Any],
     recorder: ResponseDriftRecorder,
+    uncontracted_expected_type: str,
 ) -> tuple[dict[str, Any], tuple[str, ...], ProjectionDrift]:
     static_allowed = operation.response_projection.data_item_keys.get(name)
     dynamic_inputs = operation.response_projection.data_dynamic_item_fields.get(name, ())
@@ -152,6 +169,7 @@ def _apply_nested_data_container(
         recorder,
         ("data", name),
         operation.response_projection.known_omitted_data_item_keys.get(name, ()),
+        uncontracted_expected_type,
     )
     unknown -= set(
         operation.response_projection.known_omitted_data_item_keys.get(name, ())
@@ -201,6 +219,11 @@ def _project_page_info(
     if not unknown and not invalid:
         return projected, None, ProjectionDrift.NONE
     recorder.add_unknown_fields(("data", name), value, unknown)
+    for key, item in value.items():
+        if str(key) in invalid:
+            recorder.add_breaking_field(
+                ("data", name, str(key)), "json_scalar", item
+            )
     warning = (
         "unregistered or non-scalar page_info fields were omitted "
         f"(count={len(unknown | invalid)})"
@@ -243,6 +266,9 @@ def _project_recursive_collection(
                     breaking = True
             elif isinstance(item, (Mapping, list, tuple)) or not _is_json_scalar(item):
                 breaking = True
+                recorder.add_breaking_field(
+                    (*row_path, name), "json_scalar", item
+                )
             else:
                 result[name] = item
         return result, unknown, breaking
@@ -252,6 +278,11 @@ def _project_recursive_collection(
         return projected, unknown, breaking, True
     if isinstance(value, (list, tuple)):
         if any(not isinstance(item, Mapping) for item in value):
+            for item in value:
+                if not isinstance(item, Mapping):
+                    recorder.add_breaking_field(
+                        (*path, "*"), "object", item
+                    )
             return None, set(), True, False
         result: list[dict[str, Any]] = []
         unknown: set[str] = set()
@@ -262,6 +293,7 @@ def _project_recursive_collection(
             unknown.update(item_unknown)
             breaking = breaking or item_breaking
         return result, unknown, breaking, True
+    recorder.add_breaking_field(path, "object_or_array", value)
     return None, set(), True, False
 
 
@@ -284,6 +316,10 @@ def _project_data_path_items(
         value = projected.get(root)
         if not isinstance(value, Mapping):
             copied.pop(root, None)
+            if root in projected:
+                recorder.add_breaking_field(("data", root), "object", value)
+            else:
+                recorder.add_breaking_field(("data", root), "object")
             warnings.append("contracted nested response data is absent or invalid")
             drift = ProjectionDrift.BREAKING
             continue
@@ -340,16 +376,35 @@ def _project_data_path_items(
 def _project_scalar_list(value: Any, item_type: str) -> tuple[list[Any] | None, bool]:
     if not isinstance(value, (list, tuple)):
         return None, False
+    check = _scalar_list_check(item_type)
+    if any(not check(item) for item in value):
+        return None, False
+    return list(value), True
+
+
+def _scalar_list_check(item_type: str) -> Any:
     checks = {
         "string": lambda item: isinstance(item, str),
         "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
         "number": lambda item: _is_finite_number(item),
         "boolean": lambda item: isinstance(item, bool),
     }
-    check = checks[item_type]
-    if any(not check(item) for item in value):
-        return None, False
-    return list(value), True
+    return checks[item_type]
+
+
+def _record_scalar_list_drift(
+    value: Any,
+    item_type: str,
+    recorder: ResponseDriftRecorder,
+    path: tuple[str, ...],
+) -> None:
+    if not isinstance(value, (list, tuple)):
+        recorder.add_breaking_field(path, "array", value)
+        return
+    check = _scalar_list_check(item_type)
+    for item in value:
+        if not check(item):
+            recorder.add_breaking_field((*path, "*"), item_type, item)
 
 
 def _copy_json_value(value: Any, *, depth: int = 0) -> tuple[Any, bool]:
@@ -386,10 +441,13 @@ def _project_nested_item_value(
     recorder: ResponseDriftRecorder | None = None,
     path: tuple[str, ...] = (),
     known_omitted: Sequence[str] = (),
+    uncontracted_expected_type: str = "json_scalar",
 ) -> tuple[Any, set[str], bool, bool]:
     """Project a contracted object or object list; scalar lists need typed contracts."""
 
     if allowed_keys is None:
+        if recorder is not None:
+            recorder.add_breaking_field(path, uncontracted_expected_type, value)
         return None, set(), False, False
     allowed = set(allowed_keys)
     nested_contracts = nested_item_keys or {}
@@ -415,6 +473,10 @@ def _project_nested_item_value(
                         result[name] = opaque_json
                     else:
                         breaking = True
+                        if recorder is not None:
+                            recorder.add_breaking_field(
+                                (*item_path, name), "json", nested_value
+                            )
                     continue
                 nested_allowed = nested_contracts.get(name)
                 nested, nested_unknown, nested_breaking, contracted = _project_nested_item_value(
@@ -437,6 +499,10 @@ def _project_nested_item_value(
                 continue
             if not _is_json_scalar(nested_value):
                 breaking = True
+                if recorder is not None:
+                    recorder.add_breaking_field(
+                        (*item_path, name), "json_scalar", nested_value
+                    )
                 continue
             result[name] = nested_value
         return result, unknown, breaking
@@ -452,6 +518,8 @@ def _project_nested_item_value(
         breaking = False
         for item in value:
             if not isinstance(item, Mapping):
+                if recorder is not None:
+                    recorder.add_breaking_field((*path, "*"), "object", item)
                 return None, set(), True, False
             projected, item_unknown, item_breaking = project_mapping(
                 item, (*path, "*")
@@ -460,6 +528,8 @@ def _project_nested_item_value(
             unknown.update(item_unknown)
             breaking = breaking or item_breaking
         return projected_items, unknown, breaking, True
+    if recorder is not None:
+        recorder.add_breaking_field(path, "object_or_array", value)
     return None, set(), True, False
 
 
@@ -476,4 +546,3 @@ def _is_json_scalar(value: Any) -> bool:
         or isinstance(value, int)
         or (isinstance(value, float) and math.isfinite(value))
     )
-

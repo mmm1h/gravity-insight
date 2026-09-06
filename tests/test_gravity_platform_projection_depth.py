@@ -65,6 +65,108 @@ def _event_property(**overrides: Any) -> dict[str, Any]:
 
 
 class PlatformProjectionDepthTests(unittest.TestCase):
+    def test_three_certification_breaks_expose_value_free_root_causes(self) -> None:
+        sentinel = "BREAKING_RESPONSE_VALUE_MUST_NOT_PERSIST"
+        cases = (
+            (
+                "analysis.report_config.get",
+                {"app_id": "1", "id": "7"},
+                ("analysis.report_config.list", "app.list"),
+                {
+                    "id": 7,
+                    "app_id": 1,
+                    "config": {"private": sentinel},
+                    "name": "fixture",
+                    "subject": "fixture",
+                    "create_user_id": 11,
+                },
+                {
+                    "classification": "breaking",
+                    "path": "/data/config",
+                    "expected_type": "json_scalar",
+                    "observed_type": "object",
+                },
+            ),
+            (
+                "material.local.list",
+                {},
+                (),
+                {
+                    "list": [
+                        {
+                            "id": 9,
+                            "file_name": "fixture.mp4",
+                            "image_set": [{"private": sentinel}],
+                            "file_sub_type": sentinel,
+                            "video_cover_list": [sentinel],
+                        }
+                    ],
+                    "page_info": {
+                        "page": 1,
+                        "page_size": 20,
+                        "total_number": 1,
+                        "total_page": 1,
+                    },
+                },
+                {
+                    "classification": "breaking",
+                    "path": "/data/list/*/image_set",
+                    "expected_type": "json_scalar",
+                    "observed_type": "array",
+                },
+            ),
+            (
+                "report.report.detail",
+                {"id": "12"},
+                ("report.report.list",),
+                {
+                    "id": 12,
+                    "name": "fixture",
+                    "subject": "fixture",
+                    "config": [sentinel],
+                    "remark": None,
+                },
+                {
+                    "classification": "breaking",
+                    "path": "/data/config",
+                    "expected_type": "json_scalar",
+                    "observed_type": "array",
+                },
+            ),
+        )
+
+        for operation_id, inputs, parents, data, expected in cases:
+            with self.subTest(operation_id=operation_id):
+                result = _client(
+                    operation_id, {"code": 0, "data": data}, *parents
+                ).read(operation_id, inputs)
+
+                self.assertEqual(
+                    (False, "contract_changed", "CONTRACT_CHANGED"),
+                    (result["ok"], result["status"], result["error"]["code"]),
+                )
+                drift = result["result_audit"]["response_drift"]
+                self.assertEqual(
+                    ("gravity.response-drift.v2", "response", "breaking"),
+                    (
+                        drift["schema_version"],
+                        drift["direction"],
+                        drift["classification"],
+                    ),
+                )
+                self.assertIn(expected, drift["fields"])
+                self.assertNotIn(sentinel, json.dumps(result, sort_keys=True))
+
+                if operation_id == "material.local.list":
+                    self.assertIn(
+                        {
+                            "classification": "additive",
+                            "path": "/data/list/*/file_sub_type",
+                            "observed_type": "string",
+                        },
+                        drift["fields"],
+                    )
+
     def test_bytedance_advertiser_contracts_project_operator_fields_consistently(
         self,
     ) -> None:
