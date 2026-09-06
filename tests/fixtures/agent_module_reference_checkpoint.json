@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "9648f1b598e3eb474bdfedc6e2bfe2baf742f380b8f81d639c7173dfdeb9f02b",
-    "manual_review_sha256": "71049b9113fdb30c9454009bd8f434f85766db7dbce86f38a833d64f3e709296",
+    "reference_evidence_sha256": "2d34329cb7d3e211baa931f7ca27d0493abc7f48dcd7fe71a6269dc407ccbd47",
+    "manual_review_sha256": "d87b2a356f51f444d8cfe465dea82f564419cb72d8732aed4642ea0d44a0d451",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3184,
     "scanned_file_count": 3177,
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 255
     },
-    "sites_sha256": "ac33b387fd946e3f50a934fc1ed30553a828ace0dcb467e309080fc4a5ebdfd0"
+    "sites_sha256": "57d6775199d777de566667177aa0cfa16b7307f5c8db0831222b295f4ca9e379"
   },
   "blockers": [],
   "site_fields": [
@@ -2437,7 +2437,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:335:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:345:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2452,7 +2452,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:340:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:350:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2467,7 +2467,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:341:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:351:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2482,7 +2482,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:342:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:352:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2977,7 +2977,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2753:18:patch",
+      "tests/test_gravity_insight_core.py:2794:18:patch",
       "rm",
       "non_string_patch_expression",
       "f\"{_atomic_update_env.__module__}._restrict_secret_file\"",
@@ -2992,7 +2992,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2753:27:__module__",
+      "tests/test_gravity_insight_core.py:2794:27:__module__",
       "rm",
       "module_owner_receiver",
       "_atomic_update_env.__module__",
