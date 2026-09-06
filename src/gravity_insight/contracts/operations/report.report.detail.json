@@ -18,7 +18,7 @@
     "pagination": {"kind": "none", "completeness": "unknown", "pagination_evidence": "production", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
     "semantic_error_rules": ["code", "extra.error"],
     "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
-    "required_parent": [{"operation_id": "report.report.list", "input_field": "id", "output_path": "data.list[].id", "selection": "caller_select"}], "live_probe": {"enabled": true, "inputs": {"id": "1"}}, "examples": [],
+    "required_parent": [{"operation_id": "report.report.list", "input_field": "id", "output_path": "data.list[].id", "selection": "caller_select"}], "live_probe": {"enabled": true, "inputs": {"id": "$parent:id"}}, "examples": [],
     "provenance": {"source_files": ["operations/report.report.detail.json"], "family": null, "platform": null, "applied_overrides": []}
   }
 }

@@ -14,16 +14,21 @@ from gravity_insight.capability_contract import _operations, capability_contract
 from gravity_insight.capability_trust import CapabilityTrustService
 from gravity_insight.capability_validation import CapabilityValidationStore, SCHEMA_VERSION
 from gravity_insight.data_quality import data_quality_result
-from gravity_insight.errors import GravityInsightError
+from gravity_insight.errors import ErrorCode, GravityInsightError
 from gravity_insight.receipt_query import get_http_receipt
 from gravity_insight.result_audit import result_response_drift
 from gravity_insight.read_result_support import result_warnings
 from gravity_insight.semantic_status import response_data_nonempty
 
 
-RUN_SCHEMA_VERSION = "gravity.capability-validation-run.v1"
+LEGACY_RUN_SCHEMA_VERSION = "gravity.capability-validation-run.v1"
+RUN_SCHEMA_VERSION = "gravity.capability-validation-run.v2"
+SUMMARY_SCHEMA_VERSION = "gravity.capability-validation-summary.v2"
 MAX_PRODUCTION_REQUESTS = 500
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_ERROR_CODE = re.compile(r"^[A-Z][A-Z0-9_]{1,127}$")
+_ERROR_CATEGORIES = frozenset({"caller", "upstream", "local"})
+_KNOWN_ERROR_CODES = frozenset(item.value for item in ErrorCode)
 _SUCCESS_HTTP = range(200, 300)
 _APP_PLACEHOLDERS = frozenset({"$first_app_id", "$parent:app_id"})
 
@@ -258,6 +263,9 @@ def result_outcome(
     selector: str, result: Mapping[str, Any], request_count: int,
     receipts: Sequence[Mapping[str, Any]], recorded: bool, reasons: Sequence[str],
 ) -> dict[str, Any]:
+    drift = result_response_drift(result)
+    error_detail = _result_error_detail(result.get("error"))
+    fingerprint = result.get("schema_fingerprint")
     return {
         **_base_outcome(("operation", selector), "read", (
             "validated" if recorded else _category_for_result(result, reasons)
@@ -267,9 +275,15 @@ def result_outcome(
         "result_status": str(result.get("status", "unknown")),
         "result_nonempty": response_data_nonempty({"data": result.get("data")}),
         "receipt_ids": _receipt_ids(receipts, selector),
-        "schema_fingerprint": result.get("schema_fingerprint"),
+        "schema_fingerprint": (
+            fingerprint
+            if isinstance(fingerprint, str) and _DIGEST.fullmatch(fingerprint)
+            else None
+        ),
         "validation_recorded": recorded,
         "reason_codes": list(reasons),
+        **({"response_drift": drift} if drift is not None else {}),
+        **({"error_detail": error_detail} if error_detail is not None else {}),
     }
 
 
@@ -293,6 +307,7 @@ def error_outcome(
         "receipt_ids": _receipt_ids(receipts, selector),
         "schema_fingerprint": None,
         "reason_codes": [_error_reason(error)],
+        "error_detail": _exception_error_detail(error),
     }
 
 
@@ -451,9 +466,52 @@ def _category_for_error(error: GravityInsightError) -> str:
 def _error_reason(error: BaseException) -> str:
     raw = getattr(error, "code", "")
     value = str(getattr(raw, "value", raw)).upper()
-    if re.fullmatch(r"[A-Z][A-Z0-9_]{1,127}", value):
+    if _ERROR_CODE.fullmatch(value):
         return value
-    return f"EXECUTION_{type(error).__name__.upper()}"
+    fallback = f"EXECUTION_{type(error).__name__.upper()}"
+    return fallback if _ERROR_CODE.fullmatch(fallback) else "EXECUTION_EXCEPTION"
+
+
+def _result_error_detail(value: Any) -> dict[str, str] | None:
+    if value in (None, {}):
+        return None
+    if not isinstance(value, Mapping):
+        return {"code": "UNKNOWN", "category": "unknown"}
+    raw_code = value.get("code")
+    code = getattr(raw_code, "value", raw_code)
+    normalized_code = code.upper() if isinstance(code, str) else ""
+    raw_category = value.get("category")
+    category = getattr(raw_category, "value", raw_category)
+    return {
+        "code": normalized_code if normalized_code in _KNOWN_ERROR_CODES else "UNKNOWN",
+        "category": (
+            category
+            if isinstance(category, str) and category in _ERROR_CATEGORIES
+            else "unknown"
+        ),
+    }
+
+
+def _exception_error_detail(error: BaseException) -> dict[str, str]:
+    category = (
+        error.to_error_detail().category
+        if isinstance(error, GravityInsightError)
+        else "unknown"
+    )
+    raw_code = getattr(error, "code", "")
+    normalized_code = str(getattr(raw_code, "value", raw_code)).upper()
+    fallback = f"EXECUTION_{type(error).__name__.upper()}"
+    code = (
+        normalized_code
+        if normalized_code in _KNOWN_ERROR_CODES
+        else fallback
+        if _ERROR_CODE.fullmatch(fallback)
+        else "EXECUTION_EXCEPTION"
+    )
+    return {
+        "code": code,
+        "category": category if category in _ERROR_CATEGORIES else "unknown",
+    }
 
 
 def timestamp(value: datetime) -> str:
@@ -463,8 +521,9 @@ def timestamp(value: datetime) -> str:
 
 
 __all__ = [
-    "MAX_PRODUCTION_REQUESTS", "RUN_SCHEMA_VERSION", "BudgetedSession",
-    "RequestBudgetExceeded", "bind_probe_app", "error_outcome", "inventory",
+    "LEGACY_RUN_SCHEMA_VERSION", "MAX_PRODUCTION_REQUESTS", "RUN_SCHEMA_VERSION",
+    "SUMMARY_SCHEMA_VERSION", "BudgetedSession", "RequestBudgetExceeded",
+    "bind_probe_app", "error_outcome", "inventory",
     "mark_budget_exhausted", "mark_terminal_stop", "ranked_candidates",
     "resolve_receipts", "result_outcome", "static_outcomes", "timestamp",
     "terminal_stop_category", "trust_counts",
