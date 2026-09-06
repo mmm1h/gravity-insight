@@ -24,6 +24,8 @@ from .result_audit import (
 from .result_source import GOVERNED_PRODUCT, result_source
 from .user_detail_aggregate_contract import (
     AggregateCardinalityError,
+    AggregateConditionTypeMismatchError,
+    AggregateFieldPrivacyExcludedError,
     AggregateFieldUnsupportedError,
     AggregateMixedTypeError,
     INPUT_SCHEMA_VERSION,
@@ -211,7 +213,18 @@ def _privacy_excluded(field: str) -> bool:
 
 
 def _validate_fields(inputs: Mapping[str, Any], catalog: _FieldCatalog) -> None:
-    missing = sorted(referenced_fields(inputs) - catalog.allowed)
+    fields = referenced_fields(inputs)
+    if any(_privacy_excluded(field) for field in fields):
+        raise AggregateFieldPrivacyExcludedError(
+            "aggregate field is excluded by the user-detail privacy policy",
+            field="fields",
+            next_action=(
+                "Remove the field or switch to an owner-approved privacy-governed "
+                "product; type registration cannot make a privacy-excluded field "
+                "eligible."
+            ),
+        )
+    missing = sorted(fields - catalog.allowed)
     nonnumeric = sorted(numeric_measure_fields(inputs) - catalog.numeric)
     if missing or nonnumeric:
         raise AggregateFieldUnsupportedError(
@@ -292,7 +305,17 @@ def _validate_condition_types(
             if value is not None and (kind := _scalar_kind(value)) is not None
         }
         if types and value_types and types != value_types:
-            raise _mixed_type_error()
+            raise AggregateConditionTypeMismatchError(
+                "aggregate condition non-null value types do not match the field type "
+                "observed in this read",
+                field="conditions[].values",
+                next_action=(
+                    "Use non-null condition values of one scalar type matching the "
+                    "field, or remove the condition; do not retry the unchanged "
+                    "request. Investigate upstream only if separate type-drift "
+                    "evidence exists."
+                ),
+            )
 
 
 def _mixed_type_error() -> AggregateMixedTypeError:

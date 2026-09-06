@@ -150,6 +150,7 @@
         "file_name",
         "file_size",
         "file_size_str",
+        "file_sub_type",
         "file_type",
         "format",
         "gravity_material_id",
@@ -196,6 +197,7 @@
         "used_ad_platform",
         "video_duration",
         "video_duration_second",
+        "video_cover_list",
         "width"
       ],
       "known_omitted_item_keys": [

@@ -11,7 +11,11 @@ from dataclasses import replace
 from unittest.mock import patch
 
 from gravity_insight import GravitySDK, cli
-from gravity_insight.errors import error_detail_from_exception, error_envelope
+from gravity_insight.errors import (
+    error_detail_from_exception,
+    error_envelope,
+    exit_code_for_error,
+)
 from gravity_insight.pagination_completeness import (
     STABLE_PRODUCT_SURFACES,
     SURFACE_PARITY_OUTCOMES,
@@ -26,6 +30,8 @@ from gravity_insight.plan_adapters import build_plan_adapters
 from gravity_insight.user_detail_aggregate_contract import (
     BOUNDS_REQUIRED,
     CARDINALITY_LIMIT,
+    CONDITION_TYPE_MISMATCH,
+    FIELD_PRIVACY_EXCLUDED,
     FIELD_UNSUPPORTED,
     INPUT_SCHEMA_VERSION,
     MIXED_TYPE,
@@ -63,7 +69,7 @@ def _audit(receipt_id: str) -> dict[str, object]:
     }
 
 
-def _metadata() -> dict[str, object]:
+def _metadata(*fields: dict[str, object]) -> dict[str, object]:
     return {
         "schema_version": "gravity-insight.read.v1",
         "ok": True,
@@ -77,6 +83,7 @@ def _metadata() -> dict[str, object]:
                 {"name": "$pay_count", "data_type": "INT"},
                 {"name": "$pay_amount_sum", "data_type": "FLOAT"},
                 {"name": "assignment_property", "data_type": "STRING"},
+                *fields,
             ]
         },
         "result_audit": _audit(RECEIPT_A),
@@ -115,6 +122,20 @@ def _source(
     }
 
 
+def _error_contract(error: Mapping[str, object]) -> tuple[object, ...]:
+    return tuple(
+        error[field]
+        for field in (
+            "code",
+            "category",
+            "message",
+            "field",
+            "retryable",
+            "next_action",
+        )
+    )
+
+
 def _inputs(*, max_cells: int = 200) -> dict[str, object]:
     return {
         "source": {"app_id": "101", "date": "2026-08-29"},
@@ -140,8 +161,13 @@ def _inputs(*, max_cells: int = 200) -> dict[str, object]:
 
 
 class _Client:
-    def __init__(self, source: Mapping[str, object]) -> None:
+    def __init__(
+        self,
+        source: Mapping[str, object],
+        metadata: Mapping[str, object] | None = None,
+    ) -> None:
         self.source = source
+        self.metadata = metadata if metadata is not None else _metadata()
         self.calls: list[tuple[str, dict[str, object], dict[str, int]]] = []
 
     def schema(self, operation_id: str) -> dict[str, object]:
@@ -165,7 +191,7 @@ class _Client:
 
     def read_all(self, operation_id: str, inputs: Mapping[str, object], **options):
         self.calls.append((operation_id, dict(inputs), dict(options)))
-        return _metadata() if operation_id == METADATA_OPERATION_ID else self.source
+        return self.metadata if operation_id == METADATA_OPERATION_ID else self.source
 
 
 class UserDetailAggregateTests(unittest.TestCase):
@@ -273,7 +299,7 @@ class UserDetailAggregateTests(unittest.TestCase):
 
     def test_unsupported_field_fails_before_detail_read(self) -> None:
         inputs = _inputs()
-        inputs["group_by"] = ["ClientID"]
+        inputs["group_by"] = ["UnregisteredScalar"]
         client = _Client(_source([]))
 
         with self.assertRaises(Exception) as raised:
@@ -291,6 +317,92 @@ class UserDetailAggregateTests(unittest.TestCase):
                     "http_receipts"
                 ]
             ],
+        )
+
+    def test_registered_privacy_excluded_field_stays_rejected_with_policy_diagnostic(
+        self,
+    ) -> None:
+        inputs = _inputs()
+        inputs["source"]["app_id"] = f"{SENTINEL}-app"
+        inputs["filters"] = []
+        inputs["group_by"] = ["bytedanceMid3"]
+        inputs["measures"] = [{"name": "users", "op": "count"}]
+        client = _Client(
+            _source([{"bytedanceMid3": SENTINEL}]),
+            _metadata({"name": "bytedanceMid3", "data_type": "STRING"}),
+        )
+
+        with self.assertRaises(Exception) as raised:
+            run_user_detail_aggregate(client, inputs)
+
+        envelope = error_envelope(raised.exception)
+        error = envelope["error"]
+        self.assertEqual(
+            (
+                FIELD_PRIVACY_EXCLUDED,
+                "caller",
+                "aggregate field is excluded by the user-detail privacy policy",
+                "fields",
+                False,
+                "Remove the field or switch to an owner-approved privacy-governed "
+                "product; type registration cannot make a privacy-excluded field "
+                "eligible.",
+            ),
+            _error_contract(error),
+        )
+        rendered = json.dumps(envelope, ensure_ascii=False, sort_keys=True)
+        self.assertNotIn(SENTINEL, rendered)
+        self.assertNotIn("bytedanceMid3", rendered)
+        self.assertNotIn("cells", envelope)
+        self.assertEqual(2, exit_code_for_error(raised.exception))
+        self.assertEqual([METADATA_OPERATION_ID], [item[0] for item in client.calls])
+
+    def test_condition_value_type_mismatch_stays_rejected_as_caller_input(
+        self,
+    ) -> None:
+        inputs = _inputs()
+        inputs["source"]["app_id"] = f"{SENTINEL}-app"
+        inputs["filters"] = [
+            {
+                "field": "AdCid",
+                "operator": "NOT_IN",
+                "values": [None, "", 0, "0"],
+            }
+        ]
+        inputs["group_by"] = []
+        inputs["measures"] = [{"name": "users", "op": "count"}]
+        client = _Client(
+            _source([{"AdCid": SENTINEL}]),
+            _metadata({"name": "AdCid", "data_type": "STRING"}),
+        )
+
+        with self.assertRaises(Exception) as raised:
+            run_user_detail_aggregate(client, inputs)
+
+        envelope = error_envelope(raised.exception)
+        error = envelope["error"]
+        self.assertEqual(
+            (
+                CONDITION_TYPE_MISMATCH,
+                "caller",
+                "aggregate condition non-null value types do not match the field type "
+                "observed in this read",
+                "conditions[].values",
+                False,
+                "Use non-null condition values of one scalar type matching the field, "
+                "or remove the condition; do not retry the unchanged request. "
+                "Investigate upstream only if separate type-drift evidence exists.",
+            ),
+            _error_contract(error),
+        )
+        rendered = json.dumps(envelope, ensure_ascii=False, sort_keys=True)
+        self.assertNotIn(SENTINEL, rendered)
+        self.assertNotIn("AdCid", rendered)
+        self.assertNotIn("cells", envelope)
+        self.assertEqual(2, exit_code_for_error(raised.exception))
+        self.assertEqual(
+            [METADATA_OPERATION_ID, SOURCE_OPERATION_ID],
+            [item[0] for item in client.calls],
         )
 
     def test_mixed_types_fail_atomically_and_sentinel_never_enters_any_boundary(self) -> None:
@@ -328,6 +440,8 @@ class UserDetailAggregateTests(unittest.TestCase):
 
         self.assertEqual(MIXED_TYPE, envelope["error"]["code"])
         self.assertEqual("upstream", envelope["error"]["category"])
+        self.assertFalse(envelope["error"]["retryable"])
+        self.assertEqual(3, exit_code_for_error(raised.exception))
         self.assertNotIn(SENTINEL, str(raised.exception))
         self.assertNotIn(SENTINEL, rendered)
         self.assertNotIn(SENTINEL, stream.getvalue())
