@@ -374,6 +374,29 @@ def assess_capability_requirement(
     return "stable", []
 
 
+def assess_declared_capability_requirement(
+    dependency: Mapping[str, Any], requirement: Mapping[str, Any]
+) -> tuple[str, list[str]]:
+    """Assess whether a dependency requirement is reachable by contract.
+
+    The synthetic result uses the dependency's declared completeness ceiling,
+    its best lifecycle-permitted trust status, and best-case data quality.
+    Data quality is deliberately optimistic here because a Capability contract
+    declares a minimum accepted quality, not an upper bound on future
+    Validation Results.
+    """
+
+    lifecycle_status, _ = _lifecycle_status(str(dependency["lifecycle"]))
+    return assess_capability_requirement(
+        {
+            "completeness": dependency["declared_completeness"],
+            "trust_status": lifecycle_status,
+            "data_quality": {"status": "pass"},
+        },
+        requirement,
+    )
+
+
 def meets_completeness(actual: str, required: str) -> bool:
     if actual not in _COMPLETENESS_RANK or required not in _COMPLETENESS_RANK:
         return False
@@ -499,6 +522,7 @@ def _validate_trust_result(value: Mapping[str, Any]) -> None:
 __all__ = [
     "CapabilityTrustService",
     "TRUST_RESULT_SCHEMA_VERSION",
+    "assess_declared_capability_requirement",
     "assess_capability_requirement",
     "meets_completeness",
 ]

@@ -4,6 +4,7 @@ import json
 import re
 import tempfile
 import unittest
+import warnings
 from collections import deque
 from pathlib import Path
 
@@ -25,6 +26,19 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 ARCHIVE = DOCS / "archive"
 MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+ACTIVE_DOC_MAX_LINES = 4900
+ACTIVE_DOC_LOW_HEADROOM_LINES = 100
+
+
+def warn_if_active_doc_headroom_is_low(lines: int) -> None:
+    remaining = ACTIVE_DOC_MAX_LINES - lines
+    if 0 <= remaining < ACTIVE_DOC_LOW_HEADROOM_LINES:
+        warnings.warn(
+            "active documentation consolidation budget has only "
+            f"{remaining} lines left; consolidate current prose before the hard cap",
+            UserWarning,
+            stacklevel=2,
+        )
 
 
 def local_markdown_targets(path: Path) -> list[Path]:
@@ -120,12 +134,24 @@ class DocumentationArchitectureTests(unittest.TestCase):
         )
         lines = sum(len(path.read_text(encoding="utf-8").splitlines()) for path in files)
         size = sum(path.stat().st_size for path in files)
-        # Both limits are lowered by exactly what the narrower scope removed, so
-        # the headroom for active prose is unchanged at 5 lines and 42.5 KiB.
-        # Dropping files from a budget without dropping the number would have
-        # been a 659-line raise wearing the costume of a scope fix.
-        self.assertLessEqual(lines, 4922)
+        # The migration-scope correction lowered both limits by exactly what it
+        # removed; this later ratchet is different. Repeated Segment envelopes
+        # were consolidated in-place, then the line cap moved down 4922 -> 4900.
+        # A warning at less than 100 lines prevents the remaining reserve from
+        # becoming silently unusable before the hard cap fails.
+        warn_if_active_doc_headroom_is_low(lines)
+        self.assertLessEqual(lines, ACTIVE_DOC_MAX_LINES)
         self.assertLessEqual(size, 417 * 1024)
+
+    def test_consolidation_budget_warns_before_headroom_is_unusable(self) -> None:
+        with self.assertWarnsRegex(UserWarning, "only 99 lines left"):
+            warn_if_active_doc_headroom_is_low(ACTIVE_DOC_MAX_LINES - 99)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            warn_if_active_doc_headroom_is_low(
+                ACTIVE_DOC_MAX_LINES - ACTIVE_DOC_LOW_HEADROOM_LINES
+            )
+        self.assertEqual([], caught)
 
     def test_entry_docs_do_not_state_catalog_totals(self) -> None:
         sources = [

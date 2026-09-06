@@ -2,7 +2,7 @@
   "artifact_kind": "skill",
   "capability_dependencies": [
     {
-      "completeness": "complete",
+      "completeness": "unknown",
       "contract_version": "1",
       "data_quality": "pass",
       "identity_kind": "product",
@@ -221,7 +221,7 @@
           "example_id": "locked-complete-success",
           "expected": {
             "allowed_claims": ["window-metric-change", "returned-dimension-change", "selected-slice-observation"],
-            "completeness": "complete",
+            "completeness": "unknown",
             "forbidden_claims": ["complete-app-total", "unreturned-values", "causality", "incrementality", "roi", "natural-volume-attribution"],
             "network_called": true,
             "reason_codes": [],
@@ -435,7 +435,7 @@
     "unknown_discovery_max": 4
   },
   "requirements": {
-    "completeness": "complete",
+    "completeness": "unknown",
     "data_quality": "pass"
   },
   "routing": {

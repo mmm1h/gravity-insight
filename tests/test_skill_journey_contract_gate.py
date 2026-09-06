@@ -44,6 +44,7 @@ def _skill(*, covered: list[str] | None = None) -> dict:
             "unknown_discovery_max": 1,
             "runtime_additional_requests": 0,
         },
+        "requirements": {"completeness": "complete", "data_quality": "pass"},
     }
 
 
@@ -84,6 +85,26 @@ def _model() -> dict:
                 "guaranteed-future-outcome",
             ],
         },
+    }
+
+
+def _capability(
+    selector: str,
+    *,
+    identity_kind: str = "product",
+    completeness: str = "complete",
+    allowed_claims: list[str] | None = None,
+    dependencies: list[dict] | None = None,
+) -> dict:
+    return {
+        "identity_kind": identity_kind,
+        "selector": selector,
+        "contract_version": "1",
+        "lifecycle": "active",
+        "declared_completeness": completeness,
+        "required_data_quality": "pass",
+        "allowed_claims": allowed_claims or [],
+        "dependencies": dependencies or [],
     }
 
 
@@ -184,6 +205,19 @@ class SkillJourneyContractGateTests(unittest.TestCase):
                     {item["detector"] for item in receipt["findings"]},
                 )
 
+    def test_skill_summary_requirement_must_match_journey(self) -> None:
+        skill = _skill()
+        skill["requirements"]["completeness"] = "unknown"
+
+        code, receipt = check_contracts([skill], [_journey()], [_model()])
+
+        self.assertEqual(1, code)
+        self.assertEqual(
+            ["skill-journey-requirement-mismatch"],
+            [item["detector"] for item in receipt["findings"]],
+        )
+        self.assertEqual("completeness", receipt["findings"][0]["dimension"])
+
     def test_model_claim_vocabulary_fails_closed(self) -> None:
         cases = (
             ("causal claim", "model-claim-id-invalid"),
@@ -230,6 +264,48 @@ class SkillJourneyContractGateTests(unittest.TestCase):
             {item["detector"] for item in receipt["findings"]},
         )
 
+    def test_claim_dependency_reachability_fails_closed_at_every_claim_layer(self) -> None:
+        dependency = _capability("sample.read", completeness="unknown")
+        requirement = copy.deepcopy(_skill()["capability_dependencies"][0])
+        publisher = _capability(
+            "sample.publisher",
+            completeness="unknown",
+            allowed_claims=["returned-observation"],
+            dependencies=[requirement],
+        )
+
+        code, receipt = check_contracts(
+            [_skill()],
+            [_journey()],
+            [_model()],
+            capabilities=[dependency, publisher],
+        )
+
+        self.assertEqual(1, code)
+        self.assertEqual("fail", receipt["status"])
+        findings = [
+            item
+            for item in receipt["findings"]
+            if item["detector"] == "claim-dependency-requirement-unreachable"
+        ]
+        self.assertEqual(3, len(findings))
+        self.assertEqual({"completeness"}, {item["dimension"] for item in findings})
+        self.assertEqual(
+            {"sample.read"}, {item["dependency_selector"] for item in findings}
+        )
+        self.assertEqual(
+            {"product:sample.publisher"},
+            {item["capability_id"] for item in findings} - {"<none>"},
+        )
+        self.assertEqual(
+            {"sample-skill"},
+            {item["skill_id"] for item in findings} - {"<none>"},
+        )
+        self.assertEqual(
+            {"analysis.sample"},
+            {item["journey_id"] for item in findings} - {"<none>"},
+        )
+
     def test_current_repository_is_consistent_and_ci_runs_gate(self) -> None:
         code, receipt = check_repository(ROOT)
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -241,6 +317,8 @@ class SkillJourneyContractGateTests(unittest.TestCase):
         self.assertEqual(6, receipt["checked_skill_model_link_count"])
         self.assertEqual(2, receipt["checked_journey_model_link_count"])
         self.assertEqual(5, receipt["referenced_model_count"])
+        self.assertEqual(3, receipt["claim_bearing_capability_count"])
+        self.assertGreater(receipt["checked_claim_dependency_count"], 0)
         self.assertIn("python scripts/check_skill_journey_contracts.py", workflow)
 
 

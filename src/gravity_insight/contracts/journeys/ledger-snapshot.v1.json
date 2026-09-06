@@ -3,7 +3,7 @@
   "row_count": 69,
   "rows": [
     {
-      "blocker_note": "2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=[\"/app\"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。2026-08-19 #222：组/身份不变量按响应形状生效，新同形 route 不再靠手写 operation_id。2026-08-19 #226：host `boundaries` 改为卡上 owner 字段，加载缺字段即红；不改状态、不改冻结 case。2026-08-19 #227：带 UV 的分维结果信封现有 `interpretation.metrics[].additivity=non_additive`；投放中 App `29034827` 同窗生产确认声明与响应一致。2026-08-19 #229：`NO_CANDIDATE` 信封另带 8 条已登记可执行问法；2026-08-19 #228：跨进程磁盘命中后冷启动 metadata HTTP 不再每进程重打；十人合计 metadata 从 20 降到 2。不改状态、不改冻结 case。2026-08-20 #22：条件 `type=user_property` 改为离线拒绝，`global_filters` 与 `steps[].conditions` 两处都在发请求前失败，错误指向条件路径而不是上游误报的 `group_by_list`；`type=user` 行为不变。`spec-schema` 的 `type` 枚举跨 kind 共用，未收窄，限制只加在编译期的 event/funnel 上。不改状态、不改冻结 case。2026-08-20 #23：上游反报编译器自己生成的 `create_time/day` 分组\"缺失\"时，不再让调用方重加已发的分组，改判 `upstream` + `retryable`（同一请求实测可在另一次执行成功）；未分类的 analysis 拒绝也不再默认把 `field` 说成 `group_by_list`。`SemanticRejectedError` 的\"确定性\"前提对这类自相矛盾的拒绝不成立。不改状态、不改冻结 case。2026-08-31 #45：compact Event `time_grain=hour` 已按四次失败且同形 `day` 成功的消费证据从 event enum 移除，并在 workspace/validator/transport 前以 `INPUT_INVALID`、`retryable=false` 拒绝；后续审计确认 `minute` 没有成功证据且会被错误主动推荐给 sub-day 消费者，现同样离线拒绝。Event `total` 保留，因为生产请求曾被接受但返回空对象；`month/week` 与 Funnel/Retention/Scatter 的非日粒度均无成功证据但不据此断言不支持，保留 enum，并在其上游语义拒绝时返回 `field=time_grain`、`retryable=false`、day 对照和证据采集动作。生产已接受的粒度与 #23/#24 同形瞬态拒绝继续走 retryable upstream。单用户 `analysis.user_event.list` 仍不是全量首流量替代。",
+      "blocker_note": "2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=[\"/app\"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。2026-08-19 #222：组/身份不变量按响应形状生效，新同形 route 不再靠手写 operation_id。2026-08-19 #226：host `boundaries` 改为卡上 owner 字段，加载缺字段即红；不改状态、不改冻结 case。2026-08-19 #227：带 UV 的分维结果信封现有 `interpretation.metrics[].additivity=non_additive`；投放中 App `29034827` 同窗生产确认声明与响应一致。2026-08-19 #229：`NO_CANDIDATE` 信封另带 8 条已登记可执行问法；2026-08-19 #228：跨进程磁盘命中后冷启动 metadata HTTP 不再每进程重打；十人合计 metadata 从 20 降到 2。不改状态、不改冻结 case。2026-08-20 #22：条件 `type=user_property` 改为离线拒绝，`global_filters` 与 `steps[].conditions` 两处都在发请求前失败，错误指向条件路径而不是上游误报的 `group_by_list`；`type=user` 行为不变。`spec-schema` 的 `type` 枚举跨 kind 共用，未收窄，限制只加在编译期的 event/funnel 上。不改状态、不改冻结 case。2026-08-20 #23：上游反报编译器自己生成的 `create_time/day` 分组\"缺失\"时，不再让调用方重加已发的分组，改判 `upstream` + `retryable`（同一请求实测可在另一次执行成功）；未分类的 analysis 拒绝也不再默认把 `field` 说成 `group_by_list`。`SemanticRejectedError` 的\"确定性\"前提对这类自相矛盾的拒绝不成立。不改状态、不改冻结 case。2026-08-31 #45：compact Event `time_grain=hour` 已按四次失败且同形 `day` 成功的消费证据从 event enum 移除，并在 workspace/validator/transport 前以 `INPUT_INVALID`、`retryable=false` 拒绝；后续审计确认 `minute` 没有成功证据且会被错误主动推荐给 sub-day 消费者，现同样离线拒绝。Event `total` 保留，因为生产请求曾被接受但返回空对象；`month/week` 与 Funnel/Retention/Scatter 的非日粒度均无成功证据但不据此断言不支持，保留 enum，并在其上游语义拒绝时返回 `field=time_grain`、`retryable=false`、day 对照和证据采集动作。生产已接受的粒度与 #23/#24 同形瞬态拒绝继续走 retryable upstream。单用户 `analysis.user_event.list` 仍不是全量首流量替代。`returned-event-metric-observation` 只约束返回聚合，Capability/Journey requirement 保持 `completeness=unknown`，不声明完整事件总体。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "看某事件随时间、分组和条件的变化",
@@ -12,7 +12,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "ef9d7bb5b7d33a5dd4e5044e51158adc2d2de2f838df5739fc4030e3f8b34e12",
+      "row_digest": "0ae921819a59a65e0d703425d3157ea735a35b39c18e04d2152827af0818e821",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -231,7 +231,7 @@
       }
     },
     {
-      "blocker_note": "-",
+      "blocker_note": "`multi-app-business-pulse-observation` 只约束显式 App、日期、平台和实际返回 source；Capability/Journey requirement 保持 `completeness=unknown`，不声明完整经营总量。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "汇总多个 App 的业务趋势和小时脉搏",
@@ -240,7 +240,7 @@
       "request_budget": {
         "raw": "1 / 2（控制流）"
       },
-      "row_digest": "576ed24ff68c7be9bd6c12f23cea5362ed3522b797894d06f09198f3b62de852",
+      "row_digest": "fd2ef8a8704b74c5f0dc370750d1a06f862bef1673ec0f14f7d5ea10d45e3793",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -611,16 +611,16 @@
       }
     },
     {
-      "blocker_note": "`analysis.merge2.ap-cost-anomaly-localization` 由项目精确 Skill lock 与本地 CAS 解析 canonical Library Skill，再由 `project.merge2` Overlay 绑定 project Semantic、deterministic Operator 与两份 `role=data` Repo Context；wheel 不再内置业务 Skill，缺 lock/CAS 时以稳定 Hub gap 零请求失败关闭。Core 仍将 exact Journey/Skill package/lock/Overlay/Trust/Semantic/Operator/Context/执行合同冻结为值无关 `gravity.execution-snapshot.v1`，既有 runner/Plan 是唯一执行者并产出正式 `gravity.analysis-result.v1`。当前 `report.multidim.query` 权威完整性仍为 `unknown`，故依赖齐全时 `can-run/run` 仍返回 `blocked/COMPLETENESS_INSUFFICIENT`、空 findings/claims/receipts 且零请求；synthetic complete/fresh 只证明组合等价，不提升生产 Trust。",
+      "blocker_note": "`analysis.merge2.ap-cost-anomaly-localization` 由项目精确 Skill lock 与本地 CAS 解析 canonical Library Skill，再由 `project.merge2` Overlay 绑定 project Semantic、deterministic Operator 与两份 `role=data` Repo Context；wheel 不再内置业务 Skill，缺 lock/CAS 时以稳定 Hub gap 零请求失败关闭。Core 仍将 exact Journey/Skill package/lock/Overlay/Trust/Semantic/Operator/Context/执行合同冻结为值无关 `gravity.execution-snapshot.v1`，既有 runner/Plan 是唯一执行者并产出正式 `gravity.analysis-result.v1`。`report.multidim.query` 权威完整性仍为 `unknown`；Capability、Skill 与 Journey requirement 已与 returned/window/selected-slice claims 对齐为 `unknown`，离线 contract-conforming Validation 可得到 `verified` 并运行，正式结果继续传播 `completeness=unknown`。DQ 只检查 playbook 与 result audit，不把完整性改写为质量。生产 Trust、lock、项目 Context 的当前状态尚未重认证，不据此声称生产已运行。",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
-      "ledger_status": "当前阻塞（R09A Core readiness 已机器闭合）",
+      "ledger_status": "契约可达（生产 Journey 尚未重认证）",
       "legacy_display_key": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
       "request_budget": {
         "raw": "can-run 0；当前 run 0"
       },
-      "row_digest": "8005545d6c39debd1e290ad340b8d2224905a7774bb3fa88cdc3533b45c3201f",
+      "row_digest": "832537a4878bd433ff3eb577b9630168fcd452a89cd84c5bb8b8006cc138554f",
       "surfaces": {
         "agent": "有（Library Agent Skill）",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "d391d2ee8cf1dff79b2e1ea0cb97c79e2fcdd4b53689f1d2189c2dde8d2babb0",
+  "snapshot_digest": "ba1241b212f6396c17a4a2d9da057f783e6ee47e14cebc0af04e46a524b97bee",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "51b375c73bae13ba26428247ef68bff2aea65cb8c564309749039fa9562b6096"
+  "source_sha256": "bcdb887808f15ec3c059c6017953da4cad83e30843cd29880d52867712777dbd"
 }

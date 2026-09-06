@@ -19,7 +19,7 @@
       "selector": "analysis.event.query",
       "contract_version": "1",
       "minimum_trust": "stable",
-      "completeness": "complete",
+      "completeness": "unknown",
       "data_quality": "pass"
     }
   ],

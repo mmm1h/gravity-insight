@@ -95,8 +95,7 @@ class ReferenceJourneyRunner:
             failed["can_run_status"] = "blocked"
             failed["reason_codes"] = ["REQUEST_BUDGET_EXCEEDED"]
             return _blocked_analysis_result(failed, network_called=True)
-        completeness = before["dependencies"]["capabilities"][0]["completeness"]
-        quality = evaluate_playbook_data_quality(playbook, completeness=completeness)
+        quality = evaluate_playbook_data_quality(playbook)
         if quality["status"] != "pass":
             failed = copy.deepcopy(before)
             failed["can_run_status"] = "blocked"
@@ -293,7 +292,7 @@ def _success_analysis_result(
         "operators": copy.deepcopy(snapshot["operators"]),
         "models": copy.deepcopy(snapshot["models"]),
         "context_packs": _context_packs(readiness),
-        "completeness": "complete",
+        "completeness": readiness["dependencies"]["capabilities"][0]["completeness"],
         "data_quality": copy.deepcopy(quality),
         "evidence_level": "L2",
         "findings": [

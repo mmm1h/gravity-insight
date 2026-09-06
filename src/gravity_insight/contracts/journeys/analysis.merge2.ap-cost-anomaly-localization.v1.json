@@ -16,7 +16,7 @@
       "selector": "metric-anomaly-localization@1",
       "contract_version": "1",
       "minimum_trust": "stable",
-      "completeness": "complete",
+      "completeness": "unknown",
       "data_quality": "pass"
     }
   ],

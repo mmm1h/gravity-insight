@@ -30,14 +30,15 @@ def result():
 
 
 class ReferenceJourneyQualityTests(unittest.TestCase):
-    def test_quality_never_infers_missing_product_completeness(self):
-        unknown = evaluate_playbook_data_quality(result(), completeness="unknown")
-        passed = evaluate_playbook_data_quality(result(), completeness="complete")
+    def test_quality_is_orthogonal_to_product_completeness(self):
+        quality = evaluate_playbook_data_quality(result())
 
-        self.assertEqual("unknown", unknown["status"])
-        self.assertEqual(["DATA_QUALITY_UNPROVEN"], unknown["reason_codes"])
-        self.assertEqual("pass", passed["status"])
-        self.assertEqual([], passed["reason_codes"])
+        self.assertEqual("pass", quality["status"])
+        self.assertEqual([], quality["reason_codes"])
+        self.assertEqual(
+            {"playbook-result", "query-result-audit"},
+            {item["check_id"] for item in quality["checks"]},
+        )
 
     def test_missing_or_malformed_query_evidence_fails(self):
         broken = result()
@@ -49,9 +50,7 @@ class ReferenceJourneyQualityTests(unittest.TestCase):
 
         for value in (broken, truncated, malformed_id):
             with self.subTest(value=value):
-                quality = evaluate_playbook_data_quality(
-                    copy.deepcopy(value), completeness="complete"
-                )
+                quality = evaluate_playbook_data_quality(copy.deepcopy(value))
                 self.assertEqual("fail", quality["status"])
                 self.assertEqual(["DATA_QUALITY_FAILED"], quality["reason_codes"])
 
