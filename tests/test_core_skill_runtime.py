@@ -122,11 +122,12 @@ class CoreSkillRuntimeTests(unittest.TestCase):
         ):
             self.assertNotIn(value, rendered)
 
-    def test_current_authoritative_completeness_stays_blocked(self):
+    def test_current_missing_validation_stays_blocked(self):
         result = CoreSkillRuntime(workspace=self.workspace).resolve(JOURNEY_ID, scope())
 
         self.assertEqual("blocked", result["status"])
-        self.assertIn("COMPLETENESS_INSUFFICIENT", result["reason_codes"])
+        self.assertIn("DEPENDENCY_VALIDATION_UNKNOWN", result["reason_codes"])
+        self.assertNotIn("COMPLETENESS_INSUFFICIENT", result["reason_codes"])
         self.assertEqual("blocked", result["execution_snapshot"]["status"])
         self.assertFalse(result["network_called"])
 

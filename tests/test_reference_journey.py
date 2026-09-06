@@ -53,7 +53,7 @@ def stable_trust():
             "status": "matched",
         },
         "validation": None,
-        "completeness": "complete",
+        "completeness": "unknown",
         "data_quality": data_quality_result(
             [
                 {
@@ -187,12 +187,13 @@ class ReferenceJourneyTests(unittest.TestCase):
     def tearDown(self):
         self.temporary.cleanup()
 
-    def test_current_real_contract_blocks_before_execution(self):
+    def test_current_unvalidated_contract_blocks_before_execution(self):
         readiness = self.service.can_run(journey_input())
         result = self.service.run(journey_input())
 
         self.assertEqual("blocked", readiness["can_run_status"])
-        self.assertIn("COMPLETENESS_INSUFFICIENT", readiness["reason_codes"])
+        self.assertIn("DEPENDENCY_VALIDATION_UNKNOWN", readiness["reason_codes"])
+        self.assertNotIn("COMPLETENESS_INSUFFICIENT", readiness["reason_codes"])
         self.assertEqual("blocked", result["status"])
         self.assertEqual([], result["findings"])
         self.assertEqual([], result["allowed_claims"])
@@ -212,7 +213,7 @@ class ReferenceJourneyTests(unittest.TestCase):
         self.assertEqual(1, len(self.sdk.calls))
         self.assertEqual(1, len(self.sdk.semantic_bindings))
         self.assertEqual("gravity.analysis-result.v1", result["schema_version"])
-        self.assertEqual("complete", result["completeness"])
+        self.assertEqual("unknown", result["completeness"])
         self.assertEqual("pass", result["data_quality"]["status"])
         self.assertEqual([], result["models"])
         self.assertEqual(1, len(result["operators"]))
@@ -267,7 +268,10 @@ class ReferenceJourneyTests(unittest.TestCase):
         result = self.service.can_run(journey_input())
         self.assertEqual("blocked", result["can_run_status"])
         self.assertEqual(
-            {"PROJECT_SKILL_OVERLAY_MISSING", "COMPLETENESS_INSUFFICIENT"},
+            {
+                "PROJECT_SKILL_OVERLAY_MISSING",
+                "DEPENDENCY_VALIDATION_UNKNOWN",
+            },
             set(result["reason_codes"]),
         )
 

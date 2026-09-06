@@ -79,7 +79,7 @@ class MCPToolTests(unittest.TestCase):
 
         self.assertEqual(13, inspected["structuredContent"]["result"]["count"])
         self.assertEqual(
-            "blocked", readiness["structuredContent"]["result"]["can_run_status"]
+            "unknown", readiness["structuredContent"]["result"]["can_run_status"]
         )
         self.assertEqual(
             "analysis.query.spec:event",

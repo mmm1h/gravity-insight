@@ -69,7 +69,7 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
                 "selector": "metric-anomaly-localization@1",
                 "contract_version": "1",
                 "minimum_trust": "stable",
-                "completeness": "complete",
+                "completeness": "unknown",
                 "data_quality": "pass",
             }
         ],

@@ -63,8 +63,8 @@ class JourneyServiceTests(unittest.TestCase):
         }
 
         self.assertEqual("unknown", results["analysis.readable-app-catalog"]["can_run_status"])
-        self.assertEqual("blocked", results["analysis.event-trend"]["can_run_status"])
-        self.assertEqual("blocked", results["analysis.business-pulse"]["can_run_status"])
+        self.assertEqual("unknown", results["analysis.event-trend"]["can_run_status"])
+        self.assertEqual("unknown", results["analysis.business-pulse"]["can_run_status"])
         ltv = results["analysis.ltv-curve-fit"]
         self.assertEqual("blocked", ltv["can_run_status"])
         self.assertEqual(

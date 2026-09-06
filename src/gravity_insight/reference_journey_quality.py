@@ -10,16 +10,13 @@ from .data_quality import data_quality_result
 from .result_audit import SCHEMA_VERSION as RESULT_AUDIT_SCHEMA_VERSION
 
 
-def evaluate_playbook_data_quality(
-    result: Mapping[str, Any], *, completeness: str
-) -> dict[str, Any]:
-    """Check R01 facts without inferring missing Product completeness."""
+def evaluate_playbook_data_quality(result: Mapping[str, Any]) -> dict[str, Any]:
+    """Check R01 fact shape and audits independently of completeness."""
 
     playbook_ok = _playbook_result_is_valid(result)
     audits_ok = _query_audits_are_valid(
         result, required_ids=_required_query_step_ids()
     )
-    complete = completeness == "complete"
     checks = [
         {
             "check_id": "playbook-result",
@@ -31,17 +28,10 @@ def evaluate_playbook_data_quality(
             "status": "pass" if audits_ok else "fail",
             "scope": "metric-anomaly-localization@1",
         },
-        {
-            "check_id": "completeness",
-            "status": "pass" if complete else "unknown",
-            "scope": "metric-anomaly-localization@1",
-        },
     ]
     reasons: list[str] = []
     if not playbook_ok or not audits_ok:
         reasons.append("DATA_QUALITY_FAILED")
-    if not complete:
-        reasons.append("DATA_QUALITY_UNPROVEN")
     return data_quality_result(checks, reason_codes=reasons)
 
 

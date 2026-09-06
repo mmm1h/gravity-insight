@@ -47,7 +47,7 @@ class CapabilityTrustTests(unittest.TestCase):
             CapabilityValidationStore(values=values), clock=lambda: NOW
         )
 
-    def test_current_contracts_are_honestly_unknown_or_blocked(self):
+    def test_current_contracts_without_validation_are_honestly_unknown(self):
         app = self.service().trust("operation", "app.list")
         event = self.service().trust("product", "analysis.query.spec:event")
         pulse = self.service().trust("composite", "composite:business_pulse")
@@ -57,10 +57,44 @@ class CapabilityTrustTests(unittest.TestCase):
         self.assertEqual(["CAPABILITY_VALIDATION_MISSING"], app["reason_codes"])
         for result in (event, pulse, reference):
             with self.subTest(selector=result["selector"]):
-                self.assertEqual("blocked", result["trust_status"])
-                self.assertIn("COMPLETENESS_INSUFFICIENT", result["reason_codes"])
+                self.assertEqual("unknown", result["trust_status"])
+                self.assertNotIn("COMPLETENESS_INSUFFICIENT", result["reason_codes"])
                 self.assertFalse(result["network_called"])
                 self.assertEqual([], result["allowed_claims"])
+
+    def test_claim_bearing_contracts_are_reachable_with_current_declared_values(self):
+        identities = (
+            ("operation", "analysis.event.query"),
+            ("product", "analysis.query.spec:event"),
+            ("operation", "report.overview.query"),
+            ("operation", "report.business.query"),
+            ("operation", "report.hour_comparison.query"),
+            ("composite", "composite:business_pulse"),
+            ("operation", "report.multidim.query"),
+            ("product", "metric-anomaly-localization@1"),
+        )
+        service = self.service(*(validation(*identity) for identity in identities))
+        expected = {
+            ("product", "analysis.query.spec:event"): [
+                "returned-event-metric-observation"
+            ],
+            ("composite", "composite:business_pulse"): [
+                "multi-app-business-pulse-observation"
+            ],
+            ("product", "metric-anomaly-localization@1"): [
+                "window-metric-change",
+                "returned-dimension-change",
+                "selected-slice-observation",
+            ],
+        }
+
+        for identity, claims in expected.items():
+            with self.subTest(identity=identity):
+                result = service.trust(*identity)
+                self.assertEqual("stable", result["trust_status"])
+                self.assertEqual("unknown", result["completeness"])
+                self.assertEqual([], result["reason_codes"])
+                self.assertEqual(claims, result["allowed_claims"])
 
     @patch.object(CapabilityValidationStore, "for_current_principal")
     def test_default_service_reads_only_the_current_principal_store(self, current):
@@ -121,7 +155,11 @@ class CapabilityTrustTests(unittest.TestCase):
 
         self.assertEqual("quarantined", result["trust_status"])
         self.assertEqual(
-            ["CAPABILITY_FINGERPRINT_MISMATCH", "CAPABILITY_VALIDATION_MISSING", "COMPLETENESS_INSUFFICIENT"],
+            [
+                "CAPABILITY_FINGERPRINT_MISMATCH",
+                "CAPABILITY_VALIDATION_MISSING",
+                "DEPENDENCY_VALIDATION_UNKNOWN",
+            ],
             result["reason_codes"],
         )
 

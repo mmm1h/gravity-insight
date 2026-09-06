@@ -347,7 +347,8 @@ class CoreExternalContextBindingTests(unittest.TestCase):
         result = sdk.skill_runtime.resolve(JOURNEY_ID, scope())
 
         self.assertEqual("blocked", result["status"])
-        self.assertIn("COMPLETENESS_INSUFFICIENT", result["reason_codes"])
+        self.assertIn("DEPENDENCY_VALIDATION_UNKNOWN", result["reason_codes"])
+        self.assertNotIn("COMPLETENESS_INSUFFICIENT", result["reason_codes"])
         self.assertTrue(result["provider_rpc_called"])
         self.assertEqual(
             "available",

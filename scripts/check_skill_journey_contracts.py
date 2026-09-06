@@ -1,4 +1,4 @@
-"""Fail closed when linked Skill, Journey, and Model contracts drift."""
+"""Fail closed when linked Skill, Journey, Capability, and Model contracts drift."""
 
 from __future__ import annotations
 
@@ -15,13 +15,15 @@ from gravity_insight.agent_runtime_contracts import (
     AgentRuntimeContractError,
     load_json_object,
 )
+from gravity_insight.capability_contract import capability_contracts
+from gravity_insight.capability_trust import assess_declared_capability_requirement
 from gravity_insight.journey_contract import load_journey_contract
 from gravity_insight.model_contract import load_model_artifact
 from gravity_insight.skill_contract import load_skill_manifest, skill_uri
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_VERSION = "gravity.skill-journey-contract-gate.v2"
+SCHEMA_VERSION = "gravity.skill-journey-contract-gate.v3"
 _SKILL_ROOT = Path("skills/library")
 _JOURNEY_ROOT = Path("src/gravity_insight/contracts/journeys")
 _MODEL_ROOT = Path("src/gravity_insight/contracts/models")
@@ -59,6 +61,10 @@ class Finding:
     model_uri: str
     detector: str
     detail: str
+    capability_id: str = "<none>"
+    dependency_kind: str = "<none>"
+    dependency_selector: str = "<none>"
+    dimension: str = "<none>"
 
 
 def _canonical_items(values: Sequence[Any]) -> list[str]:
@@ -75,6 +81,10 @@ def _finding(
     detail: str,
     *,
     model_uri: str = "<none>",
+    capability_id: str = "<none>",
+    dependency_kind: str = "<none>",
+    dependency_selector: str = "<none>",
+    dimension: str = "<none>",
 ) -> Finding:
     return Finding(
         skill_id=skill_id,
@@ -82,6 +92,10 @@ def _finding(
         model_uri=model_uri,
         detector=detector,
         detail=detail,
+        capability_id=capability_id,
+        dependency_kind=dependency_kind,
+        dependency_selector=dependency_selector,
+        dimension=dimension,
     )
 
 
@@ -172,6 +186,21 @@ def _check_link(skill: Mapping[str, Any], journey: Mapping[str, Any]) -> list[Fi
             )
         )
 
+    for dimension in ("completeness", "data_quality"):
+        skill_value = skill["requirements"][dimension]
+        journey_value = journey["required_capabilities"][0][dimension]
+        if skill_value != journey_value:
+            findings.append(
+                _finding(
+                    skill_id,
+                    journey_id,
+                    "skill-journey-requirement-mismatch",
+                    f"requirements.{dimension}={skill_value!r}; first Journey "
+                    f"Capability requirement {dimension}={journey_value!r}",
+                    dimension=dimension,
+                )
+            )
+
     budget_drift = [
         f"{field}: skill={skill['request_budget'][field]!r}, "
         f"journey={journey['request_budget'][field]!r}"
@@ -225,11 +254,108 @@ def _check_link(skill: Mapping[str, Any], journey: Mapping[str, Any]) -> list[Fi
     return findings
 
 
+def _claim_dependency_findings(
+    owner_kind: str,
+    owner_id: str,
+    allowed_claims: Sequence[Any],
+    dependencies: Sequence[Mapping[str, Any]],
+    capabilities: Mapping[tuple[str, str], Mapping[str, Any]],
+) -> tuple[list[Finding], int]:
+    if not allowed_claims:
+        return [], 0
+    findings: list[Finding] = []
+    for requirement in dependencies:
+        dependency_kind = str(requirement["identity_kind"])
+        dependency_selector = str(requirement["selector"])
+        dependency = capabilities.get((dependency_kind, dependency_selector))
+        common = {
+            "capability_id": owner_id if owner_kind == "capability" else "<none>",
+            "dependency_kind": dependency_kind,
+            "dependency_selector": dependency_selector,
+        }
+        owner_fields = {
+            "skill_id": owner_id if owner_kind == "skill" else "<none>",
+            "journey_id": owner_id if owner_kind == "journey" else "<none>",
+        }
+        if dependency is None:
+            findings.append(
+                _finding(
+                    owner_fields["skill_id"],
+                    owner_fields["journey_id"],
+                    "claim-dependency-contract-missing",
+                    f"{owner_kind} {owner_id!r} publishes claims but dependency "
+                    f"{dependency_kind}:{dependency_selector} has no Capability contract",
+                    dimension="contract",
+                    **common,
+                )
+            )
+            continue
+        if dependency["contract_version"] != requirement["contract_version"]:
+            findings.append(
+                _finding(
+                    owner_fields["skill_id"],
+                    owner_fields["journey_id"],
+                    "claim-dependency-version-unreachable",
+                    f"{owner_kind} {owner_id!r} publishes claims but requires "
+                    f"{dependency_kind}:{dependency_selector} contract_version="
+                    f"{requirement['contract_version']!r}; current declared value is "
+                    f"{dependency['contract_version']!r}",
+                    dimension="contract_version",
+                    **common,
+                )
+            )
+            continue
+        status, reasons = assess_declared_capability_requirement(
+            dependency, requirement
+        )
+        if status == "stable":
+            continue
+        for reason in reasons:
+            dimension = _requirement_dimension(reason)
+            findings.append(
+                _finding(
+                    owner_fields["skill_id"],
+                    owner_fields["journey_id"],
+                    "claim-dependency-requirement-unreachable",
+                    f"{owner_kind} {owner_id!r} publishes claims but dependency "
+                    f"{dependency_kind}:{dependency_selector} cannot satisfy "
+                    f"{dimension}: required={requirement[dimension]!r}, "
+                    f"current_declared={_declared_value(dependency, dimension)!r}; "
+                    f"runtime_reason={reason}",
+                    dimension=dimension,
+                    **common,
+                )
+            )
+    return findings, len(dependencies)
+
+
+def _requirement_dimension(reason: str) -> str:
+    if reason == "COMPLETENESS_INSUFFICIENT":
+        return "completeness"
+    if reason in {
+        "DEPENDENCY_BLOCKED",
+        "DEPENDENCY_QUARANTINED",
+        "DEPENDENCY_TRUST_INSUFFICIENT",
+        "DEPENDENCY_VALIDATION_UNKNOWN",
+    }:
+        return "minimum_trust"
+    return "data_quality"
+
+
+def _declared_value(dependency: Mapping[str, Any], dimension: str) -> Any:
+    if dimension == "completeness":
+        return dependency["declared_completeness"]
+    if dimension == "minimum_trust":
+        return dependency["lifecycle"]
+    return "pass (best case)"
+
+
 def check_contracts(
     skills: Sequence[Mapping[str, Any]],
     journeys: Sequence[Mapping[str, Any]],
     models: Sequence[Mapping[str, Any]],
     *,
+    capabilities: Sequence[Mapping[str, Any]] | None = None,
     initial_findings: Sequence[Finding] = (),
     scanned_skill_files: int | None = None,
     scanned_journey_files: int | None = None,
@@ -239,6 +365,7 @@ def check_contracts(
     skills_by_uri: dict[str, Mapping[str, Any]] = {}
     journeys_by_id: dict[str, Mapping[str, Any]] = {}
     models_by_uri: dict[str, Mapping[str, Any]] = {}
+    capabilities_by_id: dict[tuple[str, str], Mapping[str, Any]] = {}
     for skill in skills:
         uri = skill_uri(skill)
         if uri in skills_by_uri:
@@ -279,6 +406,25 @@ def check_contracts(
             )
         else:
             models_by_uri[model_uri] = model
+    capability_values = tuple(capabilities or ())
+    reachability_enabled = capabilities is not None
+    for capability in capability_values:
+        identity = (
+            str(capability["identity_kind"]),
+            str(capability["selector"]),
+        )
+        if identity in capabilities_by_id:
+            findings.append(
+                _finding(
+                    "<none>",
+                    "<none>",
+                    "duplicate-capability-identity",
+                    f"Capability identity is duplicated: {identity!r}",
+                    capability_id=f"{identity[0]}:{identity[1]}",
+                )
+            )
+        else:
+            capabilities_by_id[identity] = capability
 
     vocabulary = _claim_vocabulary(skills, journeys)
     for model in models:
@@ -289,6 +435,23 @@ def check_contracts(
     checked_journey_model_links = 0
     linked_skills: set[str] = set()
     referenced_models: set[str] = set()
+    claim_publishers = 0
+    claim_bearing_capabilities = 0
+    checked_claim_dependencies = 0
+    for capability in capability_values:
+        allowed_claims = capability["allowed_claims"]
+        if allowed_claims:
+            claim_publishers += 1
+            claim_bearing_capabilities += 1
+        selected, checked = _claim_dependency_findings(
+            "capability",
+            f"{capability['identity_kind']}:{capability['selector']}",
+            allowed_claims,
+            capability["dependencies"],
+            capabilities_by_id,
+        )
+        findings.extend(selected)
+        checked_claim_dependencies += checked
     for skill in skills:
         skill_id = str(skill["skill_id"])
         covered = skill["covers_journeys"]
@@ -310,6 +473,18 @@ def check_contracts(
             findings.extend(_check_link(skill, journey))
 
         skill_allowed = set(skill["claim_policy"]["allowed"])
+        if skill_allowed:
+            claim_publishers += 1
+        if reachability_enabled:
+            selected, checked = _claim_dependency_findings(
+                "skill",
+                skill_id,
+                tuple(skill_allowed),
+                skill["capability_dependencies"],
+                capabilities_by_id,
+            )
+            findings.extend(selected)
+            checked_claim_dependencies += checked
         for dependency in skill["model_dependencies"]:
             checked_skill_model_links += 1
             model_uri = str(dependency)
@@ -343,6 +518,18 @@ def check_contracts(
     for journey in journeys:
         journey_id = str(journey["journey_id"])
         journey_allowed = set(journey["claim_policy"]["allowed"])
+        if journey_allowed:
+            claim_publishers += 1
+        if reachability_enabled:
+            selected, checked = _claim_dependency_findings(
+                "journey",
+                journey_id,
+                tuple(journey_allowed),
+                journey["required_capabilities"],
+                capabilities_by_id,
+            )
+            findings.extend(selected)
+            checked_claim_dependencies += checked
         for dependency in journey["required_models"]:
             checked_journey_model_links += 1
             model_uri = str(dependency)
@@ -414,6 +601,10 @@ def check_contracts(
         "skill_contract_count": len(skills),
         "journey_contract_count": len(journeys),
         "model_contract_count": len(models),
+        "capability_contract_count": len(capability_values),
+        "claim_bearing_capability_count": claim_bearing_capabilities,
+        "claim_publisher_count": claim_publishers,
+        "checked_claim_dependency_count": checked_claim_dependencies,
         "linked_skill_count": len(linked_skills),
         "checked_link_count": checked_links,
         "referenced_model_count": len(referenced_models),
@@ -560,10 +751,28 @@ def check_repository(root: Path = ROOT) -> tuple[int, dict[str, Any]]:
                 )
             )
 
+    capabilities: list[dict[str, Any]] = []
+    try:
+        capabilities = [
+            artifact["contract"] for artifact in capability_contracts()
+        ]
+    except (AgentRuntimeContractError, OSError, TypeError, ValueError) as exc:
+        findings.append(
+            _finding(
+                "<none>",
+                "<none>",
+                "capability-contract-registry-invalid",
+                str(exc),
+                capability_id="<registry>",
+                dimension="contract",
+            )
+        )
+
     return check_contracts(
         skills,
         journeys,
         models,
+        capabilities=capabilities,
         initial_findings=findings,
         scanned_skill_files=len(skill_files),
         scanned_journey_files=len(journey_files),
