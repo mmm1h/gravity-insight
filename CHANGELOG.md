@@ -17,6 +17,22 @@ Target release: `0.3.11`
 
 ### Breaking changes
 
+- **Hard break:** the three claim-bearing Capability contracts no longer require
+  `completeness: "complete"` from dependencies that do not paginate. Those four
+  operations declare `pagination.kind: "none"`, so the completeness vocabulary
+  (`unknown`/`prefix`/`complete`, whose upgrade criterion is entirely about last-page
+  echo and total counts) could never rank them above `unknown`; every claim-bearing
+  capability was therefore permanently blocked and published an empty
+  `allowed_claims` at runtime. `report.business.query` does paginate and still
+  requires `complete`. `journey can-run` on an affected Journey no longer returns
+  `COMPLETENESS_INSUFFICIENT`; a dependency lacking a Validation Result now reports
+  `DEPENDENCY_VALIDATION_UNKNOWN`, which is resolvable by running validation rather
+  than unsatisfiable by contract. Consumers asserting the old reason code must
+  update; `meets_completeness`, `assess_capability_requirement` and the
+  `COMPLETENESS_INSUFFICIENT` rejection itself are unchanged, and a new CI-time gate
+  (`claim-dependency-requirement-unreachable`) fails the build if any claim-bearing
+  capability declares a requirement its dependency can never satisfy.
+
 - **Hard break:** `user-detail-aggregate` now reports a privacy-policy-excluded
   field as `USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED` instead of
   `USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`. A condition whose non-null value-type
