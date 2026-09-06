@@ -80,6 +80,11 @@
         "is_superuser",
         "role"
       ],
+      "opaque_json_item_keys": [
+        "company",
+        "dept",
+        "role"
+      ],
       "required_data_keys": [
         "list"
       ]

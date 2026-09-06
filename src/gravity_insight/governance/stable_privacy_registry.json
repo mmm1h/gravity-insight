@@ -2014,6 +2014,9 @@
       "data.page_info"
     ],
     "material.material_examine_user.list": [
+      "@opaque:data.list[].company",
+      "@opaque:data.list[].dept",
+      "@opaque:data.list[].role",
       "data.list",
       "data.list[].cid",
       "data.list[].company",
