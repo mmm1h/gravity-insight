@@ -97,7 +97,7 @@ class PlatformProjectionDepthTests(unittest.TestCase):
                             "id": 9,
                             "file_name": "fixture.mp4",
                             "image_set": [{"private": sentinel}],
-                            "file_sub_type": sentinel,
+                            "breaking_fixture_additive": "fixture-added-field",
                             "video_cover_list": [sentinel],
                         }
                     ],
@@ -161,7 +161,7 @@ class PlatformProjectionDepthTests(unittest.TestCase):
                     self.assertIn(
                         {
                             "classification": "additive",
-                            "path": "/data/list/*/file_sub_type",
+                            "path": "/data/list/*/breaking_fixture_additive",
                             "observed_type": "string",
                         },
                         drift["fields"],

@@ -1,21 +1,24 @@
-"""Contracted response list-row projection."""
+"""Contracted response row and nested-item projection."""
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import math
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from .drift import ProjectionDrift
 from .models import OperationSpec
 from .multidim import projected_keys
 from .response_drift import ResponseDriftRecorder
-from .response_projection import (
-    _copy_json_value,
-    _is_json_scalar,
-    _project_nested_item_value,
-    _project_scalar_list,
-    _record_scalar_list_drift,
-)
+
+
+@dataclass(frozen=True)
+class _NestedProjectionRules:
+    allowed: frozenset[str]
+    nested: Mapping[str, tuple[str, ...]]
+    known_omitted: Mapping[str, tuple[str, ...]]
+    opaque: frozenset[str]
 
 
 def _project_list_rows(
@@ -234,3 +237,201 @@ def _project_list_row(
             containers += 1
     return projected, (unknown, containers, invalid_scalars, breaking)
 
+
+def _project_scalar_list(value: Any, item_type: str) -> tuple[list[Any] | None, bool]:
+    if not isinstance(value, (list, tuple)):
+        return None, False
+    check = _scalar_list_check(item_type)
+    if any(not check(item) for item in value):
+        return None, False
+    return list(value), True
+
+
+def _scalar_list_check(item_type: str) -> Any:
+    checks = {
+        "string": lambda item: isinstance(item, str),
+        "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
+        "number": lambda item: _is_finite_number(item),
+        "boolean": lambda item: isinstance(item, bool),
+    }
+    return checks[item_type]
+
+
+def _record_scalar_list_drift(
+    value: Any,
+    item_type: str,
+    recorder: ResponseDriftRecorder,
+    path: tuple[str, ...],
+) -> None:
+    if not isinstance(value, (list, tuple)):
+        recorder.add_breaking_field(path, "array", value)
+        return
+    check = _scalar_list_check(item_type)
+    for item in value:
+        if not check(item):
+            recorder.add_breaking_field((*path, "*"), item_type, item)
+
+
+def _copy_json_value(value: Any, *, depth: int = 0) -> tuple[Any, bool]:
+    if depth > 32:
+        return None, False
+    if _is_json_scalar(value):
+        return value, True
+    if isinstance(value, Mapping):
+        copied: dict[str, Any] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                return None, False
+            nested, valid = _copy_json_value(item, depth=depth + 1)
+            if not valid:
+                return None, False
+            copied[key] = nested
+        return copied, True
+    if isinstance(value, (list, tuple)):
+        copied_items: list[Any] = []
+        for item in value:
+            nested, valid = _copy_json_value(item, depth=depth + 1)
+            if not valid:
+                return None, False
+            copied_items.append(nested)
+        return copied_items, True
+    return None, False
+
+
+def _project_nested_item_value(
+    value: Any, allowed_keys: tuple[str, ...] | None,
+    nested_item_keys: Mapping[str, tuple[str, ...]] | None = None,
+    known_omitted_nested_item_keys: Mapping[str, tuple[str, ...]] | None = None,
+    opaque_json_item_keys: tuple[str, ...] | None = None,
+    recorder: ResponseDriftRecorder | None = None,
+    path: tuple[str, ...] = (),
+    known_omitted: Sequence[str] = (),
+    uncontracted_expected_type: str = "json_scalar",
+) -> tuple[Any, set[str], bool, bool]:
+    """Project a contracted object or object list; scalar lists need typed contracts."""
+
+    if allowed_keys is None:
+        if recorder is not None:
+            recorder.add_breaking_field(path, uncontracted_expected_type, value)
+        return None, set(), False, False
+    rules = _NestedProjectionRules(
+        allowed=frozenset(allowed_keys),
+        nested=nested_item_keys or {},
+        known_omitted=known_omitted_nested_item_keys or {},
+        opaque=frozenset(opaque_json_item_keys or ()),
+    )
+    if isinstance(value, Mapping):
+        projected, unknown, breaking = _project_nested_mapping(
+            value, path, rules, opaque_json_item_keys, recorder, known_omitted
+        )
+        return projected, unknown, breaking, True
+    if isinstance(value, (list, tuple)):
+        return _project_nested_sequence(
+            value, path, rules, opaque_json_item_keys, recorder, known_omitted
+        )
+    if recorder is not None:
+        recorder.add_breaking_field(path, "object_or_array", value)
+    return None, set(), True, False
+
+
+def _project_nested_mapping(
+    item: Mapping[Any, Any],
+    item_path: tuple[str, ...],
+    rules: _NestedProjectionRules,
+    opaque_json_item_keys: tuple[str, ...] | None,
+    recorder: ResponseDriftRecorder | None,
+    known_omitted: Sequence[str],
+) -> tuple[dict[str, Any], set[str], bool]:
+    unknown = {str(key) for key in item} - rules.allowed - set(known_omitted)
+    if recorder is not None:
+        recorder.add_unknown_fields(item_path, item, unknown)
+    result: dict[str, Any] = {}
+    breaking = False
+    for key, nested_value in item.items():
+        name = str(key)
+        if name not in rules.allowed:
+            continue
+        if isinstance(nested_value, (Mapping, list, tuple)):
+            if name in rules.opaque:
+                opaque_json, valid = _copy_json_value(nested_value)
+                if valid:
+                    result[name] = opaque_json
+                else:
+                    breaking = True
+                    if recorder is not None:
+                        recorder.add_breaking_field(
+                            (*item_path, name), "json", nested_value
+                        )
+                continue
+            nested, nested_unknown, nested_breaking, contracted = (
+                _project_nested_item_value(
+                    nested_value,
+                    rules.nested.get(name),
+                    rules.nested,
+                    rules.known_omitted,
+                    opaque_json_item_keys,
+                    recorder,
+                    (*item_path, name),
+                    rules.known_omitted.get(name, ()),
+                )
+            )
+            if not contracted:
+                breaking = True
+                continue
+            nested_unknown -= set(rules.known_omitted.get(name, ()))
+            unknown.update(nested_unknown)
+            breaking = breaking or nested_breaking
+            result[name] = nested
+            continue
+        if not _is_json_scalar(nested_value):
+            breaking = True
+            if recorder is not None:
+                recorder.add_breaking_field(
+                    (*item_path, name), "json_scalar", nested_value
+                )
+            continue
+        result[name] = nested_value
+    return result, unknown, breaking
+
+
+def _project_nested_sequence(
+    value: Sequence[Any],
+    path: tuple[str, ...],
+    rules: _NestedProjectionRules,
+    opaque_json_item_keys: tuple[str, ...] | None,
+    recorder: ResponseDriftRecorder | None,
+    known_omitted: Sequence[str],
+) -> tuple[Any, set[str], bool, bool]:
+    if not value:
+        return [], set(), False, True
+    projected_items: list[dict[str, Any]] = []
+    unknown: set[str] = set()
+    breaking = False
+    for item in value:
+        if not isinstance(item, Mapping):
+            if recorder is not None:
+                recorder.add_breaking_field((*path, "*"), "object", item)
+            return None, set(), True, False
+        projected, item_unknown, item_breaking = _project_nested_mapping(
+            item, (*path, "*"), rules, opaque_json_item_keys,
+            recorder, known_omitted,
+        )
+        projected_items.append(projected)
+        unknown.update(item_unknown)
+        breaking = breaking or item_breaking
+    return projected_items, unknown, breaking, True
+
+
+def _is_finite_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and (
+        not isinstance(value, float) or math.isfinite(value)
+    )
+
+
+def _is_json_scalar(value: Any) -> bool:
+    return (
+        value is None
+        or isinstance(value, (str, bool))
+        or isinstance(value, int)
+        or (isinstance(value, float) and math.isfinite(value))
+    )

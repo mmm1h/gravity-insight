@@ -21,7 +21,11 @@ from .analysis_projection_contract import (
 )
 from .drift import ProjectionDrift, projection_drift_status
 from .errors import ManifestError, PolicyViolation
-from .list_row_projection import _project_list_rows
+from .list_row_projection import (
+    _is_finite_number,
+    _is_json_scalar,
+    _project_list_rows,
+)
 from .material_asset_source import _capture_private_material_asset_rows
 from .models import (
     OperationSpec,
@@ -39,9 +43,10 @@ from .receipt import capture_http_receipt_references, record_response_drift
 from .registry import PolicyEngine, Registry
 from .response_drift import ResponseDriftRecorder
 from .response_projection import (
-    _is_finite_number,
-    _is_json_scalar,
+    _empty_projection,
+    _normalize_empty_page,
     _project_data_containers,
+    _required_data_expected_type,
 )
 from . import response_redaction_policy as _response_redaction
 from .semantic_status import (
@@ -176,15 +181,6 @@ def _project_response(
     return result
 
 
-def _empty_projection(operation: OperationSpec) -> Any:
-    if operation.response_projection.data_shape == "list":
-        return []
-    item_field = operation.pagination.items_field
-    if operation.pagination.kind != "none" or item_field in operation.response_projection.data_keys:
-        return {item_field: []}
-    return {}
-
-
 def _project(
     operation: OperationSpec,
     payload: Mapping[str, Any],
@@ -220,27 +216,6 @@ def _project(
         ), ProjectionDrift.BREAKING, recorder.to_contract()
     result = _project_mapping_data(operation, data, values, recorder)
     return *result, recorder.to_contract()
-
-
-def _normalize_empty_page(
-    operation: OperationSpec, data: Any, values: Mapping[str, Any]
-) -> Any:
-    if not operation.response_projection.empty_object_as_empty_page or data != {}:
-        return data
-    return {
-        "list": [],
-        "page_info": {
-            operation.pagination.page_field: values.get(
-                operation.pagination.page_field, 1
-            ),
-            operation.pagination.page_size_field: values.get(
-                operation.pagination.page_size_field,
-                operation.pagination.default_page_size,
-            ),
-            operation.pagination.total_page_field: 1,
-            "total_number": 0,
-        },
-    }
 
 
 def _project_mapping_data(
@@ -292,24 +267,6 @@ def _project_mapping_data(
     )
     warnings.extend(nested_warnings)
     return projected, tuple(warnings), max(drift, nested_drift)
-
-
-def _required_data_expected_type(operation: OperationSpec, key: str) -> str:
-    projection = operation.response_projection
-    root = key.split(".", 1)[0]
-    primary = operation.pagination.list_path.rsplit(".", 1)[-1]
-    if not primary and "list" in projection.data_keys:
-        primary = "list"
-    if root == primary or root in projection.data_scalar_list_types:
-        return "array"
-    page_info = operation.pagination.page_info_path.rsplit(".", 1)[-1]
-    if root == page_info or any(
-        path.split(".", 1)[0] == root for path in projection.data_path_item_keys
-    ):
-        return "object"
-    if root in projection.data_item_keys:
-        return "object_or_array"
-    return "json"
 
 
 def _project_analysis_aggregate(

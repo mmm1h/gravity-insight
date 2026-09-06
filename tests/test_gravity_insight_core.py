@@ -36,6 +36,7 @@ try:
         Registry,
         _AuthorizedRequest,
     )
+    from gravity_insight.response_drift import merge_response_drifts
     from gravity_insight.transport import Transport, TransportResponse
 except ModuleNotFoundError:  # source checkout without an editable install
     from gravity_insight import (
@@ -61,6 +62,7 @@ except ModuleNotFoundError:  # source checkout without an editable install
         Registry,
         _AuthorizedRequest,
     )
+    from gravity_insight.response_drift import merge_response_drifts
     from gravity_insight.transport import Transport, TransportResponse
 
 
@@ -517,6 +519,55 @@ class GravityInsightCoreTests(unittest.TestCase):
         sent = session.calls[0][2]["body"]
         self.assertEqual("safe", sent["filter"])
         self.assertEqual("safe", sent["read_mode"])
+
+    def test_legacy_additive_drift_merges_into_breaking_v2(self):
+        merged = merge_response_drifts(
+            (
+                {
+                    "schema_version": "gravity.response-drift.v1",
+                    "direction": "response",
+                    "classification": "additive",
+                    "fields": [
+                        {"path": "/data/future", "observed_type": "string"}
+                    ],
+                },
+                {
+                    "schema_version": "gravity.response-drift.v2",
+                    "direction": "response",
+                    "classification": "breaking",
+                    "fields": [
+                        {
+                            "classification": "breaking",
+                            "path": "/data/config",
+                            "expected_type": "json_scalar",
+                            "observed_type": "object",
+                        }
+                    ],
+                },
+            )
+        )
+
+        self.assertEqual(
+            {
+                "schema_version": "gravity.response-drift.v2",
+                "direction": "response",
+                "classification": "breaking",
+                "fields": [
+                    {
+                        "classification": "breaking",
+                        "path": "/data/config",
+                        "expected_type": "json_scalar",
+                        "observed_type": "object",
+                    },
+                    {
+                        "classification": "additive",
+                        "path": "/data/future",
+                        "observed_type": "string",
+                    },
+                ],
+            },
+            merged,
+        )
 
     def test_unregistered_credential_field_is_drift_and_never_leaks(self):
         payload = {

@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "2d34329cb7d3e211baa931f7ca27d0493abc7f48dcd7fe71a6269dc407ccbd47",
-    "manual_review_sha256": "d87b2a356f51f444d8cfe465dea82f564419cb72d8732aed4642ea0d44a0d451",
+    "reference_evidence_sha256": "80749a9519eec9f5149a92bab47473438851c6a512c8dcf84b142944b2735701",
+    "manual_review_sha256": "39ad3ea6fdf9671d77251c578c397dccafca6ac8ef2e0e8f673e967b4ace4293",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3184,
     "scanned_file_count": 3177,
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 255
     },
-    "sites_sha256": "57d6775199d777de566667177aa0cfa16b7307f5c8db0831222b295f4ca9e379"
+    "sites_sha256": "8adeb9beff06d7be7759ab778aee6f8e6a6b788906a3ca72e09679f024adfdec"
   },
   "blockers": [],
   "site_fields": [
@@ -2977,7 +2977,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2794:18:patch",
+      "tests/test_gravity_insight_core.py:2845:18:patch",
       "rm",
       "non_string_patch_expression",
       "f\"{_atomic_update_env.__module__}._restrict_secret_file\"",
@@ -2992,7 +2992,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2794:27:__module__",
+      "tests/test_gravity_insight_core.py:2845:27:__module__",
       "rm",
       "module_owner_receiver",
       "_atomic_update_env.__module__",
