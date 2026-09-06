@@ -110,7 +110,7 @@ class PlatformProjectionDepthTests(unittest.TestCase):
                 },
                 {
                     "classification": "breaking",
-                    "path": "/data/list/*/image_set",
+                    "path": "/data/list/*/video_cover_list",
                     "expected_type": "json_scalar",
                     "observed_type": "array",
                 },
@@ -158,6 +158,12 @@ class PlatformProjectionDepthTests(unittest.TestCase):
                 self.assertNotIn(sentinel, json.dumps(result, sort_keys=True))
 
                 if operation_id == "material.local.list":
+                    self.assertFalse(
+                        any(
+                            field["path"] == "/data/list/*/image_set"
+                            for field in drift["fields"]
+                        )
+                    )
                     self.assertIn(
                         {
                             "classification": "additive",
