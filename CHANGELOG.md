@@ -17,6 +17,16 @@ Target release: `0.3.11`
 
 ### Breaking changes
 
+- **Hard break:** `user-detail-aggregate` now reports a privacy-policy-excluded
+  field as `USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED` instead of
+  `USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`. A condition whose non-null value-type
+  set disagrees with the non-empty homogeneous observed row type now reports
+  `USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH` with `category=caller` instead
+  of `USER_DETAIL_AGGREGATE_MIXED_TYPE` with `category=upstream`, changing the
+  process exit from 3 to 2. Both old and new paths are non-retryable. Actual
+  mixed/non-scalar source rows retain `USER_DETAIL_AGGREGATE_MIXED_TYPE` and
+  `category=upstream`; every prior rejection, the privacy exclusion, and all
+  read capabilities are unchanged.
 - **Hard break:** the five built-in Model contracts express `claim_policy` in
   canonical stable ids across all three tiers (`validated`, `scenario`,
   `forbidden`) instead of natural-language phrases. `causal claim` becomes the

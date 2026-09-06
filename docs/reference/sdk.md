@@ -235,7 +235,7 @@ result = gravity.user_detail_aggregate(request, max_workers=4)
 
 `user_detail_aggregate_input_schema()` 返回闭合 machine schema。执行时动态字段先经 live metadata
 白名单验证，分页和 receipts 由公共 Insight client 负责；返回信封没有用户行或用户标识。当前源合同
-不能证明完整 collection，调用方必须检查 `pagination.completeness` 和 `claims.forbidden`。
+不能证明完整 collection，调用方必须检查 `pagination.completeness` 和 `claims.forbidden`。错误分类与 CLI 共用同一合同；隐私策略排除、调用条件类型不符和真实行类型不稳定使用不同错误码，调用方不得只按错误文本推断重试或修复 owner，详见 [CLI 错误表](cli.md#user-detail-aggregate)。
 
 ## Insight 专用 facade
 

@@ -27,6 +27,8 @@ METADATA_OPERATION_ID = ANALYSIS_METADATA_OPERATIONS[1]
 MAX_AGGREGATE_CELLS = DEFAULT_STDOUT_MAX_ITEMS
 
 FIELD_UNSUPPORTED = "USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED"
+FIELD_PRIVACY_EXCLUDED = "USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED"
+CONDITION_TYPE_MISMATCH = "USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH"
 MIXED_TYPE = "USER_DETAIL_AGGREGATE_MIXED_TYPE"
 CARDINALITY_LIMIT = "USER_DETAIL_AGGREGATE_CARDINALITY_LIMIT"
 BOUNDS_REQUIRED = "USER_DETAIL_AGGREGATE_BOUNDS_REQUIRED"
@@ -52,6 +54,16 @@ _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 
 class AggregateFieldUnsupportedError(InputValidationError):
     code = FIELD_UNSUPPORTED
+    category = ErrorCategory.CALLER
+
+
+class AggregateFieldPrivacyExcludedError(InputValidationError):
+    code = FIELD_PRIVACY_EXCLUDED
+    category = ErrorCategory.CALLER
+
+
+class AggregateConditionTypeMismatchError(InputValidationError):
+    code = CONDITION_TYPE_MISMATCH
     category = ErrorCategory.CALLER
 
 
@@ -429,10 +441,14 @@ def _scalar(value: Any) -> bool:
 __all__ = [
     "AggregateBoundsError",
     "AggregateCardinalityError",
+    "AggregateConditionTypeMismatchError",
+    "AggregateFieldPrivacyExcludedError",
     "AggregateFieldUnsupportedError",
     "AggregateMixedTypeError",
     "BOUNDS_REQUIRED",
     "CARDINALITY_LIMIT",
+    "CONDITION_TYPE_MISMATCH",
+    "FIELD_PRIVACY_EXCLUDED",
     "FIELD_UNSUPPORTED",
     "INPUT_SCHEMA_VERSION",
     "MAX_AGGREGATE_CELLS",

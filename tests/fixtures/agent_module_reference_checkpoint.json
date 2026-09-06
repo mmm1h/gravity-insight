@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "083a6d00c7ad93f85003d41f76b2ddc6461c2baa1aba23a5c781575f3a7d9ad5",
-    "manual_review_sha256": "b34ca8db2df2ac1f088e96414552dc19b9b58f4d942859f92877d33735abf492",
+    "reference_evidence_sha256": "9648f1b598e3eb474bdfedc6e2bfe2baf742f380b8f81d639c7173dfdeb9f02b",
+    "manual_review_sha256": "71049b9113fdb30c9454009bd8f434f85766db7dbce86f38a833d64f3e709296",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3179,
-    "scanned_file_count": 3172,
+    "version_controlled_file_count": 3184,
+    "scanned_file_count": 3177,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 255
     },
-    "sites_sha256": "0b47aa78c157536d511bfeb06f8371dc9dcf3e4e568cac67e5d349cf85888579"
+    "sites_sha256": "ac33b387fd946e3f50a934fc1ed30553a828ace0dcb467e309080fc4a5ebdfd0"
   },
   "blockers": [],
   "site_fields": [
@@ -757,7 +757,7 @@
       }
     ],
     [
-      "docs/maintainers/technical-debt.md:72:113:bare text module string",
+      "docs/maintainers/technical-debt.md:73:113:bare text module string",
       "rm",
       "bare_agent_string",
       "agent_runtime_contracts",
@@ -1072,7 +1072,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22132:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22147:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1087,7 +1087,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63637:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:63753:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2977,7 +2977,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2745:18:patch",
+      "tests/test_gravity_insight_core.py:2753:18:patch",
       "rm",
       "non_string_patch_expression",
       "f\"{_atomic_update_env.__module__}._restrict_secret_file\"",
@@ -2992,7 +2992,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2745:27:__module__",
+      "tests/test_gravity_insight_core.py:2753:27:__module__",
       "rm",
       "module_owner_receiver",
       "_atomic_update_env.__module__",

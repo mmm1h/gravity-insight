@@ -456,6 +456,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ],
@@ -472,6 +473,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ],
@@ -488,6 +490,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ]
@@ -1024,7 +1027,8 @@
           "list",
           "target_list",
           "default_limit",
-          "date_list"
+          "date_list",
+          "filter_agg_type"
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
@@ -1626,7 +1630,13 @@
       "response_projection": {
         "data_keys": [
           "aggregate_date",
-          "zone_tags"
+          "zone_tags",
+          "aggregate_by_date",
+          "aggregate_date_group",
+          "date_list",
+          "total",
+          "x",
+          "y"
         ],
         "dynamic_item_fields": [],
         "empty_object_as_empty_result": true,
@@ -2273,7 +2283,9 @@
           "$split_count",
           "$split_trace_id_list",
           "re_attribute_info",
-          "Name"
+          "Name",
+          "user$pay_amount_sum",
+          "user$pay_max_amount"
         ],
         "nested_item_keys": {
           "re_attribute_info": [
@@ -2597,7 +2609,16 @@
           "user$ad_avg_ecpm",
           "user$ad_ltv",
           "Name",
-          "WXOpenID"
+          "WXOpenID",
+          "AdCid",
+          "AdClickTime",
+          "AdGid",
+          "CSite",
+          "Channel",
+          "LatestLoginDay",
+          "Version",
+          "id",
+          "modify_time"
         ],
         "nested_item_keys": {
           "device_info": [
@@ -3760,6 +3781,9 @@
         },
         "dynamic_item_fields": [],
         "item_keys": [],
+        "known_omitted_data_keys": [
+          "Android"
+        ],
         "required_data_keys": []
       },
       "semantic_error_rules": [

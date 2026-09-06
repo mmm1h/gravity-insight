@@ -696,8 +696,16 @@ class GravityInsightCoreTests(unittest.TestCase):
             [result["status"] for result in results],
         )
         self.assertEqual(
-            3,
-            sum("response_drift" in result["result_audit"] for result in results),
+            # `material.recycle.list` left this set once its production drift
+            # fields were declared; `promotion.object.list` still carries
+            # undeclared fixture fields. Asserting the identities rather than a
+            # count is what surfaced the change instead of absorbing it.
+            {"promotion.object.list"},
+            {
+                operation_id
+                for operation_id, result in zip(operation_ids, results)
+                if "response_drift" in result["result_audit"]
+            },
         )
         serialized = json.dumps(results)
         for omitted_value in (

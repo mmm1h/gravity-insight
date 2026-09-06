@@ -435,9 +435,10 @@ gravity analysis user-detail-aggregate --input aggregate.json
 `"cells":[{"group":{"Version":"1.0"},"measure":"users","value":42},{"group":{"Version":"1.0"},"measure":"revenue","value":128.5}]`；
 不会出现 `data.list`、请求行、用户 ID 或设备 ID。`--input-schema` 和 `--dry-run` 均严格离线。
 
-不在 live 白名单、`sum` 非数值字段、同一引用字段混合类型、单元格超限和缺失边界分别稳定失败为
-`USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`、`USER_DETAIL_AGGREGATE_MIXED_TYPE`、
-`USER_DETAIL_AGGREGATE_CARDINALITY_LIMIT`、`USER_DETAIL_AGGREGATE_BOUNDS_REQUIRED`；错误不返回部分单元格。
+隐私策略排除、未登记/非标量或 `sum` 非数值字段、条件非空取值类型与实测单一类型不符、实测行混型/非标量、单元格超限和缺失边界分别稳定失败为
+`USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED`、`USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`、`USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH`、
+`USER_DETAIL_AGGREGATE_MIXED_TYPE`、`USER_DETAIL_AGGREGATE_CARDINALITY_LIMIT`、`USER_DETAIL_AGGREGATE_BOUNDS_REQUIRED`。前两类字段错误和条件类型不符均为不可重试的
+`caller`（exit 2）；真实行类型不稳定仍为不可重试的 `upstream`（exit 3）。错误不回显字段名、App 或条件值，也不返回部分单元格。
 
 ### Saved Analysis v4
 
