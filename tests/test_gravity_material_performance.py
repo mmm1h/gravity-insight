@@ -1,5 +1,5 @@
 from __future__ import annotations
-import copy, importlib, unittest
+import copy, importlib, json, unittest
 
 from gravity_insight.errors import InputValidationError, LocalIOError, PaginationError
 from gravity_insight.material_performance import (
@@ -7,6 +7,8 @@ from gravity_insight.material_performance import (
     material_performance,
 )
 from gravity_insight.material_performance_result import safe_component
+from gravity_insight.material_performance_plan_result import sanitize_product_result
+from gravity_insight.response_drift import ResponseDriftRecorder
 
 def _read_envelope(rows, *, status="success", page=None):
     return {
@@ -56,6 +58,118 @@ class _BatchClient:
             for request in reversed(requests)]
 
 class MaterialPerformanceTests(unittest.TestCase):
+    def test_component_contract_failures_identify_the_broken_invariant(self):
+        wrong_identity = _failure("error", "CUSTOM_UPSTREAM", "upstream")
+        wrong_identity["operation_id"] = "material.report.changed"
+        status_type = _failure(None, "CUSTOM_UPSTREAM", "upstream")
+        unsafe_error = _failure("error", "CUSTOM_UPSTREAM", [])
+        mismatched_error = _failure(
+            "parent_required", "CUSTOM_UPSTREAM", "upstream"
+        )
+        invalid_status = _success("tencent")
+        invalid_status.update(ok=False, status="success")
+        cases = (
+            (None, "component_shape", "$"),
+            (
+                wrong_identity,
+                "component_identity",
+                "$.operation_id_or_request_id",
+            ),
+            (status_type, "component_status_type", "$.status"),
+            (unsafe_error, "component_error_shape", "$.error"),
+            (
+                mismatched_error,
+                "component_error_status",
+                "$.status_or_error.code",
+            ),
+            (invalid_status, "component_status", "$.ok_or_status"),
+        )
+        for value, check, path in cases:
+            with self.subTest(check=check):
+                result = safe_component(value, "tencent", max_pages=3)
+                self.assertEqual("contract_changed", result["status"])
+                self.assertEqual(
+                    {"check": check, "path": path},
+                    result["drift_diagnostics"]["failures"][0],
+                )
+
+    def test_upstream_contract_drift_reaches_consumers_without_values(self):
+        sentinel = "PRIVATE_MATERIAL_VALUE_MUST_NOT_LEAK"
+        recorder = ResponseDriftRecorder()
+        recorder.add_breaking_field(
+            ("data", "list", "*", "remaining_field"),
+            "json_scalar",
+            [sentinel],
+        )
+        drift = recorder.to_contract()
+        self.assertIsNotNone(drift)
+        inner = {
+            "schema_version": "gravity-insight.read.v1",
+            "operation_id": MATERIAL_REPORT_OPERATION,
+            "ok": False,
+            "status": "contract_changed",
+            "data": {"list": [{"remaining_field": [sentinel]}]},
+            "error": {
+                "code": "CONTRACT_CHANGED",
+                "category": "upstream",
+                "message": sentinel,
+            },
+            "result_audit": {
+                "schema_version": "gravity.result-audit.v1",
+                "fact_paths": {},
+                "http_receipts": [],
+                "response_drift": drift,
+            },
+        }
+        raw = {
+            "operation_id": MATERIAL_REPORT_OPERATION,
+            "request_id": "kuaishou",
+            "ok": False,
+            "status": "contract_changed",
+            "data": inner,
+            "error": {
+                "code": "CONTRACT_CHANGED",
+                "category": "upstream",
+                "message": sentinel,
+            },
+        }
+
+        component = safe_component(raw, "kuaishou", max_pages=3)
+        self.assertEqual(
+            drift, component["result_audit"]["response_drift"]
+        )
+        self.assertNotIn("drift_diagnostics", component)
+        self.assertNotIn(sentinel, json.dumps(component, sort_keys=True))
+
+        class DriftClient:
+            def batch(self, _requests, **_options):
+                return [copy.deepcopy(raw)]
+
+        product = material_performance(
+            DriftClient(),
+            [17],
+            "2026-08-01",
+            "2026-08-02",
+            platforms=("kuaishou",),
+            max_pages=3,
+            max_items=1,
+        )
+        self.assertEqual(
+            drift, product["results"][0]["result_audit"]["response_drift"]
+        )
+        self.assertEqual(drift, product["result_audit"]["response_drift"])
+        self.assertNotIn(sentinel, json.dumps(product, sort_keys=True))
+        plan_result = sanitize_product_result(product)
+        self.assertEqual(drift, plan_result["result_audit"]["response_drift"])
+        self.assertNotIn(sentinel, json.dumps(plan_result, sort_keys=True))
+
+        poisoned = copy.deepcopy(raw)
+        poisoned_drift = poisoned["data"]["result_audit"]["response_drift"]
+        poisoned_drift["fields"][0]["value"] = sentinel
+        rejected = safe_component(poisoned, "kuaishou", max_pages=3)
+        self.assertNotIn("response_drift", rejected["result_audit"])
+        self.assertNotIn(sentinel, json.dumps(rejected, sort_keys=True))
+
     def test_semantic_rejection_code_is_consistent_across_product_sanitizers(self):
         modules = ("advertiser_profile", "company_usage", "custom_audience", "material_performance_result", "order_trace_result", "promotion_performance_error", "title_package")
         policies = [importlib.import_module(f"gravity_insight.{name}")._FAILURE_CODES for name in modules]
