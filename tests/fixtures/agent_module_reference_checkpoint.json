@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "beaa727b8f517024b9f2f7c4eb802594f305b029359737d0dcdd38537905245d",
+    "reference_evidence_sha256": "07b4850961dd56be72bebd145052a94b39a6d8fd076c24fa3b886f8a0e89c382",
     "manual_review_sha256": "78020874d105619f1daf80b298afc6bec2f5570732843932d0011896f4558079",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3176,
-    "scanned_file_count": 3169,
+    "version_controlled_file_count": 3177,
+    "scanned_file_count": 3170,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -720,7 +720,7 @@
     "dispositions": {
       "no_migration_effect": 250
     },
-    "sites_sha256": "0b60fe44bef491310c831163e7b23c3b4ee36fcd4888e90a753f50b60529ca7b"
+    "sites_sha256": "0063440ae2a924aadbe71d11163ebd254d313fc8aad47abfd0d48ed69acb41f3"
   },
   "blockers": [],
   "site_fields": [
@@ -798,7 +798,7 @@
       }
     ],
     [
-      "scripts/check_skill_journey_contracts.py:13:1:from import",
+      "scripts/check_skill_journey_contracts.py:14:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

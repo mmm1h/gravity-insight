@@ -1,4 +1,4 @@
-"""Fail closed when linked Skill and Journey contracts drift."""
+"""Fail closed when linked Skill, Journey, and Model contracts drift."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -15,14 +16,28 @@ from gravity_insight.agent_runtime_contracts import (
     load_json_object,
 )
 from gravity_insight.journey_contract import load_journey_contract
+from gravity_insight.model_contract import load_model_artifact
 from gravity_insight.skill_contract import load_skill_manifest, skill_uri
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_VERSION = "gravity.skill-journey-contract-gate.v1"
+SCHEMA_VERSION = "gravity.skill-journey-contract-gate.v2"
 _SKILL_ROOT = Path("skills/library")
 _JOURNEY_ROOT = Path("src/gravity_insight/contracts/journeys")
+_MODEL_ROOT = Path("src/gravity_insight/contracts/models")
 _JOURNEY_AUXILIARY_FILES = frozenset({"ledger-snapshot.v1.json"})
+_CLAIM_ID = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
+_MODEL_CLAIM_FIELDS = ("validated", "scenario", "forbidden")
+# These concepts have no exact Skill/Journey counterpart. Keeping literal IDs
+# avoids widening them into invented-confidence or a domain-specific guarantee.
+_MODEL_ONLY_CLAIM_IDS = frozenset(
+    {
+        "deterministic-scenario-over-caller-bound-parameters",
+        "guaranteed-future-outcome",
+        "project-accuracy-guarantee",
+        "unvalidated-project-calibration-scenario",
+    }
+)
 _DEPENDENCY_FIELDS = (
     ("capability_dependencies", "required_capabilities"),
     ("semantic_dependencies", "required_semantics"),
@@ -41,6 +56,7 @@ _REQUEST_BUDGET_FIELDS = (
 class Finding:
     skill_id: str
     journey_id: str
+    model_uri: str
     detector: str
     detail: str
 
@@ -53,14 +69,66 @@ def _canonical_items(values: Sequence[Any]) -> list[str]:
 
 
 def _finding(
-    skill_id: str, journey_id: str, detector: str, detail: str
+    skill_id: str,
+    journey_id: str,
+    detector: str,
+    detail: str,
+    *,
+    model_uri: str = "<none>",
 ) -> Finding:
     return Finding(
         skill_id=skill_id,
         journey_id=journey_id,
+        model_uri=model_uri,
         detector=detector,
         detail=detail,
     )
+
+
+def _claim_vocabulary(
+    skills: Sequence[Mapping[str, Any]], journeys: Sequence[Mapping[str, Any]]
+) -> set[str]:
+    claims = set(_MODEL_ONLY_CLAIM_IDS)
+    for skill in skills:
+        policy = skill["claim_policy"]
+        for field in ("allowed", "forbidden", "forbidden_without_context"):
+            claims.update(str(value) for value in policy[field])
+    for journey in journeys:
+        policy = journey["claim_policy"]
+        for field in ("allowed", "forbidden"):
+            claims.update(str(value) for value in policy[field])
+    return claims
+
+
+def _check_model_claims(
+    model: Mapping[str, Any], vocabulary: set[str]
+) -> list[Finding]:
+    model_uri = str(model["uri"])
+    findings: list[Finding] = []
+    for field in _MODEL_CLAIM_FIELDS:
+        for claim in model["claim_policy"][field]:
+            value = str(claim)
+            if _CLAIM_ID.fullmatch(value) is None:
+                findings.append(
+                    _finding(
+                        "<none>",
+                        "<none>",
+                        "model-claim-id-invalid",
+                        f"Model claim_policy.{field} contains a non-canonical claim ID: {value!r}",
+                        model_uri=model_uri,
+                    )
+                )
+            elif value not in vocabulary:
+                findings.append(
+                    _finding(
+                        "<none>",
+                        "<none>",
+                        "model-claim-id-unknown",
+                        f"Model claim_policy.{field} references an unknown canonical claim ID: {value!r}",
+                        model_uri=model_uri,
+                    )
+                )
+    return findings
 
 
 def _check_link(skill: Mapping[str, Any], journey: Mapping[str, Any]) -> list[Finding]:
@@ -160,14 +228,17 @@ def _check_link(skill: Mapping[str, Any], journey: Mapping[str, Any]) -> list[Fi
 def check_contracts(
     skills: Sequence[Mapping[str, Any]],
     journeys: Sequence[Mapping[str, Any]],
+    models: Sequence[Mapping[str, Any]],
     *,
     initial_findings: Sequence[Finding] = (),
     scanned_skill_files: int | None = None,
     scanned_journey_files: int | None = None,
+    scanned_model_files: int | None = None,
 ) -> tuple[int, dict[str, Any]]:
     findings = list(initial_findings)
     skills_by_uri: dict[str, Mapping[str, Any]] = {}
     journeys_by_id: dict[str, Mapping[str, Any]] = {}
+    models_by_uri: dict[str, Mapping[str, Any]] = {}
     for skill in skills:
         uri = skill_uri(skill)
         if uri in skills_by_uri:
@@ -194,9 +265,30 @@ def check_contracts(
             )
         else:
             journeys_by_id[journey_id] = journey
+    for model in models:
+        model_uri = str(model["uri"])
+        if model_uri in models_by_uri:
+            findings.append(
+                _finding(
+                    "<none>",
+                    "<none>",
+                    "duplicate-model-uri",
+                    f"Model URI is duplicated: {model_uri!r}",
+                    model_uri=model_uri,
+                )
+            )
+        else:
+            models_by_uri[model_uri] = model
+
+    vocabulary = _claim_vocabulary(skills, journeys)
+    for model in models:
+        findings.extend(_check_model_claims(model, vocabulary))
 
     checked_links = 0
+    checked_skill_model_links = 0
+    checked_journey_model_links = 0
     linked_skills: set[str] = set()
+    referenced_models: set[str] = set()
     for skill in skills:
         skill_id = str(skill["skill_id"])
         covered = skill["covers_journeys"]
@@ -217,11 +309,73 @@ def check_contracts(
                 continue
             findings.extend(_check_link(skill, journey))
 
+        skill_allowed = set(skill["claim_policy"]["allowed"])
+        for dependency in skill["model_dependencies"]:
+            checked_skill_model_links += 1
+            model_uri = str(dependency)
+            referenced_models.add(model_uri)
+            model = models_by_uri.get(model_uri)
+            if model is None:
+                findings.append(
+                    _finding(
+                        skill_id,
+                        "<none>",
+                        "skill-model-reference-missing",
+                        "Skill model_dependencies references an unknown Model URI",
+                        model_uri=model_uri,
+                    )
+                )
+                continue
+            forbidden = sorted(
+                skill_allowed & set(model["claim_policy"]["forbidden"])
+            )
+            if forbidden:
+                findings.append(
+                    _finding(
+                        skill_id,
+                        "<none>",
+                        "skill-allowed-claims-forbidden-by-model",
+                        f"Skill allows claims forbidden by Model: {forbidden!r}",
+                        model_uri=model_uri,
+                    )
+                )
+
     for journey in journeys:
+        journey_id = str(journey["journey_id"])
+        journey_allowed = set(journey["claim_policy"]["allowed"])
+        for dependency in journey["required_models"]:
+            checked_journey_model_links += 1
+            model_uri = str(dependency)
+            referenced_models.add(model_uri)
+            model = models_by_uri.get(model_uri)
+            if model is None:
+                findings.append(
+                    _finding(
+                        "<none>",
+                        journey_id,
+                        "journey-model-reference-missing",
+                        "Journey required_models references an unknown Model URI",
+                        model_uri=model_uri,
+                    )
+                )
+                continue
+            forbidden = sorted(
+                journey_allowed & set(model["claim_policy"]["forbidden"])
+            )
+            if forbidden:
+                findings.append(
+                    _finding(
+                        "<none>",
+                        journey_id,
+                        "journey-allowed-claims-forbidden-by-model",
+                        f"Journey allows claims forbidden by Model: {forbidden!r}",
+                        model_uri=model_uri,
+                    )
+                )
+
         required_skill = journey["required_skill"]
         if required_skill is None:
             continue
-        journey_id = str(journey["journey_id"])
         skill = skills_by_uri.get(str(required_skill))
         if skill is None:
             findings.append(
@@ -254,10 +408,17 @@ def check_contracts(
         "scanned_journey_files": (
             len(journeys) if scanned_journey_files is None else scanned_journey_files
         ),
+        "scanned_model_files": (
+            len(models) if scanned_model_files is None else scanned_model_files
+        ),
         "skill_contract_count": len(skills),
         "journey_contract_count": len(journeys),
+        "model_contract_count": len(models),
         "linked_skill_count": len(linked_skills),
         "checked_link_count": checked_links,
+        "referenced_model_count": len(referenced_models),
+        "checked_skill_model_link_count": checked_skill_model_links,
+        "checked_journey_model_link_count": checked_journey_model_links,
     }
     return (1 if findings else 0), receipt
 
@@ -265,11 +426,13 @@ def check_contracts(
 def check_repository(root: Path = ROOT) -> tuple[int, dict[str, Any]]:
     skill_root = root / _SKILL_ROOT
     journey_root = root / _JOURNEY_ROOT
+    model_root = root / _MODEL_ROOT
     findings: list[Finding] = []
     skill_files = sorted(skill_root.glob("*.json")) if skill_root.is_dir() else []
     journey_files = (
         sorted(journey_root.glob("*.json")) if journey_root.is_dir() else []
     )
+    model_files = sorted(model_root.glob("*.json")) if model_root.is_dir() else []
     if not skill_root.is_dir():
         findings.append(
             _finding(
@@ -304,6 +467,26 @@ def check_repository(root: Path = ROOT) -> tuple[int, dict[str, Any]]:
                 "<registry>",
                 "journey-registry-empty",
                 "Journey registry contains no JSON contracts",
+            )
+        )
+    if not model_root.is_dir():
+        findings.append(
+            _finding(
+                "<none>",
+                "<none>",
+                "model-scan-root-missing",
+                f"required scan root is absent: {_MODEL_ROOT.as_posix()}",
+                model_uri="<registry>",
+            )
+        )
+    elif not model_files:
+        findings.append(
+            _finding(
+                "<none>",
+                "<none>",
+                "model-registry-empty",
+                "Model registry contains no JSON contracts",
+                model_uri="<registry>",
             )
         )
 
@@ -349,12 +532,42 @@ def check_repository(root: Path = ROOT) -> tuple[int, dict[str, Any]]:
                 )
             )
 
+    models: list[dict[str, Any]] = []
+    for path in model_files:
+        relative = path.relative_to(root).as_posix()
+        try:
+            document = load_json_object(path, f"Model registry file {path.name}")
+            if document.get("artifact_kind") != "model":
+                findings.append(
+                    _finding(
+                        "<none>",
+                        "<none>",
+                        "model-artifact-kind-invalid",
+                        "Model registry JSON is not a Model Artifact",
+                        model_uri=relative,
+                    )
+                )
+                continue
+            models.append(load_model_artifact(path)["contract"])
+        except (AgentRuntimeContractError, OSError, TypeError, ValueError) as exc:
+            findings.append(
+                _finding(
+                    "<none>",
+                    "<none>",
+                    "model-contract-invalid",
+                    str(exc),
+                    model_uri=relative,
+                )
+            )
+
     return check_contracts(
         skills,
         journeys,
+        models,
         initial_findings=findings,
         scanned_skill_files=len(skill_files),
         scanned_journey_files=len(journey_files),
+        scanned_model_files=len(model_files),
     )
 
 

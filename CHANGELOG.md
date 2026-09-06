@@ -17,7 +17,18 @@ Target release: `0.3.11`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** the five built-in Model contracts express `claim_policy` in
+  canonical stable ids across all three tiers (`validated`, `scenario`,
+  `forbidden`) instead of natural-language phrases. `causal claim` becomes the
+  existing Skill/Journey id `causality`; the other four become their own ids
+  rather than being merged into broader near-synonyms. No prose aliases are
+  retained. A consumer matching the old strings gets no match, and a missed
+  match against `forbidden` reads as "not forbidden" rather than raising, so a
+  caller can silently begin permitting a claim it used to refuse. Model URIs,
+  `models describe`/`evaluate` shapes, approval-selection logic and every
+  data-read capability are unchanged.
+
+Migration guide: [0.3.11](docs/migration/0.3.11.md)
 
 ## [0.3.10] - 2026-09-05
 

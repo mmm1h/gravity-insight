@@ -52,15 +52,15 @@
   },
   "claim_policy": {
     "validated": [
-      "deterministic scenario over caller-bound parameters"
+      "deterministic-scenario-over-caller-bound-parameters"
     ],
     "scenario": [
-      "unvalidated project calibration scenario"
+      "unvalidated-project-calibration-scenario"
     ],
     "forbidden": [
-      "causal claim",
-      "project accuracy guarantee",
-      "guaranteed future outcome"
+      "causality",
+      "project-accuracy-guarantee",
+      "guaranteed-future-outcome"
     ]
   }
 }
