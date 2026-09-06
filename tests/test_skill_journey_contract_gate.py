@@ -19,6 +19,7 @@ def _skill(*, covered: list[str] | None = None) -> dict:
         "claim_policy": {
             "allowed": ["returned-observation"],
             "forbidden": ["causality"],
+            "forbidden_without_context": [],
         },
         "capability_dependencies": [
             {
@@ -69,24 +70,47 @@ def _journey() -> dict:
     }
 
 
+def _model() -> dict:
+    return {
+        "uri": "model://gravity/sample@1",
+        "claim_policy": {
+            "validated": [
+                "deterministic-scenario-over-caller-bound-parameters"
+            ],
+            "scenario": ["unvalidated-project-calibration-scenario"],
+            "forbidden": [
+                "causality",
+                "project-accuracy-guarantee",
+                "guaranteed-future-outcome",
+            ],
+        },
+    }
+
+
 class SkillJourneyContractGateTests(unittest.TestCase):
     def test_valid_link_and_unlinked_skill_pass(self) -> None:
         unlinked = _skill(covered=[])
         unlinked.update({"skill_id": "unlinked", "namespace": "gravity.other"})
 
-        code, receipt = check_contracts([_skill(), unlinked], [_journey()])
+        code, receipt = check_contracts(
+            [_skill(), unlinked], [_journey()], [_model()]
+        )
 
         self.assertEqual(0, code)
         self.assertEqual("pass", receipt["status"])
         self.assertEqual(2, receipt["skill_contract_count"])
         self.assertEqual(1, receipt["linked_skill_count"])
         self.assertEqual(1, receipt["checked_link_count"])
+        self.assertEqual(1, receipt["model_contract_count"])
+        self.assertEqual(2, receipt["checked_skill_model_link_count"])
+        self.assertEqual(1, receipt["checked_journey_model_link_count"])
 
     def test_claim_policy_drift_fails_closed(self) -> None:
         skill = _skill()
         skill["claim_policy"] = {
             "allowed": ["outside", "explicitly-forbidden"],
             "forbidden": [],
+            "forbidden_without_context": [],
         }
         journey = _journey()
         journey["claim_policy"] = {
@@ -94,7 +118,7 @@ class SkillJourneyContractGateTests(unittest.TestCase):
             "forbidden": ["explicitly-forbidden", "causality"],
         }
 
-        code, receipt = check_contracts([skill], [journey])
+        code, receipt = check_contracts([skill], [journey], [_model()])
 
         self.assertEqual(1, code)
         self.assertEqual("fail", receipt["status"])
@@ -108,7 +132,7 @@ class SkillJourneyContractGateTests(unittest.TestCase):
         )
 
     def test_unknown_journey_reference_fails_closed(self) -> None:
-        code, receipt = check_contracts([_skill()], [])
+        code, receipt = check_contracts([_skill()], [], [_model()])
 
         self.assertEqual(1, code)
         self.assertEqual(
@@ -120,7 +144,7 @@ class SkillJourneyContractGateTests(unittest.TestCase):
         journey = _journey()
         journey["required_skill"] = "skill://gravity.sample/missing@1.0.0"
 
-        code, receipt = check_contracts([_skill()], [journey])
+        code, receipt = check_contracts([_skill()], [journey], [_model()])
 
         self.assertEqual(1, code)
         self.assertEqual(
@@ -150,7 +174,9 @@ class SkillJourneyContractGateTests(unittest.TestCase):
                 else:
                     skill[field] = []
 
-                code, receipt = check_contracts([skill], [_journey()])
+                code, receipt = check_contracts(
+                    [skill], [_journey()], [_model()]
+                )
 
                 self.assertEqual(1, code)
                 self.assertIn(
@@ -158,13 +184,63 @@ class SkillJourneyContractGateTests(unittest.TestCase):
                     {item["detector"] for item in receipt["findings"]},
                 )
 
+    def test_model_claim_vocabulary_fails_closed(self) -> None:
+        cases = (
+            ("causal claim", "model-claim-id-invalid"),
+            ("unknown-stable-claim", "model-claim-id-unknown"),
+        )
+        for claim, detector in cases:
+            with self.subTest(claim=claim):
+                model = _model()
+                model["claim_policy"]["forbidden"] = [claim]
+
+                code, receipt = check_contracts([], [], [model])
+
+                self.assertEqual(1, code)
+                self.assertEqual(
+                    [detector],
+                    [item["detector"] for item in receipt["findings"]],
+                )
+
+    def test_model_forbidden_claims_constrain_dependents(self) -> None:
+        model = _model()
+        model["claim_policy"]["forbidden"].append("returned-observation")
+
+        code, receipt = check_contracts([_skill()], [_journey()], [model])
+
+        self.assertEqual(1, code)
+        self.assertEqual(
+            {
+                "journey-allowed-claims-forbidden-by-model",
+                "skill-allowed-claims-forbidden-by-model",
+            },
+            {item["detector"] for item in receipt["findings"]},
+        )
+        self.assertEqual(
+            {"model://gravity/sample@1"},
+            {item["model_uri"] for item in receipt["findings"]},
+        )
+
+    def test_missing_model_references_fail_closed(self) -> None:
+        code, receipt = check_contracts([_skill()], [_journey()], [])
+
+        self.assertEqual(1, code)
+        self.assertEqual(
+            {"journey-model-reference-missing", "skill-model-reference-missing"},
+            {item["detector"] for item in receipt["findings"]},
+        )
+
     def test_current_repository_is_consistent_and_ci_runs_gate(self) -> None:
         code, receipt = check_repository(ROOT)
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 
         self.assertEqual(0, code, receipt)
         self.assertEqual(44, receipt["skill_contract_count"])
-        self.assertGreater(receipt["journey_contract_count"], 0)
+        self.assertEqual(13, receipt["journey_contract_count"])
+        self.assertEqual(5, receipt["model_contract_count"])
+        self.assertEqual(6, receipt["checked_skill_model_link_count"])
+        self.assertEqual(2, receipt["checked_journey_model_link_count"])
+        self.assertEqual(5, receipt["referenced_model_count"])
         self.assertIn("python scripts/check_skill_journey_contracts.py", workflow)
 
 
