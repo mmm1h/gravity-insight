@@ -256,6 +256,22 @@ class GravityInsightPrivacyAuditTests(unittest.TestCase):
         validate_projection_bindings(ResponseProjection.from_dict(projection), ())
 
 
+    def test_projection_exposes_data_path_item_allowlist(self):
+        projection = {
+            "data_keys": ["properties"],
+            "data_path_item_keys": {
+                "properties.common": ["name", "remark"],
+            },
+        }
+
+        assert projection_exposes_path(
+            "data.properties.common[].remark", projection
+        )
+        assert not projection_exposes_path(
+            "data.properties.common[].secret", projection
+        )
+
+
     def test_metadata_dictionary_context_allows_authorized_user_names(self):
         safe_path = "data.list[].name_en_cn_dict.item_price"
         sensitive_path = "data.list[].name_en_cn_dict.user_name"

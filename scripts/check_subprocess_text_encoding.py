@@ -54,6 +54,7 @@ COMMAND_EXEMPTIONS = {
     ("scripts/validation_observability.py", "run_gate"): ("python", "Task-context gate commands include Python and git"),
     ("tests/test_installed_wheel.py", "_run"): ("python", "Python pip/build argv assembled by wheel test"),
     ("tests/test_release_channel.py", "_run"): ("python", "Python release probes and git fixtures"),
+    ("src/gravity_insight/prober/drift_declaration.py", "_run_command"): ("python", "Offline gate argv is literal at every call site: sys.executable for compiler/quality/unittest/pytest/CLI and one git diff --check"),
     ("scripts/scan_repository_secrets.py", "_history_lines"): ("external", "Locally assembled git log argv"),
     ("tests/test_release_channel.py", "ReleaseRecoveryStateTests.test_missing_github_release_is_created_from_verified_tag"): ("external", "Loop contains only literal git fixture commands"),
 }
