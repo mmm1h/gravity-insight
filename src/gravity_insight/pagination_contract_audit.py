@@ -54,34 +54,96 @@ def current_operation_pagination() -> dict[str, dict[str, Any]]:
     for path in sorted(OPERATIONS_ROOT.glob("*.json")):
         document = json.loads(path.read_text(encoding="utf-8"))
         operation = document["operation"]
-        pagination = operation.get("pagination")
-        if not isinstance(pagination, Mapping):
-            pagination = {}
-        request = operation.get("request")
-        projection = operation.get("response_projection")
-        request_fields = set()
-        if isinstance(request, Mapping):
-            for field in ("body_fields", "path_fields", "query_fields"):
-                values = request.get(field)
-                if isinstance(values, Sequence) and not isinstance(values, (str, bytes)):
-                    request_fields.update(str(item) for item in values)
-        current[str(operation["operation_id"])] = {
-            **dict(pagination),
-            "_evidence_context": {
-                "action": operation.get("action"),
-                "effect": operation.get("effect"),
-                "projected_fields": sorted(_field_names(projection)),
-                "request_fields": sorted(request_fields),
-                "response_data_shape": (
-                    projection.get("data_shape")
-                    if isinstance(projection, Mapping)
-                    else None
-                ),
-                "response_scalar_only": _response_scalar_only(projection, pagination),
-                "stability": operation.get("stability"),
-            },
-        }
+        current[str(operation["operation_id"])] = _current_pagination(operation)
     return current
+
+
+def _current_pagination(operation: Mapping[str, Any]) -> dict[str, Any]:
+    pagination = operation.get("pagination")
+    if not isinstance(pagination, Mapping):
+        pagination = {}
+    request = operation.get("request")
+    projection = operation.get("response_projection")
+    request_fields = set()
+    if isinstance(request, Mapping):
+        for field in ("body_fields", "path_fields", "query_fields"):
+            values = request.get(field)
+            if isinstance(values, Sequence) and not isinstance(values, (str, bytes)):
+                request_fields.update(str(item) for item in values)
+    return {
+        **dict(pagination),
+        "_evidence_context": {
+            "action": operation.get("action"),
+            "effect": operation.get("effect"),
+            "projected_fields": sorted(_field_names(projection)),
+            "request_fields": sorted(request_fields),
+            "response_data_shape": (
+                projection.get("data_shape")
+                if isinstance(projection, Mapping)
+                else None
+            ),
+            "response_scalar_only": _response_scalar_only(projection, pagination),
+            "stability": operation.get("stability"),
+        },
+    }
+
+
+def operation_pagination_evidence_signature(
+    operation: Mapping[str, Any],
+    audit: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Return the governance disposition that a projection currently supports."""
+
+    operation_id = str(operation.get("operation_id", ""))
+    record = next(
+        (
+            item
+            for item in (audit or load_pagination_audit()).get("records", ())
+            if isinstance(item, Mapping) and item.get("operation_id") == operation_id
+        ),
+        None,
+    )
+    if record is None:
+        return None
+    pagination = _current_pagination(operation)
+    reconciled = _reconcile_record(record, {operation_id: pagination})
+    context = pagination["_evidence_context"]
+    return {
+        "response_scalar_only": context["response_scalar_only"],
+        "unknown_evidence_disposition": reconciled["unknown_evidence_disposition"],
+        "unknown_evidence_action": _unknown_evidence_action(reconciled),
+    }
+
+
+def operation_pagination_candidate_signatures(
+    operation: Mapping[str, Any], candidate: Mapping[str, Any]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Return evidence dispositions before and after an unreviewed projection edit.
+
+    A current optional scalar may be covered by an existing reviewed scalar-only
+    verdict.  A newly observed optional top-level field has only one-run shape
+    evidence, so it cannot inherit that verdict automatically.
+    """
+
+    before = operation_pagination_evidence_signature(operation)
+    after = operation_pagination_evidence_signature(candidate)
+    if before is None or after is None or not before["response_scalar_only"]:
+        return before, after
+    current_projection = operation.get("response_projection")
+    candidate_projection = candidate.get("response_projection")
+    if not isinstance(current_projection, Mapping) or not isinstance(
+        candidate_projection, Mapping
+    ):
+        return before, after
+    current_keys = set(current_projection.get("data_keys", ()))
+    candidate_keys = set(candidate_projection.get("data_keys", ()))
+    if candidate_keys - current_keys:
+        after = {
+            "response_scalar_only": False,
+            "unknown_evidence_disposition": None,
+            "unknown_evidence_action": None,
+        }
+    return before, after
 
 
 def pagination_shape_unproven(
@@ -404,6 +466,8 @@ __all__ = [
     "OPERATIONS_ROOT",
     "current_operation_pagination",
     "load_pagination_audit",
+    "operation_pagination_evidence_signature",
+    "operation_pagination_candidate_signatures",
     "pagination_shape_unproven",
     "reconcile_pagination_audit",
 ]
