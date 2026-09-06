@@ -47,7 +47,7 @@ def _reproducible_evidence_source(root: Path, source: str) -> bool:
 
 
 class PaginationContractAuditTests(unittest.TestCase):
-    def test_response_scalar_only_rejects_all_missed_collection_capabilities(
+    def test_response_scalar_only_allows_omissions_but_rejects_collections(
         self,
     ) -> None:
         scalar_projection = {
@@ -56,8 +56,12 @@ class PaginationContractAuditTests(unittest.TestCase):
             "numeric_paths": ["a"],
         }
         missed_capabilities = {
+            "data_item_keys": {"a": ["id"]},
             "data_path_item_keys": {"a.items": ["id"]},
-            "known_omitted_data_keys": ["omitted"],
+            "data_scalar_list_types": {"a": "number"},
+            "data_dynamic_item_fields": {"a": ["field"]},
+            "data_numeric_suffix_item_fields": {"a": ["metric"]},
+            "recursive_data_item_keys": {"a": ["id", "children"]},
             "known_omitted_item_keys": ["omitted"],
             "known_omitted_nested_item_keys": {"item": ["omitted"]},
             "known_omitted_data_item_keys": {"a": ["omitted"]},
@@ -69,6 +73,15 @@ class PaginationContractAuditTests(unittest.TestCase):
         }
 
         self.assertTrue(_response_scalar_only(scalar_projection))
+        self.assertTrue(
+            _response_scalar_only(
+                {
+                    **scalar_projection,
+                    "data_keys": ["a", "zone_offset"],
+                    "known_omitted_data_keys": ["extra_data"],
+                }
+            )
+        )
         for field, capability in missed_capabilities.items():
             with self.subTest(field=field):
                 self.assertFalse(
@@ -101,11 +114,32 @@ class PaginationContractAuditTests(unittest.TestCase):
                 "required_data_keys": ["a", "a"],
                 "numeric_paths": ["a", "a"],
             },
+            "required nonnumeric field": {
+                "data_keys": ["a", "label"],
+                "required_data_keys": ["a", "label"],
+                "numeric_paths": ["a"],
+            },
+            "collection root": {
+                "data_keys": ["a", "list"],
+                "required_data_keys": ["a"],
+                "numeric_paths": ["a"],
+            },
         }
 
         for case, projection in invalid_projections.items():
             with self.subTest(case=case):
                 self.assertFalse(_response_scalar_only(projection))
+
+        self.assertFalse(
+            _response_scalar_only(
+                {
+                    "data_keys": ["a", "values"],
+                    "required_data_keys": ["a"],
+                    "numeric_paths": ["a"],
+                },
+                {"list_path": "data.values"},
+            )
+        )
 
     def test_only_current_scalar_only_contract_is_segment_evaluate_percent(
         self,
