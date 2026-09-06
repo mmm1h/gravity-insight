@@ -3047,3 +3047,77 @@ class CredentialDecisionTests(unittest.TestCase):
                 observed.extend((str(exc), repr(exc)))
         observed.extend((output.getvalue(), errors.getvalue(), *logs.messages))
         self.assertNotIn(sentinel, "\n".join(observed))
+
+
+class MaterialExamineUserProjectionTests(unittest.TestCase):
+    def test_preserves_opaque_container_fields(self):
+        payload = {
+            "code": 0,
+            "data": {
+                "list": [
+                    {
+                        "cid": 1,
+                        "id": 2,
+                        "name": "Example User",
+                        "company": {"arbitrary_company_key": {"value": 3}},
+                        "dept": {"arbitrary_dept_key": [4, None]},
+                        "email": "user@example.invalid",
+                        "is_superuser": False,
+                        "role": ["reviewer", {"arbitrary_role_key": 5}, None],
+                    }
+                ]
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(
+                Path(directory),
+                [FakeResponse(payload)],
+                operation_manifest=repository_manifest(
+                    "material.material_examine_user.list"
+                ),
+            )
+            result = client.read("material.material_examine_user.list", {})
+
+        self.assertEqual(payload["data"]["list"], result["data"]["list"])
+        self.assertEqual("success", result["status"])
+        self.assertEqual([], result["warnings"])
+
+    def test_preserves_empty_opaque_container_fields(self):
+        payload = {
+            "code": 0,
+            "data": {"list": [{"company": {}, "dept": {}, "role": []}]},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(
+                Path(directory),
+                [FakeResponse(payload)],
+                operation_manifest=repository_manifest(
+                    "material.material_examine_user.list"
+                ),
+            )
+            result = client.read("material.material_examine_user.list", {})
+
+        self.assertEqual(payload["data"]["list"], result["data"]["list"])
+        self.assertEqual("success", result["status"])
+        self.assertEqual([], result["warnings"])
+
+    def test_opaque_container_fields_still_reject_non_json_values(self):
+        payload = {
+            "code": 0,
+            "data": {"list": [{"company": {1: "not-a-json-object"}}]},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(
+                Path(directory),
+                [FakeResponse(payload)],
+                operation_manifest=repository_manifest(
+                    "material.material_examine_user.list"
+                ),
+            )
+            result = client.read("material.material_examine_user.list", {})
+
+        self.assertEqual([{}], result["data"]["list"])
+        self.assertEqual("contract_changed", result["status"])
+        self.assertTrue(
+            any("uncontracted nested" in warning for warning in result["warnings"])
+        )
