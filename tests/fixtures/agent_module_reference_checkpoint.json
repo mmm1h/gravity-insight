@@ -26,7 +26,7 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "d2c925705788e284a0ce4f7a2aabd986754553e6cbc668763287e3bb6013187a",
+    "reference_evidence_sha256": "9648f1b598e3eb474bdfedc6e2bfe2baf742f380b8f81d639c7173dfdeb9f02b",
     "manual_review_sha256": "71049b9113fdb30c9454009bd8f434f85766db7dbce86f38a833d64f3e709296",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3184,
