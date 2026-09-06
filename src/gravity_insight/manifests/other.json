@@ -1063,7 +1063,6 @@
           "height",
           "id",
           "image_nums",
-          "image_set",
           "internal_audit_status",
           "is_favorite",
           "lowercase_file_name",
@@ -1108,6 +1107,7 @@
         ],
         "known_omitted_item_keys": [
           "file_url",
+          "image_set",
           "thumbnail_url"
         ],
         "nested_item_keys": {
@@ -1126,6 +1126,15 @@
             "tencent"
           ]
         },
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "d3_action_user_id",
+          "d3_render_user_id",
+          "dub_user_id",
+          "other_user_id",
+          "performer_user_id",
+          "transcribe_user_id"
+        ],
         "required_data_keys": [
           "list"
         ]

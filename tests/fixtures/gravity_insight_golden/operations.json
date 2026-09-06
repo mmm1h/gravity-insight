@@ -13479,7 +13479,6 @@
           "height",
           "id",
           "image_nums",
-          "image_set",
           "internal_audit_status",
           "is_favorite",
           "lowercase_file_name",
@@ -13526,6 +13525,7 @@
         "known_omitted_data_keys": [],
         "known_omitted_item_keys": [
           "file_url",
+          "image_set",
           "thumbnail_url"
         ],
         "known_omitted_nested_item_keys": {},
@@ -13546,7 +13546,15 @@
           ]
         },
         "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "d3_action_user_id",
+          "d3_render_user_id",
+          "dub_user_id",
+          "other_user_id",
+          "performer_user_id",
+          "transcribe_user_id"
+        ],
         "recursive_data_item_keys": {},
         "required_data_keys": [
           "list"
@@ -14160,7 +14168,10 @@
         "empty_object_as_empty_result": false,
         "opaque_json_item_keys": [
           "capture_user_id",
+          "d3_action_user_id",
+          "d3_render_user_id",
           "dub_user_id",
+          "other_user_id",
           "performer_user_id",
           "transcribe_user_id"
         ],

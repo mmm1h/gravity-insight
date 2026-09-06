@@ -19,7 +19,7 @@
       "selector": "report.multidim.query",
       "contract_version": "4",
       "minimum_trust": "stable",
-      "completeness": "complete",
+      "completeness": "unknown",
       "data_quality": "pass"
     }
   ],

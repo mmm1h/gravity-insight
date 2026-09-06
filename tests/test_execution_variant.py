@@ -59,7 +59,7 @@ _EVIDENCE_FIELDS = {
     "request_count": "request_count",
     "journey_regression": "journey_sha256",
 }
-_PRODUCT_DIGEST = "598f9af7dfa77e81a0398c1123a6cf188795044002d428276e78e576c93ce8fa"
+_PRODUCT_DIGEST = "00d2c0b97042144c848db6dda76105453359af7430bb09e03ff57c6da4fa523b"
 
 
 def _selection_service(status="stable", reasons=()):
@@ -90,7 +90,7 @@ class ExecutionVariantContractTests(unittest.TestCase):
             self.assertEqual(descriptor, validate_execution_variant(descriptor))
             self.assertEqual((
                 PRODUCT_SELECTOR,
-                "598f9af7dfa77e81a0398c1123a6cf188795044002d428276e78e576c93ce8fa",
+                _PRODUCT_DIGEST,
                 ["returned-event-metric-observation"],
                 "user_level",
                 [REFERENCE_JOURNEY],
@@ -255,7 +255,7 @@ class ExecutionVariantServiceTests(unittest.TestCase):
                     "identity_kind": identity_kind,
                     "selector": selector,
                     "contract_digest": (
-                        "598f9af7dfa77e81a0398c1123a6cf188795044002d428276e78e576c93ce8fa"
+                        _PRODUCT_DIGEST
                     ),
                     "trust_status": "stable",
                     "reason_codes": [],

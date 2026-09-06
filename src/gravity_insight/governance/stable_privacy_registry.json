@@ -2080,6 +2080,13 @@
       "data.page_info"
     ],
     "material.local.list": [
+      "@opaque:data.list[].capture_user_id",
+      "@opaque:data.list[].d3_action_user_id",
+      "@opaque:data.list[].d3_render_user_id",
+      "@opaque:data.list[].dub_user_id",
+      "@opaque:data.list[].other_user_id",
+      "@opaque:data.list[].performer_user_id",
+      "@opaque:data.list[].transcribe_user_id",
       "data.list",
       "data.list[].advertising_materials_label",
       "data.list[].album_id",
@@ -2121,7 +2128,6 @@
       "data.list[].height",
       "data.list[].id",
       "data.list[].image_nums",
-      "data.list[].image_set",
       "data.list[].internal_audit_status",
       "data.list[].is_favorite",
       "data.list[].lowercase_file_name",
@@ -2276,7 +2282,10 @@
     ],
     "material.report.query": [
       "@opaque:data.list[].capture_user_id",
+      "@opaque:data.list[].d3_action_user_id",
+      "@opaque:data.list[].d3_render_user_id",
       "@opaque:data.list[].dub_user_id",
+      "@opaque:data.list[].other_user_id",
       "@opaque:data.list[].performer_user_id",
       "@opaque:data.list[].transcribe_user_id",
       "data.list",

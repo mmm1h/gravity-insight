@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: gravity-upstream-census
@@ -184,6 +185,7 @@ jobs:
           gravity census coverage --routes $routes --output (Join-Path $evidence "current-coverage.json") --report (Join-Path $evidence "current-coverage-report.md") --require-complete
 
       - name: Diff routes and locate affected operations
+        id: impact
         if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
         shell: pwsh
         run: |
@@ -194,6 +196,40 @@ jobs:
           gravity census impact $diff --output $impact --overlay-output (Join-Path $evidence "health-overlay-candidate.json") --require-complete
           $plan = (Get-Content -Raw $impact | ConvertFrom-Json).probe_plan
           $plan | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $evidence "targeted-probe-plan.json")
+
+      - name: Build the actionable upstream drift signal
+        id: drift_signal
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
+        continue-on-error: true
+        shell: pwsh
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
+          $report = Join-Path $evidence "upstream-drift-signal.json"
+          $summary = Join-Path $evidence "upstream-drift-signal.md"
+          $issueBody = Join-Path $evidence "upstream-drift-issue.md"
+          $plan = Join-Path $evidence "targeted-probe-plan.json"
+          python scripts/build_upstream_drift_signal.py `
+            --evidence-root evidence/probe `
+            --probe-plan $plan `
+            --require-probe-plan `
+            --output $report `
+            --summary-output $summary `
+            --issue-body-output $issueBody `
+            --run-url $env:RUN_URL
+          $signalExit = $LASTEXITCODE
+          if (Test-Path -LiteralPath $report) {
+            $signal = Get-Content -Raw -LiteralPath $report | ConvertFrom-Json
+            "status=$($signal.status)" >> $env:GITHUB_OUTPUT
+            "fingerprint=$($signal.fingerprint)" >> $env:GITHUB_OUTPUT
+          } else {
+            "status=invalid" >> $env:GITHUB_OUTPUT
+          }
+          if (Test-Path -LiteralPath $summary) {
+            Get-Content -LiteralPath $summary >> $env:GITHUB_STEP_SUMMARY
+          }
+          exit $signalExit
 
       - name: Verify current scoring evidence
         if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
@@ -230,7 +266,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload drift evidence and the schedule-only probe plan
+      - name: Upload drift evidence, signal receipt, and targeted probe plan
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -238,6 +274,82 @@ jobs:
           path: ${{ runner.temp }}/gravity-drift/*
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish the deduplicated upstream drift Issue
+        if: always() && steps.drift_signal.outcome == 'success' && github.ref_name == github.event.repository.default_branch
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNAL_STATUS: ${{ steps.drift_signal.outputs.status }}
+          SIGNAL_FINGERPRINT: ${{ steps.drift_signal.outputs.fingerprint }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          $title = "[upstream drift] Action required"
+          $marker = "<!-- gravity-upstream-drift-signal:v1"
+          $search = '"[upstream drift] Action required" in:title'
+          $issues = @(gh issue list --repo $env:GITHUB_REPOSITORY --state all --search $search --limit 100 --json number,title,state,body,labels | ConvertFrom-Json)
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not query the managed upstream drift Issue."
+          }
+          $managed = @($issues | Where-Object { $_.title -eq $title -and [string]$_.body -like "$marker*" })
+          if ($managed.Count -gt 1) {
+            throw "Multiple managed upstream drift Issues exist; refusing an ambiguous update."
+          }
+          $issue = $managed | Select-Object -First 1
+
+          function Set-ManagedStatus([object]$target, [string]$status) {
+            $current = @($target.labels | ForEach-Object { $_.name } | Where-Object { $_ -like "status:*" })
+            foreach ($label in $current) {
+              gh issue edit $target.number --repo $env:GITHUB_REPOSITORY --remove-label $label | Out-Null
+              if ($LASTEXITCODE -ne 0) { throw "Could not remove managed Issue status $label." }
+            }
+            gh issue edit $target.number --repo $env:GITHUB_REPOSITORY --add-label $status | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Could not set managed Issue status $status." }
+          }
+
+          if ($env:SIGNAL_STATUS -eq "action_required") {
+            $body = Join-Path $env:RUNNER_TEMP "gravity-drift/upstream-drift-issue.md"
+            $fingerprintMarker = "$marker fingerprint=$env:SIGNAL_FINGERPRINT -->"
+            if ($null -eq $issue) {
+              $createArgs = @(
+                "issue", "create", "--repo", $env:GITHUB_REPOSITORY,
+                "--title", $title, "--body-file", $body,
+                "--label", "bug,status:triage,priority:p2,area:contracts-census"
+              )
+              $ownerType = gh api "repos/$env:GITHUB_REPOSITORY" --jq ".owner.type"
+              if ($LASTEXITCODE -ne 0) { throw "Could not inspect the repository owner type." }
+              if ($ownerType -eq "User") {
+                $createArgs += @("--assignee", $env:GITHUB_REPOSITORY_OWNER)
+              }
+              $created = & gh @createArgs
+              if ($LASTEXITCODE -ne 0) { throw "Could not create the upstream drift Issue." }
+              Write-Output "::warning title=Gravity upstream drift requires review::Created $created for actionable fingerprint $env:SIGNAL_FINGERPRINT."
+            } elseif ($issue.state -eq "OPEN" -and [string]$issue.body -like "*$fingerprintMarker*") {
+              Write-Host "Managed upstream drift Issue #$($issue.number) already has this fingerprint; no update was sent."
+            } else {
+              if ($issue.state -ne "OPEN") {
+                gh issue reopen $issue.number --repo $env:GITHUB_REPOSITORY | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw "Could not reopen the upstream drift Issue." }
+                Set-ManagedStatus $issue "status:triage"
+              }
+              gh issue comment $issue.number --repo $env:GITHUB_REPOSITORY --body "Actionable upstream drift changed to fingerprint ``$env:SIGNAL_FINGERPRINT``. Review $env:RUN_URL." | Out-Null
+              if ($LASTEXITCODE -ne 0) { throw "Could not notify subscribers about changed upstream drift." }
+              gh issue edit $issue.number --repo $env:GITHUB_REPOSITORY --body-file $body | Out-Null
+              if ($LASTEXITCODE -ne 0) { throw "Could not update the upstream drift Issue body." }
+              Write-Output "::warning title=Gravity upstream drift changed::Updated Issue #$($issue.number) for actionable fingerprint $env:SIGNAL_FINGERPRINT."
+            }
+          } elseif ($env:SIGNAL_STATUS -eq "clear" -and $null -ne $issue -and $issue.state -eq "OPEN") {
+            Set-ManagedStatus $issue "status:released"
+            gh issue close $issue.number --repo $env:GITHUB_REPOSITORY --reason completed --comment "A complete successful upstream census found no remaining actionable targeted probe or checked-in response drift. Verified by $env:RUN_URL." | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Could not close the cleared upstream drift Issue." }
+          } elseif ($env:SIGNAL_STATUS -notin @("action_required", "clear")) {
+            throw "The drift signal has an unexpected status: $env:SIGNAL_STATUS"
+          }
+
+      - name: Reject an unavailable upstream drift signal
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success' && steps.drift_signal.outcome != 'success'
+        shell: pwsh
+        run: throw "The complete census could not build a trustworthy drift signal. No Issue was created or closed; inspect the workflow logs and gravity-upstream artifact when available."
 
       - name: Warn when upstream capacity prevents a complete crawl
         if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class == 'upstream_capacity'

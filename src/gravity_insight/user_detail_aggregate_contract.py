@@ -146,8 +146,25 @@ def _condition_schema() -> dict[str, Any]:
         "required": ["field", "operator", "values"],
         "properties": {
             "field": {"type": "string", "minLength": 1, "maxLength": 256},
-            "operator": {"type": "string", "enum": sorted(_OPERATORS)},
-            "values": {"type": "array", "maxItems": 50, "items": scalar},
+            "operator": {
+                "type": "string",
+                "enum": sorted(_OPERATORS),
+                "description": (
+                    "WITH_VAL tests JSON non-null and therefore matches the empty "
+                    "string, zero, and false; WITHOUT_VAL tests null or a missing "
+                    "field. To require a non-null, non-empty string in filters, "
+                    "combine WITH_VAL [] with NOT_EQUALS [\"\"]."
+                ),
+            },
+            "values": {
+                "type": "array",
+                "maxItems": 50,
+                "items": scalar,
+                "description": (
+                    "Non-null values must use one scalar type matching the field "
+                    "type observed in the current read."
+                ),
+            },
         },
     }
 

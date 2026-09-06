@@ -956,6 +956,24 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             "steps.fetch.outputs.failure_class != 'upstream_capacity'", workflow
         )
         self.assertIn("No route-drift conclusion was made", workflow)
+        self.assertIn("issues: write", workflow)
+        self.assertIn("Build the actionable upstream drift signal", workflow)
+        self.assertIn("scripts/build_upstream_drift_signal.py", workflow)
+        self.assertIn("--probe-plan $plan", workflow)
+        self.assertIn("--require-probe-plan", workflow)
+        self.assertIn("Publish the deduplicated upstream drift Issue", workflow)
+        self.assertIn('"issue", "create"', workflow)
+        self.assertIn("& gh @createArgs", workflow)
+        self.assertIn("gh issue comment", workflow)
+        self.assertIn("gh issue close", workflow)
+        self.assertIn("status:triage,priority:p2,area:contracts-census", workflow)
+        self.assertIn("already has this fingerprint; no update was sent", workflow)
+        self.assertIn("steps.drift_signal.outcome != 'success'", workflow)
+        ci = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("build_upstream_drift_signal.py", ci)
+        self.assertNotIn("collect_capability_validation_evidence.py", workflow)
         self.assertNotIn("--concurrency 5", workflow)
 
 
