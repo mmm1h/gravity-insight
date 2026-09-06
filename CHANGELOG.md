@@ -23,10 +23,11 @@ Target release: `0.3.11`
   set disagrees with the non-empty homogeneous observed row type now reports
   `USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH` with `category=caller` instead
   of `USER_DETAIL_AGGREGATE_MIXED_TYPE` with `category=upstream`, changing the
-  process exit from 3 to 2. Both old and new paths are non-retryable. Actual
-  mixed/non-scalar source rows retain `USER_DETAIL_AGGREGATE_MIXED_TYPE` and
-  `category=upstream`; every prior rejection, the privacy exclusion, and all
-  read capabilities are unchanged.
+  process exit from 3 to 2. The mismatch diagnostic now identifies the exact
+  filter or measure path, measure name, referenced field, supplied scalar-type
+  set and observed row type; it still omits condition values and user rows.
+  Both old and new paths are non-retryable. Actual mixed/non-scalar source rows
+  retain `USER_DETAIL_AGGREGATE_MIXED_TYPE` and `category=upstream`.
 - **Hard break:** the five built-in Model contracts express `claim_policy` in
   canonical stable ids across all three tiers (`validated`, `scenario`,
   `forbidden`) instead of natural-language phrases. `causal claim` becomes the
@@ -46,6 +47,18 @@ Target release: `0.3.11`
   collection and trust capabilities are unchanged.
 
 Migration guide: [0.3.11](docs/migration/0.3.11.md)
+
+### Fixed
+
+- Removed the unsupported blanket privacy exclusion for `bytedanceMid1..8`, so
+  registered scalar material fields can be filtered and grouped by the bounded
+  aggregate product. Direct identifiers, direct personal response fields and
+  credential/session fields remain excluded, and no user-detail row is added to
+  the result contract.
+- The aggregate input schema now states that `WITH_VAL` means JSON non-null and
+  therefore includes empty strings, zero and false. It also gives the existing
+  `WITH_VAL []` plus `NOT_EQUALS [""]` recipe for a non-null, non-empty string;
+  operator behavior and homogeneous condition-type validation are unchanged.
 
 ## [0.3.10] - 2026-09-05
 

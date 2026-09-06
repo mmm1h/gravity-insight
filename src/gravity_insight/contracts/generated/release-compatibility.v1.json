@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "461e04e9a733967d8f05cbc66110acf2377b434b1ac25e2d0cf678526dcd62e4"
+    "compatibility_sha256": "3f0f1b896a0f1b167812a84cc3db2f26500cac0189f798eddc6402023f8a6bcd"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -193,7 +193,7 @@
       "hard_breaks": [
         {
           "id": "0.3.11-hard-break-1",
-          "description": "`user-detail-aggregate` now reports a privacy-policy-excluded field as `USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED` instead of `USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`. A condition whose non-null value-type set disagrees with the non-empty homogeneous observed row type now reports `USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH` with `category=caller` instead of `USER_DETAIL_AGGREGATE_MIXED_TYPE` with `category=upstream`, changing the process exit from 3 to 2. Both old and new paths are non-retryable. Actual mixed/non-scalar source rows retain `USER_DETAIL_AGGREGATE_MIXED_TYPE` and `category=upstream`; every prior rejection, the privacy exclusion, and all read capabilities are unchanged.",
+          "description": "`user-detail-aggregate` now reports a privacy-policy-excluded field as `USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED` instead of `USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`. A condition whose non-null value-type set disagrees with the non-empty homogeneous observed row type now reports `USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH` with `category=caller` instead of `USER_DETAIL_AGGREGATE_MIXED_TYPE` with `category=upstream`, changing the process exit from 3 to 2. The mismatch diagnostic now identifies the exact filter or measure path, measure name, referenced field, supplied scalar-type set and observed row type; it still omits condition values and user rows. Both old and new paths are non-retryable. Actual mixed/non-scalar source rows retain `USER_DETAIL_AGGREGATE_MIXED_TYPE` and `category=upstream`.",
           "migration_guide": "docs/migration/0.3.11.md"
         },
         {

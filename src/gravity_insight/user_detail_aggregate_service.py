@@ -208,7 +208,6 @@ def _privacy_excluded(field: str) -> bool:
         compact in _DIRECT_IDENTIFIERS
         or is_direct_personal_response_field(field)
         or is_sensitive_analysis_field(field)
-        or compact.startswith("bytedancemid")
     )
 
 
@@ -275,7 +274,7 @@ def _validate_row_types(
         raise _mixed_type_error()
     if any(observed[field] - {"number"} for field in numeric_measure_fields(inputs)):
         raise _mixed_type_error()
-    _validate_condition_types(observed, _all_conditions(inputs))
+    _validate_condition_types(observed, _condition_contexts(inputs))
 
 
 def _observed_row_types(
@@ -295,25 +294,33 @@ def _observed_row_types(
 
 
 def _validate_condition_types(
-    observed: Mapping[str, set[str]], conditions: Sequence[Mapping[str, Any]]
+    observed: Mapping[str, set[str]],
+    contexts: Sequence[tuple[Mapping[str, Any], str, str | None]],
 ) -> None:
-    for condition in conditions:
-        types = observed[condition["field"]]
+    for condition, location, measure_name in contexts:
+        field_name = condition["field"]
+        types = observed[field_name]
         value_types = {
             kind
             for value in condition["values"]
             if value is not None and (kind := _scalar_kind(value)) is not None
         }
         if types and value_types and types != value_types:
+            observed_type = next(iter(types))
+            rendered_value_types = ", ".join(sorted(value_types))
+            subject = (
+                f"measure {measure_name!r}" if measure_name is not None else location
+            )
             raise AggregateConditionTypeMismatchError(
-                "aggregate condition non-null value types do not match the field type "
-                "observed in this read",
-                field="conditions[].values",
+                f"aggregate condition for {subject} on field {field_name!r} uses "
+                f"non-null value types {rendered_value_types}; observed field type "
+                f"is {observed_type}",
+                field=f"{location}.values",
                 next_action=(
-                    "Use non-null condition values of one scalar type matching the "
-                    "field, or remove the condition; do not retry the unchanged "
-                    "request. Investigate upstream only if separate type-drift "
-                    "evidence exists."
+                    f"Use only {observed_type} condition values for field "
+                    f"{field_name!r} in {location}.values, or remove that condition; "
+                    "do not retry the unchanged request. Investigate upstream only "
+                    "if separate type-drift evidence exists."
                 ),
             )
 
@@ -341,11 +348,16 @@ def _scalar_kind(value: Any) -> str | None:
     return None
 
 
-def _all_conditions(inputs: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-    result = list(inputs["filters"])
+def _condition_contexts(
+    inputs: Mapping[str, Any],
+) -> list[tuple[Mapping[str, Any], str, str | None]]:
+    result = [
+        (condition, f"filters[{index}]", None)
+        for index, condition in enumerate(inputs["filters"])
+    ]
     result.extend(
-        item["condition"]
-        for item in inputs["measures"]
+        (item["condition"], f"measures[{index}].condition", item["name"])
+        for index, item in enumerate(inputs["measures"])
         if item["op"] == "count_if"
     )
     return result

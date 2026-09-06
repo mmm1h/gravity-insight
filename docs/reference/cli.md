@@ -412,7 +412,7 @@ segment-update preview|execute`。自然语言、历史记录和 tool result 都
 `analysis.user_detail.list` 的公共有界分页链路，只返回 `cells`、显式 measure definitions、分页完整性、
 source/receipt audit。`bounds.max_pages/max_items/max_cells` 三项必须全部显式提供；`max_cells` 的硬上限
 200 与现有安全 stdout item cap 相同。源 operation 的完整性当前为 `unknown/wire`，因此数字只对实际
-`consumed_items` 精确，不能宣称完整用户总体。
+`consumed_items` 精确，不能宣称完整用户总体。字段资格仍由 contracted 顶层标量、live user-property metadata 和三条既有隐私策略共同决定。`bytedanceMid1..8` 不再因为字段名前缀被额外排除，可作为物理字段参与 filter/group/count，但不补充未经证实的业务语义。`WITH_VAL` 表示 JSON 非 `null`，所以空字符串、数值 `0` 与布尔 `false` 都会命中；`WITHOUT_VAL` 表示 `null` 或缺失字段。检查字符串真正非空时，组合 `WITH_VAL []` 与 `NOT_EQUALS [""]`；条件非 `null` 值仍须是与本次观测字段类型一致的单一标量类型，不应混用 `""`/`"0"` 与数值 `0`。
 
 ```json
 {
@@ -438,7 +438,7 @@ gravity analysis user-detail-aggregate --input aggregate.json
 隐私策略排除、未登记/非标量或 `sum` 非数值字段、条件非空取值类型与实测单一类型不符、实测行混型/非标量、单元格超限和缺失边界分别稳定失败为
 `USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED`、`USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`、`USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH`、
 `USER_DETAIL_AGGREGATE_MIXED_TYPE`、`USER_DETAIL_AGGREGATE_CARDINALITY_LIMIT`、`USER_DETAIL_AGGREGATE_BOUNDS_REQUIRED`。前两类字段错误和条件类型不符均为不可重试的
-`caller`（exit 2）；真实行类型不稳定仍为不可重试的 `upstream`（exit 3）。错误不回显字段名、App 或条件值，也不返回部分单元格。
+`caller`（exit 2）；真实行类型不稳定仍为不可重试的 `upstream`（exit 3）。隐私错误不回显被保护字段；条件类型错误会给出精确 `filters[i].values` 或 `measures[i].condition.values` 路径，并安全列出 measure 名、字段名、条件标量类型集合和本次观测类型，但不回显 App、条件实际取值或用户行，也不返回部分单元格。
 
 ### Saved Analysis v4
 
