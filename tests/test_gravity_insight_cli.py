@@ -229,6 +229,121 @@ class GravityInsightCliTests(unittest.TestCase):
         error = json.loads(stderr.getvalue()) if stderr.getvalue() else None
         return code, rendered, error, client
 
+    def test_structured_input_shape_and_missing_path_are_caller_errors(self):
+        next_action = (
+            "Run `gravity --help`, then retry the same command with inline JSON, "
+            "an existing JSON file, or '-' for stdin."
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            cases = (
+                ("agent", ["agent", "--input", "metadata:search"], "inline JSON"),
+                (
+                    "plan-run",
+                    ["plan", "run", "--input", "metadata:search"],
+                    "inline JSON",
+                ),
+                (
+                    "analysis-spec",
+                    [
+                        "analysis",
+                        "query",
+                        "--kind",
+                        "event",
+                        "--app",
+                        "1",
+                        "--spec",
+                        "metadata:search",
+                    ],
+                    "inline JSON",
+                ),
+                ("derive", ["derive", "--input", "metadata:search"], "inline JSON"),
+                (
+                    "missing-path",
+                    [
+                        "agent",
+                        "--input",
+                        str(Path(temporary) / "missing.json"),
+                    ],
+                    "existing JSON file",
+                ),
+            )
+            for label, argv, message in cases:
+                with self.subTest(case=label):
+                    code, result, error, _ = self.invoke(argv)
+                    self.assertEqual(2, code)
+                    self.assertIsNone(result)
+                    self.assertEqual(
+                        ("caller", "INPUT_INVALID", "input"),
+                        (
+                            error["error"]["category"],
+                            error["error"]["code"],
+                            error["error"]["field"],
+                        ),
+                    )
+                    self.assertIn(message, error["error"]["message"])
+                    self.assertEqual(next_action, error["error"]["next_action"])
+
+            with self.subTest(case="export-run"):
+                output = Path(temporary) / "export.json"
+                argv = [
+                    "export",
+                    "run",
+                    "app.list",
+                    "--input",
+                    "metadata:search",
+                    "--columns",
+                    "id",
+                    "--idempotency-key",
+                    "test-key",
+                    "--output",
+                    str(output),
+                ]
+                with patch.object(FakeClient, "export_run", create=True):
+                    code, result, error, _ = self.invoke(argv)
+                self.assertEqual(2, code)
+                self.assertIsNone(result)
+                self.assertEqual(
+                    ("caller", "INPUT_INVALID", "input"),
+                    (
+                        error["error"]["category"],
+                        error["error"]["code"],
+                        error["error"]["field"],
+                    ),
+                )
+                self.assertEqual(next_action, error["error"]["next_action"])
+
+    def test_existing_structured_input_read_failures_remain_local_io_errors(self):
+        next_action = (
+            "Check local console and filesystem I/O, then retry the same request."
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            invalid_encoding = root / "invalid-encoding.json"
+            invalid_encoding.write_bytes(b"\xff")
+            for label, value in (
+                ("directory", str(root)),
+                ("invalid-encoding", str(invalid_encoding)),
+            ):
+                with self.subTest(case=label):
+                    code, result, error, _ = self.invoke(
+                        ["agent", "--input", value]
+                    )
+                    self.assertEqual(4, code)
+                    self.assertIsNone(result)
+                    self.assertEqual(
+                        (
+                            "local",
+                            "LOCAL_IO_ERROR",
+                            "input" if label == "invalid-encoding" else None,
+                        ),
+                        (
+                            error["error"]["category"],
+                            error["error"]["code"],
+                            error["error"]["field"],
+                        ),
+                    )
+                    self.assertEqual(next_action, error["error"]["next_action"])
+
     def test_dry_run_validates_every_core_registry_schema_without_reads(self):
         code, result, error, client = self.invoke(["--dry-run"])
         self.assertEqual(0, code)
