@@ -69,299 +69,125 @@ metadata 或最终查询请求之前停止。`--dry-run` 返回 `status=capabili
 一个伪装成已验证路径的 Event/Segment spec，更不会用回访人数、付费率或其他事件人数
 替代金额、时长或 ARPU。
 
+## 两次聚合求 D1 的共用结构
+
+下面前两条路径只有 cohort 规则不同；分母/分子 envelope 和 D1 规则完全相同，故只在这里
+定义一次。两个 spec 都使用 `start=2026-08-01`、`end=2026-08-02`、顶层
+`logic=AND`，并把相应的 `<cohort-rule>` 放在
+`property_rules={"logic":"AND","groups":[{"logic":"AND","rules":[<cohort-rule>]}]}`。
+分子再增加下列 `event_rules`，分母省略它：
+
+```json
+{"logic":"AND","groups":[{"logic":"AND","rules":[{
+  "event":"$MPLaunch","did":true,
+  "target":{"field":"PresetAllCount","aggregation":"PresetAllCount"},
+  "did_condition":{"operator":"GTE","values":[1]},
+  "date_range":{"type":"static","start":"2026-08-02","end":"2026-08-02"}
+}]}]}
+```
+
+先分别 `--dry-run`；确认后，两次只读评估只取聚合 `part`。把路径自己的文件名代入
+`<base.json>` / `<return.json>`：
+
+```powershell
+gravity analysis segment evaluate --app main --spec <base.json> --dry-run
+gravity analysis segment evaluate --app main --spec <return.json> --dry-run
+$denominator = gravity analysis segment evaluate --app main --spec <base.json> --fields part | ConvertFrom-Json
+$numerator = gravity analysis segment evaluate --app main --spec <return.json> --fields part | ConvertFrom-Json
+if ($denominator.data.part -eq 0) { $d1 = $null } else { $d1 = [decimal]$numerator.data.part / [decimal]$denominator.data.part }
+```
+
+分母为 0 时 D1 未定义，不能填 0。这个共用结构固定一个 cohort 日和 D1，只返回所选
+观察日，不返回 Retention endpoint 的整条 offset 矩阵。
+
 ## 同日首次注册与支付的交集
 
 分母 cohort 是同一自然日内依次完成首次注册和支付、并满足用户属性条件的用户。
-`window.unit=today` 与单日 `start=end` 共同把两步限制在 cohort 日；Funnel
-第二步人数就是分母。
-
-`reg-pay-funnel.json`：
+`window.unit=today` 与单日 `start=end` 共同把两步限制在 cohort 日；Funnel 第二步人数
+就是分母。`reg-pay-funnel.json` 的非默认字段如下：
 
 ```json
 {
-  "start": "2026-08-01",
-  "end": "2026-08-01",
-  "global_filters": [
-    {
-      "operator": "EQUALS",
-      "field": "$ea_click_company",
-      "type": "user",
-      "value": ["<project-acquisition-value>"]
-    }
+  "start":"2026-08-01","end":"2026-08-01","global_logic":"AND",
+  "global_filters":[{"operator":"EQUALS","field":"$ea_click_company","type":"user","value":["<project-acquisition-value>"]}],
+  "steps":[
+    {"event":"$UserFirstRegister","metric":{"field":"PresetAllCount","aggregation":"PresetAllCount"}},
+    {"event":"$PayEvent","metric":{"field":"PresetAllCount","aggregation":"PresetAllCount"}}
   ],
-  "global_logic": "AND",
-  "steps": [
-    {
-      "event": "$UserFirstRegister",
-      "metric": {"field": "PresetAllCount", "aggregation": "PresetAllCount"}
-    },
-    {
-      "event": "$PayEvent",
-      "metric": {"field": "PresetAllCount", "aggregation": "PresetAllCount"}
-    }
-  ],
-  "window": {"unit": "today", "value": 1},
-  "calculate_each_day": false
+  "window":{"unit":"today","value":1},"calculate_each_day":false
 }
 ```
 
-先确认 Funnel，再把 matched step `1` 固化为一个受治理分群。`--execute` 内部会先
-重跑同一 Funnel，只有成功后才发单次、不重试的分群写入；返回的
-`target.segment_id` 是下面两个 spec 的 `<reg-pay-segment-id>`。
+先确认 Funnel，再把 matched step `1` 固化为受治理分群。`--execute` 会重跑同一 Funnel，
+成功后才发单次、不重试的分群写入；`target.segment_id` 是 `<reg-pay-segment-id>`。
 
 ```powershell
 gravity analysis query --kind funnel --app main --spec reg-pay-funnel.json --dry-run
 gravity analysis query --kind funnel --app main --spec reg-pay-funnel.json
-gravity analysis segment create-from-analysis --app main --spec reg-pay-funnel.json `
-  --name GSDK-reg-pay-d1 --step 1 --matched --dry-run
-gravity analysis segment create-from-analysis --app main --spec reg-pay-funnel.json `
-  --name GSDK-reg-pay-d1 --step 1 --matched --execute
+gravity analysis segment create-from-analysis --app main --spec reg-pay-funnel.json --name GSDK-reg-pay-d1 --step 1 --matched --dry-run
+gravity analysis segment create-from-analysis --app main --spec reg-pay-funnel.json --name GSDK-reg-pay-d1 --step 1 --matched --execute
 ```
 
-`reg-pay-denominator.json` 只评估该分群：
+将共用结构分别保存为 `reg-pay-denominator.json`（名称 `reg-pay-base`）和
+`reg-pay-numerator.json`（名称 `reg-pay-return`）；两者的 `<cohort-rule>` 均为：
 
 ```json
-{
-  "name": "reg-pay-base",
-  "start": "2026-08-01",
-  "end": "2026-08-02",
-  "logic": "AND",
-  "property_rules": {
-    "logic": "AND",
-    "groups": [
-      {
-        "logic": "AND",
-        "rules": [
-          {
-            "field": "<reg-pay-segment-id>",
-            "source": "segment",
-            "operator": "TRUE",
-            "values": [],
-            "segment_type": "LATEST"
-          }
-        ]
-      }
-    ]
-  }
-}
+{"field":"<reg-pay-segment-id>","source":"segment","operator":"TRUE","values":[],"segment_type":"LATEST"}
 ```
 
-`reg-pay-numerator.json` 使用相同分群，并要求 D1 至少发生一次启动：
-
-```json
-{
-  "name": "reg-pay-return",
-  "start": "2026-08-01",
-  "end": "2026-08-02",
-  "logic": "AND",
-  "property_rules": {
-    "logic": "AND",
-    "groups": [
-      {
-        "logic": "AND",
-        "rules": [
-          {
-            "field": "<reg-pay-segment-id>",
-            "source": "segment",
-            "operator": "TRUE",
-            "values": [],
-            "segment_type": "LATEST"
-          }
-        ]
-      }
-    ]
-  },
-  "event_rules": {
-    "logic": "AND",
-    "groups": [
-      {
-        "logic": "AND",
-        "rules": [
-          {
-            "event": "$MPLaunch",
-            "did": true,
-            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
-            "did_condition": {"operator": "GTE", "values": [1]},
-            "date_range": {"type": "static", "start": "2026-08-02", "end": "2026-08-02"}
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-两次只读评估都只取聚合 `part`；分母为 0 时留存率未定义，不能填 0。
-
-```powershell
-$denominator = gravity analysis segment evaluate --app main `
-  --spec reg-pay-denominator.json --fields part | ConvertFrom-Json
-$numerator = gravity analysis segment evaluate --app main `
-  --spec reg-pay-numerator.json --fields part | ConvertFrom-Json
-if ($denominator.data.part -eq 0) { $d1 = $null } `
-else { $d1 = [decimal]$numerator.data.part / [decimal]$denominator.data.part }
-```
-
-完成后可以按同一受治理两阶段流程删除中间分群：
+完成后按同一受治理两阶段流程删除中间分群：
 
 ```powershell
 gravity analysis segment delete --segment-id <reg-pay-segment-id> --dry-run
 gravity analysis segment delete --segment-id <reg-pay-segment-id> --execute
 ```
 
-语义差异只有执行形态：原请求希望一次 Retention 调用直接返回整条留存曲线；替代路径
-固定一个 cohort 日和 D1，产生一个中间分群，再用两个聚合数相除。用户集合定义、属性
-条件、cohort 日和 D1 启动日不变；它不自动生成 D2/D3 等整条曲线。
+用户集合定义、属性条件、cohort 日和 D1 启动日与目标语义不变；代价是一个中间分群、
+两次聚合读取和本地除法。
 
 ## 首次付费日属性 cohort
 
 set-once `first_pay_time` 直接用 Segment 属性规则定义，不要求 `$PayEvent` 再次出现。
-下面的毫秒值是北京时间 `2026-08-01 00:00:00.000` 到
-`23:59:59.999`。如果 live metadata 把项目字段登记为另一种表示，执行会 fail closed；不得
-静默把毫秒改成秒或字符串。
-
-`first-pay-denominator.json`：
+将共用结构保存为 `first-pay-denominator.json`（名称 `first-pay-base`）和
+`first-pay-numerator.json`（名称 `first-pay-return`），`<cohort-rule>` 为：
 
 ```json
-{
-  "name": "first-pay-base",
-  "start": "2026-08-01",
-  "end": "2026-08-02",
-  "logic": "AND",
-  "property_rules": {
-    "logic": "AND",
-    "groups": [
-      {
-        "logic": "AND",
-        "rules": [
-          {
-            "field": "first_pay_time",
-            "source": "user",
-            "operator": "RANGE_IN",
-            "values": [1785513600000, 1785599999999]
-          }
-        ]
-      }
-    ]
-  }
-}
+{"field":"first_pay_time","source":"user","operator":"RANGE_IN","values":[1785513600000,1785599999999]}
 ```
 
-`first-pay-numerator.json` 是同一属性规则 AND D1 启动：
-
-```json
-{
-  "name": "first-pay-return",
-  "start": "2026-08-01",
-  "end": "2026-08-02",
-  "logic": "AND",
-  "property_rules": {
-    "logic": "AND",
-    "groups": [
-      {
-        "logic": "AND",
-        "rules": [
-          {
-            "field": "first_pay_time",
-            "source": "user",
-            "operator": "RANGE_IN",
-            "values": [1785513600000, 1785599999999]
-          }
-        ]
-      }
-    ]
-  },
-  "event_rules": {
-    "logic": "AND",
-    "groups": [
-      {
-        "logic": "AND",
-        "rules": [
-          {
-            "event": "$MPLaunch",
-            "did": true,
-            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
-            "did_condition": {"operator": "GTE", "values": [1]},
-            "date_range": {"type": "static", "start": "2026-08-02", "end": "2026-08-02"}
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-```powershell
-gravity analysis segment evaluate --app main --spec first-pay-denominator.json --dry-run
-gravity analysis segment evaluate --app main --spec first-pay-numerator.json --dry-run
-$denominator = gravity analysis segment evaluate --app main `
-  --spec first-pay-denominator.json --fields part | ConvertFrom-Json
-$numerator = gravity analysis segment evaluate --app main `
-  --spec first-pay-numerator.json --fields part | ConvertFrom-Json
-if ($denominator.data.part -eq 0) { $d1 = $null } `
-else { $d1 = [decimal]$numerator.data.part / [decimal]$denominator.data.part }
-```
-
-这一路不写分群、不取用户明细。与 Retention 目标的集合语义相同：分母是属性值落在
-cohort 日的用户，分子是该集合与 D1 启动用户的交集。代价是两次聚合读取与一次本地
-除法，且只返回所选观察日，不返回 Retention endpoint 的整条 offset 矩阵。
+这两个毫秒值覆盖北京时间 `2026-08-01 00:00:00.000` 到 `23:59:59.999`。如果 live
+metadata 把项目字段登记为另一种表示，执行会 fail closed；不得静默改成秒或字符串。
+这一路不写分群、不取用户明细。分母是属性值落在 cohort 日的用户，分子是该集合与 D1
+启动用户的交集；代价是两次聚合读取与一次本地除法。
 
 ## 自定义事件首次暴露 cohort
 
-I107 要求的集合不是普通事件日 Retention。它的分母必须同时满足：cohort 日发生目标
-事件，并且在 cohort 日之前从未发生目标事件。若目标事件已有 Segment endpoint 的成功
-收据，下面的两个静态规则能在一次只读聚合中表达这个交集；前置窗口的 `start` 必须是
-该项目可证明的事件历史起点，否则只能声称“在这个有界窗口内首次”，不能声称生命周期
-首次。
-
-`custom-event-first-exposure.json`：
+I107 的分母必须同时满足 cohort 日发生目标事件，并且此前从未发生。若目标事件已有
+Segment endpoint 成功收据，`custom-event-first-exposure.json` 用一个 `AND` group 放入
+下列两条规则；顶层 `start=<event-history-start>`、`end=<cohort-date>`。前置窗口的起点
+必须是项目可证明的事件历史起点，否则只能声称“在有界窗口内首次”：
 
 ```json
 {
-  "name": "first-exposure",
-  "start": "<event-history-start>",
-  "end": "<cohort-date>",
-  "logic": "AND",
-  "event_rules": {
-    "logic": "AND",
-    "groups": [
-      {
-        "logic": "AND",
-        "rules": [
-          {
-            "event": "<target-custom-event>",
-            "did": true,
-            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
-            "did_condition": {"operator": "GTE", "values": [1]},
-            "date_range": {
-              "type": "static",
-              "start": "<cohort-date>",
-              "end": "<cohort-date>"
-            }
-          },
-          {
-            "event": "<target-custom-event>",
-            "did": false,
-            "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"},
-            "did_condition": {"operator": "GTE", "values": [1]},
-            "date_range": {
-              "type": "static",
-              "start": "<event-history-start>",
-              "end": "<day-before-cohort>"
-            }
-          }
-        ]
-      }
-    ]
-  }
+  "event":"<target-custom-event>","did":true,
+  "target":{"field":"PresetAllCount","aggregation":"PresetAllCount"},
+  "did_condition":{"operator":"GTE","values":[1]},
+  "date_range":{"type":"static","start":"<cohort-date>","end":"<cohort-date>"}
+}
+```
+
+```json
+{
+  "event":"<target-custom-event>","did":false,
+  "target":{"field":"PresetAllCount","aggregation":"PresetAllCount"},
+  "did_condition":{"operator":"GTE","values":[1]},
+  "date_range":{"type":"static","start":"<event-history-start>","end":"<day-before-cohort>"}
 }
 ```
 
 ```powershell
-gravity analysis segment evaluate --app main `
-  --spec custom-event-first-exposure.json --dry-run
-gravity analysis segment evaluate --app main `
-  --spec custom-event-first-exposure.json --fields part
+gravity analysis segment evaluate --app main --spec custom-event-first-exposure.json --dry-run
+gravity analysis segment evaluate --app main --spec custom-event-first-exposure.json --fields part
 ```
 
 这段 spec 是目标集合定义和正/负静态窗口控制，不是 I107 已拒绝事件的绕行：当前外部证据
