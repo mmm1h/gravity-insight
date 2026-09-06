@@ -6,6 +6,11 @@ GitHub Issue 只接收其他项目在真实使用本 SDK 时提交的问题。�
 维护者自行发现的优化、能力规划和开发拆包不创建 Issue，分别写入 roadmap、候选矩阵或技术债。
 Agent 可以整理、补证据和更新已有外部 Issue，但不得为了给自己的工作派号而创建 Issue。
 
+唯一自动化例外是 `.github/workflows/upstream-census.yml` 管理的上游漂移信号。它只在完整、
+成功的 Census 后，为非空 targeted probe plan 或与当前合同对账后仍未处置的脱敏响应字段证据维护
+一条固定 Issue；相同指纹不更新，变化时才评论，完整复核清零后才关闭。该 Issue 使用
+`status:triage`、`priority:p2`、`bug` 和 `area:contracts-census`，不代表 Agent 给自身开发工作派号。
+
 ## 状态流
 
 | 状态 | 含义 | Agent 动作 |
