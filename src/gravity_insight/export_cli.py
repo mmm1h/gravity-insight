@@ -216,7 +216,7 @@ def export_cli_error(
             operation_id=operation_id,
             next_action=getattr(error, "next_action", None) or fallback_action,
         )
-    next_action = _next_action(
+    next_action = getattr(error, "next_action", None) or _next_action(
         code,
         str(getattr(args, "export_command", "status")),
         job_id,

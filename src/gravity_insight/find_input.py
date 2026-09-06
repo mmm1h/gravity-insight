@@ -8,29 +8,86 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping
 
-from .errors import InputValidationError
+from .errors import InputValidationError, LocalIOError
 from .actionable_error_values import actual_value
+
+
+_JSON_INPUT_NEXT_ACTION = (
+    "Run `gravity --help`, then retry the same command with inline JSON, "
+    "an existing JSON file, or '-' for stdin."
+)
 
 
 def load_json_input(source: Any, *, required: bool = False) -> Any:
     if source is None:
         if required:
-            raise ValueError(
-                "--input is required (use inline JSON, a JSON file, or '-' for stdin)"
+            raise InputValidationError(
+                "--input is required (use inline JSON, a JSON file, or '-' for stdin)",
+                field="input",
+                next_action=_JSON_INPUT_NEXT_ACTION,
             )
         return {}
     if not isinstance(source, str):
         return source
     if source == "-":
-        raw = sys.stdin.read()
+        raw = _read_stdin()
     elif source.lstrip().startswith(("{", "[")):
         raw = source
+    elif _looks_like_path(source):
+        raw = _read_json_file(source)
     else:
-        raw = Path(source).read_text(encoding="utf-8")
+        try:
+            return json.loads(source)
+        except json.JSONDecodeError as exc:
+            raise InputValidationError(
+                f"actual value: {actual_value(source)}; allowed values: inline JSON, "
+                "an existing JSON file path, or '-' for stdin",
+                field="input",
+                next_action=_JSON_INPUT_NEXT_ACTION,
+            ) from exc
     try:
         return json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise ValueError("input must be valid JSON") from exc
+        raise InputValidationError(
+            "input JSON is malformed; allowed value: valid JSON content",
+            field="input",
+            next_action=_JSON_INPUT_NEXT_ACTION,
+        ) from exc
+
+
+def _looks_like_path(source: str) -> bool:
+    candidate = Path(source)
+    if candidate.exists():
+        return True
+    return bool(candidate.drive) or candidate.suffix.casefold() == ".json" or (
+        source.startswith((".", "~", "/", "\\"))
+        or "/" in source
+        or "\\" in source
+    )
+
+
+def _read_stdin() -> str:
+    try:
+        return sys.stdin.read()
+    except UnicodeError as exc:
+        raise LocalIOError(
+            "structured input source is not readable UTF-8 text", field="input"
+        ) from exc
+
+
+def _read_json_file(source: str) -> str:
+    try:
+        return Path(source).read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise InputValidationError(
+            f"actual value: {actual_value(source)}; allowed value: an existing JSON file",
+            field="input",
+            next_action=_JSON_INPUT_NEXT_ACTION,
+        ) from exc
+    except UnicodeError as exc:
+        raise LocalIOError(
+            "structured input file is not readable UTF-8 text", field="input"
+        ) from exc
 
 
 def object_input(source: Any) -> dict[str, Any]:
