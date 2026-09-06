@@ -21,7 +21,11 @@ from .analysis_projection_contract import (
 )
 from .drift import ProjectionDrift, projection_drift_status
 from .errors import ManifestError, PolicyViolation
-from .list_row_projection import _project_list_rows
+from .list_row_projection import (
+    _is_finite_number,
+    _is_json_scalar,
+    _project_list_rows,
+)
 from .material_asset_source import _capture_private_material_asset_rows
 from .models import (
     OperationSpec,
@@ -39,9 +43,10 @@ from .receipt import capture_http_receipt_references, record_response_drift
 from .registry import PolicyEngine, Registry
 from .response_drift import ResponseDriftRecorder
 from .response_projection import (
-    _is_finite_number,
-    _is_json_scalar,
+    _empty_projection,
+    _normalize_empty_page,
     _project_data_containers,
+    _required_data_expected_type,
 )
 from . import response_redaction_policy as _response_redaction
 from .semantic_status import (
@@ -176,15 +181,6 @@ def _project_response(
     return result
 
 
-def _empty_projection(operation: OperationSpec) -> Any:
-    if operation.response_projection.data_shape == "list":
-        return []
-    item_field = operation.pagination.items_field
-    if operation.pagination.kind != "none" or item_field in operation.response_projection.data_keys:
-        return {item_field: []}
-    return {}
-
-
 def _project(
     operation: OperationSpec,
     payload: Mapping[str, Any],
@@ -207,38 +203,19 @@ def _project(
     data = _normalize_empty_page(operation, data, values)
     if operation.response_projection.data_shape == "list":
         if not isinstance(data, list):
+            recorder.add_breaking_field(("data",), "array", data)
             return [], (
                 "response data shape changed; the uncontracted value was omitted",
-            ), ProjectionDrift.BREAKING, None
+            ), ProjectionDrift.BREAKING, recorder.to_contract()
         result = _project_list_rows(operation, data, values, recorder)
         return *result, recorder.to_contract()
     if not isinstance(data, Mapping):
+        recorder.add_breaking_field(("data",), "object", data)
         return {}, (
             "response data shape changed; the uncontracted value was omitted",
-        ), ProjectionDrift.BREAKING, None
+        ), ProjectionDrift.BREAKING, recorder.to_contract()
     result = _project_mapping_data(operation, data, values, recorder)
     return *result, recorder.to_contract()
-
-
-def _normalize_empty_page(
-    operation: OperationSpec, data: Any, values: Mapping[str, Any]
-) -> Any:
-    if not operation.response_projection.empty_object_as_empty_page or data != {}:
-        return data
-    return {
-        "list": [],
-        "page_info": {
-            operation.pagination.page_field: values.get(
-                operation.pagination.page_field, 1
-            ),
-            operation.pagination.page_size_field: values.get(
-                operation.pagination.page_size_field,
-                operation.pagination.default_page_size,
-            ),
-            operation.pagination.total_page_field: 1,
-            "total_number": 0,
-        },
-    }
 
 
 def _project_mapping_data(
@@ -250,6 +227,11 @@ def _project_mapping_data(
     projection = operation.response_projection
     required = set(projection.required_data_keys)
     missing = [key for key in required if _path_get(data, key) is _ABSENT]
+    for key in missing:
+        recorder.add_breaking_field(
+            ("data", *key.split(".")),
+            _required_data_expected_type(operation, key),
+        )
     drift = ProjectionDrift.BREAKING if missing else ProjectionDrift.NONE
     warnings = (
         [f"required response data keys are absent (count={len(missing)})"]

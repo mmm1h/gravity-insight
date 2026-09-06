@@ -36,6 +36,7 @@ try:
         Registry,
         _AuthorizedRequest,
     )
+    from gravity_insight.response_drift import merge_response_drifts
     from gravity_insight.transport import Transport, TransportResponse
 except ModuleNotFoundError:  # source checkout without an editable install
     from gravity_insight import (
@@ -61,6 +62,7 @@ except ModuleNotFoundError:  # source checkout without an editable install
         Registry,
         _AuthorizedRequest,
     )
+    from gravity_insight.response_drift import merge_response_drifts
     from gravity_insight.transport import Transport, TransportResponse
 
 
@@ -518,6 +520,55 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual("safe", sent["filter"])
         self.assertEqual("safe", sent["read_mode"])
 
+    def test_legacy_additive_drift_merges_into_breaking_v2(self):
+        merged = merge_response_drifts(
+            (
+                {
+                    "schema_version": "gravity.response-drift.v1",
+                    "direction": "response",
+                    "classification": "additive",
+                    "fields": [
+                        {"path": "/data/future", "observed_type": "string"}
+                    ],
+                },
+                {
+                    "schema_version": "gravity.response-drift.v2",
+                    "direction": "response",
+                    "classification": "breaking",
+                    "fields": [
+                        {
+                            "classification": "breaking",
+                            "path": "/data/config",
+                            "expected_type": "json_scalar",
+                            "observed_type": "object",
+                        }
+                    ],
+                },
+            )
+        )
+
+        self.assertEqual(
+            {
+                "schema_version": "gravity.response-drift.v2",
+                "direction": "response",
+                "classification": "breaking",
+                "fields": [
+                    {
+                        "classification": "breaking",
+                        "path": "/data/config",
+                        "expected_type": "json_scalar",
+                        "observed_type": "object",
+                    },
+                    {
+                        "classification": "additive",
+                        "path": "/data/future",
+                        "observed_type": "string",
+                    },
+                ],
+            },
+            merged,
+        )
+
     def test_unregistered_credential_field_is_drift_and_never_leaks(self):
         payload = {
             "code": 0,
@@ -732,6 +783,15 @@ class GravityInsightCoreTests(unittest.TestCase):
             self.assertEqual("contract_changed", drift["status"])
             self.assertFalse(drift["ok"])
             self.assertEqual("CONTRACT_CHANGED", drift["error"]["code"])
+            self.assertIn(
+                {
+                    "classification": "breaking",
+                    "path": "/data/list",
+                    "expected_type": "array",
+                    "observed_type": "missing",
+                },
+                drift["result_audit"]["response_drift"]["fields"],
+            )
             self.assertTrue(drift["warnings"])
             self.assertEqual(
                 "upstream_changed",
@@ -985,6 +1045,20 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual([{"id": 1}], result["data"]["list"])
         self.assertEqual("contract_changed", result["status"])
         self.assertTrue(any("non-object" in warning for warning in result["warnings"]))
+        breaking_fields = result["result_audit"]["response_drift"]["fields"]
+        self.assertTrue(
+            {
+                (field["path"], field["expected_type"], field["observed_type"])
+                for field in breaking_fields
+                if field["classification"] == "breaking"
+            }.issuperset(
+                {
+                    ("/data/list/*", "object", "array"),
+                    ("/data/list/*", "object", "integer"),
+                    ("/data/list/*", "object", "string"),
+                }
+            )
+        )
         self.assertNotIn("private scalar", json.dumps(result))
         self.assertNotIn("private nested", json.dumps(result))
 
@@ -1001,6 +1075,15 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual([{"id": 1}], non_json["data"]["list"])
         self.assertEqual("contract_changed", non_json["status"])
         self.assertTrue(any("non-JSON scalar" in item for item in non_json["warnings"]))
+        self.assertIn(
+            {
+                "classification": "breaking",
+                "path": "/data/list/*/value",
+                "expected_type": "json_scalar",
+                "observed_type": "non_json",
+            },
+            non_json["result_audit"]["response_drift"]["fields"],
+        )
 
     def test_typed_scalar_lists_require_every_item_to_match(self):
         typed = manifest()
@@ -1045,6 +1128,15 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual(["country"], invalid["data"]["list"][0]["exclusion_dims"])
         self.assertEqual("contract_changed", invalid["status"])
         self.assertTrue(any("uncontracted nested" in warning for warning in invalid["warnings"]))
+        self.assertIn(
+            {
+                "classification": "breaking",
+                "path": "/data/list/*/tag_ids/*",
+                "expected_type": "integer",
+                "observed_type": "string",
+            },
+            invalid["result_audit"]["response_drift"]["fields"],
+        )
 
     def test_dynamic_item_fields_only_admit_requested_columns(self):
         dynamic = repository_manifest(
@@ -3128,4 +3220,13 @@ class MaterialExamineUserProjectionTests(unittest.TestCase):
         self.assertEqual("contract_changed", result["status"])
         self.assertTrue(
             any("uncontracted nested" in warning for warning in result["warnings"])
+        )
+        self.assertIn(
+            {
+                "classification": "breaking",
+                "path": "/data/list/*/company",
+                "expected_type": "json",
+                "observed_type": "object",
+            },
+            result["result_audit"]["response_drift"]["fields"],
         )
