@@ -490,6 +490,8 @@ def projection_exposes_path(path: str, projection: Mapping[str, Any]) -> bool:
         return first_name in data_keys
     if first_name not in data_keys:
         return False
+    if _data_path_projection_exposes(segments, projection):
+        return True
     allowed = projection.get("data_item_keys", {})
     if not isinstance(allowed, Mapping):
         return False
@@ -497,6 +499,29 @@ def projection_exposes_path(path: str, projection: Mapping[str, Any]) -> bool:
     if item_name not in {str(value) for value in allowed.get(first_name, ())}:
         return False
     return _nested_projection_exposes(item_name, segments[2:], nested)
+
+
+def _data_path_projection_exposes(
+    segments: Sequence[str], projection: Mapping[str, Any]
+) -> bool:
+    allowed_paths = projection.get("data_path_item_keys", {})
+    if not isinstance(allowed_paths, Mapping):
+        return False
+    nested = projection.get("nested_item_keys", {})
+    for path, allowed in allowed_paths.items():
+        parents = str(path).split(".")
+        if len(segments) <= len(parents):
+            continue
+        actual = [item.removesuffix("[]") for item in segments[: len(parents)]]
+        if actual != parents or not segments[len(parents) - 1].endswith("[]"):
+            continue
+        item_name = segments[len(parents)].removesuffix("[]")
+        if item_name not in {str(value) for value in allowed}:
+            continue
+        return _nested_projection_exposes(
+            item_name, segments[len(parents) + 1 :], nested
+        )
+    return False
 
 
 def _list_projection_exposes(
