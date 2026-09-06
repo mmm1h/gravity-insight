@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "6409ca7e072ea900e545576e2f5c9760c9747de4ef3dc3c89d04b087e896b3e9"
+    "compatibility_sha256": "f0cdfe4727ea31a07b5a3ade8890818f2b4dd60992246b4033b654be404f261a"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -188,11 +188,17 @@
       "version": "0.3.11",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.11-hard-break-1",
+          "description": "the five built-in Model contracts express `claim_policy` in canonical stable ids across all three tiers (`validated`, `scenario`, `forbidden`) instead of natural-language phrases. `causal claim` becomes the existing Skill/Journey id `causality`; the other four become their own ids rather than being merged into broader near-synonyms. No prose aliases are retained. A consumer matching the old strings gets no match, and a missed match against `forbidden` reads as \"not forbidden\" rather than raising, so a caller can silently begin permitting a claim it used to refuse. Model URIs, `models describe`/`evaluate` shapes, approval-selection logic and every data-read capability are unchanged. Migration guide: [0.3.11](docs/migration/0.3.11.md)",
+          "migration_guide": "docs/migration/0.3.11.md"
+        }
+      ],
       "soft_breaks": [],
-      "migration_guide": null
+      "migration_guide": "docs/migration/0.3.11.md"
     }
   ]
 }
