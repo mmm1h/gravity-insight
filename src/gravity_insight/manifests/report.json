@@ -2704,7 +2704,7 @@
       "live_probe": {
         "enabled": true,
         "input": {
-          "id": "1"
+          "id": "$parent:id"
         }
       },
       "operation_id": "report.report.detail",

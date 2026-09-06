@@ -606,6 +606,95 @@ class GravityInsightProbeSemanticsTests(unittest.TestCase):
         ]
         assert transport.calls[1][1]["album_id"] == "17"
 
+    def test_report_detail_probe_uses_declared_parent_id(self) -> None:
+        class ReportParentProbeTransport:
+            is_test_transport = True
+
+            def __init__(self) -> None:
+                self.calls: list[tuple[str, dict[str, object]]] = []
+
+            def request(
+                self,
+                _method: str,
+                _path: str,
+                *,
+                operation: object,
+                body: object,
+                query: object,
+                **_: object,
+            ) -> TransportResponse:
+                operation_id = str(operation.operation_id)
+                request_inputs = {**dict(query), **dict(body)}
+                self.calls.append((operation_id, request_inputs))
+                if operation_id == "report.report.list":
+                    payload = {
+                        "code": 0,
+                        "data": {
+                            "list": [{"id": "report-42"}],
+                            "page_info": {
+                                "page": 1,
+                                "page_size": 1,
+                                "total_page": 1,
+                                "total_number": 1,
+                            },
+                        },
+                    }
+                else:
+                    assert operation_id == "report.report.detail"
+                    payload = {
+                        "code": 0,
+                        "data": {
+                            "id": request_inputs["id"],
+                            "name": "fixture report",
+                            "subject": "fixture subject",
+                            "config": "{}",
+                            "remark": "fixture",
+                        },
+                    }
+                return TransportResponse(200, payload, "2026-09-06T00:00:00Z")
+
+        root = Path(__file__).resolve().parents[1]
+        contract_root = root / "src" / "gravity_insight" / "contracts" / "operations"
+        operation_ids = ("report.report.list", "report.report.detail")
+        metadata = {
+            operation_id: json.loads(
+                (contract_root / f"{operation_id}.json").read_text(encoding="utf-8")
+            )["operation"]
+            for operation_id in operation_ids
+        }
+        manifest_root = root / "src" / "gravity_insight" / "manifests"
+        compiled = [
+            item
+            for path in manifest_root.glob("*.json")
+            for item in json.loads(path.read_text(encoding="utf-8"))["operations"]
+        ]
+        selected = [
+            item for item in compiled if item["operation_id"] in operation_ids
+        ]
+        operations = load_operation_manifest(
+            {"manifest_version": 1, "operations": selected}
+        )
+        registry = Registry(operations)
+        transport = ReportParentProbeTransport()
+        client = GravityInsightClient(
+            registry,
+            ReadExecutor(registry, PolicyEngine(registry), transport),
+            operation_catalog=OperationCatalog(
+                operations,
+                contract_metadata=metadata,
+            ),
+        )
+
+        result = client.probe("report.report.detail")
+
+        assert result["status"] == "success", json.dumps(result, indent=2)
+        assert [call[0] for call in transport.calls] == [
+            "report.report.list",
+            "report.report.detail",
+        ]
+        assert transport.calls[0][1] == {"filters": [], "page": 1, "page_size": 1}
+        assert transport.calls[1][1]["id"] == "report-42"
+
     def test_public_probe_reuses_one_parent_envelope_for_multiple_fields(self) -> None:
         class ParentClient:
             def __init__(self) -> None:
