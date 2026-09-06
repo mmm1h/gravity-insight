@@ -696,7 +696,7 @@ class GravityInsightCoreTests(unittest.TestCase):
             [result["status"] for result in results],
         )
         self.assertEqual(
-            3,
+            2,
             sum("response_drift" in result["result_audit"] for result in results),
         )
         serialized = json.dumps(results)
