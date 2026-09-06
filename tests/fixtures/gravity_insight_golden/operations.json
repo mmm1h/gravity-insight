@@ -1933,6 +1933,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ],
@@ -1949,6 +1950,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ],
@@ -1965,6 +1967,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ]
@@ -2616,7 +2619,8 @@
           "list",
           "target_list",
           "default_limit",
-          "date_list"
+          "date_list",
+          "filter_agg_type"
         ],
         "data_path_item_keys": {},
         "data_scalar_list_types": {},
@@ -3831,7 +3835,16 @@
           "user$ad_avg_ecpm",
           "user$ad_ltv",
           "Name",
-          "WXOpenID"
+          "WXOpenID",
+          "AdCid",
+          "AdClickTime",
+          "AdGid",
+          "CSite",
+          "Channel",
+          "LatestLoginDay",
+          "Version",
+          "id",
+          "modify_time"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -4235,7 +4248,9 @@
           "$split_count",
           "$split_trace_id_list",
           "re_attribute_info",
-          "Name"
+          "Name",
+          "user$pay_amount_sum",
+          "user$pay_max_amount"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -6042,7 +6057,13 @@
         "data_item_keys": {},
         "data_keys": [
           "aggregate_date",
-          "zone_tags"
+          "zone_tags",
+          "aggregate_by_date",
+          "aggregate_date_group",
+          "date_list",
+          "total",
+          "x",
+          "y"
         ],
         "data_path_item_keys": {},
         "data_scalar_list_types": {},
@@ -6521,7 +6542,8 @@
         "data_keys": [
           "part",
           "percent",
-          "total"
+          "total",
+          "zone_offset"
         ],
         "data_path_item_keys": {},
         "data_scalar_list_types": {},
@@ -6531,7 +6553,9 @@
         "empty_object_as_empty_result": false,
         "item_keys": [],
         "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
+        "known_omitted_data_keys": [
+          "extra_data"
+        ],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
