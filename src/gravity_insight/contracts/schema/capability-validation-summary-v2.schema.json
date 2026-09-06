@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.capability-validation-summary.v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "source_run_count",
+    "production_requests_total",
+    "outcome_counts",
+    "trust_counts",
+    "unresolved",
+    "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.capability-validation-summary.v2"},
+    "generated_at": {"$ref": "#/$defs/timestamp"},
+    "source_run_count": {"type": "integer", "minimum": 0},
+    "production_requests_total": {"type": "integer", "minimum": 0, "maximum": 500},
+    "outcome_counts": {"$ref": "#/$defs/counts"},
+    "trust_counts": {"$ref": "#/$defs/trust_counts"},
+    "unresolved": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {"$ref": "#/$defs/outcome"}
+    },
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 20,
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "trust_counts": {
+      "type": "object",
+      "required": [
+        "stable", "complete", "data_quality_pass", "provider_matched", "total"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stable": {"type": "integer", "minimum": 0},
+        "complete": {"type": "integer", "minimum": 0},
+        "data_quality_pass": {"type": "integer", "minimum": 0},
+        "provider_matched": {"type": "integer", "minimum": 0},
+        "total": {"type": "integer", "minimum": 0}
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "required": [
+        "identity_kind",
+        "selector",
+        "effect",
+        "attempted",
+        "category",
+        "request_count",
+        "validation_recorded",
+        "reason_codes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "identity_kind": {"enum": ["operation", "product", "composite"]},
+        "selector": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/-]*$"
+        },
+        "effect": {"type": "string", "minLength": 1, "maxLength": 64},
+        "attempted": {"type": "boolean"},
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "request_count": {"type": "integer", "minimum": 0, "maximum": 500},
+        "validation_recorded": {"type": "boolean"},
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"}
+        },
+        "result_status": {"type": ["string", "null"], "maxLength": 128},
+        "result_nonempty": {"type": "boolean"},
+        "receipt_ids": {
+          "type": "array",
+          "maxItems": 500,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+        },
+        "schema_fingerprint": {
+          "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
+        },
+        "response_drift": {"$ref": "#/$defs/response_drift"},
+        "error_detail": {"$ref": "#/$defs/error_detail"}
+      }
+    },
+    "response_drift": {
+      "type": "object",
+      "required": ["schema_version", "direction", "classification", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.response-drift.v1"},
+        "direction": {"const": "response"},
+        "classification": {"const": "additive"},
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "required": ["path", "observed_type"],
+            "additionalProperties": false,
+            "properties": {
+              "path": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^/.*$"},
+              "observed_type": {
+                "enum": ["null", "boolean", "integer", "number", "string", "object", "array"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "error_detail": {
+      "type": "object",
+      "required": ["code", "category"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"},
+        "category": {"enum": ["caller", "upstream", "local", "unknown"]}
+      }
+    }
+  }
+}

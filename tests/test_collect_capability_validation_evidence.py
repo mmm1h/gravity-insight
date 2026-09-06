@@ -1,17 +1,28 @@
 from __future__ import annotations
 
+import json
+import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from types import MappingProxyType
 import unittest
+from unittest import mock
 
 from gravity_insight.capability_contract import capability_contract
 from gravity_insight.capability_contract import _operations
+from gravity_insight.capability_validation import CapabilityValidationStore
+from gravity_insight.errors import UpstreamError
 from gravity_insight.read_result_support import result_warnings
+from gravity_insight.workspace import Workspace, WorkspaceDefaults
+import scripts.capability_validation_evidence_support as evidence_support
 from scripts.capability_validation_evidence_support import (
     BudgetedSession,
     RequestBudgetExceeded,
     bind_probe_app,
+    error_outcome,
     inventory,
+    result_outcome,
     validation_from_execution,
 )
 
@@ -165,6 +176,201 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
 
         self.assertIsNone(validation)
         self.assertIn("EXECUTION_WARNINGS_PRESENT", reasons)
+
+    def test_outcomes_persist_only_value_free_diagnostics(self):
+        response_value = "RESPONSE_VALUE_MUST_NOT_PERSIST"
+        error_message = "ERROR_MESSAGE_MUST_NOT_PERSIST"
+        exception_message = "EXCEPTION_MESSAGE_MUST_NOT_PERSIST"
+        drift = {
+            "schema_version": "gravity.response-drift.v1",
+            "direction": "response",
+            "classification": "additive",
+            "fields": [
+                {"path": "/data/new_field", "observed_type": "string"}
+            ],
+        }
+        failed = result(
+            ok=False,
+            status="contract_changed",
+            data={"list": [{"new_field": response_value}]},
+            error={
+                "code": "CONTRACT_CHANGED",
+                "category": "upstream",
+                "message": error_message,
+                "field": response_value,
+            },
+            result_audit={
+                **result()["result_audit"],
+                "response_drift": drift,
+            },
+        )
+
+        result_evidence = result_outcome(
+            "analysis.event.list",
+            failed,
+            1,
+            [receipt()],
+            False,
+            ["EXECUTION_RESPONSE_DRIFT", "EXECUTION_ERROR_PRESENT"],
+        )
+        exception_evidence = error_outcome(
+            "analysis.event.list",
+            UpstreamError(exception_message, field=response_value),
+            1,
+            [],
+        )
+
+        self.assertEqual(drift, result_evidence["response_drift"])
+        self.assertEqual(
+            {"code": "CONTRACT_CHANGED", "category": "upstream"},
+            result_evidence["error_detail"],
+        )
+        self.assertEqual(
+            {"code": "UPSTREAM_UNAVAILABLE", "category": "upstream"},
+            exception_evidence["error_detail"],
+        )
+        encoded = json.dumps([result_evidence, exception_evidence])
+        for forbidden in (response_value, error_message, exception_message):
+            self.assertNotIn(forbidden, encoded)
+
+    def test_malformed_error_detail_is_reduced_to_unknown_identity(self):
+        business_value = "BUSINESS_VALUE_MUST_NOT_PERSIST"
+        failed = result(
+            error={"code": business_value, "category": [business_value]}
+        )
+
+        outcome = result_outcome(
+            "analysis.event.list",
+            failed,
+            1,
+            [receipt()],
+            False,
+            ["EXECUTION_ERROR_PRESENT"],
+        )
+
+        self.assertEqual(
+            {"code": "UNKNOWN", "category": "unknown"},
+            outcome["error_detail"],
+        )
+        self.assertNotIn(business_value, json.dumps(outcome))
+
+    def test_summary_v2_keeps_diagnostics_and_reads_historical_v1_runs(self):
+        drift = {
+            "schema_version": "gravity.response-drift.v1",
+            "direction": "response",
+            "classification": "additive",
+            "fields": [{"path": "/data/new", "observed_type": "integer"}],
+        }
+        current = result_outcome(
+            "analysis.event.list",
+            result(
+                result_audit={
+                    **result()["result_audit"],
+                    "response_drift": drift,
+                }
+            ),
+            1,
+            [receipt()],
+            False,
+            ["EXECUTION_RESPONSE_DRIFT"],
+        )
+        historical = result_outcome(
+            "analysis.event_property.list",
+            result(status="empty", data={"list": []}),
+            1,
+            [],
+            False,
+            ["EXECUTION_DATA_EMPTY"],
+        )
+        legacy_fingerprint_value = "LEGACY_FINGERPRINT_VALUE_MUST_NOT_PERSIST"
+        historical["schema_fingerprint"] = {
+            "unexpected": legacy_fingerprint_value
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            run_root = root / "agent-runtime" / "capability-validation-runs"
+            run_root.mkdir(parents=True)
+            (run_root / "20260904T000000Z.json").write_text(
+                json.dumps({
+                    "schema_version": "gravity.capability-validation-run.v1",
+                    "production_requests_total": 1,
+                    "outcomes": [historical],
+                }),
+                encoding="utf-8",
+            )
+            (run_root / "20260905T000000Z.json").write_text(
+                json.dumps({
+                    "schema_version": "gravity.capability-validation-run.v2",
+                    "production_requests_total": 2,
+                    "outcomes": [current],
+                }),
+                encoding="utf-8",
+            )
+            workspace = Workspace(
+                path=None,
+                root=root,
+                state_root=root,
+                apps={},
+                defaults=WorkspaceDefaults(
+                    app=None, timezone="UTC", time_window=None
+                ),
+                datasources={},
+                products={},
+                recipes={},
+            )
+            with mock.patch.dict(
+                sys.modules,
+                {"capability_validation_evidence_support": evidence_support},
+            ):
+                from scripts import collect_capability_validation_evidence as collector
+
+            trust = {
+                "stable": 0,
+                "complete": 0,
+                "data_quality_pass": 0,
+                "provider_matched": 0,
+                "total": 231,
+            }
+            with (
+                mock.patch.object(
+                    collector,
+                    "resolve_env_path",
+                    return_value=(root / "unused.env", False),
+                ),
+                mock.patch.object(collector, "load_workspace", return_value=workspace),
+                mock.patch.object(collector, "scope_workspace", return_value=workspace),
+                mock.patch.object(collector, "trust_counts", return_value=trust),
+            ):
+                run_report = collector._run_report(
+                    started_at=NOW,
+                    finished_at=NOW + timedelta(seconds=1),
+                    app_id="1",
+                    request_budget=2,
+                    prior_requests=1,
+                    requests_sent=1,
+                    counter_count=1,
+                    candidates=[{"contract": {}}],
+                    validations=[],
+                    store=CapabilityValidationStore(values=[]),
+                    outcomes={("operation", "analysis.event.list"): current},
+                )
+                collector.summarize()
+
+            summary = json.loads(
+                (
+                    root
+                    / "agent-runtime"
+                    / "capability-validation-summary.v2.json"
+                ).read_text(encoding="utf-8")
+            )
+
+        self.assertEqual("gravity.capability-validation-summary.v2", summary["schema_version"])
+        self.assertEqual("gravity.capability-validation-run.v2", run_report["schema_version"])
+        self.assertEqual(2, summary["source_run_count"])
+        self.assertEqual(2, len(summary["unresolved"]))
+        self.assertEqual(drift, summary["unresolved"][0]["response_drift"])
+        self.assertNotIn("response_drift", summary["unresolved"][1])
+        self.assertNotIn(legacy_fingerprint_value, json.dumps(summary))
 
 
 if __name__ == "__main__":
