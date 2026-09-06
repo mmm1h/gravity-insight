@@ -115,6 +115,37 @@ def operation_pagination_evidence_signature(
     }
 
 
+def operation_pagination_candidate_signatures(
+    operation: Mapping[str, Any], candidate: Mapping[str, Any]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Return evidence dispositions before and after an unreviewed projection edit.
+
+    A current optional scalar may be covered by an existing reviewed scalar-only
+    verdict.  A newly observed optional top-level field has only one-run shape
+    evidence, so it cannot inherit that verdict automatically.
+    """
+
+    before = operation_pagination_evidence_signature(operation)
+    after = operation_pagination_evidence_signature(candidate)
+    if before is None or after is None or not before["response_scalar_only"]:
+        return before, after
+    current_projection = operation.get("response_projection")
+    candidate_projection = candidate.get("response_projection")
+    if not isinstance(current_projection, Mapping) or not isinstance(
+        candidate_projection, Mapping
+    ):
+        return before, after
+    current_keys = set(current_projection.get("data_keys", ()))
+    candidate_keys = set(candidate_projection.get("data_keys", ()))
+    if candidate_keys - current_keys:
+        after = {
+            "response_scalar_only": False,
+            "unknown_evidence_disposition": None,
+            "unknown_evidence_action": None,
+        }
+    return before, after
+
+
 def pagination_shape_unproven(
     record: Mapping[str, Any], current_kind: str | None = None
 ) -> bool:
@@ -436,6 +467,7 @@ __all__ = [
     "current_operation_pagination",
     "load_pagination_audit",
     "operation_pagination_evidence_signature",
+    "operation_pagination_candidate_signatures",
     "pagination_shape_unproven",
     "reconcile_pagination_audit",
 ]

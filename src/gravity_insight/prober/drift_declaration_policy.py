@@ -13,7 +13,7 @@ from gravity_insight.governance.stable_privacy import (
 )
 from gravity_insight.models import OperationSpec, ResponseProjection
 from gravity_insight.pagination_contract_audit import (
-    operation_pagination_evidence_signature,
+    operation_pagination_candidate_signatures,
 )
 
 from .privacy import classify_candidate_field, projection_exposes_path
@@ -179,7 +179,7 @@ def apply_projection_edit(
         values.append(value)
 
 
-def _manual(
+def manual_decision(
     pointer: str, observed_types: Sequence[str], reason: str, **details: Any
 ) -> dict[str, Any]:
     return {
@@ -217,16 +217,16 @@ def _shape_rejection(
     pointer: str, types: Sequence[str]
 ) -> tuple[dict[str, Any] | None, tuple[str, ...] | None]:
     if len(types) != 1:
-        return _manual(pointer, types, "conflicting_observed_types"), None
+        return manual_decision(pointer, types, "conflicting_observed_types"), None
     parts = _decode_pointer(pointer)
     if parts is None:
-        return _manual(pointer, types, "invalid_json_pointer"), None
+        return manual_decision(pointer, types, "invalid_json_pointer"), None
     if any(_DATE_KEY.fullmatch(part) for part in parts):
-        return _manual(pointer, types, "dynamic_key_requires_review"), None
+        return manual_decision(pointer, types, "dynamic_key_requires_review"), None
     if types[0] == "null":
-        return _manual(pointer, types, "null_type_unproven"), None
+        return manual_decision(pointer, types, "null_type_unproven"), None
     if types[0] not in _SCALAR_TYPES:
-        return _manual(pointer, types, "container_shape_unproven"), None
+        return manual_decision(pointer, types, "container_shape_unproven"), None
     return None, parts
 
 
@@ -256,23 +256,22 @@ def _proposed_rejection(
         ResponseProjection.from_dict(proposed["response_projection"])
         OperationSpec.from_dict(proposed)
     except (TypeError, ValueError) as exc:
-        return _manual(
+        return manual_decision(
             "", (), "proposed_contract_invalid",
             projection_path=projection_path, detail=type(exc).__name__,
         ), []
     if not projection_exposes_path(projection_path, proposed["response_projection"]):
-        return _manual(
+        return manual_decision(
             "", (), "projection_model_cannot_expose_path",
             projection_path=projection_path,
         ), []
-    before = operation_pagination_evidence_signature(operation)
-    after = operation_pagination_evidence_signature(proposed)
+    before, after = operation_pagination_candidate_signatures(operation, proposed)
     if before is None:
-        return _manual(
+        return manual_decision(
             "", (), "pagination_audit_missing", projection_path=projection_path
         ), []
     if before != after:
-        return _manual(
+        return manual_decision(
             "", (), "pagination_evidence_context_changed",
             projection_path=projection_path,
             governance_before=before,
@@ -280,7 +279,7 @@ def _proposed_rejection(
         ), []
     delta = sorted(operation_exposure_paths(proposed) - operation_exposure_paths(operation))
     if len(delta) != 1:
-        return _manual(
+        return manual_decision(
             "", (), "projection_blast_radius_not_single",
             projection_path=projection_path, exposure_delta=delta,
         ), delta
@@ -301,19 +300,36 @@ def decide_observation(
     types = sorted(observed_types)
     rejected, parts = _shape_rejection(pointer, types)
     if rejected is not None or parts is None:
-        return rejected or _manual(pointer, types, "invalid_json_pointer")
+        return rejected or manual_decision(pointer, types, "invalid_json_pointer")
     projection_path = _projection_path(parts)
     edit = _projection_slot(operation, parts)
     if edit is None:
-        return _manual(
+        return manual_decision(
             pointer, types, "projection_topology_requires_review",
             projection_path=projection_path,
         )
+    privacy, reason = _privacy_decision(
+        operation, str(operation["operation_id"]), projection_path
+    )
+    if privacy in {
+        "credential_requires_omission",
+        "personal_or_privilege_field_requires_review",
+        "redacted_field_requires_review",
+    }:
+        return manual_decision(
+            pointer, types, privacy,
+            projection_path=projection_path,
+            privacy_classification_reason=reason,
+        )
     projection = operation.get("response_projection", {})
     if edit["value"] in _projection_values(projection, edit):
-        return _manual(pointer, types, "already_exposed", projection_path=projection_path)
+        return manual_decision(
+            pointer, types, "already_exposed", projection_path=projection_path
+        )
     if _omitted_field(operation, edit):
-        return _manual(pointer, types, "already_omitted", projection_path=projection_path)
+        return manual_decision(
+            pointer, types, "already_omitted", projection_path=projection_path
+        )
 
     proposed = copy.deepcopy(dict(operation))
     apply_projection_edit(proposed, edit)
@@ -322,11 +338,8 @@ def decide_observation(
     )
     if rejection is not None:
         return _replace_observation(rejection, pointer, types)
-    privacy, reason = _privacy_decision(
-        operation, str(operation["operation_id"]), exposure_delta[0]
-    )
     if privacy != "automatic":
-        return _manual(
+        return manual_decision(
             pointer, types, privacy,
             projection_path=projection_path,
             privacy_classification_reason=reason,
@@ -354,8 +367,7 @@ def validate_combined_decisions(
         OperationSpec.from_dict(proposed)
     except (TypeError, ValueError):
         return _downgrade_automatic(decisions, "combined_contract_invalid")
-    before = operation_pagination_evidence_signature(operation)
-    after = operation_pagination_evidence_signature(proposed)
+    before, after = operation_pagination_candidate_signatures(operation, proposed)
     if before != after:
         return _downgrade_automatic(
             decisions, "combined_pagination_evidence_context_changed"
@@ -373,7 +385,7 @@ def _downgrade_automatic(
 ) -> list[dict[str, Any]]:
     return [
         (
-            _manual(
+            manual_decision(
                 item["path"], item["observed_types"], reason,
                 projection_path=item.get("projection_path"),
             )
@@ -387,5 +399,6 @@ def _downgrade_automatic(
 __all__ = [
     "apply_projection_edit",
     "decide_observation",
+    "manual_decision",
     "validate_combined_decisions",
 ]

@@ -96,11 +96,22 @@ def _decisions(plan: dict[str, object]) -> dict[tuple[str, str], dict[str, objec
     }
 
 
-def _temporary_operation_root(tmp_path: Path, operation_id: str) -> Path:
+def _temporary_operation_root(
+    tmp_path: Path,
+    *operation_ids: str,
+    remove_fields: dict[str, dict[str, set[str]]] | None = None,
+) -> Path:
     operation_root = tmp_path / "src/gravity_insight/contracts/operations"
     operation_root.mkdir(parents=True)
-    source = OPERATIONS / f"{operation_id}.json"
-    (operation_root / source.name).write_bytes(source.read_bytes())
+    for operation_id in operation_ids:
+        source = OPERATIONS / f"{operation_id}.json"
+        document = json.loads(source.read_text(encoding="utf-8"))
+        projection = document["operation"]["response_projection"]
+        for field, removed in (remove_fields or {}).get(operation_id, {}).items():
+            projection[field] = [
+                value for value in projection[field] if value not in removed
+            ]
+        _write_json(operation_root / source.name, document)
     registry = tmp_path / "src/gravity_insight/governance/stable_privacy_registry.json"
     registry.parent.mkdir(parents=True)
     registry.write_text(render_registry(tmp_path), encoding="utf-8")
@@ -108,6 +119,16 @@ def _temporary_operation_root(tmp_path: Path, operation_id: str) -> Path:
 
 
 def test_recovered_map_rejects_all_three_real_counterexamples(tmp_path: Path) -> None:
+    operation_root = _temporary_operation_root(
+        tmp_path,
+        "promotion.kuaishou.account.list",
+        "material.local.list",
+        "analysis.segment.evaluate_percent",
+        remove_fields={
+            "material.local.list": {"item_keys": {"video_cover_list"}},
+            "analysis.segment.evaluate_percent": {"data_keys": {"zone_offset"}},
+        },
+    )
     evidence = _write_json(
         tmp_path / "recovered.json",
         {
@@ -123,7 +144,7 @@ def test_recovered_map_rejects_all_three_real_counterexamples(tmp_path: Path) ->
         },
     )
 
-    plan = build_drift_plan([evidence])
+    plan = build_drift_plan([evidence], operation_root=operation_root)
     decisions = _decisions(plan)
 
     assert plan["summary"]["automatic"] == 0
@@ -165,6 +186,13 @@ def test_v2_runs_merge_types_and_are_order_independent(tmp_path: Path) -> None:
 
 
 def test_safe_scalar_uses_existing_projection_slot(tmp_path: Path) -> None:
+    operation_root = _temporary_operation_root(
+        tmp_path,
+        "promotion.kuaishou.account.list",
+        remove_fields={
+            "promotion.kuaishou.account.list": {"item_keys": {"create_time"}}
+        },
+    )
     evidence = _write_json(
         tmp_path / "run.json",
         _run([_outcome("promotion.kuaishou.account.list", [
@@ -172,7 +200,7 @@ def test_safe_scalar_uses_existing_projection_slot(tmp_path: Path) -> None:
         ])]),
     )
 
-    plan = build_drift_plan([evidence])
+    plan = build_drift_plan([evidence], operation_root=operation_root)
     decision = _decisions(plan)[(
         "promotion.kuaishou.account.list", "/data/list/*/create_time"
     )]
@@ -188,6 +216,14 @@ def test_safe_scalar_uses_existing_projection_slot(tmp_path: Path) -> None:
 
 
 def test_manual_reasons_cover_dynamic_privacy_and_topology(tmp_path: Path) -> None:
+    operation_root = _temporary_operation_root(
+        tmp_path,
+        "analysis.funnel.query",
+        "promotion.kuaishou.account.list",
+        remove_fields={
+            "promotion.kuaishou.account.list": {"item_keys": {"operator_name"}}
+        },
+    )
     evidence = _write_json(
         tmp_path / "recovered.json",
         {
@@ -202,7 +238,9 @@ def test_manual_reasons_cover_dynamic_privacy_and_topology(tmp_path: Path) -> No
         },
     )
 
-    decisions = _decisions(build_drift_plan([evidence]))
+    decisions = _decisions(
+        build_drift_plan([evidence], operation_root=operation_root)
+    )
 
     assert decisions[(
         "analysis.funnel.query", "/data/aggregate_date/group/2026-09-04"
@@ -220,7 +258,11 @@ def test_manual_reasons_cover_dynamic_privacy_and_topology(tmp_path: Path) -> No
 
 def test_plan_apply_is_exact_and_rolls_back_failed_gate(tmp_path: Path) -> None:
     operation_id = "promotion.kuaishou.account.list"
-    operation_root = _temporary_operation_root(tmp_path, operation_id)
+    operation_root = _temporary_operation_root(
+        tmp_path,
+        operation_id,
+        remove_fields={operation_id: {"item_keys": {"create_time"}}},
+    )
     evidence = _write_json(
         tmp_path / "run.json",
         _run([_outcome(operation_id, [
@@ -252,7 +294,11 @@ def test_plan_apply_is_exact_and_rolls_back_failed_gate(tmp_path: Path) -> None:
 
 def test_plan_apply_writes_only_automatic_entries(tmp_path: Path) -> None:
     operation_id = "promotion.kuaishou.account.list"
-    operation_root = _temporary_operation_root(tmp_path, operation_id)
+    operation_root = _temporary_operation_root(
+        tmp_path,
+        operation_id,
+        remove_fields={operation_id: {"item_keys": {"create_time"}}},
+    )
     evidence = _write_json(
         tmp_path / "run.json",
         _run([_outcome(operation_id, [
@@ -284,7 +330,11 @@ def test_plan_apply_writes_only_automatic_entries(tmp_path: Path) -> None:
 
 def test_apply_rejects_tampered_or_stale_plan(tmp_path: Path) -> None:
     operation_id = "promotion.kuaishou.account.list"
-    operation_root = _temporary_operation_root(tmp_path, operation_id)
+    operation_root = _temporary_operation_root(
+        tmp_path,
+        operation_id,
+        remove_fields={operation_id: {"item_keys": {"create_time"}}},
+    )
     evidence = _write_json(
         tmp_path / "run.json",
         _run([_outcome(operation_id, [

@@ -63,6 +63,22 @@ def _batch_request_limit(value: str) -> int:
     return parsed
 
 
+def _add_drift_commands(commands: Any) -> None:
+    drift_plan = commands.add_parser(
+        "drift-plan",
+        help="Build a conservative stable response-drift declaration plan offline.",
+    )
+    drift_plan.add_argument("--evidence", type=Path, action="append", required=True)
+    drift_plan.add_argument("--selector", action="append", default=[])
+    drift_plan.add_argument("--output", type=Path)
+
+    drift_apply = commands.add_parser(
+        "drift-apply",
+        help="Apply an exact drift plan, refresh derived products, and run full gates.",
+    )
+    drift_apply.add_argument("--plan", type=Path, required=True)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = ProberArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -140,19 +156,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Re-evaluate legacy privacy-short-circuit evidence offline and promote eligible drafts.",
     )
 
-    drift_plan = commands.add_parser(
-        "drift-plan",
-        help="Build a conservative stable response-drift declaration plan offline.",
-    )
-    drift_plan.add_argument("--evidence", type=Path, action="append", required=True)
-    drift_plan.add_argument("--selector", action="append", default=[])
-    drift_plan.add_argument("--output", type=Path)
-
-    drift_apply = commands.add_parser(
-        "drift-apply",
-        help="Apply an exact drift plan, refresh derived products, and run full gates.",
-    )
-    drift_apply.add_argument("--plan", type=Path, required=True)
+    _add_drift_commands(commands)
 
     status = commands.add_parser("status", help="Show draft gates and aggregate probe request statistics.")
     status.add_argument("operation_id", nargs="*")

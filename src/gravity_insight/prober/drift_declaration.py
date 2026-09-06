@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
-import re
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -15,30 +13,41 @@ from typing import Any
 
 from gravity_insight.agent_runtime_contracts import validate_schema
 from gravity_insight.compiler import ContractCompiler
+from gravity_insight.contracts.envelope_obligations import (
+    CompletenessState,
+    DataCompleteness,
+    DiagnosticEvidence,
+    DiagnosticState,
+    EnvelopeObligations,
+    ExecutionState,
+    ExecutionStatus,
+    MutationCertainty,
+    MutationState,
+    SemanticState,
+    SemanticValidity,
+    serialize_envelope,
+)
 from gravity_insight.governance.stable_privacy import (
     REGISTRY_PATH,
     inspect_stable_response_privacy,
-    operation_exposure_paths,
     render_registry,
-    suspected_personal_reason,
 )
-from gravity_insight.models import OperationSpec, ResponseProjection
-from gravity_insight.pagination_contract_audit import (
-    operation_pagination_evidence_signature,
-)
+from gravity_insight.models import OperationSpec
 from gravity_insight.response_drift import normalize_response_drift
 
 from .core import OPERATION_ROOT, REPO_ROOT, canonical_fingerprint, read_json, write_json
-from .privacy import classify_candidate_field, projection_exposes_path
+from .drift_declaration_policy import (
+    apply_projection_edit,
+    decide_observation,
+    manual_decision,
+    validate_combined_decisions,
+)
 
 
 PLAN_SCHEMA_VERSION = "gravity-insight.response-drift-declaration-plan.v1"
 RUN_SCHEMA_VERSION = "gravity.capability-validation-run.v2"
 RECOVERED_INPUT_VERSION = "recovered-drift-map.v0"
 _RUN_SCHEMA = "capability-validation-run-v2.schema.json"
-_SCALAR_TYPES = frozenset({"boolean", "integer", "number", "string"})
-_ALL_TYPES = _SCALAR_TYPES | {"array", "null", "object"}
-_DATE_KEY = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 
 
 def _sha256_bytes(value: bytes) -> str:
@@ -134,290 +143,6 @@ def _load_observations(
     return observations, inputs
 
 
-def _decode_pointer(pointer: str) -> tuple[str, ...] | None:
-    if not pointer.startswith("/") or pointer == "/":
-        return None
-    decoded: list[str] = []
-    for raw in pointer[1:].split("/"):
-        if re.search(r"~(?![01])", raw):
-            return None
-        decoded.append(raw.replace("~1", "/").replace("~0", "~"))
-    return tuple(decoded) if _encode_pointer(decoded) == pointer else None
-
-
-def _encode_pointer(parts: Sequence[str]) -> str:
-    return "/" + "/".join(
-        part.replace("~", "~0").replace("/", "~1") for part in parts
-    )
-
-
-def _projection_path(parts: Sequence[str]) -> str:
-    result: list[str] = []
-    for part in parts:
-        if part == "*":
-            if result:
-                result[-1] += "[]"
-            continue
-        result.append(part)
-    return ".".join(result)
-
-
-def _list_parts(operation: Mapping[str, Any]) -> tuple[str, ...]:
-    pagination = operation.get("pagination")
-    list_path = pagination.get("list_path") if isinstance(pagination, Mapping) else None
-    if isinstance(list_path, str) and list_path.startswith("data."):
-        return tuple(list_path.split(".")[1:])
-    projection = operation.get("response_projection")
-    if isinstance(projection, Mapping) and "list" in projection.get("data_keys", ()):
-        return ("list",)
-    return ()
-
-
-def _map_keys(projection: Mapping[str, Any], name: str) -> set[str]:
-    value = projection.get(name)
-    return {str(item) for item in value} if isinstance(value, Mapping) else set()
-
-
-def _projection_slot(
-    operation: Mapping[str, Any], parts: Sequence[str]
-) -> dict[str, Any] | None:
-    projection = operation.get("response_projection")
-    if not isinstance(projection, Mapping) or not parts or parts[0] != "data":
-        return None
-    leaf = parts[-1]
-    if leaf == "*" or len(parts) == 1:
-        return None
-    if len(parts) == 2:
-        return _edit("data_keys", None, leaf)
-    if projection.get("data_shape") == "list" and parts == ("data", "*", leaf):
-        return _edit("item_keys", None, leaf)
-
-    list_parts = _list_parts(operation)
-    if len(parts) >= 4 and parts[-2] == "*":
-        container = tuple(parts[1:-2])
-        if container == list_parts:
-            return _edit("item_keys", None, leaf)
-        dotted = ".".join(container)
-        if dotted in _map_keys(projection, "data_path_item_keys"):
-            return _edit("data_path_item_keys", dotted, leaf)
-        if len(container) == 1 and container[0] in (
-            _map_keys(projection, "data_item_keys")
-            | _map_keys(projection, "data_dynamic_item_fields")
-            | _map_keys(projection, "data_numeric_suffix_item_fields")
-        ):
-            return _edit("data_item_keys", container[0], leaf)
-        if (
-            len(container) == len(list_parts) + 2
-            and container[: len(list_parts)] == list_parts
-            and container[-2] == "*"
-            and container[-1] in _map_keys(projection, "nested_item_keys")
-        ):
-            return _edit("nested_item_keys", container[-1], leaf)
-
-    if len(parts) == 3 and parts[1] in (
-        _map_keys(projection, "data_item_keys")
-        | _map_keys(projection, "data_dynamic_item_fields")
-        | _map_keys(projection, "data_numeric_suffix_item_fields")
-    ):
-        return _edit("data_item_keys", parts[1], leaf)
-    return None
-
-
-def _edit(field: str, key: str | None, value: str) -> dict[str, Any]:
-    return {"projection_field": field, "projection_key": key, "value": value}
-
-
-def _projection_values(
-    projection: Mapping[str, Any], edit: Mapping[str, Any]
-) -> Sequence[Any]:
-    field = str(edit["projection_field"])
-    key = edit.get("projection_key")
-    current = projection.get(field, {} if key is not None else [])
-    if key is not None:
-        return current.get(key, ()) if isinstance(current, Mapping) else ()
-    return current if isinstance(current, Sequence) and not isinstance(current, str) else ()
-
-
-def _omitted_field(operation: Mapping[str, Any], edit: Mapping[str, Any]) -> bool:
-    projection = operation.get("response_projection")
-    if not isinstance(projection, Mapping):
-        return False
-    field = str(edit["projection_field"])
-    key = edit.get("projection_key")
-    omitted_field = {
-        "data_keys": "known_omitted_data_keys",
-        "item_keys": "known_omitted_item_keys",
-        "data_item_keys": "known_omitted_data_item_keys",
-        "nested_item_keys": "known_omitted_nested_item_keys",
-        "data_path_item_keys": "known_omitted_data_item_keys",
-    }[field]
-    omitted = projection.get(omitted_field, {})
-    if key is not None:
-        omitted = omitted.get(key, ()) if isinstance(omitted, Mapping) else ()
-    return edit["value"] in omitted
-
-
-def _apply_projection_edit(
-    operation: dict[str, Any], edit: Mapping[str, Any]
-) -> None:
-    projection = operation.setdefault("response_projection", {})
-    field = str(edit["projection_field"])
-    key = edit.get("projection_key")
-    value = str(edit["value"])
-    if key is None:
-        values = projection.setdefault(field, [])
-    else:
-        values = projection.setdefault(field, {}).setdefault(str(key), [])
-    if value not in values:
-        values.append(value)
-
-
-def _manual(
-    pointer: str, observed_types: Sequence[str], reason: str, **details: Any
-) -> dict[str, Any]:
-    return {
-        "path": pointer,
-        "observed_types": list(observed_types),
-        "decision": "manual",
-        "reason": reason,
-        **details,
-    }
-
-
-def _automatic(
-    pointer: str,
-    observed_types: Sequence[str],
-    *,
-    projection_path: str,
-    edit: Mapping[str, Any],
-    exposure_path: str,
-    classification_reason: str,
-) -> dict[str, Any]:
-    return {
-        "path": pointer,
-        "observed_types": list(observed_types),
-        "decision": "automatic",
-        "reason": "safe_scalar_existing_projection_slot",
-        "projection_path": projection_path,
-        "proposed_edit": dict(edit),
-        "exposure_path": exposure_path,
-        "privacy_classification": "non_sensitive",
-        "classification_reason": classification_reason,
-    }
-
-
-def _privacy_decision(
-    operation: Mapping[str, Any], operation_id: str, path: str
-) -> tuple[str, str]:
-    classification, reason = classify_candidate_field(
-        path, operation_id=operation_id
-    )
-    if classification == "sensitive":
-        return "credential_requires_omission", reason
-    privacy = operation.get("privacy_policy")
-    redacted = privacy.get("redact_fields", ()) if isinstance(privacy, Mapping) else ()
-    leaf = path.rsplit(".", 1)[-1].replace("[]", "").casefold()
-    if any(str(item).rsplit(".", 1)[-1].casefold() == leaf for item in redacted):
-        return "redacted_field_requires_review", reason
-    personal = suspected_personal_reason(operation, path)
-    if personal is not None:
-        return "personal_or_privilege_field_requires_review", personal
-    if classification != "non_sensitive":
-        return "privacy_classification_required", reason
-    return "automatic", reason
-
-
-def _decide_observation(
-    operation: Mapping[str, Any], pointer: str, observed_types: set[str]
-) -> dict[str, Any]:
-    types = sorted(observed_types)
-    if len(types) != 1:
-        return _manual(pointer, types, "conflicting_observed_types")
-    observed_type = types[0]
-    parts = _decode_pointer(pointer)
-    if parts is None:
-        return _manual(pointer, types, "invalid_json_pointer")
-    if any(_DATE_KEY.fullmatch(part) for part in parts):
-        return _manual(pointer, types, "dynamic_key_requires_review")
-    if observed_type == "null":
-        return _manual(pointer, types, "null_type_unproven")
-    if observed_type not in _SCALAR_TYPES:
-        return _manual(pointer, types, "container_shape_unproven")
-
-    edit = _projection_slot(operation, parts)
-    projection_path = _projection_path(parts)
-    if edit is None:
-        return _manual(
-            pointer, types, "projection_topology_requires_review",
-            projection_path=projection_path,
-        )
-    projection = operation.get("response_projection", {})
-    if edit["value"] in _projection_values(projection, edit):
-        return _manual(
-            pointer, types, "already_exposed", projection_path=projection_path
-        )
-    if _omitted_field(operation, edit):
-        return _manual(
-            pointer, types, "already_omitted", projection_path=projection_path
-        )
-
-    proposed = copy.deepcopy(dict(operation))
-    _apply_projection_edit(proposed, edit)
-    try:
-        ResponseProjection.from_dict(proposed["response_projection"])
-        OperationSpec.from_dict(proposed)
-    except (TypeError, ValueError) as exc:
-        return _manual(
-            pointer, types, "proposed_contract_invalid",
-            projection_path=projection_path, detail=type(exc).__name__,
-        )
-    if not projection_exposes_path(projection_path, proposed["response_projection"]):
-        return _manual(
-            pointer, types, "projection_model_cannot_expose_path",
-            projection_path=projection_path,
-        )
-    before_signature = operation_pagination_evidence_signature(operation)
-    after_signature = operation_pagination_evidence_signature(proposed)
-    if before_signature is None:
-        return _manual(
-            pointer, types, "pagination_audit_missing",
-            projection_path=projection_path,
-        )
-    if before_signature != after_signature:
-        return _manual(
-            pointer, types, "pagination_evidence_context_changed",
-            projection_path=projection_path,
-            governance_before=before_signature,
-            governance_after=after_signature,
-        )
-
-    exposure_delta = sorted(
-        operation_exposure_paths(proposed) - operation_exposure_paths(operation)
-    )
-    if len(exposure_delta) != 1:
-        return _manual(
-            pointer, types, "projection_blast_radius_not_single",
-            projection_path=projection_path, exposure_delta=exposure_delta,
-        )
-    privacy_decision, privacy_reason = _privacy_decision(
-        operation, str(operation["operation_id"]), exposure_delta[0]
-    )
-    if privacy_decision != "automatic":
-        return _manual(
-            pointer, types, privacy_decision,
-            projection_path=projection_path,
-            privacy_classification_reason=privacy_reason,
-        )
-    return _automatic(
-        pointer,
-        types,
-        projection_path=projection_path,
-        edit=edit,
-        exposure_path=exposure_delta[0],
-        classification_reason=privacy_reason,
-    )
-
-
 def _source_entry(
     operation_id: str,
     observations: Sequence[tuple[str, set[str]]],
@@ -427,7 +152,7 @@ def _source_entry(
     path = operation_root / f"{operation_id}.json"
     if not path.is_file():
         decisions = [
-            _manual(pointer, sorted(types), "direct_stable_source_missing")
+            manual_decision(pointer, sorted(types), "direct_stable_source_missing")
             for pointer, types in observations
         ]
         return _operation_entry(operation_id, None, None, decisions)
@@ -436,64 +161,21 @@ def _source_entry(
     operation = source.get("operation") if isinstance(source, Mapping) else None
     if not isinstance(operation, Mapping) or operation.get("stability") != "stable":
         decisions = [
-            _manual(pointer, sorted(types), "operation_not_stable")
+            manual_decision(pointer, sorted(types), "operation_not_stable")
             for pointer, types in observations
         ]
     else:
         decisions = [
-            _decide_observation(operation, pointer, types)
+            decide_observation(operation, pointer, types)
             for pointer, types in observations
         ]
-        decisions = _validate_combined_decisions(operation, decisions)
+        decisions = validate_combined_decisions(operation, decisions)
     return _operation_entry(
         operation_id,
         _display_path(path, project_root),
         _sha256_bytes(payload),
         decisions,
     )
-
-
-def _validate_combined_decisions(
-    operation: Mapping[str, Any], decisions: list[dict[str, Any]]
-) -> list[dict[str, Any]]:
-    automatic = [item for item in decisions if item["decision"] == "automatic"]
-    if not automatic:
-        return decisions
-    proposed = copy.deepcopy(dict(operation))
-    for item in automatic:
-        _apply_projection_edit(proposed, item["proposed_edit"])
-    try:
-        OperationSpec.from_dict(proposed)
-    except (TypeError, ValueError):
-        return _downgrade_automatic(decisions, "combined_contract_invalid")
-    if operation_pagination_evidence_signature(operation) != (
-        operation_pagination_evidence_signature(proposed)
-    ):
-        return _downgrade_automatic(
-            decisions, "combined_pagination_evidence_context_changed"
-        )
-    delta = operation_exposure_paths(proposed) - operation_exposure_paths(operation)
-    if delta != {item["exposure_path"] for item in automatic}:
-        return _downgrade_automatic(
-            decisions, "combined_projection_blast_radius_changed"
-        )
-    return decisions
-
-
-def _downgrade_automatic(
-    decisions: list[dict[str, Any]], reason: str
-) -> list[dict[str, Any]]:
-    return [
-        (
-            _manual(
-                item["path"], item["observed_types"], reason,
-                projection_path=item.get("projection_path"),
-            )
-            if item["decision"] == "automatic"
-            else item
-        )
-        for item in decisions
-    ]
 
 
 def _operation_entry(
@@ -654,7 +336,7 @@ def _apply_contract_decisions(
         operation = source["operation"]
         for decision in plan_operation["decisions"]:
             if decision.get("decision") == "automatic":
-                _apply_projection_edit(operation, decision["proposed_edit"])
+                apply_projection_edit(operation, decision["proposed_edit"])
         OperationSpec.from_dict(operation)
         write_json(path, source)
         changed.append(str(plan_operation["operation_id"]))
@@ -677,7 +359,7 @@ def _refresh_golden_fixture(
             continue
         for decision in plan_operation["decisions"]:
             if decision.get("decision") == "automatic":
-                _apply_projection_edit(golden, decision["proposed_edit"])
+                apply_projection_edit(golden, decision["proposed_edit"])
     write_json(path, document)
 
 
@@ -729,6 +411,28 @@ RefreshProducts = Callable[[Path, Sequence[Mapping[str, Any]]], list[dict[str, A
 GateRunner = Callable[[Path], list[dict[str, Any]]]
 
 
+def _apply_obligations(*, changed: bool) -> EnvelopeObligations:
+    return EnvelopeObligations(
+        execution_status=ExecutionStatus(
+            ExecutionState.COMPLETE, "DRIFT_DECLARATION_APPLY_FINISHED"
+        ),
+        data_completeness=DataCompleteness(
+            CompletenessState.NOT_APPLICABLE,
+            "DRIFT_DECLARATION_HAS_NO_DATA_ROWS",
+        ),
+        semantic_validity=SemanticValidity(
+            SemanticState.VALID, ("DRIFT_DECLARATION_PLAN_VERIFIED",)
+        ),
+        diagnostic_evidence=DiagnosticEvidence(DiagnosticState.NONE),
+        mutation_certainty=MutationCertainty(
+            MutationState.CONFIRMED if changed else MutationState.NOT_ATTEMPTED,
+            "DRIFT_DECLARATION_GATES_PASSED"
+            if changed
+            else "DRIFT_DECLARATION_NO_AUTOMATIC_CHANGES",
+        ),
+    )
+
+
 def apply_drift_plan(
     plan_path: Path,
     *,
@@ -747,14 +451,17 @@ def apply_drift_plan(
     verified = _verify_plan(plan, operation_root)
     automatic = _automatic_operations(verified)
     if not automatic:
-        return {
-            "schema_version": "gravity-insight.response-drift-declaration-apply.v1",
-            "status": "no_automatic_changes",
-            "operations": [],
-            "automatic": 0,
-            "network_called": False,
-            "gates": [],
-        }
+        return serialize_envelope(
+            {
+                "schema_version": "gravity-insight.response-drift-declaration-apply.v1",
+                "status": "no_automatic_changes",
+                "operations": [],
+                "automatic": 0,
+                "network_called": False,
+                "gates": [],
+            },
+            _apply_obligations(changed=False),
+        )
     baseline_privacy_errors = inspect_stable_response_privacy(root)
     if baseline_privacy_errors:
         raise ValueError("stable privacy baseline is not clean")
@@ -767,15 +474,18 @@ def apply_drift_plan(
         _restore_snapshot(snapshot)
         raise RuntimeError("drift declaration apply failed and was rolled back") from exc
     automatic_count = sum(item["summary"]["automatic"] for item in automatic)
-    return {
-        "schema_version": "gravity-insight.response-drift-declaration-apply.v1",
-        "status": "applied",
-        "operations": operation_ids,
-        "automatic": automatic_count,
-        "network_called": False,
-        "refresh": refresh_results,
-        "gates": gate_results,
-    }
+    return serialize_envelope(
+        {
+            "schema_version": "gravity-insight.response-drift-declaration-apply.v1",
+            "status": "applied",
+            "operations": operation_ids,
+            "automatic": automatic_count,
+            "network_called": False,
+            "refresh": refresh_results,
+            "gates": gate_results,
+        },
+        _apply_obligations(changed=True),
+    )
 
 
 __all__ = [
