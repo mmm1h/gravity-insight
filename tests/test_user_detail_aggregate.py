@@ -39,6 +39,7 @@ from gravity_insight.user_detail_aggregate_contract import (
     SOURCE_OPERATION_ID,
     AggregateBoundsError,
     normalize_user_detail_aggregate_inputs,
+    user_detail_aggregate_input_schema,
 )
 from gravity_insight.user_detail_aggregate_product import run_user_detail_aggregate
 from scripts.check_surface_parity import (
@@ -283,6 +284,35 @@ class UserDetailAggregateTests(unittest.TestCase):
             {item["measure"]: item["value"] for item in result["cells"]},
         )
 
+    def test_non_empty_string_recipe_is_machine_described_and_executable(self) -> None:
+        operator = user_detail_aggregate_input_schema()["properties"]["filters"][
+            "items"
+        ]["properties"]["operator"]
+        self.assertEqual(
+            "WITH_VAL tests JSON non-null and therefore matches the empty string, "
+            "zero, and false; WITHOUT_VAL tests null or a missing field. To require "
+            "a non-null, non-empty string in filters, combine WITH_VAL [] with "
+            'NOT_EQUALS [""].',
+            operator["description"],
+        )
+
+        inputs = _inputs()
+        inputs["filters"] = [
+            {"field": "AdCid", "operator": "WITH_VAL", "values": []},
+            {"field": "AdCid", "operator": "NOT_EQUALS", "values": [""]},
+        ]
+        inputs["group_by"] = []
+        inputs["measures"] = [{"name": "users", "op": "count"}]
+        result = run_user_detail_aggregate(
+            _Client(
+                _source([{}, {"AdCid": ""}, {"AdCid": "creative-7"}]),
+                _metadata({"name": "AdCid", "data_type": "STRING"}),
+            ),
+            inputs,
+        )
+
+        self.assertEqual(1, result["cells"][0]["value"])
+
     def test_unknown_source_completeness_forbids_complete_collection_claims(self) -> None:
         inputs = _inputs()
         inputs["group_by"] = []
@@ -319,58 +349,115 @@ class UserDetailAggregateTests(unittest.TestCase):
             ],
         )
 
-    def test_registered_privacy_excluded_field_stays_rejected_with_policy_diagnostic(
+    def test_all_bytedance_mid_fields_are_available_only_as_aggregate_groups(
         self,
     ) -> None:
-        inputs = _inputs()
-        inputs["source"]["app_id"] = f"{SENTINEL}-app"
-        inputs["filters"] = []
-        inputs["group_by"] = ["bytedanceMid3"]
-        inputs["measures"] = [{"name": "users", "op": "count"}]
-        client = _Client(
-            _source([{"bytedanceMid3": SENTINEL}]),
-            _metadata({"name": "bytedanceMid3", "data_type": "STRING"}),
-        )
+        for index in range(1, 9):
+            with self.subTest(index=index):
+                field = f"bytedanceMid{index}"
+                material_id = f"material-{index}"
+                inputs = _inputs()
+                inputs["filters"] = []
+                inputs["group_by"] = [field]
+                inputs["measures"] = [{"name": "users", "op": "count"}]
+                client = _Client(
+                    _source(
+                        [
+                            {
+                                field: material_id,
+                                "ClientID": f"{SENTINEL}-client-{index}",
+                            }
+                        ]
+                    ),
+                    _metadata({"name": field, "data_type": "STRING"}),
+                )
 
-        with self.assertRaises(Exception) as raised:
-            run_user_detail_aggregate(client, inputs)
+                result = run_user_detail_aggregate(client, inputs)
 
-        envelope = error_envelope(raised.exception)
-        error = envelope["error"]
-        self.assertEqual(
+                self.assertEqual(
+                    [
+                        {
+                            "group": {field: material_id},
+                            "measure": "users",
+                            "value": 1,
+                        }
+                    ],
+                    result["cells"],
+                )
+                self.assertNotIn(SENTINEL, json.dumps(result, sort_keys=True))
+                self.assertNotIn("data", result)
+                self.assertNotIn("request", result)
+                self.assertEqual(
+                    [METADATA_OPERATION_ID, SOURCE_OPERATION_ID],
+                    [item[0] for item in client.calls],
+                )
+
+    def test_all_existing_personal_and_sensitive_field_policies_still_reject(
+        self,
+    ) -> None:
+        cases = (
+            ("direct identifier", "ClientID", _metadata()),
             (
-                FIELD_PRIVACY_EXCLUDED,
-                "caller",
-                "aggregate field is excluded by the user-detail privacy policy",
-                "fields",
-                False,
-                "Remove the field or switch to an owner-approved privacy-governed "
-                "product; type registration cannot make a privacy-excluded field "
-                "eligible.",
+                "direct personal response field",
+                "Email",
+                _metadata({"name": "Email", "data_type": "STRING"}),
             ),
-            _error_contract(error),
+            (
+                "sensitive analysis field",
+                "session_token",
+                _metadata({"name": "session_token", "data_type": "STRING"}),
+            ),
         )
-        rendered = json.dumps(envelope, ensure_ascii=False, sort_keys=True)
-        self.assertNotIn(SENTINEL, rendered)
-        self.assertNotIn("bytedanceMid3", rendered)
-        self.assertNotIn("cells", envelope)
-        self.assertEqual(2, exit_code_for_error(raised.exception))
-        self.assertEqual([METADATA_OPERATION_ID], [item[0] for item in client.calls])
+        for policy, field, metadata in cases:
+            with self.subTest(policy=policy, field=field):
+                inputs = _inputs()
+                inputs["source"]["app_id"] = f"{SENTINEL}-app"
+                inputs["filters"] = []
+                inputs["group_by"] = [field]
+                inputs["measures"] = [{"name": "users", "op": "count"}]
+                client = _Client(_source([{field: SENTINEL}]), metadata)
+
+                with self.assertRaises(Exception) as raised:
+                    run_user_detail_aggregate(client, inputs)
+
+                envelope = error_envelope(raised.exception)
+                error = envelope["error"]
+                self.assertEqual(FIELD_PRIVACY_EXCLUDED, error["code"])
+                self.assertEqual("caller", error["category"])
+                self.assertEqual("fields", error["field"])
+                self.assertFalse(error["retryable"])
+                rendered = json.dumps(envelope, ensure_ascii=False, sort_keys=True)
+                self.assertNotIn(SENTINEL, rendered)
+                self.assertNotIn(field, rendered)
+                self.assertNotIn("cells", envelope)
+                self.assertEqual(2, exit_code_for_error(raised.exception))
+                self.assertEqual(
+                    [METADATA_OPERATION_ID],
+                    [item[0] for item in client.calls],
+                )
 
     def test_condition_value_type_mismatch_stays_rejected_as_caller_input(
         self,
     ) -> None:
         inputs = _inputs()
         inputs["source"]["app_id"] = f"{SENTINEL}-app"
-        inputs["filters"] = [
-            {
-                "field": "AdCid",
-                "operator": "NOT_IN",
-                "values": [None, "", 0, "0"],
-            }
-        ]
+        inputs["filters"] = []
         inputs["group_by"] = []
-        inputs["measures"] = [{"name": "users", "op": "count"}]
+        inputs["measures"] = [
+            *(
+                {"name": f"users_{index}", "op": "count"}
+                for index in range(8)
+            ),
+            {
+                "name": "ad_cid_coverage",
+                "op": "count_if",
+                "condition": {
+                    "field": "AdCid",
+                    "operator": "NOT_IN",
+                    "values": [None, "", 0, "0"],
+                },
+            },
+        ]
         client = _Client(
             _source([{"AdCid": SENTINEL}]),
             _metadata({"name": "AdCid", "data_type": "STRING"}),
@@ -385,19 +472,24 @@ class UserDetailAggregateTests(unittest.TestCase):
             (
                 CONDITION_TYPE_MISMATCH,
                 "caller",
-                "aggregate condition non-null value types do not match the field type "
-                "observed in this read",
-                "conditions[].values",
+                "aggregate condition for measure 'ad_cid_coverage' on field 'AdCid' "
+                "uses non-null value types number, string; observed field type is "
+                "string",
+                "measures[8].condition.values",
                 False,
-                "Use non-null condition values of one scalar type matching the field, "
-                "or remove the condition; do not retry the unchanged request. "
-                "Investigate upstream only if separate type-drift evidence exists.",
+                "Use only string condition values for field 'AdCid' in "
+                "measures[8].condition.values, or remove that condition; do not retry "
+                "the unchanged request. Investigate upstream only if separate "
+                "type-drift evidence exists.",
             ),
             _error_contract(error),
         )
         rendered = json.dumps(envelope, ensure_ascii=False, sort_keys=True)
         self.assertNotIn(SENTINEL, rendered)
-        self.assertNotIn("AdCid", rendered)
+        self.assertIn("ad_cid_coverage", rendered)
+        self.assertIn("AdCid", rendered)
+        self.assertIn("observed field type is string", rendered)
+        self.assertNotIn('"values"', rendered)
         self.assertNotIn("cells", envelope)
         self.assertEqual(2, exit_code_for_error(raised.exception))
         self.assertEqual(
