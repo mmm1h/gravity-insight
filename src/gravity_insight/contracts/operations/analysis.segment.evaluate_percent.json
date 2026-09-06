@@ -189,10 +189,14 @@
       "data_keys": [
         "part",
         "percent",
-        "total"
+        "total",
+        "zone_offset"
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
+      "known_omitted_data_keys": [
+        "extra_data"
+      ],
       "numeric_paths": [
         "part",
         "percent",

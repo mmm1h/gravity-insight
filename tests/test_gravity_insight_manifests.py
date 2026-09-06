@@ -683,7 +683,7 @@ class GravityInsightManifestTests(unittest.TestCase):
 
         monetization = self.by_id["analysis.monetization_detail.list"]
         projection = monetization["response_projection"]
-        self.assertEqual(26, len(projection["item_keys"]))
+        self.assertEqual(35, len(projection["item_keys"]))
         self.assertEqual(["fields"], projection["dynamic_item_fields"])
         self.assertNotIn("item_enum", monetization["input_fields"]["fields"])
         self.assertNotIn("known_omitted_item_keys", projection)
@@ -1568,6 +1568,7 @@ class GravityInsightManifestTests(unittest.TestCase):
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible",
         ]

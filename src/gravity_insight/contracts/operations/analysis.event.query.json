@@ -199,7 +199,8 @@
         "list",
         "target_list",
         "default_limit",
-        "date_list"
+        "date_list",
+        "filter_agg_type"
       ],
       "dynamic_item_fields": [],
       "item_keys": [],

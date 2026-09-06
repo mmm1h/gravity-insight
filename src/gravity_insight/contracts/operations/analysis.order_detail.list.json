@@ -204,7 +204,9 @@
         "$split_count",
         "$split_trace_id_list",
         "re_attribute_info",
-        "Name"
+        "Name",
+        "user$pay_amount_sum",
+        "user$pay_max_amount"
       ],
       "nested_item_keys": {
         "re_attribute_info": [
