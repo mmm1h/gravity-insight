@@ -696,7 +696,11 @@ class GravityInsightCoreTests(unittest.TestCase):
             [result["status"] for result in results],
         )
         self.assertEqual(
-            {"promotion.object.list", "material.recycle.list"},
+            # `material.recycle.list` left this set once its production drift
+            # fields were declared; `promotion.object.list` still carries
+            # undeclared fixture fields. Asserting the identities rather than a
+            # count is what surfaced the change instead of absorbing it.
+            {"promotion.object.list"},
             {
                 operation_id
                 for operation_id, result in zip(operation_ids, results)
