@@ -14,13 +14,14 @@ from .component_aggregate import (
     component_exit_code,
 )
 from .composite_catalog import stable_operation
+from .composite_result import bounded_structural_drift_diagnostics
 from .errors import (
     ErrorCategory,
     ErrorCode,
     ErrorDetail,
     exit_code_for_error,
 )
-from .result_audit import aggregate_result_audit
+from .result_audit import aggregate_result_audit, project_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -99,23 +100,29 @@ def safe_component(
     max_pages: int,
 ) -> dict[str, Any]:
     if not isinstance(value, Mapping):
-        return contract_component(platform)
+        return _contract_failure(platform, "component_shape", "$")
     if (
         value.get("operation_id") != MATERIAL_REPORT_OPERATION
         or value.get("request_id") != platform
     ):
-        return contract_component(platform)
+        return _contract_failure(
+            platform, "component_identity", "$.operation_id_or_request_id"
+        )
     status = value.get("status")
     if not isinstance(status, str):
-        return contract_component(platform)
+        return _contract_failure(platform, "component_status_type", "$.status")
     if value.get("ok") is True and status in _SUCCESS_STATUSES:
         return _safe_success(value, platform, status, max_pages=max_pages)
     if value.get("ok") is False and status in _FAILURE_STATUSES:
         error = _safe_error(value.get("error"), platform)
-        if error is None or not _failure_matches(status, error["code"]):
-            return contract_component(platform)
+        if error is None:
+            return _contract_failure(platform, "component_error_shape", "$.error")
+        if not _failure_matches(status, error["code"]):
+            return _contract_failure(
+                platform, "component_error_status", "$.status_or_error.code"
+            )
         if error["code"] == ErrorCode.CONTRACT_CHANGED.value:
-            return contract_component(platform)
+            return project_result_audit(contract_component(platform), value)
         return {
             "platform": platform,
             "operation_id": MATERIAL_REPORT_OPERATION,
@@ -125,7 +132,7 @@ def safe_component(
             "page": None,
             "error": error,
         }
-    return contract_component(platform)
+    return _contract_failure(platform, "component_status", "$.ok_or_status")
 
 
 def _safe_success(
@@ -323,6 +330,14 @@ def contract_component(platform: str) -> dict[str, Any]:
         "page": None,
         "error": detail.to_dict(),
     }
+
+
+def _contract_failure(platform: str, check: str, path: str) -> dict[str, Any]:
+    result = contract_component(platform)
+    result["drift_diagnostics"] = bounded_structural_drift_diagnostics(
+        MATERIAL_REPORT_OPERATION, [(check, path)]
+    )
+    return result
 
 
 def contract_result() -> dict[str, Any]:
