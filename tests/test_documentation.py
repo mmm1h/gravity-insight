@@ -102,17 +102,30 @@ class DocumentationArchitectureTests(unittest.TestCase):
         self.assertEqual({}, excess)
 
     def test_active_human_docs_stay_within_consolidation_budget(self) -> None:
+        # docs/migration is excluded for the same reason as the archive: its
+        # files are not consolidation candidates. A released version's guide is
+        # linked from a CHANGELOG section whose SHA is locked, so it cannot be
+        # merged or rewritten -- only appended to, once per breaking change.
+        # Counting immutable history against a budget for active prose meant the
+        # two standing rules contradicted each other: "every breaking change
+        # ships a migration guide" had five lines of headroom left, so the next
+        # break was blocked no matter how tersely it was documented.
         files = [ROOT / "README.md", ROOT / "AGENTS.md"]
         files.extend(
             path
             for path in DOCS.rglob("*.md")
             if ARCHIVE.resolve() not in path.resolve().parents
             and (DOCS / "agent-skills").resolve() not in path.resolve().parents
+            and (DOCS / "migration").resolve() not in path.resolve().parents
         )
         lines = sum(len(path.read_text(encoding="utf-8").splitlines()) for path in files)
         size = sum(path.stat().st_size for path in files)
-        self.assertLessEqual(lines, 5547)
-        self.assertLessEqual(size, 450 * 1024)
+        # Both limits are lowered by exactly what the narrower scope removed, so
+        # the headroom for active prose is unchanged at 5 lines and 42.5 KiB.
+        # Dropping files from a budget without dropping the number would have
+        # been a 659-line raise wearing the costume of a scope fix.
+        self.assertLessEqual(lines, 4922)
+        self.assertLessEqual(size, 417 * 1024)
 
     def test_entry_docs_do_not_state_catalog_totals(self) -> None:
         sources = [
