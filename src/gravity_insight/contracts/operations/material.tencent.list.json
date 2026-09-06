@@ -5,7 +5,7 @@
     "action": "list",
     "auth_profile": "gravity_authorization",
     "contract_version": 2,
-    "description": "腾讯平台素材列表。广告主名称、租户字段、文件/缩略图 URL 与已观察人员字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
+    "description": "腾讯平台素材列表。广告主、租户、文件/缩略图 URL、人员字段与已观察媒体容器已登记返回；缓存状态、未证实文件元数据、MD5、标签与其余图片容器仍按现有合同省略。",
     "domain": "material",
     "effect": "read",
     "examples": [],
@@ -110,7 +110,19 @@
         "creative_user_id",
         "creative_user_name",
         "designer_id",
-        "designer_name"
+        "designer_name",
+        "capture_user_id",
+        "dub_user_id",
+        "performer_user_id",
+        "transcribe_user_id",
+        "video_cover_list"
+      ],
+      "opaque_json_item_keys": [
+        "capture_user_id",
+        "dub_user_id",
+        "performer_user_id",
+        "transcribe_user_id",
+        "video_cover_list"
       ],
       "known_omitted_item_keys": [
         "create_time",

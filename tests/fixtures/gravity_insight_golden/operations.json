@@ -12650,7 +12650,18 @@
       "resource": "album",
       "response_projection": {
         "data_dynamic_item_fields": {},
-        "data_item_keys": {},
+        "data_item_keys": {
+          "tree": [
+            "id",
+            "label",
+            "parent_id",
+            "root_id",
+            "has_alum",
+            "album_authority",
+            "create_user_id",
+            "children"
+          ]
+        },
         "data_keys": [
           "tree",
           "image_size",
@@ -12662,24 +12673,30 @@
         "dynamic_item_fields": [],
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
-        "item_keys": [],
+        "item_keys": [
+          "album_authority"
+        ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
-        "nested_item_keys": {},
-        "numeric_paths": [],
-        "opaque_json_item_keys": [],
-        "recursive_data_item_keys": {
-          "tree": [
+        "nested_item_keys": {
+          "children": [
             "id",
             "label",
             "parent_id",
             "root_id",
             "has_alum",
+            "album_authority",
+            "create_user_id",
             "children"
           ]
         },
+        "numeric_paths": [],
+        "opaque_json_item_keys": [
+          "album_authority"
+        ],
+        "recursive_data_item_keys": {},
         "required_data_keys": [
           "tree"
         ],
@@ -12710,7 +12727,7 @@
       "resource": "bytedance",
       "action": "list",
       "platform": null,
-      "description": "巨量平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
+      "description": "巨量平台素材列表。广告主、人员、租户、文件 URL 与已观察媒体容器已登记返回；缓存状态、未证实文件元数据、MD5、标签与其余图片容器仍按现有合同省略。",
       "stability": "stable",
       "executable": true,
       "block_reason": null,
@@ -12811,7 +12828,20 @@
           "material_id",
           "gravity_material_id",
           "cid",
-          "advertiser_name"
+          "advertiser_name",
+          "capture_user_id",
+          "create_user_id",
+          "create_user_name",
+          "creative_user_id",
+          "creative_user_name",
+          "designer_id",
+          "designer_name",
+          "dub_user_id",
+          "file_url",
+          "performer_user_id",
+          "thumbnail_url",
+          "transcribe_user_id",
+          "video_cover_list"
         ],
         "dynamic_item_fields": [],
         "nested_item_keys": {},
@@ -12860,7 +12890,13 @@
         "numeric_paths": [],
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "dub_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "video_cover_list"
+        ],
         "unreliable_item_keys": {
           "gravity_material_id": {
             "reason": "Live bytedance library rows return gravity_material_id=0 while material_id is a unique 19-char identifier on the same row.",
@@ -13430,6 +13466,7 @@
           "file_name",
           "file_size",
           "file_size_str",
+          "file_sub_type",
           "file_type",
           "format",
           "gravity_material_id",
@@ -13476,6 +13513,7 @@
           "used_ad_platform",
           "video_duration",
           "video_duration_second",
+          "video_cover_list",
           "width"
         ],
         "known_omitted_data_item_keys": {},
@@ -14521,9 +14559,13 @@
           "category_id",
           "cid",
           "create_time",
+          "create_user_id",
+          "create_user_name",
           "is_system",
           "modify_time",
-          "source"
+          "source",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -14822,7 +14864,7 @@
       "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "2",
-      "description": "腾讯平台素材列表。广告主名称、租户字段、文件/缩略图 URL 与已观察人员字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
+      "description": "腾讯平台素材列表。广告主、租户、文件/缩略图 URL、人员字段与已观察媒体容器已登记返回；缓存状态、未证实文件元数据、MD5、标签与其余图片容器仍按现有合同省略。",
       "domain": "material",
       "executable": true,
       "input_fields": [
@@ -14971,7 +15013,12 @@
           "creative_user_id",
           "creative_user_name",
           "designer_id",
-          "designer_name"
+          "designer_name",
+          "capture_user_id",
+          "dub_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "video_cover_list"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -15011,7 +15058,13 @@
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "dub_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "video_cover_list"
+        ],
         "recursive_data_item_keys": {},
         "required_data_keys": [
           "list"

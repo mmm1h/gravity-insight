@@ -875,23 +875,42 @@
       "required_parent": [],
       "resource": "album",
       "response_projection": {
-        "data_keys": [
-          "tree",
-          "image_size",
-          "video_size"
-        ],
-        "dynamic_item_fields": [],
-        "item_keys": [],
-        "recursive_data_item_keys": {
+        "data_item_keys": {
           "tree": [
             "id",
             "label",
             "parent_id",
             "root_id",
             "has_alum",
+            "album_authority",
+            "create_user_id",
             "children"
           ]
         },
+        "data_keys": [
+          "tree",
+          "image_size",
+          "video_size"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "album_authority"
+        ],
+        "nested_item_keys": {
+          "children": [
+            "id",
+            "label",
+            "parent_id",
+            "root_id",
+            "has_alum",
+            "album_authority",
+            "create_user_id",
+            "children"
+          ]
+        },
+        "opaque_json_item_keys": [
+          "album_authority"
+        ],
         "required_data_keys": [
           "tree"
         ]
@@ -1031,6 +1050,7 @@
           "file_name",
           "file_size",
           "file_size_str",
+          "file_sub_type",
           "file_type",
           "format",
           "gravity_material_id",
@@ -1077,6 +1097,7 @@
           "used_ad_platform",
           "video_duration",
           "video_duration_second",
+          "video_cover_list",
           "width"
         ],
         "known_omitted_item_keys": [
@@ -1332,9 +1353,13 @@
           "category_id",
           "cid",
           "create_time",
+          "create_user_id",
+          "create_user_name",
           "is_system",
           "modify_time",
-          "source"
+          "source",
+          "update_user_id",
+          "update_user_name"
         ],
         "nested_item_keys": {
           "category": [

@@ -860,6 +860,18 @@ class GravityInsightManifestTests(unittest.TestCase):
                 ]
             },
             "material.tag.list": {"category": ["id", "name"]},
+            "material.album.tree": {
+                "children": [
+                    "id",
+                    "label",
+                    "parent_id",
+                    "root_id",
+                    "has_alum",
+                    "album_authority",
+                    "create_user_id",
+                    "children",
+                ]
+            },
             "material.tag_category.tree": {"tag_list": ["id", "name"]},
             "material.favorites.list": {
                 "group": [
@@ -1077,9 +1089,13 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "category_id",
                 "cid",
                 "create_time",
+                "create_user_id",
+                "create_user_name",
                 "is_system",
                 "modify_time",
                 "source",
+                "update_user_id",
+                "update_user_name",
             ],
             self.by_id["material.tag.list"]["response_projection"]["item_keys"],
         )
@@ -1116,6 +1132,18 @@ class GravityInsightManifestTests(unittest.TestCase):
                     ],
                     "pay_list": [],
                     "postback_list": [],
+                },
+                "material.album.tree": {
+                    "tree": [
+                        "id",
+                        "label",
+                        "parent_id",
+                        "root_id",
+                        "has_alum",
+                        "album_authority",
+                        "create_user_id",
+                        "children",
+                    ]
                 },
                 "report.my_template.detail": {
                     "detail": [
@@ -1683,20 +1711,9 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "data_dynamic_item_fields"
             ],
         )
-        self.assertEqual(
-            {
-                "tree": [
-                    "id",
-                    "label",
-                    "parent_id",
-                    "root_id",
-                    "has_alum",
-                    "children",
-                ]
-            },
-            self.by_id["material.album.tree"]["response_projection"][
-                "recursive_data_item_keys"
-            ],
+        self.assertNotIn(
+            "recursive_data_item_keys",
+            self.by_id["material.album.tree"]["response_projection"],
         )
 
         tag_category = self.by_id["report.multidim.metric_tag_category.list"]
