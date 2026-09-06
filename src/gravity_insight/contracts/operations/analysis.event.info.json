@@ -111,6 +111,7 @@
           "modify_time",
           "name",
           "prop_type",
+          "remark",
           "uploaded",
           "visible"
         ],
@@ -127,6 +128,7 @@
           "modify_time",
           "name",
           "prop_type",
+          "remark",
           "uploaded",
           "visible"
         ],
@@ -143,6 +145,7 @@
           "modify_time",
           "name",
           "prop_type",
+          "remark",
           "uploaded",
           "visible"
         ]

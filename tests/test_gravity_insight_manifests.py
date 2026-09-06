@@ -683,7 +683,7 @@ class GravityInsightManifestTests(unittest.TestCase):
 
         monetization = self.by_id["analysis.monetization_detail.list"]
         projection = monetization["response_projection"]
-        self.assertEqual(26, len(projection["item_keys"]))
+        self.assertEqual(35, len(projection["item_keys"]))
         self.assertEqual(["fields"], projection["dynamic_item_fields"])
         self.assertNotIn("item_enum", monetization["input_fields"]["fields"])
         self.assertNotIn("known_omitted_item_keys", projection)
@@ -765,7 +765,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 ]
             },
             "app.permission_menu.list": {
-                "children": ["id", "name", "parent_id", "person_num"]
+                "children": ["children", "id", "name", "parent_id", "person_num"]
             },
             "app.template.list": {
                 "data_config": ["child_module", "effect_module", "role_effect"]
@@ -860,6 +860,18 @@ class GravityInsightManifestTests(unittest.TestCase):
                 ]
             },
             "material.tag.list": {"category": ["id", "name"]},
+            "material.album.tree": {
+                "children": [
+                    "id",
+                    "label",
+                    "parent_id",
+                    "root_id",
+                    "has_alum",
+                    "album_authority",
+                    "create_user_id",
+                    "children",
+                ]
+            },
             "material.tag_category.tree": {"tag_list": ["id", "name"]},
             "material.favorites.list": {
                 "group": [
@@ -1052,7 +1064,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "company", self.by_id[operation_id]["response_projection"]["item_keys"]
             )
         self.assertEqual(
-            ["file_md5", "image_set", "remark"],
+            ["file_md5", "file_url", "image_set", "remark", "thumbnail_url"],
             self.by_id["material.recycle.list"]["response_projection"][
                 "known_omitted_item_keys"
             ],
@@ -1077,9 +1089,13 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "category_id",
                 "cid",
                 "create_time",
+                "create_user_id",
+                "create_user_name",
                 "is_system",
                 "modify_time",
                 "source",
+                "update_user_id",
+                "update_user_name",
             ],
             self.by_id["material.tag.list"]["response_projection"]["item_keys"],
         )
@@ -1116,6 +1132,18 @@ class GravityInsightManifestTests(unittest.TestCase):
                     ],
                     "pay_list": [],
                     "postback_list": [],
+                },
+                "material.album.tree": {
+                    "tree": [
+                        "id",
+                        "label",
+                        "parent_id",
+                        "root_id",
+                        "has_alum",
+                        "album_authority",
+                        "create_user_id",
+                        "children",
+                    ]
                 },
                 "report.my_template.detail": {
                     "detail": [
@@ -1440,6 +1468,8 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "total": ["stat_cost"]
                 },
                 "promotion.bytedance.project.list": {"total": ["stat_cost"]},
+                "promotion.kuaishou.ad_unit.list": {"total": ["charge"]},
+                "promotion.kuaishou.advertiser.list": {"total": ["charge"]},
                 "promotion.tencent.advertiser.list": {"total": ["cost"]},
                 "promotion.tencent.tencent_adgroup_v2.list": {"total": ["cost"]},
                 "promotion.taptap.group.list": {"total": []},
@@ -1568,6 +1598,7 @@ class GravityInsightManifestTests(unittest.TestCase):
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible",
         ]
@@ -1626,6 +1657,43 @@ class GravityInsightManifestTests(unittest.TestCase):
             scalar_list_contracts,
         )
 
+    def test_misc_response_drift_declarations_are_exact(self) -> None:
+        promotion = self.by_id["promotion.bytedance.project.list"][
+            "response_projection"
+        ]
+        self.assertTrue(
+            {"delay", "download_url", "operator_id", "operator_name"}
+            <= set(promotion["item_keys"])
+        )
+
+        permission_menu = self.by_id["app.permission_menu.list"][
+            "response_projection"
+        ]
+        self.assertEqual(
+            ["children", "id", "name", "parent_id", "person_num"],
+            permission_menu["nested_item_keys"]["children"],
+        )
+
+        attribution = self.by_id["attribution.postback_map_collect.list"][
+            "response_projection"
+        ]
+        self.assertTrue(
+            {
+                "create_user_id",
+                "create_user_name",
+                "operator_id",
+                "operator_name",
+                "update_user_id",
+                "update_user_name",
+            }
+            <= set(attribution["item_keys"])
+        )
+
+        media_enum = self.by_id["report.multidim.media_enum.list"][
+            "response_projection"
+        ]
+        self.assertEqual(["dy_mini_game"], media_enum["known_omitted_data_keys"])
+
     def test_verified_dynamic_totals_and_recursive_contracts_are_exact(self) -> None:
         promotion_totals = {
             item["operation_id"]: item["response_projection"][
@@ -1682,20 +1750,9 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "data_dynamic_item_fields"
             ],
         )
-        self.assertEqual(
-            {
-                "tree": [
-                    "id",
-                    "label",
-                    "parent_id",
-                    "root_id",
-                    "has_alum",
-                    "children",
-                ]
-            },
-            self.by_id["material.album.tree"]["response_projection"][
-                "recursive_data_item_keys"
-            ],
+        self.assertNotIn(
+            "recursive_data_item_keys",
+            self.by_id["material.album.tree"]["response_projection"],
         )
 
         tag_category = self.by_id["report.multidim.metric_tag_category.list"]

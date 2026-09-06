@@ -66,18 +66,37 @@
         "image_size",
         "video_size"
       ],
-      "dynamic_item_fields": [],
-      "item_keys": [],
-      "recursive_data_item_keys": {
+      "data_item_keys": {
         "tree": [
           "id",
           "label",
           "parent_id",
           "root_id",
           "has_alum",
+          "album_authority",
+          "create_user_id",
           "children"
         ]
       },
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "album_authority"
+      ],
+      "nested_item_keys": {
+        "children": [
+          "id",
+          "label",
+          "parent_id",
+          "root_id",
+          "has_alum",
+          "album_authority",
+          "create_user_id",
+          "children"
+        ]
+      },
+      "opaque_json_item_keys": [
+        "album_authority"
+      ],
       "required_data_keys": [
         "tree"
       ]

@@ -197,7 +197,16 @@
         "user$ad_avg_ecpm",
         "user$ad_ltv",
         "Name",
-        "WXOpenID"
+        "WXOpenID",
+        "AdCid",
+        "AdClickTime",
+        "AdGid",
+        "CSite",
+        "Channel",
+        "LatestLoginDay",
+        "Version",
+        "id",
+        "modify_time"
       ],
       "nested_item_keys": {
         "re_attribute_info": [
