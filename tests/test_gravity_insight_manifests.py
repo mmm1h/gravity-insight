@@ -765,7 +765,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 ]
             },
             "app.permission_menu.list": {
-                "children": ["id", "name", "parent_id", "person_num"]
+                "children": ["children", "id", "name", "parent_id", "person_num"]
             },
             "app.template.list": {
                 "data_config": ["child_module", "effect_module", "role_effect"]
@@ -1625,6 +1625,43 @@ class GravityInsightManifestTests(unittest.TestCase):
             },
             scalar_list_contracts,
         )
+
+    def test_misc_response_drift_declarations_are_exact(self) -> None:
+        promotion = self.by_id["promotion.bytedance.project.list"][
+            "response_projection"
+        ]
+        self.assertTrue(
+            {"delay", "download_url", "operator_id", "operator_name"}
+            <= set(promotion["item_keys"])
+        )
+
+        permission_menu = self.by_id["app.permission_menu.list"][
+            "response_projection"
+        ]
+        self.assertEqual(
+            ["children", "id", "name", "parent_id", "person_num"],
+            permission_menu["nested_item_keys"]["children"],
+        )
+
+        attribution = self.by_id["attribution.postback_map_collect.list"][
+            "response_projection"
+        ]
+        self.assertTrue(
+            {
+                "create_user_id",
+                "create_user_name",
+                "operator_id",
+                "operator_name",
+                "update_user_id",
+                "update_user_name",
+            }
+            <= set(attribution["item_keys"])
+        )
+
+        media_enum = self.by_id["report.multidim.media_enum.list"][
+            "response_projection"
+        ]
+        self.assertEqual(["dy_mini_game"], media_enum["known_omitted_data_keys"])
 
     def test_verified_dynamic_totals_and_recursive_contracts_are_exact(self) -> None:
         promotion_totals = {

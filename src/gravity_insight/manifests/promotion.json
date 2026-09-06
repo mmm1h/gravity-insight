@@ -582,6 +582,10 @@
           "advertiser_name",
           "advertiser_remark",
           "company",
+          "delay",
+          "download_url",
+          "operator_id",
+          "operator_name",
           "project_list"
         ],
         "known_omitted_item_keys": [

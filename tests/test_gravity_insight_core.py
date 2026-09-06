@@ -696,8 +696,12 @@ class GravityInsightCoreTests(unittest.TestCase):
             [result["status"] for result in results],
         )
         self.assertEqual(
-            3,
-            sum("response_drift" in result["result_audit"] for result in results),
+            {"promotion.object.list", "material.recycle.list"},
+            {
+                operation_id
+                for operation_id, result in zip(operation_ids, results)
+                if "response_drift" in result["result_audit"]
+            },
         )
         serialized = json.dumps(results)
         for omitted_value in (
