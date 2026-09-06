@@ -10,6 +10,7 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from typing import Any
 
+from gravity_insight.agent_runtime_contracts import is_sha256, validate_schema
 from gravity_insight.capability_contract import _operations, capability_contracts
 from gravity_insight.capability_trust import CapabilityTrustService
 from gravity_insight.capability_validation import CapabilityValidationStore
@@ -27,8 +28,10 @@ from gravity_insight.runtime_scope import resolve_env_path, scope_workspace
 from gravity_insight.workspace import load_workspace
 
 from capability_validation_evidence_support import (
+    LEGACY_RUN_SCHEMA_VERSION,
     MAX_PRODUCTION_REQUESTS,
     RUN_SCHEMA_VERSION,
+    SUMMARY_SCHEMA_VERSION,
     BudgetedSession,
     RequestBudgetExceeded,
     bind_probe_app,
@@ -45,6 +48,10 @@ from capability_validation_evidence_support import (
     trust_counts,
     validation_from_execution,
 )
+
+
+_RUN_SCHEMA_NAME = "capability-validation-run-v2.schema.json"
+_SUMMARY_SCHEMA_NAME = "capability-validation-summary-v2.schema.json"
 
 
 def collect(
@@ -126,7 +133,10 @@ def summarize() -> dict[str, Any]:
     request_total = 0
     for path in paths:
         value = json.loads(path.read_text(encoding="utf-8"))
-        if value.get("schema_version") != RUN_SCHEMA_VERSION:
+        if value.get("schema_version") not in {
+            LEGACY_RUN_SCHEMA_VERSION,
+            RUN_SCHEMA_VERSION,
+        }:
             continue
         request_total = max(
             request_total, int(value.get("production_requests_total", 0))
@@ -140,7 +150,7 @@ def summarize() -> dict[str, Any]:
         if latest[key]["category"] != "validated"
     ]
     result = {
-        "schema_version": "gravity.capability-validation-summary.v1",
+        "schema_version": SUMMARY_SCHEMA_VERSION,
         "generated_at": timestamp(datetime.now(timezone.utc)),
         "source_run_count": len(paths),
         "production_requests_total": request_total,
@@ -155,10 +165,11 @@ def summarize() -> dict[str, Any]:
         "unresolved": unresolved,
         "network_called": False,
     }
+    validate_schema(result, _SUMMARY_SCHEMA_NAME, "Capability Validation summary")
     target = (
         workspace.state_root
         / "agent-runtime"
-        / "capability-validation-summary.v1.json"
+        / "capability-validation-summary.v2.json"
     )
     write_rendered_result(
         str(target),
@@ -181,6 +192,10 @@ def _normalized_final_outcome(value: Mapping[str, Any]) -> dict[str, Any]:
     reasons = set(str(item) for item in result.get("reason_codes", []))
     if "EXECUTION_RESPONSE_DRIFT" in reasons:
         result["category"] = "response_contract_drift"
+    if "schema_fingerprint" in result and not is_sha256(
+        result["schema_fingerprint"]
+    ):
+        result["schema_fingerprint"] = None
     return result
 
 
@@ -263,7 +278,7 @@ def _require_stable(validation: Mapping[str, Any], selector: str) -> None:
 
 def _run_report(**values: Any) -> dict[str, Any]:
     outcomes = [values["outcomes"][key] for key in sorted(values["outcomes"])]
-    return {
+    report = {
         "schema_version": RUN_SCHEMA_VERSION,
         "status": "complete",
         "started_at": timestamp(values["started_at"]),
@@ -293,6 +308,8 @@ def _run_report(**values: Any) -> dict[str, Any]:
             "raw_rows_persisted": False,
         },
     }
+    validate_schema(report, _RUN_SCHEMA_NAME, "Capability Validation run")
+    return report
 
 
 def _write_report(state_root: Any, report: Mapping[str, Any], finished_at: datetime) -> None:

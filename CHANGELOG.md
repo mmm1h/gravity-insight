@@ -27,6 +27,13 @@ Target release: `0.3.11`
   caller can silently begin permitting a claim it used to refuse. Model URIs,
   `models describe`/`evaluate` shapes, approval-selection logic and every
   data-read capability are unchanged.
+- **Hard break:** Capability Validation run and summary evidence advance from
+  `gravity.capability-validation-run.v1` / `summary.v1` to v2. Outcome objects
+  may now carry normalized `response_drift` and value-free `error_detail`, and
+  the current summary filename changes to `capability-validation-summary.v2.json`.
+  Strict v1 parsers and readers of the old summary path must migrate. The
+  summarizer still reads immutable v1 runs, and its command response plus all
+  collection and trust capabilities are unchanged.
 
 Migration guide: [0.3.11](docs/migration/0.3.11.md)
 
