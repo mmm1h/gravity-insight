@@ -1052,7 +1052,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "company", self.by_id[operation_id]["response_projection"]["item_keys"]
             )
         self.assertEqual(
-            ["file_md5", "image_set", "remark"],
+            ["file_md5", "file_url", "image_set", "remark", "thumbnail_url"],
             self.by_id["material.recycle.list"]["response_projection"][
                 "known_omitted_item_keys"
             ],

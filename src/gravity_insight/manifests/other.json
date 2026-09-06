@@ -1648,7 +1648,7 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 2,
-      "description": "素材回收站只读列表；单页最小探针已验证；未登记的新字段触发 additive drift，文件 MD5、嵌套图片集合与自由备注因合同证据不足仍省略。",
+      "description": "素材回收站只读列表；单页最小探针已验证；未登记的新字段触发 additive drift，文件 MD5、嵌套图片集合与自由备注因合同证据不足仍省略，素材 URL 按下载治理边界省略。",
       "domain": "material",
       "effect": "read",
       "input_fields": {
@@ -1760,12 +1760,44 @@
           "material_used",
           "image_nums",
           "aspect_ratio_int",
-          "file_extension"
+          "file_extension",
+          "capture_user_id",
+          "create_user_id",
+          "create_user_name",
+          "creative_user_id",
+          "creative_user_name",
+          "d3_action_user_id",
+          "d3_render_user_id",
+          "delete_user_id",
+          "delete_user_name",
+          "designer_id",
+          "designer_image_id",
+          "designer_image_name",
+          "designer_name",
+          "dub_user_id",
+          "file_sub_type",
+          "other_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "update_user_id",
+          "update_user_name",
+          "video_cover_list"
         ],
         "known_omitted_item_keys": [
           "file_md5",
+          "file_url",
           "image_set",
-          "remark"
+          "remark",
+          "thumbnail_url"
+        ],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "d3_action_user_id",
+          "d3_render_user_id",
+          "dub_user_id",
+          "other_user_id",
+          "performer_user_id",
+          "transcribe_user_id"
         ],
         "required_data_keys": [
           "list"
