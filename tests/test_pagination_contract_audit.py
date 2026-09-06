@@ -15,6 +15,7 @@ from gravity_insight.pagination_contract_audit import (
     _response_scalar_only,
     current_operation_pagination,
     load_pagination_audit,
+    operation_pagination_evidence_signature,
     reconcile_pagination_audit,
 )
 
@@ -120,6 +121,20 @@ class PaginationContractAuditTests(unittest.TestCase):
                 if pagination["_evidence_context"]["response_scalar_only"]
             ),
         )
+
+    def test_signature_detects_scalar_only_disposition_loss(self) -> None:
+        path = OPERATIONS_ROOT / "analysis.segment.evaluate_percent.json"
+        operation = json.loads(path.read_text(encoding="utf-8"))["operation"]
+        changed = deepcopy(operation)
+        changed["response_projection"]["data_keys"].append("zone_offset")
+
+        before = operation_pagination_evidence_signature(operation)
+        after = operation_pagination_evidence_signature(changed)
+
+        self.assertEqual("not_collection_semantics", before["unknown_evidence_disposition"])
+        self.assertTrue(before["response_scalar_only"])
+        self.assertIsNone(after["unknown_evidence_disposition"])
+        self.assertFalse(after["response_scalar_only"])
 
     def test_snapshot_is_a_historical_verdict_joined_to_current_contracts(self) -> None:
         audit = load_pagination_audit()

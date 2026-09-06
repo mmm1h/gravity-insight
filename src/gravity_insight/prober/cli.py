@@ -27,6 +27,7 @@ from .reprobe import preflight_parameter_reprobes, run_parameter_reprobes
 from .parents import resolve_parent_blockers
 from .read_semantics import assert_probe_draft_directory
 from .transport import RecordingSession, RequestDiscipline, build_runtime, sdk_parts
+from .drift_declaration import apply_drift_plan, build_drift_plan, write_drift_plan
 
 
 class ProberArgumentParser(argparse.ArgumentParser):
@@ -138,6 +139,20 @@ def build_parser() -> argparse.ArgumentParser:
         "reevaluate",
         help="Re-evaluate legacy privacy-short-circuit evidence offline and promote eligible drafts.",
     )
+
+    drift_plan = commands.add_parser(
+        "drift-plan",
+        help="Build a conservative stable response-drift declaration plan offline.",
+    )
+    drift_plan.add_argument("--evidence", type=Path, action="append", required=True)
+    drift_plan.add_argument("--selector", action="append", default=[])
+    drift_plan.add_argument("--output", type=Path)
+
+    drift_apply = commands.add_parser(
+        "drift-apply",
+        help="Apply an exact drift plan, refresh derived products, and run full gates.",
+    )
+    drift_apply.add_argument("--plan", type=Path, required=True)
 
     status = commands.add_parser("status", help="Show draft gates and aggregate probe request statistics.")
     status.add_argument("operation_id", nargs="*")
@@ -298,6 +313,20 @@ def _run_promote(args: argparse.Namespace) -> Mapping[str, Any]:
     }
 
 
+def _run_drift_plan(args: argparse.Namespace) -> Mapping[str, Any]:
+    plan = build_drift_plan(args.evidence, selectors=args.selector)
+    if args.output is None:
+        return plan
+    write_drift_plan(args.output, plan)
+    return {
+        "schema_version": plan["schema_version"],
+        "summary": plan["summary"],
+        "plan_sha256": plan["plan_sha256"],
+        "output": str(args.output.resolve()),
+        "network_called": False,
+    }
+
+
 def run(args: argparse.Namespace) -> Mapping[str, Any]:
     commands = {
         "draft": _run_draft,
@@ -309,6 +338,8 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
         "resolve-parents": _run_resolve_parents,
         "promote": _run_promote,
         "reevaluate": lambda namespace: reevaluate_drafts(),
+        "drift-plan": _run_drift_plan,
+        "drift-apply": lambda namespace: apply_drift_plan(namespace.plan),
         "status": lambda namespace: status_report(namespace.operation_id),
     }
     try:
