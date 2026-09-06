@@ -26,7 +26,7 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "357c2d986083f2c5edf8ea70f0d29ae4790a05fb221c8bdf11b6ca7199207861",
+    "reference_evidence_sha256": "425a8507f0a0e721cff64898c6d19b4bafd8979311f6213a77285eea273f90a9",
     "manual_review_sha256": "203c5c483b1f740a326dfbbe6e121c66ee5d10ad5e81b9730b76b33a41b0079d",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3187,
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 256
     },
-    "sites_sha256": "90ddc3065b94001c972bf37a1c733232cb237a63e2835eb77a477fa7c0fbe7b2"
+    "sites_sha256": "7d854593f311e74ed971d9b0f830ff7d0bc06abdeac9bdb838584b83b16b21eb"
   },
   "blockers": [],
   "site_fields": [
@@ -1567,7 +1567,7 @@
       }
     ],
     [
-      "src/gravity_insight/prober/drift_declaration.py:14:1:from import",
+      "src/gravity_insight/prober/drift_declaration.py:15:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

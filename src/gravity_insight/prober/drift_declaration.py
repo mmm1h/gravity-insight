@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -304,6 +305,7 @@ def _tracked_snapshot(root: Path, *, require_clean: bool) -> dict[Path, bytes]:
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         if status.returncode != 0 or status.stdout.strip():
             raise ValueError("drift apply requires a clean tracked worktree")
@@ -365,7 +367,14 @@ def _refresh_golden_fixture(
 
 def _run_command(root: Path, command: Sequence[str]) -> dict[str, Any]:
     completed = subprocess.run(
-        list(command), cwd=root, check=False, capture_output=True, text=True
+        list(command),
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        # Inherited stdio encoding is not proof; pin the child's explicitly.
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
     )
     output = (completed.stdout + completed.stderr)[-4000:]
     result = {"command": list(command), "exit_code": completed.returncode, "output_tail": output}
