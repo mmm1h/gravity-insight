@@ -44,8 +44,9 @@ gravity census impact <route-diff.json> --output <operation-impact.json> --overl
 `impact` follows `contracts/generated/provenance.json` to each operation source contract, builds a
 normalized method/path reverse index, and emits affected operation IDs, family/platform/level
 context, priority, suggested actions, and a schedule-only targeted probe plan. It never edits a
-contract and never calls a business API. The GitHub Actions workflow uploads this plan for an
-authorized runner or reviewer to execute separately.
+contract and never calls a business API. The existing GitHub Actions census workflow consumes the
+plan into one managed upstream-drift Issue; commands remain a handoff for a separately authorized
+runner and are never executed by the workflow.
 
 ## Response field candidates
 
@@ -101,6 +102,17 @@ stable. This is the observed cost of the current graph, not a fixed budget: the 
 
 The reviewed baseline is checked in. A detected change therefore remains visible on later runs
 until a human reviews and promotes the new snapshot and any contract updates.
+
+After each complete successful scheduled census, the same workflow also reconciles checked-in
+`evidence/probe/*.json` additive response paths against the current compiled operation projection.
+Only paths that remain neither exposed nor explicitly omitted are actionable. A non-empty targeted
+probe plan or unresolved checked-in path creates or updates the single
+`[upstream drift] Action required` Issue. Its fingerprint excludes repeated evidence references, so
+an unchanged finding produces no comment or Issue update; a changed actionable set produces one
+update and one subscriber notification. A later complete successful census closes the Issue only
+when both sources are clear. Signal construction or Issue delivery fails closed, while an
+`upstream_capacity` crawl remains the existing warning-only, no-conclusion state and cannot close
+the Issue.
 
 ## Current scoring evidence
 
