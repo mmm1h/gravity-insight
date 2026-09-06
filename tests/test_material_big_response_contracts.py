@@ -13,6 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 OPAQUE_FIXTURE = [{"shape_is_intentionally_unspecified": [1, None]}]
 
 OBSERVED_FIELDS: dict[str, dict[str, Any]] = {
+    "material.local.list": {
+        "d3_action_user_id": OPAQUE_FIXTURE,
+        "d3_render_user_id": OPAQUE_FIXTURE,
+        "image_set": OPAQUE_FIXTURE,
+        "other_user_id": OPAQUE_FIXTURE,
+    },
     "material.recycle.list": {
         "capture_user_id": OPAQUE_FIXTURE,
         "create_user_id": 1,
@@ -46,9 +52,9 @@ OBSERVED_FIELDS: dict[str, dict[str, Any]] = {
         "create_time": "2026-09-05 00:00:00",
         "creative_user_id": 2,
         "creative_user_name": "creative",
-        "d3_action_user_id": None,
+        "d3_action_user_id": OPAQUE_FIXTURE,
         "d3_action_user_name": "action",
-        "d3_render_user_id": None,
+        "d3_render_user_id": OPAQUE_FIXTURE,
         "d3_render_user_name": "render",
         "designer_id": 3,
         "designer_image_id": None,
@@ -64,7 +70,7 @@ OBSERVED_FIELDS: dict[str, dict[str, Any]] = {
         "image_set": OPAQUE_FIXTURE,
         "is_favorite": 0,
         "make_time": None,
-        "other_user_id": None,
+        "other_user_id": OPAQUE_FIXTURE,
         "other_user_name": "other",
         "performer_user_id": OPAQUE_FIXTURE,
         "performer_user_name": "performer",
@@ -75,6 +81,11 @@ OBSERVED_FIELDS: dict[str, dict[str, Any]] = {
 }
 
 OPAQUE_FIELDS = {
+    "material.local.list": {
+        "d3_action_user_id",
+        "d3_render_user_id",
+        "other_user_id",
+    },
     "material.recycle.list": {
         "capture_user_id",
         "d3_action_user_id",
@@ -86,18 +97,23 @@ OPAQUE_FIELDS = {
     },
     "material.report.query": {
         "capture_user_id",
+        "d3_action_user_id",
+        "d3_render_user_id",
         "dub_user_id",
+        "other_user_id",
         "performer_user_id",
         "transcribe_user_id",
     },
 }
 
 OMITTED_FIELDS = {
+    "material.local.list": {"image_set"},
     "material.recycle.list": {"file_url", "thumbnail_url"},
     "material.report.query": {"file_url", "image_set", "thumbnail_url"},
 }
 
 INPUTS = {
+    "material.local.list": {"page": 1, "page_size": 1},
     "material.recycle.list": {"filters": [], "page": 1, "page_size": 1},
     "material.report.query": {
         "app_list": ["fixture-app"],
@@ -159,6 +175,13 @@ class MaterialBigResponseContractTests(unittest.TestCase):
             with self.subTest(operation_id=operation_id):
                 projection = _contract(operation_id)["response_projection"]
                 projected_fields = set(observed) - OMITTED_FIELDS[operation_id]
+                result = _client(operation_id, observed).read(
+                    operation_id, INPUTS[operation_id]
+                )
+
+                self.assertTrue(result["ok"], result.get("error"))
+                self.assertEqual("success", result["status"])
+                self.assertNotIn("response_drift", result["result_audit"])
                 self.assertLessEqual(projected_fields, set(projection["item_keys"]))
                 self.assertLessEqual(
                     OMITTED_FIELDS[operation_id],
@@ -168,13 +191,6 @@ class MaterialBigResponseContractTests(unittest.TestCase):
                     OPAQUE_FIELDS[operation_id],
                     set(projection.get("opaque_json_item_keys", [])),
                 )
-
-                result = _client(operation_id, observed).read(
-                    operation_id, INPUTS[operation_id]
-                )
-
-                self.assertTrue(result["ok"])
-                self.assertEqual("success", result["status"])
                 self.assertEqual(
                     {
                         field: value
@@ -183,7 +199,6 @@ class MaterialBigResponseContractTests(unittest.TestCase):
                     },
                     result["data"]["list"][0],
                 )
-                self.assertNotIn("response_drift", result["result_audit"])
 
     def test_non_json_values_remain_contract_changed(self) -> None:
         cases = (

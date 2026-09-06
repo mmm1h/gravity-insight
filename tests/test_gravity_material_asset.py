@@ -188,7 +188,7 @@ class MaterialAssetTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ContractChangedError):
                 _validate_sources(value)
 
-    def test_public_source_contracts_omit_both_private_url_fields(self) -> None:
+    def test_public_source_contracts_omit_private_fields(self) -> None:
         operation_root = (
             Path(__file__).resolve().parents[1]
             / "src"
@@ -206,10 +206,11 @@ class MaterialAssetTests(unittest.TestCase):
         )["operation"]
         self.assertEqual(4, local["contract_version"])
         self.assertEqual(4, project["contract_version"])
-        for visible, omitted in (
+        for visible, omitted, expected_omitted in (
             (
                 local["response_projection"]["item_keys"],
                 local["response_projection"]["known_omitted_item_keys"],
+                {"file_url", "image_set", "thumbnail_url"},
             ),
             (
                 project["response_projection"]["data_item_keys"][
@@ -218,10 +219,11 @@ class MaterialAssetTests(unittest.TestCase):
                 project["response_projection"]["known_omitted_data_item_keys"][
                     "video_material_list"
                 ],
+                {"file_url", "thumbnail_url"},
             ),
         ):
             self.assertTrue({"file_url", "thumbnail_url"}.isdisjoint(visible))
-            self.assertEqual({"file_url", "thumbnail_url"}, set(omitted))
+            self.assertEqual(expected_omitted, set(omitted))
 
     def test_bytedance_observed_video_and_thumbnail_origins_commit(self) -> None:
         row = {
