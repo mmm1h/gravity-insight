@@ -85,7 +85,19 @@ class PermissionMenuOperationTests(unittest.TestCase):
         result = client.read(OPERATION_ID, {})
 
         self.assertEqual("success", result["status"])
-        self.assertIn("response_drift", result["result_audit"])
+        self.assertEqual(
+            [
+                {
+                    "path": "/data/list/*/children/*/new_nested_field",
+                    "observed_type": "string",
+                },
+                {
+                    "path": "/data/list/*/new_upstream_field",
+                    "observed_type": "string",
+                },
+            ],
+            result["result_audit"]["response_drift"]["fields"],
+        )
         method, path, kwargs = transport.calls[0]
         self.assertEqual("GET", method)
         self.assertEqual(TARGET_PATH, path)
@@ -103,6 +115,7 @@ class PermissionMenuOperationTests(unittest.TestCase):
                         "name": "事件分析",
                         "parent_id": 1,
                         "person_num": 7,
+                        "children": [],
                     }
                 ],
             },

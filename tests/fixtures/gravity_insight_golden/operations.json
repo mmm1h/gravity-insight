@@ -1933,6 +1933,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ],
@@ -1949,6 +1950,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ],
@@ -1965,6 +1967,7 @@
             "modify_time",
             "name",
             "prop_type",
+            "remark",
             "uploaded",
             "visible"
           ]
@@ -2616,7 +2619,8 @@
           "list",
           "target_list",
           "default_limit",
-          "date_list"
+          "date_list",
+          "filter_agg_type"
         ],
         "data_path_item_keys": {},
         "data_scalar_list_types": {},
@@ -3831,7 +3835,16 @@
           "user$ad_avg_ecpm",
           "user$ad_ltv",
           "Name",
-          "WXOpenID"
+          "WXOpenID",
+          "AdCid",
+          "AdClickTime",
+          "AdGid",
+          "CSite",
+          "Channel",
+          "LatestLoginDay",
+          "Version",
+          "id",
+          "modify_time"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -4235,7 +4248,9 @@
           "$split_count",
           "$split_trace_id_list",
           "re_attribute_info",
-          "Name"
+          "Name",
+          "user$pay_amount_sum",
+          "user$pay_max_amount"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -6042,7 +6057,13 @@
         "data_item_keys": {},
         "data_keys": [
           "aggregate_date",
-          "zone_tags"
+          "zone_tags",
+          "aggregate_by_date",
+          "aggregate_date_group",
+          "date_list",
+          "total",
+          "x",
+          "y"
         ],
         "data_path_item_keys": {},
         "data_scalar_list_types": {},
@@ -6521,7 +6542,8 @@
         "data_keys": [
           "part",
           "percent",
-          "total"
+          "total",
+          "zone_offset"
         ],
         "data_path_item_keys": {},
         "data_scalar_list_types": {},
@@ -6531,7 +6553,9 @@
         "empty_object_as_empty_result": false,
         "item_keys": [],
         "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
+        "known_omitted_data_keys": [
+          "extra_data"
+        ],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
@@ -11613,7 +11637,13 @@
           "cid",
           "name",
           "create_time",
-          "modify_time"
+          "modify_time",
+          "create_user_id",
+          "create_user_name",
+          "operator_id",
+          "operator_name",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -12626,7 +12656,18 @@
       "resource": "album",
       "response_projection": {
         "data_dynamic_item_fields": {},
-        "data_item_keys": {},
+        "data_item_keys": {
+          "tree": [
+            "id",
+            "label",
+            "parent_id",
+            "root_id",
+            "has_alum",
+            "album_authority",
+            "create_user_id",
+            "children"
+          ]
+        },
         "data_keys": [
           "tree",
           "image_size",
@@ -12638,24 +12679,30 @@
         "dynamic_item_fields": [],
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
-        "item_keys": [],
+        "item_keys": [
+          "album_authority"
+        ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
-        "nested_item_keys": {},
-        "numeric_paths": [],
-        "opaque_json_item_keys": [],
-        "recursive_data_item_keys": {
-          "tree": [
+        "nested_item_keys": {
+          "children": [
             "id",
             "label",
             "parent_id",
             "root_id",
             "has_alum",
+            "album_authority",
+            "create_user_id",
             "children"
           ]
         },
+        "numeric_paths": [],
+        "opaque_json_item_keys": [
+          "album_authority"
+        ],
+        "recursive_data_item_keys": {},
         "required_data_keys": [
           "tree"
         ],
@@ -12686,7 +12733,7 @@
       "resource": "bytedance",
       "action": "list",
       "platform": null,
-      "description": "巨量平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
+      "description": "巨量平台素材列表。广告主、人员、租户、文件 URL 与已观察媒体容器已登记返回；缓存状态、未证实文件元数据、MD5、标签与其余图片容器仍按现有合同省略。",
       "stability": "stable",
       "executable": true,
       "block_reason": null,
@@ -12787,7 +12834,20 @@
           "material_id",
           "gravity_material_id",
           "cid",
-          "advertiser_name"
+          "advertiser_name",
+          "capture_user_id",
+          "create_user_id",
+          "create_user_name",
+          "creative_user_id",
+          "creative_user_name",
+          "designer_id",
+          "designer_name",
+          "dub_user_id",
+          "file_url",
+          "performer_user_id",
+          "thumbnail_url",
+          "transcribe_user_id",
+          "video_cover_list"
         ],
         "dynamic_item_fields": [],
         "nested_item_keys": {},
@@ -12836,7 +12896,13 @@
         "numeric_paths": [],
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "dub_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "video_cover_list"
+        ],
         "unreliable_item_keys": {
           "gravity_material_id": {
             "reason": "Live bytedance library rows return gravity_material_id=0 while material_id is a unique 19-char identifier on the same row.",
@@ -13406,6 +13472,7 @@
           "file_name",
           "file_size",
           "file_size_str",
+          "file_sub_type",
           "file_type",
           "format",
           "gravity_material_id",
@@ -13452,6 +13519,7 @@
           "used_ad_platform",
           "video_duration",
           "video_duration_second",
+          "video_cover_list",
           "width"
         ],
         "known_omitted_data_item_keys": {},
@@ -13644,7 +13712,7 @@
       "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "2",
-      "description": "素材回收站只读列表；单页最小探针已验证；未登记的新字段触发 additive drift，文件 MD5、嵌套图片集合与自由备注因合同证据不足仍省略。",
+      "description": "素材回收站只读列表；单页最小探针已验证；未登记的新字段触发 additive drift，文件 MD5、嵌套图片集合与自由备注因合同证据不足仍省略，素材 URL 按下载治理边界省略。",
       "domain": "material",
       "executable": true,
       "input_fields": [
@@ -13811,19 +13879,50 @@
           "material_used",
           "image_nums",
           "aspect_ratio_int",
-          "file_extension"
+          "file_extension",
+          "capture_user_id",
+          "create_user_id",
+          "create_user_name",
+          "creative_user_id",
+          "creative_user_name",
+          "d3_action_user_id",
+          "d3_render_user_id",
+          "delete_user_id",
+          "delete_user_name",
+          "designer_id",
+          "designer_image_id",
+          "designer_image_name",
+          "designer_name",
+          "dub_user_id",
+          "file_sub_type",
+          "other_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "update_user_id",
+          "update_user_name",
+          "video_cover_list"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
         "known_omitted_item_keys": [
           "file_md5",
+          "file_url",
           "image_set",
-          "remark"
+          "remark",
+          "thumbnail_url"
         ],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "d3_action_user_id",
+          "d3_render_user_id",
+          "dub_user_id",
+          "other_user_id",
+          "performer_user_id",
+          "transcribe_user_id"
+        ],
         "recursive_data_item_keys": {},
         "required_data_keys": [
           "list"
@@ -13855,7 +13954,7 @@
       "resource": "report",
       "action": "query",
       "platform": null,
-      "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。2026-08-08 四个平台最小探针均 code=0 且响应合同一致。",
+      "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。素材 URL 与内部形状未知的 image_set 不向消费方投影。",
       "stability": "stable",
       "executable": true,
       "block_reason": null,
@@ -14006,7 +14105,36 @@
           "conversion_ratio",
           "click_rate",
           "AppRealRegisterCnt",
-          "AppGamePayUserCntStandardAtv"
+          "AppGamePayUserCntStandardAtv",
+          "album_id",
+          "album_name",
+          "capture_user_id",
+          "capture_user_name",
+          "create_time",
+          "creative_user_id",
+          "creative_user_name",
+          "d3_action_user_id",
+          "d3_action_user_name",
+          "d3_render_user_id",
+          "d3_render_user_name",
+          "designer_id",
+          "designer_image_id",
+          "designer_image_name",
+          "designer_name",
+          "dub_user_id",
+          "dub_user_name",
+          "file_md5",
+          "file_type",
+          "folder_id",
+          "folder_name",
+          "is_favorite",
+          "make_time",
+          "other_user_id",
+          "other_user_name",
+          "performer_user_id",
+          "performer_user_name",
+          "transcribe_user_id",
+          "transcribe_user_name"
         ],
         "dynamic_item_fields": [],
         "nested_item_keys": {},
@@ -14016,7 +14144,11 @@
         "data_scalar_list_types": {},
         "data_path_item_keys": {},
         "data_dynamic_item_fields": {},
-        "known_omitted_item_keys": [],
+        "known_omitted_item_keys": [
+          "file_url",
+          "image_set",
+          "thumbnail_url"
+        ],
         "recursive_data_item_keys": {},
         "known_omitted_data_keys": [
           "total",
@@ -14026,7 +14158,12 @@
         "numeric_paths": [],
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "dub_user_id",
+          "performer_user_id",
+          "transcribe_user_id"
+        ],
         "unreliable_item_keys": {
           "gravity_material_id": {
             "reason": "Live bytedance material.report.query rows return gravity_material_id=0 while file_name is unique and material.bytedance.list material_id is a 19-char identifier.",
@@ -14428,9 +14565,13 @@
           "category_id",
           "cid",
           "create_time",
+          "create_user_id",
+          "create_user_name",
           "is_system",
           "modify_time",
-          "source"
+          "source",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -14729,7 +14870,7 @@
       "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "2",
-      "description": "腾讯平台素材列表。广告主名称、租户字段、文件/缩略图 URL 与已观察人员字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
+      "description": "腾讯平台素材列表。广告主、租户、文件/缩略图 URL、人员字段与已观察媒体容器已登记返回；缓存状态、未证实文件元数据、MD5、标签与其余图片容器仍按现有合同省略。",
       "domain": "material",
       "executable": true,
       "input_fields": [
@@ -14878,7 +15019,12 @@
           "creative_user_id",
           "creative_user_name",
           "designer_id",
-          "designer_name"
+          "designer_name",
+          "capture_user_id",
+          "dub_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "video_cover_list"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -14918,7 +15064,13 @@
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "capture_user_id",
+          "dub_user_id",
+          "performer_user_id",
+          "transcribe_user_id",
+          "video_cover_list"
+        ],
         "recursive_data_item_keys": {},
         "required_data_keys": [
           "list"
@@ -17433,6 +17585,10 @@
           "advertiser_name",
           "advertiser_remark",
           "company",
+          "delay",
+          "download_url",
+          "operator_id",
+          "operator_name",
           "project_list"
         ],
         "known_omitted_data_item_keys": {},
@@ -19947,11 +20103,40 @@
           "app_name",
           "developer_id",
           "developer_name",
-          "advertiser_name"
+          "advertiser_name",
+          "account_role",
+          "ad_platform",
+          "advertiser_sort",
+          "agent_id",
+          "balance",
+          "budget",
+          "budget_mode",
+          "cid",
+          "company",
+          "create_time",
+          "create_user_id",
+          "create_user_name",
+          "develop_app_id",
+          "first_industry_id",
+          "first_industry_name",
+          "grant_source",
+          "grant_type",
+          "modify_time",
+          "operator_id",
+          "operator_name",
+          "put_status",
+          "put_status_modify_time",
+          "remark",
+          "second_industry_id",
+          "second_industry_name",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [],
+        "known_omitted_item_keys": [
+          "access_token"
+        ],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
@@ -20197,7 +20382,11 @@
             "query_fields"
           ]
         },
-        "data_item_keys": {},
+        "data_item_keys": {
+          "total": [
+            "charge"
+          ]
+        },
         "data_keys": [
           "list",
           "page_info",
@@ -20238,7 +20427,35 @@
           "account_name",
           "app_id",
           "app_name",
-          "advertiser_name"
+          "advertiser_name",
+          "adgroup_put_status",
+          "adgroup_status",
+          "advertiser_balance",
+          "advertiser_budget",
+          "advertiser_budget_mode",
+          "advertiser_remark",
+          "advertiser_system_status",
+          "begin_time",
+          "bid",
+          "bid_type",
+          "charge",
+          "company",
+          "compensate_status",
+          "day_budget",
+          "deep_conversion_type",
+          "deep_conversion_type_str",
+          "end_time",
+          "ocpx_action_type",
+          "ocpx_action_type_str",
+          "operator_id",
+          "operator_name",
+          "project_list",
+          "roi_ratio",
+          "scene_id",
+          "schedule_time",
+          "study_status",
+          "unit_id",
+          "unit_name"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -20246,7 +20463,9 @@
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "project_list"
+        ],
         "recursive_data_item_keys": {},
         "required_data_keys": [
           "list"
@@ -20488,7 +20707,11 @@
             "query_fields"
           ]
         },
-        "data_item_keys": {},
+        "data_item_keys": {
+          "total": [
+            "charge"
+          ]
+        },
         "data_keys": [
           "list",
           "page_info",
@@ -20529,7 +20752,17 @@
           "account_name",
           "app_id",
           "app_name",
-          "advertiser_name"
+          "advertiser_name",
+          "advertiser_balance",
+          "advertiser_budget",
+          "advertiser_budget_mode",
+          "advertiser_remark",
+          "advertiser_system_status",
+          "charge",
+          "company",
+          "operator_id",
+          "operator_name",
+          "project_list"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -20537,7 +20770,9 @@
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "project_list"
+        ],
         "recursive_data_item_keys": {},
         "required_data_keys": [
           "list"
@@ -27562,7 +27797,9 @@
         "empty_object_as_empty_result": false,
         "item_keys": [],
         "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
+        "known_omitted_data_keys": [
+          "dy_mini_game"
+        ],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},

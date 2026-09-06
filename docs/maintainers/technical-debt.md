@@ -51,8 +51,9 @@
 - **设计逃逸复核（2026-08-25）**：随真实请求被动记录响应形状不属于被禁的“全量生产探测”，但**技术可行不等于该做**——
   单次观测证不了字段跨租户/权限/灰度恒存，缓存学错后 `read_all` 会按错误 `total_page` 停止并把截断结果标为 complete，
   而 agent 不会质疑，Plan/composite 继续传播；此静默错误比现有 capability gap 更危险，据此否决，未实现。
-  同轮把 `analysis.segment.evaluate_percent` 转为永久 unknown（响应严格为 `part/percent/total` 三个必需数值标量，
-  根本无集合语义）。2026-09-01 对 `analysis.event.query` 的获批 production
+  同轮把 `analysis.segment.evaluate_percent` 转为永久 unknown（响应投影为 `part/percent/total` 三个必需数值标量、
+  可选字符串 `zone_offset`，并整项省略 `extra_data` object；没有对外集合语义）。2026-09-01 对
+  `analysis.event.query` 的获批 production
   读响应未观察到 `has_more`、`item_count`、`total_items` 或 `page_info`，按计划转入永久 unknown；机器处置现为
   上述测试计算并锁定的三类 action 与两类 permanent-unknown disposition；不把 unknown 伪装成 complete。
 - **计划与触发**：[分页生产证据采集计划](pagination-evidence-plan.md) 精确列出当前可采集集合（测试按集合相等锁定而非计数）；改 unknown 分页、

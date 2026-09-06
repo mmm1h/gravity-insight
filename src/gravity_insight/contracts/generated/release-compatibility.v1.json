@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "fd8bf9e7e3d65a5e59f31502fb354a115401123554b8ee5cbaec0de22295bdbc"
+    "compatibility_sha256": "461e04e9a733967d8f05cbc66110acf2377b434b1ac25e2d0cf678526dcd62e4"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -193,11 +193,16 @@
       "hard_breaks": [
         {
           "id": "0.3.11-hard-break-1",
-          "description": "the five built-in Model contracts express `claim_policy` in canonical stable ids across all three tiers (`validated`, `scenario`, `forbidden`) instead of natural-language phrases. `causal claim` becomes the existing Skill/Journey id `causality`; the other four become their own ids rather than being merged into broader near-synonyms. No prose aliases are retained. A consumer matching the old strings gets no match, and a missed match against `forbidden` reads as \"not forbidden\" rather than raising, so a caller can silently begin permitting a claim it used to refuse. Model URIs, `models describe`/`evaluate` shapes, approval-selection logic and every data-read capability are unchanged.",
+          "description": "`user-detail-aggregate` now reports a privacy-policy-excluded field as `USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED` instead of `USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`. A condition whose non-null value-type set disagrees with the non-empty homogeneous observed row type now reports `USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH` with `category=caller` instead of `USER_DETAIL_AGGREGATE_MIXED_TYPE` with `category=upstream`, changing the process exit from 3 to 2. Both old and new paths are non-retryable. Actual mixed/non-scalar source rows retain `USER_DETAIL_AGGREGATE_MIXED_TYPE` and `category=upstream`; every prior rejection, the privacy exclusion, and all read capabilities are unchanged.",
           "migration_guide": "docs/migration/0.3.11.md"
         },
         {
           "id": "0.3.11-hard-break-2",
+          "description": "the five built-in Model contracts express `claim_policy` in canonical stable ids across all three tiers (`validated`, `scenario`, `forbidden`) instead of natural-language phrases. `causal claim` becomes the existing Skill/Journey id `causality`; the other four become their own ids rather than being merged into broader near-synonyms. No prose aliases are retained. A consumer matching the old strings gets no match, and a missed match against `forbidden` reads as \"not forbidden\" rather than raising, so a caller can silently begin permitting a claim it used to refuse. Model URIs, `models describe`/`evaluate` shapes, approval-selection logic and every data-read capability are unchanged.",
+          "migration_guide": "docs/migration/0.3.11.md"
+        },
+        {
+          "id": "0.3.11-hard-break-3",
           "description": "Capability Validation run and summary evidence advance from `gravity.capability-validation-run.v1` / `summary.v1` to v2. Outcome objects may now carry normalized `response_drift` and value-free `error_detail`, and the current summary filename changes to `capability-validation-summary.v2.json`. Strict v1 parsers and readers of the old summary path must migrate. The summarizer still reads immutable v1 runs, and its command response plus all collection and trust capabilities are unchanged. Migration guide: [0.3.11](docs/migration/0.3.11.md)",
           "migration_guide": "docs/migration/0.3.11.md"
         }

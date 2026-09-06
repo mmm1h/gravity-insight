@@ -77,7 +77,7 @@ def current_operation_pagination() -> dict[str, dict[str, Any]]:
                     if isinstance(projection, Mapping)
                     else None
                 ),
-                "response_scalar_only": _response_scalar_only(projection),
+                "response_scalar_only": _response_scalar_only(projection, pagination),
                 "stability": operation.get("stability"),
             },
         }
@@ -335,7 +335,9 @@ def _field_names(value: Any) -> set[str]:
     return {str(value)} if isinstance(value, str) else set()
 
 
-def _response_scalar_only(value: Any) -> bool:
+def _response_scalar_only(
+    value: Any, pagination: Mapping[str, Any] | None = None
+) -> bool:
     if (
         not isinstance(value, Mapping)
         or set(value) - _RESPONSE_PROJECTION_FIELD_NAMES
@@ -345,10 +347,29 @@ def _response_scalar_only(value: Any) -> bool:
         projection = ResponseProjection.from_dict(value)
     except ManifestError:
         return False
-    return bool(projection.data_keys) and projection == ResponseProjection(
+
+    data_keys = set(projection.data_keys)
+    required_data_keys = set(projection.required_data_keys)
+    numeric_paths = set(projection.numeric_paths)
+    collection_roots = {"list", "page_info"}
+    if isinstance(pagination, Mapping):
+        for field in ("list_path", "page_info_path"):
+            path = pagination.get(field)
+            if isinstance(path, str):
+                collection_roots.update(part for part in path.split(".") if part != "data")
+
+    numeric_anchor = (
+        bool(required_data_keys)
+        and required_data_keys == numeric_paths
+        and required_data_keys <= data_keys
+    )
+    if not numeric_anchor or data_keys & collection_roots:
+        return False
+    return projection == ResponseProjection(
         data_keys=projection.data_keys,
-        required_data_keys=projection.data_keys,
-        numeric_paths=projection.data_keys,
+        required_data_keys=projection.required_data_keys,
+        known_omitted_data_keys=projection.known_omitted_data_keys,
+        numeric_paths=projection.numeric_paths,
     )
 
 

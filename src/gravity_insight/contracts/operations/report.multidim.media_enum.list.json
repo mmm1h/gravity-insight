@@ -99,6 +99,9 @@
       },
       "dynamic_item_fields": [],
       "item_keys": [],
+      "known_omitted_data_keys": [
+        "dy_mini_game"
+      ],
       "required_data_keys": []
     },
     "semantic_error_rules": [

@@ -141,14 +141,16 @@
 | `promotion.youdao.account.list` | `page_info` / `template` | none | none |
 | `promotion.youdao.advertiser.list` | `page_info` / `template` | date_list | none |
 
-## 永久 unknown：不再采集（83）
+## 永久 unknown：不再采集（84）
 
 下列结论只表示“在当前上游合同与完整性模型下没有可用的分页降债动作”。只有 exact method+path 的新
 wire/production 合同出现总数或终止信号时才重开；重复采短页、空页或相同 response sketch 不重开。
 
 - `not_collection_semantics`（47）：这些是 9 个 detail/scalar 或 38 个 mutation，不属于集合分页证据待办。新增
-  `analysis.segment.evaluate_percent`：响应严格为 `part`/`percent`/`total` 三个必需顶层数值标量，根本无集合语义，
-  故从 P0 移入本节；判据要求全部 data key 均为必需数值标量，任一 item/list/nested/dynamic 投影即 fail-closed。尤其 38 个
+  `analysis.segment.evaluate_percent`：响应投影为 `part`/`percent`/`total` 三个必需数值标量与可选字符串
+  `zone_offset`，`extra_data` object 明确整项省略，故从 P0 移入本节。scalar-only 判据仍要求必需键与直接数值路径
+  精确相等且非空；仅容许未绑定集合能力的额外 scalar data key 与整项省略键，任一 item/list/nested/dynamic/opaque/
+  recursive 投影、分页集合路径或未知投影字段均 fail-closed。尤其 38 个
   mutation 只能走产品自有 dry-run/execute，绝不能为分页取证走 read probe：
   `analysis.dashboard.condition_favourite.default_to_me.get`, `analysis.dashboard.detail`,
   `analysis.dataanalysis.segment.update`,

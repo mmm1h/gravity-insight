@@ -148,7 +148,13 @@
     "response_projection": {
       "data_keys": [
         "aggregate_date",
-        "zone_tags"
+        "zone_tags",
+        "aggregate_by_date",
+        "aggregate_date_group",
+        "date_list",
+        "total",
+        "x",
+        "y"
       ],
       "dynamic_item_fields": [],
       "empty_object_as_empty_result": true,
