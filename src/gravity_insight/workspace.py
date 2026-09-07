@@ -14,6 +14,7 @@ from typing import Any, Mapping
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .workspace_recipe import Recipe, RecipeBindings, validate_recipes
+from .support.cache_paths import user_cache_root
 from .workspace_plan_recipe import (
     PlanRecipe,
     PlanRecipeError,
@@ -137,23 +138,6 @@ class Workspace:
                 f"unknown Plan recipe: {name}; must use a name declared under [plan_recipes] in gravity.toml",
                 field="recipe",
             ) from exc
-
-
-def user_cache_root(environ: Mapping[str, str] | None = None) -> Path:
-    """Return a platform-appropriate cache root without creating it."""
-
-    env = os.environ if environ is None else environ
-    configured = env.get("GRAVITY_CACHE_HOME", "").strip()
-    if configured:
-        return Path(configured).expanduser().resolve()
-    if os.name == "nt":
-        local = env.get("LOCALAPPDATA", "").strip()
-        if local:
-            return (Path(local).expanduser() / "gravity-insight").resolve()
-    xdg = env.get("XDG_CACHE_HOME", "").strip()
-    if xdg:
-        return (Path(xdg).expanduser() / "gravity-insight").resolve()
-    return (Path.home() / ".cache" / "gravity-insight").resolve()
 
 
 def find_workspace(start: str | Path | None = None) -> Path | None:

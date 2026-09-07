@@ -18,7 +18,7 @@ class CacheIsolationTests(unittest.TestCase):
 
         self.assertEqual(_cache_root, user_cache_root())
         self.assertEqual(catalog, default_catalog_path())
-        self.assertEqual(_cache_root / "GravityInsight", catalog.parents[2])
+        self.assertEqual(_cache_root, catalog.parents[2])
         self.assertEqual(
             catalog.parents[1] / "operation-catalog.json",
             GravityInsightClient.from_env()._operation_catalog._state_path,

@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .runtime_scope import field_policy_cache_dir
+from .support.cache_paths import cache_path_candidates, existing_cache_path
 
 
 DISK_SCHEMA = "gravity.field-policy-cache.v1"
@@ -70,7 +71,7 @@ def read_snapshot(
 ) -> tuple[float, Any] | None:
     if not persist:
         return None
-    path = _path(directory, key)
+    path = existing_cache_path(_path(directory, key))
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError):
@@ -126,10 +127,11 @@ def write_snapshot(
 
 
 def clear_snapshots(persist: bool, directory: Path) -> None:
-    if not persist or not directory.is_dir():
+    if not persist:
         return
-    for path in directory.glob("*.json"):
-        _unlink(path)
+    for candidate in cache_path_candidates(directory):
+        for path in candidate.glob("*.json"):
+            _unlink(path)
 
 
 def _usable(payload: Any, key: tuple[str, str]) -> bool:
