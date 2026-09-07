@@ -89,6 +89,17 @@ Migration guide: [0.3.12](docs/migration/0.3.12.md)
   additionally rejects a receipt whose drift `expectation_provenance` does not bind
   to that receipt's own `request_shape_fingerprint`, which would otherwise let a
   provenance record describe a different request than the one it is filed under.
+- A Runtime that refreshes an expired credential mid-flight now writes its
+  subsequent HTTP receipts, and partitions its Governor observations, under the
+  refreshed credential generation. Both coordinates were previously computed once
+  at Runtime construction, so every request after a 401-triggered refresh filed its
+  evidence under the *previous* generation — the isolation guarantee failed in the
+  one case that happens routinely. Storage and observation coordinates are now
+  resolved per request and frozen before any rate wait or I/O, so an in-flight
+  response and its transport retries keep the binding they started with while the
+  authentication replay picks up the new one. The connection pool is not recycled
+  and in-flight pagination is not interrupted. Receipts already written to the wrong
+  generation are not migrated.
 
 ## [0.3.11] - 2026-09-07
 
