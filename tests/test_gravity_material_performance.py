@@ -68,6 +68,18 @@ class MaterialPerformanceTests(unittest.TestCase):
         )
         invalid_status = _success("tencent")
         invalid_status.update(ok=False, status="success")
+        success_error = _success("tencent")
+        success_error["error"] = {"code": "CUSTOM_UPSTREAM"}
+        read_envelope_type = _success("tencent")
+        read_envelope_type["data"] = None
+        read_envelope_identity = _success("tencent")
+        read_envelope_identity["data"]["operation_id"] = "material.report.changed"
+        read_data_shape = _success("tencent")
+        read_data_shape["data"]["data"]["extra"] = None
+        row_registration = _success("tencent", [{"unregistered": 1}])
+        row_status = _success("tencent", [], status="success")
+        page_receipt = _success("tencent")
+        page_receipt["data"]["page"]["max_workers"] = 2
         cases = (
             (None, "component_shape", "$"),
             (
@@ -83,6 +95,17 @@ class MaterialPerformanceTests(unittest.TestCase):
                 "$.status_or_error.code",
             ),
             (invalid_status, "component_status", "$.ok_or_status"),
+            (success_error, "success_error", "$.error"),
+            (read_envelope_type, "read_envelope_type", "$.data"),
+            (read_envelope_identity, "read_envelope_identity", "$.data"),
+            (read_data_shape, "read_data_shape", "$.data.data"),
+            (
+                row_registration,
+                "row_field_registration",
+                "$.data.data.list[0].<unregistered>",
+            ),
+            (row_status, "row_status", "$.data.status"),
+            (page_receipt, "page_receipt", "$.data.page"),
         )
         for value, check, path in cases:
             with self.subTest(check=check):
@@ -92,6 +115,15 @@ class MaterialPerformanceTests(unittest.TestCase):
                     {"check": check, "path": path},
                     result["drift_diagnostics"]["failures"][0],
                 )
+
+        upstream_contract = _failure(
+            "contract_changed", "CONTRACT_CHANGED", "upstream"
+        )
+        result = safe_component(upstream_contract, "tencent", max_pages=3)
+        self.assertEqual(
+            {"check": "component_contract_status", "path": "$.status"},
+            result["drift_diagnostics"]["failures"][0],
+        )
 
     def test_upstream_contract_drift_reaches_consumers_without_values(self):
         sentinel = "PRIVATE_MATERIAL_VALUE_MUST_NOT_LEAK"

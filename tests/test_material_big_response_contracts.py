@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from gravity_insight import GravityInsightClient
+from gravity_insight.material_performance import material_performance
+from gravity_insight.material_performance_result import MATERIAL_ROW_FIELDS
 from gravity_insight.transport import TransportResponse
 
 
@@ -63,6 +65,7 @@ OBSERVED_FIELDS: dict[str, dict[str, Any]] = {
         "dub_user_id": OPAQUE_FIXTURE,
         "dub_user_name": "dub",
         "file_md5": "0123456789abcdef",
+        "file_name": "creative.mp4",
         "file_type": "video",
         "file_url": "https://example.invalid/material",
         "folder_id": None,
@@ -70,10 +73,12 @@ OBSERVED_FIELDS: dict[str, dict[str, Any]] = {
         "image_set": OPAQUE_FIXTURE,
         "is_favorite": 0,
         "make_time": None,
+        "material_id": "1800000000000003",
         "other_user_id": OPAQUE_FIXTURE,
         "other_user_name": "other",
         "performer_user_id": OPAQUE_FIXTURE,
         "performer_user_name": "performer",
+        "stat_cost": 12.5,
         "thumbnail_url": "https://example.invalid/thumbnail",
         "transcribe_user_id": OPAQUE_FIXTURE,
         "transcribe_user_name": "transcriber",
@@ -199,6 +204,62 @@ class MaterialBigResponseContractTests(unittest.TestCase):
                     },
                     result["data"]["list"][0],
                 )
+
+    def test_material_product_matches_read_and_public_batch_on_same_response(self) -> None:
+        operation_id = "material.report.query"
+        row = OBSERVED_FIELDS[operation_id]
+        direct = _client(operation_id, row).read_all(
+            operation_id,
+            INPUTS[operation_id],
+            max_pages=500,
+            max_items=50_000,
+        )
+        batch = _client(operation_id, row).batch(
+            [
+                {
+                    "operation_id": operation_id,
+                    "request_id": "bytedance",
+                    "inputs": INPUTS[operation_id],
+                    "read_all": True,
+                }
+            ],
+            max_workers=1,
+            max_pages=500,
+            max_total_items=50_000,
+        )[0]
+        product = material_performance(
+            _client(operation_id, row),
+            [17],
+            "2026-09-05",
+            "2026-09-05",
+            platforms=("bytedance",),
+            max_pages=500,
+            max_items=50_000,
+        )
+
+        self.assertEqual((True, "success"), (direct["ok"], direct["status"]))
+        self.assertNotIn("response_drift", direct["result_audit"])
+        self.assertEqual((True, "success"), (batch["ok"], batch["status"]))
+        self.assertEqual(direct["data"], batch["data"]["data"])
+        self.assertEqual((True, "success"), (product["ok"], product["status"]))
+        expected_product_rows = [
+            {
+                key: value
+                for key, value in source.items()
+                if key in MATERIAL_ROW_FIELDS
+            }
+            for source in direct["data"]["list"]
+        ]
+        self.assertEqual(
+            expected_product_rows, product["results"][0]["data"]["list"]
+        )
+        self.assertEqual(
+            "1800000000000003",
+            product["results"][0]["data"]["list"][0]["material_id"],
+        )
+        self.assertNotIn(
+            "album_name", product["results"][0]["data"]["list"][0]
+        )
 
     def test_non_json_values_remain_contract_changed(self) -> None:
         cases = (
