@@ -135,10 +135,10 @@
       "sloc_hard_limit": 571
     },
     "src/gravity_insight/http_runtime.py": {
-      "ast_hard_limit": 3021,
-      "ast_nodes": 3021,
+      "ast_hard_limit": 2987,
+      "ast_nodes": 2987,
       "migration_sloc": 675,
-      "sloc_hard_limit": 572
+      "sloc_hard_limit": 565
     },
     "src/gravity_insight/models.py": {
       "ast_hard_limit": 6073,
