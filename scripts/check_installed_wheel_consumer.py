@@ -22,7 +22,7 @@ DEFAULT_CONSUMER = ROOT.parent / "work-dashboard"
 # Nothing checks that this pin still tracks the consumer's HEAD, so it only moves
 # when someone moves it. A stale pin does not fail — it quietly verifies the wheel
 # against a consumer that no longer exists, which is worse than not checking.
-DEFAULT_REVISION = "03d57598d601909da1297fcc0d9f31184d0f4da9"
+DEFAULT_REVISION = "f02d26fbb8cfb073e3773daf360c177348e0ae27"
 STRICT_PREREQUISITES_ENV = "GRAVITY_REQUIRE_CANONICAL_CONSUMER"
 CONSUMER_REPOSITORY_ENV = "GRAVITY_CANONICAL_CONSUMER_REPOSITORY"
 CONSUMER_TESTS = (
