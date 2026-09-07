@@ -79,6 +79,7 @@ class SkillHubCliTests(unittest.TestCase):
             "update": ["--skill", self.skill["skill_uri"], "--output", "lock.json"],
             "verify": ["--lock", "lock.json"],
             "audit": [],
+            "status": [],
         }
         for command, arguments in commands.items():
             with self.subTest(command=command):
@@ -108,6 +109,18 @@ class SkillHubCliTests(unittest.TestCase):
                     command in {"lock", "install-plan"},
                     bool(getattr(parsed, "product_file_output", False)),
                 )
+
+    def test_skill_status_exposes_explicit_unchecked_state_offline(self) -> None:
+        code, status, stderr = self.invoke("skills", "status", *self.local())
+
+        self.assertEqual(0, code, stderr)
+        self.assertEqual(
+            "gravity.skill-maintenance-receipt.v1", status["schema_version"]
+        )
+        self.assertEqual("not_bootstrapped", status["status"])
+        self.assertFalse(status["bootstrap_checked"])
+        self.assertEqual(0, status["skill_count"])
+        self.assertFalse(status["network_called"])
 
     def test_skill_cli_runs_sync_exact_lock_fetch_install_verify_and_audit(self) -> None:
         common = self.local()

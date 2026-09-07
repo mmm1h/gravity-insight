@@ -469,6 +469,7 @@ gravity journey describe <journey-id>
 gravity journey can-run <journey-id> --input request.json
 gravity skills list --state-root <state-root>
 gravity skills show <skill-uri> --state-root <state-root>
+gravity skills status --state-root <state-root>
 gravity analysis playbook schema
 gravity plan schema
 gravity plan run --input plan.json --dry-run
@@ -482,9 +483,11 @@ Journey readiness、Skill lock/trust、playbook checkpoint 和 Plan DAG 是不�
 当前 `skill-library-v4` Release 同时发布两种相互隔离的静态产物：`index.json` 和
 `runtime-skill-*.zip` 属于 Runtime Hub；`agent-index.json` 和 `agent-skill-*.zip` 属于 Codex、
 Claude Code 等宿主的 Agent Skill 投影。GitHub Release 资产使用全局唯一的扁平名称，两个 index
-不引用 Release 无法寻址的目录路径。普通 Runtime 包不含 `SKILL.md`，Agent Skill 也不携带执行代码、
-凭据或依赖实现。Runtime wheel 不携带可发现的业务 Skill，也不写宿主 Skill 目录；所有业务方法统一
-经 Hub 精确 lock/CAS 解析。Source 只能跟随一次到 `source.json` 明确列出的 HTTPS 主机，第二次
+不引用 Release 无法寻址的目录路径。普通 Runtime 包不含可直接发现的 `SKILL.md`，Agent Skill
+也不携带执行代码、凭据或依赖实现。Runtime wheel 携带同次发布生成的唯一 manifest-bound
+`skill_seed/skill-seed-v1.zip`，但不携带 `skills/library`、外部 Source Registry 或内置 resolver；seed
+只有经过 source/index 编译、独立 managed lock、archive 校验、CAS 写入和最终 verify 后才进入 Hub
+snapshot，`skills list` 不直接读取 seed。Source 只能跟随一次到 `source.json` 明确列出的 HTTPS 主机，第二次
 重定向、未声明主机、非 HTTPS、userinfo、fragment 或非默认端口全部失败关闭；最终 index/包仍按
 字节预算和摘要核验。`skill-library-v1`、`skill-library-v2` 与 `skill-library-v3` 保留原资产，不被
 v4 覆盖；v3 仅用于不可变历史取证，跨设备标准 CLI 获取使用 v4 与 Runtime 0.3.6+。
@@ -499,7 +502,20 @@ gravity skills search <query> --state-root <state-root>
 gravity skills lock --skill <exact-skill-uri> --output gravity.skills.lock.json --state-root <state-root>
 gravity skills fetch --source source.json --lock gravity.skills.lock.json --state-root <state-root>
 gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
+gravity skills status --state-root <state-root>
 ```
+
+`SkillHubClient.bootstrap_bundled()` 是当前显式离线装配 core；本阶段不把它接成 CLI 启动时自动动作。
+它只写 `<state-root>/skill-maintenance/managed-skills.lock.json`、Hub snapshot、maintenance receipt 与
+CAS，不读写项目目录的 `gravity.skills.lock.json`，也不发起网络请求。CAS 的进程内锁与 OS 文件锁
+同时承担 bootstrap 单写者边界。失败时已验证的 active lock/CAS 保持为 last-known-good；没有旧版本
+则 maintenance 状态为 `unavailable`。
+
+`gravity skills status` 返回 `gravity.skill-maintenance-receipt.v1`。`not_bootstrapped` 表示尚未检查，
+`empty` 表示检查成功且合法地得到零个 Skill，两者均由显式 `status` 与 `bootstrap_checked` 表达；
+`ready`、`degraded`、`unavailable` 分别表示当前可用、保留 last-known-good、无可用版本。输出同时
+携带 active source descriptor/index/seed digest、managed lock digest、Skill 数、最后尝试/成功时间、
+`network_called`、reason codes、`update_available` 与 `host_restart_required`。
 
 宿主先用同一 Release 的 `agent-skill-index-v1.schema.json` 验证 `agent-index.json`，按 exact
 `skill_uri` 选择 archive，核验 `sha256` 和 `size_bytes`，再把 ZIP 中唯一同名根目录交给宿主自己的

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.skill-maintenance-receipt.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "status",
+    "bootstrap_checked",
+    "active_source",
+    "active_index_digest",
+    "active_seed_digest",
+    "managed_lock_digest",
+    "skill_count",
+    "last_attempt_at",
+    "last_success_at",
+    "network_called",
+    "reason_codes",
+    "update_available",
+    "host_restart_required",
+    "receipt_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "skill_maintenance_receipt"},
+    "schema_version": {"const": "gravity.skill-maintenance-receipt.v1"},
+    "status": {"enum": ["not_bootstrapped", "ready", "empty", "degraded", "unavailable"]},
+    "bootstrap_checked": {"type": "boolean"},
+    "active_source": {
+      "type": ["object", "null"],
+      "required": ["source_id", "transport", "source_descriptor_digest", "source_revision"],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"type": "string", "minLength": 8, "maxLength": 256},
+        "transport": {"enum": ["git", "static_https"]},
+        "source_descriptor_digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "active_index_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+    "active_seed_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+    "managed_lock_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+    "skill_count": {"type": "integer", "minimum": 0, "maximum": 256},
+    "last_attempt_at": {"type": ["string", "null"], "minLength": 20, "maxLength": 32},
+    "last_success_at": {"type": ["string", "null"], "minLength": 20, "maxLength": 32},
+    "network_called": {"type": "boolean"},
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}
+    },
+    "update_available": {"type": ["boolean", "null"]},
+    "host_restart_required": {"type": "boolean"},
+    "receipt_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

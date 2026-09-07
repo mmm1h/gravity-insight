@@ -128,6 +128,11 @@ class SkillHubCAS:
     def trusted_wheel_path(self, digest: str) -> Path:
         return self.root / "trusted-packs" / "sha256" / _digest(digest) / "artifact.whl"
 
+    def maintenance_writer(self) -> Any:
+        """Reuse the CAS process/thread lock as the single maintenance writer."""
+
+        return self._single_flight("maintenance", "0" * 64)
+
     def _commit_skill(self, target: Path, files: Mapping[str, bytes]) -> None:
         self._assert_cas_path(target)
         target.parent.mkdir(parents=True, exist_ok=True)

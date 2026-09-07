@@ -2,15 +2,23 @@
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import subprocess
+import zipfile
 from dataclasses import dataclass
-from pathlib import Path
+from importlib import resources
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping, Sequence
 from urllib.parse import quote, urlsplit
 
 from . import __version__
-from .agent_runtime_contracts import canonical_digest
+from .agent_runtime_contracts import (
+    AgentRuntimeContractError,
+    canonical_digest,
+    validate_schema,
+)
 from .skill_hub_contract import (
     SkillHubContractError,
     artifact_path,
@@ -18,9 +26,15 @@ from .skill_hub_contract import (
     compile_hub_source,
 )
 from .skill_hub_paths import assert_unlinked_path
+from .skill_package import SkillPackageError, validate_package_entries
 
 
 HttpGetter = Callable[[str, int, int], bytes]
+BUNDLED_SKILL_SEED_NAME = "skill-seed-v1.zip"
+_SEED_SCHEMA_VERSION = "gravity.skill-library-build.v2"
+_AGENT_INDEX_SCHEMA = "agent-skill-index-v1.schema.json"
+_MAX_SEED_BYTES = 128 * 1024 * 1024
+_MAX_SEED_FILES = 93
 
 
 @dataclass(frozen=True)
@@ -30,6 +44,7 @@ class HubSourceSession:
     index: Mapping[str, Any]
     network_called: bool
     _read: Callable[[str, int], bytes]
+    seed_digest: str | None = None
 
     def reference(self) -> dict[str, str]:
         return {
@@ -100,6 +115,359 @@ def open_locked_hub_source(
         session = _sync_https(compiled, http_get, runtime_version)
     session.assert_reference(reference)
     return session
+
+
+def open_bundled_hub_source(
+    content: bytes | None = None,
+    *,
+    runtime_version: str = __version__,
+) -> HubSourceSession:
+    """Open the wheel's sealed mirror without treating it as a new transport."""
+
+    selected = _bundled_seed_bytes() if content is None else content
+    validated = validate_bundled_skill_seed(
+        selected, runtime_version=runtime_version
+    )
+    source = validated["source"]
+    index = validated["index"]
+    files = validated["files"]
+
+    def read(relative: str, maximum: int) -> bytes:
+        name = artifact_path(relative)
+        artifact = files.get(name)
+        if artifact is None:
+            raise SkillHubContractError(
+                "HUB_SEED_INVALID", "Bundled Skill artifact is missing"
+            )
+        if len(artifact) > maximum:
+            raise SkillHubContractError(
+                "HUB_SOURCE_OUTPUT_LIMIT", "Bundled Skill artifact exceeds its byte budget"
+            )
+        return artifact
+
+    return HubSourceSession(
+        source,
+        str(source["https"]["source_revision"]),
+        index,
+        False,
+        read,
+        seed_digest=str(validated["seed_digest"]),
+    )
+
+
+def validate_bundled_skill_seed(
+    content: bytes,
+    *,
+    runtime_version: str = __version__,
+) -> dict[str, Any]:
+    """Validate the outer seed, its build receipt, indexes, and Agent archives."""
+
+    if not isinstance(content, bytes) or not 1 <= len(content) <= _MAX_SEED_BYTES:
+        raise SkillHubContractError("HUB_SEED_INVALID", "Bundled Skill seed is invalid")
+    try:
+        files = _seed_files(content)
+        manifest = _seed_json(files, "build-manifest.json", "build manifest")
+        release_rows = _validate_seed_manifest(manifest)
+        expected_names = {"build-manifest.json", *release_rows}
+        if set(files) != expected_names or len(files) != _MAX_SEED_FILES:
+            raise SkillHubContractError(
+                "HUB_SEED_INVALID", "Bundled Skill seed file set changed"
+            )
+        for name, row in release_rows.items():
+            artifact = files[name]
+            if (
+                row["size_bytes"] != len(artifact)
+                or row["sha256"] != hashlib.sha256(artifact).hexdigest()
+            ):
+                raise SkillHubContractError(
+                    "HUB_SEED_DIGEST_MISMATCH",
+                    "Bundled Skill seed artifact changed",
+                )
+
+        compiled_source = compile_hub_source(
+            _seed_json(files, "source.json", "Hub Source")
+        )
+        compiled_index = _compile_index_bytes(files["index.json"], runtime_version)
+        agent_index = _seed_json(files, "agent-index.json", "Agent Skill index")
+        validate_schema(agent_index, _AGENT_INDEX_SCHEMA, "Agent Skill index")
+        _validate_seed_bindings(
+            manifest,
+            compiled_source["contract"],
+            compiled_index,
+            agent_index,
+            files,
+        )
+    except SkillHubContractError:
+        raise
+    except (AgentRuntimeContractError, SkillPackageError) as exc:
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Skill seed validation failed"
+        ) from exc
+    return {
+        "schema_version": "gravity.skill-seed-validation.v1",
+        "seed_digest": hashlib.sha256(content).hexdigest(),
+        "build_manifest_digest": canonical_digest(manifest),
+        "source": compiled_source["contract"],
+        "source_descriptor_digest": compiled_source["digest"],
+        "index": compiled_index,
+        "agent_index": agent_index,
+        "skill_count": len(compiled_index["skills"]),
+        "agent_skill_count": len(agent_index["skills"]),
+        "files": files,
+        "network_called": False,
+    }
+
+
+def _bundled_seed_bytes() -> bytes:
+    try:
+        return (
+            resources.files("gravity_insight")
+            .joinpath("skill_seed", BUNDLED_SKILL_SEED_NAME)
+            .read_bytes()
+        )
+    except (FileNotFoundError, ModuleNotFoundError, OSError) as exc:
+        raise SkillHubContractError(
+            "HUB_SEED_UNAVAILABLE", "Bundled Skill seed is unavailable"
+        ) from exc
+
+
+def _seed_files(content: bytes) -> dict[str, bytes]:
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            if archive.comment:
+                raise SkillHubContractError(
+                    "HUB_SEED_INVALID", "Bundled Skill seed comment is invalid"
+                )
+            members = archive.infolist()
+            names = [item.filename for item in members]
+            if (
+                len(members) != _MAX_SEED_FILES
+                or names != sorted(names)
+                or len(names) != len(set(names))
+                or len({name.casefold() for name in names}) != len(names)
+            ):
+                raise SkillHubContractError(
+                    "HUB_SEED_INVALID", "Bundled Skill seed entries are invalid"
+                )
+            result: dict[str, bytes] = {}
+            total = 0
+            for member in members:
+                path = PurePosixPath(member.filename)
+                if (
+                    path.is_absolute()
+                    or len(path.parts) != 1
+                    or any(part in {"", ".", ".."} for part in path.parts)
+                    or member.is_dir()
+                    or member.flag_bits & 0x1
+                    or member.date_time != (1980, 1, 1, 0, 0, 0)
+                    or member.compress_type != zipfile.ZIP_STORED
+                    or member.create_system != 3
+                    or member.external_attr >> 16 != 0o100644
+                    or member.file_size < 1
+                ):
+                    raise SkillHubContractError(
+                        "HUB_SEED_INVALID", "Bundled Skill seed member is unsafe"
+                    )
+                total += member.file_size
+                if total > _MAX_SEED_BYTES:
+                    raise SkillHubContractError(
+                        "HUB_SEED_INVALID", "Bundled Skill seed exceeds its byte budget"
+                    )
+                value = archive.read(member)
+                if len(value) != member.file_size:
+                    raise SkillHubContractError(
+                        "HUB_SEED_INVALID", "Bundled Skill seed member changed"
+                    )
+                result[member.filename] = value
+            return result
+    except (OSError, zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Skill seed is not a valid ZIP"
+        ) from exc
+
+
+def _seed_json(files: Mapping[str, bytes], name: str, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(files[name].decode("utf-8"))
+    except (KeyError, UnicodeError, json.JSONDecodeError) as exc:
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", f"Bundled {label} is not valid UTF-8 JSON"
+        ) from exc
+    if not isinstance(value, dict):
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", f"Bundled {label} must be an object"
+        )
+    return value
+
+
+def _validate_seed_manifest(manifest: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    expected = {
+        "artifact_kind",
+        "schema_version",
+        "canonical_source",
+        "canonical_source_sha256",
+        "publish_target",
+        "publish_base_url",
+        "files",
+        "release_assets",
+    }
+    if (
+        set(manifest) != expected
+        or manifest.get("artifact_kind") != "skill_library_build"
+        or manifest.get("schema_version") != _SEED_SCHEMA_VERSION
+        or manifest.get("canonical_source") != "skills/library"
+        or manifest.get("publish_target") != "github_release"
+        or not _sha256(manifest.get("canonical_source_sha256"))
+        or not isinstance(manifest.get("publish_base_url"), str)
+    ):
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Skill build manifest changed"
+        )
+    all_rows = _seed_rows(manifest.get("files"), "build files")
+    release_rows = _seed_rows(manifest.get("release_assets"), "release assets")
+    if (
+        len(release_rows) != _MAX_SEED_FILES - 1
+        or any("/" in name for name in release_rows)
+        or any(all_rows.get(name) != row for name, row in release_rows.items())
+    ):
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Skill release asset binding changed"
+        )
+    return release_rows
+
+
+def _seed_rows(value: Any, label: str) -> dict[str, dict[str, Any]]:
+    if not isinstance(value, list):
+        raise SkillHubContractError("HUB_SEED_INVALID", f"Bundled {label} changed")
+    result: dict[str, dict[str, Any]] = {}
+    previous = ""
+    for item in value:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"path", "size_bytes", "sha256"}
+            or not isinstance(item.get("path"), str)
+            or not item["path"]
+            or item["path"] <= previous
+            or not isinstance(item.get("size_bytes"), int)
+            or isinstance(item.get("size_bytes"), bool)
+            or item["size_bytes"] < 1
+            or not _sha256(item.get("sha256"))
+        ):
+            raise SkillHubContractError("HUB_SEED_INVALID", f"Bundled {label} changed")
+        previous = item["path"]
+        result[item["path"]] = dict(item)
+    return result
+
+
+def _validate_seed_bindings(
+    manifest: Mapping[str, Any],
+    source: Mapping[str, Any],
+    index: Mapping[str, Any],
+    agent_index: Mapping[str, Any],
+    files: Mapping[str, bytes],
+) -> None:
+    source_digest = str(manifest["canonical_source_sha256"])
+    https = source["https"]
+    publish_base = str(manifest["publish_base_url"])
+    runtime_entries = list(index["skills"].values())
+    agent_entries = list(agent_index["skills"])
+    if (
+        source["transport"] != "static_https"
+        or source["git"] is not None
+        or https["source_revision"] != source_digest
+        or https["index_url"] != f"{publish_base}/index.json"
+        or https["artifact_base_url"] != f"{publish_base}/"
+        or agent_index.get("canonical_source_sha256") != source_digest
+        or len(runtime_entries) != 44
+        or len(agent_entries) != 44
+    ):
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Skill source binding changed"
+        )
+    runtime_identities = [item["skill_uri"] for item in runtime_entries]
+    agent_identities = [item["skill_uri"] for item in agent_entries]
+    if runtime_identities != agent_identities:
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Runtime and Agent Skill sets differ"
+        )
+    expected_assets = {
+        "index.json",
+        "agent-index.json",
+        "agent-skill-index-v1.schema.json",
+        "source.json",
+        *(item["archive"]["path"] for item in runtime_entries),
+        *(item["archive"]["path"] for item in agent_entries),
+    }
+    if set(files) != {"build-manifest.json", *expected_assets}:
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Skill asset references changed"
+        )
+    for entry in agent_entries:
+        _validate_agent_seed_archive(files[entry["archive"]["path"]], entry)
+
+
+def _validate_agent_seed_archive(content: bytes, entry: Mapping[str, Any]) -> None:
+    archive_metadata = entry["archive"]
+    if (
+        archive_metadata["size_bytes"] != len(content)
+        or archive_metadata["sha256"] != hashlib.sha256(content).hexdigest()
+        or archive_metadata["media_type"]
+        != "application/vnd.gravity.agent-skill.v1+zip"
+    ):
+        raise SkillHubContractError(
+            "HUB_SEED_DIGEST_MISMATCH", "Bundled Agent Skill archive changed"
+        )
+    expected = {
+        f"{entry['directory']}/{item['path']}": item for item in entry["files"]
+    }
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            members = archive.infolist()
+            names = [item.filename for item in members]
+            if names != sorted(expected) or len(names) != len(set(names)):
+                raise SkillHubContractError(
+                    "HUB_SEED_INVALID", "Bundled Agent Skill entries changed"
+                )
+            package_files: dict[str, bytes] = {}
+            for member in members:
+                path = PurePosixPath(member.filename)
+                if (
+                    path.is_absolute()
+                    or any(part in {"", ".", ".."} for part in path.parts)
+                    or not path.parts
+                    or path.parts[0] != entry["directory"]
+                    or member.is_dir()
+                    or member.flag_bits & 0x1
+                    or member.date_time != (1980, 1, 1, 0, 0, 0)
+                    or member.compress_type != zipfile.ZIP_STORED
+                    or member.create_system != 3
+                    or member.external_attr >> 16 != 0o100644
+                ):
+                    raise SkillHubContractError(
+                        "HUB_SEED_INVALID", "Bundled Agent Skill member is unsafe"
+                    )
+                value = archive.read(member)
+                metadata = expected.get(member.filename)
+                if metadata is None or (
+                    metadata["size_bytes"] != len(value)
+                    or metadata["sha256"] != hashlib.sha256(value).hexdigest()
+                ):
+                    raise SkillHubContractError(
+                        "HUB_SEED_DIGEST_MISMATCH",
+                        "Bundled Agent Skill content changed",
+                    )
+                package_files[PurePosixPath(*path.parts[1:]).as_posix()] = value
+    except (OSError, zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+        raise SkillHubContractError(
+            "HUB_SEED_INVALID", "Bundled Agent Skill archive is invalid"
+        ) from exc
+    validate_package_entries(package_files, allow_skill_md=True)
+
+
+def _sha256(value: Any) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(
+        character in "0123456789abcdef" for character in value
+    )
 
 
 def _sync_git(
@@ -382,8 +750,11 @@ def _sha(value: str) -> bool:
 
 
 __all__ = [
+    "BUNDLED_SKILL_SEED_NAME",
     "HubSourceSession",
     "HttpGetter",
+    "open_bundled_hub_source",
     "open_locked_hub_source",
     "sync_hub_source",
+    "validate_bundled_skill_seed",
 ]

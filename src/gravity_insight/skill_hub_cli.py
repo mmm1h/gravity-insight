@@ -62,6 +62,11 @@ def add_skill_hub_actions(actions: Any) -> None:
     audit = actions.add_parser("audit", help="Audit synced Hub snapshots offline.")
     _local(audit)
 
+    status = actions.add_parser(
+        "status", help="Read explicit bundled Skill maintenance state."
+    )
+    _local(status)
+
     for parser in (
         listed,
         show,
@@ -74,6 +79,7 @@ def add_skill_hub_actions(actions: Any) -> None:
         update,
         verify,
         audit,
+        status,
     ):
         parser.set_defaults(network_required=False, _gravity_handler=dispatch)
 
@@ -109,6 +115,8 @@ def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
         )
     if command == "verify":
         return client.verify(_json(args.lock))
+    if command == "status":
+        return client.status()
     return client.audit()
 
 

@@ -64,6 +64,7 @@ gravity_insight = [
   "manifests/*.json",
   "census/data/*",
   "governance/*.json",
+  "skill_seed/*.zip",
 ]
 
 [tool.gravity_insight.agent-package-membership]
