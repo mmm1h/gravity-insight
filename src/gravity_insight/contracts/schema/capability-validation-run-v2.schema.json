@@ -222,8 +222,79 @@
             },
             "observed_type": {
               "enum": ["null", "boolean", "integer", "number", "string", "object", "array", "missing", "non_json"]
+            },
+            "expectation_provenance": {
+              "$ref": "#/$defs/response_drift/$defs/expectation_provenance"
             }
           }
+        },
+        "expectation_provenance": {
+          "type": "object",
+          "required": [
+            "operation_contract",
+            "runtime_version",
+            "request_shape_fingerprint",
+            "accepted_upstream_baseline",
+            "current_observation"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "operation_contract": {
+              "type": "object",
+              "required": ["digest", "version"],
+              "additionalProperties": false,
+              "properties": {
+                "digest": {"$ref": "#/$defs/digest"},
+                "version": {"$ref": "#/$defs/response_drift/$defs/version_identifier"}
+              }
+            },
+            "runtime_version": {"$ref": "#/$defs/response_drift/$defs/version_identifier"},
+            "request_shape_fingerprint": {"$ref": "#/$defs/digest"},
+            "accepted_upstream_baseline": {
+              "type": "object",
+              "required": [
+                "observed_type",
+                "response_shape_fingerprint",
+                "observed_at",
+                "app_environment_fingerprint"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "observed_type": {
+                  "enum": ["null", "boolean", "integer", "number", "string", "object", "array", "missing", "non_json"]
+                },
+                "response_shape_fingerprint": {"$ref": "#/$defs/digest"},
+                "observed_at": {"$ref": "#/$defs/response_drift/$defs/provenance_timestamp"},
+                "app_environment_fingerprint": {"$ref": "#/$defs/digest"}
+              }
+            },
+            "current_observation": {
+              "type": "object",
+              "required": [
+                "response_shape_fingerprint",
+                "observed_at",
+                "app_environment_fingerprint"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "response_shape_fingerprint": {"$ref": "#/$defs/digest"},
+                "observed_at": {"$ref": "#/$defs/response_drift/$defs/provenance_timestamp"},
+                "app_environment_fingerprint": {"$ref": "#/$defs/digest"}
+              }
+            }
+          }
+        },
+        "version_identifier": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:/-]{0,127}$"
+        },
+        "provenance_timestamp": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 27,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{6})?Z$"
         }
       }
     },

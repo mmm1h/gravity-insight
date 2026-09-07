@@ -33,6 +33,9 @@ _RECEIPT_FIELDS = frozenset(
         "request_shape_fingerprint",
     }
 )
+_OPTIONAL_RECEIPT_FIELDS = frozenset(
+    {"credential_scope_opaque_id", "response_drift"}
+)
 
 
 @dataclass(frozen=True)
@@ -317,10 +320,11 @@ def _read_entry(entry: os.DirEntry[str]) -> tuple[_StoredReceipt | None, str, st
 
 
 def _validated_receipt(value: object) -> dict[str, Any]:
-    if not isinstance(value, Mapping) or set(value) not in {
-        _RECEIPT_FIELDS,
-        _RECEIPT_FIELDS | {"response_drift"},
-    }:
+    if (
+        not isinstance(value, Mapping)
+        or not _RECEIPT_FIELDS.issubset(value)
+        or not set(value).issubset(_RECEIPT_FIELDS | _OPTIONAL_RECEIPT_FIELDS)
+    ):
         raise ValueError("HTTP receipt fields changed")
     _validate_receipt_identity(value)
     completed_at = value.get("completed_at")
@@ -330,7 +334,9 @@ def _validated_receipt(value: object) -> dict[str, Any]:
     _validate_receipt_attempt(value)
     selected = dict(value)
     if value.get("response_drift") is not None:
-        selected["response_drift"] = normalize_response_drift(value["response_drift"])
+        drift = normalize_response_drift(value["response_drift"])
+        _validate_drift_request_shape(drift, value["request_shape_fingerprint"])
+        selected["response_drift"] = drift
     return selected
 
 
@@ -339,6 +345,23 @@ def _validate_receipt_identity(value: Mapping[str, Any]) -> None:
         raise ValueError("HTTP receipt schema changed")
     if not _valid_receipt_id(value.get("receipt_id")):
         raise ValueError("HTTP receipt id is invalid")
+    if "credential_scope_opaque_id" in value and not _valid_digest(
+        value.get("credential_scope_opaque_id")
+    ):
+        raise ValueError("HTTP receipt credential scope opaque id is invalid")
+
+
+def _validate_drift_request_shape(
+    drift: Mapping[str, Any], request_shape_fingerprint: object
+) -> None:
+    for field in drift.get("fields", ()):
+        provenance = field.get("expectation_provenance")
+        if (
+            provenance is not None
+            and provenance["request_shape_fingerprint"]
+            != request_shape_fingerprint
+        ):
+            raise ValueError("HTTP receipt drift request shape binding changed")
 
 
 def _validate_receipt_route(value: Mapping[str, Any]) -> None:

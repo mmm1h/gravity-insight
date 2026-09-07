@@ -281,6 +281,25 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
                     "path": "/data/list",
                     "expected_type": "array",
                     "observed_type": "object",
+                    "expectation_provenance": {
+                        "operation_contract": {
+                            "digest": "1" * 64,
+                            "version": "gravity.operation-contract.v1",
+                        },
+                        "runtime_version": "0.3.11",
+                        "request_shape_fingerprint": "2" * 64,
+                        "accepted_upstream_baseline": {
+                            "observed_type": "array",
+                            "response_shape_fingerprint": "3" * 64,
+                            "observed_at": "2026-09-01T08:00:00Z",
+                            "app_environment_fingerprint": "4" * 64,
+                        },
+                        "current_observation": {
+                            "response_shape_fingerprint": "5" * 64,
+                            "observed_at": "2026-09-03T08:00:00.100000Z",
+                            "app_environment_fingerprint": "4" * 64,
+                        },
+                    },
                 }
             ],
         }
@@ -411,6 +430,10 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
         persisted_drift = persisted_run["outcomes"][1]["response_drift"]
         self.assertEqual("breaking", persisted_drift["classification"])
         self.assertEqual("array", persisted_drift["fields"][0]["expected_type"])
+        self.assertEqual(
+            breaking_drift["fields"][0]["expectation_provenance"],
+            persisted_drift["fields"][0]["expectation_provenance"],
+        )
         self.assertNotIn("response_drift", summary["unresolved"][2])
         self.assertNotIn(legacy_fingerprint_value, json.dumps(summary))
 
