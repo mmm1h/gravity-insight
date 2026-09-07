@@ -61,6 +61,8 @@ DOMAIN_MODULE_LAYER_OVERRIDES = {
     "gravity_insight.sdk": "facade_cli_mcp",
     "gravity_insight.client": "domain_services",
     "gravity_insight.executor": "domain_services",
+    "gravity_insight.analysis_aggregate_projection": "domain_services",
+    "gravity_insight.response_projection_schema": "contracts_value_objects",
     "gravity_insight.composite": "product_composite_plan",
     "gravity_insight.plan": "product_composite_plan",
     "gravity_insight.plan_adapters": "product_composite_plan",

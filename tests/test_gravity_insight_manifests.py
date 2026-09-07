@@ -290,6 +290,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "scalar_list_item_types",
                         "data_scalar_list_types",
                         "numeric_paths",
+                        "dynamic_key_patterns",
                         "data_dynamic_item_fields",
                         "numeric_suffix_item_fields",
                         "data_numeric_suffix_item_fields",
