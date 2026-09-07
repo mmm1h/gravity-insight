@@ -30,7 +30,11 @@ class SkillLockStatusTests(unittest.TestCase):
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name) / "project's $offline workspace"
+        # Resolve before use: on Windows a >8-character account name gives the
+        # temp root an 8.3 alias (RUNNER~1), and the diagnostic reports the
+        # canonical long form. Comparing the two spellings fails only on hosts
+        # that have such an alias, which is why it survived local runs.
+        self.root = Path(temporary.name).resolve() / "project's $offline workspace"
         self.root.mkdir()
         self.state = self.root / "state"
         self.path = self.root / "gravity.skills.lock.json"
@@ -110,7 +114,7 @@ class SkillLockStatusTests(unittest.TestCase):
             parsed = subprocess.run(
                 ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
                  "function gravity { ConvertTo-Json -InputObject @($args) -Compress }; " + command],
-                capture_output=True, text=True, check=True, timeout=30,
+                capture_output=True, text=True, encoding="utf-8", check=True, timeout=30,
             )
             arguments = json.loads(parsed.stdout)
         else:
