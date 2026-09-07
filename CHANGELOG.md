@@ -17,7 +17,78 @@ Target release: `0.3.12`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** `ResponseProjection` gained a `dynamic_key_patterns` field, inserted
+  between `numeric_paths` and `empty_object_as_empty_page`. Any caller constructing
+  `ResponseProjection` positionally now binds the wrong arguments; construct it with
+  keywords, or build it from a contract via `ResponseProjection.from_config`. The
+  private `models._response_projection_schema` also moved to the new public module
+  `gravity_insight.response_projection_schema` as `response_projection_schema()`.
+- **Hard break:** `capability-validation-summary-v2.schema.json` now lists
+  `data_evidence_status` in `required`. Summaries produced before 0.3.12 fail
+  validation, and consumers that construct summaries must emit one of
+  `nonempty` / `confirmed_empty` / `inconclusive` / `not_evaluated`. The field is
+  optional in `capability-validation-run-v2.schema.json`, so stored runs stay
+  readable. This exists because projected emptiness alone never proved absence of
+  rows: a response whose every declared field missed the upstream payload was
+  indistinguishable from a genuinely empty result. Only an explicit upstream signal
+  (`page.total_items == 0` or HTTP 204) now yields `confirmed_empty`, and a response
+  carrying both non-empty projected data and an explicit-empty signal fails closed as
+  `inconclusive` rather than silently picking one.
+- **Hard break:** `analysis.user_detail.list` moved to `contract_version: 4`,
+  declaring eight newly observed top-level fields (`bytedanceMid1_name` through
+  `bytedanceMid8_name`, 153 observed fields to 161). Its `contract_fingerprint`
+  changes, so Validation Results recorded against version 3 are quarantined with
+  `CAPABILITY_FINGERPRINT_MISMATCH` and must be re-recorded.
+- **Hard break:** `analysis.funnel.query` declares
+  `response_projection.dynamic_key_patterns` and its `contract_fingerprint` changes
+  for the same reason. No other operation is affected: the fingerprint payload emits
+  `dynamic_key_patterns` only when non-empty, and `analysis.funnel.query` is the only
+  operation that declares it.
+
+Migration guide: [0.3.12](docs/migration/0.3.12.md)
+
+### Added
+
+- Operation contracts accept `response_projection.dynamic_key_patterns`, mapping a
+  declared data path to a **named** key shape. Only `iso_date` and `decimal_19` are
+  accepted — arbitrary regular expressions are deliberately not a contract surface.
+  `iso_date` additionally rejects non-calendar dates, and every declared path root
+  must be a declared `data_key`. This lets `analysis.funnel.query` return legitimate
+  date-bucketed aggregate groups without each new calendar day reading as additive
+  drift, while user-property grouping stays fail-closed: a date cannot impersonate a
+  requested dimension such as `$os`. Drift declarations gained the reason codes
+  `declared_dynamic_key` (shape matched) and `dynamic_key_shape_mismatch` (declared
+  but wrong shape); undeclared dynamic keys still report
+  `dynamic_key_requires_review`.
+- Response drift records carry `expectation_provenance`, pinning the operation
+  contract digest and version, the Runtime version, the request shape fingerprint,
+  the accepted upstream baseline (observed type, response shape fingerprint,
+  observation timestamp, app environment fingerprint) and the corresponding current
+  observation. Drift can now be attributed to an upstream change versus a wrong local
+  expectation instead of only being reported as a mismatch.
+- HTTP receipts carry an optional `credential_scope_opaque_id`, and
+  `gravity_insight.runtime_scope.credential_scope_opaque_id()` is public. It is a
+  random 64-hex marker persisted `0600` inside the principal scope directory, so
+  receipts can be grouped by credential scope without the marker being derived from,
+  or revealing, any credential material.
+- Cross-operation join keys are now a machine contract rather than a field-name
+  guess. `gravity_insight.contracts.join_key.resolve_proven_join_key()` resolves by
+  `platform`, `object_type` and optional `object_subtype`, returning the exact left
+  and right operation/path pair, normalization rules and the observed evidence.
+  `namespace_status` is three-valued — `proven`, `disproven`,
+  `insufficient_evidence` — and only a `proven` namespace within its
+  `revalidate_after` window resolves; everything else raises `JoinKeyContractError`.
+  The registry lives at `contracts/join-keys/registry.v1.json`, validated by
+  `join-key-registry-v1.schema.json`.
+
+### Fixed
+
+- `receipt_query` no longer requires an HTTP receipt's field set to match one of two
+  exact shapes; it now requires the mandatory fields and permits a closed set of
+  optional ones, so adding a receipt field stops invalidating stored receipts. It
+  additionally rejects a receipt whose drift `expectation_provenance` does not bind
+  to that receipt's own `request_shape_fingerprint`, which would otherwise let a
+  provenance record describe a different request than the one it is filed under.
 
 ## [0.3.11] - 2026-09-07
 
