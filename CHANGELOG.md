@@ -44,6 +44,21 @@ Target release: `0.3.12`
   for the same reason. No other operation is affected: the fingerprint payload emits
   `dynamic_key_patterns` only when non-empty, and `analysis.funnel.query` is the only
   operation that declares it.
+- **Soft break:** the Runtime wheel again carries Skill content, and the root CLI
+  provisions it automatically. This **partially reverses the 0.3.5 Hard break** that
+  removed wheel-bundled Skills, so it is called out rather than shipped as an
+  invisible improvement. What returns is a single sealed archive at
+  `gravity_insight/skill_seed/skill-seed-v1.zip` (93 assets, 44 Runtime and 44 Agent
+  Skills). What does **not** return is the wheel-owned registry: no
+  `gravity_insight/skills/` or `gravity_insight/contracts/skills/` path exists, and
+  `scripts/generate_skill_library.py` remains the only build owner. The seed does not
+  enter the discovery surface directly — first provisioning still runs the full
+  source/index compile, exact managed lock, archive verification, CAS write and final
+  verify, with `network_called=false`. Set `GRAVITY_INSIGHT_AUTO_SKILLS=0` to opt out;
+  it is deliberately a **separate** switch from `GRAVITY_INSIGHT_AUTO_UPGRADE`, so
+  Runtime security updates can be accepted while Skill content is frozen. `doctor`,
+  `--help`, `--dry-run`, test and evaluation paths never provision, and importing
+  `gravity_insight` still has no file or network side effect.
 
 Migration guide: [0.3.12](docs/migration/0.3.12.md)
 
