@@ -546,14 +546,14 @@ def run():
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
         expected = module_graph_baseline()
         self.assertEqual(
-            "ad7974a347cffd36a98d41a81cb04cdaf7ad864a83ec838b4641ff814c68a263",
+            "eed02e25ca16c8c6ce0bf3768c953049f3df7b87d184441699f0984afef899fb",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
                 "ast-only": 20,
                 "ast+lazy-exports": 436,
-                "canonical": 553,
+                "canonical": 554,
                 "eager-ast-only": 0,
             },
             {
@@ -566,7 +566,7 @@ def run():
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
-            [553, 15, 8, 3, 2, 2],
+            [554, 15, 8, 3, 2, 2],
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())

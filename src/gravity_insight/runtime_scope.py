@@ -23,6 +23,7 @@ from .credential_storage import (
     session_path,
 )
 from .paths import PROJECT_ROOT
+from .support.cache_paths import cache_roots, existing_cache_path, user_cache_root
 
 
 ENV_FILE_VAR = "GRAVITY_ENV_FILE"
@@ -164,22 +165,19 @@ def env_isolation_key(env_path: str | Path) -> str:
 
 
 def gravity_insight_cache_root() -> Path:
-    cache_root = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CACHE_HOME")
-    if cache_root:
-        return Path(cache_root) / "GravityInsight"
-    return Path.home() / ".cache" / "gravity-insight"
+    return user_cache_root()
 
 
 def operation_catalog_state_path(isolation_key: str | None = "") -> Path:
-    return gravity_insight_cache_root() / _required_scope(isolation_key) / "operation-catalog.json"
+    return existing_cache_path(gravity_insight_cache_root() / _required_scope(isolation_key) / "operation-catalog.json")
 
 
 def metadata_catalog_path(isolation_key: str = "") -> Path:
-    return gravity_insight_cache_root() / _required_scope(isolation_key) / "metadata" / "catalog.sqlite3"
+    return existing_cache_path(gravity_insight_cache_root() / _required_scope(isolation_key) / "metadata" / "catalog.sqlite3")
 
 
 def field_policy_cache_dir(isolation_key: str = "") -> Path:
-    return gravity_insight_cache_root() / _required_scope(isolation_key) / "field-policy"
+    return existing_cache_path(gravity_insight_cache_root() / _required_scope(isolation_key) / "field-policy")
 
 
 def principal_state_root(state_root: str | Path, scope: RuntimeScopeKey) -> Path:
@@ -267,14 +265,14 @@ def redact_scoped_path(path: str | Path) -> str:
     """Render a default cache path without exposing its scope digest."""
 
     selected = Path(path)
-    root = gravity_insight_cache_root()
-    try:
-        relative = selected.relative_to(root)
-    except ValueError:
-        return str(selected)
-    if len(relative.parts) < 2:
-        return str(selected)
-    return str(root / "<principal-scope>" / Path(*relative.parts[1:]))
+    for root in cache_roots():
+        try:
+            relative = selected.relative_to(root)
+        except ValueError:
+            continue
+        if len(relative.parts) >= 2:
+            return str(root / "<principal-scope>" / Path(*relative.parts[1:]))
+    return str(selected)
 
 
 def public_scoped_path(path: str | Path, *, explicit: bool) -> str:

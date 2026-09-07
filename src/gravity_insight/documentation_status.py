@@ -30,6 +30,7 @@ from gravity_insight import cli
 from gravity_insight.census import cli as census_cli
 from gravity_insight.sql import __main__ as sql_cli
 from gravity_insight import account_pool_cli
+from gravity_insight import cache_cli
 
 def parser_paths(parser, prefix=()):
     paths = set()
@@ -52,6 +53,8 @@ paths.add(("sql",))
 paths.update({("sql", *path) for path in parser_paths(sql_cli.build_parser())})
 paths.add(("account-pool",))
 paths.update({("account-pool", *path) for path in parser_paths(account_pool_cli.build_parser())})
+paths.add(("cache",))
+paths.update({("cache", *path) for path in parser_paths(cache_cli.build_parser())})
 print(json.dumps(sorted(paths)))
 """
 

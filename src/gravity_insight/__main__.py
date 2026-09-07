@@ -19,6 +19,7 @@ Usage:
   gravity journey list|verify|certifications|describe|can-run|impact|run
   gravity maturity score
   gravity runtime health
+  gravity cache status|prune
   gravity docs check
   gravity capabilities trust|validate|impact
   gravity skills list|show|sync|search|resolve|lock|fetch|install|update|verify|audit|status|bootstrap|repair|host-install-plan
@@ -139,6 +140,11 @@ def _main(argv: Sequence[str] | None = None) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return exit_code_for_category(ErrorCategory.CALLER)
+
+    if args and args[0] == "cache":
+        from .cache_cli import main as cache_main
+
+        return cache_main(args[1:])
 
     upgrade_exit = _startup_upgrade_exit(args)
     if upgrade_exit is not None:

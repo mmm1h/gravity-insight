@@ -19,6 +19,14 @@ Target release: `0.3.13`
 
 - None.
 
+### Added
+
+- Additive: offline `gravity cache status|prune` reports file counts, logical/allocation bytes, legacy residue and reason-coded retention; pruning defaults to dry-run and requires `--execute`.
+
+### Fixed
+
+- Cache-root resolution now consistently honors `GRAVITY_CACHE_HOME`, uses `gravity-insight`, and expands/resolves paths. Existing account snapshots remain readable through legacy-location fallback without a forced network refresh; no scope semantics or read capabilities are removed.
+
 ## [0.3.12] - 2026-09-07
 
 ### Breaking changes

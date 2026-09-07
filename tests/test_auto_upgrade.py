@@ -108,11 +108,11 @@ class UpdateStateTests(unittest.TestCase):
         cases = (
             (
                 {"LOCALAPPDATA": "C:/Local", "XDG_CACHE_HOME": "C:/ignored"},
-                Path("C:/Local/GravityInsight/update-check.json"),
+                Path("C:/Local/gravity-insight/update-check.json") if os.name == "nt" else Path("C:/ignored/gravity-insight/update-check.json"),
             ),
             (
                 {"XDG_CACHE_HOME": "/var/cache/user"},
-                Path("/var/cache/user/GravityInsight/update-check.json"),
+                Path("/var/cache/user/gravity-insight/update-check.json"),
             ),
         )
         for environment, expected in cases:
@@ -121,7 +121,7 @@ class UpdateStateTests(unittest.TestCase):
                 patch.dict(os.environ, environment, clear=True),
             ):
                 self.assertEqual(
-                    expected.with_name(f"update-check-{scope}.json"),
+                    expected.with_name(f"update-check-{scope}.json").resolve(),
                     update_state_path(),
                 )
         with (
@@ -134,7 +134,7 @@ class UpdateStateTests(unittest.TestCase):
             self.assertEqual(
                 Path(
                     f"/Users/analyst/.cache/gravity-insight/update-check-{scope}.json"
-                ),
+                ).resolve(),
                 update_state_path(),
             )
 
