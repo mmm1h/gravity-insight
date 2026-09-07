@@ -7,7 +7,6 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
-from .bounded_json_scalar import is_bounded_json_scalar
 from .component_aggregate import (
     aggregate_exit_code,
     aggregate_status,
@@ -19,9 +18,17 @@ from .errors import (
     ErrorCategory,
     ErrorCode,
     ErrorDetail,
+    ManifestError,
     exit_code_for_error,
 )
-from .result_audit import aggregate_result_audit, project_result_audit
+from .models import load_operation_manifest
+from .paths import MANIFEST_ROOT
+from .promotion_performance_rows import safe_promotion_rows
+from .result_audit import (
+    aggregate_result_audit,
+    project_result_audit,
+    result_response_drift,
+)
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -29,14 +36,44 @@ SCHEMA_VERSION = "gravity-insight.material-performance.v1"
 MATERIAL_REPORT_OPERATION = stable_operation(
     "material", "report", action="query"
 ).operation_id
+
+
+def _material_source_row_contract() -> tuple[frozenset[str], frozenset[str]]:
+    operations = load_operation_manifest(MANIFEST_ROOT / "candidates.json")
+    matches = tuple(
+        operation
+        for operation in operations
+        if operation.operation_id == MATERIAL_REPORT_OPERATION
+    )
+    if len(matches) != 1:
+        raise ManifestError(
+            "compiled candidate manifest must contain one material report operation"
+        )
+    projection = matches[0].response_projection
+    fields = frozenset(projection.item_keys)
+    opaque = frozenset(projection.opaque_json_item_keys)
+    if not fields or opaque - fields:
+        raise ManifestError(
+            "compiled material report row projection is internally inconsistent"
+        )
+    return fields, opaque
+
+
 MATERIAL_ROW_FIELDS = frozenset(
     {
-        "file_name", "gravity_material_id", "stat_cost", "ctr", "convert_rate",
-        "cost", "conversions_rate", "charge", "action_ratio",
+        "file_name", "gravity_material_id", "material_id", "stat_cost", "ctr",
+        "convert_rate", "cost", "conversions_rate", "charge", "action_ratio",
         "conversion_ratio", "click_rate", "AppRealRegisterCnt",
         "AppGamePayUserCntStandardAtv",
     }
 )
+_MATERIAL_SOURCE_ROW_FIELDS, _MATERIAL_OPAQUE_JSON_FIELDS = (
+    _material_source_row_contract()
+)
+if MATERIAL_ROW_FIELDS - _MATERIAL_SOURCE_ROW_FIELDS:
+    raise ManifestError(
+        "material performance row fields must be registered source fields"
+    )
 _SUCCESS_STATUSES = frozenset({"success", "empty"})
 _FAILURE_STATUSES = frozenset(
     {
@@ -122,7 +159,17 @@ def safe_component(
                 platform, "component_error_status", "$.status_or_error.code"
             )
         if error["code"] == ErrorCode.CONTRACT_CHANGED.value:
-            return project_result_audit(contract_component(platform), value)
+            inner = value.get("data")
+            if result_response_drift(value) is not None or result_response_drift(
+                inner
+            ) is not None:
+                return project_result_audit(contract_component(platform), value)
+            return project_result_audit(
+                _contract_failure(
+                    platform, "component_contract_status", "$.status"
+                ),
+                value,
+            )
         return {
             "platform": platform,
             "operation_id": MATERIAL_REPORT_OPERATION,
@@ -142,27 +189,30 @@ def _safe_success(
     *,
     max_pages: int,
 ) -> dict[str, Any]:
+    if value.get("error") not in (None, {}):
+        return _contract_failure(platform, "success_error", "$.error")
     envelope = value.get("data")
     if not isinstance(envelope, Mapping):
-        return contract_component(platform)
+        return _contract_failure(platform, "read_envelope_type", "$.data")
     if (
         envelope.get("schema_version") != "gravity-insight.read.v1"
         or envelope.get("operation_id") != MATERIAL_REPORT_OPERATION
         or envelope.get("status") != status
         or envelope.get("error") not in (None, {})
     ):
-        return contract_component(platform)
+        return _contract_failure(platform, "read_envelope_identity", "$.data")
     data = envelope.get("data")
     if not isinstance(data, Mapping) or set(data) - {"list", "page_info"}:
-        return contract_component(platform)
-    rows = _safe_rows(data.get("list"))
-    if rows is None:
-        return contract_component(platform)
+        return _contract_failure(platform, "read_data_shape", "$.data.data")
+    rows, failure = _safe_rows_with_failure(data.get("list"))
+    if failure is not None or rows is None:
+        check, path = failure or ("row_projection", "$.data.data.list")
+        return _contract_failure(platform, check, path)
     if (status == "empty") != (not rows):
-        return contract_component(platform)
+        return _contract_failure(platform, "row_status", "$.data.status")
     page = _safe_page(envelope.get("page"), len(rows), max_pages=max_pages)
     if page is None:
-        return contract_component(platform)
+        return _contract_failure(platform, "page_receipt", "$.data.page")
     return {
         "platform": platform,
         "operation_id": MATERIAL_REPORT_OPERATION,
@@ -175,19 +225,28 @@ def _safe_success(
 
 
 def _safe_rows(value: Any) -> list[dict[str, Any]] | None:
-    if not isinstance(value, list):
-        return None
-    rows: list[dict[str, Any]] = []
-    for item in value:
-        if not isinstance(item, Mapping) or set(item) - MATERIAL_ROW_FIELDS:
-            return None
-        row: dict[str, Any] = {}
-        for key, field_value in item.items():
-            if not is_bounded_json_scalar(field_value):
-                return None
-            row[str(key)] = copy.deepcopy(field_value)
-        rows.append(row)
-    return rows
+    rows, failure = _safe_rows_with_failure(value)
+    return rows if failure is None else None
+
+
+def _safe_rows_with_failure(
+    value: Any,
+) -> tuple[list[dict[str, Any]] | None, tuple[str, str] | None]:
+    rows, failure = safe_promotion_rows(
+        value,
+        allowed_fields=_MATERIAL_SOURCE_ROW_FIELDS,
+        opaque_fields=_MATERIAL_OPAQUE_JSON_FIELDS,
+    )
+    if rows is None or failure is not None:
+        return rows, failure
+    return [
+        {
+            str(key): item
+            for key, item in row.items()
+            if key in MATERIAL_ROW_FIELDS
+        }
+        for row in rows
+    ], None
 
 
 def _safe_page(value: Any, rows: int, *, max_pages: int) -> dict[str, Any] | None:
