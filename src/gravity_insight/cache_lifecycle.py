@@ -20,15 +20,16 @@ from .receipt_retention import (
     HTTP_RECEIPT_SWEEP_INTERVAL, _process_is_alive, _receipt_process_id,
     http_receipt_retention_policy,
 )
-from .support.cache_files import allocated_bytes, assert_unlinked, identity, linked, unlink_unchanged
+from .support.cache_files import allocation_units, allocated_bytes, assert_unlinked, identity, linked, unlink_unchanged
 from .support.cache_paths import cache_roots
 
 
 _SCOPE = re.compile(r"[0-9a-f]{32}\Z")
 _PICKLE = re.compile(r"[0-9a-f]{64}\.pkl\Z")
 _STAGING = re.compile(r"\.operation-catalog\.json\.([1-9][0-9]*)\.([0-9]+)\.tmp\Z")
+_UPDATE_GUARD = re.compile(r"update-check-[0-9a-f]{16}\.json\.lease\.guard\Z")
 _CATEGORIES = ("principals", "receipts", "skill-hub-cas", "skill-maintenance/generations",
-               "field-policy", "metadata", "operation-catalog", "other")
+               "field-policy", "metadata", "operation-catalog", "update-check-lease-guards", "other")
 REASONS = {
     "OBSOLETE_PICKLE_NO_READER": "Pre-JSON field-policy format; current reader uses digest.json only. Exact writer version unknown.",
     "ORPHAN_CATALOG_STAGING": "Catalog PID/thread staging file; owner exited, grace elapsed, final reader uses operation-catalog.json. Writer version unknown.",
@@ -41,7 +42,8 @@ REASONS = {
     "LIVE_PROCESS": "Owner PID is alive or process status is inaccessible.",
     "RECENT_FILE": "Deletion grace has not elapsed.",
     "MULTIPLE_LINKS": "Allocation may be shared through hard links; do not claim reclaimable bytes.",
-    "PROTECTION_STATE_PRESENT": "A hold/lease marker is present; its state is not interpreted or overridden.",
+    "PROTECTION_STATE_PRESENT": "An artifact-specific hold/lease marker is present; its state is not interpreted or overridden.",
+    "LEASE_GUARD_RETIREMENT_UNCERTAIN": "Update-check synchronization guard; absence of a lease does not prove no concurrent or future user. Retain.",
     "SCAN_INCOMPLETE": "An inaccessible or linked subtree prevents a complete safety inventory.",
     "FILE_CHANGED_OR_BUSY": "Execution revalidation failed; nothing was deleted for this item.",
 }
@@ -72,6 +74,8 @@ def _classify(relative: Path) -> tuple[str, str]:
     parts = relative.parts
     if len(parts) >= 2 and _SCOPE.fullmatch(parts[0]):
         return _account_kind(parts[1:])
+    if parts[:1] == ("field-policy",) or len(parts) == 1:
+        return _account_kind(parts)
     state = parts[1:] if parts[:1] == ("default",) else parts[2:] if parts[:1] == ("workspaces",) else ()
     if state[:1] == ("principals",) and len(state) >= 3 and _SCOPE.fullmatch(state[1]):
         return "principals", _receipt_kind(state[2:]) or "private_state"
@@ -85,6 +89,8 @@ def _classify(relative: Path) -> tuple[str, str]:
 
 
 def _account_kind(parts: tuple[str, ...]) -> tuple[str, str]:
+    if len(parts) == 1 and _UPDATE_GUARD.fullmatch(parts[0]):
+        return "update-check-lease-guards", "update_check_lease_guard"
     if parts[0] == "field-policy":
         obsolete = len(parts) == 2 and parts[1].endswith(".pkl")
         return "field-policy", "obsolete_pickle" if obsolete else "snapshot"
@@ -126,23 +132,30 @@ def _decision(path: Path, category: str, kind: str, info: os.stat_result,
               "skill-hub-cas": "PROJECT_LOCK_REFERENCES_UNCERTAIN",
               "skill-maintenance/generations": "ACTIVE_OR_ROLLBACK_UNCERTAIN",
               "field-policy": "ACCOUNT_SNAPSHOT", "metadata": "ACCOUNT_SNAPSHOT",
-              "operation-catalog": "ACCOUNT_SNAPSHOT"}
+              "operation-catalog": "ACCOUNT_SNAPSHOT",
+              "update-check-lease-guards": "LEASE_GUARD_RETIREMENT_UNCERTAIN"}
     return reason.get(category, "UNKNOWN_ARTIFACT"), False
 
 
-def _measure(entries: Iterable[Entry]) -> dict[str, Any]:
+def _measure(entries: Iterable[Entry], directories: Iterable[int | None] = ()) -> dict[str, Any]:
     rows = list(entries)
+    directory_sizes = list(directories)
     known = sum(row.disk for row in rows if row.disk is not None)
     unknown = sum(row.disk is None for row in rows)
+    directory_known = sum(size for size in directory_sizes if size is not None)
+    directory_unknown = directory_sizes.count(None)
     return {"files": len(rows), "logical_bytes": sum(row.info.st_size for row in rows),
-            "disk_bytes": None if unknown else known, "known_disk_bytes": known,
-            "allocation_unknown_files": unknown}
+            "disk_bytes": None if unknown or directory_unknown else known + directory_known,
+            "known_disk_bytes": known + directory_known, "file_disk_bytes": None if unknown else known,
+            "directories": len(directory_sizes),
+            "directory_disk_bytes": None if directory_unknown else directory_known,
+            "allocation_unknown_files": unknown, "allocation_unknown_directories": directory_unknown}
 
 
-def _summary(entries: Iterable[Entry]) -> dict[str, Any]:
+def _summary(entries: Iterable[Entry], directories: Iterable[int | None] = ()) -> dict[str, Any]:
     rows = list(entries)
-    return {**_measure(rows), "reclaimable": _measure(row for row in rows if row.reclaimable),
-            "retained": _measure(row for row in rows if not row.reclaimable),
+    return {**_measure(rows, directories), "reclaimable": _measure(row for row in rows if row.reclaimable),
+            "retained": _measure((row for row in rows if not row.reclaimable), directories),
             "retained_reasons": dict(sorted(Counter(row.reason for row in rows if not row.reclaimable).items()))}
 
 
@@ -154,16 +167,18 @@ def inventory(*, roots: Iterable[Path] | None = None, now: float | None = None,
     selected = tuple(dict.fromkeys(Path(root).absolute() for root in (cache_roots() if roots is None else roots)))
     timestamp = time.time() if now is None else now
     entries: list[Entry] = []
+    directories: list[int | None] = []
     root_rows = []
     scan_errors: list[dict[str, str]] = []
     for number, root in enumerate(selected, 1):
         root_id = f"root-{number}"
-        present, rows, errors = _scan_root(root, selected, root_id, len(entries), timestamp, min_age_days)
+        present, rows, errors, sizes, units = _scan_root(root, selected, root_id, len(entries), timestamp, min_age_days)
         entries.extend(rows)
+        directories.extend(sizes)
         scan_errors.extend({"root_id": root_id, "reason_code": error} for error in errors)
         root_rows.append({"root_id": root_id, "location": "canonical" if number == 1 else "legacy_residue",
-                          "exists": present, **_summary(rows)})
-    return _report(entries, root_rows, scan_errors, timestamp, max_files, max_disk_bytes), entries
+                          "exists": present, "allocation_units": units, **_summary(rows, sizes)})
+    return _report(entries, root_rows, scan_errors, timestamp, max_files, max_disk_bytes, directories), entries
 
 
 def _walk(root: Path, selected: tuple[Path, ...], errors: list[str]):
@@ -196,39 +211,61 @@ def _walk(root: Path, selected: tuple[Path, ...], errors: list[str]):
 def _scan_root(root, selected, root_id, offset, timestamp, min_age_days):
     rows: list[Entry] = []
     errors: list[str] = []
-    protected = False
+    observed: set[Path] = set()
+    directories: list[int | None] = []
+    units = {"cluster_bytes": None, "resident_record_bytes": None}
     try:
-        root.lstat()
+        root_info = root.lstat()
     except FileNotFoundError:
-        return False, rows, errors
+        return False, rows, errors, directories, units
     except OSError:
-        return True, rows, ["SCAN_INCOMPLETE"]
+        return True, rows, ["SCAN_INCOMPLETE"], directories, units
+    try:
+        assert_unlinked(root)
+        units = allocation_units(root)
+        directories.append(allocated_bytes(root, root_info))
+    except OSError:
+        return True, rows, ["SCAN_INCOMPLETE"], [None], units
     for path, info in _walk(root, selected, errors):
-        name = path.name.casefold()
-        protected |= "hold" in name or "lease" in name
+        observed.add(path)
         if stat.S_ISDIR(info.st_mode):
+            directories.append(allocated_bytes(path, info))
             continue
         try:
-            row = _entry(root, path, root_id, offset + len(rows) + 1, info, timestamp, min_age_days)
+            row = _entry(root, path, root_id, offset + len(rows) + 1, info, timestamp, min_age_days,
+                         units)
             rows.append(row)
         except OSError:
             errors.append("SCAN_INCOMPLETE")
-    if protected or errors:
-        for row in rows:
-            if row.reclaimable:
-                row.reclaimable = False
-                row.reason = "PROTECTION_STATE_PRESENT" if protected else "SCAN_INCOMPLETE"
-    return True, rows, errors
+    for row in rows:
+        protected = bool(_protection_paths(row) & observed)
+        if row.reclaimable and (protected or errors):
+            row.reclaimable = False
+            row.reason = "PROTECTION_STATE_PRESENT" if protected else "SCAN_INCOMPLETE"
+    return True, rows, errors, directories, units
 
 
-def _entry(root, path, root_id, number, info, timestamp, min_age_days):
+def _protection_paths(row: Entry) -> set[Path]:
+    artifacts = [row.path]
+    if row.kind == "catalog_staging":
+        artifacts.append(row.path.with_name("operation-catalog.json"))
+    return {path.with_name(path.name + suffix) for path in artifacts
+            for suffix in (".hold", ".lease", ".hold.guard", ".lease.guard")}
+
+
+def _entry(root, path, root_id, number, info, timestamp, min_age_days, units):
     category, kind = _classify(path.relative_to(root))
     reason, reclaimable = _decision(path, category, kind, info, timestamp, min_age_days)
     name = path.name.casefold()
     sensitive = name.startswith(".env") or any(word in name for word in (
         "credential", "password", "token", "cookie", "session"
     ))
-    disk = None if sensitive else allocated_bytes(path, info)
+    disk = allocated_bytes(path, info, metadata_only=True) if sensitive else allocated_bytes(path, info)
+    record_size, cluster_size = units["resident_record_bytes"], units["cluster_bytes"]
+    if (disk is not None and record_size and cluster_size and info.st_size <= disk
+            and 0 < disk < min(record_size, cluster_size)
+            and not getattr(info, "st_file_attributes", 0) & 0xA00):
+        disk = record_size
     if identity(path.lstat()) != identity(info):
         raise OSError("CACHE_SCAN_CHANGED")
     return Entry(root, path, root_id, f"item-{number}", category, kind, info, disk, reason, reclaimable)
@@ -242,16 +279,17 @@ def _budget(retained, scan_errors, max_files, max_disk_bytes):
         over.append("DISK_BUDGET_EXCEEDED")
     return {"max_files": max_files, "max_disk_bytes": max_disk_bytes,
             "retained_over_budget": bool(over), "reason_codes": over,
-            "assessment_complete": not scan_errors and (max_disk_bytes is None or not retained["allocation_unknown_files"])}
+            "assessment_complete": not scan_errors and (max_disk_bytes is None or not (
+                retained["allocation_unknown_files"] or retained["allocation_unknown_directories"]))}
 
 
-def _report(entries, root_rows, scan_errors, timestamp, max_files, max_disk_bytes):
-    summary = _summary(entries)
+def _report(entries, root_rows, scan_errors, timestamp, max_files, max_disk_bytes, directories):
+    summary = _summary(entries, directories)
     payload = {"schema_version": "gravity.cache-inventory.v1", "status": "partial" if scan_errors else "ok",
             "scope": "standard_roots_and_current_override; historical_custom_roots_not_discoverable",
             "roots": root_rows, "summary": summary,
             "categories": [{"category": name, **_summary(row for row in entries if row.category == name)} for name in _CATEGORIES],
-            "residues": [{"kind": kind, **_summary(row for row in entries if row.kind == kind)} for kind in ("obsolete_pickle", "catalog_staging", "catalog_snapshot")],
+            "residues": [{"kind": kind, **_summary(row for row in entries if row.kind == kind)} for kind in ("obsolete_pickle", "catalog_staging", "catalog_snapshot", "update_check_lease_guard")],
             "metadata_size_peers": _metadata_peers(entries),
             "http_receipts": _http_report(entries, timestamp),
             "budget": _budget(summary["retained"], scan_errors, max_files, max_disk_bytes),
@@ -343,6 +381,7 @@ def _obligations(report: dict) -> EnvelopeObligations:
     ok = report["status"] == "ok"
     code = "CACHE_SCAN_COMPLETE" if ok else "CACHE_SCAN_INCOMPLETE"
     unknown_allocation = report.get("summary", {}).get("allocation_unknown_files", 0)
+    unknown_directories = report.get("summary", {}).get("allocation_unknown_directories", 0)
     execution = {"ok": ExecutionState.COMPLETE, "partial": ExecutionState.PARTIAL,
                  "error": ExecutionState.FAILED}[report["status"]]
     mutation = MutationState.NOT_APPLICABLE
@@ -355,8 +394,9 @@ def _obligations(report: dict) -> EnvelopeObligations:
     )
     return EnvelopeObligations(
         ExecutionStatus(execution, code),
-        DataCompleteness(CompletenessState.COMPLETE if ok and not unknown_allocation else CompletenessState.UNKNOWN,
-                         code, {"scope": "enumerated_cache_roots_only", "allocation_unknown_files": unknown_allocation}),
+        DataCompleteness(CompletenessState.COMPLETE if ok and not (unknown_allocation or unknown_directories) else CompletenessState.UNKNOWN,
+                         code, {"scope": "enumerated_cache_roots_only", "allocation_unknown_files": unknown_allocation,
+                                "allocation_unknown_directories": unknown_directories}),
         SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
         diagnostics, MutationCertainty(mutation, "CACHE_" + mutation.value.upper()),
     )

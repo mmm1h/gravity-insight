@@ -68,6 +68,8 @@ def _text(report: dict) -> str:
              f"Retained: {_sizes(report['summary']['retained'])}"]
     for root in report["roots"]:
         lines.append(f"{root['root_id']} [{root['location']}]: {_sizes(root)}")
+        units = root["allocation_units"]
+        lines.append(f"  directory allocation: {root['directory_disk_bytes']} B; cluster: {units['cluster_bytes']} B; resident record: {units['resident_record_bytes']} B")
     for row in (*report["categories"], *report["residues"]):
         label = row.get("category", row.get("kind"))
         lines.append(f"{label}: {_sizes(row)}; reclaimable {_sizes(row['reclaimable'])}; retained {_sizes(row['retained'])}")
@@ -87,5 +89,5 @@ def _text(report: dict) -> str:
         lines.append(f"Deleted: {_sizes(report['deleted'])}")
     if report["scan_errors"]:
         lines.append("Incomplete scan; linked/inaccessible paths omitted and affected roots retained.")
-    lines.append("Historical custom cache roots cannot be discovered automatically. Allocation excludes directory overhead; hard links may share storage.")
+    lines.append("Historical custom cache roots cannot be discovered automatically. Root totals include directory allocation; NTFS resident files use the queried record size when available, otherwise native stream allocation. Hard links may share storage.")
     return "\n".join(lines)

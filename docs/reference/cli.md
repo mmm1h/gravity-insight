@@ -26,8 +26,8 @@ gravity run app.list --input '{"page":1,"page_size":20}'
 
 ## 本机缓存
 
-`gravity cache status --json` 离线统计标准根和当前 `GRAVITY_CACHE_HOME`，按类别并列输出文件数、逻辑字节、实际分配字节及保留原因；无法取得占盘信息时返回 null，不猜 4 KB。路径、账号和指纹不进入清单。
-`gravity cache prune [--dry-run|--execute] --json` 默认仅预览，`decisions` 使用本次盘点编号；真实删除只处理超过 `--min-age-days` 的已知旧 JSON 前 `.pkl` 和已退出 PID 的 catalog staging。未知文件名、链接、hold/lease、扫描不完整及执行时变化均保留。
+`gravity cache status --json` 离线统计标准根和当前 `GRAVITY_CACHE_HOME`，按类别并列输出文件数、逻辑字节、分配字节及保留原因；根汇总含目录分配，NTFS resident 文件计入系统查询的文件记录大小（查询不可用则保留原生 stream 分配量），不猜簇大小。凭据只取目录元数据，不打开文件；无法计量时返回 null。路径、账号和指纹不进入清单。
+`gravity cache prune [--dry-run|--execute] --json` 默认仅预览，`decisions` 使用本次盘点编号；真实删除只处理超过 `--min-age-days` 的已知旧 JSON 前 `.pkl` 和已退出 PID 的 catalog staging，含无 scope 旧布局。未知文件名、链接、对应 artifact 的 hold/lease、扫描不完整及执行时变化均保留；`update-check-*.json.lease.guard` 单列计数并保留，不保护不相干 artifact。
 新账号快照使用统一根；旧位置已有 metadata/field-policy/catalog 继续原位读写并显示为 legacy residue，不自动搬动打开的 SQLite。field-policy 逐 key 回退，清空时覆盖已知两处，避免旧快照复活。
 principal 退休、非 HTTP 审计回执、CAS 项目锁可达性和 active/rollback generation 缺少完整持久证明，当前全部保留；本命令没有完成这些热点的 GC。HTTP 的局部 7 天/10000 文件策略仍只在当前目录写入后 best-effort 执行，跳过活 PID，无字节配额；cache prune 不代替审计释放授权。
 `--max-files` / `--max-disk-bytes` 是报告预算，不是强制限额；超过预算仍保留并返回 `retained_over_budget`。无法自动发现过去任意自定义缓存根；metadata 同大小只是疑似重复，不据此删除。命令无需 workspace、凭据、自动升级或 Skill bootstrap。

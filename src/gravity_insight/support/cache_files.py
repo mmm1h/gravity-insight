@@ -26,11 +26,64 @@ def assert_unlinked(path: Path) -> None:
             raise OSError("CACHE_LINK_REFUSED")
 
 
-def allocated_bytes(path: Path, info: os.stat_result) -> int | None:
+def allocation_units(path: Path) -> dict[str, int | None]:
+    """Query volume metadata; do not infer cluster or resident-record sizes."""
+    result = {"cluster_bytes": None, "resident_record_bytes": None}
+    if os.name != "nt":
+        return result
+    import ctypes
+    from ctypes import wintypes
+
+    class NtfsVolumeData(ctypes.Structure):
+        _fields_ = [("serial", ctypes.c_longlong), ("sectors", ctypes.c_longlong),
+                    ("clusters", ctypes.c_longlong), ("free", ctypes.c_longlong),
+                    ("reserved", ctypes.c_longlong), ("sector_bytes", wintypes.DWORD),
+                    ("cluster_bytes", wintypes.DWORD), ("record_bytes", wintypes.DWORD),
+                    ("record_clusters", wintypes.DWORD), ("mft_size", ctypes.c_longlong),
+                    ("mft_start", ctypes.c_longlong), ("mft_mirror", ctypes.c_longlong),
+                    ("mft_zone_start", ctypes.c_longlong), ("mft_zone_end", ctypes.c_longlong)]
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.GetVolumePathNameW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+    kernel.GetVolumeNameForVolumeMountPointW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+    kernel.GetDiskFreeSpaceW.argtypes = [wintypes.LPCWSTR] + [ctypes.POINTER(wintypes.DWORD)] * 4
+    kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                  ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    kernel.CreateFileW.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel.DeviceIoControl.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.c_void_p,
+                                      wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD,
+                                      ctypes.POINTER(wintypes.DWORD), ctypes.c_void_p]
+    volume = ctypes.create_unicode_buffer(32768)
+    if not kernel.GetVolumePathNameW(str(path), volume, len(volume)):
+        return result
+    space = [wintypes.DWORD() for _ in range(4)]
+    if kernel.GetDiskFreeSpaceW(volume.value, *(ctypes.byref(value) for value in space)):
+        result["cluster_bytes"] = space[0].value * space[1].value or None
+    name = ctypes.create_unicode_buffer(32768)
+    if not kernel.GetVolumeNameForVolumeMountPointW(volume.value, name, len(name)):
+        return result
+    # FSCTL_GET_NTFS_VOLUME_DATA requires read access to the volume, not its files.
+    handle = kernel.CreateFileW(name.value.rstrip("\\"), 0x80000000, 7, None, 3, 0, None)
+    if handle == wintypes.HANDLE(-1).value:
+        return result
+    try:
+        value, returned = NtfsVolumeData(), wintypes.DWORD()
+        if kernel.DeviceIoControl(handle, 0x90064, None, 0, ctypes.byref(value),
+                                  ctypes.sizeof(value), ctypes.byref(returned), None):
+            result["resident_record_bytes"] = value.record_bytes or None
+    finally:
+        kernel.CloseHandle(handle)
+    return result
+
+
+def allocated_bytes(path: Path, info: os.stat_result, *, metadata_only: bool = False) -> int | None:
     if hasattr(info, "st_blocks"):
         return info.st_blocks * 512
     if os.name != "nt":
         return None
+    if metadata_only:
+        return _directory_allocation(path, info)
     import ctypes
     from ctypes import wintypes
 
@@ -51,8 +104,40 @@ def allocated_bytes(path: Path, info: os.stat_result) -> int | None:
         return None
 
 
+def _directory_allocation(path: Path, info: os.stat_result) -> int | None:
+    """Query the parent directory, never open the sensitive child file."""
+    import ctypes
+    from ctypes import wintypes
+
+    class FullDirectoryInfo(ctypes.Structure):
+        _fields_ = [("next", wintypes.DWORD), ("index", wintypes.DWORD),
+                    ("created", ctypes.c_longlong), ("accessed", ctypes.c_longlong),
+                    ("written", ctypes.c_longlong), ("changed", ctypes.c_longlong),
+                    ("size", ctypes.c_longlong), ("allocation", ctypes.c_longlong),
+                    ("attributes", wintypes.DWORD), ("name_bytes", wintypes.DWORD),
+                    ("ea_size", wintypes.DWORD), ("name", wintypes.WCHAR * 1)]
+
+    try:
+        with _windows_handle(path.parent, list_directory=True) as (kernel, handle):
+            buffer = ctypes.create_string_buffer(65536)
+            while kernel.GetFileInformationByHandleEx(handle, 14, buffer, len(buffer)):
+                offset = 0
+                while True:
+                    value = FullDirectoryInfo.from_buffer(buffer, offset)
+                    name = ctypes.wstring_at(ctypes.addressof(buffer) + offset + FullDirectoryInfo.name.offset,
+                                             value.name_bytes // ctypes.sizeof(wintypes.WCHAR))
+                    if name == path.name:
+                        return value.allocation if value.size == info.st_size else None
+                    if not value.next:
+                        break
+                    offset += value.next
+    except OSError:
+        pass
+    return None
+
+
 @contextmanager
-def _windows_handle(path: Path, *, delete: bool = False) -> Iterator[tuple]:
+def _windows_handle(path: Path, *, delete: bool = False, list_directory: bool = False) -> Iterator[tuple]:
     import ctypes
     from ctypes import wintypes
 
@@ -67,7 +152,7 @@ def _windows_handle(path: Path, *, delete: bool = False) -> Iterator[tuple]:
     kernel.SetFileInformationByHandle.argtypes = [wintypes.HANDLE, ctypes.c_int,
                                                 ctypes.c_void_p, wintypes.DWORD]
     # No FILE_SHARE_DELETE: pin every ancestor and the final file while deleting.
-    handle = kernel.CreateFileW(str(path), 0x80 | (0x10000 if delete else 0),
+    handle = kernel.CreateFileW(str(path), 0x80 | (0x10000 if delete else 0) | int(list_directory),
                                 3, None, 3, 0x02200000, None)
     if handle == wintypes.HANDLE(-1).value:
         raise OSError("CACHE_FILE_IN_USE_OR_INACCESSIBLE")
