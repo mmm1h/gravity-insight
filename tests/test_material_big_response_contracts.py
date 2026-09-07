@@ -6,6 +6,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from gravity_insight import GravityInsightClient
+from gravity_insight.list_row_projection import (
+    MAX_OPAQUE_JSON_BYTES,
+    MAX_OPAQUE_JSON_DEPTH,
+    MAX_OPAQUE_JSON_ELEMENTS,
+)
 from gravity_insight.material_performance import material_performance
 from gravity_insight.material_performance_result import MATERIAL_ROW_FIELDS
 from gravity_insight.transport import TransportResponse
@@ -174,7 +179,115 @@ def _client(operation_id: str, row: Mapping[str, Any]) -> GravityInsightClient:
     )
 
 
+def _album_tree_client(album_authority: Mapping[str, Any]) -> GravityInsightClient:
+    payload = {
+        "code": 0,
+        "data": {
+            "tree": [
+                {
+                    "id": 17,
+                    "label": "fixture",
+                    "parent_id": 0,
+                    "root_id": 17,
+                    "has_alum": True,
+                    "album_authority": album_authority,
+                    "create_user_id": 100,
+                    "children": [],
+                }
+            ],
+            "image_size": 1,
+            "video_size": 2,
+        },
+    }
+    return GravityInsightClient._from_manifest_for_tests(
+        {"manifest_version": 1, "operations": [_contract("material.album.tree")]},
+        transport=StaticTransport(payload),
+    )
+
+
 class MaterialBigResponseContractTests(unittest.TestCase):
+    def test_opaque_album_authority_recursively_applies_privacy_policy(self) -> None:
+        client = _album_tree_client(
+            {
+                "user_ids": [991],
+                "email": "a@b.c",
+                "future_email": "future@example.invalid",
+                "nested": {
+                    "material_id": "1800000000000003",
+                    "d3_action_user_id": [7],
+                    "owner_phone": "10086",
+                    "private_key": "must-not-leak",
+                },
+            }
+        )
+
+        result = client.read("material.album.tree")
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(
+            {
+                "user_ids": [991],
+                "nested": {
+                    "material_id": "1800000000000003",
+                    "d3_action_user_id": [7],
+                },
+            },
+            result["data"]["tree"][0]["album_authority"],
+        )
+
+    def test_opaque_album_authority_rejects_each_bound_overrun(self) -> None:
+        too_deep: Any = 0
+        for _ in range(MAX_OPAQUE_JSON_DEPTH + 1):
+            too_deep = {"nested": too_deep}
+        cases = (
+            ("depth", too_deep),
+            (
+                "elements",
+                {f"item_{index}": index for index in range(MAX_OPAQUE_JSON_ELEMENTS)},
+            ),
+            ("encoded bytes", {"payload": "x" * MAX_OPAQUE_JSON_BYTES}),
+        )
+        for label, album_authority in cases:
+            with self.subTest(label=label):
+                result = _album_tree_client(album_authority).read(
+                    "material.album.tree"
+                )
+
+                self.assertEqual("contract_changed", result["status"])
+                self.assertNotIn(
+                    "album_authority", result["data"]["tree"][0]
+                )
+
+    def test_material_attribution_opaque_ids_keep_non_personal_content(self) -> None:
+        operation_id = "material.report.query"
+        result = _client(
+            operation_id,
+            {
+                "material_id": "1800000000000003",
+                "d3_action_user_id": [
+                    {
+                        "material_id": "nested-material",
+                        "d3_action_user_id": [7],
+                        "email": "a@b.c",
+                    }
+                ],
+            },
+        ).read(operation_id, INPUTS[operation_id])
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(
+            {
+                "material_id": "1800000000000003",
+                "d3_action_user_id": [
+                    {
+                        "material_id": "nested-material",
+                        "d3_action_user_id": [7],
+                    }
+                ],
+            },
+            result["data"]["list"][0],
+        )
+
     def test_all_observed_fields_are_declared_and_projected(self) -> None:
         for operation_id, observed in OBSERVED_FIELDS.items():
             with self.subTest(operation_id=operation_id):
