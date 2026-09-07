@@ -8,14 +8,22 @@ import json
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
-from gravity_insight.agent_runtime_contracts import is_sha256, validate_schema
+from gravity_insight.agent_runtime_contracts import (
+    AgentRuntimeContractError,
+    is_sha256,
+    load_json_object,
+    validate_schema,
+)
 from gravity_insight.capability_contract import _operations, capability_contracts
 from gravity_insight.capability_trust import CapabilityTrustService
 from gravity_insight.capability_validation import CapabilityValidationStore
 from gravity_insight.cache import bypass_metadata_cache
 from gravity_insight.client import GravityInsightClient
+from gravity_insight.compiler import ContractError, JsonSchemaValidator
 from gravity_insight.http_runtime import GravityHttpRuntime, _build_session
 from gravity_insight.probe_inputs import resolve_probe_inputs
 from gravity_insight.receipt import count_http_requests
@@ -52,6 +60,16 @@ from capability_validation_evidence_support import (
 
 _RUN_SCHEMA_NAME = "capability-validation-run-v2.schema.json"
 _SUMMARY_SCHEMA_NAME = "capability-validation-summary-v2.schema.json"
+_SCHEMA_ROOT = (
+    Path(__file__).resolve().parents[1]
+    / "src"
+    / "gravity_insight"
+    / "contracts"
+    / "schema"
+)
+_SHARED_RESPONSE_DRIFT_REF = (
+    f"{_RUN_SCHEMA_NAME}#/$defs/response_drift"
+)
 
 
 def collect(
@@ -165,7 +183,9 @@ def summarize() -> dict[str, Any]:
         "unresolved": unresolved,
         "network_called": False,
     }
-    validate_schema(result, _SUMMARY_SCHEMA_NAME, "Capability Validation summary")
+    _validate_evidence_schema(
+        result, _SUMMARY_SCHEMA_NAME, "Capability Validation summary"
+    )
     target = (
         workspace.state_root
         / "agent-runtime"
@@ -308,8 +328,63 @@ def _run_report(**values: Any) -> dict[str, Any]:
             "raw_rows_persisted": False,
         },
     }
-    validate_schema(report, _RUN_SCHEMA_NAME, "Capability Validation run")
+    _validate_evidence_schema(
+        report, _RUN_SCHEMA_NAME, "Capability Validation run"
+    )
     return report
+
+
+def _validate_evidence_schema(
+    value: Mapping[str, Any], schema_name: str, label: str
+) -> None:
+    if schema_name == _RUN_SCHEMA_NAME:
+        validate_schema(value, schema_name, label)
+        return
+    if schema_name != _SUMMARY_SCHEMA_NAME:
+        raise AgentRuntimeContractError("unknown Capability Validation evidence schema")
+    try:
+        _summary_schema_validator().validate(value)
+    except ContractError as exc:
+        raise AgentRuntimeContractError(
+            f"{label} does not match {schema_name}"
+        ) from exc
+
+
+@lru_cache(maxsize=1)
+def _summary_schema_validator() -> JsonSchemaValidator:
+    summary = load_json_object(
+        _SCHEMA_ROOT / _SUMMARY_SCHEMA_NAME,
+        f"{_SUMMARY_SCHEMA_NAME} schema",
+    )
+    run = load_json_object(
+        _SCHEMA_ROOT / _RUN_SCHEMA_NAME,
+        f"{_RUN_SCHEMA_NAME} schema",
+    )
+    try:
+        reference = summary["$defs"]["outcome"]["properties"]["response_drift"]
+        response_drift = run["$defs"]["response_drift"]
+    except (KeyError, TypeError) as exc:
+        raise AgentRuntimeContractError(
+            "Capability Validation response-drift schema reference is missing"
+        ) from exc
+    if reference != {"$ref": _SHARED_RESPONSE_DRIFT_REF}:
+        raise AgentRuntimeContractError(
+            "Capability Validation summary response-drift schema reference changed"
+        )
+    if not isinstance(response_drift, Mapping):
+        raise AgentRuntimeContractError(
+            "Capability Validation shared response-drift schema must be an object"
+        )
+    summary["$defs"]["response_drift"] = response_drift
+    summary["$defs"]["outcome"]["properties"]["response_drift"] = {
+        "$ref": "#/$defs/response_drift"
+    }
+    try:
+        return JsonSchemaValidator(summary, _SUMMARY_SCHEMA_NAME)
+    except ContractError as exc:
+        raise AgentRuntimeContractError(
+            f"{_SUMMARY_SCHEMA_NAME} schema is invalid"
+        ) from exc
 
 
 def _write_report(state_root: Any, report: Mapping[str, Any], finished_at: datetime) -> None:

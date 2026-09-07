@@ -185,6 +185,47 @@ def test_v2_runs_merge_types_and_are_order_independent(tmp_path: Path) -> None:
     assert decision["reason"] == "conflicting_observed_types"
 
 
+def test_v2_run_declaration_consumes_only_additive_drift_fields(
+    tmp_path: Path,
+) -> None:
+    operation_id = "promotion.kuaishou.account.list"
+    operation_root = _temporary_operation_root(
+        tmp_path,
+        operation_id,
+        remove_fields={operation_id: {"item_keys": {"create_time"}}},
+    )
+    outcome = _outcome(operation_id, [])
+    outcome["response_drift"] = {
+        "schema_version": "gravity.response-drift.v2",
+        "direction": "response",
+        "classification": "breaking",
+        "fields": [
+            {
+                "classification": "breaking",
+                "path": "/data/list",
+                "expected_type": "array",
+                "observed_type": "object",
+            },
+            {
+                "classification": "additive",
+                "path": "/data/list/*/create_time",
+                "observed_type": "string",
+            },
+        ],
+    }
+    evidence = _write_json(tmp_path / "run.json", _run([outcome]))
+
+    plan = build_drift_plan([evidence], operation_root=operation_root)
+    decisions = _decisions(plan)
+
+    assert set(decisions) == {(operation_id, "/data/list/*/create_time")}
+    assert plan["summary"]["automatic"] == 1
+    persisted = json.loads(evidence.read_text(encoding="utf-8"))
+    assert persisted["outcomes"][0]["response_drift"]["fields"][0][
+        "classification"
+    ] == "breaking"
+
+
 def test_safe_scalar_uses_existing_projection_slot(tmp_path: Path) -> None:
     operation_root = _temporary_operation_root(
         tmp_path,

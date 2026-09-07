@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "99b3222edd28a1810d443b1b8603818f92a185114dcbce5206c82b47a94e37cc",
-    "manual_review_sha256": "ccfdeff6e0e2d6c1ed81bafd7c2224ac759c89df99c72e6658f694db838e7733",
+    "reference_evidence_sha256": "092874f35df8a378a0d5c5345246e4c3779b9aec1907ef493df78f1616802df4",
+    "manual_review_sha256": "6ac81c2719b29ee1c85a029cfa611e117075fb3cbf35ee46bec4d1fc355c5708",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3189,
     "scanned_file_count": 3182,
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 256
     },
-    "sites_sha256": "e4fbee4a88871c3619e70526ef34616e66a59bf5f180c45c3982b6abcae154ae"
+    "sites_sha256": "534244af8b1bf5baf9b3d0f3efca4251d0fbdc8a48cafd817a2275b1a10bc6df"
   },
   "blockers": [],
   "site_fields": [
@@ -832,7 +832,7 @@
       }
     ],
     [
-      "scripts/collect_capability_validation_evidence.py:13:1:from import",
+      "scripts/collect_capability_validation_evidence.py:15:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2452,7 +2452,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:345:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:364:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2467,7 +2467,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:350:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:369:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2482,7 +2482,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:351:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:370:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2497,7 +2497,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:352:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:371:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
