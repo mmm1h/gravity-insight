@@ -33,7 +33,6 @@ from .adaptive_governor_contract import raise_request_failure
 from .credentials import (
     GRAVITY_HOST,
     CredentialProvider,
-    validated_login_payload,
 )
 from .errors import (
     AuthenticationError,
@@ -43,16 +42,22 @@ from .errors import (
     TransportError,
 )
 from .http_retry import (
+    backoff as _backoff,
     is_retryable_exception as _is_retryable_exception,
     response_payload as _response_payload,
     retry_delay as _retry_delay,
-    unit_random as _unit_random,
 )
 from .host_rate_limiter import (
     DEFAULT_REQUESTS_PER_SECOND,
     HostRateLimiter,
 )
-from .http_runtime_observation import perform_runtime_attempt
+from .http_runtime_observation import (
+    ReceiptBinding,
+    ReceiptBindingResolver,
+    perform_runtime_attempt,
+    perform_runtime_login,
+    resolve_receipt_binding,
+)
 from .paths import STATE_ROOT
 from .process_limits import MAX_CONCURRENCY
 from .runtime_scope import resolve_env_path
@@ -213,6 +218,7 @@ class _GravityRequester:
         random_source: Callable[[], float] = random.random,
         receipt_root: Path = STATE_ROOT,
         observation_scope_key: str = "local-runtime",
+        receipt_binding_resolver: ReceiptBindingResolver | None = None,
         observation_clock: Callable[[], float] = time.monotonic,
         governor: AdaptiveRequestGovernor | None = None,
     ) -> None:
@@ -225,8 +231,9 @@ class _GravityRequester:
         self.sleeper = sleeper
         self.wall_clock = wall_clock or (lambda: datetime.now(timezone.utc))
         self.random_source = random_source
-        self.receipt_root = receipt_root
+        self.receipt_binding = (receipt_root, observation_scope_key)
         self.observation_scope_key = observation_scope_key
+        self.receipt_binding_resolver = receipt_binding_resolver
         self.observation_clock = observation_clock
         self.governor = governor if governor is not None else get_process_governor()
         self.business_limit = self.governor.business_capacity
@@ -256,6 +263,7 @@ class _GravityRequester:
         extra_headers = dict(headers or {})
         if set(extra_headers) - _AUTH_HEADER_NAMES:
             raise PolicyViolation("Gravity requester accepts only credential headers")
+        binding = resolve_receipt_binding(self)
         request_headers = {
             **BROWSER_HEADERS, **extra_headers,
             "Origin": profile.origin, "Referer": profile.referer,
@@ -265,7 +273,7 @@ class _GravityRequester:
             attempt_receipt = request_attempt_context(receipt_context, attempt)
             result = self._request_attempt(
                 profile, normalized_method, path, request_headers, params, json_body,
-                request_timeout, request_attempts, attempt, attempt_receipt, rate_delay,
+                request_timeout, request_attempts, attempt, attempt_receipt, rate_delay, binding,
             )
             if result is not None:
                 return result
@@ -276,16 +284,17 @@ class _GravityRequester:
         request_headers: Mapping[str, str], params: Mapping[str, Any] | None,
         json_body: Mapping[str, Any] | None, request_timeout: float, request_attempts: int,
         attempt: int, attempt_receipt: Mapping[str, Any], rate_delay: float,
+        binding: ReceiptBinding,
     ) -> RuntimeResponse | None:
         retry_after_ms = None
         try:
             response = perform_runtime_attempt(
                 self, profile, normalized_method, path, request_headers,
-                params, json_body, request_timeout, request_attempts, attempt_receipt, rate_delay,
+                params, json_body, request_timeout, request_attempts, attempt_receipt, rate_delay, binding,
             )
         except Exception as exc:
             if attempt + 1 < request_attempts and _is_retryable_exception(exc):
-                self.sleeper(self._backoff(attempt))
+                self.sleeper(_backoff(attempt, self.random_source))
                 return None
             raise_request_failure(exc)
         status = int(getattr(response, "status_code", 0))
@@ -297,7 +306,7 @@ class _GravityRequester:
             retry_after_ms = int(delay * 1_000)
         if status in _RETRYABLE_STATUS and attempt + 1 < request_attempts:
             if status != 429:
-                self.sleeper(self._backoff(attempt))
+                self.sleeper(_backoff(attempt, self.random_source))
             return None
         payload = _response_payload(response)
         fetched_at = self.wall_clock().astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -307,26 +316,7 @@ class _GravityRequester:
         return RuntimeResponse(status, payload, fetched_at, response_headers, retry_after_ms)
 
     def login(self, body: Mapping[str, Any], timeout: float) -> Mapping[str, Any]:
-        response = self.request(
-            _LOGIN_PROFILE,
-            "POST",
-            "/account_center/api/v1/user_login/v2/",
-            json_body=body,
-            timeout=timeout,
-            receipt_context=request_receipt_context(
-                operation_id="authentication",
-                method="POST",
-                path="/account_center/api/v1/user_login/v2/",
-                body=body,
-                effect="login",
-            ),
-        )
-        return validated_login_payload(response.status_code, response.payload, response.retry_after_ms)
-
-    def _backoff(self, attempt: int) -> float:
-        base = float(min(2 ** (attempt + 1), 8))
-        return base * (1.0 + 0.2 * _unit_random(self.random_source))
-
+        return perform_runtime_login(self, _LOGIN_PROFILE, body, timeout)
 
 class GravityHttpRuntime:
     """Long-lived session, credentials, requester, and limiter shared by clients."""
@@ -352,6 +342,7 @@ class GravityHttpRuntime:
         receipt_root: Path = STATE_ROOT,
         isolated: bool = False,
         observation_scope_key: str | None = None,
+        receipt_binding_resolver: ReceiptBindingResolver | None = None,
     ) -> None:
         selected_env, resolved_isolated = resolve_env_path(env_path)
         if isolated:
@@ -381,10 +372,10 @@ class GravityHttpRuntime:
             random_source=random_source,
             receipt_root=receipt_root,
             observation_scope_key=selected_observation_scope,
+            receipt_binding_resolver=receipt_binding_resolver,
             observation_clock=rate_clock,
             governor=self.__governor,
         )
-        self.__observation_scope_key = selected_observation_scope
         if credentials is None:
             self.__credentials = CredentialProvider.from_env(
                 env_path,
@@ -415,7 +406,7 @@ class GravityHttpRuntime:
         from .governor_observation import observation_snapshot
 
         return observation_snapshot(
-            self.__observation_scope_key,
+            self.__requester.observation_scope_key,
             after_sequence=after_sequence,
             limit=limit,
         )
@@ -423,7 +414,7 @@ class GravityHttpRuntime:
     def adaptive_governor_snapshot(self) -> dict[str, Any]:
         """Return this private Runtime scope's active policy without I/O."""
 
-        return self.__governor.snapshot(self.__observation_scope_key)
+        return self.__governor.snapshot(self.__requester.observation_scope_key)
 
     def request(
         self,
