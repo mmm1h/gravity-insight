@@ -11,6 +11,7 @@ from scripts.build_upstream_drift_signal import (
     build_signal,
     main,
     render_issue_body,
+    render_summary,
 )
 
 
@@ -52,6 +53,23 @@ def _write_plan(root: Path) -> Path:
                 "commands": [
                     "python -m gravity_insight.prober probe analysis.event.query"
                 ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return target
+
+
+def _write_empty_plan(root: Path) -> Path:
+    target = root / "empty-probe-plan.json"
+    target.write_text(
+        json.dumps(
+            {
+                "mode": "none",
+                "business_api_called": False,
+                "direct_operation_ids": [],
+                "family_sample_operation_ids": [],
+                "commands": [],
             }
         ),
         encoding="utf-8",
@@ -106,6 +124,78 @@ def test_current_projection_resolution_clears_historical_additive_path(tmp_path)
 
     assert exposed["status"] == "clear"
     assert dispositioned["status"] == "clear"
+
+
+def test_zero_recognizable_evidence_is_inconclusive_not_clear(tmp_path):
+    recognized = tmp_path / "recognized"
+    unrecognized = tmp_path / "unrecognized"
+    _write_evidence(recognized, "response.json", [])
+    unrecognized.mkdir()
+    (unrecognized / "other.json").write_text(
+        json.dumps(
+            {
+                "operation_id": "analysis.event.query",
+                "response_observation": {"registered_paths": []},
+            }
+        ),
+        encoding="utf-8",
+    )
+    plan = _write_empty_plan(tmp_path)
+
+    clear = build_signal(
+        recognized,
+        probe_plan=plan,
+        require_probe_plan=True,
+        operations={},
+    )
+    inconclusive = build_signal(
+        unrecognized,
+        probe_plan=plan,
+        require_probe_plan=True,
+        operations={},
+    )
+
+    assert clear["status"] == "clear"
+    assert inconclusive["status"] == "inconclusive"
+    assert inconclusive["actionable"] is False
+    assert "No upstream drift conclusion is available" in render_summary(inconclusive)
+
+
+def test_cli_emits_inconclusive_receipt_without_failing(tmp_path):
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    (evidence / "other.json").write_text(
+        json.dumps({"response_observation": {"registered_paths": []}}),
+        encoding="utf-8",
+    )
+    plan = _write_empty_plan(tmp_path)
+    output = tmp_path / "signal.json"
+    summary = tmp_path / "summary.md"
+    issue_body = tmp_path / "issue.md"
+
+    code = main(
+        [
+            "--evidence-root",
+            str(evidence),
+            "--probe-plan",
+            str(plan),
+            "--require-probe-plan",
+            "--output",
+            str(output),
+            "--summary-output",
+            str(summary),
+            "--issue-body-output",
+            str(issue_body),
+        ]
+    )
+
+    signal = json.loads(output.read_text(encoding="utf-8"))
+    assert code == 0
+    assert signal["status"] == "inconclusive"
+    assert "No upstream drift conclusion is available" in summary.read_text(
+        encoding="utf-8"
+    )
+    assert issue_body.read_text(encoding="utf-8") == ""
 
 
 def test_repeated_evidence_for_same_gap_does_not_change_actionable_fingerprint(tmp_path):

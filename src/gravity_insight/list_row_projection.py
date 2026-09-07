@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from . import response_redaction_policy as _response_redaction
+from ._field_policy_shared import (
+    is_direct_personal_response_field,
+    is_sensitive_analysis_field,
+)
 from .drift import ProjectionDrift
 from .models import OperationSpec
 from .multidim import projected_keys
 from .response_drift import ResponseDriftRecorder
+
+
+MAX_OPAQUE_JSON_BYTES = 32_768
+MAX_OPAQUE_JSON_DEPTH = 8
+MAX_OPAQUE_JSON_ELEMENTS = 256
 
 
 @dataclass(frozen=True)
@@ -189,6 +200,17 @@ def _project_list_row(
         name = str(key)
         if name not in allowed:
             continue
+        if name in projection.opaque_json_item_keys:
+            normalized, valid = _copy_json_value(value)
+            if not valid:
+                recorder.add_breaking_field(
+                    (*row_path, name), "json", value
+                )
+            if valid:
+                projected[name] = normalized
+            else:
+                containers += 1
+            continue
         if not isinstance(value, (Mapping, list, tuple)):
             if _is_json_scalar(value):
                 projected[name] = value
@@ -198,13 +220,7 @@ def _project_list_row(
                     (*row_path, name), "json_scalar", value
                 )
             continue
-        if name in projection.opaque_json_item_keys:
-            normalized, valid = _copy_json_value(value)
-            if not valid:
-                recorder.add_breaking_field(
-                    (*row_path, name), "json", value
-                )
-        elif name in projection.scalar_list_item_types:
+        if name in projection.scalar_list_item_types:
             normalized, valid = _project_scalar_list(
                 value, projection.scalar_list_item_types[name]
             )
@@ -272,8 +288,26 @@ def _record_scalar_list_drift(
             recorder.add_breaking_field((*path, "*"), item_type, item)
 
 
-def _copy_json_value(value: Any, *, depth: int = 0) -> tuple[Any, bool]:
-    if depth > 32:
+def _copy_json_value(value: Any) -> tuple[Any, bool]:
+    copied, valid = _copy_json_node(value, depth=0, budget=[0])
+    if not valid:
+        return None, False
+    try:
+        encoded = json.dumps(
+            copied, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+        ).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError):
+        return None, False
+    return (copied, True) if len(encoded) <= MAX_OPAQUE_JSON_BYTES else (None, False)
+
+
+def _copy_json_node(
+    value: Any, *, depth: int, budget: list[int]
+) -> tuple[Any, bool]:
+    if depth > MAX_OPAQUE_JSON_DEPTH:
+        return None, False
+    budget[0] += 1
+    if budget[0] > MAX_OPAQUE_JSON_ELEMENTS:
         return None, False
     if _is_json_scalar(value):
         return value, True
@@ -282,7 +316,11 @@ def _copy_json_value(value: Any, *, depth: int = 0) -> tuple[Any, bool]:
         for key, item in value.items():
             if not isinstance(key, str):
                 return None, False
-            nested, valid = _copy_json_value(item, depth=depth + 1)
+            if _opaque_json_excluded_key(key):
+                continue
+            nested, valid = _copy_json_node(
+                item, depth=depth + 1, budget=budget
+            )
             if not valid:
                 return None, False
             copied[key] = nested
@@ -290,12 +328,24 @@ def _copy_json_value(value: Any, *, depth: int = 0) -> tuple[Any, bool]:
     if isinstance(value, (list, tuple)):
         copied_items: list[Any] = []
         for item in value:
-            nested, valid = _copy_json_value(item, depth=depth + 1)
+            nested, valid = _copy_json_node(
+                item, depth=depth + 1, budget=budget
+            )
             if not valid:
                 return None, False
             copied_items.append(nested)
         return copied_items, True
     return None, False
+
+
+def _opaque_json_excluded_key(value: str) -> bool:
+    normalized = value.casefold().strip().lstrip("$").replace("-", "_")
+    return (
+        is_direct_personal_response_field(value)
+        or is_sensitive_analysis_field(value)
+        or normalized in _response_redaction.RESPONSE_CREDENTIALS
+        or normalized.endswith(_response_redaction.RESPONSE_CREDENTIAL_SUFFIXES)
+    )
 
 
 def _project_nested_item_value(
@@ -351,18 +401,20 @@ def _project_nested_mapping(
         name = str(key)
         if name not in rules.allowed:
             continue
+        if name in rules.opaque:
+            opaque_json, valid = _copy_json_value(nested_value)
+            if valid:
+                result[name] = opaque_json
+            else:
+                breaking = True
+                if recorder is not None:
+                    recorder.add_breaking_field(
+                        (*item_path, name),
+                        "json",
+                        nested_value,
+                    )
+            continue
         if isinstance(nested_value, (Mapping, list, tuple)):
-            if name in rules.opaque:
-                opaque_json, valid = _copy_json_value(nested_value)
-                if valid:
-                    result[name] = opaque_json
-                else:
-                    breaking = True
-                    if recorder is not None:
-                        recorder.add_breaking_field(
-                            (*item_path, name), "json", nested_value
-                        )
-                continue
             nested, nested_unknown, nested_breaking, contracted = (
                 _project_nested_item_value(
                     nested_value,

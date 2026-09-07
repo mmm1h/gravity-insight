@@ -143,26 +143,85 @@
       }
     },
     "response_drift": {
-      "type": "object",
-      "required": ["schema_version", "direction", "classification", "fields"],
-      "additionalProperties": false,
-      "properties": {
-        "schema_version": {"const": "gravity.response-drift.v1"},
-        "direction": {"const": "response"},
-        "classification": {"const": "additive"},
-        "fields": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "type": "object",
-            "required": ["path", "observed_type"],
-            "additionalProperties": false,
-            "properties": {
-              "path": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^/.*$"},
-              "observed_type": {
-                "enum": ["null", "boolean", "integer", "number", "string", "object", "array"]
+      "oneOf": [
+        {"$ref": "#/$defs/response_drift/$defs/additive_v1"},
+        {"$ref": "#/$defs/response_drift/$defs/breaking_v2"}
+      ],
+      "$defs": {
+        "additive_v1": {
+          "type": "object",
+          "required": ["schema_version", "direction", "classification", "fields"],
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {"const": "gravity.response-drift.v1"},
+            "direction": {"const": "response"},
+            "classification": {"const": "additive"},
+            "fields": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "required": ["path", "observed_type"],
+                "additionalProperties": false,
+                "properties": {
+                  "path": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^/.*$"},
+                  "observed_type": {
+                    "enum": ["null", "boolean", "integer", "number", "string", "object", "array"]
+                  }
+                }
               }
+            }
+          }
+        },
+        "breaking_v2": {
+          "type": "object",
+          "required": ["schema_version", "direction", "classification", "fields"],
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {"const": "gravity.response-drift.v2"},
+            "direction": {"const": "response"},
+            "classification": {"const": "breaking"},
+            "fields": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "oneOf": [
+                  {"$ref": "#/$defs/response_drift/$defs/additive_v2_field"},
+                  {"$ref": "#/$defs/response_drift/$defs/breaking_v2_field"}
+                ]
+              },
+              "not": {
+                "items": {"$ref": "#/$defs/response_drift/$defs/additive_v2_field"}
+              }
+            }
+          }
+        },
+        "additive_v2_field": {
+          "type": "object",
+          "required": ["classification", "path", "observed_type"],
+          "additionalProperties": false,
+          "properties": {
+            "classification": {"const": "additive"},
+            "path": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^/.*$"},
+            "observed_type": {
+              "enum": ["null", "boolean", "integer", "number", "string", "object", "array"]
+            }
+          }
+        },
+        "breaking_v2_field": {
+          "type": "object",
+          "required": ["classification", "path", "expected_type", "observed_type"],
+          "additionalProperties": false,
+          "properties": {
+            "classification": {"const": "breaking"},
+            "path": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^/.*$"},
+            "expected_type": {
+              "enum": ["null", "boolean", "integer", "number", "string", "object", "array", "json", "json_scalar", "object_or_array"]
+            },
+            "observed_type": {
+              "enum": ["null", "boolean", "integer", "number", "string", "object", "array", "missing", "non_json"]
             }
           }
         }

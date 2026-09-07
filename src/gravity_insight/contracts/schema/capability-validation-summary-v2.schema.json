@@ -101,34 +101,8 @@
         "schema_fingerprint": {
           "anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]
         },
-        "response_drift": {"$ref": "#/$defs/response_drift"},
+        "response_drift": {"$ref": "capability-validation-run-v2.schema.json#/$defs/response_drift"},
         "error_detail": {"$ref": "#/$defs/error_detail"}
-      }
-    },
-    "response_drift": {
-      "type": "object",
-      "required": ["schema_version", "direction", "classification", "fields"],
-      "additionalProperties": false,
-      "properties": {
-        "schema_version": {"const": "gravity.response-drift.v1"},
-        "direction": {"const": "response"},
-        "classification": {"const": "additive"},
-        "fields": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "type": "object",
-            "required": ["path", "observed_type"],
-            "additionalProperties": false,
-            "properties": {
-              "path": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^/.*$"},
-              "observed_type": {
-                "enum": ["null", "boolean", "integer", "number", "string", "object", "array"]
-              }
-            }
-          }
-        }
       }
     },
     "error_detail": {

@@ -89,6 +89,8 @@ def _run_observations(
         rows.extend(
             (selector, str(item["path"]), str(item["observed_type"]))
             for item in normalized["fields"]
+            if item.get("classification", normalized["classification"])
+            == "additive"
         )
     return rows
 

@@ -968,6 +968,19 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         self.assertIn("gh issue close", workflow)
         self.assertIn("status:triage,priority:p2,area:contracts-census", workflow)
         self.assertIn("already has this fingerprint; no update was sent", workflow)
+        self.assertIn('$env:SIGNAL_STATUS -eq "inconclusive"', workflow)
+        self.assertIn(
+            "No managed Issue was created, updated, or closed", workflow
+        )
+        self.assertLess(
+            workflow.index('$env:SIGNAL_STATUS -eq "inconclusive"'),
+            workflow.index("gh issue list"),
+        )
+        inconclusive_branch = workflow[
+            workflow.index('$env:SIGNAL_STATUS -eq "inconclusive"'):
+            workflow.index("gh issue list")
+        ]
+        self.assertIn("exit 0", inconclusive_branch)
         self.assertIn("steps.drift_signal.outcome != 'success'", workflow)
         ci = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(
             encoding="utf-8"

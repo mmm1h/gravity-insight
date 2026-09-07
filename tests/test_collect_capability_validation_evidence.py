@@ -264,19 +264,32 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
         )
         self.assertNotIn(business_value, json.dumps(outcome))
 
-    def test_summary_v2_keeps_diagnostics_and_reads_historical_v1_runs(self):
-        drift = {
+    def test_run_and_summary_v2_write_additive_and_breaking_drift(self):
+        additive_drift = {
             "schema_version": "gravity.response-drift.v1",
             "direction": "response",
             "classification": "additive",
             "fields": [{"path": "/data/new", "observed_type": "integer"}],
         }
-        current = result_outcome(
+        breaking_drift = {
+            "schema_version": "gravity.response-drift.v2",
+            "direction": "response",
+            "classification": "breaking",
+            "fields": [
+                {
+                    "classification": "breaking",
+                    "path": "/data/list",
+                    "expected_type": "array",
+                    "observed_type": "object",
+                }
+            ],
+        }
+        additive = result_outcome(
             "analysis.event.list",
             result(
                 result_audit={
                     **result()["result_audit"],
-                    "response_drift": drift,
+                    "response_drift": additive_drift,
                 }
             ),
             1,
@@ -284,8 +297,22 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
             False,
             ["EXECUTION_RESPONSE_DRIFT"],
         )
-        historical = result_outcome(
+        breaking = result_outcome(
             "analysis.event_property.list",
+            result(
+                status="contract_changed",
+                result_audit={
+                    **result()["result_audit"],
+                    "response_drift": breaking_drift,
+                },
+            ),
+            1,
+            [receipt(operation_id="analysis.event_property.list")],
+            False,
+            ["EXECUTION_RESPONSE_DRIFT"],
+        )
+        historical = result_outcome(
+            "historical.operation",
             result(status="empty", data={"list": []}),
             1,
             [],
@@ -300,19 +327,11 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
             root = Path(raw)
             run_root = root / "agent-runtime" / "capability-validation-runs"
             run_root.mkdir(parents=True)
-            (run_root / "20260904T000000Z.json").write_text(
+            (run_root / "20260902T000000Z.json").write_text(
                 json.dumps({
                     "schema_version": "gravity.capability-validation-run.v1",
                     "production_requests_total": 1,
                     "outcomes": [historical],
-                }),
-                encoding="utf-8",
-            )
-            (run_root / "20260905T000000Z.json").write_text(
-                json.dumps({
-                    "schema_version": "gravity.capability-validation-run.v2",
-                    "production_requests_total": 2,
-                    "outcomes": [current],
                 }),
                 encoding="utf-8",
             )
@@ -362,10 +381,19 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
                     candidates=[{"contract": {}}],
                     validations=[],
                     store=CapabilityValidationStore(values=[]),
-                    outcomes={("operation", "analysis.event.list"): current},
+                    outcomes={
+                        ("operation", "analysis.event.list"): additive,
+                        ("operation", "analysis.event_property.list"): breaking,
+                    },
+                )
+                collector._write_report(
+                    root, run_report, NOW + timedelta(seconds=1)
                 )
                 collector.summarize()
 
+            persisted_run = json.loads(
+                (run_root / "20260903T080001Z.json").read_text(encoding="utf-8")
+            )
             summary = json.loads(
                 (
                     root
@@ -377,9 +405,13 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
         self.assertEqual("gravity.capability-validation-summary.v2", summary["schema_version"])
         self.assertEqual("gravity.capability-validation-run.v2", run_report["schema_version"])
         self.assertEqual(2, summary["source_run_count"])
-        self.assertEqual(2, len(summary["unresolved"]))
-        self.assertEqual(drift, summary["unresolved"][0]["response_drift"])
-        self.assertNotIn("response_drift", summary["unresolved"][1])
+        self.assertEqual(3, len(summary["unresolved"]))
+        self.assertEqual(additive_drift, summary["unresolved"][0]["response_drift"])
+        self.assertEqual(breaking_drift, summary["unresolved"][1]["response_drift"])
+        persisted_drift = persisted_run["outcomes"][1]["response_drift"]
+        self.assertEqual("breaking", persisted_drift["classification"])
+        self.assertEqual("array", persisted_drift["fields"][0]["expected_type"])
+        self.assertNotIn("response_drift", summary["unresolved"][2])
         self.assertNotIn(legacy_fingerprint_value, json.dumps(summary))
 
 
