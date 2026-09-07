@@ -21,7 +21,7 @@ Usage:
   gravity runtime health
   gravity docs check
   gravity capabilities trust|validate|impact
-  gravity skills list|show|sync|search|resolve|lock|fetch|install|update|verify|audit|status
+  gravity skills list|show|sync|search|resolve|lock|fetch|install|update|verify|audit|status|bootstrap|repair|host-install-plan
   gravity trusted-packs resolve|lock|fetch|verify|install-plan
   gravity action segment-update|dashboard-delivery preview|execute --input <json|file|->
   gravity experiment propose|outcome-handoff --input <json|file|->
@@ -113,6 +113,12 @@ def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
     return None
 
 
+def _startup_skill_maintenance(args: Sequence[str]) -> None:
+    from .skill_maintenance_startup import maybe_bootstrap_bundled_skills
+
+    maybe_bootstrap_bundled_skills(args)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     from .cli_stdio import configure_utf8_stdio, emit_entry_error
 
@@ -136,6 +142,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
     upgrade_exit = _startup_upgrade_exit(args)
     if upgrade_exit is not None:
         return upgrade_exit
+    _startup_skill_maintenance(args)
 
     from . import cli as insight_cli
     from .census import cli as census_cli

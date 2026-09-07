@@ -14,9 +14,8 @@
 
 ## 当前架构范围
 
-[Canonical Architecture](architecture.md) 只规定跨组件不变量，并由
-[`directive.json`](../specs/agent-runtime/directive.json) 绑定 digest。当前接口仍以 CLI/SDK/Plan、
-catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
+[Canonical Architecture](architecture.md) 只规定跨组件不变量，并由 [`directive.json`](../specs/agent-runtime/directive.json)
+绑定 digest。当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 [Runtime Component Index](../specs/agent-runtime/index.md)。`main` 是唯一长期分支，日常变更从短命分支
 经必需状态检查和 PR 合入。
 
@@ -37,7 +36,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - CT05 已通过 [`skill-library-v2`](https://github.com/mmm1h/gravity-insight/releases/tag/skill-library-v2) 发布：标签固定到 `ad1097443e6fd29bdcdb9bf36ce803271be2ae47`，90 个 receipt-bound 资产加 build manifest 均通过 checkout 外回读，43/43 Runtime 与 43/43 Agent archive 完整验证；canonical source SHA-256 为 `b03992523e2bbb9c31c4c50d8b35af143ddaaa44a30b3fc2becb6a7364e6ad71`，build manifest SHA-256 为 `b23fc0e657e2ed6defb81ecb5f8f050a03ace04aa026c5198cb603e3c93c3243`。已公开的 `skill-library-v1` 85 个资产保持不变，使旧 lock 的 URL、摘要与安装能力继续可用。
 - 0.3.5 已将 Runtime wheel 内置业务 Skill 数收敛为零，并把 43 项外部方法与第一方 AP 成本参考方法统一为 44 项 canonical Library。`skill-library-v3` 的 93 个资产与 checkout 外摘要回读通过，但 0.3.5 客户端会拒绝 GitHub Release 必需的一次 CDN 重定向，因此 v3/0.3.5 不作为跨设备可用组合。0.3.6 与不可变 `skill-library-v4` 是修正通道：Source 显式锁定允许主机、最多一跳，R01 仍只接受项目精确 lock 与本地核验 CAS；v1/v2/v3 资产保持不变。
 - Skill Library build receipt schema 直接升级到 v2，将完整本地 QA tree 与 GitHub Release 的扁平 `release_assets` 分开；receipt schema v1 从未发布且没有当前消费者，因此该破坏性升级不损失读取或安装能力。
-- 0.3.5 的“wheel 内无业务 Skill registry/resolver”边界继续成立，但分发形态有意识地部分回退为唯一 manifest-bound 密封镜像：同一 CT03 构建把 build manifest、两个 index、Agent index schema 与 88 个 Runtime/Agent ZIP 封入 wheel seed，原始 canonical library 和外部 Source Registry 仍不入包。显式离线 bootstrap 复用 source/lock/archive/CAS/state 原语并只写独立 managed lock；seed 本身不进入发现面。maintenance receipt 以不同状态显式区分未检查与合法零项，失败保留 last-known-good，无旧版本则 `unavailable`。
+- 0.3.5 的“wheel 内无业务 Skill registry/resolver”边界继续成立，但分发形态有意识地部分回退为唯一 manifest-bound 密封镜像：同一 CT03 构建把 build manifest、两个 index、Agent index schema 与清单绑定的 Runtime/Agent ZIP 封入 wheel seed，原始 canonical library 和外部 Source Registry 仍不入包。默认离线 bootstrap 在普通 CLI dispatch 前复用 source/lock/archive/CAS/state 原语，以 generation + receipt pointer 原子激活并只读报告项目 lock 更新；相同 digest 短路，失败保留 last-known-good。Host plan 只向 Codex 和 Claude 原生机制交付已验证 CAS 源，保留本地修改并把 activation 限定为下一次宿主启动。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。发布收据逐字段解释拒绝，并绑定当前 run/attempt 的步骤覆盖，measure 跳过不能形成发布级通过；收据 CLI 必需覆盖输入已同步迁移 workflow/tests，不损失数据读取或只读 measure 能力，不替代发布后 provenance。

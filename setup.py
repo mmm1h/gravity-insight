@@ -12,6 +12,7 @@ from setuptools.command.sdist import sdist as _sdist
 
 ROOT = Path(__file__).resolve().parent
 SOURCE_SEED = ROOT / "src" / "gravity_insight" / "skill_seed" / "skill-seed-v1.zip"
+CANONICAL_LIBRARY = ROOT / "skills" / "library"
 
 
 def _render_seed() -> bytes:
@@ -25,12 +26,20 @@ def _render_seed() -> bytes:
         del sys.path[:2]
 
 
+def _distribution_seed() -> bytes:
+    if CANONICAL_LIBRARY.is_dir():
+        return _render_seed()
+    if SOURCE_SEED.is_file():
+        return SOURCE_SEED.read_bytes()
+    raise RuntimeError("distribution has neither canonical Skill library nor sealed seed")
+
+
 class _SeedBuildPy(_build_py):
     def run(self) -> None:
         super().run()
         target = Path(self.build_lib) / "gravity_insight" / "skill_seed" / SOURCE_SEED.name
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(SOURCE_SEED.read_bytes() if SOURCE_SEED.is_file() else _render_seed())
+        target.write_bytes(_distribution_seed())
 
     def get_outputs(self, include_bytecode: bool = True) -> list[str]:
         outputs = list(super().get_outputs(include_bytecode=include_bytecode))

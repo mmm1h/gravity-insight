@@ -16,6 +16,7 @@ _ISOLATED_ENVIRONMENT = {
     "LOCALAPPDATA": str(_cache_root),
     "XDG_CACHE_HOME": str(_cache_root),
     "GRAVITY_INSIGHT_AUTO_UPGRADE": "0",
+    "GRAVITY_INSIGHT_AUTO_SKILLS": "0",
 }
 # Applied to os.environ directly rather than through patch.dict(...).start().
 # A started patch joins mock's process-wide registry, so any test that calls

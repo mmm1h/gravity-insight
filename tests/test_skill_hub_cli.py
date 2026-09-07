@@ -80,6 +80,14 @@ class SkillHubCliTests(unittest.TestCase):
             "verify": ["--lock", "lock.json"],
             "audit": [],
             "status": [],
+            "bootstrap": [],
+            "repair": [],
+            "host-install-plan": [
+                "--host",
+                "codex",
+                "--host-root",
+                str(self.root / "host-skills"),
+            ],
         }
         for command, arguments in commands.items():
             with self.subTest(command=command):

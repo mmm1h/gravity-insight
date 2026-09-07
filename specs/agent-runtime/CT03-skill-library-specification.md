@@ -34,8 +34,8 @@ overwrite or delete earlier assets. V4 retains the Runtime-authored AP-cost
 reference method on the canonical Hub channel and adds the explicit GitHub Release
 CDN redirect boundary.
 
-The same builder also seals `build-manifest.json` plus its exact 92 flat release
-assets into deterministic `skill-seed-v1.zip`. Distribution builds stage that
+The same builder also seals `build-manifest.json` plus its exact manifest-listed
+flat release assets into deterministic `skill-seed-v1.zip`. Distribution builds stage that
 generated ZIP directly into `gravity_insight/skill_seed/` in the build tree (and
 into the generated sdist tree when a wheel is built from sdist). The ZIP remains
 ignored and untracked in the checkout; neither `skills/library/*.json` nor

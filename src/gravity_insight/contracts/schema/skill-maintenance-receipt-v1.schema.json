@@ -40,7 +40,7 @@
     "active_index_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
     "active_seed_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
     "managed_lock_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
-    "skill_count": {"type": "integer", "minimum": 0, "maximum": 256},
+    "skill_count": {"type": "integer", "minimum": 0, "maximum": 10000},
     "last_attempt_at": {"type": ["string", "null"], "minLength": 20, "maxLength": 32},
     "last_success_at": {"type": ["string", "null"], "minLength": 20, "maxLength": 32},
     "network_called": {"type": "boolean"},

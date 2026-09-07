@@ -156,15 +156,16 @@ class ReleaseCompatibilityTests(unittest.TestCase):
                 seed = bundle.read(WHEEL_SEED_PATH)
 
         self.assertEqual(load_release_compatibility(), packaged)
-        self.assertNotIn(
-            "gravity_insight/skills/sources/registry.json",
-            names,
-        )
         self.assertFalse(
-            any(name.startswith("gravity_insight/skills/library/") for name in names)
+            any(
+                name.startswith("gravity_insight/skills/")
+                or name.startswith("gravity_insight/contracts/skills/")
+                for name in names
+            )
         )
         self.assertEqual(
-            [WHEEL_SEED_PATH], [name for name in names if name == WHEEL_SEED_PATH]
+            [WHEEL_SEED_PATH],
+            [name for name in names if name.startswith("gravity_insight/skill_seed/")],
         )
         with zipfile.ZipFile(io.BytesIO(seed)) as bundled_seed:
             manifest = json.loads(bundled_seed.read("build-manifest.json"))
@@ -175,6 +176,13 @@ class ReleaseCompatibilityTests(unittest.TestCase):
                 set(bundled_seed.namelist()),
             )
             self.assertEqual(93, len(bundled_seed.namelist()))
+            self.assertNotIn("skills/sources/registry.json", bundled_seed.namelist())
+            self.assertFalse(
+                any(
+                    name.startswith("skills/library/")
+                    for name in bundled_seed.namelist()
+                )
+            )
         self.assertNotIn(b"LocalSkillResolver", root_init)
 
 

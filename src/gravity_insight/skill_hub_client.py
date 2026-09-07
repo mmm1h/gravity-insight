@@ -19,22 +19,18 @@ from .skill_hub_contract import (
 )
 from .skill_hub_locks import build_skills_lock, compile_skills_lock
 from .skill_hub_paths import ensure_unlinked_directory
-from .skill_hub_source import HttpGetter, open_locked_hub_source, sync_hub_source
-from .skill_hub_source import open_bundled_hub_source
+from .skill_hub_source import (
+    HttpGetter,
+    open_locked_hub_source,
+    sync_hub_source,
+)
 from .skill_hub_state import (
-    MAINTENANCE_DIRECTORY,
-    MAINTENANCE_RECEIPT_NAME,
-    MANAGED_SKILLS_LOCK_NAME,
     atomic_write_json,
     build_hub_snapshot,
-    build_skill_maintenance_receipt,
     build_skill_installation_state,
-    compile_skill_maintenance_receipt,
     load_hub_snapshots,
-    not_bootstrapped_skill_maintenance_receipt,
     read_json,
     write_hub_snapshot,
-    write_skill_maintenance_receipt,
     write_skill_installation_state,
 )
 from .support.process_lock import FileLockTimeout, advisory_file_lock
@@ -332,245 +328,49 @@ class SkillHubClient:
         content: bytes | None = None,
         *,
         at: str | None = None,
+        force: bool = False,
+        project_root: str | Path | None = None,
     ) -> dict[str, Any]:
-        """Activate the wheel seed through exact lock, CAS, and final verify."""
+        from .skill_maintenance import bootstrap_bundled
 
-        timestamp = _timestamp(at)
-        candidate_path = self._maintenance_root / "candidate-skills.lock.json"
-        with self.cas.maintenance_writer():
-            previous = self.status()
-            try:
-                session = open_bundled_hub_source(
-                    content, runtime_version=self.runtime_version
-                )
-                requested = sorted(session.index["skills"])
-                selected = build_skills_lock(
-                    session.index,
-                    session.reference(),
-                    requested,
-                    runtime_version=self.runtime_version,
-                )
-                if self._active_matches(previous, session, selected):
-                    receipt = self._ready_receipt(session, selected, timestamp)
-                    write_skill_maintenance_receipt(self.state_root, receipt)
-                    return _bootstrap_result(
-                        receipt,
-                        changed=False,
-                        artifacts_verified=len(selected["skills"]),
-                        artifacts_written=0,
-                    )
-
-                atomic_write_json(candidate_path, selected)
-                candidate = compile_skills_lock(read_json(candidate_path))
-                rebuilt = build_skills_lock(
-                    session.index,
-                    session.reference(),
-                    candidate["requested"],
-                    runtime_version=candidate["runtime_version"],
-                )
-                if candidate != rebuilt:
-                    raise SkillHubContractError(
-                        "HUB_LOCK_SOURCE_MISMATCH",
-                        "Managed lock differs from the exact bundled Hub snapshot",
-                    )
-                session.assert_reference(candidate["source"])
-                fetched = [
-                    self.cas.fetch_skill(
-                        session, session.index["skills"][item["skill_uri"]]
-                    )
-                    for item in candidate["skills"]
-                ]
-                verification = self.verify(candidate)
-                if not verification["ok"] or len(verification["artifacts"]) != len(
-                    candidate["skills"]
-                ):
-                    reason = (
-                        verification["reason_codes"][0]
-                        if verification["reason_codes"]
-                        else "HUB_BOOTSTRAP_VERIFY_FAILED"
-                    )
-                    raise SkillHubContractError(
-                        reason, "Bundled Skill final verification failed"
-                    )
-
-                reference = session.reference()
-                snapshot = build_hub_snapshot(
-                    reference,
-                    reference["source_descriptor_digest"],
-                    session.index,
-                    network_called=False,
-                    at=timestamp,
-                )
-                write_hub_snapshot(self.state_root, snapshot)
-                atomic_write_json(self._managed_lock_path, candidate)
-                if compile_skills_lock(read_json(self._managed_lock_path)) != candidate:
-                    raise SkillHubContractError(
-                        "HUB_LOCK_WRITE_FAILED", "Managed Skill lock readback changed"
-                    )
-                _remove_candidate(candidate_path)
-                receipt = self._ready_receipt(session, candidate, timestamp)
-                write_skill_maintenance_receipt(self.state_root, receipt)
-                return _bootstrap_result(
-                    receipt,
-                    changed=True,
-                    artifacts_verified=len(verification["artifacts"]),
-                    artifacts_written=sum(not item["cached"] for item in fetched),
-                )
-            except (OSError, SkillHubContractError) as exc:
-                _remove_candidate(candidate_path)
-                reason = (
-                    exc.reason_code
-                    if isinstance(exc, SkillHubContractError)
-                    else "HUB_BOOTSTRAP_IO_FAILED"
-                )
-                receipt = self._failed_receipt(previous, reason, timestamp)
-                write_skill_maintenance_receipt(self.state_root, receipt)
-                if isinstance(exc, SkillHubContractError):
-                    raise
-                raise SkillHubContractError(
-                    reason, "Bundled Skill bootstrap failed"
-                ) from exc
+        return bootstrap_bundled(
+            self,
+            content,
+            at=at,
+            force=force,
+            project_root=project_root,
+        )
 
     def status(self) -> dict[str, Any]:
-        """Read the explicit maintenance state without opening the seed or network."""
+        from .skill_maintenance import maintenance_status
 
-        path = self._maintenance_root / MAINTENANCE_RECEIPT_NAME
-        if not path.exists() and not self._managed_lock_path.exists():
-            return not_bootstrapped_skill_maintenance_receipt()
-        try:
-            return compile_skill_maintenance_receipt(read_json(path))
-        except SkillHubContractError:
-            attempted_at = _path_timestamp(path, self._managed_lock_path)
-            return build_skill_maintenance_receipt(
-                status="unavailable",
-                bootstrap_checked=True,
-                active_source=None,
-                active_index_digest=None,
-                active_seed_digest=None,
-                managed_lock_digest=None,
-                skill_count=0,
-                last_attempt_at=attempted_at,
-                last_success_at=None,
-                network_called=False,
-                reason_codes=["SKILL_MAINTENANCE_STATE_INVALID"],
-                update_available=None,
-                host_restart_required=False,
-            )
+        return maintenance_status(self)
 
-    @property
-    def _maintenance_root(self) -> Path:
-        return self.state_root / MAINTENANCE_DIRECTORY
-
-    @property
-    def _managed_lock_path(self) -> Path:
-        return self._maintenance_root / MANAGED_SKILLS_LOCK_NAME
-
-    def _active_matches(
+    def host_install_plan(
         self,
-        receipt: Mapping[str, Any],
-        session: Any,
-        lock: Mapping[str, Any],
-    ) -> bool:
-        if receipt["status"] not in {"ready", "degraded"}:
-            return False
-        if (
-            receipt["active_seed_digest"] != session.seed_digest
-            or receipt["active_index_digest"] != session.index["digest"]
-            or receipt["managed_lock_digest"] != lock["lock_digest"]
-            or receipt["skill_count"] != len(lock["skills"])
-        ):
-            return False
-        try:
-            active = compile_skills_lock(read_json(self._managed_lock_path))
-            snapshots = load_hub_snapshots(self.state_root)
-        except SkillHubContractError:
-            return False
-        reference = session.reference()
-        snapshot_matches = any(
-            item["source"] == reference and item["index"] == session.index["contract"]
-            for item in snapshots
-        )
-        return (
-            active == lock
-            and snapshot_matches
-            and self.verify(active)["ok"]
-        )
-
-    def _ready_receipt(
-        self, session: Any, lock: Mapping[str, Any], timestamp: str
+        host: str,
+        host_root: str | Path,
+        content: bytes | None = None,
     ) -> dict[str, Any]:
-        reference = session.reference()
-        return build_skill_maintenance_receipt(
-            status="ready",
-            bootstrap_checked=True,
-            active_source=_active_source(reference),
-            active_index_digest=reference["index_digest"],
-            active_seed_digest=session.seed_digest,
-            managed_lock_digest=lock["lock_digest"],
-            skill_count=len(lock["skills"]),
-            last_attempt_at=timestamp,
-            last_success_at=timestamp,
-            network_called=False,
-            reason_codes=[],
-            update_available=False,
-            host_restart_required=False,
-        )
+        from .skill_host_install import build_host_install_plan
 
-    def _failed_receipt(
-        self,
-        previous: Mapping[str, Any],
-        reason: str,
-        timestamp: str,
-    ) -> dict[str, Any]:
-        if self._verified_active(previous):
-            return build_skill_maintenance_receipt(
-                status="degraded",
-                bootstrap_checked=True,
-                active_source=previous["active_source"],
-                active_index_digest=previous["active_index_digest"],
-                active_seed_digest=previous["active_seed_digest"],
-                managed_lock_digest=previous["managed_lock_digest"],
-                skill_count=previous["skill_count"],
-                last_attempt_at=timestamp,
-                last_success_at=previous["last_success_at"],
-                network_called=False,
-                reason_codes=[reason],
-                update_available=None,
-                host_restart_required=False,
-            )
-        return build_skill_maintenance_receipt(
-            status="unavailable",
-            bootstrap_checked=True,
-            active_source=None,
-            active_index_digest=None,
-            active_seed_digest=None,
-            managed_lock_digest=None,
-            skill_count=0,
-            last_attempt_at=timestamp,
-            last_success_at=None,
-            network_called=False,
-            reason_codes=[reason],
-            update_available=None,
-            host_restart_required=False,
-        )
-
-    def _verified_active(self, receipt: Mapping[str, Any]) -> bool:
-        if receipt["status"] not in {"ready", "degraded"}:
-            return False
-        try:
-            lock = compile_skills_lock(read_json(self._managed_lock_path))
-        except SkillHubContractError:
-            return False
-        return (
-            lock["lock_digest"] == receipt["managed_lock_digest"]
-            and len(lock["skills"]) == receipt["skill_count"]
-            and self.verify(lock)["ok"]
-        )
+        return build_host_install_plan(self, host, host_root, content)
 
     def _indexes(self) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+        from .skill_maintenance import maintenance_snapshot
+
+        snapshots = load_hub_snapshots(self.state_root)
+        bundled = maintenance_snapshot(self)
+        if bundled is not None and not any(item == bundled for item in snapshots):
+            snapshots.append(bundled)
         return [
-            (snapshot, compile_hub_index(snapshot["index"], runtime_version=self.runtime_version))
-            for snapshot in load_hub_snapshots(self.state_root)
+            (
+                snapshot,
+                compile_hub_index(
+                    snapshot["index"], runtime_version=self.runtime_version
+                ),
+            )
+            for snapshot in snapshots
         ]
 
     def _index(
@@ -663,80 +463,6 @@ def _now() -> str:
     )
 
 
-def _timestamp(value: str | None) -> str:
-    if value is None:
-        return _now()
-    try:
-        selected = datetime.fromisoformat(value.removesuffix("Z") + "+00:00")
-    except (AttributeError, ValueError) as exc:
-        raise SkillHubContractError(
-            "HUB_TIME_INVALID", "Bootstrap time is invalid"
-        ) from exc
-    rendered = selected.astimezone(timezone.utc).isoformat(timespec="seconds").replace(
-        "+00:00", "Z"
-    )
-    if rendered != value:
-        raise SkillHubContractError(
-            "HUB_TIME_INVALID", "Bootstrap time is not canonical UTC"
-        )
-    return rendered
-
-
-def _active_source(reference: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        key: reference[key]
-        for key in (
-            "source_id",
-            "transport",
-            "source_descriptor_digest",
-            "source_revision",
-        )
-    }
-
-
-def _bootstrap_result(
-    receipt: Mapping[str, Any],
-    *,
-    changed: bool,
-    artifacts_verified: int,
-    artifacts_written: int,
-) -> dict[str, Any]:
-    return {
-        "schema_version": "gravity.skill-bootstrap.v1",
-        "status": receipt["status"],
-        "changed": changed,
-        "skill_count": receipt["skill_count"],
-        "artifacts_verified": artifacts_verified,
-        "artifacts_written": artifacts_written,
-        "managed_lock_digest": receipt["managed_lock_digest"],
-        "seed_digest": receipt["active_seed_digest"],
-        "network_called": False,
-        "reason_codes": list(receipt["reason_codes"]),
-    }
-
-
-def _remove_candidate(path: Path) -> None:
-    if not path.exists():
-        return
-    if path.is_symlink() or not path.is_file():
-        raise SkillHubContractError(
-            "HUB_STATE_PATH_INVALID", "Managed lock candidate is invalid"
-        )
-    path.unlink()
-
-
-def _path_timestamp(*paths: Path) -> str:
-    timestamps = []
-    for path in paths:
-        try:
-            timestamps.append(path.stat().st_mtime)
-        except OSError:
-            pass
-    if not timestamps:
-        return _now()
-    return datetime.fromtimestamp(max(timestamps), timezone.utc).isoformat(
-        timespec="seconds"
-    ).replace("+00:00", "Z")
-
-
-__all__ = ["SkillHubClient"]
+__all__ = [
+    "SkillHubClient",
+]

@@ -24,15 +24,10 @@ from .skill_hub_paths import assert_unlinked_path, is_reparse
 SNAPSHOT_SCHEMA_VERSION = "gravity.skill-hub-snapshot.v1"
 SKILL_STATE_SCHEMA_VERSION = "gravity.skill-installation-state.v1"
 TRUSTED_STATE_SCHEMA_VERSION = "gravity.trusted-pack-installation-state.v1"
-MAINTENANCE_RECEIPT_SCHEMA_VERSION = "gravity.skill-maintenance-receipt.v1"
 _SNAPSHOT_SCHEMA = "skill-hub-snapshot-v1.schema.json"
 _SKILL_STATE_SCHEMA = "skill-installation-state-v1.schema.json"
 _TRUSTED_STATE_SCHEMA = "trusted-pack-installation-state-v1.schema.json"
-_MAINTENANCE_RECEIPT_SCHEMA = "skill-maintenance-receipt-v1.schema.json"
 _MAX_STATE_BYTES = 16 * 1024 * 1024
-MAINTENANCE_DIRECTORY = "skill-maintenance"
-MANAGED_SKILLS_LOCK_NAME = "managed-skills.lock.json"
-MAINTENANCE_RECEIPT_NAME = "maintenance-receipt.json"
 
 
 def build_hub_snapshot(
@@ -154,88 +149,6 @@ def compile_trusted_installation_state(value: Mapping[str, Any]) -> dict[str, An
     return contract
 
 
-def build_skill_maintenance_receipt(
-    *,
-    status: str,
-    bootstrap_checked: bool,
-    active_source: Mapping[str, Any] | None,
-    active_index_digest: str | None,
-    active_seed_digest: str | None,
-    managed_lock_digest: str | None,
-    skill_count: int,
-    last_attempt_at: str | None,
-    last_success_at: str | None,
-    network_called: bool,
-    reason_codes: Sequence[str],
-    update_available: bool | None,
-    host_restart_required: bool,
-) -> dict[str, Any]:
-    body = {
-        "artifact_kind": "skill_maintenance_receipt",
-        "schema_version": MAINTENANCE_RECEIPT_SCHEMA_VERSION,
-        "status": status,
-        "bootstrap_checked": bootstrap_checked,
-        "active_source": (
-            copy.deepcopy(dict(active_source)) if active_source is not None else None
-        ),
-        "active_index_digest": active_index_digest,
-        "active_seed_digest": active_seed_digest,
-        "managed_lock_digest": managed_lock_digest,
-        "skill_count": skill_count,
-        "last_attempt_at": last_attempt_at,
-        "last_success_at": last_success_at,
-        "network_called": network_called,
-        "reason_codes": sorted(reason_codes),
-        "update_available": update_available,
-        "host_restart_required": host_restart_required,
-    }
-    return compile_skill_maintenance_receipt(
-        {**body, "receipt_digest": canonical_digest(body)}
-    )
-
-
-def compile_skill_maintenance_receipt(
-    value: Mapping[str, Any],
-) -> dict[str, Any]:
-    contract = _contract(
-        value, _MAINTENANCE_RECEIPT_SCHEMA, "SKILL_MAINTENANCE_RECEIPT_INVALID"
-    )
-    for field in ("last_attempt_at", "last_success_at"):
-        if contract[field] is not None:
-            _timestamp(contract[field])
-    reasons = contract["reason_codes"]
-    if reasons != sorted(reasons) or len(reasons) != len(set(reasons)):
-        raise SkillHubContractError(
-            "SKILL_MAINTENANCE_RECEIPT_INVALID",
-            "Skill maintenance reason codes are not deterministic",
-        )
-    _maintenance_semantics(contract)
-    _digest(
-        contract,
-        "receipt_digest",
-        "SKILL_MAINTENANCE_RECEIPT_DIGEST_MISMATCH",
-    )
-    return contract
-
-
-def not_bootstrapped_skill_maintenance_receipt() -> dict[str, Any]:
-    return build_skill_maintenance_receipt(
-        status="not_bootstrapped",
-        bootstrap_checked=False,
-        active_source=None,
-        active_index_digest=None,
-        active_seed_digest=None,
-        managed_lock_digest=None,
-        skill_count=0,
-        last_attempt_at=None,
-        last_success_at=None,
-        network_called=False,
-        reason_codes=["SKILL_BOOTSTRAP_NOT_ATTEMPTED"],
-        update_available=None,
-        host_restart_required=False,
-    )
-
-
 def write_skill_installation_state(
     state_root: Path, value: Mapping[str, Any]
 ) -> Path:
@@ -244,19 +157,6 @@ def write_skill_installation_state(
     atomic_write_json(path, selected)
     if compile_skill_installation_state(read_json(path)) != selected:
         raise SkillHubContractError("HUB_STATE_WRITE_FAILED", "Skill state readback changed")
-    return path
-
-
-def write_skill_maintenance_receipt(
-    state_root: Path, value: Mapping[str, Any]
-) -> Path:
-    selected = compile_skill_maintenance_receipt(value)
-    path = state_root / MAINTENANCE_DIRECTORY / MAINTENANCE_RECEIPT_NAME
-    atomic_write_json(path, selected)
-    if compile_skill_maintenance_receipt(read_json(path)) != selected:
-        raise SkillHubContractError(
-            "HUB_STATE_WRITE_FAILED", "Skill maintenance receipt readback changed"
-        )
     return path
 
 
@@ -351,95 +251,6 @@ def _source_reference(value: Mapping[str, Any]) -> None:
         raise SkillHubContractError("HUB_SNAPSHOT_INVALID", "Snapshot source is invalid")
 
 
-def _maintenance_semantics(value: Mapping[str, Any]) -> None:
-    status = value["status"]
-    active_fields = (
-        value["active_source"],
-        value["active_index_digest"],
-        value["active_seed_digest"],
-    )
-    if value["network_called"] or value["host_restart_required"]:
-        raise SkillHubContractError(
-            "SKILL_MAINTENANCE_RECEIPT_INVALID",
-            "Offline static Skill maintenance boundaries changed",
-        )
-    if value["active_source"] is not None:
-        source = value["active_source"]
-        if (
-            set(source)
-            != {
-                "source_id",
-                "transport",
-                "source_descriptor_digest",
-                "source_revision",
-            }
-            or source["transport"] not in {"git", "static_https"}
-        ):
-            raise SkillHubContractError(
-                "SKILL_MAINTENANCE_RECEIPT_INVALID",
-                "Active Skill source reference changed",
-            )
-    if status == "not_bootstrapped":
-        valid = (
-            not value["bootstrap_checked"]
-            and all(item is None for item in active_fields)
-            and value["managed_lock_digest"] is None
-            and value["skill_count"] == 0
-            and value["last_attempt_at"] is None
-            and value["last_success_at"] is None
-            and value["reason_codes"] == ["SKILL_BOOTSTRAP_NOT_ATTEMPTED"]
-            and value["update_available"] is None
-        )
-    elif status == "empty":
-        valid = (
-            value["bootstrap_checked"]
-            and all(item is not None for item in active_fields)
-            and value["managed_lock_digest"] is None
-            and value["skill_count"] == 0
-            and value["last_attempt_at"] is not None
-            and value["last_success_at"] is not None
-            and not value["reason_codes"]
-            and value["update_available"] is False
-        )
-    elif status == "ready":
-        valid = (
-            value["bootstrap_checked"]
-            and all(item is not None for item in active_fields)
-            and value["managed_lock_digest"] is not None
-            and value["skill_count"] > 0
-            and value["last_attempt_at"] is not None
-            and value["last_success_at"] is not None
-            and not value["reason_codes"]
-            and value["update_available"] is False
-        )
-    elif status == "degraded":
-        valid = (
-            value["bootstrap_checked"]
-            and all(item is not None for item in active_fields)
-            and value["managed_lock_digest"] is not None
-            and value["skill_count"] > 0
-            and value["last_attempt_at"] is not None
-            and value["last_success_at"] is not None
-            and bool(value["reason_codes"])
-        )
-    else:
-        valid = (
-            status == "unavailable"
-            and value["bootstrap_checked"]
-            and all(item is None for item in active_fields)
-            and value["managed_lock_digest"] is None
-            and value["skill_count"] == 0
-            and value["last_attempt_at"] is not None
-            and value["last_success_at"] is None
-            and bool(value["reason_codes"])
-        )
-    if not valid:
-        raise SkillHubContractError(
-            "SKILL_MAINTENANCE_RECEIPT_INVALID",
-            "Skill maintenance status fields disagree",
-        )
-
-
 def _installation_order(values: Sequence[Mapping[str, Any]], key: str) -> None:
     identities = [item[key] for item in values]
     if identities != sorted(identities) or len(identities) != len(set(identities)):
@@ -473,23 +284,15 @@ def _timestamp(value: str | None) -> str:
 
 
 __all__ = [
-    "MAINTENANCE_DIRECTORY",
-    "MAINTENANCE_RECEIPT_NAME",
-    "MAINTENANCE_RECEIPT_SCHEMA_VERSION",
-    "MANAGED_SKILLS_LOCK_NAME",
     "atomic_write_json",
     "build_hub_snapshot",
-    "build_skill_maintenance_receipt",
     "build_skill_installation_state",
     "build_trusted_installation_state",
     "compile_hub_snapshot",
-    "compile_skill_maintenance_receipt",
     "compile_skill_installation_state",
     "compile_trusted_installation_state",
     "load_hub_snapshots",
-    "not_bootstrapped_skill_maintenance_receipt",
     "read_json",
     "write_hub_snapshot",
-    "write_skill_maintenance_receipt",
     "write_skill_installation_state",
 ]

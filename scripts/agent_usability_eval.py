@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 
 os.environ["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"
+os.environ["GRAVITY_INSIGHT_AUTO_SKILLS"] = "0"
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITE_ROOT = ROOT / "evals" / "agent_usability"

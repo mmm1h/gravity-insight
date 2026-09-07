@@ -16,6 +16,11 @@ gravity insight auth status
 
 **自动更新全团队默认开启**，不要逐机关闭。`GRAVITY_INSIGHT_AUTO_UPGRADE` 未设置即为开启，启动时安装更新版本（含破坏性变更）并在新进程重跑命令；破坏性变更靠[迁移说明](migration/)传达，不靠停留旧版躲避。因此 `pip show` 显示的是基础安装版本而非实际执行版本，要认实际版本读 `gravity.runtime-update-receipt.v1` 收据。取证需临时钉版时设 `GRAVITY_INSIGHT_PINNED_VERSION`，**必须在第一条命令之前**。从 `0.3.9` 及更早升上来的人要手动装一次 `0.3.10`：执行更新的代码在 `0.3.10` 里，旧运行时没有它。
 
+密封 Skill seed 也默认在普通业务命令 dispatch 前离线装配；相同 seed digest 直接短路，更新随 Runtime
+版本进入下一进程，不另查远程 Skill channel。需要冻结 Skill 时单独设置
+`GRAVITY_INSIGHT_AUTO_SKILLS=0`；这不关闭 Runtime 安全更新。`gravity skills status` 查看明确状态，
+失败后用 `gravity skills repair` 重验。自动装配不会改写项目 `gravity.skills.lock.json`。
+
 只有修改源码时才在当前 worktree 的独立虚拟环境安装 editable 包：
 
 ```powershell
@@ -41,21 +46,25 @@ gravity agent-catalog describe analysis.query.spec:event
 
 调用方能可靠选择产品时，先读 `gravity agent-catalog host`，再提交严格的 `gravity.host-product-selection.v1`。没有 selection 时 recognizer 只是离线保底，不会替调用方猜 App、日期、事件或业务口径。
 
-已知 Skill 先从明确 Hub Source 同步，再离线检查版本：
+安装后先查看 wheel seed 的离线装配状态；只有需要显式外部 Hub Source 时才同步：
 
 ```powershell
 curl -sL -o source.json https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v4/source.json
-gravity skills sync --source source.json --state-root <state-root>
+gravity agent-catalog categories
+gravity skills status
 gravity skills list --state-root <state-root>
-gravity skills show <skill_uri> --state-root <state-root>
+# 显式外部 Source：
+gravity skills sync --source source.json --state-root <state-root>
 ```
 
-`source.json` 是 Skill Library 的发布产物，公开可取。同步前 `list` 返回 `count: 0` 且退出码 `0`，与"Source 里没有 Skill"无法区分；同步成功以 `sync` 返回的 `skill_count` 和 `snapshot_digest` 为准。
+`status=not_bootstrapped` 与成功但合法零项的 `status=empty` 是不同机器状态；不要只看 `count: 0`。
+显式外部同步成功仍以 `sync` 返回的 `skill_count` 和 `snapshot_digest` 为准。
 
 Skill 不替代选路、Journey、权限或执行合同；`blocked` 必须停止，`validated` 不代表当前可执行。
-Runtime wheel 不内置业务 Skill；所有方法统一通过明确的 Hub Source 完成
-`sync → list/search → lock → fetch → verify`。供 Codex、Claude Code 等宿主安装的 `SKILL.md` 包是同一
-canonical manifest 的独立 Agent 投影，按 `agent-index.json` 摘要核验，不使用 `gravity models --source`。
+Runtime wheel 不内置可发现 registry/resolver，但携带同次 CT03 构建的唯一密封 seed；它只有完成
+managed lock/CAS/verify 后才进入发现面。供 Codex、Claude Code 等宿主安装的 `SKILL.md` 是同一
+canonical manifest 的独立 Agent 投影；用 `skills host-install-plan` 交给宿主原生机制，用户改过的
+目标目录不会被覆盖，当前会话 reload 不作承诺。
 
 ## 3. 补参并执行
 

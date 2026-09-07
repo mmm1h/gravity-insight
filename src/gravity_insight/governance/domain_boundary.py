@@ -64,6 +64,11 @@ DOMAIN_MODULE_LAYER_OVERRIDES = {
     "gravity_insight.composite": "product_composite_plan",
     "gravity_insight.plan": "product_composite_plan",
     "gravity_insight.plan_adapters": "product_composite_plan",
+    "gravity_insight.skill_host_install": "domain_services",
+    "gravity_insight.skill_maintenance": "domain_services",
+    "gravity_insight.skill_maintenance_startup": "domain_services",
+    "gravity_insight.skill_maintenance_state": "domain_services",
+    "gravity_insight.skill_seed": "domain_services",
     "gravity_insight.analysis_result_contract": "contracts_value_objects",
     "gravity_insight.plan_analysis_contract": "contracts_value_objects",
 }

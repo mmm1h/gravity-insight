@@ -502,14 +502,26 @@ gravity skills search <query> --state-root <state-root>
 gravity skills lock --skill <exact-skill-uri> --output gravity.skills.lock.json --state-root <state-root>
 gravity skills fetch --source source.json --lock gravity.skills.lock.json --state-root <state-root>
 gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
-gravity skills status --state-root <state-root>
+gravity skills status [--state-root <state-root>]
+gravity skills bootstrap [--state-root <state-root>]
+gravity skills repair [--state-root <state-root>]
+gravity skills host-install-plan --host codex|claude --host-root <host-skill-directory> [--state-root <state-root>]
 ```
 
-`SkillHubClient.bootstrap_bundled()` 是当前显式离线装配 core；本阶段不把它接成 CLI 启动时自动动作。
-它只写 `<state-root>/skill-maintenance/managed-skills.lock.json`、Hub snapshot、maintenance receipt 与
-CAS，不读写项目目录的 `gravity.skills.lock.json`，也不发起网络请求。CAS 的进程内锁与 OS 文件锁
-同时承担 bootstrap 单写者边界。失败时已验证的 active lock/CAS 保持为 last-known-good；没有旧版本
-则 maintenance 状态为 `unavailable`。
+普通 `gravity` 业务命令在 dispatch 前默认调用 `SkillHubClient.bootstrap_bundled()`；Runtime 自动升级
+并 supervised re-exec 后，新进程也走同一入口，因此 Skill 更新只搭 Runtime release train，不增加
+远程 channel。`GRAVITY_INSIGHT_AUTO_SKILLS=0|false|no|off` 可独立关闭；它不复用
+`GRAVITY_INSIGHT_AUTO_UPGRADE`，固定 Runtime 与冻结 Skill 是两个不同选择。`doctor`、任意 `--help`、
+任意 `--dry-run`、显式 Skill 维护/变更命令以及仓库测试/评测入口不会自动装配；Python import
+没有文件或网络副作用。
+
+bootstrap 只写 state root 下的 CAS、按 seed digest 命名的 maintenance generation 和最后提交的
+maintenance receipt。generation 绑定 Hub snapshot 与独立 managed lock，receipt 是唯一 active pointer；
+全部 source/index 编译、lock 重建比对、archive 校验、CAS 写入和最终 verify 完成前，候选 generation
+不进入发现面。相同 seed digest 直接短路，不重新打开 seed、解包 archive 或验证全部 CAS。失败保留
+last-known-good；没有旧版本则为 `unavailable`，维护失败不改变无关业务命令的退出码。bootstrap
+可以只读比较项目 `gravity.skills.lock.json` 并设置 `update_available`，但永不创建或改写它；升级项目
+lock 仍须显式 `skills update` 和项目评审。`skills repair` 强制重验 seed/CAS。
 
 `gravity skills status` 返回 `gravity.skill-maintenance-receipt.v1`。`not_bootstrapped` 表示尚未检查，
 `empty` 表示检查成功且合法地得到零个 Skill，两者均由显式 `status` 与 `bootstrap_checked` 表达；
@@ -517,9 +529,11 @@ CAS，不读写项目目录的 `gravity.skills.lock.json`，也不发起网络�
 携带 active source descriptor/index/seed digest、managed lock digest、Skill 数、最后尝试/成功时间、
 `network_called`、reason codes、`update_available` 与 `host_restart_required`。
 
-宿主先用同一 Release 的 `agent-skill-index-v1.schema.json` 验证 `agent-index.json`，按 exact
-`skill_uri` 选择 archive，核验 `sha256` 和 `size_bytes`，再把 ZIP 中唯一同名根目录交给宿主自己的
-Skill 安装机制。Runtime 不写宿主 Skill 目录。Agent Skill 可安装不代表可执行；入口必须读取
+`skills host-install-plan` 重新验证 active seed 与 Agent index/archive，把只读源目录放入本地 CAS，
+并只生成交给 Codex 或 Claude 原生 Skill installer 的 action。Runtime 不写宿主 Skill 目录；目标内容
+完全相同则为 `unchanged`，任何用户修改、额外文件或链接都返回 `local_override_conflict` 且不覆盖。
+plan 的 activation 固定为 `next_host_start`；仓库不声称 Codex 和 Claude 当前会话支持运行中 reload。
+Agent Skill 可安装不代表可执行；入口必须读取
 `SCHEMA.json` 的声明和 Runtime 当前 readiness，在 `blocked`、`unvalidated` 或依赖未解析时停止。
 不带 `--source` 的 `gravity models ...` 读取 Runtime Core 内置且受信的 Model Artifact；
 `--source` 只在当前进程隔离读取显式本地 JSON，既不持久注册也不继承 Runtime trust，仍是诊断面而

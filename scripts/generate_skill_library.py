@@ -157,7 +157,7 @@ def render_outputs() -> dict[str, bytes]:
 def render_seed(outputs: dict[str, bytes] | None = None) -> bytes:
     """Seal the manifest and its exact flat release assets into one wheel seed."""
 
-    selected_outputs = outputs or render_outputs()
+    selected_outputs = render_outputs() if outputs is None else outputs
     try:
         manifest = json.loads(selected_outputs["build-manifest.json"])
         release_paths = [str(item["path"]) for item in manifest["release_assets"]]
@@ -175,8 +175,6 @@ def render_seed(outputs: dict[str, bytes] | None = None) -> bytes:
         "build-manifest.json": selected_outputs["build-manifest.json"],
         **{path: selected_outputs[path] for path in release_paths},
     }
-    if len(files) != 93:
-        raise SkillPackageError("Skill seed file set must contain exactly 93 artifacts")
     return _zip(files)
 
 
@@ -522,9 +520,11 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("Skill library build is not deterministic")
     if options.check:
         _assert_no_tracked_mirrors()
+        with zipfile.ZipFile(io.BytesIO(first_seed)) as seed_archive:
+            seed_files = len(seed_archive.infolist())
         print(
             f"Skill library source is valid and deterministic: skills={len(list(SOURCE_ROOT.glob('*.json')))}, "
-            f"outputs={len(first)}, seed_files=93, seed_bytes={len(first_seed)}, "
+            f"outputs={len(first)}, seed_files={seed_files}, seed_bytes={len(first_seed)}, "
             f"seed_sha256={hashlib.sha256(first_seed).hexdigest()}, source_sha256={_source_digest()}"
         )
         return 0

@@ -37,7 +37,10 @@
         "../../src/gravity_insight/contracts/schema/skill-v1.schema.json",
         "../../src/gravity_insight/contracts/schema/skills-lock-v1.schema.json",
         "../../src/gravity_insight/contracts/schema/skill-hub-source-v1.schema.json",
-        "../../src/gravity_insight/contracts/schema/project-skill-overlay-v1.schema.json"
+        "../../src/gravity_insight/contracts/schema/project-skill-overlay-v1.schema.json",
+        "../../src/gravity_insight/contracts/schema/skill-maintenance-generation-v1.schema.json",
+        "../../src/gravity_insight/contracts/schema/skill-maintenance-receipt-v1.schema.json",
+        "../../src/gravity_insight/contracts/schema/agent-skill-host-install-plan-v1.schema.json"
       ],
       "reference": "../../docs/reference/cli.md"
     },

@@ -16,6 +16,7 @@ concurrency:
 env:
   PYTHONUTF8: "1"
   PYTHONIOENCODING: utf-8
+  GRAVITY_INSIGHT_AUTO_SKILLS: "0"
 
 jobs:
   surface_parity:

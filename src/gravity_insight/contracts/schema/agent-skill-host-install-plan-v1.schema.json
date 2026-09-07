@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.agent-skill-host-install-plan.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "status",
+    "host",
+    "installation_owner",
+    "activation",
+    "seed_digest",
+    "actions",
+    "unchanged",
+    "conflicts",
+    "host_restart_required",
+    "network_called",
+    "plan_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "agent_skill_host_install_plan"},
+    "schema_version": {"const": "gravity.agent-skill-host-install-plan.v1"},
+    "status": {"enum": ["ready", "local_override_conflict"]},
+    "host": {"enum": ["codex", "claude"]},
+    "installation_owner": {"enum": ["codex_native_skill_installer", "claude_native_skill_installer"]},
+    "activation": {"const": "next_host_start"},
+    "seed_digest": {"$ref": "#/$defs/digest"},
+    "actions": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/action"}
+    },
+    "unchanged": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/target"}
+    },
+    "conflicts": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/conflict"}
+    },
+    "host_restart_required": {"type": "boolean"},
+    "network_called": {"const": false},
+    "plan_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "skill_uri": {
+      "type": "string",
+      "pattern": "^skill://[a-z][a-z0-9.-]*/[a-z0-9-]+@[0-9A-Za-z.-]+$",
+      "maxLength": 256
+    },
+    "path": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "target": {
+      "type": "object",
+      "required": ["skill_uri", "target_directory", "target_preimage_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "skill_uri": {"$ref": "#/$defs/skill_uri"},
+        "target_directory": {"$ref": "#/$defs/path"},
+        "target_preimage_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]}
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "action_id",
+        "effect",
+        "host",
+        "skill_uri",
+        "package_digest",
+        "archive_sha256",
+        "source_directory",
+        "target_directory",
+        "target_preimage_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {"type": "string", "pattern": "^install-[0-9a-f]{12}$"},
+        "effect": {"const": "host_native_skill_install"},
+        "host": {"enum": ["codex", "claude"]},
+        "skill_uri": {"$ref": "#/$defs/skill_uri"},
+        "package_digest": {"$ref": "#/$defs/digest"},
+        "archive_sha256": {"$ref": "#/$defs/digest"},
+        "source_directory": {"$ref": "#/$defs/path"},
+        "target_directory": {"$ref": "#/$defs/path"},
+        "target_preimage_digest": {"type": "null"}
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["skill_uri", "target_directory", "target_preimage_digest", "reason_code"],
+      "additionalProperties": false,
+      "properties": {
+        "skill_uri": {"$ref": "#/$defs/skill_uri"},
+        "target_directory": {"$ref": "#/$defs/path"},
+        "target_preimage_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "reason_code": {"const": "local_override_conflict"}
+      }
+    }
+  }
+}
