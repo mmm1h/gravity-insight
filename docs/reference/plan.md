@@ -98,17 +98,32 @@ foreach 实例按 source 数组顺序。提高 worker 数不能增加请求总�
 以下名称是当前 runtime 接受的 composite identity。request 字段和允许 binding targets 由对应 adapter
 preflight 决定；先用 Agent 产品卡生成节点，不手写猜测。
 
-| 领域 | composite `request.name` |
+下表同时列出 identity 与边界，旧 composite 小节锚点保留在对应行。
+
+| composite `request.name` | 边界 |
 | --- | --- |
-| Analysis | `analysis_query`、`user_detail_aggregate`、`analysis_context`、`analysis_default_dictionary`、`analysis_template`、`derived_metrics`、`monetization_detail`、`realtime_event_catalog`、`metadata_sync` |
-| App / Attribution | `app_snapshot`、`attribution_snapshot`、`attribution_performance`、`attribution_user_detail` |
-| Dashboard / Journey | `dashboard_snapshot`、`dashboard_analysis`、`user_journey` |
-| Segment / Order | `segment_evaluate`、`segment_snapshot`、`segment_members`、`order_directory`、`order_split_trace` |
-| Multidim / Semantic | `multidim`、`semantic_compose` |
-| Material / Promotion | `material_performance`、`title_package`、`promotion_performance`、`bilibili_account_performance`、`advertiser_profile` |
-| Reports | `business_pulse`、`company_usage`、`report_directory`、`report_subscriptions`、`custom_audience` |
-| Saved Analysis | `saved_analysis` |
-| Governed mutation | `kanban_mutation`、`custom_metric_mutation`、`metadata_template_mutation` |
+| <a id="derived-metrics-composite"></a>`derived_metrics` | 产品行为见 [Derived Metrics](cli.md#derived-metrics)。 |
+| <a id="analysis-query-composite"></a>`analysis_query` | 接受显式 `kind/app/spec` 和可选日期覆盖；只允许 `/app` binding，不允许绑定 spec 内 业务值。adapter 先编译、脱敏和离线校验，再执行对应稳定 Analysis operation。结果保留产品 envelope， 不回显 literal spec 或 compiled input。 |
+| <a id="business-pulse-composite"></a>`business_pulse` | 产品行为见 [Business pulse](cli.md#business-pulse)。 |
+| <a id="dashboard-snapshot-composite"></a>`dashboard_snapshot` | 产品行为见 [Dashboard snapshot](cli.md#dashboard-control-plane-snapshot)。 |
+| <a id="dashboard-analysis-composite"></a>`dashboard_analysis` | 产品行为见 [Dashboard Analysis Replay v2](cli.md#dashboard-analysis-replay-v2)。 |
+| <a id="user-journey-composite"></a>`user_journey` | 产品行为见 [Single-user journey](cli.md#single-user-journey)。 |
+| <a id="order-directory-composite"></a>`order_directory` | 产品行为见 [Order Directory v1](cli.md#order-directory-v1)。 |
+| <a id="order-split-trace-composite"></a>`order_split_trace` | 产品行为见 [Order Split Trace v1](cli.md#order-split-trace-v1)。 |
+| <a id="segment-rule-composite"></a>`segment_evaluate` | 接受显式 Segment Rule Spec；聚合人数/占比、自然语言和不保存分群的边界见 [Segment Rule Spec v2](cli.md#segment-rule-spec-v2)。 |
+| <a id="multidim-composite"></a>`multidim` | 要求 `input_schema_version`；闭合物理输入、预检和结果状态规则见 [Multidim](cli.md#multidim)。 |
+| <a id="user-detail-aggregate-composite"></a>`user_detail_aggregate` | request 只接受 `name/input_schema_version/inputs`，不接受 binding 或 foreach 目标；`inputs` 与 CLI 的闭合 schema 相同。adapter 内部固定 `max_workers=1`，要求请求 `bounds.max_pages <= node.limits.max_pages`、`bounds.max_cells <= node.limits.max_items`。结果 projector 从闭合单元格、分页/source/audit 白名单重新构造信封，原始 `data/request/next_page_input` 或未知容器 不会穿过 Plan 边界。 |
+| <a id="material-performance-composite"></a>`material_performance` | 按 App、日期窗和平台读取；原生字段与跨平台边界见 [Material Performance](cli.md#material-performance)。 |
+| <a id="promotion-performance-composite"></a>`promotion_performance` | 要求显式 App、日期窗、平台和物理指标；每个平台独立受预算约束，未用份额不能 借给 sibling。 |
+| <a id="saved-analysis-composite"></a>`saved_analysis` | 使用稳定 ID 或精确名称与显式日期窗严格编译和执行；不解释 template/layout/favourite， 不从模糊引用选择第一个。 |
+| <a id="segment-snapshot-composite"></a>`segment_snapshot` | 产品行为见 [Segment Snapshot v1](cli.md#segment-snapshot-v1)。 |
+| <a id="segment-members-composite"></a>`segment_members` | 产品行为见 [Segment Members v1](cli.md#segment-members-v1)。 |
+| <a id="analysis-default-dictionary-composite"></a>Analysis Default Dictionary (`analysis_default_dictionary`) | 只接受显式 App 或 `/app` binding，返回受治理的默认值字典。新增未登记键 按响应漂移处理，不能自动成为调用方配置。 |
+| `analysis_context`、`analysis_template`、`monetization_detail`、`realtime_event_catalog`、`metadata_sync` | 其他 Analysis |
+| `app_snapshot`、`attribution_snapshot`、`attribution_performance`、`attribution_user_detail` | App / Attribution |
+| `title_package`、`bilibili_account_performance`、`advertiser_profile` | 其他 Material / Promotion |
+| `company_usage`、`report_directory`、`report_subscriptions`、`custom_audience` | 其他 Reports |
+| `kanban_mutation`、`custom_metric_mutation`、`metadata_template_mutation` | Governed mutation |
 
 Plan `schema` 当前不枚举这张表的全部成员，因此每次升级后以运行时 dry-run 为最终接收判据。
 
@@ -167,92 +182,6 @@ gravity plan run --recipe example --param date=2026-08-14 --param app=main
 参数 binding 使用 RFC 6901 pointer，只替换已存在的非空 scalar，不做字符串插值，也不能改变节点、
 依赖、foreach、budget 或 limits。展开后仍进入同一个 `validate_plan` 和执行器。完整 TOML 形状见
 [Workspace 参考](workspace.md#参数化-plan)。
-
-## Derived Metrics composite
-
-`derived_metrics` 接受调用方已有 source envelope 与显式算术 spec，严格本地执行。source 为 partial 时
-保留 partial 事实；派生 provenance 标为 caller-defined，不改写上游来源。
-
-## Analysis Query composite
-
-`analysis_query` 接受显式 `kind/app/spec` 和可选日期覆盖；只允许 `/app` binding，不允许绑定 spec 内
-业务值。adapter 先编译、脱敏和离线校验，再执行对应稳定 Analysis operation。结果保留产品 envelope，
-不回显 literal spec 或 compiled input。
-
-## Business Pulse composite
-
-`business_pulse` 读取显式 App、日期窗和平台；小时比较仅在 workspace scope 下启用。平台局部失败保留
-组件状态，不把安全 sibling 拼成完整汇总。
-
-## Dashboard Snapshot composite
-
-`dashboard_snapshot` 按稳定 ID 或精确名称读取控制面，不执行图表，也不模拟 layout、favourite 或页面
-global filter。
-
-## Dashboard Analysis composite
-
-`dashboard_analysis` 编译或执行看板中受支持图表；单图失败隔离，结果按看板顺序。引用、日期窗和
-`max_charts` 必须由调用方显式提供。
-
-## User Journey composite
-
-`user_journey` 只读取调用方明确给出的 client id、App 和日期/日期窗；专用投影不用于发现任意用户。
-
-## Order Directory composite
-
-`order_directory` 完整读取单日受管订单目录；额外身份、字段或不完整分页失败关闭。
-
-## Order Split Trace composite
-
-`order_split_trace` 先在单日父目录唯一匹配显式 TraceID，再读取一次 child 安全投影。TraceID 不进入结果、
-错误或 receipt。
-
-## Segment Rule composite
-
-`segment_evaluate` 接受显式 Segment Rule Spec，编译和执行聚合人数/占比；自然语言不生成规则，结果不
-保存分群。
-
-## Multidim composite
-
-`multidim` 要求 `input_schema_version` 与闭合物理输入，未知指标/维度/关系或 cohort horizon 发网前
-失败。结果同时检查顶层状态、query 状态和分页完整性。
-
-<a id="user-detail-aggregate-composite"></a>
-## User Detail Aggregate composite
-
-`user_detail_aggregate` request 只接受 `name/input_schema_version/inputs`，不接受 binding 或 foreach
-目标；`inputs` 与 CLI 的闭合 schema 相同。adapter 内部固定 `max_workers=1`，要求请求
-`bounds.max_pages <= node.limits.max_pages`、`bounds.max_cells <= node.limits.max_items`。结果 projector
-从闭合单元格、分页/source/audit 白名单重新构造信封，原始 `data/request/next_page_input` 或未知容器
-不会穿过 Plan 边界。
-
-## Material Performance composite
-
-`material_performance` 按 App、日期窗和平台返回原生物理字段；不跨平台归一、汇总、排名或推导策略。
-
-## Promotion Performance composite
-
-`promotion_performance` 要求显式 App、日期窗、平台和物理指标；每个平台独立受预算约束，未用份额不能
-借给 sibling。
-
-## Saved Analysis composite
-
-`saved_analysis` 使用稳定 ID 或精确名称与显式日期窗严格编译和执行；不解释 template/layout/favourite，
-不从模糊引用选择第一个。
-
-## Segment Snapshot composite
-
-`segment_snapshot` 读取 detail/history/指定日期结果，不返回成员或规则。
-
-## Segment Members composite
-
-`segment_members` 读取完整成员行；动态属性先由 metadata 发现，历史使用 `segment_version_id`。上游无
-可控分页时，超过 item bound 返回 partial，不伪造 continuation。
-
-## Analysis Default Dictionary composite
-
-`analysis_default_dictionary` 只接受显式 App 或 `/app` binding，返回受治理的默认值字典。新增未登记键
-按响应漂移处理，不能自动成为调用方配置。
 
 ## 失败与结果
 
