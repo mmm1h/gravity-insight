@@ -284,6 +284,14 @@ jobs:
           SIGNAL_FINGERPRINT: ${{ steps.drift_signal.outputs.fingerprint }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          if ($env:SIGNAL_STATUS -eq "inconclusive") {
+            Write-Output "::warning title=Gravity upstream drift signal is inconclusive::No recognizable checked-in additive-response evidence was available. No managed Issue was created, updated, or closed; inspect $env:RUN_URL."
+            exit 0
+          }
+          if ($env:SIGNAL_STATUS -notin @("action_required", "clear")) {
+            throw "The drift signal has an unexpected status: $env:SIGNAL_STATUS"
+          }
+
           $title = "[upstream drift] Action required"
           $marker = "<!-- gravity-upstream-drift-signal:v1"
           $search = '"[upstream drift] Action required" in:title'
@@ -342,8 +350,6 @@ jobs:
             Set-ManagedStatus $issue "status:released"
             gh issue close $issue.number --repo $env:GITHUB_REPOSITORY --reason completed --comment "A complete successful upstream census found no remaining actionable targeted probe or checked-in response drift. Verified by $env:RUN_URL." | Out-Null
             if ($LASTEXITCODE -ne 0) { throw "Could not close the cleared upstream drift Issue." }
-          } elseif ($env:SIGNAL_STATUS -notin @("action_required", "clear")) {
-            throw "The drift signal has an unexpected status: $env:SIGNAL_STATUS"
           }
 
       - name: Reject an unavailable upstream drift signal
