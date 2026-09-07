@@ -13,7 +13,13 @@
 
 ## [Unreleased]
 
-Target release: `0.3.11`
+Target release: `0.3.12`
+
+### Breaking changes
+
+- None.
+
+## [0.3.11] - 2026-09-07
 
 ### Breaking changes
 
@@ -62,6 +68,76 @@ Target release: `0.3.11`
   summarizer still reads immutable v1 runs, and its command response plus all
   collection and trust capabilities are unchanged.
 
+- **Hard break:** stable response projections were reconciled with what upstream
+  actually returns across 22 operations. Fields previously omitted with additive
+  `result_audit.response_drift` may now be projected, newly known-omitted fields
+  no longer produce that drift, and selected JSON containers are now accepted as
+  opaque values. `material.local.list.image_set` moves from `item_keys` to
+  `known_omitted_item_keys` — the one allowed-to-omitted migration — and
+  `material.album.tree` replaces `recursive_data_item_keys` with an explicit
+  `data_item_keys` plus self-recursive `nested_item_keys`. `promotion-performance`
+  preserves the newly registered Kuaishou account fields. `contract_version` is
+  unchanged; Validation Result staleness is enforced by `contract_digest`, which
+  covers `response_projection` through `contract_fingerprint`, so evidence
+  collected against an old projection is quarantined as
+  `CAPABILITY_FINGERPRINT_MISMATCH` rather than silently reused. Strict response
+  or `describe` parsers, drift-driven automation, and callers relying on the
+  previous omission policy must migrate using the per-operation field matrix in
+  the 0.3.11 migration guide.
+- **Hard break:** shared structured-JSON input parsing reclassifies two failures
+  in opposite directions. Missing, path-like and selector-like `--input` values
+  now report `INPUT_INVALID` with `category=caller`, `field=input` and exit code
+  2 instead of `LOCAL_IO_ERROR`/exit 4; unreadable UTF-8 files or stdin now
+  report `LOCAL_IO_ERROR` with `category=local`, `field=input` and exit code 4
+  instead of `INPUT_INVALID`/exit 2. Malformed-JSON diagnostics gain a stable
+  `field=input` and a `next_action`, and `export` now preserves an exception's
+  own recovery action. This affects every command sharing the parser, including
+  `agent`, `plan`, `analysis query`, `derive` and `export`. Consumers branching
+  on the old code, category or exit status must migrate.
+- **Hard break:** general Insight read results and receipts may now carry
+  `gravity.response-drift.v2` for breaking response drift, independently of
+  Capability Validation evidence. V2 adds per-field `classification` and, for
+  breaking fields, `expected_type`, and admits `missing` and `non_json` observed
+  types. Additive-only evidence remains v1 while the exported
+  `response_drift.SCHEMA_VERSION` now denotes v2, so callers comparing every
+  drift artifact against that constant will mismatch on additive output. Branch
+  on each artifact's own `schema_version` and dispatch on `classification`.
+- **Hard break:** executable recovery text in Agent gap envelopes changed.
+  Multi-intent gaps now direct callers to `gravity agent-catalog describe
+  <selector>` instead of passing a selector to the JSON-only `gravity agent
+  --input` option, and host-selection, batch-question and derived-metric
+  recovery commands now carry explicit JSON-document placeholders. Codes and
+  envelope keys are unchanged; consumers matching or executing the previous
+  `next_action` strings must update.
+- **Hard break:** `material-performance` contract-failure components now expose
+  value-free structural diagnostics. Malformed components gain a
+  `drift_diagnostics` object naming the failed check and JSON Pointer path,
+  valid upstream `CONTRACT_CHANGED` components retain normalized
+  `result_audit.response_drift` through product and Plan sanitization, and a
+  lower-layer `CONTRACT_CHANGED` without drift adds
+  `component_contract_status @ $.status`. The error code, status and outer
+  schema name are unchanged; strict component parsers must migrate.
+- **Hard break:** Journey `analysis.gravity.game.revenue-forecast-readiness` now
+  allows `observed-revenue-driver`, `scenario-revenue-projection` and
+  `bounded-target-path`, where its v1 contract previously exposed an empty
+  allowed-claim set. The Journey remains unavailable for execution, but
+  consumers using its descriptor as a claim authorization policy must update.
+- **Hard break:** public
+  `reference_journey_quality.evaluate_playbook_data_quality()` no longer accepts
+  the required `completeness=` keyword, so a 0.3.10 call raises `TypeError`.
+  Completeness is assessed separately from data quality: the returned DQ
+  `checks` array no longer contains a `completeness` entry and no longer emits
+  `DATA_QUALITY_UNPROVEN`, and successful R01 results propagate the dependency
+  completeness instead of hard-coding `complete`.
+- **Hard break:** opaque JSON containers declared in `opaque_json_item_keys` now
+  apply the same key-level privacy exclusions recursively to their contents, and
+  are bounded to 32 KB serialized, depth 8 and 256 elements. A container key
+  matching a direct personal identifier, a sensitive analysis field or a
+  credential name/suffix is dropped instead of copied verbatim, and an
+  over-budget container is reported as breaking drift rather than silently
+  truncated. Callers that relied on receiving arbitrary nested upstream JSON
+  unfiltered must migrate.
+
 Migration guide: [0.3.11](docs/migration/0.3.11.md)
 
 ### Fixed
@@ -75,6 +151,33 @@ Migration guide: [0.3.11](docs/migration/0.3.11.md)
   therefore includes empty strings, zero and false. It also gives the existing
   `WITH_VAL []` plus `NOT_EQUALS [""]` recipe for a non-null, non-empty string;
   operator behavior and homogeneous condition-type validation are unchanged.
+- The `material-performance` product no longer reports `CONTRACT_CHANGED` for
+  valid material report rows. Its second-stage sanitizer validated whole rows
+  against a stale 13-field set that omitted `material_id`, which every
+  production response carries, so the set difference was always non-empty and
+  the row projector rejected the batch while the same request through
+  `gravity read material.report.query` succeeded. The source-row and opaque
+  boundaries are now derived solely from the compiled candidate manifest, and an
+  import-time check fails closed if the product's output fields are not a subset
+  of registered source fields. Product output stays narrow: the existing fields
+  plus `material_id` for the attribution chain.
+- Capability Validation run and summary v2 evidence can now persist breaking
+  response drift. Both schemas pinned `response_drift` to
+  `gravity.response-drift.v1` with `classification: "additive"`, so any operation
+  with a missing required field or a changed type made the run report fail
+  schema validation before it was written — the evidence format built to record
+  drift could only record the harmless kind, and losing one outcome lost the
+  whole run. The two schemas now share one definition accepting both v1 additive
+  and v2 breaking evidence, and the additive-only filter moved to the drift
+  declaration consumer.
+- The upstream drift signal no longer reports `clear` when no checked-in file
+  contains a recognizable observation. "Not measured" and "measured, no drift"
+  shared one value, and the census workflow closed the managed drift Issue on
+  either. A third `inconclusive` status now covers the first case; the workflow
+  warns and leaves every Issue untouched, while a genuine no-drift census still
+  reports `clear` and still closes the Issue. The unexpected-status guard also
+  moved ahead of the Issue actions, where previously it sat at the end of an
+  `elseif` chain that only one path reached.
 
 ## [0.3.10] - 2026-09-05
 
