@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "7c344e789a8aaa77377222643fe597e8ad34473c65d8474fccd2bd2dc1efdeee"
+    "compatibility_sha256": "28d22bb6f3f68a7816869cc9b9ec0058909888181e0cb994ee940cfb5645ff89"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -259,11 +259,32 @@
       "version": "0.3.12",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.12-hard-break-1",
+          "description": "`ResponseProjection` gained a `dynamic_key_patterns` field, inserted between `numeric_paths` and `empty_object_as_empty_page`. Any caller constructing `ResponseProjection` positionally now binds the wrong arguments; construct it with keywords, or build it from a contract via `ResponseProjection.from_config`. The private `models._response_projection_schema` also moved to the new public module `gravity_insight.response_projection_schema` as `response_projection_schema()`.",
+          "migration_guide": "docs/migration/0.3.12.md"
+        },
+        {
+          "id": "0.3.12-hard-break-2",
+          "description": "`capability-validation-summary-v2.schema.json` now lists `data_evidence_status` in `required`. Summaries produced before 0.3.12 fail validation, and consumers that construct summaries must emit one of `nonempty` / `confirmed_empty` / `inconclusive` / `not_evaluated`. The field is optional in `capability-validation-run-v2.schema.json`, so stored runs stay readable. This exists because projected emptiness alone never proved absence of rows: a response whose every declared field missed the upstream payload was indistinguishable from a genuinely empty result. Only an explicit upstream signal (`page.total_items == 0` or HTTP 204) now yields `confirmed_empty`, and a response carrying both non-empty projected data and an explicit-empty signal fails closed as `inconclusive` rather than silently picking one.",
+          "migration_guide": "docs/migration/0.3.12.md"
+        },
+        {
+          "id": "0.3.12-hard-break-3",
+          "description": "`analysis.user_detail.list` moved to `contract_version: 4`, declaring eight newly observed top-level fields (`bytedanceMid1_name` through `bytedanceMid8_name`, 153 observed fields to 161). Its `contract_fingerprint` changes, so Validation Results recorded against version 3 are quarantined with `CAPABILITY_FINGERPRINT_MISMATCH` and must be re-recorded.",
+          "migration_guide": "docs/migration/0.3.12.md"
+        },
+        {
+          "id": "0.3.12-hard-break-4",
+          "description": "`analysis.funnel.query` declares `response_projection.dynamic_key_patterns` and its `contract_fingerprint` changes for the same reason. No other operation is affected: the fingerprint payload emits `dynamic_key_patterns` only when non-empty, and `analysis.funnel.query` is the only operation that declares it. Migration guide: [0.3.12](docs/migration/0.3.12.md)",
+          "migration_guide": "docs/migration/0.3.12.md"
+        }
+      ],
       "soft_breaks": [],
-      "migration_guide": null
+      "migration_guide": "docs/migration/0.3.12.md"
     }
   ]
 }

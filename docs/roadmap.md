@@ -37,7 +37,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - 0.3.5 已将 Runtime wheel 内置业务 Skill 数收敛为零，并把 43 项外部方法与第一方 AP 成本参考方法统一为 44 项 canonical Library。`skill-library-v3` 的 93 个资产与 checkout 外摘要回读通过，但 0.3.5 客户端会拒绝 GitHub Release 必需的一次 CDN 重定向，因此 v3/0.3.5 不作为跨设备可用组合。0.3.6 与不可变 `skill-library-v4` 是修正通道：Source 显式锁定允许主机、最多一跳，R01 仍只接受项目精确 lock 与本地核验 CAS；v1/v2/v3 资产保持不变。
 - Skill Library build receipt schema 直接升级到 v2，将完整本地 QA tree 与 GitHub Release 的扁平 `release_assets` 分开；receipt schema v1 从未发布且没有当前消费者，因此该破坏性升级不损失读取或安装能力。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
-- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。
+- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 全局共享，scope 摘要不进入公开输出。#175：receipt 与 observation 在请求开始时共同绑定当前世代；刷新重放重新解析，在途响应及传输重试保留原绑定，不替换 Runtime 或连接池。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。发布收据逐字段解释拒绝，并绑定当前 run/attempt 的步骤覆盖，measure 跳过不能形成发布级通过；收据 CLI 必需覆盖输入已同步迁移 workflow/tests，不损失数据读取或只读 measure 能力，不替代发布后 provenance。
 - Probe 语义只使用六态机器模型；`unknown` 不等于 read，静态 read candidate 不构成授权，未证实 POST
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
