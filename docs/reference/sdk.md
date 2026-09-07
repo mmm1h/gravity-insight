@@ -154,6 +154,15 @@ Semantic Compose 都要求显式结构化输入；自然语言不填业务字段
 prepare 不执行最终查询；Order Split Trace 必须先唯一匹配父行；Material/Promotion 不跨平台归一或
 生成业务判断。
 
+### 投放到用户的 join key
+
+issue #154 将跨 operation 的物理 join 收口为逐平台机器契约，不从字段名猜测。调用方先用
+`gravity_insight.contracts.join_key.resolve_proven_join_key()` 按 `platform`、`object_type` 和可选
+`object_subtype` 解析；返回值给出精确左右 operation/path、规范化规则和观测证据。只有未超过
+`revalidate_after` 的 `namespace_status=proven` 可解析，`disproven`、`insufficient_evidence`、过期证据
+和素材子类型歧义全部抛 `JoinKeyContractError`。机器真相位于
+`contracts/join-keys/registry.v1.json`，结构由 `join-key-registry-v1.schema.json` 校验。
+
 ### 普通留存分母对账
 
 `reconcile_standard_retention_denominators()` 只接收两侧已取得的聚合读数：`status`、`value`、
