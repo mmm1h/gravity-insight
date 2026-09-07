@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "d45cfc7409f51ccd745b87eee2f084f4976da6761934a182b7767e17d892e2b8",
-    "manual_review_sha256": "6ac81c2719b29ee1c85a029cfa611e117075fb3cbf35ee46bec4d1fc355c5708",
+    "reference_evidence_sha256": "a153f3f24d6e462be7f5e8141132d391e063815a0b24becfcf8d6310b585f9b5",
+    "manual_review_sha256": "e59a99a909498e3d53a5d92a4bc775686f46132a6e9a54dc7645a1cfe510730c",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3189,
     "scanned_file_count": 3182,
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 256
     },
-    "sites_sha256": "6205fe90f1d92c8b4678b80ee7bffd0f3c0ec989cb59325db735cc8d80af6bef"
+    "sites_sha256": "3ad226d65862059de7e513f7502dc46be861b79e54315328dd75ac921351364d"
   },
   "blockers": [],
   "site_fields": [
@@ -2452,7 +2452,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:364:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:488:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2467,7 +2467,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:369:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:493:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2482,7 +2482,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:370:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:494:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2497,7 +2497,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:371:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:495:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",

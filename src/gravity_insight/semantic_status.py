@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from .errors import PermissionUnavailableError
 from .models import OperationSpec, SemanticErrorRule
@@ -15,6 +15,11 @@ SEMANTIC_EXPLICIT_EMPTY = "explicit_empty"
 SEMANTIC_REJECTED = "rejected"
 SEMANTIC_PERMISSION = "permission_unavailable"
 SEMANTIC_INVALID_ENVELOPE = "invalid_envelope"
+
+DATA_EVIDENCE_NONEMPTY = "nonempty"
+DATA_EVIDENCE_CONFIRMED_EMPTY = "confirmed_empty"
+DATA_EVIDENCE_INCONCLUSIVE = "inconclusive"
+DATA_EVIDENCE_NOT_EVALUATED = "not_evaluated"
 
 SUCCESS_CODES = (None, 0, 200, "0", "200")
 PERMISSION_CODES = frozenset({2000, "2000"})
@@ -95,6 +100,32 @@ def response_data_nonempty(payload: Any) -> bool:
     if isinstance(data, (list, str)):
         return bool(data)
     return True
+
+
+def response_data_evidence_status(
+    payload: Any, *, http_statuses: Sequence[int | None] = ()
+) -> str:
+    """Classify whether a projected response proves presence or absence of rows.
+
+    Projected emptiness is not affirmative no-data evidence: every declared
+    field may simply have missed the upstream response. A zero upstream total
+    or HTTP 204 is explicit enough to confirm emptiness. Conflicting non-empty
+    projected data and explicit-empty evidence fails closed as inconclusive.
+    """
+
+    nonempty = response_data_nonempty(payload)
+    page = payload.get("page") if isinstance(payload, Mapping) else None
+    total_items = page.get("total_items") if isinstance(page, Mapping) else None
+    explicit_empty = (
+        type(total_items) is int and total_items == 0
+    ) or any(status == 204 for status in http_statuses)
+    if nonempty:
+        return DATA_EVIDENCE_INCONCLUSIVE if explicit_empty else DATA_EVIDENCE_NONEMPTY
+    return (
+        DATA_EVIDENCE_CONFIRMED_EMPTY
+        if explicit_empty
+        else DATA_EVIDENCE_INCONCLUSIVE
+    )
 
 
 def protocol_status_evidence(payload: Any, *, http_status: int | None) -> dict[str, Any]:

@@ -129,6 +129,9 @@
         },
         "result_status": {"type": ["string", "null"], "maxLength": 128},
         "result_nonempty": {"type": "boolean"},
+        "data_evidence_status": {
+          "enum": ["nonempty", "confirmed_empty", "inconclusive", "not_evaluated"]
+        },
         "receipt_ids": {
           "type": "array",
           "maxItems": 500,
