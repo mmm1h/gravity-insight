@@ -23,6 +23,7 @@ from .receipt_retention import (
 from .result_audit import STORED, WRITE_FAILED, receipt_reference
 from .response_drift import merge_response_drifts, normalize_response_drift
 from .result_output import write_rendered_result
+from .runtime_scope import credential_scope_opaque_id
 
 
 SCHEMA_VERSION = "gravity.receipt.v1"
@@ -285,6 +286,7 @@ def record_completed_http_response(
     completed_at = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace(
         "+00:00", "Z"
     )
+    scope_opaque_id = credential_scope_opaque_id(state_root)
     receipt = {
         "schema_version": HTTP_SCHEMA_VERSION,
         "receipt_id": uuid.uuid4().hex,
@@ -298,6 +300,11 @@ def record_completed_http_response(
         "retry": bool(context.get("retry", False)),
         "request_shape_fingerprint": str(
             context.get("request_shape_fingerprint", "")
+        ),
+        **(
+            {"credential_scope_opaque_id": scope_opaque_id}
+            if scope_opaque_id is not None
+            else {}
         ),
     }
     try:
