@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "5b4e14c24acd2606c7576183f4fac364f6d7fbcbcce029cc32fcdcfd0d2b0ba5",
-    "manual_review_sha256": "805310411d0fe53687b9d265031684562c7de425334e6c9a5c8902706945212b",
+    "reference_evidence_sha256": "c60ee52edac1029750b11fc23c2efd5a897d57169fe6825651031bdcd3b4162a",
+    "manual_review_sha256": "6ac81c2719b29ee1c85a029cfa611e117075fb3cbf35ee46bec4d1fc355c5708",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3190,
-    "scanned_file_count": 3183,
+    "version_controlled_file_count": 3191,
+    "scanned_file_count": 3184,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 256
     },
-    "sites_sha256": "d8d043b6d8261dad4d7547a7508c77b591279a68bb96cf0be3accc53da735b97"
+    "sites_sha256": "ef6bb2970da0aad1e9a4546b86d299da7630c6aff263369dd0e7a07b4591f68b"
   },
   "blockers": [],
   "site_fields": [
@@ -1072,7 +1072,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22232:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22227:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1087,7 +1087,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:64041:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:64044:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1702,7 +1702,7 @@
       }
     ],
     [
-      "src/gravity_insight/receipt.py:462:5:from import",
+      "src/gravity_insight/receipt.py:455:5:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2452,7 +2452,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:383:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:364:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2467,7 +2467,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:388:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:369:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2482,7 +2482,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:389:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:370:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",
@@ -2497,7 +2497,7 @@
       }
     ],
     [
-      "tests/test_collect_capability_validation_evidence.py:390:17:mock.patch.object",
+      "tests/test_collect_capability_validation_evidence.py:371:17:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "collector",

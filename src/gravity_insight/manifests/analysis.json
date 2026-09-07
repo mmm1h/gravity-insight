@@ -1479,6 +1479,9 @@
           "window_funnel_mode"
         ],
         "dynamic_item_fields": [],
+        "dynamic_key_patterns": {
+          "aggregate_date.group": "iso_date"
+        },
         "item_keys": [],
         "numeric_paths": [
           "window_funnel_mode",

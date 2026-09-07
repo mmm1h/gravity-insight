@@ -28,7 +28,10 @@ from .operation_manifest_parse import (
     validate_input_field,
 )
 from .pagination_inputs import pagination_schema, validate_page_inputs
-from .projection_validation import numeric_suffix_schema
+from .response_projection_schema import (
+    dynamic_key_pattern_mapping,
+    response_projection_schema,
+)
 from .result_audit import add_result_audit, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
 
@@ -433,24 +436,19 @@ class ResponseProjection:
     dynamic_item_fields: tuple[str, ...] = ()
     numeric_suffix_item_fields: tuple[str, ...] = ()
     nested_item_keys: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
-    known_omitted_nested_item_keys: Mapping[str, tuple[str, ...]] = field(
-        default_factory=dict
-    )
+    known_omitted_nested_item_keys: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     data_item_keys: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     scalar_list_item_types: Mapping[str, str] = field(default_factory=dict)
     data_scalar_list_types: Mapping[str, str] = field(default_factory=dict)
     data_path_item_keys: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     data_dynamic_item_fields: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
-    data_numeric_suffix_item_fields: Mapping[str, tuple[str, ...]] = field(
-        default_factory=dict
-    )
+    data_numeric_suffix_item_fields: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     known_omitted_item_keys: tuple[str, ...] = ()
     recursive_data_item_keys: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     known_omitted_data_keys: tuple[str, ...] = ()
-    known_omitted_data_item_keys: Mapping[str, tuple[str, ...]] = field(
-        default_factory=dict
-    )
+    known_omitted_data_item_keys: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     numeric_paths: tuple[str, ...] = ()
+    dynamic_key_patterns: Mapping[str, str] = field(default_factory=dict)
     empty_object_as_empty_page: bool = False
     empty_object_as_empty_result: bool = False
     opaque_json_item_keys: tuple[str, ...] = ()
@@ -526,6 +524,7 @@ class ResponseProjection:
                 "response_projection.known_omitted_data_item_keys",
             ),
             _numeric_path_tuple(config.get("numeric_paths")),
+            dynamic_key_pattern_mapping(config.get("dynamic_key_patterns")),
             bool(config.get("empty_object_as_empty_page", False)),
             bool(config.get("empty_object_as_empty_result", False)),
             _string_tuple(
@@ -784,7 +783,7 @@ class OperationSpec:
                 "query_fields": list(self.request.query_fields),
                 "body_fields": list(self.request.body_fields),
             },
-            "response_projection": _response_projection_schema(self.response_projection),
+            "response_projection": response_projection_schema(self.response_projection),
             "pagination": pagination_schema(self.pagination),
             "privacy": {"classification": self.privacy_policy.classification},
             "required_parent": [
@@ -820,25 +819,6 @@ class OperationSpec:
             "required_parent": bool(self.required_parent),
             "paginated": self.pagination.kind != "none",
         }
-
-
-_PROJECTION_VALUES = "data_shape empty_object_as_empty_page empty_object_as_empty_result".split()
-_PROJECTION_LISTS = "data_keys required_data_keys item_keys dynamic_item_fields known_omitted_item_keys known_omitted_data_keys numeric_paths opaque_json_item_keys".split()
-_PROJECTION_MAPPINGS = "nested_item_keys known_omitted_nested_item_keys data_item_keys data_path_item_keys data_dynamic_item_fields recursive_data_item_keys known_omitted_data_item_keys".split()
-
-
-def _response_projection_schema(projection: ResponseProjection) -> dict[str, Any]:
-    result = {"leaf_contract": "json_scalar"}
-    for name in _PROJECTION_VALUES:
-        result[name] = getattr(projection, name)
-    for name in _PROJECTION_LISTS:
-        result[name] = list(getattr(projection, name))
-    result.update(numeric_suffix_schema(projection))
-    for name in ("scalar_list_item_types", "data_scalar_list_types"):
-        result[name] = dict(getattr(projection, name))
-    for name in _PROJECTION_MAPPINGS:
-        result[name] = {key: list(value) for key, value in getattr(projection, name).items()}
-    return result
 
 
 @dataclass(frozen=True)

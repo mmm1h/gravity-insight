@@ -129,10 +129,10 @@
       "sloc_hard_limit": 652
     },
     "src/gravity_insight/executor.py": {
-      "ast_hard_limit": 4370,
-      "ast_nodes": 4370,
+      "ast_hard_limit": 3543,
+      "ast_nodes": 3543,
       "migration_sloc": 1330,
-      "sloc_hard_limit": 699
+      "sloc_hard_limit": 571
     },
     "src/gravity_insight/http_runtime.py": {
       "ast_hard_limit": 3021,
@@ -141,10 +141,10 @@
       "sloc_hard_limit": 572
     },
     "src/gravity_insight/models.py": {
-      "ast_hard_limit": 6202,
-      "ast_nodes": 6202,
+      "ast_hard_limit": 6073,
+      "ast_nodes": 6073,
       "migration_sloc": 1071,
-      "sloc_hard_limit": 833
+      "sloc_hard_limit": 817
     },
     "src/gravity_insight/prober/drafts.py": {
       "ast_hard_limit": 12903,

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 
 
@@ -48,6 +49,81 @@ _CURRENT_OBSERVATION_FIELDS = frozenset(
     }
 )
 _MISSING = object()
+_DYNAMIC_KEY_PATH_SEGMENT = re.compile(r"^(?:\[\]|\*|[A-Za-z_][A-Za-z0-9_-]*)$")
+_DYNAMIC_KEY_SHAPES = frozenset({"decimal_19", "iso_date"})
+_ISO_DATE_KEY = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+_DECIMAL_19_KEY = re.compile(r"^[0-9]{19}$")
+
+
+def normalize_dynamic_key_patterns(value: object) -> dict[str, str]:
+    """Validate exact response-container paths and their closed key shapes."""
+
+    if value is None:
+        return {}
+    if not isinstance(value, Mapping):
+        raise ValueError("response_projection.dynamic_key_patterns must be an object")
+    result: dict[str, str] = {}
+    for raw_path, raw_shape in value.items():
+        if not isinstance(raw_path, str) or not raw_path:
+            raise ValueError(
+                "response_projection.dynamic_key_patterns contains an invalid path"
+            )
+        parts = raw_path.split(".")
+        if any(not _DYNAMIC_KEY_PATH_SEGMENT.fullmatch(part) for part in parts):
+            raise ValueError(
+                "response_projection.dynamic_key_patterns contains an invalid path"
+            )
+        if raw_shape not in _DYNAMIC_KEY_SHAPES:
+            raise ValueError(
+                "response_projection.dynamic_key_patterns contains an invalid key shape"
+            )
+        result[raw_path] = str(raw_shape)
+    return dict(sorted(result.items()))
+
+
+def dynamic_key_shape(
+    patterns: Mapping[str, str], path: Sequence[str], key: str
+) -> str | None:
+    """Return the matching declared shape for one key at one container path."""
+
+    for raw_path, shape in patterns.items():
+        expected = raw_path.split(".")
+        if len(expected) != len(path) or any(
+            wanted != "*" and wanted != actual
+            for wanted, actual in zip(expected, path)
+        ):
+            continue
+        if _dynamic_key_matches_shape(key, shape):
+            return shape
+    return None
+
+
+def dynamic_key_path_shape(
+    patterns: Mapping[str, str], path: Sequence[str]
+) -> str | None:
+    """Return the declared shape at a path even when a candidate key is invalid."""
+
+    for raw_path, shape in patterns.items():
+        expected = raw_path.split(".")
+        if len(expected) == len(path) and all(
+            wanted == "*" or wanted == actual
+            for wanted, actual in zip(expected, path)
+        ):
+            return shape
+    return None
+
+
+def _dynamic_key_matches_shape(key: str, shape: str) -> bool:
+    if shape == "iso_date":
+        if not _ISO_DATE_KEY.fullmatch(key):
+            return False
+        try:
+            return date.fromisoformat(key).isoformat() == key
+        except ValueError:
+            return False
+    if shape == "decimal_19":
+        return bool(_DECIMAL_19_KEY.fullmatch(key))
+    return False
 
 
 class ResponseDriftRecorder:
@@ -464,6 +540,9 @@ __all__ = [
     "V1_SCHEMA_VERSION",
     "V2_SCHEMA_VERSION",
     "ResponseDriftRecorder",
+    "dynamic_key_path_shape",
+    "dynamic_key_shape",
     "merge_response_drifts",
+    "normalize_dynamic_key_patterns",
     "normalize_response_drift",
 ]

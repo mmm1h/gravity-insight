@@ -136,6 +136,13 @@
         "known_omitted_data_keys": {"$ref": "#/$defs/stringArray"},
         "known_omitted_data_item_keys": {"$ref": "#/$defs/stringArrayMap"},
         "numeric_paths": {"$ref": "#/$defs/stringArray"},
+        "dynamic_key_patterns": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["iso_date", "decimal_19"]
+          }
+        },
         "empty_object_as_empty_page": {"type": "boolean"},
         "empty_object_as_empty_result": {"type": "boolean"},
         "opaque_json_item_keys": {"$ref": "#/$defs/stringArray"}
