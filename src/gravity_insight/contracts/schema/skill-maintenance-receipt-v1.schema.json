@@ -52,6 +52,19 @@
     },
     "update_available": {"type": ["boolean", "null"]},
     "host_restart_required": {"type": "boolean"},
+    "project_lock": {
+      "type": "object",
+      "required": ["status", "reason", "lock_path", "runtime_version", "locked_runtime_version", "next_action"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["not_checked", "match", "mismatch"]},
+        "reason": {"enum": ["no_lock", "HUB_RUNTIME_INCOMPATIBLE", null]},
+        "lock_path": {"type": "string", "minLength": 1},
+        "runtime_version": {"type": "string", "minLength": 1},
+        "locked_runtime_version": {"type": ["string", "null"], "minLength": 1},
+        "next_action": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
     "receipt_digest": {"$ref": "#/$defs/digest"}
   },
   "$defs": {
