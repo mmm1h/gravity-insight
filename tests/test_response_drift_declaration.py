@@ -270,6 +270,8 @@ def test_manual_reasons_cover_dynamic_privacy_and_topology(tmp_path: Path) -> No
         {
             "analysis.funnel.query": {
                 "/data/aggregate_date/group/2026-09-04": "object",
+                "/data/aggregate_date/group/2026-09-05": "object",
+                "/data/aggregate_date/group/2026-02-30": "object",
             },
             "promotion.kuaishou.account.list": {
                 "/data/list/*/operator_name": "string",
@@ -285,7 +287,15 @@ def test_manual_reasons_cover_dynamic_privacy_and_topology(tmp_path: Path) -> No
 
     assert decisions[(
         "analysis.funnel.query", "/data/aggregate_date/group/2026-09-04"
-    )]["reason"] == "dynamic_key_requires_review"
+    )]["reason"] == "declared_dynamic_key"
+    assert decisions[(
+        "analysis.funnel.query", "/data/aggregate_date/group/2026-09-05"
+    )]["reason"] == "declared_dynamic_key"
+    mismatch = decisions[(
+        "analysis.funnel.query", "/data/aggregate_date/group/2026-02-30"
+    )]
+    assert mismatch["reason"] == "dynamic_key_shape_mismatch"
+    assert mismatch["expected_key_shape"] == "iso_date"
     assert decisions[(
         "promotion.kuaishou.account.list", "/data/list/*/operator_name"
     )]["reason"] == "personal_or_privilege_field_requires_review"

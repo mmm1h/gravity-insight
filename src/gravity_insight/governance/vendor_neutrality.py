@@ -43,6 +43,9 @@ def scan_vendor_identities(root: Path) -> tuple[VendorIdentityViolation, ...]:
             )
         if relative == SOURCE_REGISTRY or _NON_DEFAULT_TEXT.match(relative):
             continue
+        name = Path(relative).name.casefold()
+        if name.startswith(".env") or name.endswith(".env") or ".env.gravity" in name:
+            continue  # Credential sources/templates are not executable Runtime content.
         raw = (root / relative).read_bytes()
         if b"\0" in raw or relative.casefold().endswith(".zip"):
             continue

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import copy
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from scripts import generate_skill_library as builder
 from scripts.verify_skill_library_release import (
@@ -12,6 +15,15 @@ from scripts.verify_skill_library_release import (
 
 
 class SkillLibraryReleaseTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        source = Path(temporary.name) / "source"
+        source.mkdir()
+        override = patch("scripts.verify_skill_library_release.ROOT", source)
+        override.start()
+        self.addCleanup(override.stop)
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.outputs = builder.render_outputs()
@@ -47,6 +59,11 @@ class SkillLibraryReleaseTests(unittest.TestCase):
             SkillLibraryReleaseError, "size or digest changed"
         ):
             verify_release(self.fetch(changed))
+
+    def test_readback_inside_source_checkout_remains_rejected(self) -> None:
+        with patch("scripts.verify_skill_library_release.ROOT", Path(tempfile.gettempdir()).resolve()):
+            with self.assertRaisesRegex(SkillLibraryReleaseError, "inside the source checkout"):
+                verify_release(self.fetch(self.outputs))
 
 
 if __name__ == "__main__":

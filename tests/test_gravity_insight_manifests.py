@@ -290,6 +290,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "scalar_list_item_types",
                         "data_scalar_list_types",
                         "numeric_paths",
+                        "dynamic_key_patterns",
                         "data_dynamic_item_fields",
                         "numeric_suffix_item_fields",
                         "data_numeric_suffix_item_fields",
@@ -676,7 +677,7 @@ class GravityInsightManifestTests(unittest.TestCase):
 
     def test_user_and_monetization_detail_register_the_full_observed_profiles(self) -> None:
         user_projection = self.by_id["analysis.user_detail.list"]["response_projection"]
-        self.assertEqual(153, len(user_projection["item_keys"]))
+        self.assertEqual(161, len(user_projection["item_keys"]))
         self.assertNotIn("known_omitted_item_keys", user_projection)
         self.assertNotIn("known_omitted_nested_item_keys", user_projection)
         self.assertEqual(14, len(user_projection["nested_item_keys"]["device_info"]))

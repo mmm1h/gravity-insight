@@ -312,18 +312,20 @@ def resolve_cli_command(command: str) -> CommandResolution:
         return CommandResolution((), "command must start with gravity")
 
     from gravity_insight import cli as insight_cli
+    from gravity_insight import account_pool_cli
     from gravity_insight.census import cli as census_cli
     from gravity_insight.sql import __main__ as sql_cli
 
     remaining = tokens[1:]
     command_path: list[str] = []
-    if remaining and remaining[0] in {"insight", "sql", "census"}:
+    if remaining and remaining[0] in {"insight", "sql", "census", "account-pool"}:
         namespace = remaining.pop(0)
         command_path.append(namespace)
         parser = {
             "insight": insight_cli.build_parser,
             "sql": sql_cli.build_parser,
             "census": census_cli.build_parser,
+            "account-pool": account_pool_cli.build_parser,
         }[namespace]()
     else:
         parser = insight_cli.build_parser()

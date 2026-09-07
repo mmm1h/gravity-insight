@@ -194,6 +194,9 @@
         "aggregate_by_date.*.*",
         "aggregate_by_date.*.*.*"
       ],
+      "dynamic_key_patterns": {
+        "aggregate_date.group": "iso_date"
+      },
       "required_data_keys": []
     },
     "semantic_error_rules": [

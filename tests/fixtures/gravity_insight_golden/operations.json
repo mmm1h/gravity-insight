@@ -8994,270 +8994,240 @@
       "upstream_method": "GET"
     },
     {
-      "action": "list",
-      "auth_profile": "gravity_authorization",
-      "block_reason": null,
-      "contract_version": "3",
-      "description": "用户细查；支持结构化字段、筛选和排序，返回全部 153 个已观察顶层字段及已登记设备信息。bytedanceMid1..8 与 bytedanceProjectId 按观察到的 JSON 标量类型交付，业务语义仍未证实。",
+      "operation_id": "analysis.user_detail.list",
       "domain": "analysis",
+      "resource": "user_detail",
+      "action": "list",
+      "platform": null,
+      "description": "用户细查；支持结构化字段、筛选和排序，返回全部 161 个已观察顶层字段及已登记设备信息。bytedanceMid1..8 与 bytedanceProjectId 按观察到的 JSON 标量类型交付；bytedanceMid1_name..8_name 按观察到的 JSON string 交付。字段业务语义只以独立 join-key 契约的逐平台三态裁决为准。",
+      "stability": "stable",
       "executable": true,
+      "block_reason": null,
+      "contract_version": "4",
+      "upstream_method": "POST",
+      "path_template": "/report/api/v3/dataanalysis/user/detail/list/",
+      "auth_profile": "gravity_authorization",
       "input_fields": [
         {
+          "name": "app_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 64,
-          "min_items": null,
-          "name": "app_id",
-          "nullable": false,
-          "required": true,
-          "sensitive": false,
-          "type": "string"
+          "max_depth": 5
         },
         {
+          "name": "client_id",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": true,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 256,
-          "min_items": null,
-          "name": "client_id",
-          "nullable": false,
-          "required": false,
-          "sensitive": true,
-          "type": "string"
+          "max_depth": 5
         },
         {
+          "name": "date",
+          "type": "date",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": null,
-          "min_items": null,
-          "name": "date",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "date"
+          "max_depth": 5
         },
         {
-          "default": {
-            "present": true,
-            "value": []
-          },
-          "description": "",
-          "enum": [],
-          "item_enum": [],
-          "item_type": "string",
-          "max_depth": 5,
-          "max_items": 100,
-          "max_length": null,
-          "min_items": null,
           "name": "fields",
-          "nullable": false,
+          "type": "array",
           "required": false,
-          "sensitive": false,
-          "type": "array"
-        },
-        {
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "enum": [],
+          "sensitive": false,
+          "item_type": "string",
           "item_enum": [],
-          "item_type": "object",
-          "max_depth": 5,
+          "min_items": null,
           "max_items": 100,
           "max_length": null,
-          "min_items": null,
-          "name": "global_conditions",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "array"
+          "max_depth": 5
         },
         {
+          "name": "global_conditions",
+          "type": "array",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": "object",
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
+          "max_items": 100,
+          "max_length": null,
+          "max_depth": 5
+        },
+        {
+          "name": "order_by_list",
+          "type": "array",
+          "required": false,
+          "nullable": false,
+          "enum": [],
+          "default": {
+            "present": true,
+            "value": []
+          },
+          "description": "",
+          "sensitive": false,
+          "item_type": "object",
+          "item_enum": [],
+          "min_items": null,
           "max_items": 20,
           "max_length": null,
-          "min_items": null,
-          "name": "order_by_list",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "array"
+          "max_depth": 5
         },
         {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": 1
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": null,
-          "min_items": null,
-          "name": "page",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "integer"
+          "max_depth": 5
         },
         {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": 20
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": null,
-          "min_items": null,
-          "name": "page_size",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "integer"
+          "max_depth": 5
         },
         {
+          "name": "postback_cond_logic",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "AND",
+            "OR"
+          ],
           "default": {
             "present": true,
             "value": "AND"
           },
           "description": "",
-          "enum": [
-            "AND",
-            "OR"
-          ],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 4096,
-          "min_items": null,
-          "name": "postback_cond_logic",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "string"
+          "max_depth": 5
         },
         {
+          "name": "postback_conditions",
+          "type": "array",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": "object",
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": 100,
           "max_length": null,
-          "min_items": null,
-          "name": "postback_conditions",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "array"
+          "max_depth": 5
         },
         {
+          "name": "user_cond_logic",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "AND",
+            "OR"
+          ],
           "default": {
             "present": true,
             "value": "AND"
           },
           "description": "",
-          "enum": [
-            "AND",
-            "OR"
-          ],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 4096,
-          "min_items": null,
-          "name": "user_cond_logic",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "string"
+          "max_depth": 5
         }
       ],
-      "live_probe": {
-        "enabled": true,
-        "inputs": {
-          "app_id": "$first_app_id",
-          "client_id": "$first_client_id",
-          "date": "$today",
-          "page": 1,
-          "page_size": 1
-        }
-      },
-      "operation_id": "analysis.user_detail.list",
-      "pagination": {
-        "default_page_size": 20,
-        "items_field": "list",
-        "kind": "page_info",
-        "list_path": "data.list",
-        "max_page_size": 100,
-        "page_field": "page",
-        "page_info_field": "page_info",
-        "page_info_path": "data.page_info",
-        "page_size_field": "page_size",
-        "total_page_field": "total_page"
-      },
-      "path_template": "/report/api/v3/dataanalysis/user/detail/list/",
-      "platform": null,
-      "privacy_policy": {
-        "classification": "user_level",
-        "redact_fields": [
-          "authorization",
-          "password",
-          "token",
-          "gravity_email",
-          "access_token",
-          "cookie",
-          "secret",
-          "refresh_token",
-          "session_token"
-        ]
-      },
       "request": {
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": [],
         "body_fields": [
           "app_id",
           "client_id",
@@ -9281,34 +9251,18 @@
           "postback_conditions": [],
           "user_cond_logic": "AND"
         },
-        "fixed_body": {},
         "fixed_query": {},
-        "location": "mixed",
-        "path_fields": [],
-        "query_fields": []
+        "fixed_body": {}
       },
-      "required_parent": [
-        {
-          "input_field": null,
-          "operation_id": "app.list"
-        }
-      ],
-      "resource": "user_detail",
       "response_projection": {
-        "data_dynamic_item_fields": {},
-        "data_item_keys": {},
+        "data_shape": "object",
         "data_keys": [
           "list",
           "page_info"
         ],
-        "data_path_item_keys": {},
-        "data_scalar_list_types": {},
-        "data_shape": "object",
-        "dynamic_item_fields": [
-          "fields"
+        "required_data_keys": [
+          "list"
         ],
-        "empty_object_as_empty_page": false,
-        "empty_object_as_empty_result": false,
         "item_keys": [
           "CreateTime",
           "LatestLoginDay",
@@ -9349,6 +9303,14 @@
           "bytedanceMid6",
           "bytedanceMid7",
           "bytedanceMid8",
+          "bytedanceMid1_name",
+          "bytedanceMid2_name",
+          "bytedanceMid3_name",
+          "bytedanceMid4_name",
+          "bytedanceMid5_name",
+          "bytedanceMid6_name",
+          "bytedanceMid7_name",
+          "bytedanceMid8_name",
           "bytedanceProjectId",
           "user$ad_24h_avg_ecpm",
           "user$ad_24h_count",
@@ -9464,10 +9426,9 @@
           "useruser_sex",
           "useruser_tpe"
         ],
-        "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [],
-        "known_omitted_nested_item_keys": {},
+        "dynamic_item_fields": [
+          "fields"
+        ],
         "nested_item_keys": {
           "device_info": [
             "Android_Version",
@@ -9499,32 +9460,79 @@
             "ReAttributeAdClickTime"
           ]
         },
-        "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "known_omitted_nested_item_keys": {},
+        "data_item_keys": {},
+        "scalar_list_item_types": {},
+        "data_scalar_list_types": {},
+        "data_path_item_keys": {},
+        "data_dynamic_item_fields": {},
+        "known_omitted_item_keys": [],
         "recursive_data_item_keys": {},
-        "required_data_keys": [
-          "list"
-        ],
-        "scalar_list_item_types": {}
+        "known_omitted_data_keys": [],
+        "known_omitted_data_item_keys": {},
+        "numeric_paths": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "opaque_json_item_keys": []
+      },
+      "pagination": {
+        "kind": "page_info",
+        "page_field": "page",
+        "page_size_field": "page_size",
+        "items_field": "list",
+        "page_info_field": "page_info",
+        "total_page_field": "total_page",
+        "list_path": "data.list",
+        "page_info_path": "data.page_info",
+        "default_page_size": 20,
+        "max_page_size": 100
       },
       "semantic_error_rules": [
         {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
           "path": "code",
+          "operator": "truthy",
           "value": null,
-          "values": []
+          "values": [],
+          "message": "Gravity rejected the read operation"
         },
         {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
           "path": "extra.error",
+          "operator": "truthy",
           "value": null,
-          "values": []
+          "values": [],
+          "message": "Gravity rejected the read operation"
         }
       ],
-      "stability": "stable",
-      "upstream_method": "POST"
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "required_parent": [
+        {
+          "operation_id": "app.list",
+          "input_field": null
+        }
+      ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "app_id": "$first_app_id",
+          "client_id": "$first_client_id",
+          "date": "$today",
+          "page": 1,
+          "page_size": 1
+        }
+      }
     },
     {
       "action": "list",

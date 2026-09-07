@@ -29,6 +29,75 @@ prefix = gravity.read_limited("app.list", {"page": 1, "page_size": 20})
 完整 operation 输入、默认值和响应投影先由 CLI `gravity operations describe <operation-id>` 读取；
 不要从本页示例推导其他 operation 的字段。
 
+## 多账号鉴权失效切换（高级、默认关闭）
+
+只支持完整只读边界：`read`、`read_all`、`read_limited`、`run`、`execute_plan`、
+`query_sql_products`。一个 Plan、composite 或分页读取固定到同一槽位和世代；401 时先由原
+Runtime 刷新一次，世代改变后取消待发页、等待已发请求结束、丢弃结果并从头重跑。刷新后仍鉴权
+失败才推进到下一个兼容槽位。裸 `sdk.insight` / `sdk.sql`、其他未接入边界和 workspace 覆盖
+会明确拒绝，不自动降为单账号，也不自动重放 mutation。关闭功能不改变原单账号行为。
+
+```python
+from gravity_insight import connect
+from gravity_insight.account_pool import AccountPoolConfig
+
+gravity = connect(
+    workspace="/path/to/gravity.toml",
+    account_pool=AccountPoolConfig(
+        enabled=True,
+        env_paths=("/protected/account-a.env", "/protected/account-b.env"),
+        max_accounts=2,
+    ),
+)
+status = gravity.account_pool_status
+```
+
+`enabled=False` 为默认值。显式提供关闭的配置覆盖环境开关；关闭时不解析、不 stat、不打开备用
+源。每个槽位仍通过 `connect(env_path=...)` 创建独立 SDK/Runtime，未增加凭据格式或共享 session。
+全部账号源及 session 必须位于仓库外、无 symlink/junction、可收紧到当前用户及系统管理员访问；
+不能把备用账号加入主 `.env`。`max_accounts=2` 是配置默认值，不是固定数组长度；显式调大即可
+允许更多槽位，但账号之间仍顺序执行，不增加 host/global 并发。
+
+环境配置为 `GRAVITY_ACCOUNT_FAILOVER=0|1`（默认 `0`）、`GRAVITY_ACCOUNT_ENV_FILES`
+（有序 JSON 路径数组）、`GRAVITY_ACCOUNT_MAX_ACCOUNTS`（默认 `2`）。名称特意使用
+`FAILOVER`，不叫 `PARALLEL` 或 `POOL_ENABLED`，以免误解为吞吐或调度功能。
+CLI/Agent 显式使用 `gravity account-pool`，例如
+`gravity account-pool --enable --account-env <a> --account-env <b> read-all <operation> --input '{}'`。
+`plan` / `sql-products` 的 `--input` 接受 JSON 对象；SDK 与 CLI 复用同一边界。配置了环境开关后，
+统一 `gravity` 的普通命名空间拒绝执行并引导到显式命令。独立的 `gravity-insight` /
+`gravity-sql` 专用入口不支持账号池；需要切换时必须改用上述入口，不能只设置环境开关。
+
+**429 不触发切换**：Owner 于 2026-09-07 的 382 + 7 次生产请求、两轮独立进程复现表明，
+同 IP 的不同 principal 在 A 被限流时 B 也返回 429，否定账号隔离。429（即使响应体含鉴权码）
+仍使用原 host limiter / Retry-After 退避；403、5xx、网络错误也不作为换号信号。本实现只以离线
+夹具验证这些规则，不声称完成生产实测，也不实现需求 2。
+
+### 准入与状态
+
+凭据可读不等于权限兼容。每个槽位需要当前世代私有根目录下的
+`agent-runtime/account-failover-admission.v1.json`，字段由
+[`account-admission-v1.schema.json`](../../src/gravity_insight/contracts/schema/account-admission-v1.schema.json)
+拥有。`principal` 是上游 principal ID 的 SHA-256（仅私有准入比较，不对外输出）；
+`generation_ref` 复用 #174 的随机 opaque marker，不能用可反推的凭据摘要替代。
+`permission_scope` / `data_scope` 是调用方审定的规范化权限和数据范围证据摘要，必须有证据引用且
+两账号相同。TTL 最多一天；缺失、过期、世代不匹配、重复 principal 或范围不一致均拒绝。
+角色名或菜单列表相同不能替代此证明。Runtime 不自动签发这些权限等价声明。
+
+`capabilities` 引用同一私有根目录的现有 Capability Validation store。Insight 复用同层 Trust
+检查；登记 SQL 产品使用 `product` / `sql-product:<登记名>`，以现有 `contract_hash()` 同时校验
+`contract_digest` 与 `provider_fingerprint`，并要求版本、有效期、stable、complete、DQ pass 和证据引用；
+每次请求前重新核验冻结证据的有效期和依赖 trust，长读取不会越过验证期限。
+未准入的 SQL 产品不能因另一个产品通过就执行。一次读取内同 principal 刷新后可以沿用冻结准入
+的剩余有效期，但不会将旧验证伪造成新验证写入新世代；后续独立读取需要当前世代的准入记录。
+
+`account_pool_status` 区分备用槽位 `not_configured`、`configured_unavailable`、`configured_healthy`；
+未校验时为 `configured_unavailable/ADMISSION_PENDING`，拒绝凭据为 `configured_unavailable/AUTH_REJECTED`。
+切换态为 `never_switched`、`switching`、`switched_success`、`switched_failed`、`exhausted`。
+所有可选槽位失效或不可用时抛出 `ACCOUNT_POOL_EXHAUSTED`，池终止，需修复后显式重新 connect。
+收据和 `gravity_account_failover` 日志只记录槽位序号、原因、累计切换次数和随机世代标识。
+HTTP attempt/page 使用当前槽位 Runtime 的世代根；切换事件也写在该根的 `account-failover/`，不输出
+env 路径、principal 值或凭据。`status` 不进行生产探测，也不会把待验证账号标成健康。
+
 ## 签名自检
 
 运行时签名是方法参数的精确真相：
@@ -153,6 +222,15 @@ Semantic Compose 都要求显式结构化输入；自然语言不填业务字段
 产品之间不要互相替代：Dashboard snapshot 不执行图表；Segment snapshot 不返回成员；Saved Analysis
 prepare 不执行最终查询；Order Split Trace 必须先唯一匹配父行；Material/Promotion 不跨平台归一或
 生成业务判断。
+
+### 投放到用户的 join key
+
+issue #154 将跨 operation 的物理 join 收口为逐平台机器契约，不从字段名猜测。调用方先用
+`gravity_insight.contracts.join_key.resolve_proven_join_key()` 按 `platform`、`object_type` 和可选
+`object_subtype` 解析；返回值给出精确左右 operation/path、规范化规则和观测证据。只有未超过
+`revalidate_after` 的 `namespace_status=proven` 可解析，`disproven`、`insufficient_evidence`、过期证据
+和素材子类型歧义全部抛 `JoinKeyContractError`。机器真相位于
+`contracts/join-keys/registry.v1.json`，结构由 `join-key-registry-v1.schema.json` 校验。
 
 ### 普通留存分母对账
 

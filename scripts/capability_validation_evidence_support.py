@@ -18,7 +18,13 @@ from gravity_insight.errors import ErrorCode, GravityInsightError
 from gravity_insight.receipt_query import get_http_receipt
 from gravity_insight.result_audit import result_response_drift
 from gravity_insight.read_result_support import result_warnings
-from gravity_insight.semantic_status import response_data_nonempty
+from gravity_insight.semantic_status import (
+    DATA_EVIDENCE_CONFIRMED_EMPTY,
+    DATA_EVIDENCE_INCONCLUSIVE,
+    DATA_EVIDENCE_NOT_EVALUATED,
+    response_data_evidence_status,
+    response_data_nonempty,
+)
 
 
 LEGACY_RUN_SCHEMA_VERSION = "gravity.capability-validation-run.v1"
@@ -165,10 +171,14 @@ def _qualification_reasons(
     exact: Sequence[Mapping[str, Any]], started_at: datetime, observed_at: datetime,
 ) -> list[str]:
     reasons: list[str] = []
+    data_evidence_status = response_data_evidence_status(
+        result,
+        http_statuses=tuple(item.get("http_status") for item in exact),
+    )
     if not exact:
         reasons.append("EXECUTION_RECEIPT_MISSING")
     if result.get("ok") is not True or result.get("status") != "success":
-        reasons.append(_result_status_reason(result))
+        reasons.append(_result_status_reason(result, data_evidence_status))
     if result.get("error") not in (None, {}):
         reasons.append("EXECUTION_ERROR_PRESENT")
     if result.get("operation_id") != selector:
@@ -182,8 +192,10 @@ def _qualification_reasons(
     schema = result.get("schema_fingerprint")
     if not isinstance(schema, str) or _DIGEST.fullmatch(schema) is None:
         reasons.append("EXECUTION_SCHEMA_UNPROVEN")
-    if not response_data_nonempty({"data": result.get("data")}):
+    if data_evidence_status == DATA_EVIDENCE_CONFIRMED_EMPTY:
         reasons.append("EXECUTION_DATA_EMPTY")
+    elif data_evidence_status == DATA_EVIDENCE_INCONCLUSIVE:
+        reasons.append("EXECUTION_DATA_EMPTY_INCONCLUSIVE")
     operation = _operations()[selector]
     expected_warnings = list(result_warnings(operation, ()))
     if list(result.get("warnings") or ()) != expected_warnings:
@@ -266,14 +278,25 @@ def result_outcome(
     drift = result_response_drift(result)
     error_detail = _result_error_detail(result.get("error"))
     fingerprint = result.get("schema_fingerprint")
+    data_evidence_status = response_data_evidence_status(
+        result,
+        http_statuses=tuple(
+            item.get("http_status")
+            for item in receipts
+            if item.get("operation_id") == selector
+        ),
+    )
     return {
         **_base_outcome(("operation", selector), "read", (
-            "validated" if recorded else _category_for_result(result, reasons)
+            "validated"
+            if recorded
+            else _category_for_result(result, reasons, data_evidence_status)
         )),
         "attempted": True,
         "request_count": request_count,
         "result_status": str(result.get("status", "unknown")),
         "result_nonempty": response_data_nonempty({"data": result.get("data")}),
+        "data_evidence_status": data_evidence_status,
         "receipt_ids": _receipt_ids(receipts, selector),
         "schema_fingerprint": (
             fingerprint
@@ -388,6 +411,7 @@ def _base_outcome(
         "identity_kind": key[0], "selector": key[1], "effect": effect,
         "attempted": False, "category": category, "request_count": 0,
         "validation_recorded": False, "reason_codes": [],
+        "data_evidence_status": DATA_EVIDENCE_NOT_EVALUATED,
     }
 
 
@@ -421,10 +445,16 @@ def _parse_timestamp(value: Any) -> datetime | None:
         return None
 
 
-def _result_status_reason(result: Mapping[str, Any]) -> str:
+def _result_status_reason(
+    result: Mapping[str, Any], data_evidence_status: str
+) -> str:
     status = str(result.get("status", "unknown"))
     if status == "empty":
-        return "EXECUTION_DATA_EMPTY"
+        return (
+            "EXECUTION_DATA_EMPTY"
+            if data_evidence_status == DATA_EVIDENCE_CONFIRMED_EMPTY
+            else "EXECUTION_DATA_EMPTY_INCONCLUSIVE"
+        )
     if status.startswith("contract_changed"):
         return "EXECUTION_RESPONSE_DRIFT"
     if status == "permission_unavailable":
@@ -434,16 +464,20 @@ def _result_status_reason(result: Mapping[str, Any]) -> str:
     return "EXECUTION_NOT_SUCCESSFUL"
 
 
-def _category_for_result(result: Mapping[str, Any], reasons: Sequence[str]) -> str:
+def _category_for_result(
+    result: Mapping[str, Any], reasons: Sequence[str], data_evidence_status: str
+) -> str:
     status = str(result.get("status", "unknown"))
     if "EXECUTION_PERMISSION_UNAVAILABLE" in reasons:
         return "permission_unavailable"
     if "EXECUTION_AUTHENTICATION_FAILED" in reasons:
         return "authentication_failed"
-    if "EXECUTION_DATA_EMPTY" in reasons:
-        return "no_data_in_current_scope"
     if "EXECUTION_RESPONSE_DRIFT" in reasons or status.startswith("contract_changed"):
         return "response_contract_drift"
+    if data_evidence_status == DATA_EVIDENCE_CONFIRMED_EMPTY:
+        return "no_data_in_current_scope"
+    if data_evidence_status == DATA_EVIDENCE_INCONCLUSIVE:
+        return "empty_evidence_inconclusive"
     error = result.get("error")
     if isinstance(error, Mapping) and error.get("category") == "permission":
         return "permission_unavailable"

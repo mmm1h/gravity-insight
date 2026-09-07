@@ -2,11 +2,51 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import Any
 
-from .credentials import GRAVITY_HOST
-from .receipt import PRODUCTION_HTTP_KIND, perform_http_request
+from .credentials import GRAVITY_HOST, validated_login_payload
+from .receipt import PRODUCTION_HTTP_KIND, perform_http_request, request_receipt_context
+
+
+ReceiptBinding = tuple[Path, str]
+ReceiptBindingResolver = Callable[[], ReceiptBinding]
+
+
+def perform_runtime_login(
+    requester: Any, profile: Any, body: Mapping[str, Any], timeout: float,
+) -> Mapping[str, Any]:
+    """Keep login on the same generation-bound requester as business traffic."""
+
+    response = requester.request(
+        profile,
+        "POST",
+        "/account_center/api/v1/user_login/v2/",
+        json_body=body,
+        timeout=timeout,
+        receipt_context=request_receipt_context(
+            operation_id="authentication",
+            method="POST",
+            path="/account_center/api/v1/user_login/v2/",
+            body=body,
+            effect="login",
+        ),
+    )
+    return validated_login_payload(response.status_code, response.payload, response.retry_after_ms)
+
+
+def resolve_receipt_binding(requester: Any) -> ReceiptBinding:
+    """Freeze storage and observation coordinates before rate waits and I/O."""
+
+    binding = (
+        requester.receipt_binding_resolver()
+        if requester.receipt_binding_resolver is not None
+        else requester.receipt_binding
+    )
+    requester.receipt_binding = binding
+    requester.observation_scope_key = binding[1]
+    return binding
 
 
 def perform_runtime_attempt(
@@ -21,6 +61,7 @@ def perform_runtime_attempt(
     attempts: int,
     receipt_context: Mapping[str, Any],
     rate_delay: float,
+    binding: ReceiptBinding,
 ) -> Any:
     """Call the existing request boundary with value-free policy metadata."""
 
@@ -37,9 +78,9 @@ def perform_runtime_attempt(
         timeout=timeout,
         allow_redirects=False,
         http_receipt=receipt_context,
-        receipt_root=requester.receipt_root,
+        receipt_root=binding[0],
         governor_context=runtime_attempt_context(
-            scope_key=requester.observation_scope_key,
+            scope_key=binding[1],
             profile=profile.name,
             rate_delay_seconds=rate_delay,
             attempt_budget=attempts,

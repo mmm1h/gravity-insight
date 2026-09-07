@@ -126,33 +126,59 @@ class AnalysisResponseDriftDeclarationTests(unittest.TestCase):
                 self.assertNotIn(omitted, projected)
                 assert_projected(projected)
 
-    def test_dynamic_nested_fields_without_contract_vocabulary_remain_audited(self) -> None:
-        cases = (
-            (
-                "analysis.funnel.query",
-                {
-                    "aggregate_date": {"group": {"2026-09-04": {}}},
-                    "window_funnel_mode": 4,
-                },
-                "/data/aggregate_date/group/2026-09-04",
-            ),
-            (
-                "analysis.scatter.query",
-                {"aggregate_date": [], "zone_tags": {"unit": "day"}},
-                "/data/zone_tags/unit",
-            ),
-        )
+    def test_declared_funnel_iso_date_keys_are_stable_across_days(self) -> None:
+        for observed_date in ("2026-09-04", "2026-09-05"):
+            with self.subTest(observed_date=observed_date):
+                projected, _warnings, drift, audit = _project(
+                    _operation("analysis.funnel.query"),
+                    {
+                        "data": {
+                            "aggregate_date": {
+                                "group": {observed_date: {"0": 7, "1": 3}}
+                            },
+                            "window_funnel_mode": 4,
+                        }
+                    },
+                    {},
+                )
+                self.assertIs(ProjectionDrift.NONE, drift)
+                self.assertIsNone(audit)
+                self.assertEqual(
+                    {"0": 7, "1": 3},
+                    projected["aggregate_date"]["group"][observed_date],
+                )
 
-        for operation_id, data, expected_path in cases:
-            with self.subTest(operation_id=operation_id):
-                _projected, _warnings, drift, audit = _project(
-                    _operation(operation_id), {"data": data}, {}
+    def test_declared_funnel_dynamic_key_shape_remains_fail_closed(self) -> None:
+        for invalid_key in ("2026-9-05", "2026-02-30", "1234567890123456789"):
+            with self.subTest(invalid_key=invalid_key):
+                projected, _warnings, drift, audit = _project(
+                    _operation("analysis.funnel.query"),
+                    {
+                        "data": {
+                            "aggregate_date": {"group": {invalid_key: {}}},
+                            "window_funnel_mode": 4,
+                        }
+                    },
+                    {},
                 )
                 self.assertIs(ProjectionDrift.ADDITIVE, drift)
+                self.assertEqual({}, projected["aggregate_date"]["group"])
                 self.assertEqual(
-                    [expected_path],
+                    [f"/data/aggregate_date/group/{invalid_key}"],
                     [field["path"] for field in audit["fields"]],
                 )
+
+    def test_other_dynamic_nested_fields_without_contract_vocabulary_remain_audited(self) -> None:
+        _projected, _warnings, drift, audit = _project(
+            _operation("analysis.scatter.query"),
+            {"data": {"aggregate_date": [], "zone_tags": {"unit": "day"}}},
+            {},
+        )
+        self.assertIs(ProjectionDrift.ADDITIVE, drift)
+        self.assertEqual(
+            ["/data/zone_tags/unit"],
+            [field["path"] for field in audit["fields"]],
+        )
 
     def test_declared_container_still_rejects_non_json_values_as_contract_changed(self) -> None:
         projected, _warnings, drift, _audit = _project(

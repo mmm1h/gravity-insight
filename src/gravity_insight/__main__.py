@@ -72,6 +72,7 @@ Usage:
   gravity run @<recipe> [options]
   gravity run <operation-id> [options]
   gravity receipts list|get|export
+  gravity account-pool [--enable --account-env <path> ...] status|read|read-all|run|plan|sql-products
   gravity sql <command> [options]
   gravity census <command> [options]
 
@@ -144,10 +145,6 @@ def _main(argv: Sequence[str] | None = None) -> int:
         return upgrade_exit
     _startup_skill_maintenance(args)
 
-    from . import cli as insight_cli
-    from .census import cli as census_cli
-    from .sql import __main__ as sql_cli
-
     if not args:
         if not ensure_first_run_credentials(requires_credentials=True):
             return exit_code_for_category(ErrorCategory.LOCAL)
@@ -156,8 +153,23 @@ def _main(argv: Sequence[str] | None = None) -> int:
     if args == ["--help"] or args == ["-h"]:
         print(_HELP, end="")
         return 0
+    return _run_namespace(args)
+
+
+def _run_namespace(args: list[str]) -> int:
+    from . import cli as insight_cli
+    from .census import cli as census_cli
+    from .sql import __main__ as sql_cli
+    from .errors import ErrorCategory, GravityInsightError, exit_code_for_category
+    from .cli_stdio import emit_entry_error
 
     namespace, *remaining = args
+    if namespace == "account-pool":
+        from .account_pool_cli import main as account_pool_main
+        return account_pool_main(remaining)
+    from .account_pool import AccountPoolConfig, _account_config_error
+    if AccountPoolConfig.from_environment().enabled:
+        raise _account_config_error("ACCOUNT_POOL_EXPLICIT_COMMAND_REQUIRED", field="command", next_action="Use `gravity account-pool --help` for explicit complete-read failover.")
     if namespace == "insight":
         command, command_args = insight_cli.main, remaining
         requires_credentials = command_requires_credentials(

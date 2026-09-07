@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.join-key-registry.v1",
+  "type": "object",
+  "required": ["$schema", "artifact_kind", "schema_version", "registry_id", "mappings"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {"const": "../schema/join-key-registry-v1.schema.json"},
+    "artifact_kind": {"const": "join_key_registry"},
+    "schema_version": {"const": "gravity.join-key-registry.v1"},
+    "registry_id": {"const": "join-key://gravity/acquisition-user@1"},
+    "mappings": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {"$ref": "#/$defs/mapping"}
+    }
+  },
+  "$defs": {
+    "field_reference": {
+      "type": "object",
+      "required": ["operation_id", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160,
+          "pattern": "^[a-z][a-z0-9_.]*$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 13,
+          "maxLength": 192,
+          "pattern": "^data\\.list\\[\\]\\.[A-Za-z_$][A-Za-z0-9_.$-]*$"
+        }
+      }
+    },
+    "nullable_count": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "source", "sampled_on", "revalidate_after", "request_count",
+        "observation_scope", "user_row_count", "left_non_null_count",
+        "left_distinct_count", "right_non_null_count", "right_distinct_count",
+        "intersection_distinct_count", "limitation_codes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 256,
+          "pattern": "^issue://[a-z0-9.-]+/[a-z0-9.-]+/[1-9][0-9]*(#[a-z0-9.-]+)?$"
+        },
+        "sampled_on": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "revalidate_after": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "request_count": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "observation_scope": {"enum": ["platform_object", "field_candidate"]},
+        "user_row_count": {"$ref": "#/$defs/nullable_count"},
+        "left_non_null_count": {"$ref": "#/$defs/nullable_count"},
+        "left_distinct_count": {"$ref": "#/$defs/nullable_count"},
+        "right_non_null_count": {"$ref": "#/$defs/nullable_count"},
+        "right_distinct_count": {"$ref": "#/$defs/nullable_count"},
+        "intersection_distinct_count": {"$ref": "#/$defs/nullable_count"},
+        "limitation_codes": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 96,
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        }
+      }
+    },
+    "right_field": {
+      "type": "object",
+      "required": ["reference", "object_subtype", "candidate_evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "reference": {"$ref": "#/$defs/field_reference"},
+        "object_subtype": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9_]*$", "maxLength": 64},
+        "candidate_evidence": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/evidence"}
+          ]
+        }
+      }
+    },
+    "right_side": {
+      "type": "object",
+      "required": ["selection", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "selection": {"enum": ["single", "by_object_subtype"]},
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {"$ref": "#/$defs/right_field"}
+        }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "required": ["rule", "apply_to"],
+      "additionalProperties": false,
+      "properties": {
+        "rule": {"enum": ["identity", "json_integer_to_decimal_string"]},
+        "apply_to": {"enum": ["none", "left"]}
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "required": [
+        "mapping_id", "platform", "object_type", "namespace_status",
+        "left", "right", "normalization", "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mapping_id": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 160,
+          "pattern": "^[a-z][a-z0-9_.-]*$"
+        },
+        "platform": {"enum": ["bytedance", "kuaishou", "tencent"]},
+        "object_type": {"enum": ["material", "promotion", "project", "advertiser", "unit", "campaign", "creative", "adgroup"]},
+        "namespace_status": {"enum": ["proven", "disproven", "insufficient_evidence"]},
+        "left": {"$ref": "#/$defs/field_reference"},
+        "right": {"$ref": "#/$defs/right_side"},
+        "normalization": {"$ref": "#/$defs/normalization"},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    }
+  }
+}

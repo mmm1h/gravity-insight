@@ -15,6 +15,10 @@ from gravity_insight.analysis_projection_contract import (
 from gravity_insight.errors import ManifestError
 from gravity_insight.executor import _project as project_response
 from gravity_insight.models import InputField, OperationSpec, ResponseProjection, load_operation_manifest
+from gravity_insight.response_drift import (
+    dynamic_key_shape,
+    normalize_dynamic_key_patterns,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -220,6 +224,50 @@ class ResponseGroupIdentityInvariantTests(unittest.TestCase):
         self.assertFalse(
             allowed_analysis_response_key("union_groups", set(), ("list",))
         )
+
+    def test_dynamic_key_shape_is_path_scoped_and_calendar_valid(self) -> None:
+        patterns = {"aggregate_date.group": "iso_date"}
+        self.assertTrue(
+            allowed_analysis_response_key(
+                "2026-09-05",
+                set(),
+                ("aggregate_date", "group"),
+                dynamic_key_patterns=patterns,
+            )
+        )
+        self.assertFalse(
+            allowed_analysis_response_key(
+                "2026-02-30",
+                set(),
+                ("aggregate_date", "group"),
+                dynamic_key_patterns=patterns,
+            )
+        )
+        self.assertIsNone(
+            dynamic_key_shape(
+                patterns, ("aggregate_date", "other"), "2026-09-05"
+            )
+        )
+
+    def test_dynamic_key_shapes_are_closed_and_constrained(self) -> None:
+        decimal = {"items.by_id": "decimal_19"}
+        self.assertEqual(
+            "decimal_19",
+            dynamic_key_shape(
+                decimal, ("items", "by_id"), "1234567890123456789"
+            ),
+        )
+        for invalid_key in (
+            "123456789012345678",
+            "12345678901234567890",
+            "123456789012345678x",
+        ):
+            with self.subTest(invalid_key=invalid_key):
+                self.assertIsNone(
+                    dynamic_key_shape(decimal, ("items", "by_id"), invalid_key)
+                )
+        with self.assertRaisesRegex(ValueError, "invalid key shape"):
+            normalize_dynamic_key_patterns({"items.by_id": ".*"})
 
     def test_source_contracts_do_not_need_a_hand_list(self) -> None:
         groupable = []

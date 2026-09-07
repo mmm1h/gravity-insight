@@ -1660,6 +1660,41 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         self.assertEqual({"Name": "registered"}, result["data"]["list"][0])
         self.assertNotIn("future_154", result["data"]["list"][0])
 
+    def test_user_detail_projects_registered_material_name_fields(self) -> None:
+        material_names = {
+            f"bytedanceMid{index}_name": f"asset-name-{index}"
+            for index in range(1, 9)
+        }
+
+        def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
+            if path.endswith(
+                ("user_property_list/", "event_property_list/", "segment/list/")
+            ):
+                return page([])
+            if path.endswith("user/detail/list/"):
+                return page([{"Name": "registered", **material_names}])
+            raise AssertionError(path)
+
+        client, _transport = client_for(
+            "analysis.user_detail.list",
+            "analysis.user_property.list",
+            "analysis.event_property.list",
+            "analysis.segment.list",
+            handler=handler,
+        )
+
+        result = client.read(
+            "analysis.user_detail.list",
+            {"app_id": "101", "fields": ["Name"]},
+        )
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(
+            {"Name": "registered", **material_names},
+            result["data"]["list"][0],
+        )
+        self.assertNotIn("response_drift", result["result_audit"])
+
     def test_order_and_monetization_project_selected_total_metrics(self) -> None:
         def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
             if path.endswith(

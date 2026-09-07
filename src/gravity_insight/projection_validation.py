@@ -43,7 +43,20 @@ def validate_projection_bindings(projection: Any, names: Sequence[str]) -> None:
             raise ManifestError(message)
     _validate_collection_bindings(projection)
     _validate_data_bindings(projection, declared_inputs)
+    _validate_dynamic_key_patterns(projection)
     _validate_omission_bindings(projection)
+
+
+def _validate_dynamic_key_patterns(projection: Any) -> None:
+    invalid_roots = {
+        path.split(".", 1)[0]
+        for path in projection.dynamic_key_patterns
+        if path.split(".", 1)[0] not in projection.data_keys
+    }
+    if invalid_roots:
+        raise ManifestError(
+            "response_projection.dynamic_key_patterns must use declared data roots"
+        )
 
 
 def _validate_collection_bindings(projection: Any) -> None:

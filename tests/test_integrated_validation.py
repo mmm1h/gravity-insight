@@ -337,8 +337,8 @@ class IntegratedValidationTests(unittest.TestCase):
     def test_custom_receipt_path_outside_root_is_reported_as_absolute(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             receipt_path = (Path(raw) / "receipt.json").resolve()
-
-            self.assertEqual(receipt_path.as_posix(), _display_path(receipt_path))
+            with patch("scripts.run_integrated_validation.ROOT", Path(raw) / "source"):
+                self.assertEqual(receipt_path.as_posix(), _display_path(receipt_path))
 
     def test_gate_inventory_matches_canonical_governance(self) -> None:
         gates = gate_specs(ROOT / ".venv/Scripts/python.exe", ROOT / "tmp/test")

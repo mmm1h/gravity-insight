@@ -1479,6 +1479,9 @@
           "window_funnel_mode"
         ],
         "dynamic_item_fields": [],
+        "dynamic_key_patterns": {
+          "aggregate_date.group": "iso_date"
+        },
         "item_keys": [],
         "numeric_paths": [
           "window_funnel_mode",
@@ -2665,8 +2668,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 3,
-      "description": "用户细查；支持结构化字段、筛选和排序，返回全部 153 个已观察顶层字段及已登记设备信息。bytedanceMid1..8 与 bytedanceProjectId 按观察到的 JSON 标量类型交付，业务语义仍未证实。",
+      "contract_version": 4,
+      "description": "用户细查；支持结构化字段、筛选和排序，返回全部 161 个已观察顶层字段及已登记设备信息。bytedanceMid1..8 与 bytedanceProjectId 按观察到的 JSON 标量类型交付；bytedanceMid1_name..8_name 按观察到的 JSON string 交付。字段业务语义只以独立 join-key 契约的逐平台三态裁决为准。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -2852,6 +2855,14 @@
           "bytedanceMid6",
           "bytedanceMid7",
           "bytedanceMid8",
+          "bytedanceMid1_name",
+          "bytedanceMid2_name",
+          "bytedanceMid3_name",
+          "bytedanceMid4_name",
+          "bytedanceMid5_name",
+          "bytedanceMid6_name",
+          "bytedanceMid7_name",
+          "bytedanceMid8_name",
           "bytedanceProjectId",
           "user$ad_24h_avg_ecpm",
           "user$ad_24h_count",
