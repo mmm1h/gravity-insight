@@ -459,8 +459,9 @@ def _allowed_dynamic_group_label_key(name: str, path: tuple[str, ...]) -> bool:
         return bool(ANALYSIS_GROUP_LABEL_KEY_RE.fullmatch(name))
     if path == _EVENT_QUERY_GROUP_ROW_PATH:
         return bool(ANALYSIS_GROUP_DISPLAY_KEY_RE.fullmatch(name))
-    return path == _SCATTER_GROUP_ROW_PATH and bool(
-        ANALYSIS_COMPOSED_GROUP_KEY_RE.fullmatch(name)
+    # Scatter strings and composed labels have separate, path-bound openings.
+    return analysis_numeric_path_allowed((*path, name), (("zone_tags", "unit"), ("date_list", "*", "[]", "[]", "stat_time"))) or (
+        path == _SCATTER_GROUP_ROW_PATH and bool(ANALYSIS_COMPOSED_GROUP_KEY_RE.fullmatch(name))
     )
 
 

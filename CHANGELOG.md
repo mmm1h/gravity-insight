@@ -44,6 +44,15 @@ Target release: `0.3.12`
   for the same reason. No other operation is affected: the fingerprint payload emits
   `dynamic_key_patterns` only when non-empty, and `analysis.funnel.query` is the only
   operation that declares it.
+- **Hard break:** `analysis.order_detail.list` moved to `contract_version: 3` and its
+  `pagination.completeness` is now `complete` with `pagination_evidence: production`,
+  upgraded from `unknown`/`template`. This is the outcome callers wanted — the
+  operation can now satisfy a claim-bearing dependency that requires a full
+  collection — but the `contract_fingerprint` changes with it, so Validation Results
+  recorded against version 2 are quarantined and must be re-recorded.
+- **Hard break:** `analysis.scatter.query` moved to `contract_version: 2`, registering
+  thirteen nested numeric paths under `aggregate_by_date`, `date_list` and `y` that
+  production responses were already returning. Same fingerprint consequence.
 - **Soft break:** the Runtime wheel again carries Skill content, and the root CLI
   provisions it automatically. This **partially reverses the 0.3.5 Hard break** that
   removed wheel-bundled Skills, so it is called out rather than shipped as an

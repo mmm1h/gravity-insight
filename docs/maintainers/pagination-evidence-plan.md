@@ -47,7 +47,7 @@
 同时给出可证伪的全集信号才另行修正合同；短页、空页、HTTP 200 和 `returned_items=reported_total` 本身
 都不能证明完整。没有终止信号时将该 operation 转入永久 `unknown`。
 
-## P0：App 内核心批次（最多 58；其中 6 条已于 2026-09-04 结案，见「执行结果」）
+## P0：App 内核心批次（原 58 条；其中 7 条已结案，见「执行结果」）
 
 需要一个获批的只读 evidence App，并预先确认表中 parent source 能返回合法父项。含敏感输入的
 `client_id`、`device_id`、订单 trace 等只在内存中绑定，证据仅记“由哪个 parent 字段取得”。
@@ -62,7 +62,6 @@
 | `analysis.event_property.list` | `page_info` / `template` | app_id | app.list |
 | `analysis.funnel.query` | `none` / `template` | app_id, date_list, query_id, query_item_list, stat_time_window | analysis.event.list |
 | `analysis.monetization_detail.list` | `page_info` / `wire` | app_id, date, fields | app.list |
-| `analysis.order_detail.list` | `page_info` / `template` | app_id | app.list |
 | `analysis.order_split_detail.list` | `none` / `template` | app_id, client_id, pay_event_time, split_trace_ids, trace_id | analysis.order_detail.list |
 | `analysis.property.query` | `none` / `template` | app_id, query_id, query_item | analysis.user_property.list |
 | `analysis.report.hidden_property.list` | `none` / `template` | app_id, report_id | analysis.report_config.list, app.list |
@@ -195,14 +194,12 @@ wire/production 合同出现总数或终止信号时才重开；重复采短页�
 `candidate.promotion_object.click_url_edit_log.list`, `candidate.promotion_object.click_url.list`,
 `candidate.promotion_object.extra_info.list`。它们只有在先取得独立的稳定性/权限裁决后才能重新排期。
 
-## 执行结果（2026-09-04）
+## 执行结果
 
-复核 `tmp/pagination-evidence/operations/` 的只读生产观测后，仅以下 6 条满足统一 `complete`
-判据。每条记录的 `conclusion` 均为 `complete`，`criterion` 均为
-`last_page_echo_matches_total_page_sdk_has_more_false_and_sum_matches_total_number`；终页回显
-`page=total_page`、SDK `has_more=false`，且完整页序列的 `returned_items` 合计与
-`total_number` 相等。合同据此将 `completeness` 升级为 `complete`，并把证据来源声明为
-`production`。
+以下条目已有满足统一判据的生产证据：末页回显 `page=total_page`、SDK
+`has_more=false`，且完整页序列的返回条数合计等于 `total_number`。
+前六项保留既有认证，本次不重复请求；订单细查新增证据见
+[重采收据](../../evidence/forensics/20260907_operation_recertification.json)。
 
 | operation | 终页 `page/total_page` | 终页 `has_more` | `sum(returned_items)/total_number` |
 | --- | ---: | --- | ---: |
@@ -212,6 +209,8 @@ wire/production 合同出现总数或终止信号时才重开；重复采短页�
 | `attribution.postback_map_collect.list` | 1/1 | false | 1/1 |
 | `material.tag_category.list` | 3/3 | false | 3/3 |
 | `report.multidim.metric_tag_category.list` | 8/8 | false | 8/8 |
+| `analysis.order_detail.list` | 1/1 | false | 1/1 |
 
-本轮只消费既有证据，新增生产请求为 0；其余 `prefix`、`unknown`、`permanent_unknown` 与
-`failure` 裁决均未改动。
+订单证据只覆盖最小单页请求，不证明任意大 cohort 的多页稳定性。其余待采项保持 unknown：
+空结果 `page=1/total_page=0` 不满足末页回显，超安全页数、父项不可用、
+缺分页信号或 response drift 都不得提升。逐 operation 原因和生产请求账本以收据为准。

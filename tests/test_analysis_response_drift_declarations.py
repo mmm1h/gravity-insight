@@ -171,14 +171,67 @@ class AnalysisResponseDriftDeclarationTests(unittest.TestCase):
     def test_other_dynamic_nested_fields_without_contract_vocabulary_remain_audited(self) -> None:
         _projected, _warnings, drift, audit = _project(
             _operation("analysis.scatter.query"),
-            {"data": {"aggregate_date": [], "zone_tags": {"unit": "day"}}},
+            {"data": {"aggregate_date": [], "zone_tags": {"unregistered_unit": "day"}}},
             {},
         )
         self.assertIs(ProjectionDrift.ADDITIVE, drift)
         self.assertEqual(
-            ["/data/zone_tags/unit"],
+            ["/data/zone_tags/unregistered_unit"],
             [field["path"] for field in audit["fields"]],
         )
+
+    def test_scatter_recertified_paths_preserve_observed_aggregate_fields(self) -> None:
+        data = {
+            "aggregate_date": [],
+            "zone_tags": {"unit": "day"},
+            "aggregate_by_date": {"2026-01-02": [{"proc_zone": 1, "stat_total": 2}]},
+            "date_list": {"2026-01-02": [[{
+                "proc_zone": 1, "stat_time": "2026-01-02", "stat_total": 2,
+                "zone_stat_sum": 3, "zone_stat_users": 4,
+            }]]},
+            "y": {"2026-01-02": [{
+                "is_total": 1, "total_another_event_count": 2,
+                "total_another_event_sum": 3, "total_another_event_uniques": 4,
+                "total_another_event_value": 5, "total_another_users": 6,
+                "total_user_num": 7,
+            }]},
+        }
+        projected, warnings, drift, audit = _project(
+            _operation("analysis.scatter.query"), {"data": data}, {}
+        )
+        self.assertEqual(data, projected)
+        self.assertEqual(((), ProjectionDrift.NONE, None), (warnings, drift, audit))
+
+    def test_scatter_numeric_openings_do_not_apply_at_unobserved_paths(self) -> None:
+        projected, _warnings, drift, audit = _project(
+            _operation("analysis.scatter.query"),
+            {"data": {"aggregate_date": [], "zone_tags": {"stat_total": 2}}}, {},
+        )
+        self.assertIs(ProjectionDrift.ADDITIVE, drift)
+        self.assertEqual({}, projected["zone_tags"])
+        self.assertEqual("/data/zone_tags/stat_total", audit["fields"][0]["path"])
+
+    def test_optional_dictionary_key_warning_does_not_prove_contract_drift(self) -> None:
+        projected, warnings, drift, audit = _project(
+            _operation("analysis.default_val.list"),
+            {"data": {"cocoscreator": ["synthetic-version"]}}, {},
+        )
+        self.assertEqual({"cocoscreator": ["synthetic-version"]}, projected)
+        self.assertEqual((ProjectionDrift.NONE, None), (drift, audit))
+        self.assertEqual(("optional response data key is absent: api",), warnings)
+
+    def test_scatter_string_openings_reject_unobserved_paths(self) -> None:
+        for data, expected in (
+            ({"zone_tags": {"stat_time": "day"}}, "/data/zone_tags/stat_time"),
+            ({"y": {"2026-01-02": [{"unit": "day"}]}}, "/data/y/2026-01-02/*/unit"),
+        ):
+            with self.subTest(path=expected):
+                _projected, _warnings, drift, audit = _project(
+                    _operation("analysis.scatter.query"),
+                    {"data": {"aggregate_date": [], **data}}, {},
+                )
+                self.assertIs(ProjectionDrift.ADDITIVE, drift)
+                self.assertEqual(expected, audit["fields"][0]["path"])
 
     def test_declared_container_still_rejects_non_json_values_as_contract_changed(self) -> None:
         projected, _warnings, drift, _audit = _project(
