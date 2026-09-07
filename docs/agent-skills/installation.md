@@ -14,7 +14,8 @@
   "python_requires": ">=3.11",
   "channel": {
     "kind": "pypi_latest",
-    "index": "https://pypi.org/simple"
+    "index": "https://pypi.org/simple",
+    "skill_updates": "sealed_seed_in_same_runtime_release"
   },
   "install": {
     "command": "python -m pip install --upgrade gravity-insight",
@@ -35,6 +36,15 @@
     "command": "python -c \"import importlib.metadata as m; print(m.version('gravity-insight'))\"",
     "why": "The resolved version is an observation to report, not a value to pin on the next install."
   },
+  "skill_seed": {
+    "automatic": true,
+    "environment": "GRAVITY_INSIGHT_AUTO_SKILLS",
+    "off_values": ["0", "false", "no", "off"],
+    "independent_from_runtime_auto_upgrade": true,
+    "network_called": false,
+    "project_lock_mutation": false,
+    "repair_command": "gravity skills repair"
+  },
   "verify": [
     {
       "command": "gravity --help",
@@ -47,10 +57,30 @@
       "expected_reason_code": "INSTALL_CONSISTENT",
       "network_called": false,
       "working_directory": "outside_any_gravity_insight_source_checkout"
+    },
+    {
+      "command": "gravity agent-catalog categories",
+      "expected_exit": 0,
+      "effect": "normal dispatch performs offline seed bootstrap before catalog output"
+    },
+    {
+      "command": "gravity skills status",
+      "expected_exit": 0,
+      "expected_status": "ready",
+      "expected_skill_count": "positive",
+      "network_called": false
     }
   ],
+  "host_skill_plan": {
+    "command": "gravity skills host-install-plan --host <codex|claude> --host-root <exact-host-skill-directory>",
+    "execution_owner": "selected_host_native_skill_installer",
+    "runtime_writes_host_directory": false,
+    "local_override_result": "local_override_conflict",
+    "activation": "next_host_start",
+    "reload_note": "No claim is made that a running Codex or Claude session reloads installed Skills."
+  },
   "failure": {
-    "inspect": ["pip_stderr", "gravity_doctor.reason_code", "gravity_doctor.reinstall_commands"],
+    "inspect": ["pip_stderr", "gravity_doctor.reason_code", "gravity_doctor.reinstall_commands", "gravity_skills_status.reason_codes"],
     "stop_on_nonzero_exit": true,
     "source_checkout_note": "INSTALL_METADATA_NOT_EDITABLE inside a source checkout is an intentional A-versus-B guard; leave the checkout to verify a PyPI install, or install that checkout editable for development.",
     "credentials_note": "Installation and gravity doctor are offline and must not be given Gravity credentials."

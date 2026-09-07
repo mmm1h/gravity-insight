@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 import tempfile
 import unittest
@@ -27,6 +28,7 @@ SCHEMA_PATH = (
 WHEEL_CONTRACT_PATH = (
     "gravity_insight/contracts/generated/release-compatibility.v1.json"
 )
+WHEEL_SEED_PATH = "gravity_insight/skill_seed/skill-seed-v1.zip"
 _PLACEHOLDER = "- None.\n"
 _SYNTHETIC = "- **Hard break:** synthetic stale-contract proof.\n"
 
@@ -151,6 +153,7 @@ class ReleaseCompatibilityTests(unittest.TestCase):
                 packaged = json.loads(bundle.read(WHEEL_CONTRACT_PATH))
                 names = bundle.namelist()
                 root_init = bundle.read("gravity_insight/__init__.py")
+                seed = bundle.read(WHEEL_SEED_PATH)
 
         self.assertEqual(load_release_compatibility(), packaged)
         self.assertFalse(
@@ -160,6 +163,26 @@ class ReleaseCompatibilityTests(unittest.TestCase):
                 for name in names
             )
         )
+        self.assertEqual(
+            [WHEEL_SEED_PATH],
+            [name for name in names if name.startswith("gravity_insight/skill_seed/")],
+        )
+        with zipfile.ZipFile(io.BytesIO(seed)) as bundled_seed:
+            manifest = json.loads(bundled_seed.read("build-manifest.json"))
+            self.assertEqual(
+                {"build-manifest.json", *(
+                    item["path"] for item in manifest["release_assets"]
+                )},
+                set(bundled_seed.namelist()),
+            )
+            self.assertEqual(93, len(bundled_seed.namelist()))
+            self.assertNotIn("skills/sources/registry.json", bundled_seed.namelist())
+            self.assertFalse(
+                any(
+                    name.startswith("skills/library/")
+                    for name in bundled_seed.namelist()
+                )
+            )
         self.assertNotIn(b"LocalSkillResolver", root_init)
 
 

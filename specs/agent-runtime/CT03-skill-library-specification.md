@@ -32,7 +32,16 @@ The earlier `skill-library-v1`, `skill-library-v2`, and `skill-library-v3`
 publications remain immutable. The current builder targets v4; it does not
 overwrite or delete earlier assets. V4 retains the Runtime-authored AP-cost
 reference method on the canonical Hub channel and adds the explicit GitHub Release
-CDN redirect boundary; it does not restore a wheel-owned business Skill registry.
+CDN redirect boundary.
+
+The same builder also seals `build-manifest.json` plus its exact manifest-listed
+flat release assets into deterministic `skill-seed-v1.zip`. Distribution builds stage that
+generated ZIP directly into `gravity_insight/skill_seed/` in the build tree (and
+into the generated sdist tree when a wheel is built from sdist). The ZIP remains
+ignored and untracked in the checkout; neither `skills/library/*.json` nor
+`skills/sources/registry.json` enters the wheel or sdist. The seed is a
+manifest-bound mirror from the same Runtime release, not a wheel-owned business
+Skill registry or resolver authority.
 
 ## Acceptance
 
@@ -43,4 +52,5 @@ D:/git-pjt/_wt_vendor/.venv/Scripts/python.exe scripts/generate_skill_library.py
 
 The check validates registry bindings, namespaces, `zh-CN` defaults, schema
 contracts, Runtime and Agent archive contents, two-pass byte equality, and the
-absence of tracked ZIP or legacy generated mirrors.
+absence of tracked ZIP or legacy generated mirrors. It also reports the exact
+seed byte size and SHA-256 from the two-pass equality check.

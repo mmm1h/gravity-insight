@@ -355,6 +355,7 @@ def _gate_environment(*, allow_network: bool = False) -> dict[str, str]:
     environment["PYTHONUTF8"] = "1"
     environment["PYTHONIOENCODING"] = "utf-8"
     environment["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"
+    environment["GRAVITY_INSIGHT_AUTO_SKILLS"] = "0"
     if allow_network:
         environment.pop("PIP_NO_BUILD_ISOLATION", None)
     else:

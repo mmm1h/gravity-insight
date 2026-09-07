@@ -19,7 +19,11 @@ from .skill_hub_contract import (
 )
 from .skill_hub_locks import build_skills_lock, compile_skills_lock
 from .skill_hub_paths import ensure_unlinked_directory
-from .skill_hub_source import HttpGetter, open_locked_hub_source, sync_hub_source
+from .skill_hub_source import (
+    HttpGetter,
+    open_locked_hub_source,
+    sync_hub_source,
+)
 from .skill_hub_state import (
     atomic_write_json,
     build_hub_snapshot,
@@ -319,10 +323,54 @@ class SkillHubClient:
             "network_called": False,
         }
 
+    def bootstrap_bundled(
+        self,
+        content: bytes | None = None,
+        *,
+        at: str | None = None,
+        force: bool = False,
+        project_root: str | Path | None = None,
+    ) -> dict[str, Any]:
+        from .skill_maintenance import bootstrap_bundled
+
+        return bootstrap_bundled(
+            self,
+            content,
+            at=at,
+            force=force,
+            project_root=project_root,
+        )
+
+    def status(self) -> dict[str, Any]:
+        from .skill_maintenance import maintenance_status
+
+        return maintenance_status(self)
+
+    def host_install_plan(
+        self,
+        host: str,
+        host_root: str | Path,
+        content: bytes | None = None,
+    ) -> dict[str, Any]:
+        from .skill_host_install import build_host_install_plan
+
+        return build_host_install_plan(self, host, host_root, content)
+
     def _indexes(self) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+        from .skill_maintenance import maintenance_snapshot
+
+        snapshots = load_hub_snapshots(self.state_root)
+        bundled = maintenance_snapshot(self)
+        if bundled is not None and not any(item == bundled for item in snapshots):
+            snapshots.append(bundled)
         return [
-            (snapshot, compile_hub_index(snapshot["index"], runtime_version=self.runtime_version))
-            for snapshot in load_hub_snapshots(self.state_root)
+            (
+                snapshot,
+                compile_hub_index(
+                    snapshot["index"], runtime_version=self.runtime_version
+                ),
+            )
+            for snapshot in snapshots
         ]
 
     def _index(
@@ -415,4 +463,6 @@ def _now() -> str:
     )
 
 
-__all__ = ["SkillHubClient"]
+__all__ = [
+    "SkillHubClient",
+]

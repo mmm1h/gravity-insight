@@ -373,6 +373,7 @@ def check_installed_wheel_consumer(
         environment.pop("PYTHONPATH", None)
         environment["PYTHONNOUSERSITE"] = "1"
         environment["GRAVITY_INSIGHT_AUTO_UPGRADE"] = "0"
+        environment["GRAVITY_INSIGHT_AUTO_SKILLS"] = "0"
         environment["WORK_DASHBOARD_GRAVITY_INSIGHT_ROOT"] = str(sdk_root)
         probe = _run(
             [

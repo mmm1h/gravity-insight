@@ -46,6 +46,7 @@ AGENT_INDEX_SCHEMA_PATH = (
     / "agent-skill-index-v1.schema.json"
 )
 DEFAULT_OUTPUT = ROOT / "build" / "skill-hub"
+SEED_FILENAME = "skill-seed-v1.zip"
 PUBLISH_BASE = (
     "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v4"
 )
@@ -151,6 +152,30 @@ def render_outputs() -> dict[str, bytes]:
         _build_manifest(source_digest, outputs)
     )
     return dict(sorted(outputs.items()))
+
+
+def render_seed(outputs: dict[str, bytes] | None = None) -> bytes:
+    """Seal the manifest and its exact flat release assets into one wheel seed."""
+
+    selected_outputs = render_outputs() if outputs is None else outputs
+    try:
+        manifest = json.loads(selected_outputs["build-manifest.json"])
+        release_paths = [str(item["path"]) for item in manifest["release_assets"]]
+    except (KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise SkillPackageError("Skill seed build manifest is invalid") from exc
+    if (
+        len(release_paths) != len(set(release_paths))
+        or release_paths != sorted(release_paths)
+        or set(release_paths) != {
+            path for path in selected_outputs if _is_release_asset(path)
+        }
+    ):
+        raise SkillPackageError("Skill seed release asset set drifted")
+    files = {
+        "build-manifest.json": selected_outputs["build-manifest.json"],
+        **{path: selected_outputs[path] for path in release_paths},
+    }
+    return _zip(files)
 
 
 def _artifact(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -489,20 +514,30 @@ def main(argv: list[str] | None = None) -> int:
     options = parser.parse_args(argv)
     first = render_outputs()
     second = render_outputs()
-    if first != second:
+    first_seed = render_seed(first)
+    second_seed = render_seed(second)
+    if first != second or first_seed != second_seed:
         raise SystemExit("Skill library build is not deterministic")
     if options.check:
         _assert_no_tracked_mirrors()
+        with zipfile.ZipFile(io.BytesIO(first_seed)) as seed_archive:
+            seed_files = len(seed_archive.infolist())
         print(
             f"Skill library source is valid and deterministic: skills={len(list(SOURCE_ROOT.glob('*.json')))}, "
-            f"outputs={len(first)}, source_sha256={_source_digest()}"
+            f"outputs={len(first)}, seed_files={seed_files}, seed_bytes={len(first_seed)}, "
+            f"seed_sha256={hashlib.sha256(first_seed).hexdigest()}, source_sha256={_source_digest()}"
         )
         return 0
     output = options.output_dir
     if not output.is_absolute():
         output = ROOT / output
     _write_outputs(output, first)
-    print(f"rendered {len(first)} Skill Hub files under {output}")
+    (output / SEED_FILENAME).write_bytes(first_seed)
+    print(
+        f"rendered {len(first)} Skill Hub files and {SEED_FILENAME} "
+        f"({len(first_seed)} bytes, sha256={hashlib.sha256(first_seed).hexdigest()}) "
+        f"under {output}"
+    )
     return 0
 
 

@@ -53,6 +53,17 @@ def _package_files(source: Path) -> Iterable[tuple[str, bytes]]:
             yield f"gravity_insight/{relative}", _wheel_bytes(path)
 
 
+def _generated_seed_entry(repository: Path) -> tuple[str, bytes]:
+    if repository != ROOT:
+        raise ValueError("offline wheel Skill seed must be built from this checkout")
+    try:
+        from scripts.generate_skill_library import SEED_FILENAME, render_seed
+    except ModuleNotFoundError:
+        from generate_skill_library import SEED_FILENAME, render_seed
+
+    return f"gravity_insight/skill_seed/{SEED_FILENAME}", render_seed()
+
+
 def _git_head(repository: Path) -> str | None:
     completed = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD^{commit}"],
@@ -75,6 +86,7 @@ def _offline_wheel_input_sha256(repository: Path) -> str:
         ("scripts/build_offline_wheel.py", Path(__file__).resolve().read_bytes()),
         ("pyproject.toml", (repository / "pyproject.toml").read_bytes()),
         *_package_files(repository / "src/gravity_insight"),
+        _generated_seed_entry(repository),
     ]
     for name, value in inputs:
         encoded_name = name.encode("utf-8")
@@ -192,6 +204,7 @@ def build_offline_wheel(
     wheel = wheelhouse / f"{distribution}-{version}-py3-none-any.whl"
     dist_info = f"{distribution}-{version}.dist-info"
     entries = list(_package_files(repository / "src/gravity_insight"))
+    entries.append(_generated_seed_entry(repository))
     entries.extend(
         [
             (f"{dist_info}/METADATA", _metadata(project)),

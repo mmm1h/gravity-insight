@@ -469,6 +469,7 @@ gravity journey describe <journey-id>
 gravity journey can-run <journey-id> --input request.json
 gravity skills list --state-root <state-root>
 gravity skills show <skill-uri> --state-root <state-root>
+gravity skills status --state-root <state-root>
 gravity analysis playbook schema
 gravity plan schema
 gravity plan run --input plan.json --dry-run
@@ -482,9 +483,11 @@ Journey readiness、Skill lock/trust、playbook checkpoint 和 Plan DAG 是不�
 当前 `skill-library-v4` Release 同时发布两种相互隔离的静态产物：`index.json` 和
 `runtime-skill-*.zip` 属于 Runtime Hub；`agent-index.json` 和 `agent-skill-*.zip` 属于 Codex、
 Claude Code 等宿主的 Agent Skill 投影。GitHub Release 资产使用全局唯一的扁平名称，两个 index
-不引用 Release 无法寻址的目录路径。普通 Runtime 包不含 `SKILL.md`，Agent Skill 也不携带执行代码、
-凭据或依赖实现。Runtime wheel 不携带可发现的业务 Skill，也不写宿主 Skill 目录；所有业务方法统一
-经 Hub 精确 lock/CAS 解析。Source 只能跟随一次到 `source.json` 明确列出的 HTTPS 主机，第二次
+不引用 Release 无法寻址的目录路径。普通 Runtime 包不含可直接发现的 `SKILL.md`，Agent Skill
+也不携带执行代码、凭据或依赖实现。Runtime wheel 携带同次发布生成的唯一 manifest-bound
+`skill_seed/skill-seed-v1.zip`，但不携带 `skills/library`、外部 Source Registry 或内置 resolver；seed
+只有经过 source/index 编译、独立 managed lock、archive 校验、CAS 写入和最终 verify 后才进入 Hub
+snapshot，`skills list` 不直接读取 seed。Source 只能跟随一次到 `source.json` 明确列出的 HTTPS 主机，第二次
 重定向、未声明主机、非 HTTPS、userinfo、fragment 或非默认端口全部失败关闭；最终 index/包仍按
 字节预算和摘要核验。`skill-library-v1`、`skill-library-v2` 与 `skill-library-v3` 保留原资产，不被
 v4 覆盖；v3 仅用于不可变历史取证，跨设备标准 CLI 获取使用 v4 与 Runtime 0.3.6+。
@@ -499,11 +502,38 @@ gravity skills search <query> --state-root <state-root>
 gravity skills lock --skill <exact-skill-uri> --output gravity.skills.lock.json --state-root <state-root>
 gravity skills fetch --source source.json --lock gravity.skills.lock.json --state-root <state-root>
 gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
+gravity skills status [--state-root <state-root>]
+gravity skills bootstrap [--state-root <state-root>]
+gravity skills repair [--state-root <state-root>]
+gravity skills host-install-plan --host codex|claude --host-root <host-skill-directory> [--state-root <state-root>]
 ```
 
-宿主先用同一 Release 的 `agent-skill-index-v1.schema.json` 验证 `agent-index.json`，按 exact
-`skill_uri` 选择 archive，核验 `sha256` 和 `size_bytes`，再把 ZIP 中唯一同名根目录交给宿主自己的
-Skill 安装机制。Runtime 不写宿主 Skill 目录。Agent Skill 可安装不代表可执行；入口必须读取
+普通 `gravity` 业务命令在 dispatch 前默认调用 `SkillHubClient.bootstrap_bundled()`；Runtime 自动升级
+并 supervised re-exec 后，新进程也走同一入口，因此 Skill 更新只搭 Runtime release train，不增加
+远程 channel。`GRAVITY_INSIGHT_AUTO_SKILLS=0|false|no|off` 可独立关闭；它不复用
+`GRAVITY_INSIGHT_AUTO_UPGRADE`，固定 Runtime 与冻结 Skill 是两个不同选择。`doctor`、任意 `--help`、
+任意 `--dry-run`、显式 Skill 维护/变更命令以及仓库测试/评测入口不会自动装配；Python import
+没有文件或网络副作用。
+
+bootstrap 只写 state root 下的 CAS、按 seed digest 命名的 maintenance generation 和最后提交的
+maintenance receipt。generation 绑定 Hub snapshot 与独立 managed lock，receipt 是唯一 active pointer；
+全部 source/index 编译、lock 重建比对、archive 校验、CAS 写入和最终 verify 完成前，候选 generation
+不进入发现面。相同 seed digest 直接短路，不重新打开 seed、解包 archive 或验证全部 CAS。失败保留
+last-known-good；没有旧版本则为 `unavailable`，维护失败不改变无关业务命令的退出码。bootstrap
+可以只读比较项目 `gravity.skills.lock.json` 并设置 `update_available`，但永不创建或改写它；升级项目
+lock 仍须显式 `skills update` 和项目评审。`skills repair` 强制重验 seed/CAS。
+
+`gravity skills status` 返回 `gravity.skill-maintenance-receipt.v1`。`not_bootstrapped` 表示尚未检查，
+`empty` 表示检查成功且合法地得到零个 Skill，两者均由显式 `status` 与 `bootstrap_checked` 表达；
+`ready`、`degraded`、`unavailable` 分别表示当前可用、保留 last-known-good、无可用版本。输出同时
+携带 active source descriptor/index/seed digest、managed lock digest、Skill 数、最后尝试/成功时间、
+`network_called`、reason codes、`update_available` 与 `host_restart_required`。
+
+`skills host-install-plan` 重新验证 active seed 与 Agent index/archive，把只读源目录放入本地 CAS，
+并只生成交给 Codex 或 Claude 原生 Skill installer 的 action。Runtime 不写宿主 Skill 目录；目标内容
+完全相同则为 `unchanged`，任何用户修改、额外文件或链接都返回 `local_override_conflict` 且不覆盖。
+plan 的 activation 固定为 `next_host_start`；仓库不声称 Codex 和 Claude 当前会话支持运行中 reload。
+Agent Skill 可安装不代表可执行；入口必须读取
 `SCHEMA.json` 的声明和 Runtime 当前 readiness，在 `blocked`、`unvalidated` 或依赖未解析时停止。
 不带 `--source` 的 `gravity models ...` 读取 Runtime Core 内置且受信的 Model Artifact；
 `--source` 只在当前进程隔离读取显式本地 JSON，既不持久注册也不继承 Runtime trust，仍是诊断面而

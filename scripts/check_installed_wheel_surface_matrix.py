@@ -23,6 +23,7 @@ _PROBE = r'''
 import copy
 import json
 import pathlib
+import socket
 import sys
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -37,10 +38,44 @@ from gravity_insight.journey_cli import dispatch as journey_dispatch
 from gravity_insight.journey_contract import journey_artifact
 from gravity_insight.mcp.server import MCPServer, PROTOCOL_VERSION
 from gravity_insight.plan import PlanAdapter, PlanAdapters, execute_plan
+from gravity_insight.skill_hub_client import SkillHubClient
+from gravity_insight.skill_hub_contract import SkillHubContractError
 
 package_path = pathlib.Path(gravity_insight.__file__).resolve()
 if not package_path.is_relative_to(site):
     raise AssertionError(f"gravity_insight escaped installed wheel: {package_path}")
+
+skill_state = pathlib.Path.cwd() / "installed-wheel-skill-state"
+skill_cas = pathlib.Path.cwd() / "installed-wheel-skill-cas"
+if skill_state.exists() or skill_cas.exists():
+    raise AssertionError("import created Skill maintenance state")
+skill_client = SkillHubClient(skill_state, cas_root=skill_cas)
+with patch.object(socket, "socket", side_effect=AssertionError("network attempted")):
+    first_skill_bootstrap = skill_client.bootstrap_bundled()
+with (
+    patch(
+        "gravity_insight.skill_maintenance.open_bundled_hub_source",
+        side_effect=AssertionError("same seed was reopened"),
+    ),
+    patch.object(
+        skill_client.cas,
+        "fetch_skill",
+        side_effect=AssertionError("same seed was unpacked"),
+    ),
+):
+    second_skill_bootstrap = skill_client.bootstrap_bundled()
+failed_skill_client = SkillHubClient(
+    pathlib.Path.cwd() / "failed-skill-state",
+    cas_root=pathlib.Path.cwd() / "failed-skill-cas",
+)
+try:
+    failed_skill_client.bootstrap_bundled(b"not-a-seed")
+except SkillHubContractError as error:
+    failed_reason = error.reason_code
+else:
+    raise AssertionError("invalid installed-wheel seed did not fail closed")
+if failed_skill_client.status()["status"] != "unavailable":
+    raise AssertionError("invalid installed-wheel seed became active")
 
 
 class CommonJourneyService:
@@ -249,6 +284,15 @@ print(json.dumps({
     "case_count": len(results),
     "owner_call_count": len(service.calls),
     "network_calls": 0,
+    "skill_bootstrap": {
+        "first_status": first_skill_bootstrap["status"],
+        "first_skill_count": first_skill_bootstrap["skill_count"],
+        "first_artifacts_written": first_skill_bootstrap["artifacts_written"],
+        "second_changed": second_skill_bootstrap["changed"],
+        "second_shortcut": second_skill_bootstrap["shortcut"],
+        "failed_reason": failed_reason,
+        "network_called": False,
+    },
     "cases": results,
 }, sort_keys=True))
 '''
@@ -277,6 +321,7 @@ def _run(command: list[str], *, cwd: Path, timeout: int = 300) -> str:
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     environment["PYTHONNOUSERSITE"] = "1"
+    environment["GRAVITY_INSIGHT_AUTO_SKILLS"] = "0"
     completed = subprocess.run(
         command,
         cwd=cwd,

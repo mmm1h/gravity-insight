@@ -62,6 +62,29 @@ def add_skill_hub_actions(actions: Any) -> None:
     audit = actions.add_parser("audit", help="Audit synced Hub snapshots offline.")
     _local(audit)
 
+    status = actions.add_parser(
+        "status", help="Read explicit bundled Skill maintenance state."
+    )
+    _local(status, required=False)
+
+    bootstrap = actions.add_parser(
+        "bootstrap", help="Retry bundled Skill bootstrap offline."
+    )
+    _local(bootstrap, required=False)
+
+    repair = actions.add_parser(
+        "repair", help="Force bundled Skill validation and CAS repair offline."
+    )
+    _local(repair, required=False)
+
+    host_plan = actions.add_parser(
+        "host-install-plan",
+        help="Prepare verified Codex or Claude native Skill install actions.",
+    )
+    host_plan.add_argument("--host", choices=("codex", "claude"), required=True)
+    host_plan.add_argument("--host-root", required=True)
+    _local(host_plan, required=False)
+
     for parser in (
         listed,
         show,
@@ -74,12 +97,23 @@ def add_skill_hub_actions(actions: Any) -> None:
         update,
         verify,
         audit,
+        status,
+        bootstrap,
+        repair,
+        host_plan,
     ):
         parser.set_defaults(network_required=False, _gravity_handler=dispatch)
 
 
 def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
-    client = SkillHubClient(args.state_root, cas_root=args.cas_root)
+    workspace = None
+    state_root = args.state_root
+    if state_root is None:
+        from .workspace import load_workspace
+
+        workspace = load_workspace()
+        state_root = workspace.state_root
+    client = SkillHubClient(state_root, cas_root=args.cas_root)
     command = args.skills_command
     if command == "list":
         return client.list(maximum=args.maximum)
@@ -109,11 +143,31 @@ def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
         )
     if command == "verify":
         return client.verify(_json(args.lock))
+    if command in {"status", "bootstrap", "repair", "host-install-plan"}:
+        return _maintenance_dispatch(command, client, args, workspace)
     return client.audit()
 
 
-def _local(parser: Any) -> None:
-    parser.add_argument("--state-root", required=True)
+def _maintenance_dispatch(
+    command: str, client: SkillHubClient, args: Any, workspace: Any
+) -> dict[str, Any]:
+    if command == "status":
+        return client.status()
+    if command == "host-install-plan":
+        return client.host_install_plan(args.host, args.host_root)
+    project_root = (
+        workspace.root
+        if workspace is not None and workspace.configured
+        else None
+    )
+    return client.bootstrap_bundled(
+        force=command == "repair",
+        project_root=project_root,
+    )
+
+
+def _local(parser: Any, *, required: bool = True) -> None:
+    parser.add_argument("--state-root", required=required)
     parser.add_argument("--cas-root")
 
 

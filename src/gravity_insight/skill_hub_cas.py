@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
+import stat
 import threading
 import uuid
 from pathlib import Path
@@ -16,8 +18,9 @@ from .skill_hub_archive import (
     validate_wheel_file,
 )
 from .skill_hub_contract import SkillHubContractError
-from .skill_hub_paths import assert_unlinked_path, ensure_unlinked_directory
+from .skill_hub_paths import assert_unlinked_path, ensure_unlinked_directory, is_reparse
 from .skill_hub_source import HubSourceSession
+from .skill_package import validate_package_entries
 from .support.process_lock import FileLockTimeout, advisory_file_lock
 
 
@@ -122,11 +125,62 @@ class SkillHubCAS:
             expected_size=size_bytes,
         )
 
+    def stage_agent_skill(
+        self, index_entry: Mapping[str, Any], files: Mapping[str, bytes]
+    ) -> Path:
+        """Stage one verified Agent Skill without writing a Host directory."""
+
+        digest = str(index_entry["archive"]["sha256"])
+        target = (
+            self.root
+            / "agent-skills"
+            / "sha256"
+            / _digest(digest)
+            / str(index_entry["directory"])
+        )
+        self._assert_cas_path(target)
+        with self._single_flight("agent-skill", digest):
+            self._assert_cas_path(target)
+            if target.exists() or target.is_symlink():
+                _validate_agent_skill_directory(target, index_entry)
+                return target
+            expected = {item["path"]: item for item in index_entry["files"]}
+            if set(files) != set(expected):
+                raise SkillHubContractError(
+                    "HUB_AGENT_SKILL_INVALID", "Agent Skill staged file set changed"
+                )
+            for name, value in files.items():
+                row = expected[name]
+                if (
+                    row["size_bytes"] != len(value)
+                    or row["sha256"] != hashlib.sha256(value).hexdigest()
+                ):
+                    raise SkillHubContractError(
+                        "HUB_AGENT_SKILL_INVALID", "Agent Skill staged content changed"
+                    )
+            temporary = target.parent / f".{target.name}.tmp-{uuid.uuid4().hex}"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                temporary.mkdir()
+                _write_files(temporary, files)
+                self._assert_cas_path(target.parent)
+                os.replace(temporary, target)
+            except BaseException:
+                shutil.rmtree(temporary, ignore_errors=True)
+                raise
+            _validate_agent_skill_directory(target, index_entry)
+            return target
+
     def skill_path(self, digest: str) -> Path:
         return self.root / "skills" / "sha256" / _digest(digest)
 
     def trusted_wheel_path(self, digest: str) -> Path:
         return self.root / "trusted-packs" / "sha256" / _digest(digest) / "artifact.whl"
+
+    def maintenance_writer(self) -> Any:
+        """Reuse the CAS process/thread lock as the single maintenance writer."""
+
+        return self._single_flight("maintenance", "0" * 64)
 
     def _commit_skill(self, target: Path, files: Mapping[str, bytes]) -> None:
         self._assert_cas_path(target)
@@ -222,6 +276,52 @@ def _write_files(root: Path, files: Mapping[str, bytes]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
         path.chmod(0o644)
+
+
+def _validate_agent_skill_directory(
+    root: Path, index_entry: Mapping[str, Any]
+) -> dict[str, bytes]:
+    try:
+        root_metadata = root.lstat()
+    except OSError as exc:
+        raise SkillHubContractError(
+            "HUB_AGENT_SKILL_INVALID", "Agent Skill stage is unavailable"
+        ) from exc
+    if root.is_symlink() or not stat.S_ISDIR(root_metadata.st_mode):
+        raise SkillHubContractError(
+            "HUB_AGENT_SKILL_INVALID", "Agent Skill stage is invalid"
+        )
+    expected = {item["path"]: item for item in index_entry["files"]}
+    files: dict[str, bytes] = {}
+    for path in sorted(root.rglob("*")):
+        metadata = path.lstat()
+        if path.is_symlink() or is_reparse(metadata):
+            raise SkillHubContractError(
+                "HUB_AGENT_SKILL_INVALID", "Agent Skill stage contains a link"
+            )
+        if path.is_dir():
+            continue
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+            raise SkillHubContractError(
+                "HUB_AGENT_SKILL_INVALID", "Agent Skill stage member is invalid"
+            )
+        relative = path.relative_to(root).as_posix()
+        value = path.read_bytes()
+        row = expected.get(relative)
+        if row is None or (
+            row["size_bytes"] != len(value)
+            or row["sha256"] != hashlib.sha256(value).hexdigest()
+        ):
+            raise SkillHubContractError(
+                "HUB_AGENT_SKILL_INVALID", "Agent Skill stage content changed"
+            )
+        files[relative] = value
+    if set(files) != set(expected):
+        raise SkillHubContractError(
+            "HUB_AGENT_SKILL_INVALID", "Agent Skill stage file set changed"
+        )
+    validate_package_entries(files, allow_skill_md=True)
+    return files
 
 
 def _digest(value: Any) -> str:

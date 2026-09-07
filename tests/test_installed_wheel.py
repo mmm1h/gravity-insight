@@ -93,8 +93,15 @@ class InstalledWheelTests(unittest.TestCase):
             project.mkdir()
             shutil.copy2(ROOT / "pyproject.toml", project / "pyproject.toml")
             shutil.copy2(ROOT / "README.md", project / "README.md")
+            shutil.copy2(ROOT / "setup.py", project / "setup.py")
             ignored = shutil.ignore_patterns("__pycache__", "*.pyc", "*.egg-info")
             shutil.copytree(ROOT / "src", project / "src", ignore=ignored)
+            (project / "scripts").mkdir()
+            shutil.copy2(
+                ROOT / "scripts" / "generate_skill_library.py",
+                project / "scripts" / "generate_skill_library.py",
+            )
+            shutil.copytree(ROOT / "skills", project / "skills", ignore=ignored)
             wheelhouse.mkdir()
             pip = [sys.executable, "-m", "pip", "--disable-pip-version-check"]
             wheel_command = [
@@ -150,6 +157,7 @@ class InstalledWheelTests(unittest.TestCase):
                 f"wheel module inventory drift; missing={missing}, extra={extra}",
             )
             installed_resources = _resource_inventory(wheel_package)
+            self.assertIn("skill_seed/skill-seed-v1.zip", installed_resources)
             missing_resources = sorted(expected_resources - installed_resources)
             if missing_resources:
                 self.fail(

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.skill-maintenance-generation.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "seed_digest",
+    "managed_lock",
+    "snapshot",
+    "generation_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "skill_maintenance_generation"},
+    "schema_version": {"const": "gravity.skill-maintenance-generation.v1"},
+    "seed_digest": {"$ref": "#/$defs/digest"},
+    "managed_lock": {"type": "object"},
+    "snapshot": {"type": "object"},
+    "generation_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

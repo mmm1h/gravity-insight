@@ -30,6 +30,7 @@ class HubSourceSession:
     index: Mapping[str, Any]
     network_called: bool
     _read: Callable[[str, int], bytes]
+    seed_digest: str | None = None
 
     def reference(self) -> dict[str, str]:
         return {

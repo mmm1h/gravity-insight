@@ -38,6 +38,28 @@ class SkillLibraryBuildTests(unittest.TestCase):
 
     def test_two_builds_are_byte_identical(self) -> None:
         self.assertEqual(self.outputs, builder.render_outputs())
+        self.assertEqual(
+            builder.render_seed(self.outputs),
+            builder.render_seed(builder.render_outputs()),
+        )
+
+    def test_sealed_seed_contains_manifest_and_exact_release_assets(self) -> None:
+        seed = builder.render_seed(self.outputs)
+        with zipfile.ZipFile(io.BytesIO(seed)) as selected:
+            names = selected.namelist()
+            self.assertEqual(93, len(names))
+            self.assertEqual(sorted(names), names)
+            self.assertIn("build-manifest.json", names)
+            self.assertEqual(
+                {"build-manifest.json", *(
+                    item["path"] for item in self.build_manifest["release_assets"]
+                )},
+                set(names),
+            )
+            for item in selected.infolist():
+                self.assertEqual((1980, 1, 1, 0, 0, 0), item.date_time)
+                self.assertEqual(zipfile.ZIP_STORED, item.compress_type)
+                self.assertEqual(0o100644, item.external_attr >> 16)
 
     def test_build_contains_docs_packages_archives_and_indexes(self) -> None:
         self.assertEqual(44, sum(path.startswith("docs/") for path in self.outputs))
