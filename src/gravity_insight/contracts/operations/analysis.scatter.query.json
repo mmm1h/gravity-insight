@@ -4,7 +4,7 @@
   "operation": {
     "action": "query",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "分布分析聚合；default zone 最小请求已实测，zone、指标、事件、时间分组和响应均受精确契约约束。",
     "domain": "analysis",
     "effect": "read",
@@ -160,6 +160,19 @@
       "empty_object_as_empty_result": true,
       "item_keys": [],
       "numeric_paths": [
+        "aggregate_by_date.*.[].proc_zone",
+        "aggregate_by_date.*.[].stat_total",
+        "date_list.*.[].[].proc_zone",
+        "date_list.*.[].[].stat_total",
+        "date_list.*.[].[].zone_stat_sum",
+        "date_list.*.[].[].zone_stat_users",
+        "y.*.[].is_total",
+        "y.*.[].total_another_event_count",
+        "y.*.[].total_another_event_sum",
+        "y.*.[].total_another_event_uniques",
+        "y.*.[].total_another_event_value",
+        "y.*.[].total_another_users",
+        "y.*.[].total_user_num",
         "aggregate_date.[].[].*",
         "zone_tags.val_list.[].*",
         "zone_tags.val_list_to_aggregate_date_group.[].*"
