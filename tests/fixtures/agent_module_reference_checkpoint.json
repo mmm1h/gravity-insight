@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "9b3d10e3e576dcebd1450a85187b4c79c3ff28d40fe6951d637330e07fd9ee08",
+    "reference_evidence_sha256": "08d1d965405cfe52a15423f915daa62490837661f1a0eb0320a2eff16e35d0e7",
     "manual_review_sha256": "3fd24dde4cf073a9f4961e48c010b7d1afb91e103ff58898afb1271f4399d12c",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3197,
-    "scanned_file_count": 3190,
+    "version_controlled_file_count": 3199,
+    "scanned_file_count": 3192,
     "excluded_files": [
       "scripts/audit_agent_module_references.py",
       "scripts/generate_agent_module_reference_dispositions.py",
@@ -724,7 +724,7 @@
     "dispositions": {
       "no_migration_effect": 257
     },
-    "sites_sha256": "d9ea47e5140de944d770e5f783bb7e96271e852585b811e1c18493895f9804b5"
+    "sites_sha256": "57bcdda233c822d7732956d5af709f8c9b9ac2995c04e9fcac29c66f6595e745"
   },
   "blockers": [],
   "site_fields": [
@@ -1072,7 +1072,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22232:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22237:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1087,7 +1087,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:64209:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:64281:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

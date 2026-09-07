@@ -19,8 +19,8 @@
 catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 [Runtime Component Index](../specs/agent-runtime/index.md)。`main` 是唯一长期分支，日常变更从短命分支
 经必需状态检查和 PR 合入。
-
 ## 已定决策
+- #171/#170 的当前取证裁决见[脱敏收据](../evidence/forensics/20260907_operation_recertification.json)：Scatter 补登记已观察的嵌套字段；订单细查仅在末页回显、SDK has_more=false、累计条数等于 total_number 三项齐全后提升 completeness。所有原读取入口与已登记字段保留，没有读取能力损失，也未改变调用参数或结果 envelope；只刷新对应 operation 的版本、指纹与 Validation。默认值字典的可选键 warning、本地素材的空数组元素类型、素材报表空样本仍是未闭合证据，user_detail 的 cohort completeness 继续 unknown；不以声明升级代替现场证明。
 - Owner 裁定 CLI 启动更新默认开启且真实安装，包括 Hard break；精确 pin、doctor 与显式关闭继续有效。安装使用独立不可变 pip stage，校验后由新进程执行，失败回退到未改动的基础环境，不在业务执行中换版。换版留机器可读记录，详见 [0.3.10 迁移指南](migration/0.3.10.md)。变化不删除任何读取 surface，外部 Installer 计划合同仍保留；调用方若需固定语境必须显式 pin 或关闭自动更新。
 - Insight-first；SQL 只执行 workspace 已登记产品。
 - Workspace SQL 的间接问法必须同时具备审核、跨表聚合、登记名称、日期窗和运行意图；发现只按精确登记名选择 product，无匹配返回既有配置缺口，绝不降级为 Insight、raw operation 或裸 SQL。

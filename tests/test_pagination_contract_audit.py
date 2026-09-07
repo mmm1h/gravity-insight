@@ -209,10 +209,10 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual([], reconciled["unexpected_kind_drift"])
         self.assertEqual([], reconciled["coverage"]["missing_from_audit"])
         self.assertEqual([], reconciled["coverage"]["missing_from_contracts"])
-        self.assertEqual({"complete": 66, "unknown": 171}, reconciled["current_completeness"])
+        self.assertEqual({"complete": 67, "unknown": 170}, reconciled["current_completeness"])
         self.assertEqual(
             {
-                "collect_production_or_wire": 78,
+                "collect_production_or_wire": 77,
                 "not_scheduled_non_stable": 9,
                 "not_scheduled_without_new_signal": 84,
             },
@@ -221,7 +221,7 @@ class PaginationContractAuditTests(unittest.TestCase):
         # Set equality against the plan, not a bare count: swapping one target
         # for another keeps len() at 84 while silently changing the debt scope.
         planned_targets = _planned_production_evidence_targets()
-        self.assertEqual(78, len(planned_targets))
+        self.assertEqual(77, len(planned_targets))
         self.assertEqual(planned_targets, set(reconciled["production_evidence_targets"]))
         self.assertEqual(84, len(reconciled["permanent_unknown"]))
         self.assertEqual(
@@ -232,7 +232,7 @@ class PaginationContractAuditTests(unittest.TestCase):
             reconciled["permanent_unknown_dispositions"],
         )
         self.assertEqual(
-            {"production": 104, "template": 125, "wire": 8},
+            {"production": 105, "template": 124, "wire": 8},
             reconciled["current_pagination_evidence"],
         )
         self.assertEqual(

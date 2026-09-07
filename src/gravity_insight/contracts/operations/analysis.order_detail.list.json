@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
+    "contract_version": 3,
     "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回已登记的订单、归因、内部分析标识与成员姓名。",
     "domain": "analysis",
     "effect": "read",
@@ -81,8 +81,8 @@
     "pagination": {
       "default_page_size": 20,
       "kind": "page_info",
-      "completeness": "unknown",
-      "pagination_evidence": "template",
+      "completeness": "complete",
+      "pagination_evidence": "production",
       "list_path": "data.list",
       "max_page_size": 100,
       "page_field": "page",

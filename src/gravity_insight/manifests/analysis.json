@@ -1503,7 +1503,7 @@
     {
       "action": "query",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "分布分析聚合；default zone 最小请求已实测，zone、指标、事件、时间分组和响应均受精确契约约束。",
       "domain": "analysis",
       "effect": "read",
@@ -1645,6 +1645,19 @@
         "empty_object_as_empty_result": true,
         "item_keys": [],
         "numeric_paths": [
+          "aggregate_by_date.*.[].proc_zone",
+          "aggregate_by_date.*.[].stat_total",
+          "date_list.*.[].[].proc_zone",
+          "date_list.*.[].[].stat_total",
+          "date_list.*.[].[].zone_stat_sum",
+          "date_list.*.[].[].zone_stat_users",
+          "y.*.[].is_total",
+          "y.*.[].total_another_event_count",
+          "y.*.[].total_another_event_sum",
+          "y.*.[].total_another_event_uniques",
+          "y.*.[].total_another_event_value",
+          "y.*.[].total_another_users",
+          "y.*.[].total_user_num",
           "aggregate_date.[].[].*",
           "zone_tags.val_list.[].*",
           "zone_tags.val_list_to_aggregate_date_group.[].*"
@@ -2100,7 +2113,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回已登记的订单、归因、内部分析标识与成员姓名。",
       "domain": "analysis",
       "effect": "read",
@@ -2174,7 +2187,7 @@
       },
       "operation_id": "analysis.order_detail.list",
       "pagination": {
-        "completeness": "unknown",
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -2182,7 +2195,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
-        "pagination_evidence": "template",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/report/api/v3/dataanalysis/user/pay_event/list/",
