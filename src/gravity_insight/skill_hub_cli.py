@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import shlex
+import stat
 from typing import Any
 
+from .agent_runtime_contracts import canonical_digest
 from .skill_hub_client import SkillHubClient
+from .skill_hub_contract import SkillHubContractError
+from .skill_hub_locks import compile_skills_lock
+from .skill_hub_paths import assert_unlinked_path
 from .skill_hub_state import read_json
 
 
@@ -63,8 +70,9 @@ def add_skill_hub_actions(actions: Any) -> None:
     _local(audit)
 
     status = actions.add_parser(
-        "status", help="Read explicit bundled Skill maintenance state."
+        "status", help="Read bundled maintenance and project lock Runtime drift offline."
     )
+    status.add_argument("--lock", help="Project Skill lock; defaults to workspace root or cwd.")
     _local(status, required=False)
 
     bootstrap = actions.add_parser(
@@ -152,7 +160,20 @@ def _maintenance_dispatch(
     command: str, client: SkillHubClient, args: Any, workspace: Any
 ) -> dict[str, Any]:
     if command == "status":
-        return client.status()
+        if args.lock is not None:
+            lock_path = Path(args.lock)
+        else:
+            if workspace is None:
+                from .workspace import load_workspace
+
+                workspace = load_workspace()
+            root = workspace.root if workspace.configured else Path.cwd()
+            lock_path = root / "gravity.skills.lock.json"
+        result = client.status()
+        result["project_lock"] = _project_lock_status(client, lock_path)
+        # This observation includes transient project state, not a persisted receipt update.
+        result.pop("receipt_digest")
+        return {**result, "receipt_digest": canonical_digest(result)}
     if command == "host-install-plan":
         return client.host_install_plan(args.host, args.host_root)
     project_root = (
@@ -164,6 +185,60 @@ def _maintenance_dispatch(
         force=command == "repair",
         project_root=project_root,
     )
+
+
+def _project_lock_status(client: SkillHubClient, path: Path) -> dict[str, Any]:
+    path = assert_unlinked_path(
+        path.expanduser(), reason="SKILLS_LOCK_INVALID", label="Project Skill lock"
+    )
+    result = {
+        "status": "not_checked",
+        "reason": "no_lock",
+        "lock_path": str(path),
+        "runtime_version": client.runtime_version,
+        "locked_runtime_version": None,
+        "next_action": None,
+    }
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        return result
+    except OSError as exc:
+        raise SkillHubContractError(
+            "SKILLS_LOCK_INVALID", "Project Skill lock is unreadable"
+        ) from exc
+    if (
+        not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_nlink != 1
+        or not 1 <= metadata.st_size <= 1_048_576
+    ):
+        raise SkillHubContractError("SKILLS_LOCK_INVALID", "Project Skill lock boundary is invalid")
+    try:
+        lock = compile_skills_lock(read_json(path))
+    except OSError as exc:
+        raise SkillHubContractError(
+            "SKILLS_LOCK_INVALID", "Project Skill lock is unreadable"
+        ) from exc
+    mismatch = lock["runtime_version"] != client.runtime_version
+    result.update(
+        status="mismatch" if mismatch else "match",
+        reason="HUB_RUNTIME_INCOMPATIBLE" if mismatch else None,
+        locked_runtime_version=lock["runtime_version"],
+    )
+    if mismatch:
+        arguments = [
+            "--state-root", str(client.state_root),
+            "--source-id", lock["source"]["source_id"],
+            "--output", str(path),
+        ]
+        for identity in lock["requested"]:
+            arguments.extend(("--skill", identity))
+        if os.name == "nt":
+            rendered = " ".join("'" + value.replace("'", "''") + "'" for value in arguments)
+        else:
+            rendered = shlex.join(arguments)
+        result["next_action"] = "gravity skills lock " + rendered
+    return result
 
 
 def _local(parser: Any, *, required: bool = True) -> None:

@@ -461,7 +461,7 @@ gravity skills search <query> --state-root <state-root>
 gravity skills lock --skill <exact-skill-uri> --output gravity.skills.lock.json --state-root <state-root>
 gravity skills fetch --source source.json --lock gravity.skills.lock.json --state-root <state-root>
 gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
-gravity skills status [--state-root <state-root>]
+gravity skills status [--state-root <state-root>] [--lock <project-lock>]
 gravity skills bootstrap [--state-root <state-root>]
 gravity skills repair [--state-root <state-root>]
 gravity skills host-install-plan --host codex|claude --host-root <host-skill-directory> [--state-root <state-root>]
@@ -487,6 +487,10 @@ lock 仍须显式 `skills update` 和项目评审。`skills repair` 强制重验
 `ready`、`degraded`、`unavailable` 分别表示当前可用、保留 last-known-good、无可用版本。输出同时
 携带 active source descriptor/index/seed digest、managed lock digest、Skill 数、最后尝试/成功时间、
 `network_called`、reason codes、`update_available` 与 `host_restart_required`。
+CLI 默认 JSON 输出另含 `project_lock`：读取显式 `--lock`，否则读取 workspace 根目录（无 workspace 时为 cwd）的 `gravity.skills.lock.json`，与 `--state-root` 独立。
+`status=not_checked, reason=no_lock` 明确表示无锁未比较；`match` / `mismatch` 表示已检查且版本一致 / 漂移，并给出 `runtime_version` 与 `locked_runtime_version`。
+漂移的 `next_action` 是可执行的 `gravity skills lock` 命令，保留 source ID、全部 requested Skills、state root 与锁路径；依赖该 source 已在本地同步，命令仍须显式执行和项目评审。
+诊断不改写锁或 maintenance receipt；输出摘要覆盖本次诊断。检查成功（含漂移）走 stdout、rc=0；锁无效或不可读走 stderr、非零 rc，不能当作无锁或一致。
 
 `skills host-install-plan` 重新验证 active seed 与 Agent index/archive，把只读源目录放入本地 CAS，
 并只生成交给 Codex 或 Claude 原生 Skill installer 的 action。Runtime 不写宿主 Skill 目录；目标内容
