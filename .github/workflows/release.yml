@@ -270,7 +270,7 @@ jobs:
         run: >-
           .venv/bin/python scripts/check_installed_wheel_consumer.py
           --consumer-repository "$RUNNER_TEMP/work-dashboard"
-          --revision 03d57598d601909da1297fcc0d9f31184d0f4da9
+          --revision f02d26fbb8cfb073e3773daf360c177348e0ae27
           --wheel dist/*.whl
           --strict-prerequisites
           --receipt release-evidence/canonical-consumer.json
