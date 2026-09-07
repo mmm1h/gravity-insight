@@ -70,11 +70,14 @@ def _text(report: dict) -> str:
         lines.append(f"{root['root_id']} [{root['location']}]: {_sizes(root)}")
         units = root["allocation_units"]
         lines.append(f"  directory allocation: {root['directory_disk_bytes']} B; cluster: {units['cluster_bytes']} B; resident record: {units['resident_record_bytes']} B")
-    for row in (*report["categories"], *report["residues"]):
-        label = row.get("category", row.get("kind"))
-        lines.append(f"{label}: {_sizes(row)}; reclaimable {_sizes(row['reclaimable'])}; retained {_sizes(row['retained'])}")
-        for reason, count in row["retained_reasons"].items():
-            lines.append(f"  {reason}: {count} files; {report['reason_codes'][reason]}")
+    for header, rows in (("By location (partitions the total)", report["categories"]),
+                         ("By artifact class (overlapping view of files already counted above)", report["residues"])):
+        lines.append(f"{header}:")
+        for row in rows:
+            label = row.get("category", row.get("kind"))
+            lines.append(f"  {label}: {_sizes(row)}; reclaimable {_sizes(row['reclaimable'])}; retained {_sizes(row['retained'])}")
+            for reason, count in row["retained_reasons"].items():
+                lines.append(f"    {reason}: {count} files; {report['reason_codes'][reason]}")
     for kind in ("OBSOLETE_PICKLE_NO_READER", "ORPHAN_CATALOG_STAGING", "ACCOUNT_SNAPSHOT"):
         lines.append(f"{kind}: {report['reason_codes'][kind]}")
     policy = report["http_receipts"]
