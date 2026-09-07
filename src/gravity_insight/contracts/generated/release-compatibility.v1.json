@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "28d22bb6f3f68a7816869cc9b9ec0058909888181e0cb994ee940cfb5645ff89"
+    "compatibility_sha256": "db524bc732f577e7b1ca22883dfb5e57ff0ba0b4c251c5a04fe5ba30cffa3d77"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -279,7 +279,17 @@
         },
         {
           "id": "0.3.12-hard-break-4",
-          "description": "`analysis.funnel.query` declares `response_projection.dynamic_key_patterns` and its `contract_fingerprint` changes for the same reason. No other operation is affected: the fingerprint payload emits `dynamic_key_patterns` only when non-empty, and `analysis.funnel.query` is the only operation that declares it. Migration guide: [0.3.12](docs/migration/0.3.12.md)",
+          "description": "`analysis.funnel.query` declares `response_projection.dynamic_key_patterns` and its `contract_fingerprint` changes for the same reason. No other operation is affected: the fingerprint payload emits `dynamic_key_patterns` only when non-empty, and `analysis.funnel.query` is the only operation that declares it.",
+          "migration_guide": "docs/migration/0.3.12.md"
+        },
+        {
+          "id": "0.3.12-hard-break-5",
+          "description": "`analysis.order_detail.list` moved to `contract_version: 3` and its `pagination.completeness` is now `complete` with `pagination_evidence: production`, upgraded from `unknown`/`template`. This is the outcome callers wanted — the operation can now satisfy a claim-bearing dependency that requires a full collection — but the `contract_fingerprint` changes with it, so Validation Results recorded against version 2 are quarantined and must be re-recorded.",
+          "migration_guide": "docs/migration/0.3.12.md"
+        },
+        {
+          "id": "0.3.12-hard-break-6",
+          "description": "`analysis.scatter.query` moved to `contract_version: 2`, registering thirteen nested numeric paths under `aggregate_by_date`, `date_list` and `y` that production responses were already returning. Same fingerprint consequence. Migration guide: [0.3.12](docs/migration/0.3.12.md)",
           "migration_guide": "docs/migration/0.3.12.md"
         }
       ],
