@@ -218,9 +218,15 @@ def build_signal(
         if plan_finding is not None:
             findings.append(plan_finding)
     findings.sort(key=lambda item: json.dumps(item, sort_keys=True))
+    if findings:
+        status = "action_required"
+    elif scanned["additive_evidence_files"] > 0:
+        status = "clear"
+    else:
+        status = "inconclusive"
     return {
         "schema_version": SCHEMA_VERSION,
-        "status": "action_required" if findings else "clear",
+        "status": status,
         "actionable": bool(findings),
         "fingerprint": _fingerprint(findings),
         "finding_count": len(findings),
@@ -258,6 +264,13 @@ def render_summary(signal: Mapping[str, Any]) -> str:
             "The signal pipeline could not confirm upstream state. This is not a drift conclusion."
         )
         lines.extend(f"- {error}" for error in signal.get("errors", ()))
+        return "\n".join(lines) + "\n"
+    if signal["status"] == "inconclusive":
+        lines.append(
+            "Checked-in JSON evidence was readable, but none exposed "
+            "`response_observation.additive_unregistered_paths`. No upstream "
+            "drift conclusion is available."
+        )
         return "\n".join(lines) + "\n"
     if not signal["actionable"]:
         lines.append(
