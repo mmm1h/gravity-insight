@@ -169,14 +169,12 @@ assert result["artifact"]["status"] == "complete"
 assert Path("artifacts/creative.mp4").is_file()
 ```
 
-三个 ID 是脱敏示例值，必须替换为同一已授权项目的真实引用。方法只覆盖 fresh source 中唯一命中、
-且 private URL 命中固定 host/path allowlist 的 JPEG 缩略图或 MP4；不接受 URL，也不把 URL 放入普通
-source JSON、结果、错误或 receipt。无法区分的缺失/过期/未缓存/删除/权限统一抛
-`MaterialAssetUnavailableError`（`code=MATERIAL_ASSET_BINARY_UNAVAILABLE`）；未登记 host/path 抛
-`MaterialAssetSourceUnsupportedError`。完整边界和 CLI 输出见 [Material Asset Fetch](cli.md#material-asset-fetch)。
-`analysis_queries(payload, max_workers=N)` 对独立 spec 使用一个 Plan worker 预算。可重试的 upstream 组件
-拒绝会触发 `N -> floor(N/2) -> ... -> 1` 的有界自适应重试；已成功或确定性失败的组件不会重放。
-live 结果的 `adaptive_execution` 是值无关执行轨迹，可据此读取最终并发、重试轮数、退避和总组件调用数。
+示例 ID 的替换、fresh source 唯一匹配、JPEG/MP4 与 URL 隐私边界见 [Material Asset Fetch](cli.md#material-asset-fetch)。
+SDK 的 `MaterialAssetUnavailableError` 对应 `MATERIAL_ASSET_BINARY_UNAVAILABLE`，
+`MaterialAssetSourceUnsupportedError` 对应 `MATERIAL_ASSET_SOURCE_UNSUPPORTED`。
+
+`analysis_queries(payload, max_workers=N)` 共用一个 Plan worker 预算；自适应重试和
+`adaptive_execution` 轨迹见 [Analysis Query Spec v1](cli.md#analysis-query-spec-v1)。
 
 非 callable 子服务保持独立职责：`gravity.insight`、`gravity.sql`、`gravity.sql_explorer`、
 `gravity.actions`、`gravity.experiments`、`gravity.journeys`、`gravity.capability_trust`、
@@ -311,9 +309,9 @@ preview = gravity.prepare_user_detail_aggregate(request)  # zero network
 result = gravity.user_detail_aggregate(request, max_workers=4)
 ```
 
-`user_detail_aggregate_input_schema()` 返回闭合 machine schema。执行时动态字段先经 live metadata
-白名单验证，分页和 receipts 由公共 Insight client 负责；返回信封没有用户行或用户标识。当前源合同
-不能证明完整 collection，调用方必须检查 `pagination.completeness` 和 `claims.forbidden`。错误分类与 CLI 共用同一合同；隐私策略排除、调用条件类型不符和真实行类型不稳定使用不同错误码，调用方不得只按错误文本推断重试或修复 owner，详见 [CLI 错误表](cli.md#user-detail-aggregate)。输入 machine schema 同时说明 `WITH_VAL` 的非 `null` 语义及非空字符串组合写法；条件类型错误的 `field` 精确定位 filter/measure 下标，message 只暴露安全的 measure/字段名与类型，不暴露条件值或源行。
+`user_detail_aggregate_input_schema()` 返回闭合 machine schema（含 `WITH_VAL` 与非空字符串写法）。
+动态字段、公共分页/receipts、隐私和错误分类统一见 [User Detail Aggregate 合同](cli.md#user-detail-aggregate)；
+源合同不证明完整 collection，调用方必须检查 `pagination.completeness` 和 `claims.forbidden`，按错误码而非文本判断重试或修复 owner。
 
 ## Insight 专用 facade
 
@@ -356,11 +354,9 @@ rows = sql.execute_sql("SELECT count(*) AS total FROM governed_source")
 Evidence、聚合隐私或输出投影。团队产品和 Agent 使用 `query_sql_products()` 或 `gravity sql query`；
 不要把 `execute_sql()` 暴露为任意 SQL 工具。
 
-`query_sql_products()` 的成功项必须同时读取 `row_cap_reached`、`completeness` 和
-`completeness_reason`。`status=complete` 是执行状态，不证明结果集合完整；特别是 readiness 只证明
-当前登记合同及不可变 Evidence 可用，不能把它提升为下游 cohort 的完整性证明。撞 `max_rows` 且
-没有独立 `summary.total_row_count` 时，结果保持 `completeness=unknown` 并给出
-`possible_truncation`，而不是猜成完整或确定截断。
+`query_sql_products()` 的成功项仍须检查 `row_cap_reached`、`completeness` 和
+`completeness_reason`；执行状态、readiness 与独立 `summary.total_row_count` 的判据统一见
+[CLI SQL 完整性合同](cli.md#sql)。readiness 只证明当前登记合同及不可变 Evidence 可用，不证明下游 cohort 完整。
 
 该结果同时携带 `obligations`：`execution_status` 来自 SQL 执行结论，`data_completeness` 来自 row-cap/
 独立总行数判定；`semantic_validity` 在本层未评估时明确为 `unknown`，读路径的

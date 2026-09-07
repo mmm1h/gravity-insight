@@ -54,16 +54,19 @@ raw operation。
 | 产品 | CLI | SDK | Plan composite |
 | --- | --- | --- | --- |
 | Analysis Query | `analysis query` | `analysis_query()` | `analysis_query` |
-| Analysis Context / Defaults | `analysis context/defaults` | `analysis_context()` / `analysis_default_dictionary()` | `analysis_context` / `analysis_default_dictionary` |
-| Business Pulse | `reports pulse` | `business_pulse()` | `business_pulse` |
+| Analysis Context / Defaults | `analysis context` / `analysis defaults` | `analysis_context()` / `analysis_default_dictionary()` | `analysis_context` / `analysis_default_dictionary` |
+| Realtime Event Catalog | `analysis realtime-events` | 见[方法索引](sdk.md#method-index) | 见[adapter 索引](plan.md#adapter-index) |
+| App / Permission Snapshot | `apps snapshot` / `apps permission-profile` | 同上 | 同上 |
+| Attribution | `attribution snapshot\|performance\|user-detail` | 同上 | 同上 |
+| Reports / Business Pulse / Report Directory | `reports pulse\|usage\|directory\|subscriptions` | `business_pulse()` / matching methods | `business_pulse` / matching composites |
 | Dashboard | `analysis dashboard snapshot/prepare/run`、`analysis dashboard kanban schema/prepare/mutate` | `dashboard_snapshot()` / dashboard analysis / Kanban methods | `dashboard_snapshot` / `dashboard_analysis` / `kanban_mutation` |
-| User / Order | `analysis user journey/order` | `user_journey()` / order methods | `user_journey` / order composites |
+| User / Orders | `analysis user journey`、`analysis order directory\|trace` | `user_journey()` / order methods | `user_journey` / order composites |
 | Segment | `analysis segment evaluate/snapshot/members` | matching segment methods | `segment_evaluate` / `segment_snapshot` / `segment_members` |
 | User Detail Aggregate | `analysis user-detail-aggregate` | `user_detail_aggregate()` | `user_detail_aggregate` |
-| Saved Analysis | `analysis saved prepare/run` | saved analysis methods | `saved_analysis` |
+| Saved Analysis | `analysis saved list/get/prepare/run` | saved analysis methods | `saved_analysis` |
+| Analysis Template | `analysis template list\|prepare\|run` | 见[方法索引](sdk.md#method-index) | 见[adapter 索引](plan.md#adapter-index) |
 | Multidim / Semantic | `multidim query` / `semantic compose` | matching methods | `multidim` / `semantic_compose` |
-| Material / Promotion | `materials performance` / `promotion performance` | matching methods | matching composites |
-| Report Directory | `reports directory/subscriptions` | matching methods | matching composites |
+| Material / Promotion | `materials performance\|fetch\|title-packages` / `promotion performance\|advertiser-profile\|bilibili-account-performance` | matching methods | matching composites |
 
 完整 CLI 命令族见[命令索引](#命令索引)，完整 `GravitySDK` 方法见
 [SDK 方法索引](sdk.md#method-index)，Plan 名称见 [adapter 索引](plan.md#adapter-index)。
@@ -174,29 +177,21 @@ gravity insight run analysis.event.list --input <request.json> --all-pages
 
 ## 产品命令
 
-下表是任务入口，不复制产品 request schema。先运行对应 `--help`，未知输入再运行
-`agent-catalog describe <selector>`。
+任务入口统一见 [Surface 映射](#surface-映射)。先运行对应 `--help`，未知输入再运行
+`agent-catalog describe <selector>`；本节说明产品边界，不复制 request schema。
 
-| 产品 | CLI |
+| 产品边界 | 行为与调用 |
 | --- | --- |
-| Analysis Context / Defaults | `analysis context` / `analysis defaults` |
-| Realtime Event Catalog | `analysis realtime-events` |
-| App / Permission Snapshot | `apps snapshot` / `apps permission-profile` |
-| Attribution | `attribution snapshot\|performance\|user-detail` |
-| Reports | `reports pulse\|usage\|directory\|subscriptions` |
-| Saved Analysis | `analysis saved list\|get\|prepare\|run` |
-| Analysis Template | `analysis template list\|prepare\|run` |
-| Segment | `analysis segment snapshot\|members\|evaluate` |
-| Orders | `analysis order directory\|trace` |
-| User Journey | `analysis user journey` |
-| Dashboard | `analysis dashboard snapshot\|prepare\|run`、`analysis dashboard kanban schema\|prepare\|mutate` |
-| Material | `materials performance\|fetch\|title-packages` |
-| Promotion | `promotion performance\|advertiser-profile\|bilibili-account-performance` |
-
-### Derived Metrics
-
-`gravity derive --input <request.json>` 对已有 result envelope 做本地确定性算术，不访问网络。
-request 使用 `source/spec`；结果保留来源状态，输入为 partial 时不会把派生值包装成完整上游事实。
+| <a id="derived-metrics"></a>Derived Metrics | `gravity derive --input <request.json>` 对已有 result envelope 做本地确定性算术，不访问网络。 request 使用 `source/spec`；结果保留来源状态，输入为 partial 时不会把派生值包装成完整上游事实；派生 provenance 标为 caller-defined，不改写上游来源。 |
+| <a id="single-user-journey"></a>Single-user journey | `gravity analysis user journey` 只接受调用方明确给出的 client id、App 和日期/日期窗；返回固定受管 字段，不用于发现任意用户。 |
+| <a id="order-directory-v1"></a>Order Directory v1 | `gravity analysis order directory --app <app> --date <date>` 完整读取单日受管订单目录。额外身份、字段或不完整分页失败关闭。 |
+| <a id="order-split-trace-v1"></a>Order Split Trace v1 | `gravity analysis order trace --app <app> --date <date> --trace-id <id>` 先在单日父目录唯一匹配显式 TraceID，再读取一次 child 安全投影；结果、错误或 receipt 不回显 TraceID。 |
+| <a id="dashboard-control-plane-snapshot"></a>Dashboard control-plane snapshot | `gravity analysis dashboard snapshot --app <app> --ref <id-or-exact-name>` 读取控制面，不执行图表，也不 模拟 layout、favourite 或页面 global filter。 |
+| <a id="dashboard-analysis-replay-v2"></a>Dashboard Analysis Replay v2 | `prepare` 编译可支持图表，`run` 执行；单图失败隔离，结果按看板顺序返回。引用必须是稳定 ID 或 精确名称，日期窗和 `max_charts` 由调用方显式提供。 |
+| <a id="segment-snapshot-v1"></a>Segment Snapshot v1 | `gravity analysis segment snapshot` 读取 detail/history/指定日期结果，不返回成员或规则。 |
+| <a id="segment-members-v1"></a>Segment Members v1 | `gravity analysis segment members` 读取完整成员行；动态属性先由 metadata 发现，历史使用 `segment_version_id`。超过本地结果边界时返回 partial，不伪造 continuation；上游无可控分页时同样遵守 item bound。 |
+| <a id="saved-analysis-v4"></a>Saved Analysis v4 | `list/get` 只定位受控定义；`prepare` 编译但不执行最终查询；`run` 严格重放。create/update/delete 必须 先 dry-run，再以同一参数 execute，且不提供分享能力。 |
+| <a id="business-pulse"></a>Business pulse | `gravity reports pulse` 并发读取显式 App、日期窗和平台的经营概览/趋势；小时源及小时比较只在 workspace scope 下启用。部分平台失败保留组件状态，不能当完整汇总。 |
 
 ### Multidim
 
@@ -227,7 +222,7 @@ gravity materials performance --app main --start 2026-08-01 --end 2026-08-07 `
   --platform bytedance --output materials.json
 ```
 
-平台保留原生物理字段，不跨平台归一、汇总或排名。允许的平台和指标从当前输入 schema 获取。
+平台保留原生物理字段，不跨平台归一、汇总、排名或推导策略。允许的平台和指标从当前输入 schema 获取。
 
 ### Material Asset Fetch
 
@@ -270,13 +265,13 @@ no-clobber 落盘。成功 JSON 的关键输出为：
 `size_bytes` 和 `sha256` 随真实文件变化；`artifacts/creative.mp4` 是最终文件，成功前不可见，已存在时
 拒绝覆盖。缩略图把 `--role` 改为 `thumbnail`、输出改为 `.jpg` 或 `.jpeg`，合同为 JPEG/16 MiB。
 
-边界是 fresh-response 子集，不是任意历史 ID 恢复：`local` 仅支持已观察的
+边界是 fresh-response 子集，不接受 URL，也不是任意历史 ID 恢复：`local` 仅支持已观察的
 `tos-accelerate.gravity-engine.com` 租户 video/thumbnail 路径；`bytedance_project` 仅支持已观察的
 `v26-cc.oceanengine.com` MP4 和 `p26-sign.douyinpic.com` JPEG 路径。普通
 `material.local.list` / `material.bytedance.project_material.list` JSON 已不再投影 URL。fresh scope 中
 没有唯一引用、目标 role 缺失或非重试 4xx 无法区分缺失/过期/未缓存/删除/权限时，固定返回
 `MATERIAL_ASSET_BINARY_UNAVAILABLE`；host/path 越界返回 `MATERIAL_ASSET_SOURCE_UNSUPPORTED`。
-两者均不留下 partial 文件，也不回显 URL。
+两者均不留下 partial 文件；普通 source JSON、结果、错误或 receipt 都不包含 URL。
 
 ### Promotion Performance
 
@@ -312,35 +307,10 @@ retention、property、scatter 的精确 schema 由 `--spec-schema` 返回。
 
 `batch` 保留每个 spec 的独立时间窗和筛选语义，适合把每个注册日写成一个 D0 cohort event spec。
 实际执行从 `--concurrency` 开始；组件若返回 `category=upstream` 且 `retryable=true`，只重试这些组件，
-worker 逐轮减半直至 1，并在重试前做 1s 起、最多 30s 的指数退避（更长的 `retry_after_ms` 在该上限内
-优先）。成功、empty、partial 和确定性失败不重放。结果的 `adaptive_execution` 给出每轮 worker、退避、
+worker 按 `N -> floor(N/2) -> ... -> 1` 逐轮减半，并在重试前做 1s 起、最多 30s 的指数退避（更长的 `retry_after_ms` 在该上限内
+优先）。成功、empty、partial 和确定性失败不重放。结果的值无关 `adaptive_execution` 轨迹给出每轮 worker、退避、
 组件数、待重试数、最终 worker 和组件调用总数；worker=1 仍拒绝时以
 `terminal_reason=serial_retryable_failure` 结束本次调用，错误本身仍可在更长冷却后重试。
-
-### Single-user journey
-
-`gravity analysis user journey` 只接受调用方明确给出的 client id、App 和日期/日期窗；返回固定受管
-字段，不用于发现任意用户。
-
-### Order Directory v1
-
-`gravity analysis order directory --app <app> --date <date>` 完整读取单日受管订单目录。额外身份或不完整
-分页失败关闭。
-
-### Order Split Trace v1
-
-`gravity analysis order trace --app <app> --date <date> --trace-id <id>` 先在父目录唯一匹配，再读取一次
-child 投影；结果不回显 TraceID。
-
-### Dashboard control-plane snapshot
-
-`gravity analysis dashboard snapshot --app <app> --ref <id-or-exact-name>` 读取控制面，不执行图表，也不
-模拟 layout、favourite 或页面 global filter。
-
-### Dashboard Analysis Replay v2
-
-`prepare` 编译可支持图表，`run` 执行；单图失败隔离，结果按看板顺序返回。引用必须是稳定 ID 或
-精确名称，日期窗由调用方提供。
 
 ### Kanban whole-board prepare v1
 
@@ -374,15 +344,6 @@ gravity analysis dashboard kanban prepare --input board.json
 I/O 估计。prepare 自身固定 `effect=read`、`write_sent=false`、`mutation_calls=0`，没有 execute 开关；
 每个后续 mutation 仍须走原动作的 dry-run、人工审查和 execute。并发变化可能触发执行时幂等复用，
 因此写次数是当前快照下的计划值与上界，不是跨步骤原子承诺。
-
-### Segment Snapshot v1
-
-`gravity analysis segment snapshot` 读取 detail/history/指定日期结果，不返回成员或规则。
-
-### Segment Members v1
-
-`gravity analysis segment members` 读取成员行；动态属性先由 metadata 发现。超过本地结果边界时返回
-partial，不伪造 continuation。
 
 ### Segment Mutation v1
 
@@ -439,16 +400,6 @@ gravity analysis user-detail-aggregate --input aggregate.json
 `USER_DETAIL_AGGREGATE_FIELD_PRIVACY_EXCLUDED`、`USER_DETAIL_AGGREGATE_FIELD_UNSUPPORTED`、`USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH`、
 `USER_DETAIL_AGGREGATE_MIXED_TYPE`、`USER_DETAIL_AGGREGATE_CARDINALITY_LIMIT`、`USER_DETAIL_AGGREGATE_BOUNDS_REQUIRED`。前两类字段错误和条件类型不符均为不可重试的
 `caller`（exit 2）；真实行类型不稳定仍为不可重试的 `upstream`（exit 3）。隐私错误不回显被保护字段；条件类型错误会给出精确 `filters[i].values` 或 `measures[i].condition.values` 路径，并安全列出 measure 名、字段名、条件标量类型集合和本次观测类型，但不回显 App、条件实际取值或用户行，也不返回部分单元格。
-
-### Saved Analysis v4
-
-`list/get` 只定位受控定义；`prepare` 编译但不执行最终查询；`run` 严格重放。create/update/delete 必须
-先 dry-run，再以同一参数 execute，且不提供分享能力。
-
-### Business pulse
-
-`gravity reports pulse` 并发读取显式 App 和日期窗的经营概览/趋势；小时源只在 workspace scope 下
-启用。部分平台失败保留组件状态，不能当完整汇总。
 
 ### Governed export
 

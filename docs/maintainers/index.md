@@ -32,13 +32,7 @@
 
 ## 源码真相
 
-- operation 源合同：`src/gravity_insight/contracts/operations/`
-- 编译后 manifest：`src/gravity_insight/manifests/`
-- 生成 provenance：`src/gravity_insight/contracts/generated/`
-- SQL 产品机器合同：`src/gravity_insight/contracts/sql-products/`
-- Census 数据：`src/gravity_insight/census/data/`
-- operation 探针证据：`evidence/probe/`
-- SQL Evidence：当前 workspace 对应的用户私有 `state_root/evidence/`
+合同、生成物与私有 Evidence 路径统一见[扩展地图的源码真相](extending.md#源码真相)。
 
 文档解释流程和边界；schema、默认值、字段列表和可执行目录以机器合同与 CLI 输出为准。
 

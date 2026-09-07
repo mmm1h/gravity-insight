@@ -38,7 +38,7 @@ flowchart LR
 增加 codec 或 runtime 机制。任何 runtime 扩展都必须服务多个已确认能力，或解决无法数据化
 的边界；“以后可能用到”不是理由。
 
-当前源码真相：
+### 源码真相
 
 - operation：`src/gravity_insight/contracts/operations/`
 - operation schema：`src/gravity_insight/contracts/schema/operation-v2.schema.json`
@@ -46,8 +46,10 @@ flowchart LR
 - provenance：`src/gravity_insight/contracts/generated/`
 - export：`src/gravity_insight/contracts/exports/`
 - workspace/recipe/SQL product schema：`src/gravity_insight/contracts/schema/workspace-v1.schema.json`
-- SQL 机制合同：`src/gravity_insight/contracts/sql-products/catalog.json`
+- SQL 产品机器合同：`src/gravity_insight/contracts/sql-products/`；机制合同为其中的 `catalog.json`
 - Census：`src/gravity_insight/census/data/`
+- operation 探针证据：`evidence/probe/`
+- SQL Evidence：当前 workspace 对应的用户私有 `state_root/evidence/`
 
 ## 新增原子 operation
 
