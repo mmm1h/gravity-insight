@@ -1126,7 +1126,8 @@ class GravityProductTests(unittest.TestCase):
 
             outside = Path(tempdir) / "plain"
             outside.mkdir()
-            self.assertIsNone(provenance.git_toplevel(outside))
+            with mock.patch.dict(os.environ, {"GIT_CEILING_DIRECTORIES": str(Path(tempdir).resolve())}):
+                self.assertIsNone(provenance.git_toplevel(outside))
 
         report = provenance.preflight_git_report(None)
         self.assertEqual("not_git_backed", report["git_state"])

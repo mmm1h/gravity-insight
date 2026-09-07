@@ -144,7 +144,9 @@ def version_controlled_files(root: Path = ROOT) -> tuple[list[Path], list[str]]:
         path = root / relative
         if not path.is_file():
             continue
-        if is_generated_governance_artifact(relative):
+        name = path.name.casefold()
+        credential_source = name.startswith(".env") or name.endswith(".env") or ".env.gravity" in name
+        if is_generated_governance_artifact(relative) or credential_source:
             excluded.append(PurePosixPath(relative).as_posix())
         else:
             files.append(path)

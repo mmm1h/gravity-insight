@@ -85,6 +85,20 @@ def get_shared_runtime(
             ]
             for key in stale:
                 _retire(_SHARED_RUNTIMES.pop(key))
+
+            def receipt_binding() -> tuple[Path, str]:
+                current_scope = runtime_scope_key(
+                    resolved_path,
+                    isolated=resolved_isolated,
+                    workspace_root=base_receipt_root,
+                )
+                if current_scope.storage_fingerprint != scope.storage_fingerprint:
+                    _RetiredCredentialProvider().get()
+                return (
+                    principal_state_root(base_receipt_root, current_scope),
+                    current_scope.fingerprint,
+                )
+
             existing = GravityHttpRuntime(
                 env_path=resolved_path,
                 limiter=_PROCESS_LIMITER,
@@ -94,6 +108,7 @@ def get_shared_runtime(
                 isolated=resolved_isolated,
                 receipt_root=principal_state_root(base_receipt_root, scope),
                 observation_scope_key=scope.fingerprint,
+                receipt_binding_resolver=receipt_binding,
             )
             _SHARED_RUNTIMES[scope] = existing
         else:

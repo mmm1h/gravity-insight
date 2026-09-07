@@ -1,8 +1,6 @@
 # 路线图
 
-产品目标：任何数据分析任务都能在不打开 Gravity Web 的前提下，仅用本仓库完成；Agent 能机器判定发现、执行、空结果、部分失败和能力缺口。
-
-衡量单位是[分析动线](analysis-journeys.md)，不是 operation 数量。动态目录规模只从 `gravity agent-catalog` 与 compiler 获取，不在路线图手写。
+产品目标：任何数据分析任务都能在不打开 Gravity Web 的前提下，仅用本仓库完成；Agent 能机器判定发现、执行、空结果、部分失败和能力缺口。衡量单位是[分析动线](analysis-journeys.md)，不是 operation 数量；动态目录规模只从 `gravity agent-catalog` 与 compiler 获取，不在路线图手写。
 
 ## 当前优先级
 
@@ -19,8 +17,10 @@
 catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 [Runtime Component Index](../specs/agent-runtime/index.md)。`main` 是唯一长期分支，日常变更从短命分支
 经必需状态检查和 PR 合入。
+
 ## 已定决策
 - #171/#170 的当前取证裁决见[脱敏收据](../evidence/forensics/20260907_operation_recertification.json)：Scatter 补登记已观察的嵌套字段；订单细查仅在末页回显、SDK has_more=false、累计条数等于 total_number 三项齐全后提升 completeness。所有原读取入口与已登记字段保留，没有读取能力损失，也未改变调用参数或结果 envelope；只刷新对应 operation 的版本、指纹与 Validation。默认值字典的可选键 warning、本地素材的空数组元素类型、素材报表空样本仍是未闭合证据，user_detail 的 cohort completeness 继续 unknown；不以声明升级代替现场证明。
+- #176 需求 1 只允许显式开启的凭据失效切换，默认单账号能力不变；429 仍走既有退避。2026-09-07 Owner 的独立进程复现否定同 IP 下的账号级限流隔离，需求 2 不推进。完整读取以账号/世代租约重跑，权限与数据范围准入未知即拒绝；高级入口和机器状态见 [SDK 多账号边界](reference/sdk.md#多账号鉴权失效切换高级默认关闭)。#175 的一般刷新根目录重绑定保持独立交付，本变更不修复或依赖该缺陷。单账号读取能力没有删除或降级。
 - Owner 裁定 CLI 启动更新默认开启且真实安装，包括 Hard break；精确 pin、doctor 与显式关闭继续有效。安装使用独立不可变 pip stage，校验后由新进程执行，失败回退到未改动的基础环境，不在业务执行中换版。换版留机器可读记录，详见 [0.3.10 迁移指南](migration/0.3.10.md)。变化不删除任何读取 surface，外部 Installer 计划合同仍保留；调用方若需固定语境必须显式 pin 或关闭自动更新。
 - Insight-first；SQL 只执行 workspace 已登记产品。
 - Workspace SQL 的间接问法必须同时具备审核、跨表聚合、登记名称、日期窗和运行意图；发现只按精确登记名选择 product，无匹配返回既有配置缺口，绝不降级为 Insight、raw operation 或裸 SQL。
@@ -38,7 +38,7 @@ catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 - 0.3.5 已将 Runtime wheel 内置业务 Skill 数收敛为零，并把 43 项外部方法与第一方 AP 成本参考方法统一为 44 项 canonical Library。`skill-library-v3` 的 93 个资产与 checkout 外摘要回读通过，但 0.3.5 客户端会拒绝 GitHub Release 必需的一次 CDN 重定向，因此 v3/0.3.5 不作为跨设备可用组合。0.3.6 与不可变 `skill-library-v4` 是修正通道：Source 显式锁定允许主机、最多一跳，R01 仍只接受项目精确 lock 与本地核验 CAS；v1/v2/v3 资产保持不变。
 - Skill Library build receipt schema 直接升级到 v2，将完整本地 QA tree 与 GitHub Release 的扁平 `release_assets` 分开；receipt schema v1 从未发布且没有当前消费者，因此该破坏性升级不损失读取或安装能力。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
-- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。
+- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 全局共享，scope 摘要不进入公开输出。#175：receipt 与 observation 在请求开始时共同绑定当前世代；刷新重放重新解析，在途响应及传输重试保留原绑定，不替换 Runtime 或连接池。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。发布收据逐字段解释拒绝，并绑定当前 run/attempt 的步骤覆盖，measure 跳过不能形成发布级通过；收据 CLI 必需覆盖输入已同步迁移 workflow/tests，不损失数据读取或只读 measure 能力，不替代发布后 provenance。
 - Probe 语义只使用六态机器模型；`unknown` 不等于 read，静态 read candidate 不构成授权，未证实 POST
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。

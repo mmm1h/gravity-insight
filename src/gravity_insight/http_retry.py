@@ -41,6 +41,10 @@ def retry_delay(
                 MAX_RETRY_AFTER_SECONDS,
                 minimum + jitter * unit_random(random_source),
             )
+    return backoff(attempt, random_source)
+
+
+def backoff(attempt: int, random_source: Callable[[], float]) -> float:
     base = float(min(2 ** (attempt + 1), 8))
     return base * (1.0 + 0.2 * unit_random(random_source))
 

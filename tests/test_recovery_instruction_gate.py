@@ -39,6 +39,7 @@ class RecoveryInstructionGateTests(unittest.TestCase):
             ),
             "gravity census fetch --output <snapshot.json>": ("census", "fetch"),
             "gravity sql products": ("sql", "products"),
+            "gravity account-pool status": ("account-pool", "status"),
         }
         for command, expected in cases.items():
             with self.subTest(command=command):

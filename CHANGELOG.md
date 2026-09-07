@@ -80,6 +80,25 @@ Migration guide: [0.3.12](docs/migration/0.3.12.md)
   `revalidate_after` window resolves; everything else raises `JoinKeyContractError`.
   The registry lives at `contracts/join-keys/registry.v1.json`, validated by
   `join-key-registry-v1.schema.json`.
+- Multi-account **authentication failover**, off by default. When
+  `GRAVITY_ACCOUNT_FAILOVER=1` and `GRAVITY_ACCOUNT_ENV_FILES` lists ordered
+  credential files, a complete read-only operation that fails authentication is
+  refreshed once and then retried on the next account. `GRAVITY_ACCOUNT_MAX_ACCOUNTS`
+  defaults to 2 and is configurable. `gravity account-pool` and
+  `gravity_insight.account_pool.AccountPoolConfig` expose the same behaviour.
+  Receipts are partitioned per account generation and record the slot, the reason
+  and the cumulative switch count — never the credential.
+  **HTTP 429 deliberately does not trigger a switch** and keeps the existing
+  backoff: a two-round production experiment (382 + 7 requests, separate processes)
+  showed a second principal on the same host is rate-limited while the first is, so
+  the quota is not account-scoped. Switching on 429 would spend a second account's
+  quota for no throughput. This ships failover only; it does **not** add
+  multi-account concurrency.
+  Availability is three-valued — `not_configured`, `configured_unavailable`,
+  `configured_healthy` — and the switch state is `never_switched` / `switching` /
+  `switched_success` / `switched_failed` / `exhausted`, so "no second account" and
+  "second account present but unusable" are distinguishable rather than both
+  presenting as single-account operation.
 
 ### Fixed
 
@@ -89,6 +108,17 @@ Migration guide: [0.3.12](docs/migration/0.3.12.md)
   additionally rejects a receipt whose drift `expectation_provenance` does not bind
   to that receipt's own `request_shape_fingerprint`, which would otherwise let a
   provenance record describe a different request than the one it is filed under.
+- A Runtime that refreshes an expired credential mid-flight now writes its
+  subsequent HTTP receipts, and partitions its Governor observations, under the
+  refreshed credential generation. Both coordinates were previously computed once
+  at Runtime construction, so every request after a 401-triggered refresh filed its
+  evidence under the *previous* generation — the isolation guarantee failed in the
+  one case that happens routinely. Storage and observation coordinates are now
+  resolved per request and frozen before any rate wait or I/O, so an in-flight
+  response and its transport retries keep the binding they started with while the
+  authentication replay picks up the new one. The connection pool is not recycled
+  and in-flight pagination is not interrupted. Receipts already written to the wrong
+  generation are not migrated.
 
 ## [0.3.11] - 2026-09-07
 
