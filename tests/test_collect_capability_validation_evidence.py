@@ -163,6 +163,129 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
                 self.assertIsNone(validation)
                 self.assertTrue(reasons)
 
+    def test_response_drift_precedes_confirmed_empty(self):
+        artifact = capability_contract("operation", "analysis.event.list")
+        drifted_empty = result(
+            status="empty",
+            data={"list": []},
+            page={"item_count": 0, "total_items": 0},
+            result_audit={
+                **result()["result_audit"],
+                "response_drift": {
+                    "schema_version": "gravity.response-drift.v1",
+                    "direction": "response",
+                    "classification": "additive",
+                    "fields": [
+                        {"path": "/data/new", "observed_type": "string"}
+                    ],
+                },
+            },
+        )
+
+        validation, reasons = validation_from_execution(
+            artifact,
+            drifted_empty,
+            [receipt()],
+            started_at=NOW,
+            observed_at=NOW + timedelta(seconds=1),
+        )
+        outcome = result_outcome(
+            "analysis.event.list",
+            drifted_empty,
+            1,
+            [receipt()],
+            validation is not None,
+            reasons,
+        )
+
+        self.assertIsNone(validation)
+        self.assertIn("EXECUTION_DATA_EMPTY", reasons)
+        self.assertIn("EXECUTION_RESPONSE_DRIFT", reasons)
+        self.assertFalse(outcome["result_nonempty"])
+        self.assertEqual("confirmed_empty", outcome["data_evidence_status"])
+        self.assertEqual("response_contract_drift", outcome["category"])
+
+    def test_projected_empty_without_zero_evidence_is_inconclusive(self):
+        artifact = capability_contract("operation", "analysis.event.list")
+        projected_empty = result(status="empty", data={"list": []})
+
+        validation, reasons = validation_from_execution(
+            artifact,
+            projected_empty,
+            [receipt()],
+            started_at=NOW,
+            observed_at=NOW + timedelta(seconds=1),
+        )
+        outcome = result_outcome(
+            "analysis.event.list",
+            projected_empty,
+            1,
+            [receipt()],
+            validation is not None,
+            reasons,
+        )
+
+        self.assertIsNone(validation)
+        self.assertNotIn("EXECUTION_DATA_EMPTY", reasons)
+        self.assertIn("EXECUTION_DATA_EMPTY_INCONCLUSIVE", reasons)
+        self.assertEqual("inconclusive", outcome["data_evidence_status"])
+        self.assertEqual("empty_evidence_inconclusive", outcome["category"])
+
+    def test_upstream_total_zero_remains_no_data(self):
+        artifact = capability_contract("operation", "analysis.event.list")
+        confirmed_empty = result(
+            status="empty",
+            data={"list": []},
+            page={"item_count": 0, "total_items": 0},
+        )
+
+        validation, reasons = validation_from_execution(
+            artifact,
+            confirmed_empty,
+            [receipt()],
+            started_at=NOW,
+            observed_at=NOW + timedelta(seconds=1),
+        )
+        outcome = result_outcome(
+            "analysis.event.list",
+            confirmed_empty,
+            1,
+            [receipt()],
+            validation is not None,
+            reasons,
+        )
+
+        self.assertIsNone(validation)
+        self.assertIn("EXECUTION_DATA_EMPTY", reasons)
+        self.assertEqual("confirmed_empty", outcome["data_evidence_status"])
+        self.assertEqual("no_data_in_current_scope", outcome["category"])
+
+    def test_http_204_remains_confirmed_no_data(self):
+        artifact = capability_contract("operation", "analysis.event.list")
+        confirmed_empty = result(status="empty", data={"list": []})
+        empty_receipt = receipt(http_status=204)
+
+        validation, reasons = validation_from_execution(
+            artifact,
+            confirmed_empty,
+            [empty_receipt],
+            started_at=NOW,
+            observed_at=NOW + timedelta(seconds=1),
+        )
+        outcome = result_outcome(
+            "analysis.event.list",
+            confirmed_empty,
+            1,
+            [empty_receipt],
+            validation is not None,
+            reasons,
+        )
+
+        self.assertIsNone(validation)
+        self.assertIn("EXECUTION_DATA_EMPTY", reasons)
+        self.assertEqual("confirmed_empty", outcome["data_evidence_status"])
+        self.assertEqual("no_data_in_current_scope", outcome["category"])
+
     def test_unexpected_runtime_warning_never_qualifies(self):
         artifact = capability_contract("operation", "analysis.event.list")
 
@@ -281,6 +404,25 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
                     "path": "/data/list",
                     "expected_type": "array",
                     "observed_type": "object",
+                    "expectation_provenance": {
+                        "operation_contract": {
+                            "digest": "1" * 64,
+                            "version": "gravity.operation-contract.v1",
+                        },
+                        "runtime_version": "0.3.11",
+                        "request_shape_fingerprint": "2" * 64,
+                        "accepted_upstream_baseline": {
+                            "observed_type": "array",
+                            "response_shape_fingerprint": "3" * 64,
+                            "observed_at": "2026-09-01T08:00:00Z",
+                            "app_environment_fingerprint": "4" * 64,
+                        },
+                        "current_observation": {
+                            "response_shape_fingerprint": "5" * 64,
+                            "observed_at": "2026-09-03T08:00:00.100000Z",
+                            "app_environment_fingerprint": "4" * 64,
+                        },
+                    },
                 }
             ],
         }
@@ -319,6 +461,7 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
             False,
             ["EXECUTION_DATA_EMPTY"],
         )
+        historical.pop("data_evidence_status")
         legacy_fingerprint_value = "LEGACY_FINGERPRINT_VALUE_MUST_NOT_PERSIST"
         historical["schema_fingerprint"] = {
             "unexpected": legacy_fingerprint_value
@@ -404,6 +547,9 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
 
         self.assertEqual("gravity.capability-validation-summary.v2", summary["schema_version"])
         self.assertEqual("gravity.capability-validation-run.v2", run_report["schema_version"])
+        self.assertTrue(
+            all("data_evidence_status" in item for item in run_report["outcomes"])
+        )
         self.assertEqual(2, summary["source_run_count"])
         self.assertEqual(3, len(summary["unresolved"]))
         self.assertEqual(additive_drift, summary["unresolved"][0]["response_drift"])
@@ -411,7 +557,19 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
         persisted_drift = persisted_run["outcomes"][1]["response_drift"]
         self.assertEqual("breaking", persisted_drift["classification"])
         self.assertEqual("array", persisted_drift["fields"][0]["expected_type"])
+        self.assertEqual(
+            breaking_drift["fields"][0]["expectation_provenance"],
+            persisted_drift["fields"][0]["expectation_provenance"],
+        )
         self.assertNotIn("response_drift", summary["unresolved"][2])
+        self.assertEqual(
+            "empty_evidence_inconclusive",
+            summary["unresolved"][2]["category"],
+        )
+        self.assertEqual(
+            "inconclusive",
+            summary["unresolved"][2]["data_evidence_status"],
+        )
         self.assertNotIn(legacy_fingerprint_value, json.dumps(summary))
 
 

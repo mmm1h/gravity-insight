@@ -9,21 +9,16 @@ from typing import Any, Callable, Mapping
 
 from .analysis_projection_contract import (
     ANALYSIS_DATE_RESPONSE_KEY_RE,
-    allowed_analysis_response_key as _allowed_analysis_response_key,
-    allowed_analysis_response_scalar as _allowed_analysis_response_scalar,
     analysis_group_shape,
-    analysis_numeric_path_allowed as _analysis_numeric_path_allowed,
-    funnel_group_label_value_path as _funnel_group_label_value_path,
     funnel_mode_shape_changed,
     nested_analysis_response_keys,
     operation_uses_dynamic_aggregate,
     validate_required_analysis_projection,
 )
+from .analysis_aggregate_projection import project_analysis_value as _project_analysis_value
 from .drift import ProjectionDrift, projection_drift_status
 from .errors import ManifestError, PolicyViolation
 from .list_row_projection import (
-    _is_finite_number,
-    _is_json_scalar,
     _project_list_rows,
 )
 from .material_asset_source import _capture_private_material_asset_rows
@@ -300,8 +295,9 @@ def _project_analysis_aggregate(
         blocked,
         allow_contracted_identifiers=allow_contracted_identifiers,
     )
-    numeric_paths = tuple(
-        tuple(path.split(".")) for path in operation.response_projection.numeric_paths
+    response_paths = (
+        tuple(tuple(path.split(".")) for path in operation.response_projection.numeric_paths),
+        operation.response_projection.dynamic_key_patterns,
     )
     projected: dict[str, Any] = {}
     dropped = int(funnel_mode_shape_changed(operation, data, values))
@@ -322,11 +318,13 @@ def _project_analysis_aggregate(
             data[key],
             blocked=blocked,
             response_keys=response_keys,
-            numeric_paths=numeric_paths,
+            response_paths=response_paths,
             path=(key,),
             depth=0,
             allow_contracted_identifiers=allow_contracted_identifiers,
             recorder=recorder,
+            sensitive_key=_sensitive_key, sensitive_scalar=_sensitive_analysis_scalar,
+            absent=_ABSENT,
         )
         if normalized is _ABSENT:
             dropped += 1
@@ -346,140 +344,6 @@ def _project_analysis_aggregate(
     return validate_required_analysis_projection(
         operation.response_projection, projected, values, tuple(warnings), drift
     )
-
-
-def _project_analysis_value(
-    value: Any,
-    *,
-    blocked: set[str],
-    response_keys: set[str],
-    numeric_paths: tuple[tuple[str, ...], ...],
-    path: tuple[str, ...],
-    depth: int,
-    allow_contracted_identifiers: bool,
-    recorder: ResponseDriftRecorder,
-) -> tuple[Any, ProjectionDrift]:
-    if depth > 10:
-        return _ABSENT, ProjectionDrift.BREAKING
-    if _is_json_scalar(value):
-        normalized = _project_analysis_scalar(
-            value, blocked, response_keys, numeric_paths, path,
-            allow_contracted_identifiers,
-        )
-        drift = (
-            ProjectionDrift.BREAKING
-            if normalized is _ABSENT
-            else ProjectionDrift.NONE
-        )
-        return normalized, drift
-    arguments = (
-        blocked, response_keys, numeric_paths, path, depth,
-        allow_contracted_identifiers, recorder,
-    )
-    if isinstance(value, Mapping):
-        return _project_analysis_mapping(value, *arguments)
-    if isinstance(value, (list, tuple)):
-        return _project_analysis_sequence(value, *arguments)
-    return _ABSENT, ProjectionDrift.BREAKING
-
-
-def _project_analysis_scalar(
-    value: Any,
-    blocked: set[str],
-    response_keys: set[str],
-    numeric_paths: tuple[tuple[str, ...], ...],
-    path: tuple[str, ...],
-    allow_identifiers: bool,
-) -> Any:
-    if (
-        _is_finite_number(value)
-        and not allow_identifiers
-        and not _analysis_numeric_path_allowed(path, numeric_paths)
-    ):
-        return _ABSENT
-    if isinstance(value, str) and (
-        len(value) > 4_096
-        or _funnel_group_label_value_path(path)
-        and not _allowed_analysis_response_scalar(value, response_keys, path)
-        or not allow_identifiers
-        and (
-            _sensitive_analysis_scalar(value, blocked)
-            or not _allowed_analysis_response_scalar(value, response_keys, path)
-        )
-    ):
-        return _ABSENT
-    return value
-
-
-def _project_analysis_mapping(
-    value: Mapping[Any, Any],
-    blocked: set[str],
-    response_keys: set[str],
-    numeric_paths: tuple[tuple[str, ...], ...],
-    path: tuple[str, ...],
-    depth: int,
-    allow_identifiers: bool,
-    recorder: ResponseDriftRecorder,
-) -> tuple[Any, ProjectionDrift]:
-    if len(value) > 10_000:
-        return _ABSENT, ProjectionDrift.BREAKING
-    result: dict[str, Any] = {}
-    drift = ProjectionDrift.NONE
-    for key, item in value.items():
-        name = str(key)
-        if (
-            len(name) > 256
-            or _sensitive_key(
-                name, blocked,
-                allow_contracted_identifiers=allow_identifiers,
-            )
-            or not _allowed_analysis_response_key(
-                name, response_keys, path, numeric_paths
-            )
-        ):
-            audit_path = ("data", *("*" if part == "[]" else part for part in path))
-            recorder.add_unknown_fields(audit_path, value, {name})
-            drift = max(drift, ProjectionDrift.ADDITIVE)
-            continue
-        normalized, nested_drift = _project_analysis_value(
-            item, blocked=blocked, response_keys=response_keys,
-            numeric_paths=numeric_paths, path=(*path, name), depth=depth + 1,
-            allow_contracted_identifiers=allow_identifiers, recorder=recorder,
-        )
-        if normalized is _ABSENT:
-            drift = ProjectionDrift.BREAKING
-        else:
-            result[name] = normalized
-            drift = max(drift, nested_drift)
-    return result, drift
-
-
-def _project_analysis_sequence(
-    value: tuple[Any, ...] | list[Any],
-    blocked: set[str],
-    response_keys: set[str],
-    numeric_paths: tuple[tuple[str, ...], ...],
-    path: tuple[str, ...],
-    depth: int,
-    allow_identifiers: bool,
-    recorder: ResponseDriftRecorder,
-) -> tuple[Any, ProjectionDrift]:
-    if len(value) > 100_000:
-        return _ABSENT, ProjectionDrift.BREAKING
-    result: list[Any] = []
-    drift = ProjectionDrift.NONE
-    for item in value:
-        normalized, nested_drift = _project_analysis_value(
-            item, blocked=blocked, response_keys=response_keys,
-            numeric_paths=numeric_paths, path=(*path, "[]"), depth=depth + 1,
-            allow_contracted_identifiers=allow_identifiers, recorder=recorder,
-        )
-        if normalized is _ABSENT:
-            drift = ProjectionDrift.BREAKING
-        else:
-            result.append(normalized)
-            drift = max(drift, nested_drift)
-    return result, drift
 
 
 def _analysis_response_keys(

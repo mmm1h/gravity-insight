@@ -15,6 +15,7 @@ from gravity_insight.models import OperationSpec, ResponseProjection
 from gravity_insight.pagination_contract_audit import (
     operation_pagination_candidate_signatures,
 )
+from gravity_insight.response_drift import dynamic_key_path_shape, dynamic_key_shape
 
 from .privacy import classify_candidate_field, projection_exposes_path
 
@@ -214,13 +215,41 @@ def _automatic(
 
 
 def _shape_rejection(
-    pointer: str, types: Sequence[str]
+    operation: Mapping[str, Any], pointer: str, types: Sequence[str]
 ) -> tuple[dict[str, Any] | None, tuple[str, ...] | None]:
     if len(types) != 1:
         return manual_decision(pointer, types, "conflicting_observed_types"), None
     parts = _decode_pointer(pointer)
     if parts is None:
         return manual_decision(pointer, types, "invalid_json_pointer"), None
+    projection = operation.get("response_projection")
+    patterns = (
+        projection.get("dynamic_key_patterns", {})
+        if isinstance(projection, Mapping)
+        else {}
+    )
+    if parts[0:1] == ("data",) and len(parts) >= 3:
+        container = parts[1:-1]
+        key = parts[-1]
+        expected_shape = dynamic_key_path_shape(patterns, container)
+        if expected_shape is not None:
+            matched_shape = dynamic_key_shape(patterns, container, key)
+            projection_path = ".".join((*container, f"{{{expected_shape}}}"))
+            if matched_shape is not None:
+                return manual_decision(
+                    pointer,
+                    types,
+                    "declared_dynamic_key",
+                    projection_path=projection_path,
+                    key_shape=matched_shape,
+                ), None
+            return manual_decision(
+                pointer,
+                types,
+                "dynamic_key_shape_mismatch",
+                projection_path=projection_path,
+                expected_key_shape=expected_shape,
+            ), None
     if any(_DATE_KEY.fullmatch(part) for part in parts):
         return manual_decision(pointer, types, "dynamic_key_requires_review"), None
     if types[0] == "null":
@@ -298,7 +327,7 @@ def decide_observation(
     """Return one automatic/manual decision without mutating the operation."""
 
     types = sorted(observed_types)
-    rejected, parts = _shape_rejection(pointer, types)
+    rejected, parts = _shape_rejection(operation, pointer, types)
     if rejected is not None or parts is None:
         return rejected or manual_decision(pointer, types, "invalid_json_pointer")
     projection_path = _projection_path(parts)

@@ -188,7 +188,7 @@ def _request_payload(request: Any) -> dict[str, Any]:
 
 
 def _projection_payload(projection: Any) -> dict[str, Any]:
-    return {
+    result = {
         "leaf_contract": "json_scalar",
         "data_shape": projection.data_shape,
         "data_keys": list(projection.data_keys),
@@ -223,6 +223,9 @@ def _projection_payload(projection: Any) -> dict[str, Any]:
         "empty_object_as_empty_result": projection.empty_object_as_empty_result,
         "opaque_json_item_keys": list(projection.opaque_json_item_keys),
     }
+    if projection.dynamic_key_patterns:
+        result["dynamic_key_patterns"] = dict(projection.dynamic_key_patterns)
+    return result
 
 
 def _pagination_payload(pagination: Any) -> dict[str, Any]:

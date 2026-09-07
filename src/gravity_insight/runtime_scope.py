@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import secrets
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping
@@ -26,6 +27,8 @@ from .paths import PROJECT_ROOT
 
 ENV_FILE_VAR = "GRAVITY_ENV_FILE"
 _FINGERPRINT_LENGTH = 32
+_OPAQUE_ID_LENGTH = 64
+_OPAQUE_ID_FILENAME = ".credential-scope-opaque-id"
 _CREDENTIAL_KEYS = (
     "GRAVITY_USERNAME",
     "GRAVITY_PASSWORD",
@@ -185,6 +188,46 @@ def principal_state_root(state_root: str | Path, scope: RuntimeScopeKey) -> Path
     return Path(state_root).expanduser().resolve() / "principals" / scope.fingerprint
 
 
+def credential_scope_opaque_id(state_root: str | Path) -> str | None:
+    """Return one random public marker persisted inside a private scope."""
+
+    selected = Path(state_root).expanduser().resolve()
+    private_fingerprint = selected.name
+    if (
+        selected.parent.name != "principals"
+        or len(private_fingerprint) != _FINGERPRINT_LENGTH
+        or any(
+            character not in "0123456789abcdef"
+            for character in private_fingerprint
+        )
+    ):
+        return None
+    marker_path = selected / _OPAQUE_ID_FILENAME
+    existing = _read_opaque_id(marker_path)
+    if existing is not None:
+        return existing
+    candidate = secrets.token_hex(_OPAQUE_ID_LENGTH // 2)
+    try:
+        selected.mkdir(parents=True, exist_ok=True)
+        descriptor = os.open(
+            marker_path,
+            os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+            0o600,
+        )
+    except FileExistsError:
+        return _read_opaque_id(marker_path)
+    except OSError:
+        return None
+    try:
+        with os.fdopen(descriptor, "w", encoding="ascii", newline="") as handle:
+            handle.write(candidate)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except (OSError, UnicodeError):
+        return None
+    return candidate
+
+
 def principal_receipt_root(
     state_root: str | Path,
     env_path: str | Path | None = None,
@@ -273,9 +316,22 @@ def _digest(domain: str, *values: str) -> str:
     return digest.hexdigest()[:_FINGERPRINT_LENGTH]
 
 
+def _read_opaque_id(path: Path) -> str | None:
+    try:
+        value = path.read_text(encoding="ascii")
+    except (OSError, UnicodeError):
+        return None
+    if len(value) != _OPAQUE_ID_LENGTH or any(
+        character not in "0123456789abcdef" for character in value
+    ):
+        return None
+    return value
+
+
 __all__ = [
     "ENV_FILE_VAR",
     "RuntimeScopeKey",
+    "credential_scope_opaque_id",
     "env_isolation_key",
     "field_policy_cache_dir",
     "gravity_insight_cache_root",

@@ -33,6 +33,12 @@ from gravity_insight.result_audit import (
 )
 from gravity_insight.result_output import write_rendered_result
 from gravity_insight.runtime_scope import resolve_env_path, scope_workspace
+from gravity_insight.semantic_status import (
+    DATA_EVIDENCE_CONFIRMED_EMPTY,
+    DATA_EVIDENCE_INCONCLUSIVE,
+    DATA_EVIDENCE_NONEMPTY,
+    DATA_EVIDENCE_NOT_EVALUATED,
+)
 from gravity_insight.workspace import load_workspace
 
 from capability_validation_evidence_support import (
@@ -210,6 +216,30 @@ def summarize() -> dict[str, Any]:
 def _normalized_final_outcome(value: Mapping[str, Any]) -> dict[str, Any]:
     result = dict(value)
     reasons = set(str(item) for item in result.get("reason_codes", []))
+    data_evidence_status = result.get("data_evidence_status")
+    if not isinstance(data_evidence_status, str) or data_evidence_status not in {
+        DATA_EVIDENCE_CONFIRMED_EMPTY,
+        DATA_EVIDENCE_INCONCLUSIVE,
+        DATA_EVIDENCE_NONEMPTY,
+        DATA_EVIDENCE_NOT_EVALUATED,
+    }:
+        if result.get("result_nonempty") is True:
+            data_evidence_status = DATA_EVIDENCE_NONEMPTY
+        elif (
+            "EXECUTION_DATA_EMPTY" in reasons
+            or result.get("category") == "no_data_in_current_scope"
+        ):
+            # Legacy evidence retained only projected emptiness, not the
+            # upstream count/status needed to confirm zero rows.
+            data_evidence_status = DATA_EVIDENCE_INCONCLUSIVE
+        else:
+            data_evidence_status = DATA_EVIDENCE_NOT_EVALUATED
+    result["data_evidence_status"] = data_evidence_status
+    if (
+        data_evidence_status == DATA_EVIDENCE_INCONCLUSIVE
+        and result.get("category") == "no_data_in_current_scope"
+    ):
+        result["category"] = "empty_evidence_inconclusive"
     if "EXECUTION_RESPONSE_DRIFT" in reasons:
         result["category"] = "response_contract_drift"
     if "schema_fingerprint" in result and not is_sha256(

@@ -7,6 +7,7 @@ import re
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
 from .errors import ManifestError
+from .response_drift import dynamic_key_shape
 
 if TYPE_CHECKING:
     from .models import OperationSpec
@@ -242,6 +243,9 @@ def validate_required_analysis_dimensions(
     missing = missing_funnel_grouping_fields(projection, result, values)
     if not missing:
         return result, warnings, drift
+    aggregate = result.get("aggregate_date")
+    if values.get("to_calc_each_day") is not True and isinstance(aggregate, Mapping):
+        result["aggregate_date"] = {**aggregate, "group": {}}
     warning = (
         "requested funnel user-property grouping dimensions are absent or invalid; "
         f"the response contains date-priority aggregates (count={len(missing)})"
@@ -358,16 +362,20 @@ def allowed_analysis_response_key(
     response_keys: set[str],
     path: tuple[str, ...] = (),
     numeric_paths: tuple[tuple[str, ...], ...] = (),
+    dynamic_key_patterns: Mapping[str, str] | None = None,
 ) -> bool:
     # A date under Funnel's group container is a mislabeled group, not a time
     # bucket. Apply the path-specific rule before the global date-key opening.
     if len(path) >= 2 and path[-2:] == ("aggregate_date", "group"):
-        return _allowed_dynamic_group_label_key(name, path)
+        return _allowed_dynamic_group_label_key(name, path) or dynamic_key_shape(
+            dynamic_key_patterns or {}, path, name
+        ) is not None
     if (
         name in response_keys
         or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name)
         or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(name)
         or _contracted_numeric_key_allowed((*path, name), numeric_paths)
+        or dynamic_key_shape(dynamic_key_patterns or {}, path, name) is not None
     ):
         return True
     return _allowed_dynamic_group_label_key(name, path)
