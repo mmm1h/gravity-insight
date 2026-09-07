@@ -69,6 +69,7 @@ from .receipt import (
 from .registry import _consume_authorized_request
 from .runtime_principal import (
     current_principal_id as _current_principal_id,
+    refresh_authentication as _refresh_authentication,
     refresh_if_rejected as _refresh_if_rejected,
 )
 
@@ -427,6 +428,7 @@ class GravityHttpRuntime:
         semantic_auth_codes: Collection[int] = (),
         timeout: float | None = None,
         attempts: int | None = None,
+        _read_lease: Any | None = None,
     ) -> RuntimeResponse:
         profile = _validated_profile(profile)
         if profile is not SQL_PROFILE:
@@ -442,6 +444,7 @@ class GravityHttpRuntime:
             semantic_auth_codes=semantic_auth_codes,
             timeout=timeout,
             attempts=attempts,
+            read_lease=_read_lease,
             receipt_context=request_receipt_context(
                 operation_id="sql.query",
                 method=method,
@@ -464,6 +467,7 @@ class GravityHttpRuntime:
         semantic_auth_codes: Collection[int] = (),
         timeout: float | None = None,
         attempts: int | None = None,
+        _read_lease: Any | None = None,
     ) -> RuntimeResponse:
         """Consume a PolicyEngine receipt at the final pre-network boundary."""
 
@@ -491,6 +495,7 @@ class GravityHttpRuntime:
             timeout=timeout,
             attempts=attempts,
             receipt_context=receipt_context,
+            read_lease=_read_lease,
         )
 
     def _authenticated_request(
@@ -505,10 +510,16 @@ class GravityHttpRuntime:
         timeout: float | None,
         attempts: int | None,
         receipt_context: Mapping[str, Any],
+        read_lease: Any | None = None,
     ) -> RuntimeResponse:
-        refreshed = False
+        from .account_pool_lease import check_read_lease
+
+        refreshed = bool(read_lease is not None and read_lease.refreshed)
         while True:
+            check_read_lease(read_lease, receipt_context)
             credential = self.__credentials.get()
+            if read_lease is not None:
+                read_lease.check()
             response = self.__requester.request(
                 profile,
                 method,
@@ -520,27 +531,10 @@ class GravityHttpRuntime:
                 attempts=attempts,
                 receipt_context={**receipt_context, "retry": refreshed},
             )
-            semantic_code = (
-                response.payload.get("code")
-                if isinstance(response.payload, Mapping)
-                else None
-            )
-            rejected = (
-                response.status_code in {401, 403}
-                or semantic_code in semantic_auth_codes
-            )
-            if rejected and not refreshed:
-                _refresh_if_rejected(self.__credentials, credential)
+            if _refresh_authentication(self.__credentials, credential, response,
+                                       semantic_auth_codes, refreshed, read_lease):
                 refreshed = True
                 continue
-            if rejected:
-                if response.status_code == 403:
-                    raise PermissionUnavailableError(
-                        "the authenticated Gravity account cannot read this capability"
-                    )
-                raise AuthenticationError(
-                    "Gravity authorization is invalid or expired"
-                )
             return response
 
 

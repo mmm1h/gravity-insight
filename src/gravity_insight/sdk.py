@@ -15,6 +15,7 @@ from typing import Any
 from .sdk_analysis import AnalysisSdkMixin
 from .sdk_agent_runtime import AgentRuntimeSdkMixin
 from .sdk_bootstrap import BootstrapSdkMixin
+from .sdk_environment import EnvironmentSdkMixin, _default_insight_client, _default_sql_client, _load_workspace
 from .sdk_saved_analysis import SavedAnalysisSdkMixin
 from .sdk_analysis_default_dictionary import AnalysisDefaultDictionarySdkMixin
 from .sdk_attribution import AttributionSdkMixin
@@ -39,6 +40,7 @@ ClientFactory = Callable[[], Any]
 
 
 class GravitySDK(
+    EnvironmentSdkMixin,
     AgentRuntimeSdkMixin,
     BootstrapSdkMixin,
     DerivedMetricsSdkMixin,
@@ -84,47 +86,17 @@ class GravitySDK(
         self._external_context_providers = tuple(external_context_providers)
         self._insight_lock = threading.Lock()
         self._sql_lock = threading.Lock()
+        self._account_pool = None
+        self._account_read_lease = None
         self._initialize_agent_runtime_services(
             _runtime_scope_bound, _runtime_factory
         )
 
-    @classmethod
-    def from_env(
-        cls,
-        *,
-        allow_experimental: bool = False,
-        timeout: float = 120.0,
-        attempts: int = 3,
-        workspace: Any | None = None,
-        env_path: Any | None = None,
-    ) -> "GravitySDK":
-        """Create a lazy facade configured from the normal SDK environment."""
-
-        from .sdk_environment import environment_components
-
-        build_insight, build_sql, selected_workspace, runtime = environment_components(
-            allow_experimental=allow_experimental,
-            timeout=timeout,
-            attempts=attempts,
-            workspace=_load_workspace(workspace),
-            env_path=env_path,
-        )
-        return cls(
-            insight_factory=build_insight,
-            sql_factory=build_sql,
-            workspace=selected_workspace,
-            _runtime_scope_bound=True,
-            _runtime_factory=runtime,
-        )
-
-    @property
-    def workspace(self) -> Any:
-        """The immutable workspace selection bound when this facade was created."""
-
-        return self._workspace
-
     @property
     def insight(self) -> Any:
+        if self._account_pool is not None:
+            from .account_pool import _unavailable
+            raise _unavailable("ACCOUNT_READ_BOUNDARY_REQUIRED")
         if self._insight is None:
             with self._insight_lock:
                 if self._insight is None:
@@ -133,6 +105,9 @@ class GravitySDK(
 
     @property
     def sql(self) -> Any:
+        if self._account_pool is not None:
+            from .account_pool import _unavailable
+            raise _unavailable("ACCOUNT_READ_BOUNDARY_REQUIRED")
         if self._sql is None:
             with self._sql_lock:
                 if self._sql is None:
@@ -146,6 +121,8 @@ class GravitySDK(
         *,
         output_fields: Sequence[str] | None = None,
     ) -> dict[str, Any]:
+        if self._account_pool is not None:
+            return self._account_pool.execute("read", (operation_id, inputs), {"output_fields": output_fields})
         values = dict(inputs or {})
         schema = self._output_schema(operation_id, values, output_fields)
         return self._project_read(
@@ -162,6 +139,8 @@ class GravitySDK(
         inputs: Mapping[str, Any] | None = None,
         **options: Any,
     ) -> dict[str, Any]:
+        if self._account_pool is not None:
+            return self._account_pool.execute("read_all", (operation_id, inputs), options)
         output_fields = options.pop("output_fields", None)
         values = dict(inputs or {})
         schema = self._output_schema(operation_id, values, output_fields)
@@ -180,6 +159,9 @@ class GravitySDK(
         **options: Any,
     ) -> dict[str, Any]:
         """Read an Agent-safe prefix and preserve its continuation contract."""
+
+        if self._account_pool is not None:
+            return self._account_pool.execute("read_limited", (operation_id, inputs), options)
 
         output_fields = options.pop("output_fields", None)
         values = dict(inputs or {})
@@ -283,6 +265,14 @@ class GravitySDK(
     ) -> dict[str, Any]:
         """Resolve a recipe or operation and execute the normal Agent pipeline."""
 
+        if self._account_pool is not None:
+            return self._account_pool.execute("run", (selector, inputs), {
+                "parameters": parameters, "workspace": workspace, "app": app,
+                "start": start, "end": end, "all_pages": all_pages,
+                "max_pages": max_pages, "max_items": max_items, "max_workers": max_workers,
+                "metadata_database": metadata_database, "output_fields": output_fields,
+            })
+
         from .resolver import resolve_and_run
         from .runtime import call_read
         selected_workspace = self._select_workspace(workspace)
@@ -354,7 +344,7 @@ class GravitySDK(
         from .receipt_query import list_http_receipts
 
         return list_http_receipts(
-            self._workspace.state_root,
+            self.workspace.state_root,
             limit=limit,
             cursor=cursor,
             operation_id=operation_id,
@@ -367,7 +357,7 @@ class GravitySDK(
 
         from .receipt_query import get_http_receipt
 
-        return get_http_receipt(self._workspace.state_root, reference)
+        return get_http_receipt(self.workspace.state_root, reference)
 
     def export_http_receipts(
         self,
@@ -381,7 +371,7 @@ class GravitySDK(
         from .receipt_query import export_http_receipts
 
         return export_http_receipts(
-            self._workspace.state_root,
+            self.workspace.state_root,
             destination,
             max_items=max_items,
             operation_id=operation_id,
@@ -396,9 +386,17 @@ class GravitySDK(
     ) -> dict[str, Any]:
         """Execute one or more governed workspace SQL products."""
 
+        if self._account_pool is not None:
+            return self._account_pool.execute("query_sql_products", (requests,), {
+                "max_workers": max_workers, "workspace": workspace,
+            })
+
         from .sql import run_product_queries
 
         values = [requests] if isinstance(requests, Mapping) else requests
+        if self._account_read_lease is not None:
+            from .account_pool_validation import require_sql_products
+            require_sql_products(self._account_read_lease, values)
         return run_product_queries(
             self.sql,
             values,
@@ -432,6 +430,12 @@ class GravitySDK(
         metadata_database: Any | None = None,
     ) -> dict[str, Any]:
         """Execute one bounded Plan v1 through the governed adapters."""
+
+        if self._account_pool is not None:
+            return self._account_pool.execute("execute_plan", (plan,), {
+                "workspace": workspace, "max_workers": max_workers, "dry_run": dry_run,
+                "metadata_database": metadata_database,
+            })
 
         from .plan import PlanAdapters, execute_plan, validate_plan
         from .plan_adapters import build_plan_adapters
@@ -527,7 +531,7 @@ class GravitySDK(
             raise InputValidationError("app must reference a configured workspace App or positive id", field="app") from None
 
     def _select_workspace(self, workspace: Any | None) -> Any:
-        return self._workspace if workspace is None else _load_workspace(workspace)
+        return self.workspace if workspace is None else _load_workspace(workspace)
 
 
 def connect(
@@ -537,6 +541,8 @@ def connect(
     attempts: int = 3,
     workspace: Any | None = None,
     env_path: Any | None = None,
+    account_pool: Any | None = None,
+    _read_lease: Any | None = None,
 ) -> GravitySDK:
     """Return the recommended lazy SDK entry point."""
 
@@ -546,29 +552,9 @@ def connect(
         attempts=attempts,
         workspace=workspace,
         env_path=env_path,
+        account_pool=account_pool,
+        _read_lease=_read_lease,
     )
-
-
-def _default_insight_client() -> Any:
-    from .client import GravityInsightClient
-
-    return GravityInsightClient.from_env()
-
-
-def _default_sql_client() -> Any:
-    from .sql import build_sql_client
-
-    return build_sql_client()
-
-
-def _load_workspace(value: Any | None) -> Any:
-    from pathlib import Path
-
-    from .workspace import load_workspace
-
-    if value is None or isinstance(value, (str, Path)):
-        return load_workspace(value)
-    return value
 
 
 __all__ = ["GravitySDK", "connect"]

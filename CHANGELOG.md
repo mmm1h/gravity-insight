@@ -80,6 +80,25 @@ Migration guide: [0.3.12](docs/migration/0.3.12.md)
   `revalidate_after` window resolves; everything else raises `JoinKeyContractError`.
   The registry lives at `contracts/join-keys/registry.v1.json`, validated by
   `join-key-registry-v1.schema.json`.
+- Multi-account **authentication failover**, off by default. When
+  `GRAVITY_ACCOUNT_FAILOVER=1` and `GRAVITY_ACCOUNT_ENV_FILES` lists ordered
+  credential files, a complete read-only operation that fails authentication is
+  refreshed once and then retried on the next account. `GRAVITY_ACCOUNT_MAX_ACCOUNTS`
+  defaults to 2 and is configurable. `gravity account-pool` and
+  `gravity_insight.account_pool.AccountPoolConfig` expose the same behaviour.
+  Receipts are partitioned per account generation and record the slot, the reason
+  and the cumulative switch count — never the credential.
+  **HTTP 429 deliberately does not trigger a switch** and keeps the existing
+  backoff: a two-round production experiment (382 + 7 requests, separate processes)
+  showed a second principal on the same host is rate-limited while the first is, so
+  the quota is not account-scoped. Switching on 429 would spend a second account's
+  quota for no throughput. This ships failover only; it does **not** add
+  multi-account concurrency.
+  Availability is three-valued — `not_configured`, `configured_unavailable`,
+  `configured_healthy` — and the switch state is `never_switched` / `switching` /
+  `switched_success` / `switched_failed` / `exhausted`, so "no second account" and
+  "second account present but unusable" are distinguishable rather than both
+  presenting as single-account operation.
 
 ### Fixed
 

@@ -81,12 +81,15 @@ class InstalledWheelTests(unittest.TestCase):
         _require_build_backend()
         with tempfile.TemporaryDirectory(prefix="gravity-insight-wheel-") as raw:
             temporary = Path(raw).resolve()
-            self.assertNotEqual(ROOT, temporary)
-            self.assertNotIn(ROOT, temporary.parents)
             project = temporary / "project"
             source = project / "src" / "gravity_insight"
             wheelhouse = temporary / "wheelhouse"
             extracted = temporary / "extracted"
+            self.assertNotEqual(project, extracted)
+            self.assertNotIn(project, extracted.parents)
+            # The copied project is the wheel's source. The isolated subprocess
+            # below verifies every imported module stays in the extracted wheel,
+            # including when CI deliberately keeps all temporary writes in-tree.
             project.mkdir()
             shutil.copy2(ROOT / "pyproject.toml", project / "pyproject.toml")
             shutil.copy2(ROOT / "README.md", project / "README.md")
