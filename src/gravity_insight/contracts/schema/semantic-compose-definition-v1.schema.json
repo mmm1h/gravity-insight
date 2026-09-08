@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "gravity.semantic-definition.v1",
+  "description": "Compose Definition: a versioned physical member catalog compiled to governed Multidim requests. Not a Business Definition or Business Source; select this schema by filename, not the shared $id/schema_version.",
   "type": "object",
   "additionalProperties": false,
   "required": [

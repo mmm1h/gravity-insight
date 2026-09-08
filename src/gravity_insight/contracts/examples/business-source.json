@@ -1,0 +1,56 @@
+{
+  "artifact_kind": "semantic_source",
+  "schema_version": "gravity.semantic-source.v1",
+  "source_id": "example-project/onboarding",
+  "source_kind": "project_json",
+  "project_id": "example-project",
+  "owner": "example-data",
+  "definitions": [
+    {
+      "artifact_kind": "semantic_definition",
+      "schema_version": "gravity.semantic-definition.v1",
+      "uri": "metric://example/acquisition-spend@1",
+      "kind": "metric",
+      "version": 1,
+      "owner": "example-data",
+      "authority": "project",
+      "display_name": "Fictional acquisition spend",
+      "description": "Offline onboarding example, not an approved business metric. The project owner must review identity, unit/currency, time, claims, effective range and physical binding before real use; currency and timezone are deliberately unknown.",
+      "effective_range": {"start": "2026-01-01", "end": "2026-12-31"},
+      "unit": {"kind": "currency", "symbol": "source-currency", "currency": null, "scale": 2},
+      "aggregation": {"method": "sum", "additivity": "additive"},
+      "time": {"grains": ["total"], "timezone": "unknown", "attribution_window": null},
+      "entity_uri": "entity://gravity/app@1",
+      "formula": {"operator": "source", "dependencies": [], "parameters": []},
+      "binding_required": true,
+      "claim_policy": {
+        "allowed": ["Point-in-time returned spend within the selected App, window and explicit filters."],
+        "forbidden": ["Complete App total", "Causal attribution", "Budget recommendation", "Replay-equivalent values across executions"]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "artifact_kind": "semantic_binding",
+      "schema_version": "gravity.semantic-binding.v1",
+      "binding_uri": "binding://example/acquisition-spend@1",
+      "semantic_uri": "metric://example/acquisition-spend@1",
+      "project_id": "example-project",
+      "owner": "example-data",
+      "app_alias": "demo",
+      "effective_range": {"start": "2026-01-01", "end": "2026-12-31"},
+      "provider": {
+        "kind": "semantic_compose",
+        "definition": {"definition_id": "report.ap-cost-observation", "version": 4},
+        "members": {
+          "metric": {"definition_id": "report.metric.ap-cost", "version": 1},
+          "dimension": {"definition_id": "report.dimension.click-company", "version": 1},
+          "filter": {"definition_id": "report.filter.click-company", "version": 1},
+          "grain": {"definition_id": "report.grain.total", "version": 1},
+          "join": {"definition_id": "report.join.adreport-click-company", "version": 1}
+        }
+      },
+      "parameters": {}
+    }
+  ]
+}
