@@ -21,6 +21,7 @@ Target release: `0.3.13`
 
 ### Added
 
+- Additive: `gravity skills host-install-plan --lock <project-lock>` stages only exact locked Skills after offline Runtime/source/index/package preflight; omitting `--lock` preserves full-bundle staging and shared Host entries are never pruned.
 - Additive: `gravity skills status` diagnoses project lock/Runtime version drift offline, distinguishes unchecked missing locks from matches and mismatches, and supplies an exact re-lock command without changing Runtime equality enforcement.
 - Additive: offline `gravity cache status|prune` reports file counts, logical/allocation bytes, legacy residue and reason-coded retention; pruning defaults to dry-run and requires `--execute`.
 
