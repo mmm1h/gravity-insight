@@ -77,6 +77,57 @@ Usage:
   gravity sql <command> [options]
   gravity census <command> [options]
 
+Semantic routes (three separate inputs):
+  gravity.toml [semantic_context]: caller-owned literal Agent routing, verified
+    queries and derived formulas; does not register Business Semantic URIs.
+  gravity semantic compose: explicit physical member/version request -> Multidim.
+    Does not consume a Business Source or the output of semantics resolve.
+  gravity semantics: offline Business Source Definition/Binding inspection.
+    Sources are explicit local files, never scanned or loaded from gravity.toml.
+    Execution depends on a registered Skill/Journey and its project overlay;
+    resolved is not execution readiness and does not enforce Journey claim gates.
+
+Business Source arguments (all four commands are offline):
+  gravity semantics list [--source <file> ...] [--kind <kind>]
+    Lists definitions; without --source only the built-in App entity is present.
+    kind: metric, dimension, entity, cohort, event, sku, activity, release, schema.
+  gravity semantics validate --source <file>
+    Validates one complete Source. Alternatively use --input <json|file|->;
+    supply exactly one of --source or --input, not both.
+  gravity semantics describe <uri> [--source <file> ...]
+    Shows exact-version definitions, bindings and conflicts; does not select scope.
+  gravity semantics resolve <uri> [--source <file> ...]
+    [--project-id <id>] [--app-alias <alias>] [--at <date> | --start <date> --end <date>]
+    URI includes @version. --source is JSON/TOML; repeat it for list/describe/resolve.
+    project-id and app-alias select Binding scope; alias is a literal here, not
+    a workspace App lookup. Omitted scope does not infer a workspace project/App.
+    Dates are YYYY-MM-DD, inclusive; --at excludes --start/--end, which need both.
+    Without dates, resolution uses today. The full window must be covered by
+    both Definition and Binding effective ranges. Resolve returns data, not a read.
+
+Compose version choice (report.ap-cost-observation, no implicit latest/default):
+  v1: original ap_cost request shape without the frontend request profile.
+  v2: small frontend-profile metric set with dimension-bound filters.
+  v3: expanded acquisition/payer/revenue members, new members limited to day/week.
+  v4: v3 members with fetched_at-scoped, point-in-time and cross-execution limits.
+  New illustrative inputs below pin v4 for its explicit observation limits;
+  existing project bindings stay on their approved exact version, not auto-upgraded.
+  Member versions are independent of the parent Definition version. Inspect
+  gravity semantic compose --input-schema before changing a member or grain.
+
+Packaged fictional examples (PowerShell; use the Python owning this Runtime):
+  $examples = python -c "from importlib.resources import files; print(files('gravity_insight').joinpath('contracts/examples'))"
+  gravity semantics validate --source "$examples/business-source.json"
+  gravity semantics resolve metric://example/acquisition-spend@1 --source "$examples/business-source.json" --project-id example-project --app-alias demo --start 2026-08-01 --end 2026-08-07
+  gravity semantic compose --app 1 --input "$examples/semantic-compose-input.json" --dry-run
+  App 1 and fictional-channel are dry-run placeholders, not real access scope.
+  Before real use, copy the files to your project and review owner, URI, business
+  meaning, currency, timezone, effective range, claims and physical members.
+  Compose execution needs an authorized App/filter/window and removal of --dry-run;
+  --app accepts a workspace alias or positive id; --workspace selects gravity.toml.
+  For strictly offline smoke, set GRAVITY_INSIGHT_AUTO_UPGRADE=0 and
+  GRAVITY_INSIGHT_AUTO_SKILLS=0 before starting the commands.
+
 Compatibility:
   Existing Insight commands may omit the `insight` namespace.
 

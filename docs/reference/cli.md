@@ -214,14 +214,16 @@ gravity multidim query --app main --input query.json --all-pages --output result
 ### Business Semantic 与 Semantic Compose
 
 ```powershell
-gravity semantics list
-gravity semantics describe <semantic-uri>
-gravity semantic compose --input-schema
-gravity semantic compose --app main --input semantic-request.json --dry-run
-gravity semantic compose --app main --input semantic-request.json
+gravity --help
+$examples = python -c "from importlib.resources import files; print(files('gravity_insight').joinpath('contracts/examples'))"
+gravity semantics validate --source "$examples/business-source.json"
+gravity semantics resolve metric://example/acquisition-spend@1 --source "$examples/business-source.json" --project-id example-project --app-alias demo --start 2026-08-01 --end 2026-08-07
+gravity semantic compose --app 1 --input "$examples/semantic-compose-input.json" --dry-run
 ```
 
-Semantic 编译使用版本化成员和项目 binding；未知成员、单位/粒度冲突、禁止 join 均零网络失败。
+完整虚构 [Business Source](../../src/gravity_insight/contracts/examples/business-source.json) 与 [Compose 请求](../../src/gravity_insight/contracts/examples/semantic-compose-input.json) 随包分发，不注册为内置内容；使用安装该 Runtime 的 Python 定位。
+根 `gravity --help` 解释三条路、四命令全部参数、scope 和 Compose v1-v4 的选择；Source 不放进 `gravity.toml`，Compose 不自动消费 resolve 输出。
+这只证明离线 validate/resolve/compile；App `1` 和渠道是虚构 dry-run 值，项目 owner 必须复核口径与真实绑定，生产执行仍走既有治理。严格离线时先设 `GRAVITY_INSIGHT_AUTO_UPGRADE=0`、`GRAVITY_INSIGHT_AUTO_SKILLS=0`。
 
 ### Material Performance
 

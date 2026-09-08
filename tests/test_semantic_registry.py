@@ -130,6 +130,63 @@ def semantic_binding(
 
 
 class SemanticRegistryTests(unittest.TestCase):
+    def test_definition_schemas_remain_structurally_distinguishable(self) -> None:
+        schemas = Path(__file__).resolve().parents[1] / "src/gravity_insight/contracts/schema"
+        business = json.loads((schemas / "semantic-definition-v1.schema.json").read_text(encoding="utf-8"))
+        compose = json.loads((schemas / "semantic-compose-definition-v1.schema.json").read_text(encoding="utf-8"))
+        shared = {"schema_version", "version", "description"}
+        self.assertEqual(shared, set(business["required"]) & set(compose["required"]))
+        # Shared metadata cannot discriminate. Each closed schema must reject
+        # the other family's mandatory structural fields, despite the shared ID.
+        for own, other in ((business, compose), (compose, business)):
+            exclusive = set(own["required"]) - shared
+            self.assertTrue(exclusive)
+            self.assertIs(other["additionalProperties"], False)
+            self.assertTrue(exclusive.isdisjoint(other["properties"]))
+
+    def test_packaged_onboarding_examples_run_through_offline_cli(self) -> None:
+        from importlib.resources import files
+        from gravity_insight.__main__ import main
+
+        examples = files("gravity_insight").joinpath("contracts/examples")
+        source = str(examples.joinpath("business-source.json"))
+
+        def invoke(*argv: str) -> dict:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with (
+                patch("socket.socket", side_effect=AssertionError("network attempted")),
+                patch("gravity_insight.runtime.build_client", side_effect=AssertionError("client constructed")),
+                patch("gravity_insight.onboarding.CredentialConfig.from_env", side_effect=AssertionError("credentials requested")),
+                redirect_stdout(stdout),
+                redirect_stderr(stderr),
+            ):
+                code = main(list(argv))
+            self.assertEqual(0, code, stderr.getvalue())
+            return json.loads(stdout.getvalue())
+
+        validated = invoke("semantics", "validate", "--source", source)
+        self.assertEqual("valid", validated["status"])
+        self.assertFalse(validated["network_called"])
+        self.assertEqual((1, 1), (validated["definition_count"], validated["binding_count"]))
+        resolved = invoke(
+            "semantics", "resolve", "metric://example/acquisition-spend@1",
+            "--source", source, "--project-id", "example-project", "--app-alias", "demo",
+            "--start", "2026-08-01", "--end", "2026-08-07",
+        )
+        self.assertEqual("resolved", resolved["status"])
+        self.assertFalse(resolved["network_called"])
+        self.assertEqual("binding://example/acquisition-spend@1", resolved["binding"]["contract"]["binding_uri"])
+        compiled = invoke(
+            "semantic", "compose", "--app", "1", "--input",
+            str(examples.joinpath("semantic-compose-input.json")), "--dry-run",
+        )
+        self.assertEqual("gravity.semantic-compose-compiled.v1", compiled["schema_version"])
+        self.assertFalse(compiled["validation"]["network_called"])
+        request = json.loads(examples.joinpath("semantic-compose-input.json").read_text(encoding="utf-8"))
+        provider = resolved["binding"]["contract"]["provider"]
+        self.assertEqual(provider["definition"], request["definition"])
+        self.assertEqual(provider["members"]["metric"], request["metric"])
+
     def test_runtime_builtins_contain_only_the_reusable_app_entity(self) -> None:
         builtins = builtin_semantic_source()
         self.assertEqual("gravity-runtime/builtins", builtins["source"]["source_id"])

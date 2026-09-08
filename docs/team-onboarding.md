@@ -73,6 +73,7 @@ canonical manifest 的独立 Agent 投影；用 `skills host-install-plan` 交�
 - 多个独立读取：使用一个 Plan 或 batch，共享全局有界并发预算。
 - Analysis spec：读取产品卡的 `schema_argv`，不要从 Web wire 或邻近 operation 猜形状。
 - Runtime 提供可复用 Semantic；具体活动、SKU、App/埋点绑定和项目公式参数来自显式项目 Source，缺失时不猜。
+- 首次语义校验看[可运行虚构示例](reference/cli.md#business-semantic-与-semantic-compose)；已有 Runtime Skill 包的 `references/PROJECT_BINDINGS.json` 是项目绑定占位模板，不是可直接执行的业务口径。
 
 产品步骤见[任务指南](agent-skills/index.md)，通用协议见[Agent 工作流](agent-workflow.md)。
 

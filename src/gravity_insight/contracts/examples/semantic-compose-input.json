@@ -1,0 +1,15 @@
+{
+  "definition": {"definition_id": "report.ap-cost-observation", "version": 4},
+  "window": {"start": "2026-08-01", "end": "2026-08-07"},
+  "metric": {"definition_id": "report.metric.ap-cost", "version": 1},
+  "dimensions": [{"definition_id": "report.dimension.click-company", "version": 1}],
+  "filters": [
+    {
+      "member": {"definition_id": "report.filter.click-company", "version": 1},
+      "operator": "IN",
+      "values": ["fictional-channel"]
+    }
+  ],
+  "grain": {"definition_id": "report.grain.total", "version": 1},
+  "joins": [{"definition_id": "report.join.adreport-click-company", "version": 1}]
+}
