@@ -85,13 +85,7 @@ def add_skill_hub_actions(actions: Any) -> None:
     )
     _local(repair, required=False)
 
-    host_plan = actions.add_parser(
-        "host-install-plan",
-        help="Prepare verified Codex or Claude native Skill install actions.",
-    )
-    host_plan.add_argument("--host", choices=("codex", "claude"), required=True)
-    host_plan.add_argument("--host-root", required=True)
-    _local(host_plan, required=False)
+    host_plan = _host_install_parser(actions)
 
     for parser in (
         listed,
@@ -175,7 +169,10 @@ def _maintenance_dispatch(
         result.pop("receipt_digest")
         return {**result, "receipt_digest": canonical_digest(result)}
     if command == "host-install-plan":
-        return client.host_install_plan(args.host, args.host_root)
+        return client.host_install_plan(
+            args.host, args.host_root,
+            selection=_json(args.lock) if args.lock is not None else None,
+        )
     project_root = (
         workspace.root
         if workspace is not None and workspace.configured
@@ -239,6 +236,25 @@ def _project_lock_status(client: SkillHubClient, path: Path) -> dict[str, Any]:
             rendered = shlex.join(arguments)
         result["next_action"] = "gravity skills lock " + rendered
     return result
+
+
+def _host_install_parser(actions: Any) -> Any:
+    parser = actions.add_parser(
+        "host-install-plan",
+        help="Prepare verified Codex or Claude native Skill install actions.",
+    )
+    parser.add_argument("--host", choices=("codex", "claude"), required=True)
+    parser.add_argument("--host-root", required=True)
+    parser.add_argument(
+        "--lock",
+        help=(
+            "Select exact Skills from a project lock matching this Runtime and "
+            "active bundled source/index and package digests; omit to stage the "
+            "full bundle. Offline; does not install or remove Host files."
+        ),
+    )
+    _local(parser, required=False)
+    return parser
 
 
 def _local(parser: Any, *, required: bool = True) -> None:

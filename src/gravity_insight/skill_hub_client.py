@@ -351,10 +351,15 @@ class SkillHubClient:
         host: str,
         host_root: str | Path,
         content: bytes | None = None,
+        *,
+        selection: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
+        """Stage the full bundle, or only Skills from an exact project lock."""
         from .skill_host_install import build_host_install_plan
 
-        return build_host_install_plan(self, host, host_root, content)
+        return build_host_install_plan(
+            self, host, host_root, content, selection=selection
+        )
 
     def _indexes(self) -> list[tuple[dict[str, Any], dict[str, Any]]]:
         from .skill_maintenance import maintenance_snapshot

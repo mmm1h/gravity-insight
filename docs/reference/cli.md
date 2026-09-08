@@ -464,7 +464,7 @@ gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
 gravity skills status [--state-root <state-root>] [--lock <project-lock>]
 gravity skills bootstrap [--state-root <state-root>]
 gravity skills repair [--state-root <state-root>]
-gravity skills host-install-plan --host codex|claude --host-root <host-skill-directory> [--state-root <state-root>]
+gravity skills host-install-plan --host codex|claude --host-root <host-skill-directory> [--state-root <state-root>] [--lock <project-lock>]
 ```
 
 普通 `gravity` 业务命令在 dispatch 前默认调用 `SkillHubClient.bootstrap_bundled()`；Runtime 自动升级
@@ -496,6 +496,12 @@ CLI 默认 JSON 输出另含 `project_lock`：读取显式 `--lock`，否则读�
 并只生成交给 Codex 或 Claude 原生 Skill installer 的 action。Runtime 不写宿主 Skill 目录；目标内容
 完全相同则为 `unchanged`，任何用户修改、额外文件或链接都返回 `local_override_conflict` 且不覆盖。
 plan 的 activation 固定为 `next_host_start`；仓库不声称 Codex 和 Claude 当前会话支持运行中 reload。
+显式 `--lock` 只展开所选项；不传仍展开完整 bundle，不隐式读取项目锁，也不删除共享 Host 根内其他条目。
+SDK 对应 `SkillHubClient.host_install_plan(..., selection=<lock mapping>)`；沿用 v1 plan，无 selection sidecar。
+所有选中项在 stage 前校验 lock 自身摘要、Runtime 精确版本、source/index、URI、manifest/package/archive 摘要及包元数据；任一不符整体拒绝，不退回全量。
+完整 seed、managed lock 与 maintenance `skill_count` 仍表示供给量；plan 的 actions/unchanged/conflicts 表示所选集合。
+此 API 只服务 active bundled seed，不自动获取任意旧 Agent 包。版本不符为 `HUB_RUNTIME_INCOMPATIBLE`，来源不符为 `HUB_SOURCE_SNAPSHOT_CHANGED`，URI 不可用为 `HOST_SKILL_UNAVAILABLE`，包记录不符为 `HOST_SKILL_LOCK_MISMATCH`。
+保留旧 lock/CAS 及匹配的 Runtime/seed，或显式 `skills bootstrap` 采纳当前供给后 `skills lock --source-id <source-id> --skill <exact-uri> --output <new-lock> --state-root <state-root>`，评审新锁再重试；URI 缺失先用 `skills list --state-root <state-root>` 选择可用版本。失败不改项目锁。
 Agent Skill 可安装不代表可执行；入口必须读取
 `SCHEMA.json` 的声明和 Runtime 当前 readiness，在 `blocked`、`unvalidated` 或依赖未解析时停止。
 不带 `--source` 的 `gravity models ...` 读取 Runtime Core 内置且受信的 Model Artifact；
