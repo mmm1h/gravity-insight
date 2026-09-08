@@ -19,6 +19,10 @@ Target release: `0.3.14`
 
 - None.
 
+### Fixed
+
+- Publish Skill Library `skill-library-v5` so the released library carries the corrected `metric-anomaly-localization@1` completeness declaration. The wheel seed is rebuilt from the checkout while the library is released separately, so a corrected Skill reached the 0.3.13 seed but never `skill-library-v4`: an offline consumer and one fetching the advertised `index_url` read different capability declarations under the same `source_id`. A pinned build-manifest digest now fails at the commit that introduces such drift. Published v1-v4 assets are unchanged.
+
 ## [0.3.13] - 2026-09-08
 
 ### Breaking changes

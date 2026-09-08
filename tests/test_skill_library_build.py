@@ -279,7 +279,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             )
 
     def test_static_hub_source_points_to_release_payload(self) -> None:
-        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v4"))
+        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v5"))
         self.assertEqual("static_https", self.source["transport"])
         self.assertIsNone(self.source["git"])
         self.assertTrue(self.source["https"]["index_url"].endswith("/index.json"))
@@ -350,6 +350,20 @@ class SkillLibraryBuildTests(unittest.TestCase):
 
     def test_build_check_accepts_the_current_source(self) -> None:
         self.assertEqual(0, builder.main(["--check"]))
+
+    def test_rendered_library_matches_the_published_release(self) -> None:
+        # The sealed seed is rebuilt from this checkout when the wheel is
+        # built, but the Skill Library release is published separately, and
+        # nothing else compares them. A Skill or capability edit that is never
+        # republished therefore ships a seed whose declarations differ from the
+        # index_url the same source_id advertises. Failing here means:
+        # republish the library and update PUBLISH_BASE together with this
+        # digest, or revert the change. Refreshing the constant alone
+        # reintroduces exactly the divergence it exists to catch.
+        self.assertEqual(
+            builder.PUBLISHED_BUILD_MANIFEST_SHA256,
+            hashlib.sha256(self.outputs["build-manifest.json"]).hexdigest(),
+        )
 
 
 if __name__ == "__main__":

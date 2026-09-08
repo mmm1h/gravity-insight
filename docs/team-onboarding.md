@@ -49,7 +49,7 @@ gravity agent-catalog describe analysis.query.spec:event
 安装后先查看 wheel seed 的离线装配状态；只有需要显式外部 Hub Source 时才同步：
 
 ```powershell
-curl -sL -o source.json https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v4/source.json
+curl -sL -o source.json https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v5/source.json
 gravity agent-catalog categories
 gravity skills status
 gravity skills list --state-root <state-root>

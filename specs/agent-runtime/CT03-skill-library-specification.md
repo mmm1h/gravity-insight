@@ -5,7 +5,7 @@
 | Status | `fixed_dev` |
 | Canonical input | `skills/library/*.json` |
 | Builder | `scripts/generate_skill_library.py` |
-| Publication target | GitHub Release `skill-library-v4` |
+| Publication target | GitHub Release `skill-library-v5` |
 
 ## Contract
 

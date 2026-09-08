@@ -441,7 +441,7 @@ Journey readiness、Skill lock/trust、playbook checkpoint 和 Plan DAG 是不�
 
 ### Skill Hub 与 Agent Skill
 
-当前 `skill-library-v4` Release 同时发布两种相互隔离的静态产物：`index.json` 和
+当前 `skill-library-v5` Release 同时发布两种相互隔离的静态产物：`index.json` 和
 `runtime-skill-*.zip` 属于 Runtime Hub；`agent-index.json` 和 `agent-skill-*.zip` 属于 Codex、
 Claude Code 等宿主的 Agent Skill 投影。GitHub Release 资产使用全局唯一的扁平名称，两个 index
 不引用 Release 无法寻址的目录路径。普通 Runtime 包不含可直接发现的 `SKILL.md`，Agent Skill

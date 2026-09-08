@@ -48,7 +48,20 @@ AGENT_INDEX_SCHEMA_PATH = (
 DEFAULT_OUTPUT = ROOT / "build" / "skill-hub"
 SEED_FILENAME = "skill-seed-v1.zip"
 PUBLISH_BASE = (
-    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v4"
+    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v5"
+)
+# Digest of the build manifest actually published at PUBLISH_BASE. The wheel's
+# sealed seed is rebuilt from this checkout at build time, but the Skill
+# Library release is published separately, so any edit that reaches a rendered
+# archive silently makes the shipped seed disagree with the published library:
+# an offline consumer then reads different capability declarations than one
+# fetching the declared index_url. That happened between skill-library-v4 and
+# 0.3.13, where a corrected `completeness` reached the seed but never the
+# release. The manifest is pinned rather than the canonical-Skill digest
+# because Skills resolve capability contracts at render time -- editing one of
+# those changes the published archives without changing the source digest.
+PUBLISHED_BUILD_MANIFEST_SHA256 = (
+    "1cf00dbdf8b094942c217dd3ba03b330442a710239a0213e53d5c5a9f850bbb4"
 )
 _NAMESPACE = re.compile(
     r"^(?:gravity\.(?:core|game)(?:\.[a-z][a-z0-9-]*)*|"
