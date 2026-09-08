@@ -24,6 +24,78 @@ ROOT = Path(__file__).resolve().parents[1]
 SAMPLED_ON = "2026-09-07"
 
 
+@pytest.mark.parametrize(
+    ("mapping_id", "subtype", "source_name", "pointer"),
+    [
+        ("bytedance.material", None, "targeted-summary", "/material_mid_union"),
+        ("bytedance.project", None, "targeted-summary", "/project_id_comparisons/1"),
+        ("bytedance.promotion", None, "research-summary", "/mapping_rows/2"),
+        ("bytedance.advertiser", None, "research-summary", "/mapping_rows/4"),
+        ("kuaishou.material", None, "research-summary", "/mapping_rows/5"),
+        ("kuaishou.unit", None, "research-summary", "/mapping_rows/7"),
+        ("kuaishou.campaign", None, "research-summary", "/mapping_rows/8"),
+        ("kuaishou.advertiser", None, "research-summary", "/mapping_rows/9"),
+        ("tencent.material", None, "research-summary", "/mapping_rows/10"),
+        ("tencent.creative", None, "research-summary", "/mapping_rows/11"),
+        ("tencent.adgroup", None, "research-summary", "/mapping_rows/12"),
+        ("tencent.advertiser", None, "research-summary", "/mapping_rows/14"),
+        ("bytedance.material", "image", "research-summary", "/mid_summary/0"),
+        ("bytedance.material", "video", "research-summary", "/mid_summary/2"),
+        *[
+            (f"bytedance.material.candidate.mid{i}", None, "research-summary", f"/mid_summary/{i - 1}")
+            for i in (2, 4, 5, 6, 7, 8)
+        ],
+    ],
+)
+def test_join_evidence_counts_and_denominator_match_source(
+    mapping_id: str, subtype: str | None, source_name: str, pointer: str,
+) -> None:
+    # Reviewed aggregate projections retain original JSON pointers and file hashes;
+    # no private tmp files or probe execution are needed to reproduce this check.
+    sources = json.loads(
+        (ROOT / "tests/fixtures/join_key_evidence_sources.json").read_text(encoding="utf-8")
+    )
+    source = sources[source_name]
+    row = source["excerpts"][pointer]
+    mapping = next(m for m in join_key_registry()["mappings"] if m["mapping_id"] == mapping_id)
+    fields = mapping["right"]["fields"]
+    selected = next(f for f in fields if f["object_subtype"] == subtype) if subtype else fields[0]
+    evidence = selected["candidate_evidence"] if subtype else mapping["evidence"]
+    right_name = selected["reference"]["path"].removeprefix("data.list[].")
+    if "material_intersection" in row:
+        assert right_name == row["field"]
+        comparison = row["material_intersection"]
+        denominator = row["shape"]["sample_rows"]
+        assert denominator == source["user_sample_rows"][mapping["platform"]]
+    elif "evidence" in row:
+        assert mapping["platform"] == row["platform"]
+        left = mapping["left"]
+        assert f'{left["operation_id"]}.{left["path"].removeprefix("data.list[].")}' == row["delivery_field"]
+        assert f'{selected["reference"]["operation_id"]}.{right_name}' == row["user_field"]
+        comparison = row["evidence"]
+        denominator = row["right_shape"]["sample_rows"]
+        assert denominator == source["user_sample_rows"][mapping["platform"]]
+    else:
+        comparison = row
+        denominator = source["sample_rows"]["users"]
+        if "user_field" in row:
+            assert right_name == row["user_field"]
+        else:
+            assert {f["reference"]["path"] for f in fields} == {
+                "data.list[].bytedanceMid1", "data.list[].bytedanceMid3",
+            }
+    expected = {
+        "source": f"issue://mmm1h/gravity-insight/154#joinkey-research-{source_name}",
+        "request_count": source["production_http_requests_this_run"],
+        "observation_scope": "field_candidate" if "material_intersection" in row else "platform_object",
+        "user_row_count": denominator,
+        "left_distinct_count": comparison["left_unique"],
+        "right_distinct_count": comparison["right_unique"],
+        "intersection_distinct_count": comparison["intersection"],
+    }
+    assert {key: evidence[key] for key in expected} == expected
+
+
 def test_checked_in_join_key_registry_is_schema_valid_and_reviewed() -> None:
     registry = join_key_registry()
 

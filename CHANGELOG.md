@@ -33,6 +33,7 @@ Target release: `0.3.13`
 
 ### Fixed
 
+- Correct join-key evidence denominators and per-probe request counts; existing `source` fragments identify `joinkey-research-{research,targeted}-summary` artifacts with paths, SHA-256 hashes and aggregate excerpts in `tests/fixtures/join_key_evidence_sources.json`. Unresolved evidence, adjudications and expiry rules remain unchanged.
 - Cache-root resolution now consistently honors `GRAVITY_CACHE_HOME`, uses `gravity-insight`, and expands/resolves paths. Existing account snapshots remain readable through legacy-location fallback without a forced network refresh; no scope semantics or read capabilities are removed.
 
 ## [0.3.12] - 2026-09-07
