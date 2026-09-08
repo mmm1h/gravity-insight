@@ -1,0 +1,38 @@
+{
+  "research-summary": {
+    "artifact_path": "tmp/codex/joinkey-research/research-summary.json",
+    "artifact_sha256": "69bb8ea5425341e2f1bc7637e973d9c74fcfb70b1a9c39c3cb43e672ff3a3f02",
+    "production_http_requests_this_run": 129,
+    "user_sample_rows": {"bytedance":856,"kuaishou":823,"tencent":799},
+    "excerpts": {
+      "/mid_summary/0": {"field":"bytedanceMid1","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":15,"intersection":9}},
+      "/mid_summary/1": {"field":"bytedanceMid2","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":68,"intersection":0}},
+      "/mid_summary/2": {"field":"bytedanceMid3","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":93,"intersection":14}},
+      "/mid_summary/3": {"field":"bytedanceMid4","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":1,"intersection":0}},
+      "/mid_summary/4": {"field":"bytedanceMid5","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":8,"intersection":0}},
+      "/mid_summary/5": {"field":"bytedanceMid6","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":1,"intersection":0}},
+      "/mid_summary/6": {"field":"bytedanceMid7","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":1,"intersection":0}},
+      "/mid_summary/7": {"field":"bytedanceMid8","shape":{"sample_rows":856},"material_intersection":{"left_unique":91,"right_unique":1,"intersection":0}},
+      "/mapping_rows/2": {"platform":"bytedance","delivery_field":"promotion.bytedance.promotion_filter.list.promotion_id","user_field":"analysis.user_detail.list.AdAid","evidence":{"left_unique":24,"right_unique":93,"intersection":2},"right_shape":{"sample_rows":856}},
+      "/mapping_rows/4": {"platform":"bytedance","delivery_field":"promotion.bytedance.advertiser.list.advertiser_id","user_field":"analysis.user_detail.list.AdvertiserID","evidence":{"left_unique":50,"right_unique":49,"intersection":9},"right_shape":{"sample_rows":856}},
+      "/mapping_rows/5": {"platform":"kuaishou","delivery_field":"material.report.query.material_id","user_field":"analysis.user_detail.list.bytedanceMid3","evidence":{"left_unique":49,"right_unique":34,"intersection":19},"right_shape":{"sample_rows":823}},
+      "/mapping_rows/7": {"platform":"kuaishou","delivery_field":"promotion.kuaishou.ad_unit.list.unit_id","user_field":"analysis.user_detail.list.AdAid","evidence":{"left_unique":50,"right_unique":53,"intersection":34},"right_shape":{"sample_rows":823}},
+      "/mapping_rows/8": {"platform":"kuaishou","delivery_field":"promotion.kuaishou.ad_unit.list.campaign_id","user_field":"analysis.user_detail.list.AdGid","evidence":{"left_unique":17,"right_unique":20,"intersection":15},"right_shape":{"sample_rows":823}},
+      "/mapping_rows/9": {"platform":"kuaishou","delivery_field":"promotion.kuaishou.advertiser.list.advertiser_id","user_field":"analysis.user_detail.list.AdvertiserID","evidence":{"left_unique":8,"right_unique":5,"intersection":4},"right_shape":{"sample_rows":823}},
+      "/mapping_rows/10": {"platform":"tencent","delivery_field":"material.report.query.material_id","user_field":"analysis.user_detail.list.bytedanceMid3","evidence":{"left_unique":50,"right_unique":45,"intersection":16},"right_shape":{"sample_rows":799}},
+      "/mapping_rows/11": {"platform":"tencent","delivery_field":"material.tencent_medium_creative.list.dynamic_creative_id","user_field":"analysis.user_detail.list.AdCid","evidence":{"left_unique":134,"right_unique":51,"intersection":12},"right_shape":{"sample_rows":799}},
+      "/mapping_rows/12": {"platform":"tencent","delivery_field":"promotion.tencent.tencent_adgroup_v2.list.adgroup_id","user_field":"analysis.user_detail.list.AdAid","evidence":{"left_unique":59,"right_unique":15,"intersection":15},"right_shape":{"sample_rows":799}},
+      "/mapping_rows/14": {"platform":"tencent","delivery_field":"promotion.tencent.advertiser.list.advertiser_id","user_field":"analysis.user_detail.list.AdvertiserID","evidence":{"left_unique":50,"right_unique":12,"intersection":12},"right_shape":{"sample_rows":799}}
+    }
+  },
+  "targeted-summary": {
+    "artifact_path": "tmp/codex/joinkey-research/targeted-summary.json",
+    "artifact_sha256": "d32a95d8918a0792783d1d0e60ef472a1b1addf061e03687490c4f6e848f919d",
+    "production_http_requests_this_run": 22,
+    "sample_rows": {"users":383,"materials":30,"projects":74,"promotions":100},
+    "excerpts": {
+      "/material_mid_union": {"left_unique":27,"right_unique":87,"intersection":10},
+      "/project_id_comparisons/1": {"user_field":"AdGid","left_unique":74,"right_unique":61,"intersection":7}
+    }
+  }
+}
