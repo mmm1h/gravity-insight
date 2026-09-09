@@ -1,29 +1,29 @@
-"""Reusable offline Journey registry, readiness, impact, and execution facade."""
+"""Journey inspection and readiness over explicitly bound existing owners."""
 
 from __future__ import annotations
 
 import copy
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any
 
 from .actionable_error_values import actual_value
 from .agent_runtime_contracts import canonical_digest
 from .analysis_result_contract import compile_analysis_result
 from .capability_impact import capability_impact
-from .capability_trust import (
-    CapabilityTrustService,
-    assess_capability_requirement,
+from .capability_trust import CapabilityTrustService
+from .contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, DiagnosticEvidence, DiagnosticState,
+    EnvelopeObligations, ExecutionState, ExecutionStatus, MutationCertainty,
+    MutationState, SemanticState, SemanticValidity, serialize_envelope,
 )
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
-from .execution_snapshot import build_execution_snapshot
-from .journey_contract import (
-    journey_artifact,
-    journey_artifacts,
-    verify_journey_registry,
-)
+from .execution_snapshot import build_execution_snapshot, snapshot_change_reasons
+from .journey_contract import journey_artifact, journey_artifacts, verify_journey_registry
 from .model_registry import ModelRegistry
 from .operator_registry import OperatorRegistry
 from .reference_journey_contract import JOURNEY_ID
+from .workspace_app import resolve_workspace_app
 
 
 CAN_RUN_SCHEMA_VERSION = "gravity.journey-can-run.v1"
@@ -57,6 +57,8 @@ class JourneyService:
             skill_runtime = CoreSkillRuntime(
                 workspace=self._workspace,
                 capability_trust=self._capability_trust,
+                operators=self._operators,
+                models=self._models,
             )
         self._skill_runtime = skill_runtime
 
@@ -64,17 +66,16 @@ class JourneyService:
         rows = []
         for artifact in journey_artifacts():
             contract = artifact["contract"]
-            rows.append(
-                {
-                    "journey_id": contract["journey_id"],
-                    "display_name": contract["display_name"],
-                    "version": contract["version"],
-                    "lifecycle": contract["lifecycle"],
-                    "execution_mode": contract["execution"]["mode"],
-                    "surfaces": copy.deepcopy(contract["surfaces"]),
-                    "digest": artifact["digest"],
-                }
-            )
+            rows.append({
+                "journey_id": contract["journey_id"],
+                "display_name": contract["display_name"],
+                "version": contract["version"],
+                "lifecycle": contract["lifecycle"],
+                "execution_mode": contract["execution"]["mode"],
+                "execution_binding": self._binding(contract),
+                "surfaces": copy.deepcopy(contract["surfaces"]),
+                "digest": artifact["digest"],
+            })
         return {
             "schema_version": LIST_SCHEMA_VERSION,
             "status": "success",
@@ -92,341 +93,258 @@ class JourneyService:
         return {
             "schema_version": DESCRIPTION_SCHEMA_VERSION,
             "journey": {
-                "journey_id": contract["journey_id"],
-                "display_name": contract["display_name"],
-                "version": contract["version"],
-                "lifecycle": contract["lifecycle"],
-                "owner": contract["owner"],
-                "calling_project": contract["calling_project"],
+                **{key: contract[key] for key in (
+                    "journey_id", "display_name", "version", "lifecycle", "owner", "calling_project"
+                )},
                 "digest": artifact["digest"],
             },
-            "skill": _skill_reference(contract),
-            "required_semantics": copy.deepcopy(contract["required_semantics"]),
-            "required_operators": copy.deepcopy(contract["required_operators"]),
-            "required_models": copy.deepcopy(contract["required_models"]),
-            "required_context": copy.deepcopy(contract["required_context"]),
-            "required_capabilities": copy.deepcopy(
-                contract["required_capabilities"]
-            ),
-            "surfaces": copy.deepcopy(contract["surfaces"]),
-            "request_budget": copy.deepcopy(contract["request_budget"]),
-            "claim_policy": copy.deepcopy(contract["claim_policy"]),
-            "execution": copy.deepcopy(contract["execution"]),
+            "skill": {"uri": contract["required_skill"]} if contract["required_skill"] else None,
+            **{key: copy.deepcopy(contract[key]) for key in (
+                "required_semantics", "required_operators", "required_models",
+                "required_context", "required_capabilities", "surfaces",
+                "request_budget", "claim_policy", "execution"
+            )},
+            "execution_binding": self._binding(contract),
             "network_called": False,
         }
 
+    def _binding(self, contract: Mapping[str, Any]) -> dict[str, Any]:
+        identity = contract["journey_id"]
+        method, owner, mode, schema = None, None, None, None
+        if identity == JOURNEY_ID:
+            method, owner, mode = "metric_anomaly_playbook", "metric-anomaly-localization@1", "plan"
+            schema = "gravity.analysis-result.v1"
+        elif identity == "analysis.default-value-dictionary":
+            method, owner, mode = "analysis_default_dictionary", "composite:analysis_default_dictionary", "composite"
+            from .analysis_default_dictionary import SCHEMA_VERSION
+
+            schema = SCHEMA_VERSION
+        elif identity == "analysis.realtime-event-catalog":
+            method, owner, mode = "realtime_event_catalog", "composite:realtime_event_catalog", "composite"
+            from .realtime_event_catalog import SCHEMA_VERSION
+
+            schema = SCHEMA_VERSION
+        bound = (
+            method is not None
+            and contract["execution"]["owner"] == owner
+            and contract["execution"]["mode"] == mode
+            and callable(getattr(self._sdk, method, None))
+        )
+        return {
+            "status": "bound" if bound else (
+                "method_guidance" if contract["execution"]["mode"] == "unavailable" else "unbound"
+            ),
+            "owner": contract["execution"]["owner"],
+            "sdk_method": method,
+            "result_schema_version": schema,
+        }
+
+    def _reference_runner(self) -> Any:
+        from .reference_journey import ReferenceJourneyRunner
+
+        return ReferenceJourneyRunner(
+            self._sdk, workspace=self._workspace,
+            capability_trust=self._capability_trust, core_runtime=self._skill_runtime,
+        )
+
     def can_run(
-        self,
-        journey_id: str,
-        inputs: Mapping[str, Any] | None = None,
+        self, journey_id: str, inputs: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        result = self._assess(journey_id, inputs)
+        for key in ("normalized_input", "semantic_bindings", "default_scope"):
+            result.pop(key, None)
+        return result
+
+    def _assess(
+        self, journey_id: str, inputs: Mapping[str, Any] | None,
     ) -> dict[str, Any]:
         artifact = _journey(journey_id)
-        if journey_id == JOURNEY_ID:
-            from .reference_journey import ReferenceJourneyRunner
+        contract = artifact["contract"]
+        binding = self._binding(contract)
+        selected = {} if inputs is None else inputs
+        normalized = None
+        if contract["journey_id"] == JOURNEY_ID:
+            core = self._reference_runner().can_run(selected)
+        else:
+            try:
+                if not isinstance(selected, Mapping):
+                    raise InputValidationError("Journey input must be an object", field="inputs")
+                if binding["sdk_method"] is not None:
+                    normalized = self._product_inputs(binding["sdk_method"], selected)
+                    scope = None
+                else:
+                    if set(selected) - {"scope"}:
+                        raise InputValidationError(
+                            "actual value: unsupported fields; unbound Journey accepts only dependency scope",
+                            field="inputs",
+                            next_action="Pass only scope with app_alias and named start/end windows; use the Product directly for business inputs.",
+                        )
+                    scope = selected.get("scope")
+                core = self._skill_runtime.resolve(contract["journey_id"], scope)
+            except InputValidationError as exc:
+                reason = "PROJECT_APP_BINDING_MISSING" if exc.field == "app" else "JOURNEY_INPUT_INVALID"
+                core = _unresolved(artifact, reason)
+        payload, obligations = _readiness_parts(core, contract, binding, normalized)
+        return serialize_envelope(payload, obligations)
 
-            return ReferenceJourneyRunner(
-                self._sdk,
-                workspace=self._workspace,
-                capability_trust=self._capability_trust,
-                core_runtime=self._skill_runtime,
-            ).can_run(inputs if inputs is not None else {})
-        if inputs is not None and not isinstance(inputs, Mapping):
-            return _generic_can_run(
-                artifact,
-                capability_results=[],
-                status="invalid",
-                reasons=["JOURNEY_INPUT_INVALID"],
+    def _product_inputs(self, method: str, inputs: Mapping[str, Any]) -> dict[str, Any]:
+        fields = {"app"} if method == "analysis_default_dictionary" else {"app", "start", "end", "event_type"}
+        if set(inputs) - fields:
+            raise InputValidationError(
+                "actual value: unsupported fields; Journey Product input fields changed",
+                field="inputs", next_action="Use app for the dictionary; add start/end and optional event_type for the realtime catalog.",
             )
-        return self._generic_can_run(artifact)
+        result = {"app": resolve_workspace_app(self._workspace, inputs.get("app"))}
+        if method == "realtime_event_catalog":
+            start, end = inputs.get("start"), inputs.get("end")
+            try:
+                dates = [datetime.strptime(value, "%Y-%m-%d %H:%M:%S") for value in (start, end)]
+                valid = all(date.strftime("%Y-%m-%d %H:%M:%S") == value for date, value in zip(dates, (start, end)))
+            except (ValueError, TypeError):
+                valid = False
+            event_type = inputs.get("event_type", "profile")
+            if not valid or dates[0] > dates[1] or not isinstance(event_type, str):
+                raise InputValidationError("Catalog requires an explicit ordered datetime window and string event_type", field="inputs")
+            result.update(start=start, end=end, event_type=event_type)
+        return result
 
     def run(
-        self,
-        journey_id: str,
-        inputs: Mapping[str, Any] | None = None,
+        self, journey_id: str, inputs: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        artifact = _journey(journey_id)
-        if journey_id == JOURNEY_ID:
-            from .reference_journey import ReferenceJourneyRunner
-
-            return ReferenceJourneyRunner(
-                self._sdk,
-                workspace=self._workspace,
-                capability_trust=self._capability_trust,
-                core_runtime=self._skill_runtime,
-            ).run(inputs if inputs is not None else {})
-        readiness = self.can_run(journey_id, inputs)
-        reasons = list(readiness["reason_codes"])
-        if readiness["can_run_status"] == "verified":
-            reasons = ["JOURNEY_EXECUTION_NOT_BOUND"]
-        snapshot = readiness["execution_snapshot"]
-        return compile_analysis_result({
-            "schema_version": "gravity.analysis-result.v1",
-            "ok": False,
-            "status": (
-                "invalid"
-                if readiness["can_run_status"] == "invalid"
-                else "blocked"
-            ),
-            "exit_code": (
-                _INVALID_EXIT
-                if readiness["can_run_status"] == "invalid"
-                else _BLOCKED_EXIT
-            ),
-            "question": None,
-            "journey": copy.deepcopy(snapshot["journey"]),
-            "skill": copy.deepcopy(snapshot["skill"]),
-            "scope": None,
-            "semantics": copy.deepcopy(snapshot["semantics"]),
-            "capabilities": copy.deepcopy(snapshot["capabilities"]),
-            "operators": copy.deepcopy(snapshot["operators"]),
-            "models": copy.deepcopy(snapshot["models"]),
-            "context_packs": [],
-            "can_run_status": readiness["can_run_status"],
-            "reason_codes": reasons,
-            "completeness": "unknown",
-            "data_quality": {
-                "schema_version": "gravity.data-quality-result.v1",
-                "status": "unknown",
-                "checks": [],
-                "reason_codes": ["DATA_QUALITY_UNPROVEN"],
-            },
-            "evidence_level": None,
-            "findings": [],
-            "excluded_factors": [],
-            "hypotheses": [],
-            "limitations": ["Journey execution is not bound to a current owner."],
-            "allowed_claims": [],
-            "forbidden_claims": copy.deepcopy(artifact["contract"]["claim_policy"]["forbidden"]),
-            "recommended_next_actions": [],
-            "receipt_references": [],
-            "execution_snapshot": copy.deepcopy(snapshot),
-            "network_called": False,
-        })
+        before = self._assess(journey_id, inputs)
+        if not before["ok"]:
+            return _blocked_result(before)
+        if before["journey"]["journey_id"] == JOURNEY_ID:
+            return self._reference_runner().run({} if inputs is None else inputs)
+        method = before["execution_binding"]["sdk_method"]
+        result = getattr(self._sdk, method)(**before["normalized_input"], workspace=self._workspace)
+        after = self._assess(journey_id, inputs)
+        reasons = snapshot_change_reasons(before["execution_snapshot"], after["execution_snapshot"])
+        if before["normalized_input"] != after["normalized_input"]:
+            reasons.append("PROJECT_APP_BINDING_CHANGED")
+        if before["execution_binding"] != after["execution_binding"]:
+            reasons.append("JOURNEY_EXECUTION_BINDING_CHANGED")
+        if not isinstance(result, Mapping) or result.get("schema_version") != before["execution_binding"]["result_schema_version"]:
+            reasons.append("JOURNEY_RESULT_CONTRACT_CHANGED")
+        if reasons or not after["ok"]:
+            # Discard observations made under a changed dependency set.
+            failed = copy.deepcopy(before)
+            failed["can_run_status"] = "blocked"
+            failed["reason_codes"] = list(dict.fromkeys([*after["reason_codes"], *reasons]))
+            return _blocked_result(failed, network_called=True)
+        # Product owners retain their own projection, completeness and errors.
+        return result
 
     def impact(self, request: Mapping[str, Any]) -> dict[str, Any]:
         return capability_impact(request)
 
-    def _generic_can_run(self, artifact: Mapping[str, Any]) -> dict[str, Any]:
-        contract = artifact["contract"]
-        capability_results: list[dict[str, Any]] = []
-        statuses: list[str] = []
-        reasons: list[str] = []
-        for requirement in contract["required_capabilities"]:
-            result = self._capability_trust.trust(
-                str(requirement["identity_kind"]), str(requirement["selector"])
-            )
-            capability_results.append(result)
-            status, selected_reasons = assess_capability_requirement(
-                result, requirement
-            )
-            statuses.append(status)
-            reasons.extend(selected_reasons)
-        if contract["required_semantics"]:
-            statuses.append("blocked")
-            reasons.append("SEMANTIC_DEFINITION_MISSING")
-        operator_dependencies = self._operators.dependencies(
-            contract["required_operators"]
-        )
-        if not operator_dependencies["ok"]:
-            statuses.append("blocked")
-            reasons.extend(operator_dependencies["reason_codes"])
-        model_dependencies = self._models.dependencies(contract["required_models"])
-        if not model_dependencies["ok"]:
-            statuses.append("blocked")
-            reasons.extend(model_dependencies["reason_codes"])
-        if contract["required_context"]:
-            statuses.append("blocked")
-            reasons.append("CONTEXT_REQUIRED_MISSING")
-        if contract["required_skill"]:
-            statuses.append("blocked")
-            reasons.append("SKILL_DEPENDENCY_UNRESOLVED")
-        if contract["lifecycle"] == "revoked":
-            statuses.append("blocked")
-            reasons.append("JOURNEY_REVOKED")
-        status = (
-            "blocked"
-            if "blocked" in statuses
-            else "unknown"
-            if "unknown" in statuses or not statuses
-            else "verified"
-        )
-        return _generic_can_run(
-            artifact,
-            capability_results=capability_results,
-            operator_dependencies=operator_dependencies,
-            model_dependencies=model_dependencies,
-            status=status,
-            reasons=reasons,
-        )
 
-
-def _generic_can_run(
-    artifact: Mapping[str, Any],
-    *,
-    capability_results: list[dict[str, Any]],
-    operator_dependencies: Mapping[str, Any] | None = None,
-    model_dependencies: Mapping[str, Any] | None = None,
-    status: str,
-    reasons: list[str],
-) -> dict[str, Any]:
-    contract = artifact["contract"]
-    operator_dependencies = operator_dependencies or {
-        "dependencies": [], "reason_codes": []
-    }
-    model_dependencies = model_dependencies or {
-        "dependencies": [], "reason_codes": []
-    }
-    dependencies = {
-        "capabilities": copy.deepcopy(capability_results),
-        "semantics": _static_dependencies(contract["required_semantics"]),
-        "operators": copy.deepcopy(operator_dependencies["dependencies"]),
-        "models": copy.deepcopy(model_dependencies["dependencies"]),
-        "context": _static_dependencies(contract["required_context"]),
-        "skill": (
-            {"uri": contract["required_skill"], "status": "unresolved"}
-            if contract["required_skill"]
-            else None
-        ),
-    }
-    snapshot = _generic_execution_snapshot(
-        artifact,
-        capability_results,
-        operator_dependencies,
-        model_dependencies,
-        status,
+def _readiness_parts(
+    core: Mapping[str, Any], contract: Mapping[str, Any],
+    binding: Mapping[str, Any], normalized: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], EnvelopeObligations]:
+    result = copy.deepcopy(dict(core))
+    status = str(core["status"])
+    reasons = list(core["reason_codes"])
+    if status == "unknown" and not reasons:
+        reasons.append("DEPENDENCY_VALIDATION_UNKNOWN")
+    if binding["status"] != "bound":
+        reasons.append("JOURNEY_EXECUTION_NOT_BOUND")
+    state = (
+        "dependency_blocked" if status != "verified"
+        else "unbound" if binding["status"] != "bound" else "executable"
     )
-    return {
+    public_status = "blocked" if state == "unbound" else status
+    reasons = list(dict.fromkeys(reasons))
+    result.update({
         "schema_version": CAN_RUN_SCHEMA_VERSION,
-        "ok": status == "verified",
-        "status": status,
-        "exit_code": (
-            0 if status == "verified" else _INVALID_EXIT if status == "invalid" else _BLOCKED_EXIT
+        "ok": state == "executable",
+        "status": public_status,
+        "exit_code": 0 if state == "executable" else (
+            _INVALID_EXIT if status == "invalid" else _BLOCKED_EXIT
         ),
-        "journey": {
-            "journey_id": contract["journey_id"],
-            "version": contract["version"],
-            "digest": artifact["digest"],
-        },
-        "lifecycle": contract["lifecycle"],
-        "can_run_status": status,
-        "reason_codes": list(dict.fromkeys(reasons)),
-        "dependencies": dependencies,
-        "execution_snapshot": snapshot,
+        "can_run_status": public_status,
+        "execution_readiness": state,
+        "execution_binding": copy.deepcopy(binding),
+        "dependency_status": status,
+        "reason_codes": reasons,
+        "claim_policy": copy.deepcopy(core.get("claim_policy") or contract["claim_policy"]),
+        "normalized_input": normalized,
+    })
+    if state != "executable":
+        snapshot = result["execution_snapshot"]
+        snapshot["status"] = "blocked"
+        snapshot["snapshot_digest"] = canonical_digest({
+            key: value for key, value in snapshot.items() if key != "snapshot_digest"
+        })
+    # A successful preflight is not execution or data-completeness evidence.
+    obligations = EnvelopeObligations(
+        execution_status=ExecutionStatus(ExecutionState.NOT_STARTED, "JOURNEY_READINESS_ONLY"),
+        data_completeness=DataCompleteness(CompletenessState.UNKNOWN, "NO_EXECUTION_DATA"),
+        semantic_validity=SemanticValidity(SemanticState.UNKNOWN, ("JOURNEY_READINESS_ONLY",)),
+        diagnostic_evidence=DiagnosticEvidence(
+            DiagnosticState.INCOMPLETE if reasons else DiagnosticState.NONE, tuple(reasons),
+        ),
+        mutation_certainty=MutationCertainty(MutationState.NOT_APPLICABLE, "READ_ONLY_JOURNEY"),
+    )
+    return result, obligations
+
+
+def _unresolved(artifact: Mapping[str, Any], reason: str) -> dict[str, Any]:
+    contract = artifact["contract"]
+    journey = {"journey_id": contract["journey_id"], "version": contract["version"], "digest": artifact["digest"]}
+    return {
+        "status": "blocked" if reason == "PROJECT_APP_BINDING_MISSING" else "invalid",
+        "journey": journey,
+        "reason_codes": [reason],
+        "dependencies": {},
+        "execution_snapshot": build_execution_snapshot(
+            status="blocked", journey=journey, skill=None, project_overlay=None,
+            capabilities=[], semantics=[], operators=[], models=[], context_packs=[],
+            contracts={
+                "input_schema_version": None,
+                "analysis_result_schema_version": "gravity.analysis-result.v1",
+                "execution_mode": contract["execution"]["mode"],
+                "execution_owner": contract["execution"]["owner"],
+            },
+        ),
         "network_called": False,
     }
 
 
-def _generic_execution_snapshot(
-    artifact: Mapping[str, Any],
-    capability_results: list[dict[str, Any]],
-    operator_dependencies: Mapping[str, Any],
-    model_dependencies: Mapping[str, Any],
-    status: str,
-) -> dict[str, Any]:
-    contract = artifact["contract"]
-    capability_states = [
-        _capability_state(result, requirement)
-        for result, requirement in zip(
-            capability_results, contract["required_capabilities"]
-        )
-    ]
-    return build_execution_snapshot(
-        status="resolved" if status == "verified" else "blocked",
-        journey={
-            "journey_id": contract["journey_id"],
-            "version": contract["version"],
-            "digest": artifact["digest"],
+def _blocked_result(readiness: Mapping[str, Any], *, network_called: bool = False) -> dict[str, Any]:
+    snapshot = readiness["execution_snapshot"]
+    invalid = readiness["can_run_status"] == "invalid"
+    return compile_analysis_result({
+        "schema_version": "gravity.analysis-result.v1",
+        "ok": False, "status": "invalid" if invalid else "blocked",
+        "exit_code": _INVALID_EXIT if invalid else _BLOCKED_EXIT,
+        "question": None, "scope": None,
+        **{key: copy.deepcopy(snapshot[key]) for key in (
+            "journey", "skill", "semantics", "capabilities", "operators", "models"
+        )},
+        "context_packs": copy.deepcopy(readiness["dependencies"].get("context_packs", [])),
+        "can_run_status": readiness["can_run_status"],
+        "reason_codes": copy.deepcopy(readiness["reason_codes"]),
+        "completeness": "unknown",
+        "data_quality": {
+            "schema_version": "gravity.data-quality-result.v1", "status": "unknown",
+            "checks": [], "reason_codes": ["DATA_QUALITY_UNPROVEN"],
         },
-        skill=None,
-        project_overlay=None,
-        capabilities=[
-            _capability_snapshot_reference(result, requirement, state)
-            for result, requirement, state in zip(
-                capability_results,
-                contract["required_capabilities"],
-                capability_states,
-            )
-        ],
-        semantics=[_semantic_snapshot_reference(uri) for uri in contract["required_semantics"]],
-        operators=[
-            _operator_snapshot_reference(item)
-            for item in operator_dependencies["dependencies"]
-        ],
-        models=[
-            _model_snapshot_reference(item)
-            for item in model_dependencies["dependencies"]
-        ],
-        context_packs=[],
-        contracts={
-            "input_schema_version": None,
-            "analysis_result_schema_version": "gravity.analysis-result.v1",
-            "execution_mode": contract["execution"]["mode"],
-            "execution_owner": contract["execution"]["owner"],
-        },
-    )
-
-
-def _static_dependencies(values: list[str]) -> list[dict[str, str]]:
-    return [{"uri": value, "status": "unresolved"} for value in values]
-
-
-def _capability_state(
-    result: Mapping[str, Any], requirement: Mapping[str, Any]
-) -> str:
-    return assess_capability_requirement(result, requirement)[0]
-
-
-def _capability_snapshot_reference(
-    result: Mapping[str, Any], requirement: Mapping[str, Any], status: str
-) -> dict[str, Any]:
-    return {
-        "identity_kind": requirement["identity_kind"],
-        "selector": requirement["selector"],
-        "contract_version": result.get("contract_version"),
-        "contract_digest": result.get("contract_digest"),
-        "trust_digest": canonical_digest(result),
-        "status": status,
-    }
-
-
-def _semantic_snapshot_reference(uri: str) -> dict[str, Any]:
-    return {
-        "uri": uri,
-        "version": None,
-        "definition_digest": None,
-        "binding_digest": None,
-        "source_digest": None,
-        "registry_digest": None,
-        "status": "unresolved",
-    }
-
-
-def _operator_snapshot_reference(value: Mapping[str, Any]) -> dict[str, Any]:
-    operator = value.get("operator") if isinstance(value, Mapping) else None
-    return {
-        "uri": str(value.get("uri") or (operator or {}).get("uri")),
-        "version": (operator or {}).get("version"),
-        "digest": (operator or {}).get("digest"),
-        "assumptions_digest": (operator or {}).get("assumptions_digest"),
-        "status": str(value.get("status", "unresolved")),
-    }
-
-
-def _model_snapshot_reference(value: Mapping[str, Any]) -> dict[str, Any]:
-    model = value.get("model") if isinstance(value, Mapping) else None
-    return {
-        "uri": str(value.get("uri") or (model or {}).get("uri")),
-        "version": (model or {}).get("version"),
-        "digest": (model or {}).get("digest"),
-        "status": str(value.get("status", "unresolved")),
-    }
+        "evidence_level": None, "findings": [], "excluded_factors": [], "hypotheses": [],
+        "limitations": ["Journey execution or required dependencies are not verified; no business analysis was completed."],
+        "allowed_claims": [],
+        "forbidden_claims": copy.deepcopy(readiness["claim_policy"]["forbidden"]),
+        "recommended_next_actions": [], "receipt_references": [],
+        "execution_snapshot": copy.deepcopy(snapshot),
+        "network_called": network_called or bool(readiness.get("provider_rpc_called")),
+    })
 
 
 def _journey(journey_id: Any) -> dict[str, Any]:
     if not isinstance(journey_id, str) or not journey_id.strip():
         raise InputValidationError(
-            f"actual value: {actual_value(journey_id)}; journey_id must name one "
-            "registered Journey",
+            f"actual value: {actual_value(journey_id)}; journey_id must name one registered Journey",
             field="journey_id",
         )
     artifact = journey_artifact(journey_id.strip())
@@ -439,14 +357,4 @@ def _journey(journey_id: Any) -> dict[str, Any]:
     return artifact
 
 
-def _skill_reference(contract: Mapping[str, Any]) -> dict[str, Any] | None:
-    uri = contract.get("required_skill")
-    return {"uri": uri} if isinstance(uri, str) and uri else None
-
-
-__all__ = [
-    "CAN_RUN_SCHEMA_VERSION",
-    "DESCRIPTION_SCHEMA_VERSION",
-    "JourneyService",
-    "LIST_SCHEMA_VERSION",
-]
+__all__ = ["CAN_RUN_SCHEMA_VERSION", "DESCRIPTION_SCHEMA_VERSION", "JourneyService", "LIST_SCHEMA_VERSION"]

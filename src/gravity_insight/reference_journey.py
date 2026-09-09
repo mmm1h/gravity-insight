@@ -11,7 +11,7 @@ from .analysis_result_contract import compile_analysis_result
 from .core_skill_runtime import CoreSkillRuntime
 from .data_quality import data_quality_result
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
-from .execution_snapshot import build_execution_snapshot
+from .execution_snapshot import build_execution_snapshot, snapshot_change_reasons
 from .reference_journey_contract import JOURNEY_ID, reference_artifacts
 from .reference_journey_quality import evaluate_playbook_data_quality
 from .result_audit import result_receipt_references
@@ -62,6 +62,15 @@ class ReferenceJourneyRunner:
             },
             input_schema_version=INPUT_SCHEMA_VERSION,
         )
+        execution = core["execution_snapshot"]["contracts"]
+        if (
+            execution["execution_owner"] != "metric-anomaly-localization@1"
+            or execution["execution_mode"] != "plan"
+            or not callable(getattr(self._sdk, "metric_anomaly_playbook", None))
+        ):
+            core = copy.deepcopy(core)
+            core["status"] = "blocked"
+            core["reason_codes"] = list(dict.fromkeys([*core["reason_codes"], "JOURNEY_EXECUTION_NOT_BOUND"]))
         return _can_run_result(core, normalized)
 
     def run(self, inputs: Mapping[str, Any]) -> dict[str, Any]:
@@ -83,10 +92,11 @@ class ReferenceJourneyRunner:
             semantic_binding=bindings[0],
         )
         after = self._assess(inputs)
-        if after["execution_snapshot"] != before["execution_snapshot"]:
+        changes = snapshot_change_reasons(before["execution_snapshot"], after["execution_snapshot"])
+        if changes or after["can_run_status"] != "verified":
             changed = copy.deepcopy(before)
             changed["can_run_status"] = "blocked"
-            changed["reason_codes"] = ["DEPENDENCY_SNAPSHOT_CHANGED"]
+            changed["reason_codes"] = list(dict.fromkeys([*after["reason_codes"], *changes]))
             return _blocked_analysis_result(changed, network_called=True)
         executed = playbook.get("execution", {}).get("query_steps_executed")
         maximum = before["request_budget"]["known_requests_max"]

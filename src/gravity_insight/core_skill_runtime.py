@@ -81,14 +81,14 @@ class CoreSkillRuntime:
     def resolve(
         self,
         journey_id: str,
-        scope: Mapping[str, Any],
+        scope: Mapping[str, Any] | None,
         *,
         input_schema_version: str | None = None,
         source_revision: str | None = None,
         observed_at: str | None = None,
     ) -> dict[str, Any]:
         journey = _journey(journey_id)
-        normalized_scope = _scope(scope)
+        normalized_scope = _scope(scope) if scope is not None else None
         local = self._local_dependencies(journey)
         project = self._project_dependencies(
             journey,
@@ -121,14 +121,11 @@ class CoreSkillRuntime:
         skill_resolution = self._skill_resolver.resolve(
             contract.get("required_skill"), journey=journey
         )
-        skill = skill_resolution["skill"]
-        capabilities, references, states, capability_reasons = self._capabilities(
-            contract
-        )
+        capabilities, references, states, capability_reasons = self._capabilities(contract)
         operators = self._operators.dependencies(contract["required_operators"])
         models = self._models.dependencies(contract["required_models"])
         return {
-            "skill": skill,
+            "skill": skill_resolution["skill"],
             "capabilities": capabilities,
             "capability_refs": references,
             "capability_states": states,
@@ -139,13 +136,14 @@ class CoreSkillRuntime:
                 *skill_resolution["reason_codes"],
                 *operators["reason_codes"],
                 *models["reason_codes"],
+                *(["JOURNEY_REVOKED"] if contract["lifecycle"] == "revoked" else []),
             ],
         }
 
     def _project_dependencies(
         self,
         journey: Mapping[str, Any],
-        scope: Mapping[str, Any],
+        scope: Mapping[str, Any] | None,
         skill: Mapping[str, Any] | None,
         *,
         source_revision: str | None,
@@ -164,6 +162,18 @@ class CoreSkillRuntime:
             "provider_internal_io_controlled": False,
             "provider_internal_network": "not_applicable",
         }
+        contract = journey["contract"]
+        if not any((
+            contract["project_contract_path"], contract["required_semantics"],
+            contract["required_context"], skill and skill["contract"]["context_dependencies"]["optional"],
+        )):
+            result["overlay_status"] = "not_required"
+            return result
+        if scope is None:
+            result["reasons"] = [
+                "PROJECT_SKILL_SCOPE_MISSING" if contract["project_contract_path"] else "PROJECT_SKILL_OVERLAY_MISSING"
+            ]
+            return result
         try:
             result["overlay"] = self._overlay(
                 journey,
@@ -185,19 +195,12 @@ class CoreSkillRuntime:
                 observed_at=observed_at,
                 external_context=self._external_context,
             )
-            result["context_packs"] = context["context_packs"]
-            result["optional_context_complete"] = context[
-                "optional_context_complete"
-            ]
-            result["provider_rpc_called"] = context["provider_rpc_called"]
-            result["provider_internal_io_controlled"] = context[
-                "provider_internal_io_controlled"
-            ]
-            result["provider_internal_network"] = context[
-                "provider_internal_network"
-            ]
-            context_reasons = context["reason_codes"]
-            result["reasons"] = [*semantic_reasons, *context_reasons]
+            for field in (
+                "context_packs", "optional_context_complete", "provider_rpc_called",
+                "provider_internal_io_controlled", "provider_internal_network",
+            ):
+                result[field] = context[field]
+            result["reasons"] = [*semantic_reasons, *context["reason_codes"]]
             result["overlay_status"] = "resolved"
         except (
             ProjectSkillOverlayError,

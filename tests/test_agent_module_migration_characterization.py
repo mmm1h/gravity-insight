@@ -544,10 +544,10 @@ def run():
         )
 
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
-        """R2-06 adds existing obligation-owner dependencies; all SCC sets stay unchanged."""
+        """R2-07 owner/readiness imports reviewed; all cyclic SCC memberships unchanged."""
         expected = module_graph_baseline()
         self.assertEqual(
-            "e5714bb7c6de0f19c3d3e0c60d957cb32a4d3bf0e1145b57d7eb81c6a183a2ae",
+            "1da2a83d2c59dd00625297df8ca0036013b9c585dbbda556d022f9fc11d28683",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
