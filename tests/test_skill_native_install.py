@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from contextlib import chdir, redirect_stdout
+from contextlib import chdir, redirect_stderr, redirect_stdout
 import copy
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from gravity_insight import skill_host_install as native
+from gravity_insight.control_plane import native_skill_install as native
 from gravity_insight.agent_runtime_contracts import canonical_digest
 from gravity_insight.cli import main
 from gravity_insight.doctor_cli import diagnose_skills
@@ -167,6 +168,7 @@ class NativeInstallTests(unittest.TestCase):
         preview = invoke("host-install")
         self.assertFalse(self.host.exists())
         self.assertEqual("installed", invoke("host-install", "--approve", preview["preview_digest"])["status"])
+        self.assertEqual("unchanged", invoke("host-install", "--approve", preview["preview_digest"])["status"])
         self.assertEqual("consistent", invoke("host-readback")["status"])
 
     def test_plan_defaults_to_project_lock_and_never_full_bundle_implicitly(self):
@@ -178,3 +180,93 @@ class NativeInstallTests(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertEqual(1, len(json.loads(out.getvalue())["actions"]))
         self.assertFalse(self.host.exists())
+
+    def test_non_targets_never_write_project_or_user_host_directories(self):
+        from gravity_insight import __main__ as entry
+
+        home = self.root / "home"
+        for prefix in (home / ".agents/skills", home / ".claude/skills", self.host):
+            path = prefix / "lark-existing/SKILL.md"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"existing shared host")
+        before = {str(p): p.read_bytes() for p in self.root.rglob("SKILL.md")}
+        environment = {
+            "GRAVITY_CACHE_HOME": str(self.root / "isolated-cache"),
+            "GRAVITY_INSIGHT_AUTO_UPGRADE": "0", "GRAVITY_INSIGHT_AUTO_SKILLS": "1",
+        }
+        with (
+            chdir(self.project), patch.dict(os.environ, environment),
+            patch("pathlib.Path.home", return_value=home),
+            patch("gravity_insight.skill_maintenance.read_bundled_skill_seed", return_value=self.seed),
+            patch.object(native, "execute_native_install", side_effect=AssertionError("implicit host installer")),
+            redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()),
+        ):
+            for arguments in (["agent"], ["skills", "status"], ["skills", "bootstrap"]):
+                with self.subTest(arguments=arguments):
+                    self.assertEqual(0, entry.main(arguments))
+        self.assertEqual(before, {str(p): p.read_bytes() for p in self.root.rglob("SKILL.md") if "isolated-cache" not in p.parts})
+        self.assertEqual(["lark-existing"], sorted(p.name for p in self.host.iterdir()))
+
+    def test_missing_lock_does_not_stage_and_root_readback_skips_bootstrap(self):
+        from gravity_insight import __main__ as entry
+
+        with chdir(self.project), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()), patch.object(SkillHubClient, "host_install_plan") as build:
+            code = main(["skills", "host-install-plan", "--host", "codex", "--host-root", str(self.host), "--state-root", str(self.client.state_root)])
+        self.assertNotEqual(0, code)
+        build.assert_not_called()
+        with patch("gravity_insight.skill_maintenance_startup.maybe_bootstrap_bundled_skills") as bootstrap:
+            for prefix in ([], ["insight"]):
+                entry._startup_skill_maintenance([*prefix, "skills", "host-readback"])
+        bootstrap.assert_not_called()
+
+    def test_ownership_drift_and_hardlinked_target_block_undo(self):
+        plan = self.plan()
+        self.run_plan(plan)
+        preview = native.preview_native_install(plan, self.project, operation="uninstall")
+        owner = Path(preview["targets"][0]["ownership_path"])
+        owner.write_bytes(b"unrecognized owner")
+        before = self.snapshot()
+        with self.assertRaises(SkillHubContractError):
+            native.execute_native_install(plan, self.project, approve=preview["preview_digest"], operation="uninstall")
+        self.assertEqual(before, self.snapshot())
+        target = Path(plan["actions"][0]["target_directory"]) / "SKILL.md"
+        os.link(target, self.project / "linked-skill")
+        with self.assertRaises(SkillHubContractError):
+            native.preview_native_install(plan, self.project, operation="uninstall")
+
+    def test_readback_failure_rolls_back_and_busy_guard_fails_closed(self):
+        plan = self.plan()
+        before = self.snapshot()
+        with patch.object(native, "readback_native_install", side_effect=OSError("injected readback")):
+            with self.assertRaisesRegex(OSError, "injected readback"):
+                self.run_plan(plan)
+        self.assertEqual(before, self.snapshot())
+        (self.project / ".gravity-native-install.lock").mkdir()
+        with self.assertRaises(SkillHubContractError) as error:
+            self.run_plan(plan)
+        self.assertEqual("HOST_SKILL_INSTALL_BUSY", error.exception.reason_code)
+
+    def test_rollback_conflict_preserves_removed_originals_for_manual_recovery(self):
+        plan = self.plan(2)
+        self.run_plan(plan)
+        target = Path(plan["actions"][0]["target_directory"])
+        rename = native._native_rename
+        calls = 0
+
+        def concurrent_conflict(source, destination):
+            nonlocal calls
+            calls += 1
+            if calls == 3:
+                target.mkdir()
+                (target / "local.txt").write_bytes(b"concurrent local edit")
+                raise OSError("injected concurrent writer")
+            return rename(source, destination)
+
+        with patch.object(native, "_native_rename", side_effect=concurrent_conflict):
+            with self.assertRaises(SkillHubContractError) as error:
+                self.run_plan(plan, "uninstall")
+        self.assertEqual("HOST_SKILL_ROLLBACK_CONFLICT", error.exception.reason_code)
+        self.assertEqual(b"concurrent local edit", (target / "local.txt").read_bytes())
+        backups = list(self.project.glob(".gravity-native-*/0/SKILL.md"))
+        self.assertEqual(1, len(backups))
+        self.assertEqual((Path(plan["actions"][0]["source_directory"]) / "SKILL.md").read_bytes(), backups[0].read_bytes())

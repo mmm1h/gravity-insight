@@ -17,6 +17,7 @@ Target release: `0.3.15`
 
 ### Breaking changes
 
+- **Soft break:** CLI `skills host-install-plan` now defaults to the project lock and fails closed when it is missing. Migration: pass `--lock <project-lock>` for a selected subset, or explicitly pass `--all` to retain full-bundle planning. The Python full-bundle API and all Runtime read capabilities are unchanged.
 - **Hard break:** Nonempty runtime pins are exact execution constraints: malformed pins fail with `INPUT_INVALID`, mismatched pins fail with `RUNTIME_PIN_MISMATCH` before startup distribution access, authentication or dispatch, even when updates are disabled. Unset/empty pins retain default-on updates. Activation receipts now report `running_version: null` until the staged child observes its imported version; a child exit alone is not execution-version proof.
 - **Hard break:** `campaign-outcome-evaluation`, `metric-decomposition`, `scenario-projection`, `sentiment-aggregation` and `funnel-diagnosis` Operators at `@1` now require explicit `mode=rowwise`. Implicit totals, normalized shares and cumulative conversion fail closed with registered reasons and a migration remedy. Exact `@2` contracts restore supported cross-row results with explicit scope, additivity-axis, partition or linear-lineage evidence; no silent version upgrade is provided. Three scenario Model families have explicit `@2` successors and refreshed `@1` parameter digests. Skill Library URI migration remains owned by R2-05/R2-12.
 

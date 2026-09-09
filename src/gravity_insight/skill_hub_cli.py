@@ -88,13 +88,7 @@ def add_skill_hub_actions(actions: Any) -> None:
     _local(repair, required=False)
 
     host_plan = _host_install_parser(actions)
-    for name in ("host-install", "host-uninstall", "host-readback"):
-        native = actions.add_parser(name, help="Preview/approve project-native files, or independently read back a plan.")
-        native.add_argument("--plan", required=True, help="Saved host-install-plan JSON.")
-        native.add_argument("--project-root", default=".", help="Project root; user-global scope is rejected.")
-        if name != "host-readback":
-            native.add_argument("--approve", help="Exact preview_digest; omit for read-only preview.")
-        native.set_defaults(network_required=False, _gravity_handler=dispatch)
+    _native_install_parsers(actions)
 
     for parser in (
         listed,
@@ -117,17 +111,6 @@ def add_skill_hub_actions(actions: Any) -> None:
 
 
 def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
-    if args.skills_command in {"host-install", "host-uninstall", "host-readback"}:
-        from .skill_host_install import execute_native_install, preview_native_install, readback_native_install
-
-        plan = _json(args.plan)
-        project = Path(args.project_root)
-        if args.skills_command == "host-readback":
-            return readback_native_install(plan, project)
-        operation = "install" if args.skills_command == "host-install" else "uninstall"
-        if args.approve is None:
-            return preview_native_install(plan, project, operation=operation)
-        return execute_native_install(plan, project, approve=args.approve, operation=operation)
     workspace = None
     state_root = args.state_root
     if state_root is None:
@@ -288,6 +271,29 @@ def _project_lock_status(client: SkillHubClient, path: Path) -> dict[str, Any]:
             rendered = shlex.join(arguments)
         result["next_action"] = "gravity skills lock " + rendered
     return result
+
+
+def _native_install_parsers(actions: Any) -> None:
+    for name in ("host-install", "host-uninstall", "host-readback"):
+        native = actions.add_parser(name, help="Preview/approve project-native files, or independently read back a plan.")
+        native.add_argument("--plan", required=True, help="Saved host-install-plan JSON.")
+        native.add_argument("--project-root", default=".", help="Project root; user-global scope is rejected.")
+        if name != "host-readback":
+            native.add_argument("--approve", help="Exact preview_digest; omit for read-only preview.")
+        native.set_defaults(network_required=False, _gravity_handler=_native_install_dispatch)
+
+
+def _native_install_dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
+    from .control_plane.native_skill_install import execute_native_install, preview_native_install, readback_native_install
+
+    plan = _json(args.plan)
+    project = Path(args.project_root)
+    if args.skills_command == "host-readback":
+        return readback_native_install(plan, project)
+    operation = "install" if args.skills_command == "host-install" else "uninstall"
+    if args.approve is None:
+        return preview_native_install(plan, project, operation=operation)
+    return execute_native_install(plan, project, approve=args.approve, operation=operation)
 
 
 def _host_install_parser(actions: Any) -> Any:

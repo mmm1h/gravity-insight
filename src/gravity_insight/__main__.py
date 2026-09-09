@@ -168,7 +168,8 @@ def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
 
 
 def _startup_skill_maintenance(args: Sequence[str]) -> None:
-    if len(args) >= 2 and args[0] == "skills" and args[1] in {"host-install", "host-uninstall", "host-readback"}:
+    command = args[1:] if args[:1] == ["insight"] else args
+    if len(command) >= 2 and command[0] == "skills" and command[1] in {"host-install", "host-uninstall", "host-readback"}:
         return
     from .skill_maintenance_startup import maybe_bootstrap_bundled_skills
 
