@@ -6,6 +6,7 @@ import copy
 import re
 from collections import Counter
 from collections.abc import Mapping, Sequence
+from decimal import Decimal
 from typing import Any, NoReturn
 
 from .actionable_error_values import actual_value
@@ -16,8 +17,9 @@ from .result_source import CALLER_DEFINED, result_source
 
 SCHEMA_VERSION = "gravity.derived-metrics.v1"
 SPEC_SCHEMA_VERSION = "gravity.derived-metrics-spec.v1"
-OPERATORS = ("ratio", "share", "change", "reconcile")
+OPERATORS = ("ratio", "share", "change", "ratio_identity", "reconcile")
 _RESULT_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,127}$")
+_TOLERANCE = re.compile(r"^(?:0|[1-9][0-9]{0,27})(?:\.[0-9]{1,28})?$")
 _ROOT_FIELDS = frozenset(
     {"schema_version", "rows_path", "decimal_places", "calculations"}
 )
@@ -28,6 +30,12 @@ _FIELDS = {
         {
             "operator", "result_name", "value", "period", "baseline", "current",
             "keys",
+        }
+    ),
+    "ratio_identity": frozenset(
+        {
+            "operator", "result_name", "observed", "numerator", "denominator",
+            "absolute_tolerance", "quantization_tolerance",
         }
     ),
     "reconcile": frozenset({"operator", "result_name", "observed", "expected"}),
@@ -49,6 +57,18 @@ _WARNING_MESSAGES = {
     "DUPLICATE_OBSERVED": "A reconciliation value occurs more than once in observed rows.",
     "BINARY_FLOAT_INPUT": "A binary float was consumed through its decimal text representation.",
     "PRECISION_ROUNDED": "A division result was rounded to the declared decimal places.",
+    "RATIO_IDENTITY_QUANTIZATION_DRIFT": (
+        "The observed ratio differs from the amount ratio but remains within the "
+        "declared quantization tolerance."
+    ),
+    "RATIO_IDENTITY_MISMATCH": (
+        "The observed ratio differs from the amount ratio beyond the declared "
+        "quantization tolerance."
+    ),
+    "RATIO_IDENTITY_UNDEFINED": (
+        "The ratio identity is undefined because one or more required operands "
+        "cannot be compared."
+    ),
 }
 
 
@@ -175,6 +195,8 @@ def _calculation(value: Any, index: int) -> dict[str, Any]:
             _invalid("column bindings must be non-empty strings", f"{field}.{column}", selected[column])
     if operator == "change":
         _validate_change(selected, field)
+    if operator == "ratio_identity":
+        _validate_ratio_identity(selected, field)
     if operator == "reconcile":
         _validate_expected(selected, field)
     return selected
@@ -185,6 +207,7 @@ def _column_fields(operator: str) -> tuple[str, ...]:
         "ratio": ("numerator", "denominator"),
         "share": ("value",),
         "change": ("value", "period"),
+        "ratio_identity": ("observed", "numerator", "denominator"),
         "reconcile": ("observed",),
     }[operator]
 
@@ -197,6 +220,35 @@ def _validate_change(value: Mapping[str, Any], field: str) -> None:
         _invalid("keys must be an array of non-empty column names", f"{field}.keys", keys)
     if len(keys) != len(set(keys)) or len(keys) > 8:
         _invalid("keys must be unique and contain at most 8 columns", f"{field}.keys", keys)
+
+
+def _validate_ratio_identity(value: dict[str, Any], field: str) -> None:
+    tolerances: dict[str, Decimal] = {}
+    for name in ("absolute_tolerance", "quantization_tolerance"):
+        raw = value[name]
+        if not isinstance(raw, str) or _TOLERANCE.fullmatch(raw) is None:
+            _invalid(
+                "tolerance must be a non-negative fixed decimal string with at "
+                "most 28 integer and 28 fractional digits",
+                f"{field}.{name}",
+                raw,
+            )
+        tolerances[name] = Decimal(raw)
+        value[name] = _normalized_decimal(tolerances[name])
+    if tolerances["quantization_tolerance"] < tolerances["absolute_tolerance"]:
+        _invalid(
+            "quantization_tolerance must be greater than or equal to "
+            "absolute_tolerance",
+            f"{field}.quantization_tolerance",
+            value["quantization_tolerance"],
+        )
+
+
+def _normalized_decimal(value: Decimal) -> str:
+    rendered = format(value, "f")
+    if "." in rendered:
+        rendered = rendered.rstrip("0").rstrip(".")
+    return "0" if rendered in {"", "-0"} else rendered
 
 
 def _validate_expected(value: Mapping[str, Any], field: str) -> None:

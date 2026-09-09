@@ -171,6 +171,8 @@ exclusion 命中时返回 capability gap，并阻止 raw fallback。verified que
 `derived_metrics` 是调用方公式声明，不是 SDK 业务字典。每项的 phrases 仍只做字面匹配，spec 在
 workspace 加载时按 `gravity.derived-metrics-spec.v1` 完整验证。命中后 Agent 卡预填 spec，只把 source
 envelope 留作必填输入；调用方补入 source 后可由 `composite/name=derived_metrics` Plan 节点真实执行。
+`ratio_identity` 用 `observed/numerator/denominator` 对账数值恒等式；精确匹配阈值由
+`absolute_tolerance` 声明，可解释量化偏差上限由 `quantization_tolerance` 声明，两者必须是定点十进制字符串。
 没有对应声明的 rate/ratio/share 问题返回 `DERIVED_METRIC_BINDING_REQUIRED`；SDK 不根据结果名、列名
 或问题文本猜 numerator、denominator、总体、时期标签或声明集合。
 
