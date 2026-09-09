@@ -544,10 +544,10 @@ def run():
         )
 
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
-        """R2-04 adds one leaf native installer; reviewed SCC sizes remain unchanged."""
+        """R2-06 adds existing obligation-owner dependencies; all SCC sets stay unchanged."""
         expected = module_graph_baseline()
         self.assertEqual(
-            "2e6c55a5a0733a2c57efe3ee827780cacf458bb26f46248bf83cf86636e44b2b",
+            "e5714bb7c6de0f19c3d3e0c60d957cb32a4d3bf0e1145b57d7eb81c6a183a2ae",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(

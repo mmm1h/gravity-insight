@@ -31,10 +31,11 @@ python -m venv .venv
 
 源码目录中的非 editable 安装会被 `gravity doctor` 拒绝，避免当前源码与实际导入包不一致。
 
-## 2. 发现能力
+## 2. 选择入口
+
+宿主先理解需求：有当前有效能力合同就直接调用；未知能力从下列离线目录进入；无法可靠选择才用 recognizer 保底。唯一完整顺序、失败分类与预算合同见 [Agent 工作流](agent-workflow.md#0-宿主优先的有序合同)。
 
 ```powershell
-gravity metadata sync --all-apps
 gravity agent-catalog categories
 gravity agent-catalog category analysis --limit 20
 gravity agent-catalog describe analysis.query.spec:event
@@ -42,9 +43,7 @@ gravity agent-catalog describe analysis.query.spec:event
 
 未同步过 metadata catalog 时，metadata 发现返回 `The default local metadata catalog is unavailable`。
 
-按 `categories → category → describe` 浏览当前机器的真实目录，优先选择 `identity_kind=product`。Raw operation 只用于已知 wire 的专家调用；`capability_gap` 只能报告，不能执行。
-
-调用方能可靠选择产品时，先读 `gravity agent-catalog host`，再提交严格的 `gravity.host-product-selection.v1`。没有 selection 时 recognizer 只是离线保底，不会替调用方猜 App、日期、事件或业务口径。
+按需读取 `gravity agent-catalog host` 获取现有 selection 合同；目录与发现不会执行产品。仅在任务需要本地 metadata 且获授权时运行 `gravity metadata sync --all-apps`，不把全量同步作为发现的固定前置步骤。
 
 安装后先查看 wheel seed 的离线装配状态；只有需要显式外部 Hub Source 时才同步：
 
@@ -68,8 +67,7 @@ canonical manifest 的独立 Agent 投影；用 `skills host-install-plan` 交�
 
 ## 3. 补参并执行
 
-- 已知 selector：按 `required_inputs` 补齐输入，执行一次。
-- 未知任务：第一次发现并选择，第二次执行；不要逐条启动多个进程。
+- 按[完整使用顺序](agent-workflow.md#0-宿主优先的有序合同)选择入口，再按 `required_inputs` 与当前 Schema 补参；不要靠关键词匹配补业务事实。
 - 多个独立读取：使用一个 Plan 或 batch，共享全局有界并发预算。
 - Analysis spec：读取产品卡的 `schema_argv`，不要从 Web wire 或邻近 operation 猜形状。
 - Runtime 提供可复用 Semantic；具体活动、SKU、App/埋点绑定和项目公式参数来自显式项目 Source，缺失时不猜。
@@ -110,7 +108,7 @@ canonical manifest 的独立 Agent 投影；用 `skills host-install-plan` 交�
 
 ```text
 1. 认证有效且不记录凭据。
-2. 从 catalog 选择已登记产品，不猜 selector。
+2. 已知有效合同直接调用；未知按工作流选择已登记产品，不猜 selector。
 3. 补齐 App、日期和物理字段，只执行 success + executable 的交接。
 4. 检查 envelope 状态、窗口、warning、diagnostic 和 interpretation。
 5. 重要数字独立对账；gap 和权限边界按结构化错误报告。

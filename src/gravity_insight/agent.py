@@ -45,6 +45,7 @@ from .agents.lexical_retrieval import response_match_policy
 from .errors import InputValidationError
 from .agents.output import ndjson_metadata
 from .actionable_error_values import actual_value
+from .contracts.envelope_obligations import serialize_envelope
 
 
 SCHEMA_VERSION = "gravity.agent.v1"
@@ -61,6 +62,7 @@ class _DiscoveryPage:
     operation_fallback_excluded: bool
     semantic_gaps: list[dict[str, Any]]
     semantic_context: dict[str, Any] | None
+    catalog_observed: bool
 
 
 @dataclass(frozen=True)
@@ -79,7 +81,8 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
         "agent",
         help=(
             "Discover and describe a few workspace recipes or callable operations "
-            "in one offline command."
+            "in one offline command (recognizer floor or explicit host selection). "
+            "Known current contracts use dedicated execution directly."
         ),
     )
     command.set_defaults(network_required=False)
@@ -156,6 +159,9 @@ def discover_capabilities(
 
     A client is only required for a non-empty query.  Supplying ``workspace``
     lets embedding applications use their already-loaded recipe catalog.
+    Hosts use current known contracts directly; unknown capabilities start at
+    the catalog. This function consumes host selection or provides a recognizer
+    floor; it neither invokes an LLM nor proves a prior host selection attempt.
     """
 
     if type(limit) is not int or not 1 <= limit <= 5:
@@ -276,6 +282,8 @@ def _discovery_response(
     lexical_receipt: Mapping[str, Any],
 ) -> dict[str, Any]:
     from .agents.discovery_support import recognizer_routing_declaration
+    from .agents.host_catalog import discovery_obligations
+    from .agents.host_selection import discovery_observation
 
     routing = recognizer_routing_declaration(request.query)
     candidates = [
@@ -298,10 +306,16 @@ def _discovery_response(
         if next_offset < total
         else None
     )
-    return {
+    status = "success" if candidates else "capability_gap"
+    routing.update(discovery_observation(
+        routing["mode"], [str(item["selector"]) for item in candidates] if total == 1 else [], status,
+        catalog_sha256=page.catalog_fingerprint if page.catalog_observed else None,
+        catalog_basis="workspace_catalog" if page.catalog_observed else None,
+    ))
+    payload = {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
-        "status": "success" if candidates else "capability_gap",
+        "status": status,
         "offline": True,
         "network_called": False,
         "mode": "discover_and_describe",
@@ -322,6 +336,8 @@ def _discovery_response(
         **discovery_next_fields(bool(candidates), gaps),
         **({"semantic_context": semantic_context} if semantic_context is not None else {}),
     }
+    obligations = discovery_obligations(gaps)
+    return serialize_envelope(payload, obligations)
 
 
 def _discovery_page(
@@ -352,13 +368,14 @@ def _discovery_page(
     )
     warnings: list[str] = []
     catalog_fingerprint = workspace_catalog_fingerprint(None)
-    if should_load_capability_catalog(
+    catalog_observed = should_load_capability_catalog(
         query,
         domain=args.domain,
         platform=args.platform,
         direct_cards=selected_cards,
         catalog_excluded=catalog_excluded,
-    ):
+    )
+    if catalog_observed:
         catalog, _catalog_total, warnings, catalog_fingerprint = catalog_cards(
             query, 100, workspace=selected_workspace, sources=sources
         )
@@ -380,6 +397,7 @@ def _discovery_page(
     catalog_excluded = catalog_excluded or semantic.block_fallback
     if getattr(selected_workspace, "semantic_context", None) is not None:
         catalog_fingerprint = workspace_catalog_fingerprint(selected_workspace)
+        catalog_observed = True
     if args.continuation:
         continuation = _decode_continuation(
             args, safe_discovery_query(query), catalog_fingerprint=catalog_fingerprint
@@ -401,14 +419,20 @@ def _discovery_page(
         operation_fallback_excluded=catalog_excluded,
         semantic_gaps=semantic.gaps,
         semantic_context=semantic.public_context,
+        catalog_observed=catalog_observed,
     )
 
 
 def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
     from .agents.discovery_support import recognizer_routing_declaration
+    from .agents.host_catalog import (
+        HOST_SELECTION_POLICY, HOST_WORKFLOW_REF, discovery_obligations, host_workflow,
+    )
+    from .agents.host_selection import discovery_observation
 
     routing = recognizer_routing_declaration("")
-    return {
+    routing.update(discovery_observation(None, [], None))
+    payload = {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
         "status": "ready",
@@ -419,34 +443,9 @@ def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
         "routing": routing,
         "scope": AGENT_SCOPE,
         "goal": "Known inputs take one call; candidate.call_bound declares unknown-input lower bounds.",
-        "workflow": [
-            {
-                "step": "discover_and_describe",
-                "argv": [*workspace_prefix(workspace_path), "agent", "<query>"],
-                "network_required": False,
-            },
-            {
-                "step": "execute",
-                "argv": [
-                    *workspace_prefix(workspace_path),
-                    "run",
-                    "<operation_id-or-@recipe>",
-                    "--input",
-                    "<json-object-or-file>",
-                ],
-                "network_required": True,
-            },
-        ],
-        "selection_policy": [
-            "If the caller can emit gravity.host-product-selection.v1, read "
-            "`agent-catalog host` and pass `--routing host_catalog --host-selection`.",
-            "Omit --routing to keep the recognizer floor when the caller cannot "
-            "produce a host selection.",
-            "Prefer a matching workspace recipe because it owns project semantics.",
-            "Prefer a registered composite when it already covers the requested context.",
-            "Otherwise select a callable stable Insight operation.",
-            "Use governed SQL only when Insight cannot express equivalent semantics.",
-        ],
+        "workflow_ref": HOST_WORKFLOW_REF,
+        "workflow": host_workflow(workspace_prefix(workspace_path)),
+        "selection_policy": list(HOST_SELECTION_POLICY),
         "input_precedence": ["flag", "--set", "--input", "contract_default"],
         "output": {
             "default": "json",
@@ -461,8 +460,14 @@ def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
         },
         "execution": agent_execution_contract(workspace_path),
         "fallbacks": agent_fallbacks(workspace_path=workspace_path),
-        "next_action": "Run `gravity agent <query>` to get bounded executable capability cards.",
+        "next_action": (
+            "Use a known current contract directly; for unknown capabilities read "
+            "`gravity agent-catalog host`. Only if the host cannot select, use "
+            "`gravity agent <query> --routing recognizer` as the bounded floor."
+        ),
     }
+    obligations = discovery_obligations()
+    return serialize_envelope(payload, obligations)
 
 
 def _encode_continuation(
