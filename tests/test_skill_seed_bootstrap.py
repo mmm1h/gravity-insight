@@ -342,6 +342,15 @@ class SkillSeedBootstrapTests(unittest.TestCase):
             ["skills", "repair"],
             ["skills", "host-install-plan"],
             ["skills", "sync"],
+            ["census", "fetch"],
+            ["census", "check-upstream"],
+            ["cache", "status"],
+            ["runtime", "health"],
+            ["auth", "status"],
+            ["docs", "check"],
+            ["sql", "list"],
+            ["plan", "schema"],
+            ["unknown-command"],
         )
         for argv in skipped:
             with self.subTest(argv=argv):
@@ -365,6 +374,55 @@ class SkillSeedBootstrapTests(unittest.TestCase):
         self.assertTrue(
             startup_skill_bootstrap_enabled(["agent"], environ={})
         )
+
+    def test_maintenance_dispatch_never_attempts_seed_assembly(self) -> None:
+        with (
+            patch.object(entry, "_startup_upgrade_exit", return_value=None),
+            patch.object(entry, "_run_namespace", return_value=0),
+            patch("gravity_insight.skill_maintenance_startup._startup_bootstrap") as bootstrap,
+            patch.dict(os.environ, {AUTO_SKILLS_ENV: "1"}),
+        ):
+            self.assertEqual(0, entry.main(["census", "check-upstream"]))
+            self.assertEqual(0, entry.main(["insight", "doctor"]))
+        bootstrap.assert_not_called()
+
+    def test_method_consumers_keep_default_on_maintenance(self) -> None:
+        for command in (["agent"], ["agent-catalog", "categories"], ["plan", "run"],
+                        ["journey", "run"], ["skills", "search"]):
+            self.assertTrue(startup_skill_bootstrap_enabled(command, environ={}))
+            self.assertTrue(startup_skill_bootstrap_enabled(["insight", *command], environ={}))
+
+    def test_editable_diagnosis_requires_metadata_bound_to_this_checkout(self) -> None:
+        from gravity_insight import skill_maintenance_startup as startup
+
+        root = Path(startup.__file__).resolve().parents[2]
+        for editable, source, expected in (
+            (True, root, True), (False, root, False), (True, root.parent, False),
+        ):
+            with patch.object(startup.metadata, "distribution") as distribution:
+                distribution.return_value.read_text.return_value = json.dumps(
+                    {"dir_info": {"editable": editable}, "url": source.as_uri()})
+                self.assertEqual(expected, startup._is_editable_checkout())
+
+    def test_editable_absence_is_not_distribution_corruption(self) -> None:
+        missing = SkillHubContractError("HUB_SEED_UNAVAILABLE", "missing")
+        missing.__cause__ = FileNotFoundError()
+        invalid = SkillHubContractError("HUB_SEED_INVALID", "invalid")
+        for editable, error, expected in (
+            (True, missing, "HUB_SEED_ABSENT_EDITABLE"),
+            (False, missing, "HUB_SEED_UNAVAILABLE"),
+            (True, invalid, "HUB_SEED_INVALID"),
+            (False, invalid, "HUB_SEED_INVALID"),
+        ):
+            with (
+                self.subTest(editable=editable, expected=expected),
+                patch("gravity_insight.skill_maintenance_startup._is_editable_checkout", return_value=editable),
+                patch("gravity_insight.skill_maintenance_startup._startup_bootstrap", side_effect=error),
+            ):
+                output = io.StringIO()
+                result = maybe_bootstrap_bundled_skills(["agent"], environ={}, stderr=output)
+                self.assertEqual(expected, result.reason_code)
+                self.assertEqual(expected != "HUB_SEED_ABSENT_EDITABLE", "warning:" in output.getvalue())
 
     def test_host_plan_stages_verified_sources_and_preserves_local_overrides(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

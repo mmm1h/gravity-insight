@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from .io import read_json, write_json
+from .observations import census_obligations
+from gravity_insight.contracts.envelope_obligations import serialize_envelope
 
 
 def _route_key(item: dict[str, Any]) -> tuple[str, str]:
@@ -94,6 +96,8 @@ def _withheld_diff(
         "schema_version": 1,
         "kind": kind,
         "status": "incomplete",
+        "observation_state": "crawl_incomplete",
+        "api_breaking_confirmed": False,
         "drift_conclusion_available": False,
         "failure_class": "content_incomplete",
         "classification_reason": "both_diff_inputs_must_explicitly_prove_complete",
@@ -120,7 +124,7 @@ def _withheld_diff(
         result.update(
             {"added_files": [], "removed_files": [], "changed_files": []}
         )
-    return result
+    return serialize_envelope(result, census_obligations("CENSUS_DIFF_WITHHELD", failed=True))
 
 
 def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
@@ -142,9 +146,12 @@ def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
     path_changes = _extract_path_changes(removed, added)
     added_rows = _route_rows(added)
     removed_rows = _route_rows(removed)
-    return {
+    payload = {
         "schema_version": 1,
         "kind": "route_diff",
+        "observation_state": "drift_confirmed" if (added_rows or removed_rows or method_changes or path_changes) else "unchanged",
+        "api_breaking_confirmed": False,
+        "next_action": "Review the static route diff and run governed targeted probes before claiming API breaking changes.",
         "status": "complete",
         "drift_conclusion_available": True,
         "failure_class": None,
@@ -163,6 +170,7 @@ def diff_routes(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
         "method_changes": method_changes,
         "path_changes": sorted(path_changes, key=lambda item: (item["old_path"], item["method"])),
     }
+    return serialize_envelope(payload, census_obligations("CENSUS_ROUTE_DIFF", graph_complete=True))
 
 
 def diff_snapshots(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
@@ -188,9 +196,12 @@ def diff_snapshots(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
         for url in sorted(common)
         if old_files[url].get("sha256") != new_files[url].get("sha256")
     ]
-    return {
+    payload = {
         "schema_version": 1,
         "kind": "bundle_snapshot_diff",
+        "observation_state": "drift_confirmed" if (changed or set(old_files) != set(new_files)) else "unchanged",
+        "api_breaking_confirmed": False,
+        "next_action": "Compare parsed routes before assessing API impact; this diff only proves static asset changes.",
         "status": "complete",
         "drift_conclusion_available": True,
         "failure_class": None,
@@ -208,6 +219,7 @@ def diff_snapshots(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
         "changed_files": changed,
         "note": "Route method/path changes require routes.json inputs; snapshots only contain static asset identities.",
     }
+    return serialize_envelope(payload, census_obligations("CENSUS_ASSET_DIFF", graph_complete=True))
 
 
 def diff_files(old_path: Path, new_path: Path) -> dict[str, Any]:
@@ -224,6 +236,7 @@ class CensusFailureClass(str, Enum):
     UPSTREAM_CAPACITY = "upstream_capacity"
     LOCAL_GOVERNOR_CAPACITY = "local_governor_capacity"
     REQUEST_BUDGET_EXHAUSTED = "request_budget_exhausted"
+    TIME_BUDGET_EXHAUSTED = "time_budget_exhausted"
     TRANSPORT_FAILURE = "transport_failure"
     HTTP_CLIENT_ERROR = "http_client_error"
     HTTP_SERVER_ERROR = "http_server_error"
@@ -243,7 +256,8 @@ _POLICIES = {
     CensusFailureClass.UPSTREAM_CAPACITY: _FailurePolicy("CENSUS_UPSTREAM_CAPACITY", "upstream", True, "Wait for the reported upstream cooldown, then retry within the bounded crawl-attempt limit."),
     CensusFailureClass.LOCAL_GOVERNOR_CAPACITY: _FailurePolicy("CENSUS_LOCAL_GOVERNOR_CAPACITY", "local", True, "Retry only within the configured process-local Governor-capacity limit."),
     CensusFailureClass.REQUEST_BUDGET_EXHAUSTED: _FailurePolicy("CENSUS_REQUEST_BUDGET_EXHAUSTED", "local", False, "Inspect graph size and the request budget; do not continue from the partial graph."),
-    CensusFailureClass.TRANSPORT_FAILURE: _FailurePolicy("CENSUS_TRANSPORT_FAILURE", "upstream", True, "The bounded resource attempts are exhausted; inspect network reachability."),
+    CensusFailureClass.TIME_BUDGET_EXHAUSTED: _FailurePolicy("CENSUS_TIME_BUDGET_EXHAUSTED", "local", False, "Inspect elapsed budget and incomplete evidence; escalate unavailable monitoring, do not retry this run."),
+    CensusFailureClass.TRANSPORT_FAILURE: _FailurePolicy("CENSUS_TRANSPORT_FAILURE", "upstream", True, "Retry only through the single crawl owner within remaining request/time budgets; on exhaustion escalate unavailable monitoring and inspect network reachability."),
     CensusFailureClass.HTTP_CLIENT_ERROR: _FailurePolicy("CENSUS_HTTP_CLIENT_ERROR", "upstream", False, "Inspect the discovered public resource; do not retry this as capacity."),
     CensusFailureClass.HTTP_SERVER_ERROR: _FailurePolicy("CENSUS_HTTP_SERVER_ERROR", "upstream", True, "The bounded resource attempts are exhausted; inspect upstream service health."),
     CensusFailureClass.CONTENT_INCOMPLETE: _FailurePolicy("CENSUS_CONTENT_INCOMPLETE", "upstream", False, "Withhold drift conclusions until a complete graph is proven."),
@@ -253,6 +267,7 @@ _STATUS_FAILURES = {
     "rate_limited": CensusFailureClass.UPSTREAM_CAPACITY,
     "local_governor_capacity": CensusFailureClass.LOCAL_GOVERNOR_CAPACITY,
     "request_budget_exhausted": CensusFailureClass.REQUEST_BUDGET_EXHAUSTED,
+    "time_budget_exhausted": CensusFailureClass.TIME_BUDGET_EXHAUSTED,
     "transport_error": CensusFailureClass.TRANSPORT_FAILURE,
     "client_error": CensusFailureClass.HTTP_CLIENT_ERROR,
     "server_error": CensusFailureClass.HTTP_SERVER_ERROR,
@@ -278,6 +293,8 @@ def _aggregate_statuses(values: Any) -> tuple[CensusFailureClass, str]:
     selected = {item for item in mapped if item is not None}
     if CensusFailureClass.REQUEST_BUDGET_EXHAUSTED in selected:
         return CensusFailureClass.REQUEST_BUDGET_EXHAUSTED, "request_budget_is_terminal_for_this_crawl"
+    if CensusFailureClass.TIME_BUDGET_EXHAUSTED in selected:
+        return CensusFailureClass.TIME_BUDGET_EXHAUSTED, "elapsed_budget_is_terminal_for_this_crawl"
     if len(selected) == 1:
         return next(iter(selected)), "all_resource_failures_share_one_class"
     return CensusFailureClass.UNCLASSIFIED, "mixed_failure_classes:" + ",".join(sorted(item.value for item in selected))
@@ -307,7 +324,12 @@ def _failure_payload(
     next_action: str | None = None,
 ) -> dict[str, Any]:
     policy = _POLICIES[failure_class]
-    return {"schema_version": "gravity-census.failure.v1", "status": "error",
+    payload = {"schema_version": "gravity-census.failure.v1", "status": "error",
+            "observation_state": (
+                "transport_failure" if failure_class is CensusFailureClass.TRANSPORT_FAILURE else
+                "capacity_limited" if failure_class in {CensusFailureClass.UPSTREAM_CAPACITY, CensusFailureClass.LOCAL_GOVERNOR_CAPACITY} else
+                "crawl_incomplete"),
+            "api_breaking_confirmed": False,
             "complete": False, "drift_conclusion_available": False, "error": error,
             "code": policy.code, "category": policy.category,
             "retryable": policy.retryable, "failure_class": failure_class.value,
@@ -320,6 +342,8 @@ def _failure_payload(
             "local_capacity_retries_used": max(0, local_retries),
             "summary": dict(summary or {}), "lane": dict(lane or {}),
             "next_action": next_action or policy.next_action}
+    return serialize_envelope(payload, census_obligations(policy.code, failed=True,
+        category=policy.category, retryable=policy.retryable))
 
 
 def incomplete_fetch_failure(result: dict[str, Any]) -> dict[str, Any]:
@@ -382,8 +406,12 @@ def _status_failure(error: BaseException, code: str) -> dict[str, Any]:
 def exception_failure(error: BaseException) -> dict[str, Any]:
     code, diagnostics = str(getattr(error, "code", "")), getattr(error, "diagnostics", None)
     if code.startswith("GOVERNOR_") and isinstance(diagnostics, dict):
-        return _governor_failure(error, code, diagnostics)
-    return _status_failure(error, code)
+        result = _governor_failure(error, code, diagnostics)
+    else:
+        result = _status_failure(error, code)
+    if budget := getattr(error, "census_final_request_budget", None):
+        result["request_budget"] = dict(budget)
+    return result
 
 
 def write_failure(args: Any, payload: dict[str, Any]) -> None:
@@ -403,7 +431,10 @@ def write_fetch_step(args: Any, snapshot: dict[str, Any] | None,
               {"used": used, "limit": limit, "remaining": max(0, limit - used)})
     write_json(target, {"schema_version": "gravity-census.step-output.v1",
         "operation": "fetch_public_static_graph", "status": "complete" if complete else "error",
-        "complete": complete, "drift_conclusion_available": complete,
+        "complete": complete, "drift_conclusion_available": False,
+        "observation_state": "graph_complete" if complete else failure.get("observation_state", "crawl_incomplete") if failure else "crawl_incomplete",
+        "api_breaking_confirmed": False,
+        "next_action": failure["next_action"] if failure else "Parse and compare complete route graphs before making a drift conclusion.",
         "failure_class": None if failure is None else failure["failure_class"],
         "observed_at": selected_snapshot.get("fetched_at"),
         "bundle_id": selected_snapshot.get("bundle_id"),

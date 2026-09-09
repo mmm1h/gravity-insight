@@ -63,7 +63,14 @@ jobs:
           $failure = Join-Path $evidence "fetch-failure.json"
           $stepResult = Join-Path $evidence "census-step-output.json"
           $attemptLimit = 3
+          $requestLimit = 800
+          $requestsUsed = 0
+          $elapsedLimit = 1200
+          $clock = [System.Diagnostics.Stopwatch]::StartNew()
           for ($attempt = 1; $attempt -le $attemptLimit; $attempt++) {
+            $remainingRequests = $requestLimit - $requestsUsed
+            $remainingSeconds = $elapsedLimit - $clock.Elapsed.TotalSeconds
+            if ($remainingRequests -le 0 -or $remainingSeconds -le 0) { break }
             if (Test-Path -LiteralPath $failure) {
               Remove-Item -LiteralPath $failure
             }
@@ -71,10 +78,13 @@ jobs:
               schema_version = "gravity-census.step-output.v1"
               operation = "fetch_public_static_graph"
               status = "error"
+              observation_state = "crawl_incomplete"
+              api_breaking_confirmed = $false
+              next_action = "Inspect failed monitoring and retained evidence before a manual rerun; do not infer route drift."
               complete = $false
               drift_conclusion_available = $false
               failure_class = "unclassified"
-              request_budget = [ordered]@{ used = 0; limit = 800; remaining = 800 }
+              request_budget = [ordered]@{ used = 0; limit = $remainingRequests; remaining = $remainingRequests }
               summary = [ordered]@{}
               failure = [ordered]@{
                 schema_version = "gravity-census.failure.v1"
@@ -91,7 +101,7 @@ jobs:
                   source_status_class = $null
                   exception_type = $null
                 }
-                request_budget = [ordered]@{ used = 0; limit = 800; remaining = 800 }
+                request_budget = [ordered]@{ used = 0; limit = $remainingRequests; remaining = $remainingRequests }
                 next_action = "Inspect the workflow process exit before deciding whether a retry is appropriate."
               }
               workflow_attempt = $attempt
@@ -114,7 +124,7 @@ jobs:
                 complete = $false
                 completeness_reason = "workflow attempt started without terminal Census output"
                 request_attempts = 0
-                request_limit = 800
+                request_limit = $remainingRequests
               }
               discovery = [ordered]@{ failures = @(); pending_urls = @() }
             }
@@ -122,8 +132,48 @@ jobs:
             $fallbackFailure | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $failure
             $startedSnapshot | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $snapshot
             Write-Host "Complete crawl attempt $attempt of $attemptLimit"
-            gravity census fetch --raw-dir $raw --output $snapshot --require-complete --max-attempts 1 --local-capacity-retries 2 --failure-output $failure --step-output $stepResult
-            $fetchExit = $LASTEXITCODE
+            try {
+              # The workflow is the sole retry owner; the child has one resource attempt.
+              $fetchArguments = @('census', 'fetch', '--raw-dir', $raw, '--output', $snapshot,
+                '--require-complete', '--max-attempts', '1', '--local-capacity-retries', '2',
+                '--max-requests', "$remainingRequests", '--max-elapsed-seconds', $remainingSeconds.ToString([Globalization.CultureInfo]::InvariantCulture),
+                '--failure-output', $failure, '--step-output', $stepResult)
+              $quotedArguments = @($fetchArguments | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' })
+              $process = Start-Process -FilePath (Get-Command gravity).Source -ArgumentList $quotedArguments -PassThru -WindowStyle Hidden `
+                -RedirectStandardOutput (Join-Path $evidence "attempt-$attempt-stdout.log") `
+                -RedirectStandardError (Join-Path $evidence "attempt-$attempt-stderr.log")
+              if (-not $process.WaitForExit([int][Math]::Ceiling($remainingSeconds * 1000))) {
+                $process.Kill($true)
+                $process.WaitForExit()
+                Copy-Item -LiteralPath $snapshot -Destination (Join-Path $evidence "attempt-$attempt-interrupted-snapshot.json")
+                $fallback.failure_class = 'time_budget_exhausted'
+                $fallback.failure.failure_class = 'time_budget_exhausted'
+                $fallback.failure.code = 'CENSUS_TIME_BUDGET_EXHAUSTED'
+                $fallback.failure.classification.reason = 'workflow_absolute_deadline_exceeded'
+                $fallback.failure.next_action = 'Escalate unavailable monitoring; inspect retained attempt evidence before a manual rerun.'
+                # A killed child cannot attest its terminal count: conservatively consume the remainder.
+                $fallback.request_budget.used = $remainingRequests
+                $fallback.request_budget.remaining = 0
+                $fallback.failure.request_budget = $fallback.request_budget
+                $fallback.request_accounting = 'unverified_upper_bound_after_forced_stop'
+                $fallback | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $stepResult
+                $fallback.failure | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $failure
+                $startedSnapshot | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $snapshot
+                $fetchExit = 4
+              } else {
+                $process.WaitForExit()
+                $fetchExit = $process.ExitCode
+              }
+              foreach ($log in @("attempt-$attempt-stdout.log", "attempt-$attempt-stderr.log")) {
+                Get-Content -LiteralPath (Join-Path $evidence $log) | Write-Host
+              }
+            } finally {
+              foreach ($artifact in @($snapshot, $failure, $stepResult)) {
+                if (Test-Path -LiteralPath $artifact) {
+                  Copy-Item -LiteralPath $artifact -Destination (Join-Path $evidence "attempt-$attempt-$(Split-Path -Leaf $artifact)")
+                }
+              }
+            }
             try {
               $step = Get-Content -Raw -LiteralPath $stepResult | ConvertFrom-Json -ErrorAction Stop
               if ([string]$step.schema_version -ne "gravity-census.step-output.v1") {
@@ -134,6 +184,20 @@ jobs:
               $step.failure.classification.reason = "workflow_could_not_parse_cli_step_output"
               $step | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $stepResult
             }
+            $used = $step.request_budget.used
+            if (($used -isnot [int64] -and $used -isnot [int32]) -or $used -lt 0 -or $used -gt $remainingRequests -or $step.request_budget.limit -ne $remainingRequests) {
+              throw "Untrusted Census request accounting; no further crawl is permitted."
+            }
+            $requestsUsed += $used
+            $step | Add-Member -Force -NotePropertyName crawl_budget -NotePropertyValue ([ordered]@{
+              used = $requestsUsed; limit = $requestLimit; remaining = $requestLimit - $requestsUsed
+              elapsed_seconds = $clock.Elapsed.TotalSeconds; elapsed_limit_seconds = $elapsedLimit
+              retry_owner = "workflow"; attempts = $attempt
+            })
+            $step | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 -LiteralPath $stepResult
+            "failure_class=$($step.failure_class)" >> $env:GITHUB_OUTPUT
+            "crawl_attempts=$attempt" >> $env:GITHUB_OUTPUT
+            "step_output=$stepResult" >> $env:GITHUB_OUTPUT
             if ($fetchExit -eq 0 -and $step.complete -eq $true) {
               "failure_class=none" >> $env:GITHUB_OUTPUT
               "crawl_attempts=$attempt" >> $env:GITHUB_OUTPUT
@@ -155,7 +219,7 @@ jobs:
                 $cooldownMs = [int64]$diagnostic.cooldown_remaining_ms
               }
             }
-            if ($failureClass -ne "upstream_capacity") {
+            if ($failureClass -notin @("upstream_capacity", "transport_failure") -or $step.failure.retryable -ne $true) {
               "failure_class=$failureClass" >> $env:GITHUB_OUTPUT
               "crawl_attempts=$attempt" >> $env:GITHUB_OUTPUT
               "step_output=$stepResult" >> $env:GITHUB_OUTPUT
@@ -165,14 +229,34 @@ jobs:
               $reportedCooldown = [Math]::Ceiling($cooldownMs / 1000)
               $exponentialBackoff = 30 * [Math]::Pow(2, $attempt - 1)
               $delaySeconds = [Math]::Min(60, [Math]::Max($reportedCooldown, $exponentialBackoff))
-              Write-Warning "Upstream capacity blocked the crawl; retrying after $delaySeconds seconds."
+              if ($requestsUsed -ge $requestLimit -or ($clock.Elapsed.TotalSeconds + $delaySeconds) -ge $elapsedLimit) {
+                break
+              }
+              Write-Warning "$failureClass blocked the crawl; the sole workflow owner retries after $delaySeconds seconds within the remaining budgets."
               Start-Sleep -Seconds $delaySeconds
             }
           }
-          "failure_class=upstream_capacity" >> $env:GITHUB_OUTPUT
-          "crawl_attempts=$attemptLimit" >> $env:GITHUB_OUTPUT
-          "step_output=$stepResult" >> $env:GITHUB_OUTPUT
+          Write-Output "::error title=Gravity census monitoring unavailable::Bounded crawl attempts or request/time budget exhausted. No route-drift conclusion is available. Inspect attempt evidence and network/capacity before a manual rerun."
           exit 3
+
+      - name: Summarize observation separately from crawl outcome
+        if: always()
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
+          "### Census observation and next action" >> $env:GITHUB_STEP_SUMMARY
+          $check = Join-Path $evidence "upstream-check.json"
+          if (Test-Path -LiteralPath $check) {
+            $entry = Get-Content -Raw -LiteralPath $check | ConvertFrom-Json
+            "Entry change observed: $($entry.upstream_changed). This is not a route diff or confirmed API breaking change." >> $env:GITHUB_STEP_SUMMARY
+          }
+          $stepResult = Join-Path $evidence "census-step-output.json"
+          if (Test-Path -LiteralPath $stepResult) {
+            $step = Get-Content -Raw -LiteralPath $stepResult | ConvertFrom-Json
+            "Crawl: $($step.observation_state); complete: $($step.complete); failure: $($step.failure_class). Next: $($step.next_action)" >> $env:GITHUB_STEP_SUMMARY
+          } else {
+            "No complete graph/diff conclusion was produced by this check. Inspect failed steps or await the bounded full verification." >> $env:GITHUB_STEP_SUMMARY
+          }
 
       - name: Parse routes and reconcile manifest coverage
         if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome == 'success'
@@ -368,7 +452,8 @@ jobs:
           "### Gravity upstream census capacity warning" >> $env:GITHUB_STEP_SUMMARY
           "Upstream capacity prevented a required complete graph after ${{ steps.fetch.outputs.crawl_attempts }} bounded attempts. No route-drift conclusion was made. Inspect the uploaded fetch-failure.json before retrying." >> $env:GITHUB_STEP_SUMMARY
 
-      - name: Reject an incomplete changed bundle crawl
-        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome != 'success' && steps.fetch.outputs.failure_class != 'upstream_capacity'
+      - name: Reject unavailable monitoring after bounded attempts
+        if: steps.upstream.outputs.full_required == 'true' && steps.fetch.outcome != 'success'
         shell: pwsh
-        run: throw "A required complete public static graph could not be proven for a non-capacity reason. Inspect the uploaded current-snapshot.json and fetch-failure.json, correct that cause, and rerun the workflow."
+        run: |
+          throw "Monitoring unavailable: a required complete public static graph could not be proven within the attempt/request/time budgets. No API breaking claim was made. Inspect the uploaded current-snapshot.json and fetch-failure.json, escalate the transport/capacity/incomplete cause, and rerun only after review."
