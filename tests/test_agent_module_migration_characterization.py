@@ -544,15 +544,20 @@ def run():
         )
 
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
-        """Batch-B merge + #202 + R2-09: union of reviewed branch graphs; largest SCC sizes unchanged."""
+        """R2-08 SQL catalog cut: the v1 graph splits the 20-ring into 15/4/1.
+
+        Workspace registration replaces catalog -> sql facade and query_match's
+        leaf replaces catalog -> find. Eager/canonical SCC sizes are unchanged;
+        the untouched 17-module Agent orchestration ring is now the largest.
+        """
         expected = module_graph_baseline()
         self.assertEqual(
-            "2509e9214ad71c31ba51a894788116f188c8b570d6bb753461dcfdfd9903298f",
+            "d8ef7d98e7c2f7e1aeb8aef725e7d4725a97edd42aeddf787e0f50c68da370c8",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
-                "ast-only": 20,
+                "ast-only": 17,
                 "ast+lazy-exports": 438,
                 "canonical": 555,
                 "eager-ast-only": 0,
@@ -563,7 +568,7 @@ def run():
             },
         )
         self.assertEqual(
-            [20, 17, 11, 8, 6, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+            [17, 15, 11, 8, 6, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(

@@ -21,6 +21,7 @@ from gravity_insight.support.evidence import (
     serialize_json_result,
 )
 from gravity_insight.sql.credential_source import credential_source as _credential_source
+from gravity_insight.sql.catalog import product_apps, product_definition
 from gravity_insight.sql.provenance import (
     ROOT,
     VERIFICATION_RESUME_POLICY,
@@ -48,7 +49,7 @@ from gravity_insight.sql.time_window import (
     verification_now, verification_resume_delay_ms,
     verification_segment, verification_timestamp,
 )
-from gravity_insight.workspace import Workspace, WorkspaceError, load_workspace, require_products
+from gravity_insight.workspace import Workspace, load_workspace, require_products
 
 
 EVIDENCE_PATH = EVIDENCE_ROOT / "latest.json"
@@ -61,26 +62,12 @@ def product_names(workspace: Workspace | None = None) -> tuple[str, ...]:
     return require_products(selected)
 
 
-def _product_definition(product: str, workspace: Workspace | None = None) -> Mapping[str, Any]:
-    selected = load_workspace() if workspace is None else workspace
-    try:
-        return selected.product(product)
-    except WorkspaceError as exc:
-        raise EvidenceFormatError(str(exc)) from exc
-
-
-def _product_apps(product: str, workspace: Workspace | None = None) -> tuple[int, ...]:
-    selected = load_workspace() if workspace is None else workspace
-    definition = _product_definition(product, selected)
-    return tuple(selected.resolve_app(value) for value in definition["apps"])
-
-
 def _datasource_contract(
     product: str | None = None, workspace: Workspace | None = None
 ) -> Mapping[str, Any]:
     selected = load_workspace() if workspace is None else workspace
     names = (product,) if product is not None else product_names(selected)
-    datasource_names = {str(_product_definition(name, selected)["datasource"]) for name in names}
+    datasource_names = {str(product_definition(name, selected)["datasource"]) for name in names}
     if len(datasource_names) != 1:
         raise EvidenceFormatError("SQL Evidence products must use exactly one datasource")
     return selected.datasource(next(iter(datasource_names)))
@@ -97,7 +84,7 @@ def normalize_app_ids(
     app_ids: list[int] | tuple[int, ...] | None,
     workspace: Workspace | None = None,
 ) -> tuple[int, ...]:
-    defaults = _product_apps(product, workspace)
+    defaults = product_apps(product, workspace)
     values = tuple(dict.fromkeys(app_ids or defaults))
     if not values or any(type(value) is not int or value <= 0 for value in values):
         raise ValueError("app ids must be positive integers")
@@ -112,7 +99,7 @@ def build_sql(
     workspace: Workspace | None = None,
 ) -> str:
     app_ids = normalize_app_ids(product, app_ids, workspace)
-    definition = _product_definition(product, workspace)
+    definition = product_definition(product, workspace)
     start = _sql_time(start_at)
     end = _sql_time(end_at)
     return _custom_sql(definition, app_ids, start, end)
@@ -140,7 +127,7 @@ def run_product(
 ) -> dict[str, Any]:
     selected = load_workspace() if workspace is None else workspace
     apps = normalize_app_ids(product, app_ids, selected)
-    definition = _product_definition(product, selected)
+    definition = product_definition(product, selected)
     sql = build_sql(product, start_at, end_at, apps, selected)
     rows = client.execute_sql(sql)
     summary, execution, warnings, notes, completeness = summarize_product_rows(
@@ -478,7 +465,7 @@ def datasource_verification_status(workspace: Workspace | None = None) -> str:
 def contract_hash(product: str, workspace: Workspace | None = None) -> str:
     try:
         selected = load_workspace() if workspace is None else workspace
-        definition = _product_definition(product, selected)
+        definition = product_definition(product, selected)
         datasource = _datasource_contract(product, selected)
         kernel_contract = _load_sql_product_contract(SQL_PRODUCT_CONTRACT_PATH)
         kind_contract = kernel_contract["product_kinds"][definition["kind"]]
@@ -510,8 +497,8 @@ def _load_sql_product_contract(path: Path) -> dict[str, Any]:
 def dry_run_checks() -> None:
     start_at, end_at = day_window(date(2026, 7, 22))
     for product in product_names():
-        apps = _product_apps(product)
-        definition = _product_definition(product)
+        apps = product_apps(product)
+        definition = product_definition(product)
         sql = build_sql(product, start_at, end_at, apps)
         if "2026-07-22 00:00:00" not in sql or "2026-07-23 00:00:00" not in sql:
             raise AssertionError(f"{product}: rendered SQL has the wrong window")
