@@ -58,6 +58,8 @@ COMMAND_EXEMPTIONS = {
     ("scripts/scan_repository_secrets.py", "_history_lines"): ("external", "Locally assembled git log argv"),
     ("tests/test_release_channel.py", "ReleaseRecoveryStateTests.test_missing_github_release_is_created_from_verified_tag"): ("external", "Loop contains only literal git fixture commands"),
     ("tests/test_skill_lock_status.py", "SkillLockStatusTests.test_stale_036_project_lock_reports_runtime_and_executable_remedy_offline"): ("external", "Literal powershell.exe argv parses the emitted re-lock command with the native shell, proving the quoting survives hostile path characters"),
+    ("tests/test_census_isolation.py", "CensusWorkflowTests._execute"): ("external", "Literal pwsh argv runs the offline census workflow stub against a scenario fixture"),
+    ("tests/test_census_isolation.py", "CensusWorkflowTests.test_yaml_and_all_powershell_steps_parse_and_monitoring_failure_is_fatal"): ("external", "Literal pwsh argv parses each workflow PowerShell step as a scriptblock without executing it"),
 }
 
 

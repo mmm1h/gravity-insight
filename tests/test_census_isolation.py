@@ -137,7 +137,7 @@ class CensusWorkflowTests(unittest.TestCase):
             scenario_path.write_text(json.dumps(scenario), encoding='utf-8')
             process = subprocess.run(['pwsh', '-NoProfile', '-NonInteractive', '-File', str(script)],
                 env={**os.environ, 'RUNNER_TEMP': str(root), 'CENSUS_SCENARIO': str(scenario_path),
-                    'GITHUB_OUTPUT': str(root / 'output')}, capture_output=True, text=True, timeout=30)
+                    'GITHUB_OUTPUT': str(root / 'output')}, capture_output=True, text=True, timeout=30, encoding="utf-8")
             calls = [json.loads(line) for line in (root / 'calls.jsonl').read_text(encoding='utf-8-sig').splitlines()]
             evidence = root / 'gravity-drift'
             step = json.loads((evidence / 'census-step-output.json').read_text(encoding='utf-8-sig'))
@@ -191,5 +191,5 @@ class CensusWorkflowTests(unittest.TestCase):
             source = re.sub(r'\$\{\{.*?\}\}', 'fixture', step['run'])
             encoded = source.replace("'", "''")
             process = subprocess.run(['pwsh', '-NoProfile', '-NonInteractive', '-Command',
-                f"[void][scriptblock]::Create('{encoded}')"], capture_output=True, text=True, timeout=30)
+                f"[void][scriptblock]::Create('{encoded}')"], capture_output=True, text=True, encoding="utf-8", timeout=30)
             self.assertEqual(0, process.returncode, step['name'] + process.stderr)
