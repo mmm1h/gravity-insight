@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "d0ca65dc026abdd2430916a9b2379364e9331298a70a5447625567418364cb4f",
-    "manual_review_sha256": "5f3d5a57e6b7c1fbcd4472e0e1eac3a509f3134ba14bec2664a65668a9eb4e8a",
+    "reference_evidence_sha256": "02062c15376cf1a95049a00c53a258e032f310cd27b220cce9626c365b85e438",
+    "manual_review_sha256": "67e9eebd191f84fb6d832b7226b05f150173f9d41114783e8ebfab530730d985",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3229,
     "scanned_file_count": 3221,
@@ -777,7 +777,7 @@
     "dispositions": {
       "no_migration_effect": 312
     },
-    "sites_sha256": "6fd81f95e960b35bc1e2843ae09213c144369b683893eeb6741acfe86dfc0d4b"
+    "sites_sha256": "cf37ad594b8fe954b0eaddf86c65ea2da8cc233f094fd24139752ed302f70721"
   },
   "blockers": [],
   "site_fields": [
@@ -4965,7 +4965,7 @@
       }
     ],
     [
-      "tests/test_skill_trigger_diagnosis.py:196:14:patch.object",
+      "tests/test_skill_trigger_diagnosis.py:198:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "Path",

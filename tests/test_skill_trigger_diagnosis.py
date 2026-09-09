@@ -4,6 +4,7 @@ from contextlib import chdir, redirect_stdout
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -96,6 +97,7 @@ class SkillTriggerDiagnosisTests(unittest.TestCase):
         report = self.native(self.diagnose())
         self.assertEqual("local_override_conflict", report["status"])
         self.assertEqual(["SKILL.md"], report["missing_files"])
+        self.assertIn("Restore the listed missing_files", report["next_action"])
 
     def test_old_native_version_and_disabled_claude_header_are_not_host_observations(self):
         self.lock()
@@ -195,6 +197,32 @@ class SkillTriggerDiagnosisTests(unittest.TestCase):
     def test_unreadable_native_target_is_unknown_not_missing(self):
         with patch.object(Path, "lstat", side_effect=PermissionError("private-path")):
             self.assertEqual(("unknown", None), _host_target_state(self.home / "skill", self.entry))
+
+    def test_unreadable_native_contents_are_unknown_not_local_edits(self):
+        self.lock()
+        target = self.install_files()
+        scandir = os.scandir
+
+        def unreadable_target(path):
+            if Path(path) == target:
+                raise PermissionError("private-path")
+            return scandir(path)
+
+        with patch("gravity_insight.skill_host_install.os.scandir", side_effect=unreadable_target):
+            self.assertEqual(("unknown", None), _host_target_state(target, self.entry))
+            report = self.native(self.diagnose())
+        self.assertEqual("unknown", report["status"])
+        self.assertIn("Check access", report["next_action"])
+        self.assertNotIn("private-path", json.dumps(report))
+
+    def test_status_expands_user_paths_without_creating_them(self):
+        output = io.StringIO()
+        with chdir(self.project), redirect_stdout(output), patch.dict("os.environ", {"GRAVITY_WORKSPACE": ""}), patch("gravity_insight.doctor_cli.diagnose_skills", return_value={}) as diagnose:
+            code = main(["skills", "status", "--diagnose", "--state-root", "~/state", "--cas-root", "~/cas"])
+        self.assertEqual(0, code)
+        self.assertEqual(Path("~/state").expanduser().absolute(), diagnose.call_args.kwargs["state_root"])
+        self.assertEqual(Path("~/cas").expanduser(), diagnose.call_args.kwargs["cas_root"])
+        self.assertFalse((self.project / "~").exists())
 
 
 if __name__ == "__main__":

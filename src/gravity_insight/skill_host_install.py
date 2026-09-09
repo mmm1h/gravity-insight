@@ -223,7 +223,10 @@ def _host_target_state(
         return "unknown", None
     if target.is_symlink() or is_reparse(root_metadata) or not target.is_dir():
         return "conflict", None
-    observed = _bounded_target_files(target)
+    try:
+        observed = _bounded_target_files(target)
+    except OSError:
+        return "unknown", None
     if observed is None:
         return "conflict", None
     expected = {item["path"]: item for item in entry["files"]}
@@ -238,35 +241,32 @@ def _host_target_state(
 
 
 def _bounded_target_files(target: Path) -> list[dict[str, Any]] | None:
-    try:
-        rows: list[dict[str, Any]] = []
-        pending = [target]
-        count = 0
-        # Bound traversal before descent; never enumerate a linked subtree.
-        while pending:
-            with os.scandir(pending.pop()) as children:
-                for child in children:
-                    count += 1
-                    if count > 64:
-                        return None
-                    path = Path(child.path)
-                    metadata = path.lstat()
-                    if path.is_symlink() or is_reparse(metadata):
-                        return None
-                    if stat.S_ISDIR(metadata.st_mode):
-                        pending.append(path)
-                        continue
-                    if not _bounded_regular_file(metadata):
-                        return None
-                    content = path.read_bytes()
-                    rows.append({
-                        "path": path.relative_to(target).as_posix(),
-                        "sha256": hashlib.sha256(content).hexdigest(),
-                        "size_bytes": len(content),
-                    })
-        return sorted(rows, key=lambda row: Path(row["path"]))
-    except OSError:
-        return None
+    rows: list[dict[str, Any]] = []
+    pending = [target]
+    count = 0
+    # Bound traversal before descent; never enumerate a linked subtree.
+    while pending:
+        with os.scandir(pending.pop()) as children:
+            for child in children:
+                count += 1
+                if count > 64:
+                    return None
+                path = Path(child.path)
+                metadata = path.lstat()
+                if path.is_symlink() or is_reparse(metadata):
+                    return None
+                if stat.S_ISDIR(metadata.st_mode):
+                    pending.append(path)
+                    continue
+                if not _bounded_regular_file(metadata):
+                    return None
+                content = path.read_bytes()
+                rows.append({
+                    "path": path.relative_to(target).as_posix(),
+                    "sha256": hashlib.sha256(content).hexdigest(),
+                    "size_bytes": len(content),
+                })
+    return sorted(rows, key=lambda row: Path(row["path"]))
 
 
 def inspect_host_skills(
@@ -281,9 +281,9 @@ def inspect_host_skills(
             label = f"<{scope}>/{directory}/skills"
             try:
                 assert_unlinked_path(root, reason="HOST_SKILL_PATH_INVALID", label="Host root")
-                root_status = "present" if root.is_dir() else "missing"
-                if root.exists() and not root.is_dir():
-                    root_status = "invalid"
+                root_status = "present" if stat.S_ISDIR(root.lstat().st_mode) else "invalid"
+            except FileNotFoundError:
+                root_status = "missing"
             except (OSError, SkillHubContractError):
                 root_status = "unreadable_or_linked"
             skills = []
@@ -298,18 +298,22 @@ def inspect_host_skills(
                 }[state]
                 target = root / entry["directory"]
                 details = _native_details(target, entry, host, packages) if state in {"unchanged", "conflict"} else {}
+                next_action = {
+                    "missing": "Review host-install-plan for this scope, then explicitly install with the native installer; a plan alone installs nothing.",
+                    "local_override_conflict": "Compare local files with the locked bundle; preserve local edits and explicitly reconcile before installation.",
+                    "unknown": "Check access and remove linked-path ambiguity for this exact target before retrying.",
+                    "installed_consistent": "Check host enablement and obtain a host discovery observation; file consistency does not prove loading.",
+                }[status]
+                if details.get("missing_files"):
+                    next_action = "Restore the listed missing_files from the reviewed host-install-plan with the native installer; preserve local edits in remaining files."
+                next_action = details.get("policy_next_action") or details.get("version_next_action") or next_action
                 skills.append({
                     "skill_uri": entry["skill_uri"],
                     "target": f"{label}/{entry['directory']}",
                     "status": status, "observed_digest": digest,
                     "expected_digest": canonical_digest(sorted(entry["files"], key=lambda row: Path(row["path"]))),
                     **details,
-                    "next_action": {
-                        "missing": "Review host-install-plan for this scope, then explicitly install with the native installer; a plan alone installs nothing.",
-                        "local_override_conflict": "Compare local files with the locked bundle; preserve local edits and explicitly reconcile before installation.",
-                        "unknown": "Check access and remove linked-path ambiguity for this exact target before retrying.",
-                        "installed_consistent": "Check host enablement and obtain a host discovery observation; file consistency does not prove loading.",
-                    }[status],
+                    "next_action": next_action,
                 })
             scopes.append({
                 "host": host, "scope": scope, "root": label,
@@ -325,9 +329,9 @@ def _native_details(
 ) -> dict[str, Any]:
     try:
         assert_unlinked_path(target, reason="HOST_SKILL_PATH_INVALID", label="Host target")
-    except SkillHubContractError:
+        rows = _bounded_target_files(target) if target.is_dir() and not target.is_symlink() else None
+    except (OSError, SkillHubContractError):
         return {}
-    rows = _bounded_target_files(target) if target.is_dir() and not target.is_symlink() else None
     if rows is None:
         return {}
     paths = {row["path"] for row in rows}

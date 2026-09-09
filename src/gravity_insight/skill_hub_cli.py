@@ -122,8 +122,8 @@ def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
         from . import __version__
 
         client = SimpleNamespace(
-            state_root=assert_unlinked_path(Path(state_root), reason="HUB_STATE_INVALID", label="State root"), runtime_version=__version__,
-            cas=SimpleNamespace(root=Path(args.cas_root or Path(state_root) / "skill-hub-cas")),
+            state_root=assert_unlinked_path(Path(state_root).expanduser(), reason="HUB_STATE_INVALID", label="State root"), runtime_version=__version__,
+            cas=SimpleNamespace(root=Path(args.cas_root).expanduser() if args.cas_root else Path(state_root).expanduser() / "skill-hub-cas"),
         )
         return _maintenance_dispatch(command, client, args, workspace)
     client = SkillHubClient(state_root, cas_root=args.cas_root)

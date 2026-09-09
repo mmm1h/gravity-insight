@@ -162,8 +162,8 @@ def _diagnostic_roots(state_root: Path | None, project_root: Path | None, cas_ro
         project_root = project_root if project_root is not None else (
             workspace.root if workspace.configured else Path.cwd()
         )
-    state_root, project_root = Path(state_root), Path(project_root)
-    cas_root = Path(cas_root) if cas_root is not None else state_root / "skill-hub-cas"
+    state_root, project_root = Path(state_root).expanduser(), Path(project_root).expanduser()
+    cas_root = Path(cas_root).expanduser() if cas_root is not None else state_root / "skill-hub-cas"
     return state_root, project_root, cas_root
 
 
