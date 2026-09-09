@@ -3,11 +3,12 @@
 本页是安装后完成第一次受治理分析的唯一入口。它不手写动态产品数量，也不保存租户样本。
 
 ## 1. 安装与认证
-
+使用者按下面的发行包路径安装；修改 Runtime 源码的维护者跳到[维护者源码工作](#维护者源码工作)，不混用两种安装。
+### 使用者安装
 权威发行包是 `gravity-insight`；不要安装同名或近似名的第三方包：
 
 ```powershell
-python -m pip install gravity-insight
+python -m pip install --upgrade gravity-insight
 gravity --help
 gravity insight auth status
 ```
@@ -21,7 +22,8 @@ gravity insight auth status
 `GRAVITY_INSIGHT_AUTO_SKILLS=0`；这不关闭 Runtime 安全更新。`gravity skills status` 查看明确状态，
 失败后用 `gravity skills repair` 重验。自动装配不会改写项目 `gravity.skills.lock.json`。
 
-只有修改源码时才在当前 worktree 的独立虚拟环境安装 editable 包：
+### 维护者源码工作
+按[维护者入口](maintainers/index.md)选择任务，在当前 worktree 独立虚拟环境安装 editable 包：
 
 ```powershell
 python -m venv .venv
@@ -45,25 +47,27 @@ gravity agent-catalog describe analysis.query.spec:event
 
 按需读取 `gravity agent-catalog host` 获取现有 selection 合同；目录与发现不会执行产品。仅在任务需要本地 metadata 且获授权时运行 `gravity metadata sync --all-apps`，不把全量同步作为发现的固定前置步骤。
 
-安装后先查看 wheel seed 的离线装配状态；只有需要显式外部 Hub Source 时才同步：
-
+### 原生 Host 首次安装
+先用 `gravity skills status` 核对离线 bootstrap；`not_bootstrapped` 与检查成功但合法零项的 `empty` 不同。外部 Hub 是[可选路径](reference/cli.md#skill-hub-与-agent-skill)，不是首次使用必做步骤。
+在调用项目根目录已有精确 `gravity.skills.lock.json` 时，按[原生安装命令](reference/cli.md#原生-host-安装与读回)生成计划、预览后批准；这里的 project 是调用项目，不是 Runtime 源码树：
 ```powershell
-curl -sL -o source.json https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v5/source.json
-gravity agent-catalog categories
-gravity skills status
-gravity skills list --state-root <state-root>
-# 显式外部 Source：
-gravity skills sync --source source.json --state-root <state-root>
+gravity skills host-install-plan --host codex --host-root <project>/.agents/skills --lock <project>/gravity.skills.lock.json > host-plan.json
+gravity skills host-install --plan host-plan.json --project-root <project>
+gravity skills host-install --plan host-plan.json --project-root <project> --approve <preview_digest>
+gravity skills host-readback --plan host-plan.json --project-root <project>
 ```
+Claude 对应 `--host claude` 与 `<project>/.claude/skills`；不覆盖用户修改，不安装到用户全局目录。摘要不匹配须重新预览，不承诺当前会话 reload。
 
-`status=not_bootstrapped` 与成功但合法零项的 `status=empty` 是不同机器状态；不要只看 `count: 0`。
-显式外部同步成功仍以 `sync` 返回的 `skill_count` 和 `snapshot_digest` 为准。
+| 阶段 | 成功证据与边界 |
+| --- | --- |
+| bootstrap | Runtime seed 已验证进入 managed lock/CAS；未安装宿主文件。 |
+| host-plan | 所选包的安装计划已生成；未写宿主目标目录。 |
+| installed | 显式批准安装且独立 readback 一致；未证明宿主加载。 |
+| discovered | 新宿主会话的启用/发现记录；文件存在不是发现证据。 |
+| invoked | 同次会话显式或隐式调用的方法和工具事件；发现不是调用。 |
+| executed | 受治理执行的终态、结果与 Receipt；调用不等于成功或完整业务结论。 |
 
-Skill 不替代选路、Journey、权限或执行合同；`blocked` 必须停止，`validated` 不代表当前可执行。
-Runtime wheel 不内置可发现 registry/resolver，但携带同次 CT03 构建的唯一密封 seed；它只有完成
-managed lock/CAS/verify 后才进入发现面。供 Codex、Claude Code 等宿主安装的 `SKILL.md` 是同一
-canonical manifest 的独立 Agent 投影；用 `skills host-install-plan` 交给宿主原生机制，用户改过的
-目标目录不会被覆盖，当前会话 reload 不作承诺。
+离线 `gravity doctor` 的[六层诊断](reference/cli.md#skill-触发诊断)分别检查方法库、项目锁、原生文件、发现、调用、路由；它不是上述六阶段的成功证明。宿主证据不可见时保留 `unknown/not_measured`，不能用 recognizer 测试冒充真实触发。
 
 ## 3. 补参并执行
 

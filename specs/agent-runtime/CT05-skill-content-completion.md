@@ -1,5 +1,7 @@
 # CT05 Skill Content Completion
 
+Delivery metadata and counts below are frozen release evidence, not the current architecture binding or catalog. Current Owners remain [index.json](index.json) and [directive.json](directive.json).
+
 | Field | Value |
 | --- | --- |
 | Status | `released` |
@@ -26,15 +28,7 @@ exit. Calling-project Semantic and Context values remain project-owned; each
 such dependency must instead have a validated fill-in template and an exact
 fail-closed remedy. No milestone may promote readiness by documentation alone.
 
-## Milestones
-
-| Milestone | Scope | Exit |
-| --- | --- | --- |
-| `M1` | Example contract and rendering; three newly approved topics; core diagnostics/data engineering; two method-less executable analysis Skills | Every in-scope Skill is 17/17 and has three scenario-complete run examples |
-| `M2` | Community, operations, campaign, device and game analysis | Every in-scope Skill is 17/17 with package/eval coverage |
-| `M3` | Monetization, LTV/LT, retention, churn and user analysis | Canonical library reaches 43/43 Method Complete |
-| `M4` | Runtime-owned dependency closure and project binding templates | Zero Runtime-owned dependency gaps; every project gap has a validated template |
-| `M5` | Final deterministic publication and external readback | All 43 Agent archives validate outside the checkout |
+Completed milestone execution history is retained in Git; the release verdict below is the fixed delivery evidence.
 
 ## Release verdict
 

@@ -348,7 +348,8 @@ def eager_import_cycles(package_root: Path = PACKAGE_ROOT) -> list[list[str]]:
 from scripts.audit_agent_module_references import (
     MODULE_GRAPH_CURRENT_DEFINITION_ID,
     MODULE_GRAPH_CURRENT_PACKAGE_ROOT,
-    MODULE_GRAPH_DEBT_PATH,
+    MODULE_GRAPH_BASELINE_PATH,
+    MODULE_GRAPH_DEFINITION_PATH,
     MODULE_GRAPH_EDGE_KINDS,
     MODULE_GRAPH_PROFILE_ORDER,
     module_graph_adjacency,

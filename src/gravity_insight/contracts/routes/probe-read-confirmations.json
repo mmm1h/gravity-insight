@@ -5,7 +5,7 @@
       "evidence": [
         {
           "detail": "In the hash-matched census bundle the reportSubscribe component calls this route to load its table rows and page_info.total_number. Creating, editing, deleting and exporting a subscription each go through their own separate routes, so listing carries no write side effect.",
-          "source": "docs/analysis-journeys.md"
+          "source": "src/gravity_insight/governance/journey-ledger-annotations.v1.json"
         }
       ],
       "method": "POST",
@@ -23,7 +23,7 @@
         },
         {
           "detail": "A minimum single-page request returned HTTP 200 with a semantically successful empty envelope, with no confirmation step, no layout update and no success toast.",
-          "source": "docs/analysis-journeys.md"
+          "source": "src/gravity_insight/governance/journey-ledger-annotations.v1.json"
         }
       ],
       "method": "POST",
@@ -41,7 +41,7 @@
         },
         {
           "detail": "A minimum first-page request returned HTTP 200 with a semantically successful empty data.list envelope, with no confirmation step and no modification feedback.",
-          "source": "docs/analysis-journeys.md"
+          "source": "src/gravity_insight/governance/journey-ledger-annotations.v1.json"
         }
       ],
       "method": "POST",

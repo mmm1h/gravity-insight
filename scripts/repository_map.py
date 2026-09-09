@@ -414,7 +414,9 @@ def _load_graph_owner(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     finally:
         if added_root:
             sys.path.remove(root_text)
-    definition = module.module_graph_current_definition(root / "docs/maintainers/technical-debt.md")
+    definition = module.module_graph_current_definition(
+        root / "src/gravity_insight/governance/module-graph-definition.v1.json"
+    )
     measurement = module.module_graph_measurement(
         root / "src/gravity_insight", definition
     )

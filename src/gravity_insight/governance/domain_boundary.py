@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .module_graph import (
-    MODULE_GRAPH_DEFINITION_START,
-    MODULE_GRAPH_DEFINITION_END,
+
     module_graph_canonical_sha256,
     module_graph_cyclic_sccs,
     module_graph_definition,

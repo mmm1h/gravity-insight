@@ -1061,13 +1061,10 @@ from typing import Mapping as _ModuleGraphMapping
 from typing import Sequence as _ModuleGraphSequence
 
 from gravity_insight.governance.module_graph import (
-    MODULE_GRAPH_BASELINE_END,
-    MODULE_GRAPH_BASELINE_START,
+    MODULE_GRAPH_BASELINE_PATH,
     MODULE_GRAPH_CURRENT_DEFINITION_ID,
     MODULE_GRAPH_CURRENT_PACKAGE_ROOT,
-    MODULE_GRAPH_DEBT_PATH,
-    MODULE_GRAPH_DEFINITION_END,
-    MODULE_GRAPH_DEFINITION_START,
+    MODULE_GRAPH_DEFINITION_PATH,
     MODULE_GRAPH_EDGE_KINDS,
     MODULE_GRAPH_PROFILE_ORDER,
     module_graph_adjacency,
@@ -1095,42 +1092,18 @@ from gravity_insight.governance.domain_boundary import (
     evaluate_domain_boundary,
 )
 
-def _replace_module_graph_document(
-    source: str,
-    start_marker: str,
-    end_marker: str,
-    value: _ModuleGraphAny,
-) -> str:
-    start = source.index(start_marker)
-    end = source.index(end_marker, start) + len(end_marker)
-    payload = json.dumps(
-        value,
-        ensure_ascii=True,
-        separators=(",", ":"),
-        sort_keys=True,
-    )
-    replacement = f"{start_marker}\n```json\n{payload}\n```\n{end_marker}"
-    return source[:start] + replacement + source[end:]
-
-
-def refresh_module_graph_baseline(path: Path = MODULE_GRAPH_DEBT_PATH) -> dict[str, _ModuleGraphAny]:
-    definition = module_graph_current_definition(path)
+def refresh_module_graph_baseline(
+    path: Path = MODULE_GRAPH_BASELINE_PATH,
+    *, definition_path: Path = MODULE_GRAPH_DEFINITION_PATH,
+) -> dict[str, _ModuleGraphAny]:
+    definition = module_graph_current_definition(definition_path)
     package_root = ROOT / definition["scope"]["package_root"]
     baseline = module_graph_measurement(package_root, definition)
-    source = path.read_text(encoding="utf-8")
-    source = _replace_module_graph_document(
-        source,
-        MODULE_GRAPH_DEFINITION_START,
-        MODULE_GRAPH_DEFINITION_END,
-        definition,
-    )
-    source = _replace_module_graph_document(
-        source,
-        MODULE_GRAPH_BASELINE_START,
-        MODULE_GRAPH_BASELINE_END,
-        baseline,
-    )
-    path.write_text(source, encoding="utf-8", newline="\n")
+    for target, value in ((definition_path, definition), (path, baseline)):
+        target.write_text(
+            json.dumps(value, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8", newline="\n",
+        )
     return baseline
 
 

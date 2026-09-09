@@ -22,6 +22,7 @@ def ordered_steps(python: str, *, check: bool) -> tuple[tuple[str, ...], ...]:
         else ("domain-boundary", "baseline", "--write")
     )
     return (
+        # Step 1 writes governance/module-graph-*.v1.json, never Markdown.
         (
             python,
             "-m",

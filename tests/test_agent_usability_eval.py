@@ -83,7 +83,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         )
         self.assertEqual([], missing)
 
-    def test_ledger_status_summary_is_derived_only_from_the_table(self) -> None:
+    def test_ledger_status_summary_is_derived_only_from_structured_facts(self) -> None:
         # The evaluator owns the summary. Keeping a second prose total in the
         # ledger caused repeated drift as journey rows changed status.
         import collections
@@ -95,12 +95,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         )["journeys"]
         counted_titles = {target["ledger_title"] for target in targets.values()}
         counts: collections.Counter[str] = collections.Counter()
-        for line in text.splitlines():
-            if not (line.startswith("| ") and line.count("|") >= 5):
-                continue
-            cells = [cell.strip() for cell in line.split("|")]
-            title = cells[1] if len(cells) > 1 else ""
-            status = cells[2] if len(cells) > 2 else ""
+        for row in json.loads(text)["rows"]:
+            title, status = row["display_name"], row["ledger_status"]
             if title in counted_titles and status in {"已闭环", "部分闭环", "完全缺失"}:
                 counts[status] += 1
 
@@ -124,14 +120,13 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         )
         _cases, baseline = self.subject.derive_cases([raw])
         current = self.subject.JOURNEY_LEDGER_PATH.read_text(encoding="utf-8")
-        partial = current.replace(
-            "| 查询分析默认值字典 | 已闭环 |",
-            "| 查询分析默认值字典 | 部分闭环 |",
-            1,
-        )
+        document = json.loads(current)
+        row = next(row for row in document["rows"] if row["display_name"] == "查询分析默认值字典")
+        row["ledger_status"] = "部分闭环"
+        partial = json.dumps(document, ensure_ascii=False)
         self.assertNotEqual(current, partial)
         with tempfile.TemporaryDirectory() as temp:
-            ledger = Path(temp) / "analysis-journeys.md"
+            ledger = Path(temp) / "journey-ledger-facts.v1.json"
             ledger.write_text(partial, encoding="utf-8")
             cases, snapshot = self.subject.derive_cases([raw], ledger_path=ledger)
         self.assertEqual(

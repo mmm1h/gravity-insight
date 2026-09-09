@@ -27,7 +27,7 @@ SCHEMA_VERSION = "gravity.skill-journey-contract-gate.v3"
 _SKILL_ROOT = Path("skills/library")
 _JOURNEY_ROOT = Path("src/gravity_insight/contracts/journeys")
 _MODEL_ROOT = Path("src/gravity_insight/contracts/models")
-_JOURNEY_AUXILIARY_FILES = frozenset({"ledger-snapshot.v1.json"})
+_JOURNEY_AUXILIARY_FILES = frozenset({"ledger-snapshot.v2.json"})
 _CLAIM_ID = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 _MODEL_CLAIM_FIELDS = ("validated", "scenario", "forbidden")
 # These concepts have no exact Skill/Journey counterpart. Keeping literal IDs

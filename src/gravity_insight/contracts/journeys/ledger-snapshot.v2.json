@@ -1,4 +1,6 @@
 {
+  "annotations_path": "src/gravity_insight/governance/journey-ledger-annotations.v1.json",
+  "annotations_sha256": "2d91ffc2cda6573ebbd9876d47246efbe31c6302aa4c9a09e72ac38dcd3c9f41",
   "network_called": false,
   "row_count": 69,
   "rows": [
@@ -1314,8 +1316,8 @@
       }
     }
   ],
-  "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "b987c5a1af7a22fcb21deddb18941a41a85f443b01da3a75b6b3d6616a220b97",
-  "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "465b47a1417216fd71401ea78d16ef08c20e8620f91c7d50f9cf8b03182d882d"
+  "schema_version": "gravity.journey-ledger-snapshot.v2",
+  "snapshot_digest": "392c8fddfe57c1e1cfa730ff512295a13a731502758dae418b193ef5917d1b42",
+  "source_path": "src/gravity_insight/governance/journey-ledger-facts.v1.json",
+  "source_sha256": "5b86904c4a52a9b92f5cca551c6cf1ddd5d61ebe7616e4287ab8c37eef6a568f"
 }
