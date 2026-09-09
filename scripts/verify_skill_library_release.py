@@ -23,7 +23,7 @@ except ModuleNotFoundError:  # Imported as scripts.verify_skill_library_release.
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_TAG = "skill-library-v5"
+RELEASE_TAG = "skill-library-v6"
 MANIFEST_NAME = "build-manifest.json"
 _MANIFEST_LIMIT = 1_048_576
 _ASSET_LIMIT = 4_194_304

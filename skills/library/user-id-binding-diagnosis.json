@@ -34,7 +34,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "适用于客户端、服务端或多设备事件无法稳定归并到同一业务用户的场景，沿身份产生、登录绑定、服务端透传和统一 ID 生成链路定位断点。",
+  "description": "用于沿多端身份产生、登录绑定和透传链核对可观测映射断点。用户问“客户端和服务端事件为什么没归到同一用户”时使用。不用于识别真实个人或合并历史用户记录；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -252,6 +252,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "historical-identity-repair",
+              "inferred-user-identity"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "沿多端身份产生、登录绑定和透传链核对可观测映射断点",
+            "missing_project_calibration": "identity-contract"
+          },
+          "question": "我想沿多端身份产生、登录绑定和透传链核对可观测映射断点，但尚未提供设备、账号、统一用户键和绑定时点。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "historical-identity-repair",
+              "inferred-user-identity"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "主体身份映射已确认，需要核查该主体的行为时间序列"
+          },
+          "question": "主体身份映射已确认，需要核查该主体的行为时间序列，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -403,7 +460,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

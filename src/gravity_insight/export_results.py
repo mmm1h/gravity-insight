@@ -4,9 +4,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from .contracts.envelope_obligations import serialize_envelope
 from .errors import ErrorCategory, ErrorCode, ErrorDetail
 from .export_completion import (
     completeness_audit,
+    export_result_obligations,
     result_completion_status,
     snapshot_completion_status,
 )
@@ -71,7 +73,8 @@ def export_failed_snapshot_envelope(
 def export_result_envelope(operation_id: str, result: Any) -> dict[str, Any]:
     if result.error is not None:
         detail = _export_result_error_detail(operation_id, result)
-        return {
+        obligations = export_result_obligations(result, detail.to_dict())
+        return serialize_envelope({
             "schema_version": "gravity-insight.error.v1",
             "result_source": result_source(GOVERNED_PRODUCT),
             "ok": False,
@@ -83,8 +86,10 @@ def export_result_envelope(operation_id: str, result: Any) -> dict[str, Any]:
             "history": [state.value for state in result.history],
             "resumable": result.resumable,
             "error": detail.to_dict(),
-        }
-    return {
+            **_failure_diagnostics(result.error),
+        }, obligations)
+    obligations = export_result_obligations(result)
+    return serialize_envelope({
         "schema_version": "gravity-insight.export.v1",
         "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
@@ -97,7 +102,7 @@ def export_result_envelope(operation_id: str, result: Any) -> dict[str, Any]:
         "resumable": result.resumable,
         "file": _file_receipt(result.receipt),
         **_completeness_fields(result),
-    }
+    }, obligations)
 
 
 def _export_result_error_detail(operation_id: str, result: Any) -> ErrorDetail:
@@ -112,6 +117,34 @@ def _export_result_error_detail(operation_id: str, result: Any) -> ErrorDetail:
         retryable=bool(getattr(result.error, "retryable", False)),
         next_action=next_action,
     )
+
+
+def _failure_diagnostics(error: Any) -> dict[str, Any]:
+    """Expose only fixed phases/reasons and numeric positions, never exception values."""
+
+    stage = getattr(error, "stage", None)
+    code = str(getattr(error, "code", ""))
+    reasons = {
+        ("compression", "EXPORT_FORMAT_INVALID"): "invalid_gzip",
+        ("compression", "BLOB_SIZE_LIMIT"): "gzip_expansion_limit",
+        ("encoding", "EXPORT_FORMAT_INVALID"): "invalid_text_encoding",
+        ("headers", "EXPORT_SCHEMA_MISMATCH"): "schema_mismatch",
+        ("csv_framing", "EXPORT_SCHEMA_MISMATCH"): "row_width_mismatch",
+        ("csv_framing", "EXPORT_FORMAT_INVALID"): "invalid_csv",
+        ("local_io", "LOCAL_IO_ERROR"): "local_io_failed",
+    }
+    reason = reasons.get((stage, code))
+    if code in {"BLOB_SIZE_MISMATCH", "BLOB_HASH_MISMATCH", "BLOB_MD5_MISMATCH"}:
+        stage, reason = "completeness", "source_integrity_mismatch"
+    if reason is None:
+        return {}
+    diagnostic: dict[str, Any] = {"stage": stage, "reason": reason}
+    details = getattr(error, "details", {})
+    for key in ("line", "rows_processed"):
+        value = details.get(key) if isinstance(details, Mapping) else None
+        if type(value) is int and value >= 0:
+            diagnostic[key] = value
+    return {"diagnostics": diagnostic}
 
 
 def _public_export_error(

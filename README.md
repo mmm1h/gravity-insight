@@ -4,7 +4,7 @@ Gravity Agent Runtime 的实现仓库，当前稳定内核是面向数据分析�
 
 ## 从这里开始
 
-- **使用 SDK 取数或分析**：读 [团队上手包](docs/team-onboarding.md)，然后运行：
+- **使用 SDK 取数或分析**：读 [团队上手包](docs/team-onboarding.md)。已知有效合同直接调用，未知先读目录，无法可靠选择才用 recognizer 保底；完整顺序只由 [Agent 工作流](docs/agent-workflow.md#0-宿主优先的有序合同) 定义。未知能力的最短入口：
 
   ```powershell
   gravity agent-catalog categories

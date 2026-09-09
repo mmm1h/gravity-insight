@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "生成估算前，必须具备确切的队列、删失和观测语义，以及获批的生命周期 Model。",
+  "description": "用于在成熟队列和获批模型有效域内计算生命周期观测与有界外推。用户问“这批用户的 LT 可以估到多远”时使用。不用于把 LT 当 LTV 或用短期留存保证完整生命周期；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -245,6 +245,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-lifetime-estimate"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "在成熟队列和获批模型有效域内计算生命周期观测与有界外推",
+            "missing_project_calibration": "retention-contract"
+          },
+          "question": "我想在成熟队列和获批模型有效域内计算生命周期观测与有界外推，但尚未提供留存资格、回访、身份和成熟规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-lifetime-estimate"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "根据收入与获客成本估计 LTV 回本周期，不估计生命周期 LT"
+          },
+          "question": "根据收入与获客成本估计 LTV 回本周期，不估计生命周期 LT，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -396,7 +453,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

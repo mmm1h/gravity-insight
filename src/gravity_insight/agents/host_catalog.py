@@ -11,6 +11,11 @@ from .caller_language import caller_language_fields
 from .product_inventory import canonical_capability_cards
 from .unavailable import registered_unavailable_gaps
 from ..host_effect_sources import SOURCE_SCHEMA_VERSION, host_source
+from ..contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, DiagnosticEvidence, DiagnosticState,
+    EnvelopeObligations, ExecutionState, ExecutionStatus, MutationCertainty,
+    MutationState, SemanticState, SemanticValidity, serialize_envelope,
+)
 
 
 CATALOG_SCHEMA_VERSION = "gravity.host-product-catalog.v1"
@@ -21,6 +26,23 @@ MUTATION_SELECTION_BOUNDARY = (
 )
 GAP_SELECTION_BOUNDARY = (
     "Unavailable and never executable; do not substitute a neighboring product."
+)
+HOST_WORKFLOW_REF = (
+    "https://github.com/mmm1h/gravity-insight/blob/main/docs/agent-workflow.md"
+)
+HOST_SELECTION_POLICY = (
+    "Known current contracts use dedicated execution without catalog or lexical reselection.",
+    "For unknown capabilities, read `agent-catalog host` and pass gravity.host-product-selection.v1 "
+    "with `--routing host_catalog --host-selection` or routing omitted.",
+    "Omit --routing to keep the recognizer floor only when the caller cannot produce a host selection.",
+    "Use authorized project sources for missing facts; report remaining inputs. Repair invalid/stale "
+    "selections and stop on permission/contract/quality failures; never silently switch routes, "
+    "products, accounts or raw SQL.",
+    "Reuse existing task budgets. Do not poll both arms with unchanged input.",
+    "Prefer a matching workspace recipe because it owns project semantics.",
+    "Prefer a registered composite when it already covers the requested context.",
+    "Otherwise select a callable stable Insight operation.",
+    "Use governed SQL only when Insight cannot express equivalent semantics.",
 )
 
 
@@ -44,7 +66,13 @@ def host_product_catalog(client: Any) -> dict[str, Any]:
         "catalog_sha256": fingerprint,
         "source_schema_version": SOURCE_SCHEMA_VERSION,
         "selection_schema_version": SELECTION_SCHEMA_VERSION,
+        "workflow_ref": HOST_WORKFLOW_REF,
         "selection_rules": {
+            "priority": (
+                "Known current contracts: call dedicated CLI/SDK/Composite/Plan directly. "
+                "Unknown capability: read this catalog and needed describe/schema, then "
+                "submit host-selection. Use recognizer only when the host cannot reliably select."
+            ),
             "candidate_count": f"0..{MAX_CANDIDATES}",
             "zero": "return abstained; the SDK emits its canonical routing gap",
             "one": "reference exactly one catalog_ref",
@@ -53,6 +81,19 @@ def host_product_catalog(client: Any) -> dict[str, Any]:
                 "catalog_ref is validated as sdk_contract/instruction; host output "
                 "never supplies operation, path, or Plan control identities"
             ),
+            "failure_boundary": (
+                "Missing business facts: consult authorized project sources, then report missing inputs. "
+                "Invalid/stale selection, permission denial or contract/quality drift: repair or stop; "
+                "never silently switch router, product, account or raw SQL."
+            ),
+            "budget": (
+                "Reuse existing task budgets for catalog refresh, fallback and retries; "
+                "do not poll both arms for unchanged input."
+            ),
+            "observation_boundary": (
+                "Validated selection proves receipt and validation only, not host catalog reading "
+                "or execution. Verify host order with tool events; otherwise unknown/not_measured."
+            ),
         },
         "response_schema": host_product_selection_schema(),
         "selection_template": host_product_selection_template(fingerprint),
@@ -60,7 +101,49 @@ def host_product_catalog(client: Any) -> dict[str, Any]:
         "entries": [dict(item) for item in entries],
     }
     validate_host_catalog_projection(catalog, product_cards=cards, gaps=gaps)
-    return catalog
+    obligations = discovery_obligations()
+    return serialize_envelope(catalog, obligations)
+
+
+def discovery_obligations(gaps: Sequence[Mapping[str, Any]] = ()) -> EnvelopeObligations:
+    """Discovery never validates product inputs or executes the selected product."""
+
+    codes = tuple(dict.fromkeys(str(gap.get("code") or "DISCOVERY_GAP_REPORTED") for gap in gaps))
+    return EnvelopeObligations(
+        ExecutionStatus(ExecutionState.NOT_STARTED, "DISCOVERY_ONLY"),
+        DataCompleteness(CompletenessState.NOT_APPLICABLE, "NO_PRODUCT_DATA_READ"),
+        SemanticValidity(SemanticState.UNKNOWN, ("PRODUCT_INPUTS_NOT_VALIDATED",)),
+        DiagnosticEvidence(DiagnosticState.INCOMPLETE if codes else DiagnosticState.NONE, codes),
+        MutationCertainty(MutationState.NOT_ATTEMPTED, "DISCOVERY_ONLY"),
+    )
+
+
+def host_workflow(prefix: list[str]) -> list[dict[str, Any]]:
+    """Short executable entry hints; the linked workflow owns the full order."""
+
+    return [
+        {
+            "step": "known_contract",
+            "when": "a suitable capability and its current input contract are already known",
+            "action": "Call its dedicated CLI/SDK/Composite/Plan directly; no rediscovery.",
+        },
+        {
+            "step": "unknown_capability",
+            "argv": [*prefix, "agent-catalog", "host"],
+            "action": "Read needed describe/schema, then submit the existing host-selection.",
+            "network_required": False,
+        },
+        {
+            "step": "selection_floor",
+            "when": "host cannot reliably select or its selection protocol is unavailable",
+            "argv": [*prefix, "agent", "<query>", "--routing", "recognizer"],
+            "network_required": False,
+        },
+        {
+            "step": "execute",
+            "action": "After filling inputs and validating the contract, use the card's dedicated entry; check results and limits.",
+        },
+    ]
 
 
 def host_product_selection_template(
@@ -97,14 +180,17 @@ def host_selection_upgrade_contract(query: str) -> dict[str, Any]:
     return {
         "when": (
             "the caller can emit gravity.host-product-selection.v1 after "
-            "reading the host catalog"
+            "reading the host catalog, and has not already tried the same unchanged input"
         ),
+        "workflow_ref": HOST_WORKFLOW_REF,
         "next_action": (
             "This answer is the offline recognizer floor. Read "
             "`gravity agent-catalog host`, copy `selection_template`, set "
             "`query` to this same query and `catalog_sha256` to the catalog "
             "fingerprint, pick one `catalog_ref` from `catalog_refs`, then "
-            "resubmit with `--routing host_catalog --host-selection`."
+            "resubmit with `--routing host_catalog --host-selection` within the existing budget. "
+            "Do not alternate arms on unchanged input or reinterpret a protocol/permission "
+            "failure as fallback authorization. Known current contracts need no rediscovery."
         ),
         "selection_schema_version": SELECTION_SCHEMA_VERSION,
         "selection_schema": host_product_selection_schema(),

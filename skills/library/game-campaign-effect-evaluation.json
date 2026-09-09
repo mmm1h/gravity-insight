@@ -35,7 +35,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "在活动日历、资格、分配、曝光和结果归因均由项目声明后，按证据等级评估观测结果，并把同期变化与增量或因果结论严格分开。",
+  "description": "用于比较活动结果与明确基准的观测差异，并评定证据允许的结论等级。用户问“活动前后变化能说明效果吗”时使用。不用于仅凭同期上涨证明因果或增量；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -131,7 +131,7 @@
       },
       {
         "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
-        "identity": "operator://gravity/campaign-outcome-evaluation@1",
+        "identity": "operator://gravity/campaign-outcome-evaluation@2",
         "kind": "operator",
         "reason_code": "DEPENDENCY_AVAILABLE",
         "status": "available"
@@ -288,6 +288,196 @@
         "哪些渠道、平台或地区贡献了最大的观测差异，交叉曝光残差有多大？"
       ],
       "run_examples": [
+        {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "incremental-lift",
+              "unobserved-campaign-effect"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope",
+              "formula-definition",
+              "experiment-handoff"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较活动结果与明确基准的观测差异，并评定证据允许的结论等级",
+            "missing_project_calibration": "campaign-eligibility"
+          },
+          "question": "我想比较活动结果与明确基准的观测差异，并评定证据允许的结论等级，但尚未提供活动资格、排除、入组时点和重复参与规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "operator-v2-conformance",
+          "expected": {
+            "allowed_claims": [
+              "design-qualified-association",
+              "observed-campaign-outcome-change",
+              "returned-segment-contribution"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "incremental-lift",
+              "unobserved-campaign-effect"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope",
+              "formula-definition",
+              "dependency-gaps",
+              "design-readiness",
+              "observed-results",
+              "comparison-estimate",
+              "dimension-contribution",
+              "exclusions",
+              "claims",
+              "experiment-handoff"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "operator_uri": "operator://gravity/campaign-outcome-evaluation@2",
+            "operator_input": {
+              "schema_version": "gravity.operator-input.governed-method.v2",
+              "method": "campaign-outcome-evaluation",
+              "rows": [
+                {
+                  "key": "campaign-a",
+                  "values": {
+                    "current": 0.14,
+                    "reference": 0.1
+                  },
+                  "evidence": {
+                    "step_id": "evidence-0",
+                    "path": "/rows/0"
+                  },
+                  "scopes": {
+                    "current": {
+                      "unit": "ratio",
+                      "population": "synthetic-campaign-cohort-0@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/current"
+                      }
+                    },
+                    "reference": {
+                      "unit": "ratio",
+                      "population": "synthetic-campaign-cohort-0@1",
+                      "window": {
+                        "start": "2026-08-25",
+                        "end": "2026-08-31",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/reference"
+                      }
+                    }
+                  }
+                },
+                {
+                  "key": "campaign-b",
+                  "values": {
+                    "current": 0.06,
+                    "reference": 0.1
+                  },
+                  "evidence": {
+                    "step_id": "evidence-1",
+                    "path": "/rows/1"
+                  },
+                  "scopes": {
+                    "current": {
+                      "unit": "ratio",
+                      "population": "synthetic-campaign-cohort-1@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/current"
+                      }
+                    },
+                    "reference": {
+                      "unit": "ratio",
+                      "population": "synthetic-campaign-cohort-1@1",
+                      "window": {
+                        "start": "2026-08-25",
+                        "end": "2026-08-31",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/reference"
+                      }
+                    }
+                  }
+                }
+              ],
+              "parameters": {},
+              "unit": "ratio",
+              "additivity": "non_additive",
+              "mode": "rowwise"
+            }
+          },
+          "question": "合成离线算子示例：验证 rowwise 请求形状，不代表任何项目的真实数据或分析成功。",
+          "scenario": "success",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "incremental-lift",
+              "unobserved-campaign-effect"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope",
+              "formula-definition",
+              "experiment-handoff"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "仅核对支付漏斗配置为何排除了某实体，不比较活动效果"
+          },
+          "question": "仅核对支付漏斗配置为何排除了某实体，不比较活动效果，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
         {
           "example_id": "complete-success",
           "expected": {
@@ -500,7 +690,7 @@
       "kind": "experiment",
       "target": "gravity experiment propose"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
@@ -528,7 +718,7 @@
         "depends_on": [
           "validate-data-and-design"
         ],
-        "instruction": "根据可用设计计算同期组间差、描述性前后差或双重差分算术估计，保留分子分母。",
+        "instruction": "根据可用设计计算同期组间差、描述性前后差或双重差分算术估计，保留分子分母。同一固定组的结果率前后比较使用 mode=rowwise、non_additive；每行 current/reference scopes 必须绑定同一人群，明确各自窗口。活动组和比较组分行处理，算子不直接接受不同人群的成对比较；同期组间差及双重差分需另外使用项目验证的派生公式，不能伪称共同总体来通过门禁。只有互斥人数或金额的组成贡献可另建 additive aggregate 请求，并提供 complete 同侧 scopes、允许轴和互斥分区证据；不得对率求和或用算术结果授权因果。使用 gravity operators describe operator://gravity/campaign-outcome-evaluation@2 读取绑定 Schema；执行仅由 SDK OperatorRegistry.execute 负责。",
         "on_failure": "METHOD_FORMULA_INVALID",
         "step_id": "compute-comparison"
       },
@@ -647,7 +837,7 @@
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [
-    "operator://gravity/campaign-outcome-evaluation@1"
+    "operator://gravity/campaign-outcome-evaluation@2"
   ],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {

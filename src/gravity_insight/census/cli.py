@@ -94,6 +94,7 @@ def _add_fetch_parser(subparsers: Any) -> None:
     fetch.add_argument("--max-attempts", type=int, default=3)
     fetch.add_argument("--concurrency", type=int, default=4)
     fetch.add_argument("--timeout", type=float, default=45.0)
+    fetch.add_argument("--max-elapsed-seconds", type=float, default=1200.0)
     fetch.add_argument("--local-capacity-retries", type=int, default=2)
     fetch.add_argument("--no-manifest-probes", action="store_true")
     fetch.add_argument("--require-complete", action="store_true")
@@ -222,13 +223,22 @@ def _run_fetch(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         concurrency=args.concurrency,
         timeout=args.timeout,
         local_capacity_retries=args.local_capacity_retries,
+        max_elapsed_seconds=args.max_elapsed_seconds,
     )
-    result = fetcher.fetch(
-        site_url=args.site,
-        raw_dir=args.raw_dir,
-        snapshot_path=args.output,
-        probe_manifests=not args.no_manifest_probes,
-    )
+    try:
+        result = fetcher.fetch(
+            site_url=args.site,
+            raw_dir=args.raw_dir,
+            snapshot_path=args.output,
+            probe_manifests=not args.no_manifest_probes,
+        )
+    except Exception as exc:
+        # The executor has joined its workers; exception-time counters may lag.
+        exc.census_final_request_budget = {
+            "used": fetcher.attempts, "limit": fetcher.max_requests,
+            "remaining": max(0, fetcher.max_requests - fetcher.attempts),
+        }
+        raise
     graph_incomplete = not result["summary"]["complete"]
     incomplete = args.require_complete and graph_incomplete
     failure = _incomplete_fetch_failure(result) if graph_incomplete else None

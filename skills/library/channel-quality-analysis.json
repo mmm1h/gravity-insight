@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "仅在获客成本、下游价值和归因时间窗的单位与范围相互兼容后，评估渠道切片。",
+  "description": "用于比较同龄获客队列的渠道留存、付费与回收质量。用户问“哪个渠道便宜但用户质量低”时使用。不用于认定欺诈或自动重分预算；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -241,6 +241,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-channel-population",
+              "optimal-budget-allocation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较同龄获客队列的渠道留存、付费与回收质量",
+            "missing_project_calibration": "channel-attribution"
+          },
+          "question": "我想比较同龄获客队列的渠道留存、付费与回收质量，但尚未提供渠道归属、重叠和自然量规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-channel-population",
+              "optimal-budget-allocation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "只解释同一用户在一次会话中的事件顺序，不比较渠道队列"
+          },
+          "question": "只解释同一用户在一次会话中的事件顺序，不比较渠道队列，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -391,7 +448,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

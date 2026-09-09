@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "fe42d3d0fabe3dcc36d12373607b165cef7df2d875c1902e69ced3b71855e6c4"
+    "compatibility_sha256": "8e10be2c76c08bf21ff78312c6cda029b4bc8338b0040f34fdfab62e92bdef03"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -336,11 +336,17 @@
         },
         {
           "id": "0.3.15-hard-break-2",
-          "description": "`campaign-outcome-evaluation`, `metric-decomposition`, `scenario-projection`, `sentiment-aggregation` and `funnel-diagnosis` Operators at `@1` now require explicit `mode=rowwise`. Implicit totals, normalized shares and cumulative conversion fail closed with registered reasons and a migration remedy. Exact `@2` contracts restore supported cross-row results with explicit scope, additivity-axis, partition or linear-lineage evidence; no silent version upgrade is provided. Three scenario Model families have explicit `@2` successors and refreshed `@1` parameter digests. Skill Library URI migration remains owned by R2-05/R2-12. Migration guide: [0.3.15](docs/migration/0.3.15.md)",
+          "description": "`campaign-outcome-evaluation`, `metric-decomposition`, `scenario-projection`, `sentiment-aggregation` and `funnel-diagnosis` Operators at `@1` now require explicit `mode=rowwise`. Implicit totals, normalized shares and cumulative conversion fail closed with registered reasons and a migration remedy. Exact `@2` contracts restore supported cross-row results with explicit scope, additivity-axis, partition or linear-lineage evidence; no silent version upgrade is provided. Three scenario Model families have explicit `@2` successors and refreshed `@1` parameter digests. Skill Library content/dependency migration is prepared below; publication and project activation remain explicit. Migration guide: [0.3.15](docs/migration/0.3.15.md)",
           "migration_guide": "docs/migration/0.3.15.md"
         }
       ],
-      "soft_breaks": [],
+      "soft_breaks": [
+        {
+          "id": "0.3.15-soft-break-1",
+          "description": "CLI `skills host-install-plan` now defaults to the project lock and fails closed when it is missing. Migration: pass `--lock <project-lock>` for a selected subset, or explicitly pass `--all` to retain full-bundle planning. The Python full-bundle API and all Runtime read capabilities are unchanged.",
+          "migration_guide": "docs/migration/0.3.15.md"
+        }
+      ],
       "migration_guide": "docs/migration/0.3.15.md"
     }
   ]

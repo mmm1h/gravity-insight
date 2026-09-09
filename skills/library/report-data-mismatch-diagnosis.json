@@ -34,7 +34,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "适用于两份报表声称回答同一问题但结果不同的场景，先对齐模型、事件、时间、过滤、分组和去重口径，再把差额拆成可复核项。",
+  "description": "用于对账两份报表的模型、时间、筛选、去重和状态处理差额。用户问“两份报表为什么对不上，还剩多少残差”时使用。不用于自动改报表或预设某团队口径正确；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -259,6 +259,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-population",
+              "silent-report-mutation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "对账两份报表的模型、时间、筛选、去重和状态处理差额",
+            "missing_project_calibration": "common-report-baseline"
+          },
+          "question": "我想对账两份报表的模型、时间、筛选、去重和状态处理差额，但尚未提供双方认可用于复算的公共定义和状态处理。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-population",
+              "silent-report-mutation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "看板完全无返回，需要定位最早无数据断点，不对账两个数值"
+          },
+          "question": "看板完全无返回，需要定位最早无数据断点，不对账两个数值，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -410,7 +467,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

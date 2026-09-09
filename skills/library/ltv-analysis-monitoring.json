@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "比较估算前，核对项目价值语义与获批的 LTV Model 及其评估时间窗。",
+  "description": "用于比较同龄获客队列累计 LTV 并拆解返回收入变化。用户问“同龄队列 LTV 为什么下降”时使用。不用于把短龄 LTV 当终身价值或保证回本；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -245,6 +245,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较同龄获客队列累计 LTV 并拆解返回收入变化",
+            "missing_project_calibration": "ltv-contract"
+          },
+          "question": "我想比较同龄获客队列累计 LTV 并拆解返回收入变化，但尚未提供队列资格、净收入、退款、币种和固定分母。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "为监控系统设计指标定义草案，不计算队列实际 LTV 变化"
+          },
+          "question": "为监控系统设计指标定义草案，不计算队列实际 LTV 变化，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -396,7 +453,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

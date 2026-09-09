@@ -2,9 +2,9 @@
 # 拿到 capability_gap 后怎么办
 
 ```powershell
-gravity agent "<your-query>"
+gravity agent "<your-query>" --routing recognizer
 ```
-调用方能产出选择时，先 `gravity agent-catalog host` 再把严格 `gravity.host-product-selection.v1` 交给 `gravity agent --host-selection`；省略 routing 且没有 selection 的 `gravity agent` 仍是够不着宿主时的地板，给了 selection 则走 host_catalog。识别器只排出互不相同 raw operation 时返回 `UNRANKED_OPERATIONS`，`next.argv` 是 `gravity agent-catalog host`，不是可执行产品。只有 `status=success` 的 candidate 才可执行；`capability_gaps` 是明确的不可执行结果，不是 empty。
+上面命令仅是宿主不能可靠选择时的候选保底；已知有效合同直接调用，未知先读目录。完整顺序、失败分类和预算只见 [Agent 工作流](../agent-workflow.md#0-宿主优先的有序合同)。`UNRANKED_OPERATIONS` 是待宿主选择，不是可执行产品；`capability_gaps` 是不可执行结果，不是 empty。
 
 ## 预期 envelope 形状
 
@@ -109,12 +109,54 @@ gravity agent "<your-query>"
     ]
   },
   "next_action": "<str>",
+  "obligations": {
+    "data_completeness": {
+      "evidence_code": "<str>",
+      "facts": {},
+      "state": "<str>"
+    },
+    "diagnostic_evidence": {
+      "evidence_codes": [
+        "<str>"
+      ],
+      "state": "<str>"
+    },
+    "execution_status": {
+      "evidence_code": "<str>",
+      "state": "<str>"
+    },
+    "mutation_certainty": {
+      "evidence_code": "<str>",
+      "state": "<str>"
+    },
+    "schema_version": "<str>",
+    "semantic_validity": {
+      "evidence_codes": [
+        "<str>"
+      ],
+      "state": "<str>"
+    }
+  },
   "offline": "<bool>",
   "ok": "<bool>",
   "query": "<str>",
   "routing": {
+    "arm": "<str>",
+    "catalog_basis": "<str>",
+    "catalog_sha256": "<str>",
+    "event": "<str>",
+    "execution": {
+      "status": "<str>",
+      "terminal_state": "<NoneType>"
+    },
+    "fallback_reason": "<NoneType>",
     "floor": "<bool>",
+    "host_catalog_read": "<str>",
+    "host_selection_attempt": "<str>",
     "mode": "<str>",
+    "selector": "<NoneType>",
+    "status": "<str>",
+    "terminal_state": "<str>",
     "upgrade": {
       "next": {
         "argv": [
@@ -221,7 +263,8 @@ gravity agent "<your-query>"
         "type": "<str>"
       },
       "selection_schema_version": "<str>",
-      "when": "<str>"
+      "when": "<str>",
+      "workflow_ref": "<str>"
     }
   },
   "routing_mode": "<str>",

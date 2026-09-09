@@ -74,6 +74,8 @@ class RuntimeSkillResolver:
     ) -> dict[str, Any]:
         """Return a value-free resolution; expected local gaps never raise."""
 
+        if identifier is None and journey is not None and journey["contract"]["required_skill"] is None:
+            return _result(None, [])
         try:
             identity = normalize_skill_identity(identifier)
         except InputValidationError:

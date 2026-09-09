@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from .contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, EnvelopeObligations,
+    ExecutionState, ExecutionStatus, MutationCertainty, MutationState,
+    SemanticState, SemanticValidity, diagnostic_evidence,
+)
 from .export_models import ExportCompletionStatus
 
 
@@ -38,6 +43,32 @@ def completeness_audit(result: Any) -> dict[str, Any] | None:
     if not isinstance(snapshot, Mapping):
         return None
     return dict(snapshot)
+
+
+def export_result_obligations(
+    result: Any, error: Mapping[str, Any] | None = None,
+) -> EnvelopeObligations:
+    """Own transfer facts independently of the caller-facing serialization."""
+
+    receipt = getattr(result, "receipt", None)
+    committed = result.error is None and receipt is not None
+    execution = ExecutionState.COMPLETE if committed else ExecutionState.FAILED
+    completeness = CompletenessState.UNKNOWN
+    facts: dict[str, Any] = {}
+    if committed:
+        facts["file_rows"] = receipt.finalization.rows_processed
+        status = result_completion_status(result)
+        if status in {ExportCompletionStatus.COMPLETE.value, ExportCompletionStatus.EMPTY.value}:
+            completeness = CompletenessState.COMPLETE
+        elif status == ExportCompletionStatus.TRUNCATED.value:
+            completeness = CompletenessState.PREFIX
+    return EnvelopeObligations(
+        ExecutionStatus(execution, "EXPORT_FILE_COMMITTED" if committed else "EXPORT_FILE_NOT_COMMITTED"),
+        DataCompleteness(completeness, "EXPORT_FILE_COMPLETENESS", facts),
+        SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
+        diagnostic_evidence(error),
+        MutationCertainty(MutationState.NOT_APPLICABLE, "EXPORT_HAS_NO_BUSINESS_MUTATION"),
+    )
 
 
 def _committed_status(result: Any, receipt: Any) -> str:

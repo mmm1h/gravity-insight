@@ -32,7 +32,7 @@
   "covers_journeys": [
     "analysis.gravity.game.community-context-correlation"
   ],
-  "description": "必须提供与同一 App 和时间窗对齐的项目自有 Context Pack，再将返回的行为事实与辅助社区观测结果及假设区分开。",
+  "description": "用于梳理单个社区话题的时间演变、来源差异与可追溯观点。用户问“这个话题何时升温、观点如何变化”时使用。不用于自动回应或把同步变化解释为因果；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -240,6 +240,61 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "梳理单个社区话题的时间演变、来源差异与可追溯观点",
+            "missing_project_calibration": "topic-query"
+          },
+          "question": "我想梳理单个社区话题的时间演变、来源差异与可追溯观点，但尚未提供话题关键词、别名、排除词和语言范围。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "汇总全社区整周各事件，而不是追踪一个指定话题"
+          },
+          "question": "汇总全社区整周各事件，而不是追踪一个指定话题，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -387,7 +442,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
