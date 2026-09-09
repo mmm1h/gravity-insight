@@ -252,6 +252,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-user-population",
+              "sensitive-trait-inference"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "按项目流失定义比较流失队列与活跃对照的返回特征",
+            "missing_project_calibration": "churn-definition"
+          },
+          "question": "我想按项目流失定义比较流失队列与活跃对照的返回特征，但尚未提供合格用户、无活动阈值、回流和成熟规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -273,9 +302,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "预测个人必然流失或创建召回名单"
+            "requested_outcome": "预测未来留存曲线的尾部生命周期，不比较已定义流失队列的特征"
           },
-          "question": "能否用本方法预测个人必然流失或创建召回名单？",
+          "question": "预测未来留存曲线的尾部生命周期，不比较已定义流失队列的特征，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

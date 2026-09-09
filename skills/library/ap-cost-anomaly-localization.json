@@ -218,6 +218,38 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-app-total",
+              "unreturned-values",
+              "causality",
+              "incrementality",
+              "roi",
+              "natural-volume-attribution"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较两个等长不重叠窗口的返回渠道支出，并检查指定渠道是否同向变化",
+            "missing_project_calibration": "acquisition-spend-contract"
+          },
+          "question": "我想比较两个等长不重叠窗口的返回渠道支出，并检查指定渠道是否同向变化，但尚未提供获客支出指标、币种、税费返点、时间粒度、可加性和物理字段绑定。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -242,9 +274,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "完整 App 总支出、ROI 或因果归因"
+            "requested_outcome": "评估渠道用户的长期价值与回收质量，不比较返回渠道支出窗口"
           },
-          "question": "能否用本方法完整 App 总支出、ROI 或因果归因？",
+          "question": "评估渠道用户的长期价值与回收质量，不比较返回渠道支出窗口，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "metric-anomaly-localization@1"
         },

@@ -251,6 +251,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "automatic-contact-authorized",
+              "causality",
+              "guaranteed-offer-response"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "形成带资格、场景、商品与频控条件的礼包候选矩阵",
+            "missing_project_calibration": "offer-catalog"
+          },
+          "question": "我想形成带资格、场景、商品与频控条件的礼包候选矩阵，但尚未提供真实 SKU、价格、内容、有效期和库存。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -272,9 +301,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "创建推送任务或自动触达用户"
+            "requested_outcome": "只拆解已有礼包的分层购买渗透，不设计人群与触达场景矩阵"
           },
-          "question": "能否用本方法创建推送任务或自动触达用户？",
+          "question": "只拆解已有礼包的分层购买渗透，不设计人群与触达场景矩阵，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "composite:business_pulse"
         },

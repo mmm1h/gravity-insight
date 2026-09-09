@@ -235,6 +235,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "分析指定内容评论区的可追溯观点簇、已分类情感和时间变化",
+            "missing_project_calibration": "comment-filter-policy"
+          },
+          "question": "我想分析指定内容评论区的可追溯观点簇、已分类情感和时间变化，但尚未提供低价值、重复、删除和语言过滤规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "operator-v2-conformance",
           "expected": {
             "allowed_claims": [
@@ -372,9 +401,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "把单条内容评论外推为整个社区意见"
+            "requested_outcome": "汇总全社区一周跨日事件，而不是指定内容的评论区"
           },
-          "question": "能否用本方法把单条内容评论外推为整个社区意见？",
+          "question": "汇总全社区一周跨日事件，而不是指定内容的评论区，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

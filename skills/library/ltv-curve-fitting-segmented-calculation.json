@@ -245,6 +245,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unsupported-segment-extrapolation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "用获批曲线模型拟合互斥分层的 LTV 并限定预测窗口",
+            "missing_project_calibration": "segmented-ltv-contract"
+          },
+          "question": "我想用获批曲线模型拟合互斥分层的 LTV 并限定预测窗口，但尚未提供固定队列、净收入、冻结分层和加权规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -266,9 +295,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "自动选模型或保证长期价值"
+            "requested_outcome": "只做两份已观测 LTV 结果口径对账，不拟合曲线"
           },
-          "question": "能否用本方法自动选模型或保证长期价值？",
+          "question": "只做两份已观测 LTV 结果口径对账，不拟合曲线，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

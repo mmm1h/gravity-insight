@@ -235,6 +235,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "inferred-metric-definition",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "对齐同名指标的定义、版本与下游引用",
+            "missing_project_calibration": "metric-owner"
+          },
+          "question": "我想对齐同名指标的定义、版本与下游引用，但尚未提供两个指标的业务负责人和最终裁决流程。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -255,9 +283,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "把不同业务问题强行统一为同一指标"
+            "requested_outcome": "两个指标分别衡量留存和收入，请按各自定义独立展示，不做口径统一"
           },
-          "question": "能否用本方法把不同业务问题强行统一为同一指标？",
+          "question": "两个指标分别衡量留存和收入，请按各自定义独立展示，不做口径统一，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

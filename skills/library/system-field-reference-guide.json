@@ -224,6 +224,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "field-permission-inferred",
+              "inferred-field-definition",
+              "undocumented-binding"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "依据项目字段合同核对字段定义、归属和跨查询面的可见性",
+            "missing_project_calibration": "field-catalog-version"
+          },
+          "question": "我想依据项目字段合同核对字段定义、归属和跨查询面的可见性，但尚未提供项目字段目录和系统字段版本。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -245,9 +274,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "按字段名猜含义或创建字段权限连接"
+            "requested_outcome": "核对候选版本是否漏报事件，不查询字段在分析面的可见性"
           },
-          "question": "能否用本方法按字段名猜含义或创建字段权限连接？",
+          "question": "核对候选版本是否漏报事件，不查询字段在分析面的可见性，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

@@ -238,6 +238,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-attribution",
+              "incremental-channel-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "拆解付费率或规模变化中的分子、分母及返回分层差额",
+            "missing_project_calibration": "payment-rate-contract"
+          },
+          "question": "我想拆解付费率或规模变化中的分子、分母及返回分层差额，但尚未提供合格用户、有效付费、退款和身份规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -259,9 +288,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "把相关维度定为因果责任方"
+            "requested_outcome": "设计尚未定义的付费漏斗草案，不解释付费变化"
           },
-          "question": "能否用本方法把相关维度定为因果责任方？",
+          "question": "设计尚未定义的付费漏斗草案，不解释付费变化，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "metric-anomaly-localization@1"
         },

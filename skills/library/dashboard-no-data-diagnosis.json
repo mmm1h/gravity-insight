@@ -240,6 +240,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "dashboard-ui-state",
+              "silent-permission-inference"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核查看板无返回时的数据源、时间筛选、字段和引用断点",
+            "missing_project_calibration": "dashboard-definition"
+          },
+          "question": "我想核查看板无返回时的数据源、时间筛选、字段和引用断点，但尚未提供组件、查询、过滤和数据源的权威版本。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -261,9 +290,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "直接修改线上看板或权限"
+            "requested_outcome": "两份非空报表数值不同，需要逐项对账"
           },
-          "question": "能否用本方法直接修改线上看板或权限？",
+          "question": "两份非空报表数值不同，需要逐项对账，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "metric-anomaly-localization@1"
         },

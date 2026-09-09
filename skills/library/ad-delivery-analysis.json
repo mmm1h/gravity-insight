@@ -245,6 +245,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-channel-population",
+              "incremental-return"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较投放计划从曝光到付费回收的返回表现",
+            "missing_project_calibration": "ad-attribution"
+          },
+          "question": "我想比较投放计划从曝光到付费回收的返回表现，但尚未提供触点模型、窗口、跨端合并和自然量规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -266,9 +295,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "自动调预算或保证回收"
+            "requested_outcome": "只核对两份留存报表的分子分母差异，不比较投放计划"
           },
-          "question": "能否用本方法自动调预算或保证回收？",
+          "question": "只核对两份留存报表的分子分母差异，不比较投放计划，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "metric-anomaly-localization@1"
         },

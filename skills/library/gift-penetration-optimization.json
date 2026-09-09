@@ -245,6 +245,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-eligible-population",
+              "optimal-offer-design"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "拆解礼包返回分层的触达、购买渗透与组成变化",
+            "missing_project_calibration": "gift-eligibility"
+          },
+          "question": "我想拆解礼包返回分层的触达、购买渗透与组成变化，但尚未提供目标人群、排除和商品有效期。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "operator-v2-conformance",
           "expected": {
             "allowed_claims": [
@@ -397,9 +426,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "自动改价改商品或保证收入提升"
+            "requested_outcome": "从联系政策和商品目录设计触达矩阵，不分析已有礼包渗透"
           },
-          "question": "能否用本方法自动改价改商品或保证收入提升？",
+          "question": "从联系政策和商品目录设计触达矩阵，不分析已有礼包渗透，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

@@ -258,6 +258,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "guaranteed-revenue-improvement",
+              "price-write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较可比曝光下的价格带购买与收入响应，评估价格实验依据",
+            "missing_project_calibration": "product-catalog"
+          },
+          "question": "我想比较可比曝光下的价格带购买与收入响应，评估价格实验依据，但尚未提供真实商品、版本、标价、成交价、币种和有效期。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -279,9 +308,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "保证最优价格、推断心理价位或直接改价"
+            "requested_outcome": "比较成熟队列的复购间隔，不评估可比曝光下的价格响应"
           },
-          "question": "能否用本方法保证最优价格、推断心理价位或直接改价？",
+          "question": "比较成熟队列的复购间隔，不评估可比曝光下的价格响应，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

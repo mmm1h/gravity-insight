@@ -228,6 +228,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "database-change-authorized",
+              "production-performance-guarantee",
+              "sql-execution-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "离线评审查询与执行计划的结构瓶颈及语义等价改写候选",
+            "missing_project_calibration": "sql-dialect"
+          },
+          "question": "我想离线评审查询与执行计划的结构瓶颈及语义等价改写候选，但尚未提供方言版本、函数语义和标识符规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -249,9 +278,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "连接生产库执行 SQL 或创建索引"
+            "requested_outcome": "核对同名指标的业务口径，不评审 SQL 执行计划与等价改写"
           },
-          "question": "能否用本方法连接生产库执行 SQL 或创建索引？",
+          "question": "核对同名指标的业务口径，不评审 SQL 执行计划与等价改写，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

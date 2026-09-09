@@ -238,6 +238,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-user-history",
+              "hidden-identity-linkage",
+              "user-intent"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核查单个已授权主体在有界窗口内的事件顺序、状态和序列缺口",
+            "missing_project_calibration": "subject-access"
+          },
+          "question": "我想核查单个已授权主体在有界窗口内的事件顺序、状态和序列缺口，但尚未提供授权主体、用途、字段、窗口和隐私投影。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -259,9 +288,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "身份搜索、批量画像或推断心理"
+            "requested_outcome": "比较不同渠道的群体留存与付费质量，不核查单一主体行为链"
           },
-          "question": "能否用本方法身份搜索、批量画像或推断心理？",
+          "question": "比较不同渠道的群体留存与付费质量，不核查单一主体行为链，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

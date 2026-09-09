@@ -240,6 +240,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "梳理单个社区话题的时间演变、来源差异与可追溯观点",
+            "missing_project_calibration": "topic-query"
+          },
+          "question": "我想梳理单个社区话题的时间演变、来源差异与可追溯观点，但尚未提供话题关键词、别名、排除词和语言范围。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -260,9 +288,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "自动回应或把同步变化解释为因果"
+            "requested_outcome": "汇总全社区整周各事件，而不是追踪一个指定话题"
           },
-          "question": "能否用本方法自动回应或把同步变化解释为因果？",
+          "question": "汇总全社区整周各事件，而不是追踪一个指定话题，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

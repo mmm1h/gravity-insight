@@ -248,6 +248,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "deployment-complete",
+              "production-collection-confirmed",
+              "write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "为获批业务流程设计可评审的事件属性、隐私与验收合同",
+            "missing_project_calibration": "business-question-set"
+          },
+          "question": "我想为获批业务流程设计可评审的事件属性、隐私与验收合同，但尚未提供方案必须支持的获批分析问题。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -269,9 +298,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "上传生产平台、生成生产代码或证明已采集"
+            "requested_outcome": "已有批准采集方案，需要验收这版上报是否符合定义"
           },
-          "question": "能否用本方法上传生产平台、生成生产代码或证明已采集？",
+          "question": "已有批准采集方案，需要验收这版上报是否符合定义，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

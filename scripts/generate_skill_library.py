@@ -25,6 +25,7 @@ from gravity_insight.external_method_registry import (
 from gravity_insight.skill_contract import compile_skill_manifest, skill_uri
 from gravity_insight.skill_hub_archive import validate_skill_archive
 from gravity_insight.skill_hub_contract import compile_hub_index, compile_hub_source
+from gravity_insight.skill_hub_locks import build_skills_lock, compile_skills_lock
 from gravity_insight.skill_package import SkillPackageError, validate_package_entries
 from gravity_insight.skill_render import (
     render_agent_export,
@@ -48,9 +49,10 @@ AGENT_INDEX_SCHEMA_PATH = (
 DEFAULT_OUTPUT = ROOT / "build" / "skill-hub"
 SEED_FILENAME = "skill-seed-v1.zip"
 PUBLISH_BASE = (
-    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v5"
+    "https://github.com/mmm1h/gravity-insight/releases/download/skill-library-v6"
 )
-# Digest of the build manifest actually published at PUBLISH_BASE. The wheel's
+# Digest of the reviewed build manifest for PUBLISH_BASE. Library v6 is a local
+# release candidate until separately published; pinning does not publish it. The wheel's
 # sealed seed is rebuilt from this checkout at build time, but the Skill
 # Library release is published separately, so any edit that reaches a rendered
 # archive silently makes the shipped seed disagree with the published library:
@@ -60,8 +62,8 @@ PUBLISH_BASE = (
 # release. The manifest is pinned rather than the canonical-Skill digest
 # because Skills resolve capability contracts at render time -- editing one of
 # those changes the published archives without changing the source digest.
-PUBLISHED_BUILD_MANIFEST_SHA256 = (
-    "1cf00dbdf8b094942c217dd3ba03b330442a710239a0213e53d5c5a9f850bbb4"
+PINNED_BUILD_MANIFEST_SHA256 = (
+    "b7da09bf71115d3a8d94b95daa50503a49d1ae8beb31e7c5fd4fa10436962a7e"
 )
 _NAMESPACE = re.compile(
     r"^(?:gravity\.(?:core|game)(?:\.[a-z][a-z0-9-]*)*|"
@@ -513,7 +515,48 @@ def _assert_no_tracked_mirrors() -> None:
         raise SystemExit("generated Skill mirrors are tracked: " + ", ".join(mirrors))
 
 
+def render_lock_migration(outputs: dict[str, bytes], previous: dict[str, Any]) -> dict[str, bytes]:
+    """Build a reviewable successor, retaining exactly the caller's selection."""
+    old = compile_skills_lock(previous)
+    index = compile_hub_index(json.loads(outputs["index.json"]), runtime_version=__version__)
+    source = compile_hub_source(json.loads(outputs["source.json"]))
+    descriptor = source["contract"]
+    if (old["source"]["source_id"] != descriptor["source_id"]
+            or old["source"]["transport"] != descriptor["transport"]):
+        raise SkillPackageError("Lock migration cannot change the selected source identity")
+    source_ref = {
+        "source_id": descriptor["source_id"],
+        "transport": descriptor["transport"],
+        "source_descriptor_digest": source["digest"],
+        "source_revision": descriptor["https"]["source_revision"],
+        "index_digest": index["digest"],
+    }
+    new = build_skills_lock(index, source_ref, old["requested"], runtime_version=__version__)
+    old_entries = {item["skill_uri"]: item for item in old["skills"]}
+    receipt = {
+        "schema_version": "gravity.skill-library-lock-migration.v1",
+        "build_manifest_sha256": hashlib.sha256(outputs["build-manifest.json"]).hexdigest(),
+        "from_lock_digest": old["lock_digest"],
+        "to_lock_digest": new["lock_digest"],
+        "from_runtime_version": old["runtime_version"],
+        "to_runtime_version": new["runtime_version"],
+        "requested": new["requested"],
+        "changes": [{"skill_uri": item["skill_uri"],
+                     "before": old_entries[item["skill_uri"]], "after": item}
+                    for item in new["skills"] if item != old_entries[item["skill_uri"]]],
+        "activation": "not_performed",
+        "network_called": False,
+    }
+    return {"migration/gravity.skills.lock.json": _json_bytes(new),
+            "migration/receipt.json": _json_bytes(receipt)}
+
+
 def _write_outputs(output_root: Path, outputs: dict[str, bytes]) -> None:
+    existing = output_root / "build-manifest.json"
+    if existing.exists():
+        old = load_json_object(existing, "existing Skill build")
+        if old.get("publish_base_url") != PUBLISH_BASE:
+            raise SkillPackageError("Refusing to overwrite another immutable library; choose a new output directory")
     for relative, content in outputs.items():
         target = output_root.joinpath(*relative.split("/"))
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -524,6 +567,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--from-lock", type=Path, help="Generate a successor lock for review only; never activate it")
     options = parser.parse_args(argv)
     first = render_outputs()
     second = render_outputs()
@@ -531,6 +575,12 @@ def main(argv: list[str] | None = None) -> int:
     second_seed = render_seed(second)
     if first != second or first_seed != second_seed:
         raise SystemExit("Skill library build is not deterministic")
+    manifest_digest = hashlib.sha256(first["build-manifest.json"]).hexdigest()
+    if manifest_digest != PINNED_BUILD_MANIFEST_SHA256:
+        raise SystemExit("Skill library build-manifest pin drifted; review a new library release and its pin")
+    migration = {}
+    if options.from_lock is not None:
+        migration = render_lock_migration(first, load_json_object(options.from_lock, "previous Skill lock"))
     if options.check:
         _assert_no_tracked_mirrors()
         with zipfile.ZipFile(io.BytesIO(first_seed)) as seed_archive:
@@ -538,13 +588,18 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"Skill library source is valid and deterministic: skills={len(list(SOURCE_ROOT.glob('*.json')))}, "
             f"outputs={len(first)}, seed_files={seed_files}, seed_bytes={len(first_seed)}, "
-            f"seed_sha256={hashlib.sha256(first_seed).hexdigest()}, source_sha256={_source_digest()}"
+            f"seed_sha256={hashlib.sha256(first_seed).hexdigest()}, source_sha256={_source_digest()}, "
+            f"build_manifest_sha256={manifest_digest}, pin=matched, migrated_files={len(migration)}"
         )
         return 0
     output = options.output_dir
     if not output.is_absolute():
         output = ROOT / output
-    _write_outputs(output, first)
+    if options.from_lock is not None and options.from_lock.resolve() in {
+        output.joinpath(*path.split("/")).resolve() for path in (*first, *migration, SEED_FILENAME)
+    }:
+        raise SkillPackageError("Refusing to overwrite the input project lock")
+    _write_outputs(output, {**first, **migration})
     (output / SEED_FILENAME).write_bytes(first_seed)
     print(
         f"rendered {len(first)} Skill Hub files and {SEED_FILENAME} "

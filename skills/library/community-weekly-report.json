@@ -235,6 +235,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "汇总一周跨日社区事件、已分类情感变化与来源贡献",
+            "missing_project_calibration": "weekly-window"
+          },
+          "question": "我想汇总一周跨日社区事件、已分类情感变化与来源贡献，但尚未提供周起止、时区、节假日和迟到内容处理。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "operator-v2-conformance",
           "expected": {
             "allowed_claims": [
@@ -372,9 +401,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "用单日热度替代周趋势或自动发布周报"
+            "requested_outcome": "逐条核对某内容评论的过滤与分类，而不是周度跨日汇总"
           },
-          "question": "能否用本方法用单日热度替代周趋势或自动发布周报？",
+          "question": "逐条核对某内容评论的过滤与分类，而不是周度跨日汇总，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

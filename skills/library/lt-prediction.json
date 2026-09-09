@@ -245,6 +245,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-lifetime-estimate"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "在成熟队列和获批模型有效域内计算生命周期观测与有界外推",
+            "missing_project_calibration": "retention-contract"
+          },
+          "question": "我想在成熟队列和获批模型有效域内计算生命周期观测与有界外推，但尚未提供留存资格、回访、身份和成熟规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -266,9 +295,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "把 LT 当 LTV 或用短期留存保证完整生命周期"
+            "requested_outcome": "根据收入与获客成本估计 LTV 回本周期，不估计生命周期 LT"
           },
-          "question": "能否用本方法把 LT 当 LTV 或用短期留存保证完整生命周期？",
+          "question": "根据收入与获客成本估计 LTV 回本周期，不估计生命周期 LT，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

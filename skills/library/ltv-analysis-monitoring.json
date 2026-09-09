@@ -245,6 +245,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较同龄获客队列累计 LTV 并拆解返回收入变化",
+            "missing_project_calibration": "ltv-contract"
+          },
+          "question": "我想比较同龄获客队列累计 LTV 并拆解返回收入变化，但尚未提供队列资格、净收入、退款、币种和固定分母。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -266,9 +295,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "把短龄 LTV 当终身价值或保证回本"
+            "requested_outcome": "为监控系统设计指标定义草案，不计算队列实际 LTV 变化"
           },
-          "question": "能否用本方法把短龄 LTV 当终身价值或保证回本？",
+          "question": "为监控系统设计指标定义草案，不计算队列实际 LTV 变化，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "composite:business_pulse"
         },

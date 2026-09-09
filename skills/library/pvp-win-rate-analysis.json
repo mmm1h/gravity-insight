@@ -238,6 +238,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-match-population",
+              "matchmaking-fairness"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较胜率区间与留存付费的观测关联及段位匹配差异",
+            "missing_project_calibration": "match-contract"
+          },
+          "question": "我想比较胜率区间与留存付费的观测关联及段位匹配差异，但尚未提供有效对局、胜负、机器人和组队规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -259,9 +288,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "宣称胜率导致留存或自动调匹配"
+            "requested_outcome": "定位关卡进入与通关的流失卡点，不分析 PVP 对局"
           },
-          "question": "能否用本方法宣称胜率导致留存或自动调匹配？",
+          "question": "定位关卡进入与通关的流失卡点，不分析 PVP 对局，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

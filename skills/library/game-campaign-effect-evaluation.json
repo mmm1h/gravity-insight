@@ -289,6 +289,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "incremental-lift",
+              "unobserved-campaign-effect"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope",
+              "formula-definition",
+              "experiment-handoff"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较活动结果与明确基准的观测差异，并评定证据允许的结论等级",
+            "missing_project_calibration": "campaign-eligibility"
+          },
+          "question": "我想比较活动结果与明确基准的观测差异，并评定证据允许的结论等级，但尚未提供活动资格、排除、入组时点和重复参与规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "operator-v2-conformance",
           "expected": {
             "allowed_claims": [
@@ -443,9 +472,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "仅凭同期上涨证明因果或增量"
+            "requested_outcome": "仅核对支付漏斗配置为何排除了某实体，不比较活动效果"
           },
-          "question": "能否用本方法仅凭同期上涨证明因果或增量？",
+          "question": "仅核对支付漏斗配置为何排除了某实体，不比较活动效果，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "metric-anomaly-localization@1"
         },

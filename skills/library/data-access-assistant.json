@@ -228,6 +228,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "access-authorized",
+              "credential-availability",
+              "unregistered-route-support"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "依据已批准接入合同核对 SDK 版本、平台配置和生产红线",
+            "missing_project_calibration": "integration-version"
+          },
+          "question": "我想依据已批准接入合同核对 SDK 版本、平台配置和生产红线，但尚未提供项目批准的 SDK、组件和文档版本。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -249,9 +278,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "部署采集服务或证明生产数据已到达"
+            "requested_outcome": "已经完成接入，请按采集方案验收候选版本的事件与属性"
           },
-          "question": "能否用本方法部署采集服务或证明生产数据已到达？",
+          "question": "已经完成接入，请按采集方案验收候选版本的事件与属性，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

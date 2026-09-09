@@ -235,6 +235,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "audience-write-authorized",
+              "causality",
+              "message-send-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "把运营意图整理为可评审的入口、条件、等待和动作候选有向图",
+            "missing_project_calibration": "journey-node-vocabulary"
+          },
+          "question": "我想把运营意图整理为可评审的入口、条件、等待和动作候选有向图，但尚未提供允许的入口、判断、分流、等待、动作和结束节点。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -256,9 +285,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "创建、发布或启用线上旅程"
+            "requested_outcome": "诊断既有付费漏斗的转化损失，不设计运营流程图"
           },
-          "question": "能否用本方法创建、发布或启用线上旅程？",
+          "question": "诊断既有付费漏斗的转化损失，不设计运营流程图，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

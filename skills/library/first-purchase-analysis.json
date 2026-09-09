@@ -238,6 +238,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "unreturned-user-behavior"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "分析新用户首购时间、返回转化步骤与可比人群差异",
+            "missing_project_calibration": "first-purchase-contract"
+          },
+          "question": "我想分析新用户首购时间、返回转化步骤与可比人群差异，但尚未提供新用户、首笔有效支付、退款和成熟窗口。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -259,9 +288,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "复购诊断、自动改价或保证首购提升"
+            "requested_outcome": "分析已首购用户在成熟窗口内的复购间隔"
           },
-          "question": "能否用本方法复购诊断、自动改价或保证首购提升？",
+          "question": "分析已首购用户在成熟窗口内的复购间隔，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

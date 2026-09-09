@@ -228,6 +228,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "access-authorized",
+              "deployment-complete",
+              "source-schema-compatible"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核对候选版本的事件和属性是否符合批准采集方案",
+            "missing_project_calibration": "tracking-plan-version"
+          },
+          "question": "我想核对候选版本的事件和属性是否符合批准采集方案，但尚未提供候选版本绑定的权威事件与属性合同。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -249,9 +278,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "用现有脏数据反推应有定义或自动修代码"
+            "requested_outcome": "尚无采集方案，需要从新功能业务流程设计埋点合同"
           },
-          "question": "能否用本方法用现有脏数据反推应有定义或自动修代码？",
+          "question": "尚无采集方案，需要从新功能业务流程设计埋点合同，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

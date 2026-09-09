@@ -236,6 +236,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-population",
+              "causality",
+              "unreturned-values"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核对两个筛选结果的模型、队列、时间和去重差异",
+            "missing_project_calibration": "comparison-contract"
+          },
+          "question": "我想核对两个筛选结果的模型、队列、时间和去重差异，但尚未提供两侧共同指标、实体和队列的可比条件。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -257,9 +286,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "从抽样差集外推完整总体"
+            "requested_outcome": "两份结果本来分别按订单和用户统计，请独立展示，不建立共同筛选基准"
           },
-          "question": "能否用本方法从抽样差集外推完整总体？",
+          "question": "两份结果本来分别按订单和用户统计，请独立展示，不建立共同筛选基准，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

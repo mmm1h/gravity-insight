@@ -35,7 +35,7 @@ class SkillTriggerContentTests(unittest.TestCase):
             with self.subTest(skill=manifest["skill_id"]):
                 examples = manifest["method"]["examples"]["run_examples"]
                 near = next(e for e in examples if e["example_id"] == "near-neighbor-out-of-scope")
-                missing = [e for e in examples if e["scenario"] == "blocked_or_gap" and e is not near]
+                missing = [e for e in examples if e["example_id"] == "missing-required-contract"]
                 self.assertTrue(missing)
                 self.assertTrue(any(e["scenario"] == "success" for e in examples))
                 self.assertEqual(("gap", [], False), (
@@ -48,6 +48,43 @@ class SkillTriggerContentTests(unittest.TestCase):
                 self.assertEqual(manifest["description"], description)
                 self.assertIn(near["question"], files["references/EXAMPLES.md"])
                 self.assertIn(missing[0]["question"], files["references/EXAMPLES.md"])
+
+    def test_payment_subset_keeps_local_conversion_and_boundary_loss_distinct(self):
+        manifest = self.by_id["payment-conversion-funnel"]
+        example = next(e for e in manifest["method"]["examples"]["run_examples"]
+                       if e["example_id"] == "operator-v2-subset-boundary")
+        request = example["input_template"]
+        result = self.registry.execute(request["operator_uri"], request["operator_input"])
+        self.assertTrue(result["ok"], result)
+        self.assertEqual("0.4", result["result"]["metrics"]["cumulative_conversion"])
+        rows = {r["key"]: r for r in result["result"]["ranked_rows"]}
+        self.assertEqual("0.666667", rows["payment"]["value"])
+        self.assertEqual("20", rows["payment"]["contribution"])
+        self.assertIn("entities_entering_step_k", manifest["method"]["formulas"][0]["expression"])
+
+    def test_host_handoff_order_commands_and_legacy_render_boundary(self):
+        from gravity_insight.cli import build_parser
+        from gravity_insight.skill_render import _host_handoff, render_guide
+        manifest = self.by_id["retention-analysis-data-verification"]
+        guide = render_guide(manifest)
+        commands = [
+            ["agent-catalog", "categories"],
+            ["agent-catalog", "category", "analysis"],
+            ["agent-catalog", "describe", "analysis.query.spec:event"],
+            ["agent-catalog", "host"],
+            ["agent", "--host-selection", "selection.json"],
+            ["agent", "question", "--routing", "recognizer"],
+        ]
+        for argv in commands:
+            build_parser().parse_args(argv)
+        self.assertLess(guide.index("1. "), guide.index("gravity agent-catalog categories"))
+        self.assertLess(guide.index("gravity agent-catalog host"), guide.index("--routing recognizer"))
+        self.assertIn("schema_argv", guide)
+        self.assertIn("next.argv", guide)
+        legacy = copy.deepcopy(manifest)
+        legacy["method"]["method_revision"] = 1
+        self.assertEqual([], _host_handoff(legacy))
+        self.assertNotIn("## Host Entry and Handoff", render_guide(legacy))
 
     def test_eight_canonical_requests_execute_with_their_scoped_golden_results(self):
         for skill_id, (method, mode) in MIGRATIONS.items():

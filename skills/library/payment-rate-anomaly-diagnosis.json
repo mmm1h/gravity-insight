@@ -270,6 +270,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-payment-population",
+              "inferred-metric-definition"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope",
+              "metric-definition",
+              "claims"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核对可比窗口的付费率异常，拆解分子分母和返回维度差异",
+            "missing_project_calibration": "payment-success-state"
+          },
+          "question": "我想核对可比窗口的付费率异常，拆解分子分母和返回维度差异，但尚未提供哪些支付状态计入成功，以及退款、撤销和补单如何处理。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -291,9 +320,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "证明某次发布或活动导致下降"
+            "requested_outcome": "仅比较不同价格带响应并评审价格实验依据，不判断付费率异常"
           },
-          "question": "能否用本方法证明某次发布或活动导致下降？",
+          "question": "仅比较不同价格带响应并评审价格实验依据，不判断付费率异常，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "metric-anomaly-localization@1"
         },

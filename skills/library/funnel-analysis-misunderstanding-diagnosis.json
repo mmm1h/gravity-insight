@@ -241,6 +241,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-funnel-population",
+              "inferred-step-definition"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核对实体未计入漏斗的顺序、窗口、筛选和关联规则",
+            "missing_project_calibration": "funnel-definition"
+          },
+          "question": "我想核对实体未计入漏斗的顺序、窗口、筛选和关联规则，但尚未提供步骤、顺序、窗口、筛选和关联属性。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "operator-v2-conformance",
           "expected": {
             "allowed_claims": [
@@ -412,9 +441,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "修改漏斗配置或访问未授权用户明细"
+            "requested_outcome": "为尚未定义的新付费路径设计漏斗步骤草案"
           },
-          "question": "能否用本方法修改漏斗配置或访问未授权用户明细？",
+          "question": "为尚未定义的新付费路径设计漏斗步骤草案，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

@@ -245,6 +245,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-cohort-population",
+              "inferred-retention-definition"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核查同一项目留存报表与事件复算的分子分母、队列和时间边界差异",
+            "missing_project_calibration": "retention-definition"
+          },
+          "question": "我想核查同一项目留存报表与事件复算的分子分母、队列和时间边界差异，但尚未提供队列、回访、实体、窗口、时区和筛选规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -266,9 +295,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "任意留存下降的因果诊断或只凭百分比判错"
+            "requested_outcome": "只有一个留存结果，需要判断留存下降的业务原因，不做双结果对账"
           },
-          "question": "能否用本方法任意留存下降的因果诊断或只凭百分比判错？",
+          "question": "只有一个留存结果，需要判断留存下降的业务原因，不做双结果对账，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

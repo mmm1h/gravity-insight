@@ -245,6 +245,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-progression",
+              "player-intent"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较返回关卡的进入、通关和进度停止，检查候选卡点",
+            "missing_project_calibration": "level-order"
+          },
+          "question": "我想比较返回关卡的进入、通关和进度停止，检查候选卡点，但尚未提供关卡顺序、版本和机制切换点。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "operator-v2-conformance",
           "expected": {
             "allowed_claims": [
@@ -400,9 +429,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "把最低通关率直接判为流失原因或自动调难度"
+            "requested_outcome": "比较流失队列与活跃对照的画像，不定位关卡进度卡点"
           },
-          "question": "能否用本方法把最低通关率直接判为流失原因或自动调难度？",
+          "question": "比较流失队列与活跃对照的画像，不定位关卡进度卡点，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

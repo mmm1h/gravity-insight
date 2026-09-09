@@ -251,6 +251,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-population",
+              "launch-incrementality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "关联新内容上线后的获取、养成、使用、表现和付费观测",
+            "missing_project_calibration": "content-release"
+          },
+          "question": "我想关联新内容上线后的获取、养成、使用、表现和付费观测，但尚未提供内容身份、发布时间、灰度和同期变更。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -272,9 +301,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "自动调整强度或证明上线增量"
+            "requested_outcome": "分析未涉及新内容上线的 SDK 采集验收"
           },
-          "question": "能否用本方法自动调整强度或证明上线增量？",
+          "question": "分析未涉及新内容上线的 SDK 采集验收，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "metric-anomaly-localization@1"
         },

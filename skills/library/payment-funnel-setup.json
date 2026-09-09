@@ -238,6 +238,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "inferred-step-definition",
+              "saved-analysis-created"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "为明确付费问题设计步骤、窗口、关联和验收对照的漏斗草案",
+            "missing_project_calibration": "payment-journey"
+          },
+          "question": "我想为明确付费问题设计步骤、窗口、关联和验收对照的漏斗草案，但尚未提供项目付费需求与真实事件绑定。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -259,9 +288,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "创建、保存或修改线上漏斗"
+            "requested_outcome": "对已定义且已取数的漏斗计算转化与最早流失，不设计步骤"
           },
-          "question": "能否用本方法创建、保存或修改线上漏斗？",
+          "question": "对已定义且已取数的漏斗计算转化与最早流失，不设计步骤，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

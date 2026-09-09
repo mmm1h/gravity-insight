@@ -224,6 +224,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-device-population",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "定位返回性能异常集中的设备、系统、版本和页面组合",
+            "missing_project_calibration": "performance-thresholds"
+          },
+          "question": "我想定位返回性能异常集中的设备、系统、版本和页面组合，但尚未提供各指标告警阈值、最小会话量和连续窗口规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -244,9 +272,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "修改客户端代码或保证修复效果"
+            "requested_outcome": "分析购买漏斗的支付取消率，不分析性能事件"
           },
-          "question": "能否用本方法修改客户端代码或保证修复效果？",
+          "question": "分析购买漏斗的支付取消率，不分析性能事件，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": "analysis.query.spec:event"
         },

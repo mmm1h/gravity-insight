@@ -235,6 +235,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "汇总完整业务日内社区主题、已分类情感与可比基线的观测变化",
+            "missing_project_calibration": "daily-cutoff"
+          },
+          "question": "我想汇总完整业务日内社区主题、已分类情感与可比基线的观测变化，但尚未提供业务日时区、封账时间和迟到内容处理。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "operator-v2-conformance",
           "expected": {
             "allowed_claims": [
@@ -372,9 +401,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "自动发布日报或代替团队处置"
+            "requested_outcome": "评估跨周的慢性下滑趋势，而不是一个业务日的变化"
           },
-          "question": "能否用本方法自动发布日报或代替团队处置？",
+          "question": "评估跨周的慢性下滑趋势，而不是一个业务日的变化，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },

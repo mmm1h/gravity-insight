@@ -228,6 +228,35 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "metadata-completeness",
+              "sql-execution-authorized",
+              "trino-dialect-supported"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "离线评审 Trino 元数据快照与有界元数据查询候选",
+            "missing_project_calibration": "trino-version"
+          },
+          "question": "我想离线评审 Trino 元数据快照与有界元数据查询候选，但尚未提供Trino 方言版本、连接器能力和受支持语句。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "near-neighbor-out-of-scope",
           "expected": {
             "allowed_claims": [],
@@ -249,9 +278,9 @@
             "status": "gap"
           },
           "input_template": {
-            "requested_outcome": "连接生产 Trino、读取表数据或执行任意 SQL"
+            "requested_outcome": "提供的是非 Trino 方言 SQL，希望分析它的结构瓶颈"
           },
-          "question": "能否用本方法连接生产 Trino、读取表数据或执行任意 SQL？",
+          "question": "提供的是非 Trino 方言 SQL，希望分析它的结构瓶颈，能用本方法完成吗？",
           "scenario": "blocked_or_gap",
           "selector": null
         },
