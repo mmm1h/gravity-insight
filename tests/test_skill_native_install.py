@@ -205,7 +205,11 @@ class NativeInstallTests(unittest.TestCase):
         self.plan()
         lock = build_skills_lock(self.session.index, self.session.reference(), sorted(self.session.index["skills"])[:1])
         (self.project / "gravity.skills.lock.json").write_text(json.dumps(lock), encoding="utf-8")
-        with chdir(self.project), redirect_stdout(io.StringIO()) as out:
+        with chdir(self.project), redirect_stdout(io.StringIO()) as out, patch(
+            "gravity_insight.skill_host_install.read_bundled_skill_seed", return_value=self.seed
+        ), patch(
+            "gravity_insight.skill_maintenance.read_bundled_skill_seed", return_value=self.seed
+        ):
             code = main(["skills", "host-install-plan", "--host", "codex", "--host-root", str(self.host), "--state-root", str(self.client.state_root)])
         self.assertEqual(0, code)
         self.assertEqual(1, len(json.loads(out.getvalue())["actions"]))
