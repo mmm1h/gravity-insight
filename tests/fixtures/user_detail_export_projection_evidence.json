@@ -1,0 +1,84 @@
+{
+  "issue": 203,
+  "evidence_date": "2026-09-10",
+  "baseline": "da0ecff6",
+  "operation_id": "export.analysis.user_detail.start",
+  "route": "/report/api/v3/dataanalysis/user/detail/download/",
+  "verdict": "sdk_static_projection_limit_not_upstream_absence_for_observed_fields",
+  "scope": {
+    "apps": 1,
+    "days": 1,
+    "start_calls": 1,
+    "maximum_start_calls": 2,
+    "new_fields": 5,
+    "page_advances": 0,
+    "scope_expansions": 0,
+    "user_values_persisted": false,
+    "download_deleted": true
+  },
+  "frontend": {
+    "bundle_id": "eb1d37edb5d1ee1c59d8944dd0b21db09aef097f5c7fb7f7455b8278716424b4",
+    "sources": [
+      {
+        "url": "https://web.gravity-engine.com/assets/search-B8IEKRTe.js",
+        "sha256": "2195c075ae8f05b692999c973a8e0f53f1466ea3909dc1e7e809514b008fa33a"
+      },
+      {
+        "url": "https://web.gravity-engine.com/assets/common-data-XqVSihhF.js",
+        "sha256": "8f2d89fdf546faaed5991adeb30db9abb931d4971fc6a2c295693997418069be"
+      },
+      {
+        "url": "https://web.gravity-engine.com/assets/sequence-data-BLZG4_Oh.js",
+        "sha256": "2b657c7b58620890f65f5c5b06c84a5b04d2c0b9c8a260538a20ffed8c760caf"
+      }
+    ],
+    "static_candidates": 42,
+    "conditional_device_candidates": 14,
+    "live_visible_user_properties": 114,
+    "property_code_rule": "user + metadata.name",
+    "property_header_rule": "metadata.cname",
+    "property_type_hint": "metadata.data_type",
+    "conditions": ["ASA choices require iOS", "device_info choices exclude H5 and mini-apps"],
+    "coverage": "hash_matched_frontend_choices_plus_one_app_visible_metadata_not_platform_complete"
+  },
+  "request_order": ["ClientID", "CreateTime", "useruser_ab", "useraccount_id", "userdevice_id", "userfirst_login_time", "Version"],
+  "authorized_wire_and_file_order": ["ClientID", "CreateTime", "Version", "useraccount_id", "userdevice_id", "userfirst_login_time", "useruser_ab"],
+  "order_verdict": "SDK effect _wire_snapshot sorts field_map before transport; upstream behavior for unsorted wire keys was not tested",
+  "file": {
+    "format": "xlsx",
+    "worksheet": "Sheet1",
+    "worksheet_count": 1,
+    "rows": 1176,
+    "size_bytes": 111830,
+    "headers_match_requested_order": false,
+    "headers_match_authorized_wire_order": true
+  },
+  "completeness_evidence": {
+    "known_total_items": 1176,
+    "known_total_source": "analysis.user_detail.list.page.total_items",
+    "known_total_observed_at": "2026-09-09T16:54:32.107176+00:00",
+    "known_total_freshness": "create_time_preflight",
+    "known_total_binding": "same_app_conditions_logic_and_requested_fields_as_export_create",
+    "binding_owner": "bounded_maintainer_probe_not_released_export_runtime",
+    "after_create_list_reread": false
+  },
+  "columns": [
+    {"code": "ClientID", "header": "\u5ba2\u6237ID", "frontend": true, "upstream_returned": true, "storage_type": "s", "python_type": "str", "number_format": "General", "nonempty_rows": 1176, "empty_rows": 0, "evidence_level": "observed_nonempty"},
+    {"code": "CreateTime", "header": "\u6ce8\u518c\u65f6\u95f4", "frontend": true, "upstream_returned": true, "storage_type": "s", "python_type": "str", "number_format": "General", "nonempty_rows": 1176, "empty_rows": 0, "evidence_level": "observed_nonempty"},
+    {"code": "Version", "header": "\u5ba2\u6237\u7aef\u7248\u672c", "frontend": true, "upstream_returned": true, "storage_type": "n", "python_type": "int", "number_format": "General", "nonempty_rows": 1176, "empty_rows": 0, "evidence_level": "observed_nonempty"},
+    {"code": "useraccount_id", "header": "\u8d26\u6237ID", "frontend": true, "upstream_returned": true, "metadata_type": "STRING", "storage_type": "s", "python_type": "str", "number_format": "General", "nonempty_rows": 1043, "empty_rows": 133, "evidence_level": "observed_nonempty_and_empty"},
+    {"code": "userdevice_id", "header": "\u8bbe\u5907ID", "frontend": true, "upstream_returned": true, "metadata_type": "STRING", "storage_type": "s", "python_type": "str", "number_format": "General", "nonempty_rows": 1043, "empty_rows": 133, "evidence_level": "observed_nonempty_and_empty"},
+    {"code": "userfirst_login_time", "header": "\u9996\u6b21\u767b\u5f55\u65f6\u95f4", "frontend": true, "upstream_returned": true, "metadata_type": "DATETIME", "storage_type": "s", "python_type": "str", "number_format": "General", "nonempty_rows": 1043, "empty_rows": 133, "evidence_level": "observed_nonempty_and_empty"},
+    {"code": "useruser_ab", "header": "\u7528\u6237\u6570\u503c\u6a21\u578b\u5206\u5c42", "frontend": true, "upstream_returned": true, "metadata_type": "STRING", "storage_type": "s", "python_type": "str", "number_format": "General", "nonempty_rows": 20, "empty_rows": 1156, "evidence_level": "observed_nonempty_and_empty"}
+  ],
+  "capability_gaps": [
+    "163 other static, conditional-device and metadata candidates were not export-tested; upstream support remains unknown, not absent",
+    "unsorted input order is changed by the SDK effect receipt serialization",
+    "current file gate checks header membership, not exact order or cell storage types",
+    "current user-detail runtime does not pin a create-time total",
+    "current file receipt has no per-column empty-value diagnostics",
+    "sample scope does not verify other Apps, field types or empty-file behavior"
+  ],
+  "temporal_semantics": "current-at-extraction; no historical assignment, exposure, balance or configuration inference",
+  "implementation_status": "not_started_shared_finalization_write_scope_requires_coordination_with_issue_202"
+}
