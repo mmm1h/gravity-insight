@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -59,6 +60,24 @@ class SkillLibraryReleaseTests(unittest.TestCase):
             SkillLibraryReleaseError, "size or digest changed"
         ):
             verify_release(self.fetch(changed))
+
+    def test_corrected_seed_rejects_self_consistent_stale_public_library(self) -> None:
+        from gravity_insight.skill_package import SkillPackageError
+
+        manifests = copy.deepcopy(builder.load_canonical_skills())
+        manifests[0]["summary"] += " (corrected declaration)"
+        with patch.object(builder, "load_canonical_skills", return_value=manifests):
+            corrected = builder.render_outputs()
+            with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
+                builder.main(["--check"])
+            with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
+                builder.render_seed(corrected)
+        corrected_pin = hashlib.sha256(corrected["build-manifest.json"]).hexdigest()
+        with patch.object(builder, "PINNED_BUILD_MANIFEST_SHA256", corrected_pin):
+            self.assertTrue(builder.render_seed(corrected))
+            self.assertEqual("passed", verify_release(self.fetch(corrected))["status"])
+            with self.assertRaisesRegex(SkillLibraryReleaseError, "pin drifted"):
+                verify_release(self.fetch(self.outputs))
 
     def test_readback_inside_source_checkout_remains_rejected(self) -> None:
         with patch("scripts.verify_skill_library_release.ROOT", Path(tempfile.gettempdir()).resolve()):
