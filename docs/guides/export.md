@@ -46,7 +46,7 @@ App、ClientID、日期、事件名和结构化条件都必须来自调用方或
 
 - `export.analysis.segment.result.start`：`用户ID`；
 - `export.analysis.segment_user_detail.start`：`ClientID,CreateTime` 对应 `客户ID,注册时间`；
-- `export.analysis.user_detail.start`：`ClientID,CreateTime` 对应 `客户ID,注册时间`；
+- `export.analysis.user_detail.start`：保留必填 `ClientID,CreateTime`，其余已实测字段以 `describe.columns` 为准；自定义字段须匹配当前 App 的 live metadata；
 - `export.analysis.pay_event.start`：`ClientID,TraceID` 对应 `客户ID,订单ID`；
 - `export.analysis.monetization_detail.start`：`AdEventTime,ClientID` 对应 `事件发生时间,客户ID`；
 - `export.analysis.origin_event.start`：固定五列 `客户ID(client_id),用户注册时间,事件发生时间,事件,事件属性`，文件是 gzip CSV。
@@ -56,6 +56,13 @@ App、ClientID、日期、事件名和结构化条件都必须来自调用方或
 App/日期或分群做非空父读取，再精确复制请求条件。
 
 ## 未知导出：两次调用
+
+用户明细 route 的 `field_map` 与 `--columns` 按集合精确匹配，文件按 code 字典序输出，
+不承诺输入插入序。下载逐列校验选定表头和 XLSX 存储类型，字符串标识不转换为数值，
+Version 只接受已观察的整数数值，时间保留文本。缺列触发 schema 错误；返回空值计入
+`file.empty_values_by_column`；少行和截断由独立的 `completeness` 判定。
+create 前同 App、条件、逻辑与字段集的第一页 `page.total_items` 是唯一分母，不做事后重读。
+属性标注 `current-at-extraction`，不得推断历史分层、曝光、余额或配置。
 
 ```powershell
 gravity agent "material report export"
@@ -100,6 +107,11 @@ gravity export download <job-id> --operation-id export.material.report.start `
 任务。`task_name` 和 idempotency key 应是可追踪但不含凭据或用户级值的调用方标识。
 
 ## 安全与验收
+
+用户明细分阶段恢复还必须传 `--completeness <receipt.json>`，文件内容为该任务 `start`
+返回的 `completeness` 对象；SDK 使用同名参数。`run` 超时或下载失败也保留该对象，
+不可使用另一任务的收据或事后列表总数。新投影空文件尚无在线证据；本地头部校验与零总数
+匹配测试不代表新的线上实测。空文件但钉取总数非零时是 `partial`。
 
 - 只执行 `describe.currently_callable=true` 的 create operation；创建会改变上游任务状态。
 - 使用单 App、单平台和已确认非空的最短日期窗；`page_size=1` 不限制导出总行数。

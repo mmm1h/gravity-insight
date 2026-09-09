@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from pathlib import Path
 import random
 import time
@@ -173,7 +174,7 @@ class ExportOrchestrator:
         job_id = snapshot.job_id
         polled = self._poll_until_terminal(snapshot, tracker, deadline)
         if isinstance(polled, ExportResult):
-            return polled
+            return replace(polled, completeness=snapshot.completeness)
         snapshot = polled
 
         if tracker.state == ExportState.FAILED:
@@ -198,14 +199,15 @@ class ExportOrchestrator:
                 tracker.move(ExportState.FAILED)
             return _result(tracker, job_id=job_id, error=error)
         if self._clock() >= deadline:
-            return self._timed_out(tracker, job_id)
-        return self._download(
+            return replace(self._timed_out(tracker, job_id), completeness=snapshot.completeness)
+        result = self._download(
             snapshot,
             tracker,
             destination,
             blob_policy,
             privacy_contract,
         )
+        return replace(result, completeness=result.completeness or snapshot.completeness)
 
     def _poll_until_terminal(
         self,

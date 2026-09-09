@@ -22,15 +22,15 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "5b2d0b1e2943706bb7ff071f84e8c1cb912b769bb3a364c40adb4ce9300f4f9f",
+    "scanner_sha256": "ded6d059bb93567c43af4b4326682053a04275a2916a348cb1ff7c99182ee77a",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "5ee32258686c42000cd25663c4ae6a40c9543c94be528dd7049b64302f78ab3a",
-    "manual_review_sha256": "578df2a30bd70453777ff21cae7568e88212318d1d0ac598a9b9ff600160b218",
+    "reference_evidence_sha256": "18b655f9530eb7cc2fdc941284c4fa03661389a0749bba65c5aa9abe7b5adbdd",
+    "manual_review_sha256": "849277ad9e3faf7c6df3c2dfa9d325340264aff5c9f8440eead83770b80b862a",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3265,
-    "scanned_file_count": 3257,
+    "version_controlled_file_count": 3261,
+    "scanned_file_count": 3253,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -772,12 +772,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 339,
-    "reference_site_count": 337,
-    "manual_review_site_count": 238,
-    "reference_manual_overlap_count": 236,
+    "tracked_site_count": 338,
+    "reference_site_count": 336,
+    "manual_review_site_count": 237,
+    "reference_manual_overlap_count": 235,
     "manual_only_site_count": 2,
-    "unique_source_keys": 339,
+    "unique_source_keys": 338,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -786,7 +786,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 216,
+      "manual_patch_expression": 215,
       "module_qualname_dependency": 7,
       "static_import": 93,
       "string_reference": 5
@@ -796,12 +796,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 216
+      "non_string_patch_expression": 215
     },
     "dispositions": {
-      "no_migration_effect": 339
+      "no_migration_effect": 338
     },
-    "sites_sha256": "824708d2e11103775a942e2ed3b77dd1d71a507d039e6be1638b96d035e4f15c"
+    "sites_sha256": "53962af77c17b8cdbdab2d76ebc0d0adbb30fcc1017e5fbcfa88b5a90c288bd9"
   },
   "blockers": [],
   "site_fields": [
@@ -954,7 +954,7 @@
       }
     ],
     [
-      "scripts/repository_map.py:1014:5:from import",
+      "scripts/repository_map.py:1012:5:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1164,7 +1164,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22401:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22643:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1179,7 +1179,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66098:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66405:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1524,7 +1524,7 @@
       }
     ],
     [
-      "src/gravity_insight/journey_ledger.py:10:1:from import",
+      "src/gravity_insight/journey_ledger.py:12:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2454,7 +2454,7 @@
       }
     ],
     [
-      "tests/test_agent_usability_eval.py:231:18:patch.object",
+      "tests/test_agent_usability_eval.py:236:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.subject",
@@ -2469,7 +2469,7 @@
       }
     ],
     [
-      "tests/test_agent_usability_eval.py:416:18:patch.object",
+      "tests/test_agent_usability_eval.py:421:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.subject",
@@ -2484,7 +2484,7 @@
       }
     ],
     [
-      "tests/test_agent_usability_eval.py:416:69:patch.object",
+      "tests/test_agent_usability_eval.py:421:69:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.subject",
@@ -3909,7 +3909,22 @@
       }
     ],
     [
-      "tests/test_gravity_insight_export_integration.py:633:14:patch.object",
+      "tests/test_gravity_insight_export_integration.py:397:70:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      11,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_export_integration.py:635:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "GravityInsightClient",
@@ -4714,36 +4729,6 @@
       "no_migration_effect",
       "direct_object_patch",
       28,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_journey_ledger.py:96:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "Path",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      58,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_machine_owner_migration.py:21:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "Path",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      58,
       {
         "kind": "none"
       }

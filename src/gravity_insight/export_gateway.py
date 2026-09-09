@@ -99,10 +99,13 @@ class GravityExportGateway:
                 code="EXPORT_PROTOCOL_ERROR",
                 stage="creating",
             )
+        completeness = request.completeness
+        if completeness is not None and "requested_columns" in completeness:
+            completeness = {**completeness, "job_id": str(job_id)}
         return ExportJobSnapshot(
             str(job_id),
             ExportState.QUEUED,
-            completeness=request.completeness,
+            completeness=completeness,
         )
 
     def status(self, job_id: str, *, timeout_seconds: float) -> ExportJobSnapshot:

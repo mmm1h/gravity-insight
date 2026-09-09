@@ -115,6 +115,9 @@ class ExportPrivacyContract:
     allow_contracted_identifiers: bool = False
     encoding: str = "utf-8"
     delimiter: str = ","
+    column_order: tuple[str, ...] = ()
+    column_types: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
+    temporal_semantics: str | None = None
 
     def __post_init__(self) -> None:
         if not self.allowed_columns:
@@ -133,6 +136,13 @@ class ExportPrivacyContract:
             raise ValueError("CSV delimiter must be one character")
         if not self.classification.strip():
             raise ValueError("export classification cannot be empty")
+        if self.column_order and (
+            len(set(self.column_order)) != len(self.column_order)
+            or set(self.column_order) != set(self.allowed_columns)
+        ):
+            raise ValueError("export column order must cover exactly the allowed columns")
+        if set(self.column_types) - set(self.allowed_columns):
+            raise ValueError("export column types must refer to allowed columns")
 
     @property
     def contracted_identifiers_allowed(self) -> bool:

@@ -254,6 +254,8 @@ def _user_detail_export(card: dict[str, Any], exits: dict[str, str]) -> str:
             "先 `gravity run analysis.user_detail.list` 同一 App、同一天非空，再执行：",
             "```powershell\n" + _argv(argv) + "\n```",
             "`--columns` 填请求代码 `" + codes + "`，不要填文件表头 `" + headers + "`。",
+            "仅显式选择当前 App 已注册且合同已验证的字段，field_map 与 --columns 集合须一致。文件按 code 字典序，不按输入插入序；自定义标签与类型在 create 前过 live metadata。",
+            "快照属性为 current-at-extraction。空值看 file.empty_values_by_column，缺列是 schema 错误，少行看 completeness。分阶段 download 传 --completeness <receipt.json>，只用该任务 start 的 completeness 对象。",
         ],
         {
             "schema_version": "gravity-insight.export.v1",
@@ -264,7 +266,7 @@ def _user_detail_export(card: dict[str, Any], exits: dict[str, str]) -> str:
             "file": {"rows": 1},
         },
         exits,
-        "看 `completion_status`：`complete` 是原子提交且 `file.rows` 等于预检 `total_items`；`truncated` 是触顶截断并给出已知总量；`partial` 不是完整导出。父读取信封 `truncated=true` 只表示没拉完全部分页。单日 `file.rows` = `list.total_items` = 当天漏斗第一步。",
+        "看 `completion_status`：`complete` 是原子提交且 file.rows 等于同 App/条件/逻辑/字段集的 create-time total_items；`truncated` 是触顶截断，`partial` 不是完整导出。空文件但钉取总数非零也是 partial；不得用事后 list 重读当分母。",
     )
 
 

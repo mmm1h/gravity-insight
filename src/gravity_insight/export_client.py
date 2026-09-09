@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import time
+from contextlib import nullcontext
+from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -28,6 +31,9 @@ from .export_results import (
     export_snapshot_envelope as _export_snapshot_envelope,
 )
 from .export_scope_total import pin_export_scope_total
+from .export_validation import validate_export_live_fields
+from .field_metadata_override import use_field_metadata_loader
+from ._field_policy_operations import ANALYSIS_USER_PROPERTY
 from .export_state import ExportOrchestrator
 from .registry import PolicyEngine, Registry
 from .paths import CONTRACT_ROOT
@@ -247,6 +253,7 @@ class ExportClientMixin:
         blob_policy, privacy = export_file_policies(
             contract,
             destination_path.parent,
+            requested_columns=_resume_projection(contract, job_id, completeness),
         )
         result = ExportOrchestrator(
             self._export_gateway(operation_id),
@@ -283,6 +290,7 @@ class ExportClientMixin:
         blob_policy, file_privacy = export_file_policies(
             contract,
             destination_path.parent,
+            requested_columns=request.requested_columns,
         )
         request_columns = tuple(
             str(value)
@@ -362,6 +370,7 @@ class ExportClientMixin:
         requested_columns: Sequence[str],
         idempotency_key: str,
     ) -> tuple[ExportCreationRequest, ExportPrivacyContract]:
+        payload = deepcopy(dict(payload))
         contract = self._export_contract(operation_id)
         validate_export_payload(contract, payload)
         file_allowed = tuple(
@@ -388,14 +397,31 @@ class ExportClientMixin:
             payload=payload,
             requested_columns=tuple(str(value) for value in requested_columns),
             idempotency_key=idempotency_key,
-            completeness=pin_export_scope_total(self, operation_id, payload),
         )
         privacy = ExportPrivacyContract(
             allowed_columns=request_allowed,
             required_columns=request_required,
             classification=str(contract.privacy.get("classification", "restricted")),
         )
+        if contract.privacy.get("metadata_fields"):
+            unknown_count = len(set(request.requested_columns) - set(request_allowed))
+            if unknown_count:
+                raise _export_error(
+                    "requested fields are not in the verified export contract",
+                    code="EXPORT_COLUMNS_INVALID", stage="projection",
+                    details={"unknown_column_count": unknown_count},
+                )
         validate_wire_projection(contract, request)
+        _validate_creation_request(request, privacy)
+        metadata = validate_export_live_fields(self, contract, payload)
+        def load_metadata(selector: str, inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+            if selector == ANALYSIS_USER_PROPERTY and metadata is not None and inputs.get("app_id") == str(payload["app_id"]):
+                return metadata
+            return self._load_field_metadata(selector, inputs)
+        with use_field_metadata_loader(load_metadata) if metadata is not None else nullcontext():
+            request = replace(
+                request, completeness=pin_export_scope_total(self, operation_id, payload),
+            )
         return request, privacy
 
     def _export_contract(self, operation_id: str) -> Any:
@@ -429,6 +455,25 @@ class ExportClientMixin:
                 stage="configuration",
             )
         return self._export_contracts, self._export_policy, self._export_runtime
+
+
+def _resume_projection(contract: Any, job_id: str, completeness: Mapping[str, Any] | None) -> tuple[str, ...] | None:
+    if contract.privacy.get("column_order") != "request_code_lexicographic":
+        return None
+    if not isinstance(completeness, Mapping) or completeness.get("job_id") != job_id:
+        raise _export_error(
+            "user-detail download requires the completeness receipt from this task's start",
+            code="EXPORT_JOB_INVALID", stage="resume",
+        )
+    total = completeness.get("known_total_items")
+    if type(total) is not int or total < 0 or completeness.get("known_total_source") != "analysis.user_detail.list.page.total_items" or completeness.get("known_total_freshness") != "create_time_preflight":
+        raise _export_error("task receipt lacks a pinned user-detail total", code="EXPORT_JOB_INVALID", stage="resume")
+    columns = completeness.get("requested_columns")
+    if not isinstance(columns, (list, tuple)) or not all(isinstance(code, str) for code in columns):
+        raise _export_error("task receipt omitted the projection", code="EXPORT_COLUMNS_INVALID", stage="resume")
+    if not set(contract.privacy["request_required_columns"]).issubset(columns):
+        raise _export_error("task receipt omitted required columns", code="EXPORT_COLUMNS_INVALID", stage="resume")
+    return tuple(columns)
 
 
 def _polling_policy(timeout_seconds: float) -> ExportPollingPolicy:

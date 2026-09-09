@@ -15,7 +15,7 @@ import zlib
 
 from .blob import ArchivePolicy, BlobFinalizationResult, BlobMetadata, BlobTransferError
 from .executor import _redact
-from .export_file import open_export_csv, write_export_csv
+from .export_file import open_export_csv, write_export_csv, xlsx_cell_matches, xlsx_number_formats
 from .export_models import (
     ExportPrivacyContract, _assert_exportable_classification, _export_error,
 )
@@ -215,16 +215,24 @@ class ExportPrivacyFinalizer:
         try:
             with zipfile.ZipFile(source_path) as archive:
                 worksheet_names = _xlsx_worksheet_names(archive)
+                if self._contract.column_types and len(worksheet_names) != 1:
+                    raise _export_error("typed export requires one worksheet", code="EXPORT_SCHEMA_MISMATCH", stage="headers")
                 shared_strings = _xlsx_shared_strings(archive)
+                styles = _xlsx_xml_root(archive, "xl/styles.xml") if self._contract.column_types and "xl/styles.xml" in archive.namelist() else None
+                number_formats = xlsx_number_formats(styles)
                 schemas: list[tuple[str, ...]] = []
                 rows = 0
+                empty_counts = {header: 0 for header in self._contract.column_types}
                 for worksheet_name in worksheet_names:
                     header, worksheet_rows = _xlsx_sheet_schema(
                         archive,
                         worksheet_name,
                         shared_strings,
+                        contract=self._contract,
+                        empty_counts=empty_counts,
+                        number_formats=number_formats,
                     )
-                    _validate_actual_schema(header, self._contract)
+                    _validate_actual_schema(header, self._contract, stage="headers")
                     output_header = _redacted_columns(header, self._contract)
                     if output_header != header:
                         raise _export_error(
@@ -246,16 +254,21 @@ class ExportPrivacyFinalizer:
                 os.fsync(output_handle.fileno())
         except BlobTransferError:
             raise
-        except (ET.ParseError, KeyError, OSError, ValueError, zipfile.BadZipFile) as exc:
+        except (ET.ParseError, KeyError, OSError, ValueError, zipfile.BadZipFile):
             raise _export_error(
                 "XLSX export could not be parsed and finalized safely",
                 code="EXPORT_FORMAT_INVALID",
-                stage="finalizer",
-            ) from exc
+                stage="xlsx_framing",
+            ) from None
         return BlobFinalizationResult(
             schema=schemas[0],
             rows_processed=rows,
-            details={"worksheets": len(schemas)},
+            details={
+                "worksheets": len(schemas),
+                **({"empty_values_by_column": empty_counts,
+                    "temporal_semantics": self._contract.temporal_semantics}
+                   if self._contract.column_types else {}),
+            },
         )
 
 
@@ -321,24 +334,28 @@ def _xlsx_sheet_schema(
     archive: zipfile.ZipFile,
     name: str,
     shared_strings: tuple[str, ...],
+    *,
+    contract: ExportPrivacyContract | None = None,
+    empty_counts: dict[str, int] | None = None,
+    number_formats: tuple[str, ...] = (),
 ) -> tuple[tuple[str, ...], int]:
     root = _xlsx_xml_root(archive, name)
     header: tuple[str, ...] | None = None
     rows = 0
     for row in (node for node in root.iter() if _local_name(node.tag) == "row"):
-        values = _xlsx_row_values(row, shared_strings)
+        typed = bool(contract and contract.column_types)
+        values = _xlsx_row_values(row, shared_strings, reject_formulas=typed)
         if header is None:
             if not values:
                 continue
             last_column = max(values)
-            header = tuple(values.get(index, "").strip() for index in range(last_column + 1))
+            header = tuple(values.get(index, "") for index in range(last_column + 1))
+            if not typed:
+                header = tuple(value.strip() for value in header)
+            if contract is not None:
+                _validate_actual_schema(header, contract, stage="headers")
         elif values:
-            if max(values) >= len(header):
-                raise _export_error(
-                    "XLSX row extends beyond its contracted header",
-                    code="EXPORT_SCHEMA_MISMATCH",
-                    stage="finalizer",
-                )
+            _validate_xlsx_cells(row, values, header, contract, empty_counts, rows, number_formats)
             if any(value != "" for value in values.values()):
                 rows += 1
     if header is None:
@@ -350,9 +367,47 @@ def _xlsx_sheet_schema(
     return header, rows
 
 
+def _validate_xlsx_cells(
+    row: ET.Element,
+    values: Mapping[int, str],
+    header: tuple[str, ...],
+    contract: ExportPrivacyContract | None,
+    empty_counts: dict[str, int] | None,
+    rows: int,
+    number_formats: tuple[str, ...],
+) -> None:
+    if max(values) >= len(header):
+        raise _export_error(
+            "XLSX row extends beyond its contracted header",
+            code="EXPORT_SCHEMA_MISMATCH", stage="headers",
+        )
+    if contract is None or not contract.column_types:
+        return
+    cells = {
+        _xlsx_column_index(_CELL_REFERENCE.fullmatch(cell.attrib["r"]).group(1)): cell
+        for cell in row if _local_name(cell.tag) == "c"
+    }
+    for index, name in enumerate(header):
+        spec = contract.column_types[name]
+        cell = cells.get(index)
+        value = values.get(index, "")
+        empty = value == ""
+        if empty and spec.get("nullable") is True:
+            if empty_counts is not None:
+                empty_counts[name] += 1
+            continue
+        if not xlsx_cell_matches(cell, value, spec, number_formats):
+            raise _export_error(
+                "XLSX cell violates its contracted storage or value type",
+                code="EXPORT_TYPE_MISMATCH", stage="cell_types",
+                details={"column": index + 1, "rows_processed": rows},
+            )
+
+
 def _xlsx_row_values(
     row: ET.Element,
     shared_strings: tuple[str, ...],
+    *, reject_formulas: bool = False,
 ) -> dict[int, str]:
     values: dict[int, str] = {}
     for cell in (node for node in row if _local_name(node.tag) == "c"):
@@ -361,8 +416,8 @@ def _xlsx_row_values(
         if match is None:
             raise ValueError("invalid XLSX cell reference")
         column_index = _xlsx_column_index(match.group(1))
-        if column_index in values:
-            raise ValueError("duplicate XLSX cell reference")
+        if column_index in values or (reject_formulas and any(_local_name(node.tag) == "f" for node in cell)):
+            raise ValueError("duplicate or formula XLSX cell")
         values[column_index] = _xlsx_cell_text(cell, shared_strings)
     return values
 
@@ -440,7 +495,16 @@ def _validate_actual_schema(
             "actual export schema violates the privacy contract",
             code="EXPORT_SCHEMA_MISMATCH",
             stage=stage,
-            details={"unknown_columns": unknown, "missing_required_columns": missing},
+            details=(
+                {"unknown_column_count": len(unknown), "missing_column_count": len(missing)}
+                if contract.column_types else
+                {"unknown_columns": unknown, "missing_required_columns": missing}
+            ),
+        )
+    if contract.column_order and actual != tuple(name for name in contract.column_order if name in actual):
+        raise _export_error(
+            "actual export column order violates the projection contract",
+            code="EXPORT_SCHEMA_MISMATCH", stage=stage,
         )
 
 

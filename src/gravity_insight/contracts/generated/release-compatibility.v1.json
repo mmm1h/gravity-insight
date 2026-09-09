@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "8e10be2c76c08bf21ff78312c6cda029b4bc8338b0040f34fdfab62e92bdef03"
+    "compatibility_sha256": "b89b81ac36ea5df1abe4662db63fe09897b45b9f9720fb6150779cd5ada330f2"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -343,6 +343,11 @@
       "soft_breaks": [
         {
           "id": "0.3.15-soft-break-1",
+          "description": "User-detail export projection v2 declares SDK lexicographic code order instead of caller order. Requested custom fields must match live metadata; XLSX storage types and exact selected headers now fail closed. Resume requires the same task's start completeness receipt (`export download --completeness <receipt.json>`); `export run` carries it automatically. Original two-column reads remain available. See the [migration guide](docs/migration/0.3.15.md#user-detail-export-projection).",
+          "migration_guide": "docs/migration/0.3.15.md"
+        },
+        {
+          "id": "0.3.15-soft-break-2",
           "description": "CLI `skills host-install-plan` now defaults to the project lock and fails closed when it is missing. Migration: pass `--lock <project-lock>` for a selected subset, or explicitly pass `--all` to retain full-bundle planning. The Python full-bundle API and all Runtime read capabilities are unchanged.",
           "migration_guide": "docs/migration/0.3.15.md"
         }

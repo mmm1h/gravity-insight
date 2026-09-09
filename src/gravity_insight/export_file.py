@@ -15,9 +15,42 @@ from .export_models import ExportPrivacyContract, _export_error
 _HEX = re.compile(r"^[0-9a-fA-F]{2,}$")
 
 
+def xlsx_number_formats(root: Any | None) -> tuple[str, ...]:
+    """Resolve format names from an already safety-parsed style tree."""
+    if root is None:
+        return ("General",)
+    custom = {
+        node.attrib.get("numFmtId"): node.attrib.get("formatCode", "")
+        for node in root.iter() if node.tag.rsplit("}", 1)[-1] == "numFmt"
+    }
+    if any(not isinstance(key, str) or not key.isdecimal() or int(key) < 164 for key in custom):
+        raise ValueError("XLSX custom formats cannot override built-in formats")
+    cell_formats = next((node for node in root if node.tag.rsplit("}", 1)[-1] == "cellXfs"), None)
+    if cell_formats is None:
+        raise ValueError("XLSX lacks cell formats")
+    # Unknown built-ins, including dates, cannot satisfy the verified General format.
+    return tuple(
+        "General" if node.attrib.get("numFmtId", "0") == "0"
+        else custom.get(node.attrib.get("numFmtId"), "")
+        for node in cell_formats if node.tag.rsplit("}", 1)[-1] == "xf"
+    )
+
+
+def xlsx_cell_matches(cell: Any | None, value: str, spec: Mapping, formats: tuple[str, ...]) -> bool:
+    if cell is None or not value or cell.attrib.get("t", "n") not in spec["cell_storage_types"]:
+        return False
+    style = cell.attrib.get("s", "0")
+    index = int(style) if re.fullmatch(r"[0-9]{1,6}", style) else -1
+    if not 0 <= index < len(formats) or formats[index] not in spec["number_formats"]:
+        return False
+    return spec["logical_type"] != "integer" or re.fullmatch(r"-?[0-9]+", value) is not None
+
+
 def export_file_policies(
     contract: Any,
     root: Path,
+    *,
+    requested_columns: tuple[str, ...] | None = None,
 ) -> tuple[BlobPolicy, ExportPrivacyContract]:
     protocol = _verified_file_protocol(contract.privacy)
     allowed = tuple(
@@ -32,6 +65,22 @@ def export_file_policies(
             code="EXPORT_PRIVACY_DENIED",
             stage="privacy_policy",
         )
+    order: tuple[str, ...] = ()
+    types: dict[str, Any] = {}
+    if contract.privacy.get("column_order") == "request_code_lexicographic":
+        codes = contract.privacy["request_columns"]
+        labels = dict(zip(codes, allowed, strict=True))
+        selected = requested_columns if requested_columns is not None else tuple(codes)
+        if not selected or len(set(selected)) != len(selected) or set(selected) - set(codes):
+            raise _export_error("invalid file projection", code="EXPORT_COLUMNS_INVALID", stage="headers")
+        order = tuple(labels[code] for code in sorted(selected))
+        allowed = order
+        if requested_columns is not None:
+            required = order
+        types = {
+            item["header"]: item for item in contract.privacy["file_schema"]["columns"]
+            if item["header"] in allowed
+        }
     return (
         _blob_policy(contract.privacy, protocol, root),
         ExportPrivacyContract(
@@ -49,6 +98,9 @@ def export_file_policies(
             ),
             encoding=str(contract.privacy.get("encoding", "utf-8")),
             delimiter=str(contract.privacy.get("delimiter", ",")),
+            column_order=order,
+            column_types=types,
+            temporal_semantics=contract.privacy.get("temporal_semantics"),
         ),
     )
 

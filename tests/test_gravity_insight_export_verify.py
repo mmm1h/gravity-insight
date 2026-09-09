@@ -161,7 +161,7 @@ class GravityInsightExportVerifyTests(unittest.TestCase):
         expected = {
             "export.analysis.segment.result.start": ["identifier"],
             "export.analysis.segment_user_detail.start": ["identifier", "datetime"],
-            "export.analysis.user_detail.start": ["identifier", "datetime"],
+            "export.analysis.user_detail.start": ["identifier", "datetime", "integer", "identifier", "identifier", "datetime", "string"],
             "export.analysis.pay_event.start": ["identifier", "identifier"],
         }
         for operation_id, logical_types in expected.items():
@@ -170,7 +170,10 @@ class GravityInsightExportVerifyTests(unittest.TestCase):
                 schema = route["privacy"]["file_schema"]
                 assert (route["contract_status"], route["executable"], route["block_reason"]) == ("verified", True, None)
                 assert [column["logical_type"] for column in schema["columns"]] == logical_types
-                assert schema["empty_file"] == {"row_count": 0, "headers_preserved": True}
+                if operation_id == "export.analysis.user_detail.start":
+                    assert schema["empty_file"]["status"] == "not_verified_online_for_expanded_projection"
+                else:
+                    assert schema["empty_file"] == {"row_count": 0, "headers_preserved": True}
 
 
     def test_user_event_export_has_complete_observed_file_schema(self):

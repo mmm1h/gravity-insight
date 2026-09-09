@@ -1,6 +1,6 @@
 # 候选能力证据矩阵
 
-本页只保留 19 项候选的当前裁决。历史请求账本、纠错过程和已完成写面取证见归档快照；运行时是否可执行仍以 manifest 与 gravity agent-catalog 为准。
+本页只保留 20 项候选的当前裁决。历史请求账本、纠错过程和已完成写面取证见归档快照；运行时是否可执行仍以 manifest 与 gravity agent-catalog 为准。
 
 在线补证必须遵循 [探测安全](maintainers/probing.md)：只发送取得下一项裁决所需的最小请求，不猜父资源、权限或业务值；当前租户已明确空的同形请求不重复探测。
 
@@ -8,6 +8,7 @@
 
 | Operation | Status | 本轮请求、样本、分页与父绑定 | 精确 blocker | 下一步最小证据 |
 | --- | --- | --- | --- | --- |
+| `export.analysis.user_detail.start` | projection v2，本地实现待合入 | 2026-09-10 单 App、单日、一次 start；7 列/1176 行 XLSX 与同范围 create-time total=1176 对账；字段类型、空值计数见[脱敏证据](../tests/fixtures/user_detail_export_projection_evidence.json)。阶段二无新增在线调用。 | 163 个其他候选未实测；未证明其他 App、类型、扩展投影空文件或未排序 wire 行为。没有证据表明上游不支持这些候选。 | 只开放合同中的 7 列，custom code/name/label/type 过 live metadata；扩大范围前另取有界授权证据。完整性只用该任务预检总数；当前属性不解释为历史。 |
 | `analysis.default_val.list` | **`stable`（已晋升）** | 2026-08-16 按 catalog 探测：`catalog#1` HTTP 200 空，`catalog#2` HTTP 200 非空后立即停止。当前样本观察 `data.cocoscreator[]: string`，并与既有 shape-only 样本的 `data.api[]: string` 合并；body 仍为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`。 | operation 稳定性未降级；当前重采仅返回 cocoscreator，缺少可选 api 键的 warning 阻止 Validation 资格检查，不能宣称已重新认证；闭合键集合为 `api/cocoscreator` | 保持两键全量暴露；出现第三个 SDK-family key 时按 additive drift fail-closed，取得 shape evidence 后再显式升级合同。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
 | `analysis.realtime_event.list` | **`stable`（已晋升）** | 2026-08-18 18:41 只对 `29034827` 开 2h 窗；当天窗 `filters.event_type=profile` `page=1` `page_size=50` HTTP 200，`data.list` 长度 1000，无 `page_info`。12 个顶层 item 键已观察；产品暴露 6 个，省略 `client_lib`/`client_lib_version`/`raw_properties`/`request_ip`/`request_ua`/`time_free`。分页按实测声明 `none`，不复制模板 `page_info`。已关回 `is_enabled=0`，`modify_time=2026-08-18 18:45:19`。 | 无开放 blocker | 保持第一页 `event_type=profile` 形状；未知新增字段 additive drift fail-closed。 |
