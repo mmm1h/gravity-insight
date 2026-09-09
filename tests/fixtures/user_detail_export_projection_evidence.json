@@ -73,12 +73,9 @@
   ],
   "capability_gaps": [
     "163 other static, conditional-device and metadata candidates were not export-tested; upstream support remains unknown, not absent",
-    "unsorted input order is changed by the SDK effect receipt serialization",
-    "current file gate checks header membership, not exact order or cell storage types",
-    "current user-detail runtime does not pin a create-time total",
-    "current file receipt has no per-column empty-value diagnostics",
+    "unsorted-wire upstream behavior was not tested; projection v2 explicitly declares SDK lexicographic code order",
     "sample scope does not verify other Apps, field types or empty-file behavior"
   ],
   "temporal_semantics": "current-at-extraction; no historical assignment, exposure, balance or configuration inference",
-  "implementation_status": "not_started_shared_finalization_write_scope_requires_coordination_with_issue_202"
+  "implementation_status": "projection_v2_implemented_locally_after_issue_202_merge_not_yet_released"
 }

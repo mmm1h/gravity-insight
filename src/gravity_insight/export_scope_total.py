@@ -1,4 +1,4 @@
-"""Pin a managed-list total to one monetization export create."""
+"""Pin a managed-list total to one export create."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from typing import Any, Mapping
 from .agents.monetization_guard import MONETIZATION_DETAIL_RAW_SELECTOR
 from .export_completion import MONETIZATION_EXPORT_OPERATION, UPSTREAM_FILE_ROW_LIMIT
 from .export_models import _export_error
+from ._field_policy_operations import ANALYSIS_USER_DETAIL
 
 
 _RANGE_FIELD = "create_time"
@@ -15,6 +16,7 @@ _RANGE_OPERATOR = "RANGE_IN"
 _RANGE_TYPE = "event"
 _DAY_START = " 00:00:00"
 _DAY_END = " 23:59:59"
+USER_DETAIL_EXPORT_OPERATION = "export.analysis.user_detail.start"
 
 
 def pin_export_scope_total(
@@ -26,6 +28,17 @@ def pin_export_scope_total(
 ) -> Mapping[str, Any] | None:
     """Read one page of the matching list and keep that create-time total."""
 
+    if operation_id == USER_DETAIL_EXPORT_OPERATION:
+        inputs = {key: value for key, value in payload.items() if key not in {"task_name", "field_map"}}
+        inputs.update(app_id=str(payload["app_id"]), fields=sorted(payload["field_map"]), page=1, page_size=1)
+        snapshot = _scope_total(client.read(ANALYSIS_USER_DETAIL, inputs), clock)
+        return {
+            **snapshot,
+            "known_total_source": f"{ANALYSIS_USER_DETAIL}.page.total_items",
+            "known_total_binding": "same_app_conditions_logic_and_requested_fields_as_export_create",
+            "requested_columns": sorted(payload["field_map"]),
+            "temporal_semantics": "current-at-extraction",
+        }
     if operation_id != MONETIZATION_EXPORT_OPERATION:
         return None
     inputs = _list_inputs(payload)
@@ -49,7 +62,7 @@ def classify_export_rows(
             stage="finalizer",
         )
     truncated = total > UPSTREAM_FILE_ROW_LIMIT and rows == UPSTREAM_FILE_ROW_LIMIT
-    complete = rows == total and rows > 0 and not truncated
+    complete = rows == total and not truncated
     missing = None if truncated is False and rows != total else max(total - rows, 0)
     return {
         **dict(completeness),
@@ -132,7 +145,7 @@ def _single_day(conditions: Any) -> str | None:
 def _scope_total(envelope: Any, clock: Any | None) -> dict[str, Any]:
     if not isinstance(envelope, Mapping) or envelope.get("ok") is not True:
         raise _export_error(
-            "monetization list preflight did not return a successful total",
+            "export list preflight did not return a successful total",
             code="EXPORT_CREATE_FAILED",
             stage="creating",
         )
@@ -140,7 +153,7 @@ def _scope_total(envelope: Any, clock: Any | None) -> dict[str, Any]:
     total = page.get("total_items") if isinstance(page, Mapping) else None
     if type(total) is not int or total < 0:
         raise _export_error(
-            "monetization list preflight omitted a comparable total_items",
+            "export list preflight omitted a comparable total_items",
             code="EXPORT_CREATE_FAILED",
             stage="creating",
         )

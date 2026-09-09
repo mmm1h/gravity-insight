@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 
+def download_receipt_argument(operation_id: str | None) -> str:
+    return " --completeness <receipt.json>" if operation_id == "export.analysis.user_detail.start" else ""
+
+
 def describe_next_action(operation_id: str, effect: str, currently_callable: bool) -> str:
     if currently_callable and effect == "export_job_create":
         return (
@@ -81,6 +85,7 @@ def describe_workflow(operation_id: str, effect: str) -> dict[str, Any]:
             (
                 "gravity export download <job-id> "
                 f"--operation-id {operation_id} --output <file> --timeout 300"
+                + download_receipt_argument(operation_id)
             ),
         ],
         "recovery": (
@@ -88,6 +93,8 @@ def describe_workflow(operation_id: str, effect: str) -> dict[str, Any]:
             "uncertain, run `gravity "
             "export list --page 1 --page-size 100` before creating another job. "
             "A wait timeout does not cancel the job."
+            + (" receipt.json must contain this task's start or run-error completeness object, not the full envelope or a later list total."
+               if download_receipt_argument(operation_id) else "")
         ),
         "staged_commands_are_recovery": True,
         "create_auto_retry": False,

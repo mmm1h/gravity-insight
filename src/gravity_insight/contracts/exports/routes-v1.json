@@ -218,8 +218,186 @@
       "block_reason": null,
       "request": {"location": "body", "allowed_fields": ["app_id", "field_map", "task_name", "global_conditions", "postback_conditions", "user_cond_logic", "postback_cond_logic"], "required_fields": ["app_id", "field_map", "task_name", "global_conditions", "postback_conditions", "user_cond_logic", "postback_cond_logic"], "fixed_fields": {}, "input_schema": {"type": "object", "additional_properties": false, "required": ["app_id", "field_map", "task_name", "global_conditions", "postback_conditions", "user_cond_logic", "postback_cond_logic"], "optional": [], "properties": {"app_id": {"type": "integer", "minimum": 1}, "field_map": {"type": "object"}, "task_name": {"type": "string", "min_length": 1, "max_length": 200}, "global_conditions": {"type": "array", "item_type": "object", "max_items": 100}, "postback_conditions": {"type": "array", "item_type": "object", "max_items": 100}, "user_cond_logic": {"type": "string", "enum": ["AND", "OR"]}, "postback_cond_logic": {"type": "string", "enum": ["AND", "OR"]}}}, "scale_controls": {"page_size_limits_total_rows": false, "controls": ["one exact app_id", "shortest preflight-confirmed date range", "explicit field_map"], "recommended_first_run": "one App and one day already confirmed non-empty by analysis.user_detail.list", "maximum_download_bytes": 104857600}, "examples": [{"name": "verified_single_day_user_detail", "status": "verified_online", "runnable_after_substitution": true, "required_substitutions": {"<app-id>": "Copy the App id from the non-empty parent read.", "<date>": "Copy the exact single preflight date."}, "input": {"app_id": "<app-id>", "field_map": {"ClientID": "客户ID", "CreateTime": "注册时间"}, "task_name": "agent-user-detail-export", "global_conditions": [{"field": "create_date_list", "operator": "RANGE_IN", "type": "default_user", "value": ["<date> 00:00:00", "<date> 23:59:59"]}], "postback_conditions": [], "user_cond_logic": "AND", "postback_cond_logic": "AND"}, "columns": ["ClientID", "CreateTime"], "idempotency_key_template": "agent-user-detail-<yyyymmdd>-<unique-suffix>", "preflight": {"operation_id": "analysis.user_detail.list", "required_result": "the same App, day, and projection return at least one row"}}]},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
-      "privacy": {"classification": "user_level", "format": "xlsx", "extension": ".xlsx", "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "request_column_field": "field_map", "request_columns": ["ClientID", "CreateTime"], "request_required_columns": ["ClientID", "CreateTime"], "allowed_columns": ["客户ID", "注册时间"], "required_columns": ["客户ID", "注册时间"], "allow_contracted_identifiers": true, "file_schema": {"worksheet_count": 1, "worksheet_name": "Sheet1", "empty_file": {"row_count": 0, "headers_preserved": true}, "columns": [{"header": "客户ID", "cell_storage_types": ["s"], "python_value_types": ["str"], "number_formats": ["General"], "logical_type": "identifier"}, {"header": "注册时间", "cell_storage_types": ["s"], "python_value_types": ["str"], "number_formats": ["General"], "logical_type": "datetime"}]}, "allowed_hosts": ["gravity-client-resource.oss-cn-hangzhou.aliyuncs.com"], "allowed_redirect_hosts": [], "allowed_path_prefixes": {"gravity-client-resource.oss-cn-hangzhou.aliyuncs.com": ["/266183/excels/"]}, "magic_prefix_utf8": "PK\u0003\u0004", "download_authorization_ttl_seconds": 300, "max_size_bytes": 104857600, "max_uncompressed_size_bytes": 134217728, "max_archive_entries": 1000, "max_compression_ratio": 100.0},
-      "verification": {"method_source": "frontend_asset_and_online", "online": true, "attempted_online": true, "notes": "Hash-matched search-B8IEKRTe.js proves the request binding. On 2026-08-17 one same-day non-empty parent read produced a code-0 task, READY on the first poll, and a 13619-byte Sheet1 XLSX with 255 rows. ClientID and CreateTime were both s/str/General, classified respectively as identifier and datetime text. No retry, page advance, App switch, or date expansion occurred"}
+      "privacy": {
+        "classification": "user_level",
+        "format": "xlsx",
+        "extension": ".xlsx",
+        "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "request_column_field": "field_map",
+        "request_columns": [
+          "ClientID",
+          "CreateTime",
+          "Version",
+          "useraccount_id",
+          "userdevice_id",
+          "userfirst_login_time",
+          "useruser_ab"
+        ],
+        "request_required_columns": [
+          "ClientID",
+          "CreateTime"
+        ],
+        "allowed_columns": [
+          "客户ID",
+          "注册时间",
+          "客户端版本",
+          "账户ID",
+          "设备ID",
+          "首次登录时间",
+          "用户数值模型分层"
+        ],
+        "required_columns": [
+          "客户ID",
+          "注册时间"
+        ],
+        "allow_contracted_identifiers": true,
+        "file_schema": {
+          "worksheet_count": 1,
+          "worksheet_name": "Sheet1",
+          "empty_file": {
+            "status": "not_verified_online_for_expanded_projection",
+            "row_count": null,
+            "headers_preserved": null
+          },
+          "columns": [
+            {
+              "header": "客户ID",
+              "cell_storage_types": [
+                "s"
+              ],
+              "python_value_types": [
+                "str"
+              ],
+              "number_formats": [
+                "General"
+              ],
+              "logical_type": "identifier",
+              "nullable": false
+            },
+            {
+              "header": "注册时间",
+              "cell_storage_types": [
+                "s"
+              ],
+              "python_value_types": [
+                "str"
+              ],
+              "number_formats": [
+                "General"
+              ],
+              "logical_type": "datetime",
+              "nullable": false
+            },
+            {
+              "header": "客户端版本",
+              "cell_storage_types": [
+                "n"
+              ],
+              "python_value_types": [
+                "int"
+              ],
+              "number_formats": [
+                "General"
+              ],
+              "logical_type": "integer",
+              "nullable": false
+            },
+            {
+              "header": "账户ID",
+              "cell_storage_types": [
+                "s"
+              ],
+              "python_value_types": [
+                "str"
+              ],
+              "number_formats": [
+                "General"
+              ],
+              "logical_type": "identifier",
+              "nullable": true
+            },
+            {
+              "header": "设备ID",
+              "cell_storage_types": [
+                "s"
+              ],
+              "python_value_types": [
+                "str"
+              ],
+              "number_formats": [
+                "General"
+              ],
+              "logical_type": "identifier",
+              "nullable": true
+            },
+            {
+              "header": "首次登录时间",
+              "cell_storage_types": [
+                "s"
+              ],
+              "python_value_types": [
+                "str"
+              ],
+              "number_formats": [
+                "General"
+              ],
+              "logical_type": "datetime",
+              "nullable": true
+            },
+            {
+              "header": "用户数值模型分层",
+              "cell_storage_types": [
+                "s"
+              ],
+              "python_value_types": [
+                "str"
+              ],
+              "number_formats": [
+                "General"
+              ],
+              "logical_type": "string",
+              "nullable": true
+            }
+          ]
+        },
+        "allowed_hosts": [
+          "gravity-client-resource.oss-cn-hangzhou.aliyuncs.com"
+        ],
+        "allowed_redirect_hosts": [],
+        "allowed_path_prefixes": {
+          "gravity-client-resource.oss-cn-hangzhou.aliyuncs.com": [
+            "/266183/excels/"
+          ]
+        },
+        "magic_prefix_utf8": "PK\u0003\u0004",
+        "download_authorization_ttl_seconds": 300,
+        "max_size_bytes": 104857600,
+        "max_uncompressed_size_bytes": 134217728,
+        "max_archive_entries": 1000,
+        "max_compression_ratio": 100,
+        "projection_version": 2,
+        "column_order": "request_code_lexicographic",
+        "temporal_semantics": "current-at-extraction",
+        "metadata_fields": {
+          "useraccount_id": {
+            "name": "account_id",
+            "data_type": "STRING"
+          },
+          "userdevice_id": {
+            "name": "device_id",
+            "data_type": "STRING"
+          },
+          "userfirst_login_time": {
+            "name": "first_login_time",
+            "data_type": "DATETIME"
+          },
+          "useruser_ab": {
+            "name": "user_ab",
+            "data_type": "STRING"
+          }
+        }
+      },
+      "verification": {"method_source": "frontend_asset_and_online", "online": true, "attempted_online": true, "notes": "Hash-matched search-B8IEKRTe.js proves the request binding. On 2026-08-17 the two-column export returned 255 rows. On 2026-09-10 one App, one day, one start (no retries, page advances or scope expansion) returned a 1176-row, single-Sheet1 XLSX matching a create-time analysis.user_detail.list total of 1176. ClientID, CreateTime, useraccount_id, userdevice_id, userfirst_login_time and useruser_ab were shared-string s/str/General; Version was n/int/General. The three account/device/first-login fields had 133 empty cells each; useruser_ab had 1156; all seven had nonempty observations. File headers matched SDK-authorized lexicographic code order, not original input order; unsorted-wire upstream behavior remains untested. Exactly these seven fields are verified; 163 other candidates remain untested capability gaps, not upstream absences. Evidence: tests/fixtures/user_detail_export_projection_evidence.json. No user values persisted; download deleted. Current properties are current-at-extraction, not historical assignment, exposure or balances."}
     },
     {
       "operation_id": "export.analysis.user_event.start",

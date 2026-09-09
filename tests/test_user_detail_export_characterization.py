@@ -1,7 +1,7 @@
-"""Issue 203 stage-one characterization, not acceptance of the requested fix.
+"""Issue 203 evidence and retained generic finalizer characterization.
 
-These tests describe the released limitations so the coordinated implementation
-can replace each assertion with its intended invariant. All cell values below
+Typed user-detail acceptance is covered in test_user_detail_export_projection.
+Untyped generic contracts retain their characterized behavior. All cell values below
 are synthetic; the evidence fixture contains only field metadata and counts.
 """
 from __future__ import annotations
@@ -113,10 +113,12 @@ class UserDetailExportCharacterizationTests(unittest.TestCase):
             self.assertEqual(2, result.rows_processed)
             self.assertTrue(output.is_file())
 
-    def test_user_detail_does_not_yet_pin_a_task_bound_total(self):
-        client = SimpleNamespace(read=Mock(side_effect=AssertionError('unexpected read')))
-        self.assertIsNone(pin_export_scope_total(client, OPERATION, _payload()))
-        client.read.assert_not_called()
+    def test_user_detail_now_pins_a_task_bound_total(self):
+        client = SimpleNamespace(read=Mock(return_value={'ok': True, 'page': {'total_items': 1176}}))
+        snapshot = pin_export_scope_total(client, OPERATION, _payload())
+        self.assertEqual(1176, snapshot['known_total_items'])
+        self.assertEqual('create_time_preflight', snapshot['known_total_freshness'])
+        client.read.assert_called_once()
 
     def test_sanitized_evidence_distinguishes_empty_cells_from_missing_rows(self):
         total = EVIDENCE['completeness_evidence']['known_total_items']

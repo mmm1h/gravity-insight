@@ -173,12 +173,11 @@ class DocumentationArchitectureTests(unittest.TestCase):
         ]
         self.assertEqual([], offenders)
 
-    def test_candidate_matrix_has_19_unique_operations(self) -> None:
+    def test_candidate_matrix_has_20_unique_operations(self) -> None:
         """Adding a row is a deliberate act, so the count is pinned.
 
-        Went 18 -> 19 for issue #28's `sql.user-event.aggregate-join` verdict:
-        the local failure classification is now precise, while upstream join
-        support still needs one sanitized protocol sample or an owner contract.
+        Issue #203 adds a deliberately scoped projection verdict: seven observed
+        fields are implemented, with 163 untested candidates remaining gaps.
         """
 
         rows = [
@@ -189,8 +188,8 @@ class DocumentationArchitectureTests(unittest.TestCase):
             if line.startswith("| `")
         ]
         operations = [row.split("|", 2)[1].strip().strip("`") for row in rows]
-        self.assertEqual(19, len(operations))
-        self.assertEqual(19, len(set(operations)))
+        self.assertEqual(20, len(operations))
+        self.assertEqual(20, len(set(operations)))
 
     def test_retired_document_paths_are_absent(self) -> None:
         retired = [

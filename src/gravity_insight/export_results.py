@@ -13,6 +13,7 @@ from .export_completion import (
     snapshot_completion_status,
 )
 from .export_contracts import export_error_field
+from .export_describe_actions import download_receipt_argument
 from .export_models import ExportState
 from .result_source import GOVERNED_PRODUCT, result_source
 
@@ -87,6 +88,7 @@ def export_result_envelope(operation_id: str, result: Any) -> dict[str, Any]:
             "resumable": result.resumable,
             "error": detail.to_dict(),
             **_failure_diagnostics(result.error),
+            **_completeness_fields(result),
         }, obligations)
     obligations = export_result_obligations(result)
     return serialize_envelope({
@@ -132,6 +134,11 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
         ("csv_framing", "EXPORT_SCHEMA_MISMATCH"): "row_width_mismatch",
         ("csv_framing", "EXPORT_FORMAT_INVALID"): "invalid_csv",
         ("local_io", "LOCAL_IO_ERROR"): "local_io_failed",
+        ("cell_types", "EXPORT_TYPE_MISMATCH"): "cell_type_mismatch",
+        ("xlsx_framing", "EXPORT_FORMAT_INVALID"): "invalid_xlsx",
+        ("projection", "EXPORT_COLUMNS_INVALID"): "unverified_fields",
+        ("metadata", "EXPORT_COLUMNS_INVALID"): "metadata_field_mismatch",
+        ("metadata", "EXPORT_METADATA_UNAVAILABLE"): "metadata_unavailable",
     }
     reason = reasons.get((stage, code))
     if code in {"BLOB_SIZE_MISMATCH", "BLOB_HASH_MISMATCH", "BLOB_MD5_MISMATCH"}:
@@ -140,7 +147,7 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
         return {}
     diagnostic: dict[str, Any] = {"stage": stage, "reason": reason}
     details = getattr(error, "details", {})
-    for key in ("line", "rows_processed"):
+    for key in ("line", "rows_processed", "column", "missing_column_count", "unknown_column_count"):
         value = details.get(key) if isinstance(details, Mapping) else None
         if type(value) is int and value >= 0:
             diagnostic[key] = value
@@ -160,6 +167,7 @@ def _public_export_error(
     contract_codes = {
         "EXPORT_PRIVACY_DENIED", "EXPORT_SCHEMA_MISMATCH",
         "EXPORT_FORMAT_INVALID", "EXPORT_FORMAT_UNSUPPORTED",
+        "EXPORT_TYPE_MISMATCH",
         "BLOB_MIME_MISMATCH", "BLOB_TYPE_MISMATCH", "BLOB_MAGIC_MISMATCH",
     }
     if code == "EXPORT_TIMEOUT":
@@ -184,7 +192,8 @@ def _public_export_error(
         return ErrorCode.LOCAL_IO_ERROR, (
             "Run `gravity export download "
             f"{job_id or '<job-id>'} --operation-id {operation_id} --output "
-            "<writable-file.xlsx> --timeout 300`."
+            "<writable-file.xlsx> --timeout 300"
+            f"{download_receipt_argument(operation_id)}`."
         )
     if code in contract_codes:
         return ErrorCode.CONTRACT_CHANGED, (
@@ -213,6 +222,9 @@ def _file_receipt(receipt: Any) -> dict[str, Any] | None:
         "last_modified_present": receipt.last_modified is not None,
         "schema": list(receipt.finalization.schema),
         "rows": receipt.finalization.rows_processed,
+        **({"empty_values_by_column": dict(receipt.finalization.details["empty_values_by_column"]),
+            "temporal_semantics": receipt.finalization.details.get("temporal_semantics")}
+           if "empty_values_by_column" in getattr(receipt.finalization, "details", {}) else {}),
     }
 
 

@@ -1,6 +1,14 @@
 """Agent-facing CLI helpers for governed exports."""
 from __future__ import annotations
 
+from .export_results import _failure_diagnostics
+from .export_describe_actions import download_receipt_argument
+from .contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, EnvelopeObligations, ExecutionState,
+    ExecutionStatus, MutationCertainty, MutationState, SemanticState,
+    SemanticValidity, diagnostic_evidence, serialize_envelope,
+)
+
 import argparse
 from typing import Any, Callable, Mapping
 
@@ -86,6 +94,7 @@ def add_export_commands(
             item.add_argument("--interval", type=float, default=2.0)
         if name == "download":
             item.add_argument("--output", required=True)
+            item.add_argument("--completeness", help="JSON file containing this task's start completeness receipt.")
     listing = subcommands.add_parser("list")
     listing.add_argument("--page", type=positive_int, default=1)
     listing.add_argument("--page-size", type=positive_int, default=100)
@@ -141,11 +150,13 @@ def run_export_command(
             timeout_seconds=args.timeout,
         )
     if args.export_command == "download":
+        receipt_path = getattr(args, "completeness", None)
         return client.export_download(
             args.operation_id,
             args.job_id,
             args.output,
             timeout_seconds=args.timeout,
+            **({"completeness": object_input(receipt_path)} if receipt_path else {}),
         )
     if args.export_command == "cancel":
         return client.export_cancel(args.operation_id, args.job_id)
@@ -235,14 +246,21 @@ def export_cli_error(
         retryable=bool(getattr(error, "retryable", False)),
         next_action=next_action,
     )
-    return {
+    return serialize_envelope({
         "schema_version": "gravity-insight.error.v1",
         "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "error",
         "operation_id": operation_id,
         "error": detail.to_dict(),
-    }
+        **_failure_diagnostics(error),
+    }, EnvelopeObligations(
+        ExecutionStatus(ExecutionState.FAILED, "EXPORT_REQUEST_FAILED"),
+        DataCompleteness(CompletenessState.UNKNOWN, "EXPORT_FILE_NOT_VERIFIED"),
+        SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
+        diagnostic_evidence(detail.to_dict()),
+        MutationCertainty(MutationState.NOT_APPLICABLE, "EXPORT_HAS_NO_BUSINESS_MUTATION"),
+    ))
 
 
 def command_error(
@@ -309,7 +327,8 @@ def _next_action(
         return (
             "Run `gravity export download "
             f"{job_id} --operation-id {operation_id or '<operation-id>'} "
-            "--output <writable-file.xlsx> --timeout 300`."
+            "--output <writable-file.xlsx> --timeout 300"
+            f"{download_receipt_argument(operation_id)}`."
         )
     if code == ErrorCode.CONTRACT_CHANGED:
         return (

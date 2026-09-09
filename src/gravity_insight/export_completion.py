@@ -73,9 +73,11 @@ def export_result_obligations(
 
 def _committed_status(result: Any, receipt: Any) -> str:
     rows = int(receipt.finalization.rows_processed)
-    if rows == 0:
-        return ExportCompletionStatus.EMPTY.value
     snapshot = getattr(result, "completeness", None)
+    if rows == 0:
+        if isinstance(snapshot, Mapping) and snapshot.get("known_total_items") != 0:
+            return ExportCompletionStatus.PARTIAL.value
+        return ExportCompletionStatus.EMPTY.value
     if isinstance(snapshot, Mapping) and snapshot.get("truncated") is True:
         return ExportCompletionStatus.TRUNCATED.value
     if isinstance(snapshot, Mapping) and snapshot.get("complete") is True:
