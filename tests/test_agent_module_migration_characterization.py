@@ -544,9 +544,10 @@ def run():
         )
 
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
+        """R2-02 adds auto_upgrade -> errors; reviewed SCC sizes remain unchanged."""
         expected = module_graph_baseline()
         self.assertEqual(
-            "5f061412efb00d3701be4a3de1e38896c269ff9e49e4cec195b5978778c3a4bf",
+            "09d7faa4679b1066c536c8869608eceaeb85c75d68240418fd55573c1fee9201",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(

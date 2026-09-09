@@ -31,6 +31,7 @@ from ._auto_upgrade_state import (
     write_update_state,
 )
 from .control_plane.update_models import UpdatePlanRequest
+from .errors import InputValidationError
 from .receipt import DISTRIBUTION_HTTP_KIND, perform_http_request
 from .runtime_scope import gravity_insight_cache_root
 
@@ -95,16 +96,39 @@ def update_attempt_state_path(state_path: Path | None = None) -> Path:
 def startup_update_enabled(
     argv: Sequence[str], *, environ: Mapping[str, str] | None = None
 ) -> bool:
-    """Keep diagnostic, evaluation, test, and exact-pinned paths offline."""
+    """Validate exact execution pins before applying startup update switches."""
 
     env = os.environ if environ is None else environ
-    args = list(argv)
-    if args[:1] == ["doctor"] or args[:2] == ["insight", "doctor"]:
-        return False
     pinned = str(
         _environment_value(env, PINNED_VERSION_ENV, _LEGACY_PINNED_VERSION_ENV) or ""
     ).strip()
-    if version_tuple(pinned) is not None and pinned == __version__:
+    if pinned:
+        field = (
+            PINNED_VERSION_ENV if PINNED_VERSION_ENV in env else _LEGACY_PINNED_VERSION_ENV
+        )
+        if version_tuple(pinned) is None:
+            raise InputValidationError(
+                "Runtime pin must be an exact stable X.Y.Z version.",
+                field=field,
+                next_action="Correct the pin format before running any command.",
+            )
+        if pinned != __version__:
+            error = InputValidationError(
+                f"Runtime pin {pinned} does not match executing version {__version__}.",
+                code="RUNTIME_PIN_MISMATCH",
+                field=field,
+                next_action=(
+                    f"Explicitly install gravity-insight=={pinned} with a supported "
+                    "Python 3.11/3.12 interpreter, then invoke that interpreter. "
+                    "If unavailable, stop and confirm the intended pin; do not use latest "
+                    "or rewrite project locks."
+                ),
+            )
+            error.category = "caller"
+            raise error
+        return False
+    args = list(argv)
+    if args[:1] in (["doctor"], ["cache"]) or args[:2] == ["insight", "doctor"]:
         return False
     configured = _environment_value(env, AUTO_UPGRADE_ENV, _LEGACY_AUTO_UPGRADE_ENV)
     return configured is None or configured.strip().casefold() in {"1", "true", "yes", "on"}

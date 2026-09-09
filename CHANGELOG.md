@@ -17,7 +17,9 @@ Target release: `0.3.15`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** Nonempty runtime pins are exact execution constraints: malformed pins fail with `INPUT_INVALID`, mismatched pins fail with `RUNTIME_PIN_MISMATCH` before startup distribution access, authentication or dispatch, even when updates are disabled. Unset/empty pins retain default-on updates. Activation receipts now report `running_version: null` until the staged child observes its imported version; a child exit alone is not execution-version proof.
+
+Migration guide: [0.3.15](docs/migration/0.3.15.md)
 
 ### Added
 
