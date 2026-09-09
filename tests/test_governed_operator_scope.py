@@ -186,6 +186,28 @@ class GovernedOperatorScopeTests(unittest.TestCase):
         inputs["rows"][1]["scopes"]["reached"]["completeness"] = "prefix"
         self.reject(inputs, "OPERATOR_COMPLETENESS_UNSUPPORTED")
 
+    def test_independent_steps_keep_distinct_scopes_without_a_population_claim(self):
+        inputs = self.inputs("funnel-diagnosis")
+        inputs.update(mode="rowwise", topology="independent", additivity="non_additive")
+        for row in inputs["rows"]:
+            row.pop("lineage")
+        for scope in inputs["rows"][1]["scopes"].values():
+            scope["population"] = "independent-sample"
+            scope["window"].update(start="2026-08-01", end="2026-08-07")
+            scope["completeness"] = "prefix"
+        result = self.execute(inputs)["result"]
+        self.assertEqual("prefix", result["completeness"])
+        self.assertEqual({"largest_loss_step": "payment"}, result["metrics"])
+        self.assertEqual({"0.8", "0.5"}, {row["value"] for row in result["ranked_rows"]})
+
+    def test_decomposition_sums_unrounded_components_before_normalizing(self):
+        inputs = self.inputs("metric-decomposition")
+        for row in inputs["rows"]:
+            row["values"] = {"current": 0.0000004, "reference": 0}
+        result = self.execute(inputs)["result"]
+        self.assertEqual("0.000001", result["metrics"]["returned_total_change"])
+        self.assertEqual(["0.5", "0.5"], [row["contribution"] for row in result["ranked_rows"]])
+
     def test_zero_denominators_and_zero_total_change_remain_undefined(self):
         inputs = self.inputs("funnel-diagnosis")
         for row in inputs["rows"]:

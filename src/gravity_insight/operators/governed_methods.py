@@ -289,18 +289,13 @@ def _ltv_payback(
 def _decomposition(
     rows: Sequence[Mapping[str, Any]], _parameters: Mapping[str, Any]
 ) -> dict[str, Any]:
-    changes = _changes(rows, "current", "reference")
-    total = sum((_decimal(item["contribution"]) for item in changes), Decimal(0))
-    ranked = []
-    for item in changes:
-        delta = _decimal(item["contribution"])
-        ranked.append(
-            {
-                **item,
-                "value": _render(delta),
-                "contribution": _optional(None if total == 0 else delta / total),
-            }
-        )
+    # Aggregate the facts, not the rounded presentation of each component.
+    changes = [_value(row, "current") - _value(row, "reference") for row in rows]
+    total = sum(changes, Decimal(0))
+    ranked = [
+        _row_result(row, value=delta, contribution=None if total == 0 else delta / total)
+        for row, delta in zip(rows, changes)
+    ]
     return _result(
         "metric-decomposition",
         _direction(total, "returned_metric"),
