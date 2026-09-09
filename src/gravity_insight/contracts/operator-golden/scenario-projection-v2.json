@@ -1,0 +1,166 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/scenario-projection@2",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v2",
+        "method": "scenario-projection",
+        "rows": [
+          {
+            "key": "active-base",
+            "values": {
+              "baseline": 100,
+              "coefficient": 2,
+              "change": 10
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            },
+            "scopes": {
+              "baseline": {
+                "unit": "scenario_unit",
+                "population": "fixture-population@1",
+                "window": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-07",
+                  "timezone": "UTC",
+                  "grain": "day"
+                },
+                "completeness": "complete",
+                "evidence": {
+                  "step_id": "scope-fixture",
+                  "path": "/scopes/0/baseline"
+                }
+              },
+              "projected": {
+                "unit": "scenario_unit",
+                "population": "fixture-population@1",
+                "window": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-07",
+                  "timezone": "UTC",
+                  "grain": "day"
+                },
+                "completeness": "complete",
+                "evidence": {
+                  "step_id": "scope-fixture",
+                  "path": "/scopes/0/projected"
+                }
+              }
+            }
+          },
+          {
+            "key": "cost-base",
+            "values": {
+              "baseline": 50,
+              "coefficient": -1,
+              "change": 5
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            },
+            "scopes": {
+              "baseline": {
+                "unit": "scenario_unit",
+                "population": "fixture-population@1",
+                "window": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-07",
+                  "timezone": "UTC",
+                  "grain": "day"
+                },
+                "completeness": "complete",
+                "evidence": {
+                  "step_id": "scope-fixture",
+                  "path": "/scopes/1/baseline"
+                }
+              },
+              "projected": {
+                "unit": "scenario_unit",
+                "population": "fixture-population@1",
+                "window": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-07",
+                  "timezone": "UTC",
+                  "grain": "day"
+                },
+                "completeness": "complete",
+                "evidence": {
+                  "step_id": "scope-fixture",
+                  "path": "/scopes/1/projected"
+                }
+              }
+            }
+          }
+        ],
+        "parameters": {
+          "horizon_days": 30
+        },
+        "unit": "scenario_unit",
+        "additivity": "additive",
+        "mode": "aggregate",
+        "aggregation": {
+          "axis": "component",
+          "allowed_axes": [
+            "component"
+          ],
+          "disjointness": {
+            "kind": "disjoint_partition",
+            "members": [
+              "active-base",
+              "cost-base"
+            ],
+            "evidence": {
+              "step_id": "partition-fixture",
+              "path": "/partition"
+            }
+          }
+        }
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v2",
+        "method": "scenario-projection",
+        "verdict": "scenario_increase_observed",
+        "metrics": {
+          "horizon_days": "30",
+          "baseline_total": "150",
+          "scenario_total": "165",
+          "scenario_change": "15"
+        },
+        "ranked_rows": [
+          {
+            "key": "active-base",
+            "value": "120",
+            "contribution": "20",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "cost-base",
+            "value": "45",
+            "contribution": "-5",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Projection uses only caller-supplied coefficients and bounded parameter changes.",
+          "The scenario is not a forecast guarantee or causal effect estimate."
+        ],
+        "mode": "aggregate",
+        "completeness": "complete"
+      }
+    }
+  ]
+}

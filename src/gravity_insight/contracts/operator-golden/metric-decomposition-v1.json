@@ -34,20 +34,19 @@
         ],
         "parameters": {},
         "unit": "project_metric_unit",
-        "additivity": "additive"
+        "additivity": "additive",
+        "mode": "rowwise"
       },
       "expected": {
         "schema_version": "gravity.operator-result.governed-method.v1",
         "method": "metric-decomposition",
-        "verdict": "no_returned_metric_change_observed",
-        "metrics": {
-          "returned_total_change": "0"
-        },
+        "verdict": "returned_rows_compared",
+        "metrics": {},
         "ranked_rows": [
           {
             "key": "component-a",
-            "value": "20",
-            "contribution": null,
+            "value": "70",
+            "contribution": "20",
             "rank": 1,
             "evidence": {
               "step_id": "evidence-0",
@@ -56,8 +55,8 @@
           },
           {
             "key": "component-b",
-            "value": "-20",
-            "contribution": null,
+            "value": "30",
+            "contribution": "-20",
             "rank": 2,
             "evidence": {
               "step_id": "evidence-1",
@@ -66,8 +65,7 @@
           }
         ],
         "limitations": [
-          "Components must be mutually interpretable under one metric contract.",
-          "Contribution shares describe returned arithmetic, not causality."
+          "Rowwise values only; no total, normalized share or population claim."
         ]
       }
     }

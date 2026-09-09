@@ -76,7 +76,7 @@ class ModelRegistryTests(unittest.TestCase):
         expected = {
             item["contract"]["uri"] for item in builtin_model_artifacts()
         }
-        self.assertEqual(5, registry.list()["count"])
+        self.assertEqual(8, registry.list()["count"])
         self.assertEqual(
             expected, {item["uri"] for item in registry.list()["models"]}
         )

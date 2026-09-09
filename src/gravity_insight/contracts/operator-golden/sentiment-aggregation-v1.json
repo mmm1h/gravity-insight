@@ -32,40 +32,38 @@
         ],
         "parameters": {},
         "unit": "classified_item_count",
-        "additivity": "additive"
+        "additivity": "additive",
+        "mode": "rowwise"
       },
       "expected": {
         "schema_version": "gravity.operator-result.governed-method.v1",
         "method": "sentiment-aggregation",
-        "verdict": "returned_categories_aggregated",
-        "metrics": {
-          "returned_total": "100"
-        },
+        "verdict": "returned_rows_compared",
+        "metrics": {},
         "ranked_rows": [
-          {
-            "key": "positive",
-            "value": "60",
-            "contribution": "0.6",
-            "rank": 1,
-            "evidence": {
-              "step_id": "evidence-0",
-              "path": "/rows/0"
-            }
-          },
           {
             "key": "negative",
             "value": "40",
-            "contribution": "0.4",
-            "rank": 2,
+            "contribution": null,
+            "rank": 1,
             "evidence": {
               "step_id": "evidence-1",
               "path": "/rows/1"
             }
+          },
+          {
+            "key": "positive",
+            "value": "60",
+            "contribution": null,
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
           }
         ],
         "limitations": [
-          "Rows must already be classified under one project-approved taxonomy.",
-          "Aggregation neither classifies text nor infers author intent."
+          "Rowwise values only; no total, normalized share or population claim."
         ]
       }
     }

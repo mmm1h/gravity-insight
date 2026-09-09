@@ -3,11 +3,32 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, localcontext
 from typing import Any
 
-from ..operator_ids import GOVERNED_METHOD_RESULT_SCHEMA
-from ..operator_returned_dimension_change import OperatorMethodError
+from ..operator_ids import (
+    GOVERNED_METHOD_INPUT_SCHEMA_V2,
+    GOVERNED_METHOD_RESULT_SCHEMA,
+    GOVERNED_METHOD_RESULT_SCHEMA_V2,
+    GOVERNED_METHOD_URIS_V2,
+)
+from . import (
+    _bounded_ratio,
+    _completeness,
+    _decimal,
+    _fail,
+    _integer,
+    _nonnegative,
+    _positive,
+    _positive_integer_parameter,
+    _positive_parameter,
+    _reject,
+    _validate_aggregation,
+    _validate_lineage,
+    _validate_mode,
+    _validate_scopes,
+    _value,
+)
 
 
 _METHODS: dict[
@@ -40,6 +61,13 @@ _METHOD_PARAMETERS = {
 def execute_governed_method(inputs: Mapping[str, Any]) -> dict[str, Any]:
     """Execute one exact method selected by its already validated input value."""
 
+    # The registry bounds each input to 38 digits; products and row sums need headroom.
+    with localcontext() as context:
+        context.prec = 96
+        return _execute_method(inputs)
+
+
+def _execute_method(inputs: Mapping[str, Any]) -> dict[str, Any]:
     method = str(inputs["method"])
     runner = _METHODS.get(method)
     if runner is None:
@@ -48,7 +76,62 @@ def execute_governed_method(inputs: Mapping[str, Any]) -> dict[str, Any]:
         _fail("OPERATOR_INPUT_INVALID", "governed method parameters are not exact")
     if any(set(row["values"]) != _METHOD_FIELDS[method] for row in inputs["rows"]):
         _fail("OPERATOR_INPUT_INVALID", "governed method row values are not exact")
-    return runner(inputs["rows"], inputs["parameters"])
+    if method not in GOVERNED_METHOD_URIS_V2:
+        if "mode" in inputs:
+            _fail("OPERATOR_INPUT_INVALID", "this method has no selectable mode")
+        return runner(inputs["rows"], inputs["parameters"])
+    return _execute_scoped_method(inputs, runner)
+
+
+def _execute_scoped_method(
+    inputs: Mapping[str, Any],
+    runner: Callable[[Sequence[Mapping[str, Any]], Mapping[str, Any]], dict[str, Any]],
+) -> dict[str, Any]:
+    method = inputs["method"]
+    mode = inputs.get("mode", "cumulative" if method == "funnel-diagnosis" else "aggregate")
+    _validate_mode(method, mode)
+    version_two = inputs["schema_version"] == GOVERNED_METHOD_INPUT_SCHEMA_V2
+    if version_two:
+        _validate_scopes(inputs, mode)
+    elif mode != "rowwise":
+        reason = (
+            "OPERATOR_FUNNEL_LINEAGE_UNPROVEN" if method == "funnel-diagnosis"
+            else "OPERATOR_AGGREGATION_UNPROVEN"
+        )
+        _reject(reason, "mode", "Version 1 cannot prove cross-row aggregation or lineage.",
+                f"Use {GOVERNED_METHOD_URIS_V2[method]} with explicit scope/evidence, "
+                "or request mode=rowwise on this version.")
+    if mode == "aggregate":
+        _validate_aggregation(inputs)
+    if mode == "cumulative":
+        _validate_lineage(inputs)
+    result = (
+        _rowwise(method, inputs["rows"], inputs["parameters"])
+        if mode == "rowwise" else runner(inputs["rows"], inputs["parameters"])
+    )
+    if version_two:
+        result.update(
+            schema_version=GOVERNED_METHOD_RESULT_SCHEMA_V2,
+            mode=mode,
+            completeness=_completeness(inputs),
+        )
+    return result
+
+
+def _rowwise(
+    method: str, rows: Sequence[Mapping[str, Any]], parameters: Mapping[str, Any]
+) -> dict[str, Any]:
+    if method == "funnel-diagnosis":
+        return _funnel(rows, parameters, cumulative=False)
+    if method == "scenario-projection":
+        return _scenario(rows, parameters, aggregate=False)
+    if method == "sentiment-aggregation":
+        ranked = [_row_result(row, value=Decimal(_integer(row, "count")), contribution=None) for row in rows]
+    else:
+        ranked = _changes(rows, "current", "reference")
+    return _result(method, "returned_rows_compared", {}, _rank(ranked),
+                   ["Rowwise values only; no total, normalized share or population claim."])
+
 
 
 def _campaign(
@@ -111,7 +194,7 @@ def _churn_profile(
 
 
 def _funnel(
-    rows: Sequence[Mapping[str, Any]], _parameters: Mapping[str, Any]
+    rows: Sequence[Mapping[str, Any]], _parameters: Mapping[str, Any], *, cumulative: bool = True
 ) -> dict[str, Any]:
     ordered = sorted(rows, key=lambda row: _integer(row, "order"))
     orders = [_integer(row, "order") for row in ordered]
@@ -129,7 +212,7 @@ def _funnel(
         )
     first = _nonnegative(ordered[0], "entered")
     final = _nonnegative(ordered[-1], "reached")
-    cumulative = None if first == 0 else final / first
+    cumulative_rate = None if first == 0 else final / first
     largest = max(ranked, key=lambda item: _decimal(item["contribution"]))
     return _result(
         "funnel-diagnosis",
@@ -137,9 +220,11 @@ def _funnel(
         if largest["contribution"] != "0"
         else "no_returned_step_loss",
         {
-            "first_step_entered": _render(first),
-            "final_step_reached": _render(final),
-            "cumulative_conversion": _optional(cumulative),
+            **({
+                "first_step_entered": _render(first),
+                "final_step_reached": _render(final),
+                "cumulative_conversion": _optional(cumulative_rate),
+            } if cumulative else {}),
             "largest_loss_step": largest["key"],
         },
         _rank(ranked),
@@ -317,7 +402,7 @@ def _sentiment(
 
 
 def _scenario(
-    rows: Sequence[Mapping[str, Any]], parameters: Mapping[str, Any]
+    rows: Sequence[Mapping[str, Any]], parameters: Mapping[str, Any], *, aggregate: bool = True
 ) -> dict[str, Any]:
     horizon = _positive_integer_parameter(parameters, "horizon_days")
     ranked: list[dict[str, Any]] = []
@@ -331,12 +416,14 @@ def _scenario(
         ranked.append(_row_result(row, value=baseline + impact, contribution=impact))
     return _result(
         "scenario-projection",
-        _direction(scenario_total - baseline_total, "scenario"),
+        _direction(scenario_total - baseline_total, "scenario") if aggregate else "returned_rows_projected",
         {
             "horizon_days": _render(horizon),
-            "baseline_total": _render(baseline_total),
-            "scenario_total": _render(scenario_total),
-            "scenario_change": _render(scenario_total - baseline_total),
+            **({
+                "baseline_total": _render(baseline_total),
+                "scenario_total": _render(scenario_total),
+                "scenario_change": _render(scenario_total - baseline_total),
+            } if aggregate else {}),
         },
         _rank(ranked),
         [
@@ -404,73 +491,6 @@ def _result(
     }
 
 
-def _value(row: Mapping[str, Any], name: str) -> Decimal:
-    try:
-        value = row["values"][name]
-    except (KeyError, TypeError):
-        _fail("OPERATOR_INPUT_INVALID", f"row value {name} is missing")
-    return _decimal(value)
-
-
-def _integer(row: Mapping[str, Any], name: str) -> int:
-    value = _value(row, name)
-    if value != value.to_integral_value() or value < 0:
-        _fail("OPERATOR_INPUT_INVALID", f"row value {name} must be a nonnegative integer")
-    return int(value)
-
-
-def _nonnegative(row: Mapping[str, Any], name: str) -> Decimal:
-    value = _value(row, name)
-    if value < 0:
-        _fail("OPERATOR_INPUT_INVALID", f"row value {name} must be nonnegative")
-    return value
-
-
-def _positive(row: Mapping[str, Any], name: str) -> Decimal:
-    value = _value(row, name)
-    if value <= 0:
-        _fail("OPERATOR_INPUT_INVALID", f"row value {name} must be positive")
-    return value
-
-
-def _bounded_ratio(row: Mapping[str, Any], name: str) -> Decimal:
-    value = _value(row, name)
-    if value < 0 or value > 1:
-        _fail("OPERATOR_INPUT_INVALID", f"row value {name} must be within zero and one")
-    return value
-
-
-def _positive_parameter(parameters: Mapping[str, Any], name: str) -> Decimal:
-    try:
-        value = _decimal(parameters[name])
-    except KeyError:
-        _fail("OPERATOR_INPUT_INVALID", f"parameter {name} is missing")
-    if value <= 0:
-        _fail("OPERATOR_INPUT_INVALID", f"parameter {name} must be positive")
-    return value
-
-
-def _positive_integer_parameter(
-    parameters: Mapping[str, Any], name: str
-) -> Decimal:
-    value = _positive_parameter(parameters, name)
-    if value != value.to_integral_value():
-        _fail("OPERATOR_INPUT_INVALID", f"parameter {name} must be an integer")
-    return value
-
-
-def _decimal(value: Any) -> Decimal:
-    if isinstance(value, bool) or value is None:
-        _fail("OPERATOR_NUMERIC_INVALID", "numeric value is missing or invalid")
-    try:
-        selected = Decimal(str(value))
-    except (InvalidOperation, ValueError):
-        _fail("OPERATOR_NUMERIC_INVALID", "numeric value is missing or invalid")
-    if not selected.is_finite():
-        _fail("OPERATOR_NUMERIC_INVALID", "numeric value is not finite")
-    return selected
-
-
 def _direction(value: Decimal, prefix: str) -> str:
     if value > 0:
         return f"{prefix}_increase_observed"
@@ -487,10 +507,6 @@ def _render(value: Decimal) -> str:
     selected = value.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
     rendered = format(selected, "f").rstrip("0").rstrip(".")
     return rendered or "0"
-
-
-def _fail(reason_code: str, message: str) -> None:
-    raise OperatorMethodError(reason_code, message)
 
 
 _METHODS.update(
