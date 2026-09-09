@@ -5,7 +5,7 @@ import copy
 import io
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import shutil
 import tempfile
 import unittest
@@ -119,6 +119,17 @@ class NativeInstallTests(unittest.TestCase):
         self.assertEqual("HOST_SKILL_APPROVAL_STALE", error.exception.reason_code)
         self.assertEqual(before, self.snapshot())
 
+    def test_seed_reuse_does_not_cache_mutable_previews_or_ignore_changed_bytes(self):
+        plan = self.plan()
+        first = native.preview_native_install(plan, self.project)
+        first["targets"][0]["expected"]["files"][0]["sha256"] = "0" * 64
+        fresh = native.preview_native_install(plan, self.project)
+        self.assertNotEqual("0" * 64, fresh["targets"][0]["expected"]["files"][0]["sha256"])
+        with patch.object(native, "read_bundled_skill_seed", return_value=self.seed + b"changed"):
+            with self.assertRaises(SkillHubContractError):
+                native.preview_native_install(plan, self.project)
+        self.assertFalse(self.host.exists())
+
     def test_mid_batch_install_and_uninstall_failures_restore_exact_preimage(self):
         plan = self.plan(2)
         rename = native._native_rename
@@ -170,6 +181,25 @@ class NativeInstallTests(unittest.TestCase):
         self.assertEqual("installed", invoke("host-install", "--approve", preview["preview_digest"])["status"])
         self.assertEqual("unchanged", invoke("host-install", "--approve", preview["preview_digest"])["status"])
         self.assertEqual("consistent", invoke("host-readback")["status"])
+
+    def test_project_cannot_be_nested_inside_either_global_skill_tree(self):
+        plan = self.plan()
+        for global_tree in (".agents/skills", ".claude/skills"):
+            with self.subTest(global_tree=global_tree):
+                nested = self.project / global_tree / "pretend-project"
+                nested.mkdir(parents=True)
+                changed = copy.deepcopy(plan)
+                name = Path(plan["actions"][0]["target_directory"]).name
+                changed["actions"][0]["target_directory"] = str(nested / ".agents/skills" / name)
+                changed["plan_digest"] = canonical_digest({k: v for k, v in changed.items() if k != "plan_digest"})
+                before = self.snapshot()
+                with patch("pathlib.Path.home", return_value=self.project):
+                    with self.assertRaisesRegex(SkillHubContractError, "User-global"):
+                        native.preview_native_install(changed, nested)
+                self.assertEqual(before, self.snapshot())
+        for path in (PureWindowsPath("//example.invalid/share/project"), PureWindowsPath("//?/C:/Users/PC/.agents/skills")):
+            with self.assertRaisesRegex(SkillHubContractError, "network/device"):
+                native._native_path(path)
 
     def test_plan_defaults_to_project_lock_and_never_full_bundle_implicitly(self):
         self.plan()

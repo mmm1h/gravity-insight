@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -23,9 +24,10 @@ from ..skill_seed import read_bundled_skill_seed, validate_bundled_skill_seed
 
 
 def _native_path(path: Path) -> Path:
-    if ".." in path.parts:
-        raise SkillHubContractError("HOST_SKILL_PATH_INVALID", "Parent traversal is forbidden")
-    return assert_unlinked_path(path, reason="HOST_SKILL_PATH_INVALID", label="Native Skill path")
+    if ".." in path.parts or path.drive.startswith("\\"):
+        raise SkillHubContractError("HOST_SKILL_PATH_INVALID", "Parent traversal and network/device paths are forbidden")
+    checked = assert_unlinked_path(path, reason="HOST_SKILL_PATH_INVALID", label="Native Skill path")
+    return checked.resolve()
 
 
 def _native_snapshot(path: Path) -> dict[str, Any] | None:
@@ -62,18 +64,25 @@ def _expected_native(entry: Mapping[str, Any]) -> dict[str, Any]:
     return {"files": files, "directories": directories}
 
 
+@lru_cache(maxsize=1)
+def _native_seed_index(content: bytes) -> tuple[str, str]:
+    validated = validate_bundled_skill_seed(content)
+    # Cache only immutable, byte-keyed index data, never mutable file observations.
+    return validated["seed_digest"], json.dumps(validated["agent_index"]["skills"])
+
+
 def _native_selection(plan: Mapping[str, Any], project_root: Path) -> tuple[dict, Path, list]:
     selected = _compile_host_install_plan(plan)
     project = _native_path(project_root.expanduser().absolute())
     if not project.is_dir():
         raise SkillHubContractError("HOST_SKILL_PATH_INVALID", "Project root must exist")
     root = _native_path(project / (".agents" if selected["host"] == "codex" else ".claude") / "skills")
-    if root in {Path.home() / ".agents/skills", Path.home() / ".claude/skills"}:
+    if any(root.is_relative_to(protected.resolve()) for protected in (Path.home() / ".agents/skills", Path.home() / ".claude/skills")):
         raise SkillHubContractError("HOST_SKILL_PATH_INVALID", "User-global installation is not supported")
-    validated = validate_bundled_skill_seed(read_bundled_skill_seed())
-    if selected["seed_digest"] != validated["seed_digest"]:
+    seed_digest, index_json = _native_seed_index(read_bundled_skill_seed())
+    if selected["seed_digest"] != seed_digest:
         raise SkillHubContractError("HOST_SKILL_SEED_NOT_ACTIVE", "Plan requires the matching bundled Runtime seed")
-    entries = {row["skill_uri"]: row for row in validated["agent_index"]["skills"]}
+    entries = {row["skill_uri"]: row for row in json.loads(index_json)}
     rows = []
     seen: set[str] = set()
     for kind in ("actions", "unchanged", "conflicts"):

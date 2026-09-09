@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "fe42d3d0fabe3dcc36d12373607b165cef7df2d875c1902e69ced3b71855e6c4"
+    "compatibility_sha256": "0889db38faaae9c5665d4d4aa7b752468c1aef646fdf35f57394700dc2e4acfa"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -340,7 +340,13 @@
           "migration_guide": "docs/migration/0.3.15.md"
         }
       ],
-      "soft_breaks": [],
+      "soft_breaks": [
+        {
+          "id": "0.3.15-soft-break-1",
+          "description": "CLI `skills host-install-plan` now defaults to the project lock and fails closed when it is missing. Migration: pass `--lock <project-lock>` for a selected subset, or explicitly pass `--all` to retain full-bundle planning. The Python full-bundle API and all Runtime read capabilities are unchanged.",
+          "migration_guide": "docs/migration/0.3.15.md"
+        }
+      ],
       "migration_guide": "docs/migration/0.3.15.md"
     }
   ]
