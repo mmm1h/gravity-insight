@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import os
 from pathlib import Path
@@ -10,10 +11,11 @@ import shutil
 from typing import Mapping
 import xml.etree.ElementTree as ET
 import zipfile
+import zlib
 
-from .blob import BlobFinalizationResult, BlobMetadata, BlobTransferError
+from .blob import ArchivePolicy, BlobFinalizationResult, BlobMetadata, BlobTransferError
 from .executor import _redact
-from .export_file import open_export_csv
+from .export_file import open_export_csv, write_export_csv
 from .export_models import (
     ExportPrivacyContract, _assert_exportable_classification, _export_error,
 )
@@ -21,8 +23,11 @@ from .export_models import (
 class ExportPrivacyFinalizer:
     """Validate actual tabular schema and remove only contracted credentials."""
 
-    def __init__(self, contract: ExportPrivacyContract) -> None:
+    def __init__(
+        self, contract: ExportPrivacyContract, *, archive_policy: ArchivePolicy | None = None,
+    ) -> None:
         self._contract = contract
+        self._archive_policy = archive_policy or ArchivePolicy()
 
     def finalize(
         self,
@@ -38,7 +43,7 @@ class ExportPrivacyFinalizer:
                     code="EXPORT_FORMAT_UNSUPPORTED",
                     stage="finalizer",
                 )
-            return self._finalize_csv(source_path, output_path)
+            return self._finalize_csv(source_path, output_path, metadata)
         if self._contract.format == "xlsx":
             if metadata.extension != ".xlsx":
                 raise _export_error(
@@ -59,12 +64,23 @@ class ExportPrivacyFinalizer:
         self,
         source_path: Path,
         output_path: Path,
+        metadata: BlobMetadata,
     ) -> BlobFinalizationResult:
+        rows = 0
+        reader = None
         try:
-            with open_export_csv(source_path, self._contract.encoding) as source_handle:
-                reader = csv.DictReader(source_handle, delimiter=self._contract.delimiter)
+            maximum = min(
+                self._archive_policy.max_uncompressed_size_bytes,
+                int(metadata.size_bytes * self._archive_policy.max_compression_ratio),
+            )
+            # Transfer staging names are .part/.final; only verified metadata binds the container.
+            with open_export_csv(
+                source_path, self._contract.encoding,
+                extension=metadata.extension, max_uncompressed_bytes=maximum,
+            ) as source_handle:
+                reader = csv.DictReader(source_handle, delimiter=self._contract.delimiter, strict=True)
                 header = tuple(reader.fieldnames or ())
-                _validate_actual_schema(header, self._contract)
+                _validate_actual_schema(header, self._contract, stage="headers")
                 output_header = _redacted_columns(header, self._contract)
                 if not output_header:
                     raise _export_error(
@@ -72,11 +88,8 @@ class ExportPrivacyFinalizer:
                         code="EXPORT_SCHEMA_MISMATCH",
                         stage="finalizer",
                     )
-                rows = 0
-                with output_path.open(
-                    "w",
-                    encoding=self._contract.encoding,
-                    newline="",
+                with write_export_csv(
+                    output_path, self._contract.encoding, metadata.extension,
                 ) as output_handle:
                     writer = csv.DictWriter(
                         output_handle,
@@ -91,8 +104,8 @@ class ExportPrivacyFinalizer:
                             raise _export_error(
                                 "CSV row width does not match its header",
                                 code="EXPORT_SCHEMA_MISMATCH",
-                                stage="finalizer",
-                                details={"line": reader.line_num},
+                                stage="csv_framing",
+                                details={"line": reader.line_num, "rows_processed": rows},
                             )
                         projected = _redact(
                             dict(row),
@@ -109,15 +122,15 @@ class ExportPrivacyFinalizer:
                             )
                         writer.writerow({column: projected[column] for column in output_header})
                         rows += 1
-                    output_handle.flush()
-                    os.fsync(output_handle.fileno())
         except BlobTransferError:
             raise
-        except (LookupError, UnicodeError, csv.Error, OSError) as exc:
+        except (gzip.BadGzipFile, EOFError, zlib.error, LookupError, UnicodeError, csv.Error, OSError) as exc:
+            stage = _csv_failure_stage(exc)
             raise _export_error(
                 "CSV export could not be parsed and finalized safely",
-                code="EXPORT_FORMAT_INVALID",
-                stage="finalizer",
+                code="LOCAL_IO_ERROR" if stage == "local_io" else "EXPORT_FORMAT_INVALID",
+                stage=stage,
+                details={"line": reader.reader.line_num if reader is not None else 0, "rows_processed": rows},
             ) from exc
         return BlobFinalizationResult(schema=output_header, rows_processed=rows)
 
@@ -389,24 +402,36 @@ def _xlsx_column_index(value: str) -> int:
     return result - 1
 
 
+def _csv_failure_stage(error: Exception) -> str:
+    if isinstance(error, (gzip.BadGzipFile, EOFError, zlib.error)):
+        return "compression"
+    if isinstance(error, (LookupError, UnicodeError)):
+        return "encoding"
+    if isinstance(error, csv.Error):
+        return "csv_framing"
+    return "local_io"
+
+
 def _local_name(value: str) -> str:
     return value.rsplit("}", 1)[-1]
 
 def _validate_actual_schema(
     actual: tuple[str, ...],
     contract: ExportPrivacyContract,
+    *,
+    stage: str = "finalizer",
 ) -> None:
     if not actual or any(not column for column in actual):
         raise _export_error(
             "export has no complete actual schema",
             code="EXPORT_SCHEMA_MISMATCH",
-            stage="finalizer",
+            stage=stage,
         )
     if len(set(actual)) != len(actual):
         raise _export_error(
             "export schema contains duplicate columns",
             code="EXPORT_SCHEMA_MISMATCH",
-            stage="finalizer",
+            stage=stage,
         )
     unknown = sorted(set(actual) - set(contract.allowed_columns))
     missing = sorted(set(contract.required_columns) - set(actual))
@@ -414,7 +439,7 @@ def _validate_actual_schema(
         raise _export_error(
             "actual export schema violates the privacy contract",
             code="EXPORT_SCHEMA_MISMATCH",
-            stage="finalizer",
+            stage=stage,
             details={"unknown_columns": unknown, "missing_required_columns": missing},
         )
 
