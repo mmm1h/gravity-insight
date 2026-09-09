@@ -10,6 +10,15 @@ SIGNIFICANCE_TEST_RESULT_SCHEMA = "gravity.operator-result.significance-test.v1"
 
 GOVERNED_METHOD_INPUT_SCHEMA = "gravity.operator-input.governed-method.v1"
 GOVERNED_METHOD_RESULT_SCHEMA = "gravity.operator-result.governed-method.v1"
+GOVERNED_METHOD_INPUT_SCHEMA_V2 = "gravity.operator-input.governed-method.v2"
+GOVERNED_METHOD_RESULT_SCHEMA_V2 = "gravity.operator-result.governed-method.v2"
+GOVERNED_METHOD_URIS_V2 = {
+    name: f"operator://gravity/{name}@2"
+    for name in (
+        "campaign-outcome-evaluation", "funnel-diagnosis",
+        "metric-decomposition", "scenario-projection", "sentiment-aggregation",
+    )
+}
 GOVERNED_METHOD_URIS = {
     "campaign-outcome-evaluation": "operator://gravity/campaign-outcome-evaluation@1",
     "churn-segment-profile": "operator://gravity/churn-segment-profile@1",
@@ -26,6 +35,9 @@ __all__ = [
     "GOVERNED_METHOD_INPUT_SCHEMA",
     "GOVERNED_METHOD_RESULT_SCHEMA",
     "GOVERNED_METHOD_URIS",
+    "GOVERNED_METHOD_INPUT_SCHEMA_V2",
+    "GOVERNED_METHOD_RESULT_SCHEMA_V2",
+    "GOVERNED_METHOD_URIS_V2",
     "RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA",
     "RETURNED_DIMENSION_CHANGE_URI",
     "SIGNIFICANCE_TEST_INPUT_SCHEMA",

@@ -8,7 +8,7 @@
   "deterministic": true,
   "method": {
     "method_id": "scenario-projection",
-    "revision": 1,
+    "revision": 2,
     "description": "Apply caller-supplied bounded coefficients and parameter changes to a deterministic scenario."
   },
   "schemas": {
@@ -33,6 +33,10 @@
     {
       "assumption_id": "returned-facts-only",
       "statement": "The method consumes only explicit returned facts with stable evidence references."
+    },
+    {
+      "assumption_id": "explicit-rowwise-only-v1",
+      "statement": "Version 1 cannot express scope/partition/lineage proof. Only explicit mode=rowwise is executable; omitted or aggregate/cumulative mode fails closed with a migration remedy."
     }
   ],
   "requirements": {
@@ -67,7 +71,8 @@
     ],
     "limitations": [
       "Coefficients and changes are caller-supplied governed inputs.",
-      "Scenario output is not a forecast guarantee."
+      "Scenario output is not a forecast guarantee.",
+      "Version 1 supports explicit rowwise output only, with no totals, normalized shares or cumulative conversion."
     ]
   },
   "failure_reasons": [
@@ -76,7 +81,12 @@
     "OPERATOR_NUMERIC_INVALID",
     "OPERATOR_ADDITIVITY_UNSUPPORTED",
     "OPERATOR_RESOURCE_LIMIT",
-    "OPERATOR_OUTPUT_INVALID"
+    "OPERATOR_OUTPUT_INVALID",
+    "OPERATOR_AGGREGATION_UNPROVEN",
+    "OPERATOR_FUNNEL_LINEAGE_UNPROVEN",
+    "OPERATOR_SCOPE_MISMATCH",
+    "OPERATOR_COMPLETENESS_UNSUPPORTED",
+    "OPERATOR_UNIT_MISMATCH"
   ],
   "golden_cases": [
     {

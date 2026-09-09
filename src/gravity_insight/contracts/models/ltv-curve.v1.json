@@ -9,7 +9,7 @@
   "operator_uri": "operator://gravity/scenario-projection@1",
   "artifact": {
     "kind": "parameters",
-    "digest": "c8403cfb39f2d84ca35c36c3949a683ba96191c7523703680975e82191a32dab",
+    "digest": "18516796da45f8ec93cf0fd4e4b7783ef5c1c296c06534971aecb781fd57e995",
     "resource": "ltv-curve.v1.json"
   },
   "lineage": {
@@ -21,7 +21,7 @@
       "fixture://gravity/ltv-curve-conformance@1"
     ],
     "source_digests": [
-      "c8403cfb39f2d84ca35c36c3949a683ba96191c7523703680975e82191a32dab"
+      "18516796da45f8ec93cf0fd4e4b7783ef5c1c296c06534971aecb781fd57e995"
     ],
     "sample_count": 1
   },

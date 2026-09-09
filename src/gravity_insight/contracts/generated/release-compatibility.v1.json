@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "a607923adbc0579245684b76916145e4a315625b63b10f53e444a89957aaaf01"
+    "compatibility_sha256": "fe42d3d0fabe3dcc36d12373607b165cef7df2d875c1902e69ced3b71855e6c4"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -326,11 +326,22 @@
       "version": "0.3.15",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.15-hard-break-1",
+          "description": "Nonempty runtime pins are exact execution constraints: malformed pins fail with `INPUT_INVALID`, mismatched pins fail with `RUNTIME_PIN_MISMATCH` before startup distribution access, authentication or dispatch, even when updates are disabled. Unset/empty pins retain default-on updates. Activation receipts now report `running_version: null` until the staged child observes its imported version; a child exit alone is not execution-version proof.",
+          "migration_guide": "docs/migration/0.3.15.md"
+        },
+        {
+          "id": "0.3.15-hard-break-2",
+          "description": "`campaign-outcome-evaluation`, `metric-decomposition`, `scenario-projection`, `sentiment-aggregation` and `funnel-diagnosis` Operators at `@1` now require explicit `mode=rowwise`. Implicit totals, normalized shares and cumulative conversion fail closed with registered reasons and a migration remedy. Exact `@2` contracts restore supported cross-row results with explicit scope, additivity-axis, partition or linear-lineage evidence; no silent version upgrade is provided. Three scenario Model families have explicit `@2` successors and refreshed `@1` parameter digests. Skill Library URI migration remains owned by R2-05/R2-12. Migration guide: [0.3.15](docs/migration/0.3.15.md)",
+          "migration_guide": "docs/migration/0.3.15.md"
+        }
+      ],
       "soft_breaks": [],
-      "migration_guide": null
+      "migration_guide": "docs/migration/0.3.15.md"
     }
   ]
 }

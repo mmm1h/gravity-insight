@@ -11,6 +11,7 @@ from unittest.mock import patch
 from gravity_insight import ModelRegistry, OperatorRegistry
 from gravity_insight.cli import main
 from gravity_insight.operator_ids import (
+    GOVERNED_METHOD_URIS_V2,
     RETURNED_DIMENSION_CHANGE_URI,
     SIGNIFICANCE_TEST_URI,
 )
@@ -34,12 +35,12 @@ class OperatorModelCliTests(unittest.TestCase):
         return code, json.loads(rendered), stderr.getvalue()
 
     def test_root_exports_and_operator_inspection_are_offline(self) -> None:
-        self.assertEqual(11, OperatorRegistry().list()["count"])
-        self.assertEqual(5, ModelRegistry().list()["count"])
+        self.assertEqual(16, OperatorRegistry().list()["count"])
+        self.assertEqual(8, ModelRegistry().list()["count"])
 
         code, listed, stderr = self.invoke("operators", "list")
         self.assertEqual(0, code)
-        self.assertEqual(11, listed["count"])
+        self.assertEqual(16, listed["count"])
         self.assertEqual("", stderr)
 
         code, described, stderr = self.invoke(
@@ -72,6 +73,37 @@ class OperatorModelCliTests(unittest.TestCase):
         self.assertEqual(4, code)
         self.assertEqual(["MODEL_UNVALIDATED"], missing["reason_codes"])
         self.assertEqual("", stderr)
+
+    def test_scoped_contracts_match_sdk_describe_and_validate_without_aliasing(self) -> None:
+        registry = OperatorRegistry()
+        for method in GOVERNED_METHOD_URIS_V2:
+            for version in (1, 2):
+                with self.subTest(method=method, version=version):
+                    uri = f"operator://gravity/{method}@{version}"
+                    code, described, stderr = self.invoke("operators", "describe", uri)
+                    self.assertEqual((0, ""), (code, stderr))
+                    self.assertEqual(registry.describe(uri), described)
+                    contract = described["operator"]["contract"]
+                    self.assertEqual(f"gravity.operator-input.governed-method.v{version}",
+                                     contract["schemas"]["input"]["schema_version"])
+                    code, validated, stderr = self.invoke(
+                        "operators", "validate", "--input", json.dumps(contract)
+                    )
+                    self.assertEqual((0, "valid", ""), (code, validated["status"], stderr))
+
+    def test_model_successors_expose_exact_operator_bindings_on_cli(self) -> None:
+        registry = ModelRegistry()
+        for name in ("game-revenue-forecast", "ltv-curve", "segmented-ltv-curve"):
+            with self.subTest(model=name):
+                uri = f"model://gravity/{name}@2"
+                code, described, stderr = self.invoke("models", "describe", uri)
+                self.assertEqual((0, ""), (code, stderr))
+                self.assertEqual(registry.describe(uri), described)
+                code, evaluated, stderr = self.invoke(
+                    "models", "evaluate", uri, "--at", "2026-09-09"
+                )
+                self.assertEqual((0, ""), (code, stderr))
+                self.assertEqual(registry.evaluate(uri, at="2026-09-09"), evaluated)
 
     def test_explicit_model_source_can_be_evaluated_but_never_predicts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

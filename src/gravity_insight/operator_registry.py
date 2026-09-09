@@ -22,6 +22,7 @@ from .operators.governed_methods import execute_governed_method
 from .operators.significance_test import significance_test
 from .operator_ids import (
     GOVERNED_METHOD_URIS,
+    GOVERNED_METHOD_URIS_V2,
     RETURNED_DIMENSION_CHANGE_URI,
     SIGNIFICANCE_TEST_URI,
 )
@@ -45,7 +46,7 @@ _RUNNERS: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
     ),
     **{
         uri: execute_governed_method
-        for uri in GOVERNED_METHOD_URIS.values()
+        for uri in (*GOVERNED_METHOD_URIS.values(), *GOVERNED_METHOD_URIS_V2.values())
     },
     SIGNIFICANCE_TEST_URI: significance_test,
 }

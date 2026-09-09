@@ -1,20 +1,20 @@
 {
   "artifact_kind": "model_parameters",
   "schema_version": "gravity.model-parameters.v1",
-  "model_uri": "model://gravity/game-revenue-forecast@1",
-  "revision": 2,
-  "operator_uri": "operator://gravity/scenario-projection@1",
+  "model_uri": "model://gravity/game-revenue-forecast@2",
+  "revision": 1,
+  "operator_uri": "operator://gravity/scenario-projection@2",
   "mode": "caller_bound_parameters",
   "required_parameters": [
     "baseline components",
     "bounded coefficients",
     "scenario changes",
     "horizon days",
-    "explicit rowwise mode"
+    "explicit mode, value scopes and evidenced disjoint aggregation axis"
   ],
   "limitations": [
     "Project values are supplied through governed Semantic and Context bindings.",
     "The artifact validates deterministic scenario mechanics, not project predictive accuracy.",
-    "Version 1 only supports rowwise scenarios; use the version 2 Model and Operator for evidenced totals."
+    "Aggregate scenarios require additive or permitted semi-additive components; per-user LTV ratios must use rowwise mode."
   ]
 }

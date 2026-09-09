@@ -13,8 +13,8 @@ using the installed Runtime and its explicitly locked project artifacts. Agents
 are first-class consumers: discovery, execution, trust, completeness, method,
 context, and error classification stay machine-decidable. Progress is measured
 in closed analysis journeys, not in operation, Skill, or registry counts. See
-`docs/roadmap.md` and `specs/agent-runtime/index.md` for the current schedule,
-dependency graph, parallelism constraints, and explicit non-goals.
+`docs/roadmap.md` for current decisions and `specs/agent-runtime/index.md`
+for component Owners, maturity, and limits; neither is a Program requirement graph.
 
 ## Repository scope
 
@@ -65,17 +65,17 @@ reporting language, and campaign decisions remain in the calling project.
   `docs/maintainers/technical-debt.md` for structural debt,
   `docs/candidate-capability-matrix.md` for capability evidence, or
   `docs/analysis-journeys.md` for journey state. Approved Agent Runtime
-  requirements live only in `specs/agent-runtime/` and must bind the current
-  directive; they are delivery contracts, not per-round logs or a second
-  architecture. Do not create one-off proposal files, a `docs/proposals/` tree,
+  work follows the current directive and component Owners; approved task scope
+  is not a Program ledger or a second architecture.
+  Do not create one-off proposal files, a `docs/proposals/` tree,
   or new per-round archive logs.
 
 ## Parallel development
 
 Independent units develop from `main` on separate short-lived `codex/<unit>`
 branches and merge through a green PR. Do not split one unit across branches by phase; core, surface,
-and agent handoff have ordering dependencies. For a directive-approved
-`staged_epic`, each indexed milestone is an independent unit and branch, and
+and agent handoff have ordering dependencies. For an externally approved
+staged delivery, each approved milestone is an independent unit and branch, and
 must still deliver its own complete core/surface/handoff slice rather than
 splitting that milestone again by implementation phase.
 
@@ -111,11 +111,10 @@ Do not let the list become an archive.
   product.
 - SDK changes start at `docs/maintainers/index.md` and then read only the
   task-specific maintainer page.
-- Gravity Agent Runtime program work also reads
-  `specs/agent-runtime/directive.json`, the complete repository-canonical
-  `architecture-source.md`, the Requirement Index, and exactly one externally
-  approved `ready` requirement. A specification cannot approve itself or
-  silently change the parent architecture.
+- Gravity Agent Runtime work reads `specs/agent-runtime/directive.json` and its
+  sole architecture Owner, [Canonical Architecture](docs/architecture.md), then
+  only relevant Owners in [Component Index](specs/agent-runtime/index.md).
+  Follow approved task scope; do not self-approve or silently change architecture.
 - Git preserves non-normative history and evidence. Do not recreate a
   `docs/archive/` tree or use historical commits as current interfaces,
   schedule, capability state, or debt.
@@ -194,7 +193,7 @@ isolated.
 
 - `main` is the only long-lived development and integration branch. It is
   protected: never commit or push directly to it, force-push it, or weaken its
-  required `test` status check.
+  required `ci-required` status check.
 - Create each development worktree on a short-lived branch based on current
   `main`. Give it an ignored `.venv` and editable install, then validate with
   that environment's Python; shared editable interpreters can resolve imports

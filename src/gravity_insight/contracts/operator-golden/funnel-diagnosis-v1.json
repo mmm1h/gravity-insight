@@ -36,16 +36,14 @@
         ],
         "parameters": {},
         "unit": "entity_count",
-        "additivity": "non_additive"
+        "additivity": "non_additive",
+        "mode": "rowwise"
       },
       "expected": {
         "schema_version": "gravity.operator-result.governed-method.v1",
         "method": "funnel-diagnosis",
         "verdict": "returned_step_loss_observed",
         "metrics": {
-          "first_step_entered": "100",
-          "final_step_reached": "40",
-          "cumulative_conversion": "0.4",
           "largest_loss_step": "payment"
         },
         "ranked_rows": [

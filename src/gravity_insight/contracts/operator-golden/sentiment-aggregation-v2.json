@@ -1,0 +1,127 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/sentiment-aggregation@2",
+  "cases": [
+    {
+      "case_id": "bounded-conformance",
+      "input": {
+        "schema_version": "gravity.operator-input.governed-method.v2",
+        "method": "sentiment-aggregation",
+        "rows": [
+          {
+            "key": "positive",
+            "values": {
+              "count": 60
+            },
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            },
+            "scopes": {
+              "count": {
+                "unit": "classified_item_count",
+                "population": "fixture-population@1",
+                "window": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-07",
+                  "timezone": "UTC",
+                  "grain": "day"
+                },
+                "completeness": "complete",
+                "evidence": {
+                  "step_id": "scope-fixture",
+                  "path": "/scopes/0/count"
+                }
+              }
+            }
+          },
+          {
+            "key": "negative",
+            "values": {
+              "count": 40
+            },
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            },
+            "scopes": {
+              "count": {
+                "unit": "classified_item_count",
+                "population": "fixture-population@1",
+                "window": {
+                  "start": "2026-09-01",
+                  "end": "2026-09-07",
+                  "timezone": "UTC",
+                  "grain": "day"
+                },
+                "completeness": "complete",
+                "evidence": {
+                  "step_id": "scope-fixture",
+                  "path": "/scopes/1/count"
+                }
+              }
+            }
+          }
+        ],
+        "parameters": {},
+        "unit": "classified_item_count",
+        "additivity": "additive",
+        "mode": "aggregate",
+        "aggregation": {
+          "axis": "component",
+          "allowed_axes": [
+            "component"
+          ],
+          "disjointness": {
+            "kind": "disjoint_partition",
+            "members": [
+              "positive",
+              "negative"
+            ],
+            "evidence": {
+              "step_id": "partition-fixture",
+              "path": "/partition"
+            }
+          }
+        }
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.governed-method.v2",
+        "method": "sentiment-aggregation",
+        "verdict": "returned_categories_aggregated",
+        "metrics": {
+          "returned_total": "100"
+        },
+        "ranked_rows": [
+          {
+            "key": "positive",
+            "value": "60",
+            "contribution": "0.6",
+            "rank": 1,
+            "evidence": {
+              "step_id": "evidence-0",
+              "path": "/rows/0"
+            }
+          },
+          {
+            "key": "negative",
+            "value": "40",
+            "contribution": "0.4",
+            "rank": 2,
+            "evidence": {
+              "step_id": "evidence-1",
+              "path": "/rows/1"
+            }
+          }
+        ],
+        "limitations": [
+          "Rows must already be classified under one project-approved taxonomy.",
+          "Aggregation neither classifies text nor infers author intent."
+        ],
+        "mode": "aggregate",
+        "completeness": "complete"
+      }
+    }
+  ]
+}

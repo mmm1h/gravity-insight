@@ -437,11 +437,11 @@ class CacheCliTests(CacheFixture):
             cache_cli.main(["prune", "--dry-run", "--execute"])
         self.assertEqual(result.exception.code, 2)
 
-    def test_json_dispatch_bypasses_all_startup_and_credentials(self):
+    def test_json_dispatch_checks_pin_but_bypasses_updates_and_credentials(self):
         self.put(f"{SCOPE}/field-policy/{DIGEST}.pkl")
         for command in ("status", "prune"):
             output = io.StringIO()
-            with patch.object(entry, "_startup_upgrade_exit", side_effect=AssertionError("network")), patch.object(entry, "_startup_skill_maintenance", side_effect=AssertionError("mutation")), patch.object(entry, "ensure_first_run_credentials", side_effect=AssertionError("credentials")), contextlib.redirect_stdout(output):
+            with patch("gravity_insight.auto_upgrade.maybe_auto_upgrade", side_effect=AssertionError("network")), patch.object(entry, "_startup_skill_maintenance", side_effect=AssertionError("mutation")), patch.object(entry, "ensure_first_run_credentials", side_effect=AssertionError("credentials")), contextlib.redirect_stdout(output):
                 code = entry.main(["cache", command, "--json"])
             self.assertEqual(code, 0)
             report = json.loads(output.getvalue())

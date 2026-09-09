@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "37651ee2230f592bb17dd7432545f4aed1d3e75768412fab1fbc1c4cc84e4bc2",
-    "manual_review_sha256": "8bd36a328a9df4bc5032a4a98637bb6c863c953b3fe1b3c3bc2f5ae6cc885c2b",
+    "reference_evidence_sha256": "11bc2b9189dcb1860ce7f425fbc1ac31ce26850b90a7f3344da14a11f5f43633",
+    "manual_review_sha256": "f2a339ebd3c68190c981b9d8b982422be2b89952f9b988497f8cc7ff21ef440b",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3228,
-    "scanned_file_count": 3220,
+    "version_controlled_file_count": 3249,
+    "scanned_file_count": 3241,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -748,12 +748,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 311,
-    "reference_site_count": 309,
-    "manual_review_site_count": 213,
-    "reference_manual_overlap_count": 211,
+    "tracked_site_count": 316,
+    "reference_site_count": 314,
+    "manual_review_site_count": 218,
+    "reference_manual_overlap_count": 216,
     "manual_only_site_count": 2,
-    "unique_source_keys": 311,
+    "unique_source_keys": 316,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -762,7 +762,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 191,
+      "manual_patch_expression": 196,
       "module_qualname_dependency": 7,
       "static_import": 90,
       "string_reference": 5
@@ -772,12 +772,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 191
+      "non_string_patch_expression": 196
     },
     "dispositions": {
-      "no_migration_effect": 311
+      "no_migration_effect": 316
     },
-    "sites_sha256": "b8acd901897f9108f05cb1fa83e69efdaead670f020be27d5ee0dff81cf19740"
+    "sites_sha256": "1bc2b8473f603d18c5a2df8eaec86cd3ade7967f57539e2721ba248a08c15336"
   },
   "blockers": [],
   "site_fields": [
@@ -1140,7 +1140,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22319:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22398:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1155,7 +1155,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:65374:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:65623:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1905,7 +1905,7 @@
       }
     ],
     [
-      "src/gravity_insight/skill_host_install.py:13:1:from import",
+      "src/gravity_insight/skill_host_install.py:14:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1935,7 +1935,7 @@
       }
     ],
     [
-      "src/gravity_insight/skill_hub_cli.py:11:1:from import",
+      "src/gravity_insight/skill_hub_cli.py:12:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2520,7 +2520,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:443:26:patch.object",
+      "tests/test_auto_upgrade.py:445:26:patch.object",
       "rm",
       "non_string_patch_expression",
       "installer",
@@ -2535,7 +2535,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:635:13:patch.object",
+      "tests/test_auto_upgrade.py:649:21:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2550,7 +2550,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:640:13:patch.object",
+      "tests/test_auto_upgrade.py:650:21:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2565,7 +2565,52 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:658:13:patch.object",
+      "tests/test_auto_upgrade.py:651:21:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "entry",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      59,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_auto_upgrade.py:652:21:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "entry",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      59,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_auto_upgrade.py:653:21:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "entry",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      59,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_auto_upgrade.py:740:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2580,7 +2625,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:663:13:patch.object",
+      "tests/test_auto_upgrade.py:745:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2595,7 +2640,37 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:674:14:patch.object",
+      "tests/test_auto_upgrade.py:763:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "upgrade",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      39,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_auto_upgrade.py:768:13:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "upgrade",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      39,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_auto_upgrade.py:779:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade_state",
@@ -2610,7 +2685,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:788:13:patch.object",
+      "tests/test_auto_upgrade.py:923:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2625,7 +2700,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:793:13:patch.object",
+      "tests/test_auto_upgrade.py:928:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.installer",
@@ -2640,7 +2715,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:817:13:patch.object",
+      "tests/test_auto_upgrade.py:952:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -2655,7 +2730,7 @@
       }
     ],
     [
-      "tests/test_auto_upgrade.py:832:13:patch.object",
+      "tests/test_auto_upgrade.py:967:13:patch.object",
       "rm",
       "non_string_patch_expression",
       "upgrade",
@@ -3045,7 +3120,7 @@
       }
     ],
     [
-      "tests/test_cache_lifecycle.py:444:103:patch.object",
+      "tests/test_cache_lifecycle.py:444:115:patch.object",
       "rm",
       "non_string_patch_expression",
       "entry",
@@ -3060,22 +3135,7 @@
       }
     ],
     [
-      "tests/test_cache_lifecycle.py:444:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "entry",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      59,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_cache_lifecycle.py:444:194:patch.object",
+      "tests/test_cache_lifecycle.py:444:206:patch.object",
       "rm",
       "non_string_patch_expression",
       "entry",
@@ -4960,6 +5020,21 @@
       "no_migration_effect",
       "direct_object_patch",
       9,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_skill_trigger_diagnosis.py:198:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "Path",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      54,
       {
         "kind": "none"
       }

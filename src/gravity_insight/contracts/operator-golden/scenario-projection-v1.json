@@ -38,17 +38,15 @@
           "horizon_days": 30
         },
         "unit": "scenario_unit",
-        "additivity": "additive"
+        "additivity": "additive",
+        "mode": "rowwise"
       },
       "expected": {
         "schema_version": "gravity.operator-result.governed-method.v1",
         "method": "scenario-projection",
-        "verdict": "scenario_increase_observed",
+        "verdict": "returned_rows_projected",
         "metrics": {
-          "horizon_days": "30",
-          "baseline_total": "150",
-          "scenario_total": "165",
-          "scenario_change": "15"
+          "horizon_days": "30"
         },
         "ranked_rows": [
           {

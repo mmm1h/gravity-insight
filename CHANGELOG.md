@@ -17,12 +17,20 @@ Target release: `0.3.15`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** Nonempty runtime pins are exact execution constraints: malformed pins fail with `INPUT_INVALID`, mismatched pins fail with `RUNTIME_PIN_MISMATCH` before startup distribution access, authentication or dispatch, even when updates are disabled. Unset/empty pins retain default-on updates. Activation receipts now report `running_version: null` until the staged child observes its imported version; a child exit alone is not execution-version proof.
+- **Hard break:** `campaign-outcome-evaluation`, `metric-decomposition`, `scenario-projection`, `sentiment-aggregation` and `funnel-diagnosis` Operators at `@1` now require explicit `mode=rowwise`. Implicit totals, normalized shares and cumulative conversion fail closed with registered reasons and a migration remedy. Exact `@2` contracts restore supported cross-row results with explicit scope, additivity-axis, partition or linear-lineage evidence; no silent version upgrade is provided. Three scenario Model families have explicit `@2` successors and refreshed `@1` parameter digests. Skill Library URI migration remains owned by R2-05/R2-12.
+
+Migration guide: [0.3.15](docs/migration/0.3.15.md)
 
 ### Added
 
+- Additive: `doctor` and `skills status --diagnose` distinguish read-only Runtime seed/CAS readiness, project lock resolution, native file consistency, unknown host discovery and unmeasured invocation/routing. Default `skills status` retains its maintenance receipt v1 and masks local paths; status no longer creates state or CAS directories. Neither diagnostic installs host files or infers business success from local readiness.
 - Additive: `ratio_identity` derived-metric operator reconciles a native ratio metric against the ratio of two unrounded amount columns via exact cross-multiplication, with caller-declared exact and quantization tolerances; disagreement surfaces `warn`/`fail` data-quality diagnostics (`RATIO_IDENTITY_QUANTIZATION_DRIFT`, `RATIO_IDENTITY_MISMATCH`) instead of unqualified success, zero or missing denominators yield explicitly undefined results, and total rows divide summed amounts rather than averaging row-level ratios.
 - Additive: `report-ap-cost-observation` v5 declares the ad-cost grain and provenance boundary: `click_company` as the only native non-time cost dimension, revenue cohorts anchored on activation, an estimation policy that forbids presenting allocated cost as native or exact, and machine-readable capability gaps `AP_COST_DATE_SEMANTICS_UNDECLARED` (upstream never declares which date `ap_cost` represents) and `POST_REGISTRATION_USER_GROUP_EXACT_COST_UNAVAILABLE` (no upstream fact links ad spend to post-registration user groups). Versions v1-v4 remain unchanged; existing bindings do not auto-upgrade.
+
+### Fixed
+
+- Governed metric decomposition now sums and normalizes unrounded component changes, rounding only the output; sub-micro-unit changes no longer disappear before aggregation.
 
 ## [0.3.14] - 2026-09-08
 

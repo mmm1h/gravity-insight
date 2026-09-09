@@ -1,24 +1,24 @@
 {
   "artifact_kind": "operator",
   "schema_version": "gravity.operator.v1",
-  "uri": "operator://gravity/campaign-outcome-evaluation@1",
-  "version": 1,
+  "uri": "operator://gravity/metric-decomposition@2",
+  "version": 2,
   "owner": "gravity-runtime/methods",
   "lifecycle": "active",
   "deterministic": true,
   "method": {
-    "method_id": "campaign-outcome-evaluation",
-    "revision": 2,
-    "description": "Compare caller-gated campaign outcomes and rank returned contribution without claiming incrementality."
+    "method_id": "metric-decomposition",
+    "revision": 1,
+    "description": "Decompose one returned metric change into explicit caller-gated components."
   },
   "schemas": {
     "input": {
-      "schema_version": "gravity.operator-input.governed-method.v1",
-      "resource": "governed-method-input-v1.schema.json"
+      "schema_version": "gravity.operator-input.governed-method.v2",
+      "resource": "governed-method-input-v2.schema.json"
     },
     "output": {
-      "schema_version": "gravity.operator-result.governed-method.v1",
-      "resource": "governed-method-output-v1.schema.json"
+      "schema_version": "gravity.operator-result.governed-method.v2",
+      "resource": "governed-method-output-v2.schema.json"
     }
   },
   "implementation": {
@@ -35,8 +35,8 @@
       "statement": "The method consumes only explicit returned facts with stable evidence references."
     },
     {
-      "assumption_id": "explicit-rowwise-only-v1",
-      "statement": "Version 1 cannot express scope/partition/lineage proof. Only explicit mode=rowwise is executable; omitted or aggregate/cumulative mode fails closed with a migration remedy."
+      "assumption_id": "scope-evidence-v2",
+      "statement": "Caller supplies evidence-backed scopes and metric allowed axes. Aggregate requires a complete disjoint partition; cumulative requires a complete linear root/equal/subset chain. No source evidence is fetched or inferred by Runtime."
     }
   ],
   "requirements": {
@@ -61,8 +61,8 @@
   },
   "claim_policy": {
     "allowed": [
-      "returned campaign outcome change",
-      "returned campaign contribution"
+      "returned metric component change",
+      "returned arithmetic contribution share"
     ],
     "forbidden": [
       "causal claim",
@@ -70,9 +70,9 @@
       "guaranteed future outcome"
     ],
     "limitations": [
-      "Only returned comparable outcomes are evaluated.",
-      "Contribution is observational, not causal.",
-      "Version 1 supports explicit rowwise output only, with no totals, normalized shares or cumulative conversion."
+      "Components share one metric contract.",
+      "Arithmetic contribution is not causality.",
+      "Rowwise mode never produces totals or cumulative conversion; cross-row claims require verified structural scope evidence."
     ]
   },
   "failure_reasons": [
@@ -91,7 +91,7 @@
   "golden_cases": [
     {
       "case_id": "bounded-conformance",
-      "resource": "campaign-outcome-evaluation-v1.json"
+      "resource": "metric-decomposition-v2.json"
     }
   ]
 }

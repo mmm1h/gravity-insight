@@ -11,12 +11,12 @@
 5. **控制结构增长。** 共享 spine 串行接线；领域 core 可并行；生成 compiler、provenance、coverage 产物时串行。
 
 ## 当前架构范围
-
 [Canonical Architecture](architecture.md) 只规定跨组件不变量，并由 [`directive.json`](../specs/agent-runtime/directive.json)
 绑定 digest。当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 [Runtime Component Index](../specs/agent-runtime/index.md)。`main` 是唯一长期分支，日常变更从短命分支
 经必需状态检查和 PR 合入。
 ## 已定决策
+- R2-01 采用 `@1` 失败关闭与显式 `@2` 合同并存：无依据的总体、归一化占比、漏斗累计不再成功；合法逐行比较保留，金额汇总及真实线性漏斗通过新合同的 scope、允许聚合轴、互斥分区和 `root/equal/subset` 谱系恢复。没有删除读取入口或合法分析能力，不静默别名升级；三组场景 Model 提供版本后继并同步参数 digest。八个 Skill 定义的 URI 不在本批迁移，交由 R2-05/R2-12 连同内容 digest、lock、分发工件处理。消费边界和安全回滚见 [0.3.15 迁移说明](migration/0.3.15.md)。
 - 本机缓存统一根解析并保留旧账号快照位置回退，读取能力与 principal/账号分片语义不变；缓存盘点/回收见 [CLI](reference/cli.md#本机缓存)。不自动迁移 SQLite、不跨 workspace 共享 CAS；无完整引用证明的热点只报告保留，不宣称已完成 GC。
 - #171/#170 的当前取证裁决见[脱敏收据](../evidence/forensics/20260907_operation_recertification.json)：Scatter 补登记已观察的嵌套字段；订单细查仅在末页回显、SDK has_more=false、累计条数等于 total_number 三项齐全后提升 completeness。所有原读取入口与已登记字段保留，没有读取能力损失，也未改变调用参数或结果 envelope；只刷新对应 operation 的版本、指纹与 Validation。默认值字典的可选键 warning、本地素材的空数组元素类型、素材报表空样本仍是未闭合证据，user_detail 的 cohort completeness 继续 unknown；不以声明升级代替现场证明。
 - #176 需求 1 只允许显式开启的凭据失效切换，默认单账号能力不变；429 仍走既有退避。2026-09-07 Owner 的独立进程复现否定同 IP 下的账号级限流隔离，需求 2 不推进。完整读取以账号/世代租约重跑，权限与数据范围准入未知即拒绝；高级入口和机器状态见 [SDK 多账号边界](reference/sdk.md#多账号鉴权失效切换高级默认关闭)。#175 的一般刷新根目录重绑定保持独立交付，本变更不修复或依赖该缺陷。单账号读取能力没有删除或降级。

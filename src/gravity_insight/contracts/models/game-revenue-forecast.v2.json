@@ -1,16 +1,16 @@
 {
   "artifact_kind": "model",
   "schema_version": "gravity.model-artifact.v1",
-  "uri": "model://gravity/segmented-ltv-curve@1",
-  "version": 1,
-  "alias": "segmented-ltv-curve",
+  "uri": "model://gravity/game-revenue-forecast@2",
+  "version": 2,
+  "alias": "game-revenue-forecast-v2",
   "owner": "gravity-runtime/model-methods",
   "lifecycle": "active",
-  "operator_uri": "operator://gravity/scenario-projection@1",
+  "operator_uri": "operator://gravity/scenario-projection@2",
   "artifact": {
     "kind": "parameters",
-    "digest": "47c04082bbce12d4a847719a6a05ff8148708112abc4882cf0f7c49833ed467c",
-    "resource": "segmented-ltv-curve.v1.json"
+    "digest": "331f36210a8127d6d1463700ab528d1265ba4a1a875f3509051ad969a4364ba7",
+    "resource": "game-revenue-forecast.v2.json"
   },
   "lineage": {
     "fitting_window": {
@@ -18,10 +18,10 @@
       "end": "2026-08-31"
     },
     "data_uris": [
-      "fixture://gravity/segmented-ltv-curve-conformance@1"
+      "fixture://gravity/game-revenue-forecast-conformance@1"
     ],
     "source_digests": [
-      "47c04082bbce12d4a847719a6a05ff8148708112abc4882cf0f7c49833ed467c"
+      "331f36210a8127d6d1463700ab528d1265ba4a1a875f3509051ad969a4364ba7"
     ],
     "sample_count": 1
   },
@@ -39,7 +39,7 @@
     ]
   },
   "safe_domain": {
-    "horizon_days": 3650,
+    "horizon_days": 365,
     "minimum_samples": 1,
     "units": [
       "currency"

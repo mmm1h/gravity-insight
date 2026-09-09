@@ -12,6 +12,7 @@ from gravity_insight.operator_contract import (
 )
 from gravity_insight.operator_ids import (
     GOVERNED_METHOD_URIS,
+    GOVERNED_METHOD_URIS_V2,
     RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA,
     RETURNED_DIMENSION_CHANGE_URI,
     SIGNIFICANCE_TEST_URI,
@@ -59,8 +60,9 @@ class OperatorRegistryTests(unittest.TestCase):
             RETURNED_DIMENSION_CHANGE_URI,
             SIGNIFICANCE_TEST_URI,
             *GOVERNED_METHOD_URIS.values(),
+            *GOVERNED_METHOD_URIS_V2.values(),
         }
-        self.assertEqual(11, listed["count"])
+        self.assertEqual(16, listed["count"])
         self.assertEqual(expected, {item["uri"] for item in listed["operators"]})
         self.assertEqual("gravity.operator.v1", artifact["contract"]["schema_version"])
         self.assertEqual(
@@ -73,7 +75,7 @@ class OperatorRegistryTests(unittest.TestCase):
 
     def test_governed_methods_execute_their_exact_golden_inputs(self) -> None:
         registry = OperatorRegistry()
-        for method, uri in GOVERNED_METHOD_URIS.items():
+        for method, uri in (*GOVERNED_METHOD_URIS.items(), *GOVERNED_METHOD_URIS_V2.items()):
             with self.subTest(method=method):
                 artifact = registry.artifact(uri)
                 case = artifact["golden"]["cases"][0]
