@@ -53,21 +53,21 @@ Trusted Publishing 加 PEP 740 attestation 已经提供来源证明，且是 PyP
 
 | 环节 | 当前状态 |
 | --- | --- |
-| installer | 外部（`pip` 或用户自行安装）。Runtime **不自我替换 wheel**，`InstallerContract` 固定 `owner=external-installer`、`runtime_mutation=forbidden`，已有测试验证无 subprocess / pip / `execv` / 环境与解释器改动 |
-| canary | **不存在。** 没有 canary 环境，也没有金丝雀发布流程 |
-| rollback | 依赖 PyPI 的 yank 与 GitHub Release 删除，**没有自动化** |
+| installer | `InstallerContract` 保持 `owner=external-installer`、`runtime_mutation=forbidden`；业务 Runtime 不自我替换 wheel。CLI Launcher 在 Journey 开始前使用独立不可变 pip stage，验证后由新进程激活，失败回退未改动的基础环境，见 [0.3.10](../migration/0.3.10.md) |
+| Stage B canary | **不存在。** 没有 canary 环境，也没有金丝雀发布流程 |
+| Stage B rollback | 依赖 PyPI 的 yank 与 GitHub Release 删除，**没有自动化**；不包括上述 Launcher 失败回退 |
 
 **重新评估的条件：** 出现第二个维护者，或有部署场景需要真实的灰度与回滚。
 
 ### 5. Stage B 触发条件 —— 保持未激活
 
-Stage B 是"外部 Installer 执行更新"的阶段（见 `src/gravity_insight/control_plane/lifecycle.py`）。当前 Runtime 只生成 Plan，不执行。
+Stage B 是外部 Installer 生命周期（见 `src/gravity_insight/control_plane/lifecycle.py`）；该接口只生成 Plan。它不代表 CLI Launcher 的启动更新未执行。
 
 当前的两个消费场景都不需要它：本机开发直接用 editable 安装；work-dashboard 由自己的升级工具安装，不需要 Runtime 代劳。
 
 **2026-09-04 修正：** 本节原先还写着"work-dashboard 升级工具默认只 preview、`--apply` 才改钉版与 digest lock，这个显式设计是被认可的"。**该论据已被实际结果推翻**——正因为默认什么都不做，没人记得跑它：work-dashboard 的 HEAD 一直钉在 0.3.2，仓库自带 venv 停在 0.3.3，而 PyPI 已经到 0.3.7。Owner 据此改判"默认取最新，只有明确要求时才固定版本"，消费方已改为下限约束加安装后记录实际版本。
 
-**被推翻的只是这条论据，不是本节的决定。** Stage B 仍然保持未激活：消费方现在自己就能跟上最新，Runtime 依旧只生成 Plan、不自我替换 wheel。
+**Stage B 仍保持未激活。** 已批准的 Launcher 启动更新不等于 Journey 热更新：[架构](../architecture.md)约束业务执行 Runtime，一次 Journey 的依赖与 execution snapshot 保持冻结，禁止运行中下载代码、更新 lock 或部分热切版本。
 
 **重新评估的条件：** 出现一个无人值守的部署场景，其更新频率高到显式操作成为瓶颈。
 
@@ -108,4 +108,4 @@ Stage B 是"外部 Installer 执行更新"的阶段（见 `src/gravity_insight/c
 
 结论与文档一致，**不需要 Owner 裁决**。文档中"不应通过改为 Public 获取保护能力"的判断依然成立（仓库历史含待处置敏感 blob）。
 
-作为对照，`mmm1h/gravity-insight` 是公开仓，其 `main` 的实际保护为：`strict=true`、必需检查 `['test']`、无需 review、`enforce_admins=true`、禁止 force push 与删除。
+作为对照，`mmm1h/gravity-insight` 的 `main` 必需检查为 `['ci-required']`（2026-09-09 只读 branch protection 查询）；维护要求见[仓库控制](owner-actions.md#repository-controls)，不得削弱远端保护。

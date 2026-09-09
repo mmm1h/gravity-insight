@@ -42,10 +42,8 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 ## Repository controls
 
 - `main` is protected: no direct pushes or force pushes; changes merge through PRs.
-- The required status check is currently the Windows `test` job. Owner should add
-  `core-linux-python311`, `core-linux-python312`, and
-  `installed-wheel-linux-python312` after their first green run; do not remove or
-  weaken `test`.
+- Branch protection requires the aggregate `ci-required` check, not an individual
+  platform job. Do not remove or weaken it or its upstream CI gates.
 - Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
   ownership. This prerequisite is now satisfied: `.github/CODEOWNERS` assigns
   `* @mmm1h`, and the placeholder was closed in `e3fd462f`.
