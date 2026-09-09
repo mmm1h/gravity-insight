@@ -72,7 +72,7 @@ class LockDrivenHostInstallTests(unittest.TestCase):
         return code, json.loads(stdout.getvalue() or stderr.getvalue())
 
     def test_no_lock_cli_preserves_full_44_skill_bundle(self) -> None:
-        code, plan = self.invoke()
+        code, plan = self.invoke("--all")
         self.assertEqual(0, code)
         self.assertEqual(44, len(plan["actions"]))
         files = [path for path in (self.root / "cas" / "agent-skills").rglob("*") if path.is_file()]

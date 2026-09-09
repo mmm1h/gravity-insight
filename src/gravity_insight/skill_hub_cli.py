@@ -88,6 +88,13 @@ def add_skill_hub_actions(actions: Any) -> None:
     _local(repair, required=False)
 
     host_plan = _host_install_parser(actions)
+    for name in ("host-install", "host-uninstall", "host-readback"):
+        native = actions.add_parser(name, help="Preview/approve project-native files, or independently read back a plan.")
+        native.add_argument("--plan", required=True, help="Saved host-install-plan JSON.")
+        native.add_argument("--project-root", default=".", help="Project root; user-global scope is rejected.")
+        if name != "host-readback":
+            native.add_argument("--approve", help="Exact preview_digest; omit for read-only preview.")
+        native.set_defaults(network_required=False, _gravity_handler=dispatch)
 
     for parser in (
         listed,
@@ -110,6 +117,17 @@ def add_skill_hub_actions(actions: Any) -> None:
 
 
 def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
+    if args.skills_command in {"host-install", "host-uninstall", "host-readback"}:
+        from .skill_host_install import execute_native_install, preview_native_install, readback_native_install
+
+        plan = _json(args.plan)
+        project = Path(args.project_root)
+        if args.skills_command == "host-readback":
+            return readback_native_install(plan, project)
+        operation = "install" if args.skills_command == "host-install" else "uninstall"
+        if args.approve is None:
+            return preview_native_install(plan, project, operation=operation)
+        return execute_native_install(plan, project, approve=args.approve, operation=operation)
     workspace = None
     state_root = args.state_root
     if state_root is None:
@@ -188,9 +206,24 @@ def _maintenance_dispatch(
         result.pop("receipt_digest")
         return {**result, "receipt_digest": canonical_digest(result)}
     if command == "host-install-plan":
+        lock_path = args.lock
+        if lock_path is None and not args.all:
+            if workspace is None:
+                from .workspace import load_workspace
+
+                workspace = load_workspace()
+            root = workspace.root if workspace.configured else Path.cwd()
+            lock_path = root / "gravity.skills.lock.json"
+            if not lock_path.exists():
+                raise SkillHubContractError(
+                    "HOST_SKILL_LOCK_REQUIRED",
+                    "Select Skills with gravity agent-catalog categories, then gravity skills list and "
+                    "gravity skills lock --skill <exact-uri> --output gravity.skills.lock.json "
+                    "--state-root <state-root>. Use --lock to select that lock, or explicitly --all for a bundle plan.",
+                )
         return client.host_install_plan(
             args.host, args.host_root,
-            selection=_json(args.lock) if args.lock is not None else None,
+            selection=_json(str(lock_path)) if lock_path is not None else None,
         )
     project_root = (
         workspace.root
@@ -264,12 +297,14 @@ def _host_install_parser(actions: Any) -> Any:
     )
     parser.add_argument("--host", choices=("codex", "claude"), required=True)
     parser.add_argument("--host-root", required=True)
-    parser.add_argument(
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--all", action="store_true", help="Explicitly plan the entire bundled library.")
+    selection.add_argument(
         "--lock",
         help=(
             "Select exact Skills from a project lock matching this Runtime and "
-            "active bundled source/index and package digests; omit to stage the "
-            "full bundle. Offline; does not install or remove Host files."
+            "active bundled source/index and package digests; defaults to the "
+            "project lock. Offline; does not install or remove Host files."
         ),
     )
     _local(parser, required=False)
