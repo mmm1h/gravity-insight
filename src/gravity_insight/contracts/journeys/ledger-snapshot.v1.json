@@ -117,7 +117,7 @@
       }
     },
     {
-      "blocker_note": "`gravity.derived-metrics.v1` 只变换调用方提供的已有结果，不独立取得上游数据；业务公式、总体、单位和声明集合权威性由调用方负责。",
+      "blocker_note": "`gravity.derived-metrics.v1` 只变换调用方提供的已有结果，不独立取得上游数据；业务公式、总体、单位和声明集合权威性由调用方负责。`ratio_identity` 以金额比对账原生比值，并用调用方声明的精确/量化容差输出 Data Quality；合计仍由 Multidim `calc_total` 单一 owner 先汇总金额，派生层不平均行级比值。",
       "can_return_business_content": false,
       "counted": false,
       "display_name": "在已有结果上执行调用方绑定的派生算术与声明集合对账",
@@ -126,7 +126,7 @@
       "request_budget": {
         "raw": "1 / 2（公式未知；workspace 声明后）"
       },
-      "row_digest": "ae7aebdbf6ad9b22cc3c5e144733fe95a139974995e44d4a923b12fbb4b55ed5",
+      "row_digest": "5277005e565dc1b6035ca67d5e40b0afeeeebacc784a5385b5461a63ebec349a",
       "surfaces": {
         "agent": "有（未声明公式返回目标 gap）",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "ba1241b212f6396c17a4a2d9da057f783e6ee47e14cebc0af04e46a524b97bee",
+  "snapshot_digest": "b5ac770bbc1f4ab7bf6021094b44946389a59bf9bed10fc19fa1f3d799dae22e",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "bcdb887808f15ec3c059c6017953da4cad83e30843cd29880d52867712777dbd"
+  "source_sha256": "5917f11c96ed5c0a08831d57406006752e505f923282ee8e43eead2969444cf2"
 }

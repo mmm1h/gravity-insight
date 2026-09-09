@@ -20,12 +20,14 @@ DERIVED_METRICS_CAPABILITY: Mapping[str, Any] = {
         "derived metrics",
         "derived arithmetic",
         "metric reconciliation",
+        "numeric identity reconciliation",
         "派生指标",
         "算术派生",
         "集合对账",
+        "数值恒等式对账",
     ),
     "description": (
-        "对已有结果 envelope 执行调用方绑定的比率、占比、变化和声明集合对账；"
+        "对已有结果 envelope 执行调用方绑定的比率、占比、变化、数值恒等式和声明集合对账；"
         "SDK 不提供任何业务公式；不要用于用同一 Analysis Spec 重跑两个时期，"
         "后者属于 Analysis Query 跨期比较。"
     ),
@@ -57,9 +59,11 @@ def derived_metrics_product_query(query: str) -> bool:
         "derived metrics",
         "derived arithmetic",
         "metric reconciliation",
+        "numeric identity reconciliation",
         "派生指标",
         "算术派生",
         "集合对账",
+        "数值恒等式对账",
     }
 
 
