@@ -225,7 +225,7 @@ def _describe_response(
         )
     capability = _capability_for_item(selected, client)
     if selected["source"] == "gap":
-        from .discovery_support import discovery_next_fields
+        from .output import discovery_next_fields
 
         navigation = discovery_next_fields(False, [capability])
     else:

@@ -394,7 +394,9 @@ class ExportContractTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as tmp:
             destination = Path(tmp) / "user-detail.xlsx"
-            with patch.object(client, "_export_gateway") as gateway:
+            with patch.object(client, "_export_gateway") as gateway, patch.object(
+                client, "read", return_value={"ok": True, "page": {"total_items": 1}},
+            ):
                 gateway.return_value.create.side_effect = AssertionError(
                     "create must not run until column codes are accepted"
                 )

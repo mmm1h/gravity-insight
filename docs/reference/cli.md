@@ -466,7 +466,7 @@ gravity skills verify --lock gravity.skills.lock.json --state-root <state-root>
 gravity skills status [--state-root <state-root>] [--lock <project-lock>]
 gravity skills bootstrap [--state-root <state-root>]
 gravity skills repair [--state-root <state-root>]
-gravity skills host-install-plan --host codex|claude --host-root <host-skill-directory> [--state-root <state-root>] [--lock <project-lock>]
+gravity skills host-install-plan --host codex|claude --host-root <host-skill-directory> [--state-root <state-root>] [--lock <project-lock> | --all]
 ```
 
 普通 `gravity` 业务命令在 dispatch 前默认调用 `SkillHubClient.bootstrap_bundled()`；Runtime 自动升级
@@ -495,10 +495,10 @@ CLI 默认 JSON 输出另含 `project_lock`：读取显式 `--lock`，否则读�
 诊断不改写锁或 maintenance receipt；输出摘要覆盖本次诊断。检查成功（含漂移）走 stdout、rc=0；锁无效或不可读走 stderr、非零 rc，不能当作无锁或一致。
 
 `skills host-install-plan` 重新验证 active seed 与 Agent index/archive，把只读源目录放入本地 CAS，
-并只生成交给 Codex 或 Claude 原生 Skill installer 的 action。Runtime 不写宿主 Skill 目录；目标内容
+并只生成交给显式原生安装器的 action；plan 自身不写宿主 Skill 目录。目标内容
 完全相同则为 `unchanged`，任何用户修改、额外文件或链接都返回 `local_override_conflict` 且不覆盖。
 plan 的 activation 固定为 `next_host_start`；仓库不声称 Codex 和 Claude 当前会话支持运行中 reload。
-显式 `--lock` 只展开所选项；不传仍展开完整 bundle，不隐式读取项目锁，也不删除共享 Host 根内其他条目。
+CLI 默认读取调用项目锁；无锁失败并给补锁路径，显式 `--all` 才展开完整 bundle。SDK 无 selection 仍表示完整 bundle；两者不混用，也不删除未选条目。
 SDK 对应 `SkillHubClient.host_install_plan(..., selection=<lock mapping>)`；沿用 v1 plan，无 selection sidecar。
 所有选中项在 stage 前校验 lock 自身摘要、Runtime 精确版本、source/index、URI、manifest/package/archive 摘要及包元数据；任一不符整体拒绝，不退回全量。
 完整 seed、managed lock 与 maintenance `skill_count` 仍表示供给量；plan 的 actions/unchanged/conflicts 表示所选集合。
@@ -509,6 +509,14 @@ Agent Skill 可安装不代表可执行；入口必须读取
 不带 `--source` 的 `gravity models ...` 读取 Runtime Core 内置且受信的 Model Artifact；
 `--source` 只在当前进程隔离读取显式本地 JSON，既不持久注册也不继承 Runtime trust，仍是诊断面而
 不是 Skill 安装方式。
+
+### 原生 Host 安装与读回
+
+`skills host-install --plan <json> --project-root <project>` 只读预览；核对后加 `--approve <preview_digest>` 才执行。独立 `skills host-readback --plan <json> --project-root <project>` 核验目标文件一致性，不证明所有权记录；`host-uninstall` 使用同样的预览/批准流程。仅支持项目 `.agents/skills`（Codex）或 `.claude/skills`（Claude），不支持用户全局目录，不覆盖用户修改。安装不等于宿主加载或触发，下一宿主启动后仍须取得实际发现/调用记录。
+
+### Skill 触发诊断
+
+离线 `gravity doctor` 的 `skill_diagnosis` 为六层只读观察：`runtime_library`、`project_lock`、`native_files`、`host_discovery`、`invocation`、`routing`。后面三层没有真实宿主事件时为 `unknown/not_measured`；不据文件存在推断加载，不据调用推断执行成功。安装到执行的六阶段见[上手包](../team-onboarding.md#原生-host-首次安装)。
 
 ## Metadata
 

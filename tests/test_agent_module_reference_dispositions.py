@@ -969,6 +969,12 @@ def validate_active_scope_owner_projection(
     technical_debt: str,
     ledger: dict[str, Any],
 ) -> None:
+    """R2-08 retains two execution facade edges after three value-edge cuts.
+
+    The exact current imports and 4/3/2 residual first-ring components are
+    reviewed in test_agent_module_migration_characterization; the 82-move
+    historical ledger stays immutable.
+    """
     moves = ledger.get("scope", {}).get("one_to_one_moves", [])
     _require(len(moves) == 82, "scope projection requires the reviewed 82 moves")
     _require("R17" not in roadmap, "roadmap still contains Program construction history")
@@ -978,7 +984,7 @@ def validate_active_scope_owner_projection(
         "technical debt lost the current Agent package owner boundary",
     )
     _require(
-        "五条有意保留的 facade 依赖" in technical_debt,
+        "两条执行型 facade 依赖（batch、input_resolution 调用 discover_capabilities）" in technical_debt,
         "technical debt lost the retained facade constraint",
     )
 
@@ -1219,12 +1225,18 @@ class AgentModuleReferenceDispositionTests(unittest.TestCase):
             ),
             "technical-debt facade relation": (
                 roadmap,
-                technical_debt.replace("五条有意保留的 facade 依赖", "facade dependencies", 1),
+                technical_debt.replace(
+                    "两条执行型 facade 依赖（batch、input_resolution 调用 discover_capabilities）",
+                    "facade dependencies", 1,
+                ),
                 "lost the retained facade constraint",
             ),
             "technical-debt both owners": (
                 roadmap,
-                technical_debt.replace("五条有意保留的 facade 依赖", "", 1),
+                technical_debt.replace(
+                    "两条执行型 facade 依赖（batch、input_resolution 调用 discover_capabilities）",
+                    "", 1,
+                ),
                 "lost the retained facade constraint",
             ),
         }
@@ -1927,7 +1939,7 @@ class GateFailureGuidanceTests(unittest.TestCase):
                 journey_ledger, "rendered_snapshot", return_value="new"
             ), patch.object(sys, "argv", ["generate_journey_ledger.py", "--check"]), redirect_stdout(output):
                 self.assertEqual(1, journey_ledger.main())
-        self.assertIn("does not match docs/analysis-journeys.md", output.getvalue())
+        self.assertIn("does not match structured governance owners", output.getvalue())
         self.assertIn("python scripts/generate_journey_ledger.py", output.getvalue())
 
     def test_skill_library_check_rejects_tracked_generated_mirrors(self) -> None:

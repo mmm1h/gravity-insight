@@ -15,11 +15,12 @@ from gravity_insight import __version__
 from gravity_insight.compiler import ContractError, JsonSchemaValidator
 from gravity_insight.skill_hub_archive import validate_skill_archive
 from gravity_insight.skill_hub_contract import compile_hub_index, compile_hub_source
+from gravity_insight.skill_package import SkillPackageError
 
-try:
-    from generate_skill_library import PUBLISH_BASE, validate_agent_archive
-except ModuleNotFoundError:  # Imported as scripts.verify_skill_library_release.
-    from scripts.generate_skill_library import PUBLISH_BASE, validate_agent_archive
+if __package__:
+    from .generate_skill_library import PUBLISH_BASE, validate_agent_archive, verify_build_manifest_pin
+else:  # Executed directly from scripts/.
+    from generate_skill_library import PUBLISH_BASE, validate_agent_archive, verify_build_manifest_pin
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +53,10 @@ def verify_release(fetch: _Fetch | None = None) -> dict[str, Any]:
     manifest_bytes = selected_fetch(
         f"{PUBLISH_BASE}/{MANIFEST_NAME}", _MANIFEST_LIMIT
     )
+    try:
+        verify_build_manifest_pin({MANIFEST_NAME: manifest_bytes})
+    except SkillPackageError as exc:
+        raise SkillLibraryReleaseError(str(exc)) from exc
     manifest = _json_object(manifest_bytes, "build manifest")
     rows = _release_rows(manifest)
     downloaded: dict[str, bytes] = {}

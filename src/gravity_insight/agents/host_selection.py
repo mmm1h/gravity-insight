@@ -13,7 +13,7 @@ from .host_catalog import (
     host_catalog_sources,
     host_product_catalog,
 )
-from .discovery_support import catalog_browse_next
+from .output import SCHEMA_VERSION, catalog_browse_next
 from ..errors import InputValidationError
 from ..contracts.envelope_obligations import serialize_envelope
 from ..host_effect_sources import (
@@ -405,7 +405,6 @@ def _selection_envelope(
     compiled: Mapping[str, Any],
     workspace: Any | None,
 ) -> dict[str, Any]:
-    from ..agent import SCHEMA_VERSION
     from .discovery_policy import safe_discovery_query
     from .handoff import (
         agent_execution_contract, agent_fallbacks,

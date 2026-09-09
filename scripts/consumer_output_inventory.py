@@ -15,13 +15,13 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_insight.journey_ledger import parse_journey_ledger
+from gravity_insight.journey_ledger import FACTS_PATH, load_journey_ledger
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_ROOT = ROOT / "src" / "gravity_insight" / "manifests"
 SOURCE_ROOT = ROOT / "src" / "gravity_insight"
-JOURNEYS = ROOT / "docs" / "analysis-journeys.md"
+JOURNEYS = FACTS_PATH
 SCHEMA_VERSION_RE = re.compile(r"^gravity(?:-insight|-sql|\.)[a-z0-9_.-]*\.v[0-9]+$")
 
 
@@ -166,7 +166,7 @@ def _operations() -> list[dict[str, Any]]:
 
 
 def _journeys() -> list[dict[str, Any]]:
-    snapshot = parse_journey_ledger(JOURNEYS.read_text(encoding="utf-8"))
+    snapshot = load_journey_ledger(JOURNEYS)
     return [
         {
             "product": row["display_name"],
@@ -206,7 +206,7 @@ def inventory() -> dict[str, Any]:
         "schema_version": "gravity.consumer-output-inventory.v1",
         "method": {
             "operations": "all compiled stable manifests",
-            "products": "every row in docs/analysis-journeys.md; counted=false preserves compatibility rows",
+            "products": "every structured Journey ledger row; counted=false preserves compatibility rows",
             "text_boundary": (
                 "potential_text is a conservative contract upper bound; current contracts "
                 "do not prove human authorship or scalar types for every path"

@@ -73,7 +73,10 @@
   ],
   "host_skill_plan": {
     "command": "gravity skills host-install-plan --host <codex|claude> --host-root <exact-host-skill-directory>",
-    "execution_owner": "selected_host_native_skill_installer",
+    "execution_owner": "explicit_project_native_skill_installer",
+    "preview_command": "gravity skills host-install --plan <saved-plan.json> --project-root <project>",
+    "approve_command": "gravity skills host-install --plan <saved-plan.json> --project-root <project> --approve <preview_digest>",
+    "readback_command": "gravity skills host-readback --plan <saved-plan.json> --project-root <project>",
     "runtime_writes_host_directory": false,
     "local_override_result": "local_override_conflict",
     "activation": "next_host_start",

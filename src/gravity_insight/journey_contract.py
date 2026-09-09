@@ -1,4 +1,4 @@
-"""Versioned Journey Contract registry bound to the human Markdown ledger."""
+"""Versioned Journey Contract registry bound to the structured Journey ledger."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ _JOURNEY_ROOT = Path(__file__).resolve().parent / "contracts" / "journeys"
 
 
 class JourneyContractError(AgentRuntimeContractError):
-    """A Journey Contract or its human-ledger binding is invalid."""
+    """A Journey Contract or its structured-ledger binding is invalid."""
 
 
 def journey_artifacts() -> tuple[dict[str, Any], ...]:

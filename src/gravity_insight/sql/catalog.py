@@ -2,33 +2,46 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping
 
-from gravity_insight.find import query_match
-from gravity_insight.workspace import Workspace, load_workspace
+from gravity_insight.agents.query_match import query_match
+from gravity_insight.sql.time_window import EvidenceFormatError
+from gravity_insight.workspace import Workspace, WorkspaceError, load_workspace, require_products
+
+
+def product_definition(product: str, workspace: Workspace | None = None) -> Mapping[str, Any]:
+    """Read a registered definition with the SQL boundary's existing error identity."""
+
+    selected = load_workspace() if workspace is None else workspace
+    try:
+        return selected.product(product)
+    except WorkspaceError as exc:
+        raise EvidenceFormatError(str(exc)) from exc
+
+
+def product_apps(product: str, workspace: Workspace | None = None) -> tuple[int, ...]:
+    selected = load_workspace() if workspace is None else workspace
+    definition = product_definition(product, selected)
+    return tuple(selected.resolve_app(value) for value in definition["apps"])
 
 
 def describe_products(workspace: Workspace | None = None) -> list[dict[str, Any]]:
     """Return callable product contracts without exposing implementation SQL."""
 
-    from gravity_insight.sql import products
-
     selected = load_workspace() if workspace is None else workspace
     return [
         _describe_product(name, selected)
-        for name in products.product_names(selected)
+        for name in require_products(selected)
     ]
 
 
 def _describe_product(name: str, workspace: Workspace) -> dict[str, Any]:
-    from gravity_insight.sql import products
-
-    definition = products._product_definition(name, workspace)
+    definition = product_definition(name, workspace)
     return {
         "name": name,
         "kind": definition["kind"],
         "datasource": definition["datasource"],
-        "app_ids": list(products._product_apps(name, workspace)),
+        "app_ids": list(product_apps(name, workspace)),
         "privacy": definition["privacy"],
         "output_fields": list(definition["output_fields"]),
         "output_semantics": dict(definition.get("output_semantics", {})),

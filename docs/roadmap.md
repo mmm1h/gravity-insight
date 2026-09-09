@@ -14,8 +14,9 @@
 [Canonical Architecture](architecture.md) 只规定跨组件不变量，并由 [`directive.json`](../specs/agent-runtime/directive.json)
 绑定 digest。当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；组件 Owner、成熟度与当前限制见
 [Runtime Component Index](../specs/agent-runtime/index.md)。`main` 是唯一长期分支，日常变更从短命分支
-经必需状态检查和 PR 合入。
+经必需状态检查和 PR 合入。R2-08 本次只拆发现/SQL 第一环，保留执行能力与公共 facade；17 模块 Agent 编排环和 11 模块 Plan 环留待后续版本，结构证据归[技术债第 14 项](maintainers/technical-debt.md#14-根包仍然扁平跨执行核心的大环仍未解)。
 ## 已定决策
+- #203 用户明细 projection v2 仅纳入 7 个在线观察字段，163 个未实测候选保留 gap。保留 SDK code 字典序并纠正输入同序承诺；原两列读取能力不丢失。新增 live metadata、task-bound 总数、类型与空值诊断；分阶段下载须携带同任务收据。没有删除读取入口，旧无收据任务不提升为完整导出；迁移见 [0.3.15](migration/0.3.15.md#user-detail-export-projection)。本地阶段里程碑不是合入或发布声明。
 - R2-01 采用 `@1` 失败关闭与显式 `@2` 合同并存：无依据的总体、归一化占比、漏斗累计不再成功；合法逐行比较保留，金额汇总及真实线性漏斗通过新合同的 scope、允许聚合轴、互斥分区和 `root/equal/subset` 谱系恢复。没有删除读取入口或合法分析能力，不静默别名升级；三组场景 Model 提供版本后继并同步参数 digest。八个 Skill 定义的 URI 不在本批迁移，交由 R2-05/R2-12 连同内容 digest、lock、分发工件处理。消费边界和安全回滚见 [0.3.15 迁移说明](migration/0.3.15.md)。
 - 本机缓存统一根解析并保留旧账号快照位置回退，读取能力与 principal/账号分片语义不变；缓存盘点/回收见 [CLI](reference/cli.md#本机缓存)。不自动迁移 SQLite、不跨 workspace 共享 CAS；无完整引用证明的热点只报告保留，不宣称已完成 GC。
 - #171/#170 的当前取证裁决见[脱敏收据](../evidence/forensics/20260907_operation_recertification.json)：Scatter 补登记已观察的嵌套字段；订单细查仅在末页回显、SDK has_more=false、累计条数等于 total_number 三项齐全后提升 completeness。所有原读取入口与已登记字段保留，没有读取能力损失，也未改变调用参数或结果 envelope；只刷新对应 operation 的版本、指纹与 Validation。默认值字典的可选键 warning、本地素材的空数组元素类型、素材报表空样本仍是未闭合证据，user_detail 的 cohort completeness 继续 unknown；不以声明升级代替现场证明。
@@ -69,12 +70,11 @@
 - 不把业务模块、活动策略、SKU 或埋点字典放进 SDK。
 - 不为单一调用点建立插件、注册表、依赖注入或第二套执行框架。
 - 不以扩大隐私投影、自动重试写入或猜测父资源来填补证据缺口。
-
 ## 结论写入规则
 
 - 当前排期和跨模块决策更新本页。
 - 结构债务更新[技术债清单](maintainers/technical-debt.md)。
 - 候选证据更新[候选矩阵](candidate-capability-matrix.md)。
-- 动线状态更新[分析动线](analysis-journeys.md)。
+- 动线状态由 `governance/journey-ledger-facts.v1.json` 拥有，旧注释单列 `journey-ledger-annotations.v1.json`，再生成[分析动线](analysis-journeys.md)；snapshot v2 只改变来源身份，旧行字段、顺序与摘要等价，读取能力无损，当前消费者不再解析 Markdown。graph definition/baseline 同样由 `governance/module-graph-*.v1.json` 拥有。
 - 工作提案和请求账本放 `tmp/`；不要再创建逐趟 Markdown。
-- 历史与外部调研过程由 Git 保存；当前文档只保留写入唯一 Owner 的有效结论。
+- 2026-09-09 R2 审计是固定输入，已吸收结论退出默认阅读链；其他 R2 任务仍独立验收，不据文档迁移宣称 Host 毕业。CT01–CT05 保留有效合同、来源/权利边界与固定发行证据，施工史由 Git 保存；历史生产认证不代表当前状态。

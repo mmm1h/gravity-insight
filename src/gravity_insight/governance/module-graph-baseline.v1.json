@@ -1,0 +1,84 @@
+{
+  "definition_id": "gravity-insight-runtime-possible-module-dependency-graph.v1",
+  "definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
+  "edge_kind_counts": {
+    "ast_delayed_import": 518,
+    "ast_eager_import": 2727,
+    "lazy_export_owner": 62,
+    "package_parent": 717
+  },
+  "node_count": 718,
+  "profiles": {
+    "ast+lazy-exports": {
+      "cyclic_scc_count": 4,
+      "cyclic_scc_sha256": "7eaba3f3f80ba86a30c98d3d8b631c7ca2d05cf2e92eeeb89712e418d85f7140",
+      "cyclic_scc_sizes": [
+        438,
+        3,
+        2,
+        2
+      ],
+      "edge_count": 3284,
+      "graph_sha256": "95c102fc4525ac754f3d6168cf215b56177ff969a4fe2c465b57643a72117c29",
+      "largest_cyclic_scc_size": 438,
+      "self_loop_scc_count": 0
+    },
+    "ast-only": {
+      "cyclic_scc_count": 21,
+      "cyclic_scc_sha256": "eed06de02fa9a7fae6e41ba272461570380f6a851232741fcc5d7ab01ae5ad1e",
+      "cyclic_scc_sizes": [
+        17,
+        11,
+        8,
+        6,
+        4,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1
+      ],
+      "edge_count": 3222,
+      "graph_sha256": "0f5a9eb9bd386e0fc5984f76396dbb0abeb7d6f5f57e1e1d19a4516796c49d3d",
+      "largest_cyclic_scc_size": 17,
+      "self_loop_scc_count": 1
+    },
+    "canonical": {
+      "cyclic_scc_count": 7,
+      "cyclic_scc_sha256": "a0e86f9b1792a8c39edaa9decd88b6595d95e992b4d17480d37e2378923cc25c",
+      "cyclic_scc_sizes": [
+        555,
+        15,
+        8,
+        3,
+        2,
+        2,
+        2
+      ],
+      "edge_count": 3916,
+      "graph_sha256": "97af9bb468e5cf996ecab5d100b22e8a8fdc7b287a1160ca9999b26832f4a6c6",
+      "largest_cyclic_scc_size": 555,
+      "self_loop_scc_count": 0
+    },
+    "eager-ast-only": {
+      "cyclic_scc_count": 0,
+      "cyclic_scc_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "cyclic_scc_sizes": [],
+      "edge_count": 2727,
+      "graph_sha256": "8161dac4bc6cd09ec8ad6e6942020c2f323a1e339d87eb50d661197f7ead3747",
+      "largest_cyclic_scc_size": 0,
+      "self_loop_scc_count": 0
+    }
+  }
+}

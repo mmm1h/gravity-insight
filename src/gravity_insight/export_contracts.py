@@ -305,7 +305,12 @@ def _column_description(privacy: Mapping[str, Any]) -> dict[str, Any]:
         "input_field": privacy.get("request_column_field"),
         "must_match_input_order_exactly": bool(
             privacy.get("request_column_field")
-        ),
+        ) and privacy.get("column_order") != "request_code_lexicographic",
+        **({"column_order": privacy["column_order"],
+            "must_match_input_column_set_exactly": True,
+            "metadata_fields": _plain(privacy.get("metadata_fields", {})),
+            "temporal_semantics": privacy.get("temporal_semantics")}
+           if privacy.get("column_order") else {}),
         "allowed_codes": request_columns,
         "required_codes": required_request_columns,
         "output_headers_by_code": labels,
@@ -359,6 +364,11 @@ def validate_wire_projection(contract: Any, request: Any) -> None:
     else:
         actual_columns = ()
     matches = actual_columns == request.requested_columns
+    if contract.privacy.get("column_order") == "request_code_lexicographic":
+        matches = (
+            len(actual_columns) == len(request.requested_columns)
+            and set(actual_columns) == set(request.requested_columns)
+        )
     if not matches:
         raise _export_error(
             "wire export columns do not match the approved request projection",
