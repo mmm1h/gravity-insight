@@ -1032,8 +1032,9 @@ class ObservedActivationReceiptTests(unittest.TestCase):
             journal.write_text(json.dumps({"to_version": "99.0.0", "running_version": None}), encoding="utf-8")
             completed = subprocess.run(
                 [sys.executable, "-I", "-c", installer._BOOTSTRAP, str(root)],
-                env={**os.environ, installer.RECEIPT_ENV: str(journal)},
-                capture_output=True, text=True, timeout=30, check=False,
+                env={**os.environ, installer.RECEIPT_ENV: str(journal),
+                     "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
+                capture_output=True, text=True, encoding="utf-8", timeout=30, check=False,
             )
             self.assertNotEqual(0, completed.returncode)
             self.assertIn("version does not match", completed.stderr)
