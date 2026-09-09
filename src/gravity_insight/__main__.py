@@ -22,7 +22,7 @@ Usage:
   gravity cache status|prune
   gravity docs check
   gravity capabilities trust|validate|impact
-  gravity skills list|show|sync|search|resolve|lock|fetch|install|update|verify|audit|status|bootstrap|repair|host-install-plan
+  gravity skills list|show|sync|search|resolve|lock|fetch|install|update|verify|audit|status|bootstrap|repair|host-install-plan|host-install|host-uninstall|host-readback
   gravity trusted-packs resolve|lock|fetch|verify|install-plan
   gravity action segment-update|dashboard-delivery preview|execute --input <json|file|->
   gravity experiment propose|outcome-handoff --input <json|file|->
@@ -168,6 +168,9 @@ def _startup_upgrade_exit(args: Sequence[str]) -> int | None:
 
 
 def _startup_skill_maintenance(args: Sequence[str]) -> None:
+    command = args[1:] if args[:1] == ["insight"] else args
+    if len(command) >= 2 and command[0] == "skills" and command[1] in {"host-install", "host-uninstall", "host-readback"}:
+        return
     from .skill_maintenance_startup import maybe_bootstrap_bundled_skills
 
     maybe_bootstrap_bundled_skills(args)

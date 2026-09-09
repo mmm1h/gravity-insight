@@ -1,4 +1,4 @@
-"""Verified, plan-only handoff to native Agent Skill installers."""
+"""Verified native Skill plans and explicit project-scope file installation."""
 
 from __future__ import annotations
 
@@ -240,7 +240,7 @@ def _host_target_state(
     return ("unchanged" if exact else "conflict"), preimage
 
 
-def _bounded_target_files(target: Path) -> list[dict[str, Any]] | None:
+def _bounded_target_files(target: Path, *, directories: list[str] | None = None) -> list[dict[str, Any]] | None:
     rows: list[dict[str, Any]] = []
     pending = [target]
     count = 0
@@ -256,6 +256,8 @@ def _bounded_target_files(target: Path) -> list[dict[str, Any]] | None:
                 if path.is_symlink() or is_reparse(metadata):
                     return None
                 if stat.S_ISDIR(metadata.st_mode):
+                    if directories is not None:
+                        directories.append(path.relative_to(target).as_posix())
                     pending.append(path)
                     continue
                 if not _bounded_regular_file(metadata):
