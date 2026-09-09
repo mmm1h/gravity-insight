@@ -26,7 +26,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "适用于新功能或新产品在开发前形成可评审的埋点合同，覆盖业务目标、核心循环、事件、属性、公共属性、用户属性、类型、隐私与验收用例。",
+  "description": "用于为获批业务流程设计可评审的事件属性、隐私与验收合同。用户问“这个新功能该埋哪些可验收事件”时使用。不用于上传生产平台、生成生产代码或证明已采集；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -248,6 +248,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "deployment-complete",
+              "production-collection-confirmed",
+              "write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "上传生产平台、生成生产代码或证明已采集"
+          },
+          "question": "能否用本方法上传生产平台、生成生产代码或证明已采集？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -400,7 +428,7 @@
       "kind": "action",
       "target": "action://project/tracking-plan-review"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

@@ -34,7 +34,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "使用受治理的资格与价值证据生成假设和实验护栏，绝不自动执行推送 Action。",
+  "description": "用于形成带资格、场景、商品与频控条件的礼包候选矩阵。用户问“哪些人群在什么场景适合什么礼包”时使用。不用于创建推送任务或自动触达用户；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -251,6 +251,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "automatic-contact-authorized",
+              "causality",
+              "guaranteed-offer-response"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "创建推送任务或自动触达用户"
+          },
+          "question": "能否用本方法创建推送任务或自动触达用户？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -402,7 +430,7 @@
       "kind": "action",
       "target": "action://project/gift-strategy-review"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

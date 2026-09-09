@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "评估版本化的语句、方言、schema 和执行计划产物，数据库执行与调优变更仍由外部完成。",
+  "description": "用于离线评审查询与执行计划的结构瓶颈及语义等价改写候选。用户问“这段 SQL 为什么扫描多，改写如何验证等价”时使用。不用于连接生产库执行 SQL 或创建索引；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -228,6 +228,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "database-change-authorized",
+              "production-performance-guarantee",
+              "sql-execution-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "连接生产库执行 SQL 或创建索引"
+          },
+          "question": "能否用本方法连接生产库执行 SQL 或创建索引？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -379,7 +407,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

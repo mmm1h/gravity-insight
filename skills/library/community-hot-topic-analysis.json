@@ -32,7 +32,7 @@
   "covers_journeys": [
     "analysis.gravity.game.community-context-correlation"
   ],
-  "description": "必须提供与同一 App 和时间窗对齐的项目自有 Context Pack，再将返回的行为事实与辅助社区观测结果及假设区分开。",
+  "description": "用于梳理单个社区话题的时间演变、来源差异与可追溯观点。用户问“这个话题何时升温、观点如何变化”时使用。不用于自动回应或把同步变化解释为因果；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -240,6 +240,33 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "自动回应或把同步变化解释为因果"
+          },
+          "question": "能否用本方法自动回应或把同步变化解释为因果？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -387,7 +414,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

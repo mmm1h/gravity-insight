@@ -34,7 +34,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "比较有界观测结果前，对齐内容身份、上线时间和获批的行为指标。",
+  "description": "用于关联新内容上线后的获取、养成、使用、表现和付费观测。用户问“新角色上线后哪些分层表现异常”时使用。不用于自动调整强度或证明上线增量；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -251,6 +251,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-population",
+              "launch-incrementality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "自动调整强度或证明上线增量"
+          },
+          "question": "能否用本方法自动调整强度或证明上线增量？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -402,7 +430,7 @@
       "kind": "experiment",
       "target": "experiment://project/content-balance-review"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

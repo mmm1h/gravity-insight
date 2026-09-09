@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "仅在关卡身份、进入、完成和流失时间窗均已明确后，评估有序的进度观测结果。",
+  "description": "用于比较返回关卡的进入、通关和进度停止，检查候选卡点。用户问“玩家进度主要停在哪些关卡”时使用。不用于把最低通关率直接判为流失原因或自动调难度；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -104,7 +104,7 @@
       },
       {
         "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
-        "identity": "operator://gravity/funnel-diagnosis@1",
+        "identity": "operator://gravity/funnel-diagnosis@2",
         "kind": "operator",
         "reason_code": "DEPENDENCY_AVAILABLE",
         "status": "available"
@@ -244,6 +244,168 @@
         "没有关卡顺序和流失窗合同，能否按最低通关率直接认定根因？"
       ],
       "run_examples": [
+        {
+          "example_id": "operator-v2-conformance",
+          "expected": {
+            "allowed_claims": [
+              "observed-level-dropoff",
+              "returned-level-contribution",
+              "qualified-level-friction"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-progression",
+              "player-intent"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "operator_uri": "operator://gravity/funnel-diagnosis@2",
+            "operator_input": {
+              "schema_version": "gravity.operator-input.governed-method.v2",
+              "method": "funnel-diagnosis",
+              "rows": [
+                {
+                  "key": "view",
+                  "values": {
+                    "order": 1,
+                    "entered": 100,
+                    "reached": 80
+                  },
+                  "evidence": {
+                    "step_id": "evidence-0",
+                    "path": "/rows/0"
+                  },
+                  "scopes": {
+                    "entered": {
+                      "unit": "entity_count",
+                      "population": "synthetic-level-0@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/entered"
+                      }
+                    },
+                    "reached": {
+                      "unit": "entity_count",
+                      "population": "synthetic-level-0@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/reached"
+                      }
+                    }
+                  }
+                },
+                {
+                  "key": "payment",
+                  "values": {
+                    "order": 2,
+                    "entered": 80,
+                    "reached": 40
+                  },
+                  "evidence": {
+                    "step_id": "evidence-1",
+                    "path": "/rows/1"
+                  },
+                  "scopes": {
+                    "entered": {
+                      "unit": "entity_count",
+                      "population": "synthetic-level-1@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/entered"
+                      }
+                    },
+                    "reached": {
+                      "unit": "entity_count",
+                      "population": "synthetic-level-1@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/reached"
+                      }
+                    }
+                  }
+                }
+              ],
+              "parameters": {},
+              "unit": "entity_count",
+              "additivity": "non_additive",
+              "mode": "rowwise",
+              "topology": "independent"
+            }
+          },
+          "question": "合成离线算子示例：验证 rowwise 请求形状，不代表任何项目的真实数据或分析成功。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-player-progression",
+              "player-intent"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "把最低通关率直接判为流失原因或自动调难度"
+          },
+          "question": "能否用本方法把最低通关率直接判为流失原因或自动调难度？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
         {
           "example_id": "complete-success",
           "expected": {
@@ -396,7 +558,7 @@
       "kind": "experiment",
       "target": "experiment://project/level-friction-remediation"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
@@ -424,7 +586,7 @@
         "depends_on": [
           "validate-evidence"
         ],
-        "instruction": "仅用已声明变量和项目校准参数计算关卡流失集中度和相邻基准差，分母为零或单位冲突时不产出数值。",
+        "instruction": "仅用已声明变量和项目校准参数计算关卡流失集中度和相邻基准差，分母为零或单位冲突时不产出数值。 关卡通关率使用 mode=rowwise、topology=independent；各关卡 entered/reached scopes 绑定自己的合格进入人群、窗口和单位，保留 prefix/unknown。重试、分支关卡不能拼成累计链，也不能把跨关卡损失加成独立流失人数。 使用 gravity operators describe operator://gravity/funnel-diagnosis@2 读取绑定 Schema；执行仅由 SDK OperatorRegistry.execute 负责。",
         "on_failure": "METHOD_FORMULA_INVALID",
         "step_id": "compute-indicators"
       },
@@ -537,7 +699,7 @@
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [
-    "operator://gravity/funnel-diagnosis@1"
+    "operator://gravity/funnel-diagnosis@2"
   ],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {

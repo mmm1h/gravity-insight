@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "仅在明确来源覆盖、替代关系和有效时间对齐后，比较带引用的每周社区条目。",
+  "description": "用于汇总一周跨日社区事件、已分类情感变化与来源贡献。用户问“本周社区发生了什么，与上周相比如何”时使用。不用于用单日热度替代周趋势或自动发布周报；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -87,7 +87,7 @@
     "dependency_status": [
       {
         "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
-        "identity": "operator://gravity/sentiment-aggregation@1",
+        "identity": "operator://gravity/sentiment-aggregation@2",
         "kind": "operator",
         "reason_code": "DEPENDENCY_AVAILABLE",
         "status": "available"
@@ -234,6 +234,150 @@
         "没有周窗口和事件门槛，能否自动把热度最高主题写成核心叙事？"
       ],
       "run_examples": [
+        {
+          "example_id": "operator-v2-conformance",
+          "expected": {
+            "allowed_claims": [
+              "observed-weekly-community-change",
+              "returned-weekly-narrative",
+              "qualified-community-risk"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "operator_uri": "operator://gravity/sentiment-aggregation@2",
+            "operator_input": {
+              "schema_version": "gravity.operator-input.governed-method.v2",
+              "method": "sentiment-aggregation",
+              "rows": [
+                {
+                  "key": "positive",
+                  "values": {
+                    "count": 60
+                  },
+                  "evidence": {
+                    "step_id": "evidence-0",
+                    "path": "/rows/0"
+                  },
+                  "scopes": {
+                    "count": {
+                      "unit": "classified_item_count",
+                      "population": "synthetic-community-weekly-report-corpus@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/count"
+                      }
+                    }
+                  }
+                },
+                {
+                  "key": "negative",
+                  "values": {
+                    "count": 40
+                  },
+                  "evidence": {
+                    "step_id": "evidence-1",
+                    "path": "/rows/1"
+                  },
+                  "scopes": {
+                    "count": {
+                      "unit": "classified_item_count",
+                      "population": "synthetic-community-weekly-report-corpus@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/count"
+                      }
+                    }
+                  }
+                }
+              ],
+              "parameters": {},
+              "unit": "classified_item_count",
+              "additivity": "additive",
+              "mode": "aggregate",
+              "aggregation": {
+                "axis": "sentiment-category",
+                "allowed_axes": [
+                  "sentiment-category"
+                ],
+                "disjointness": {
+                  "kind": "disjoint_partition",
+                  "members": [
+                    "positive",
+                    "negative"
+                  ],
+                  "evidence": {
+                    "step_id": "partition-fixture",
+                    "path": "/partition"
+                  }
+                }
+              }
+            }
+          },
+          "question": "合成离线算子示例：验证 aggregate 请求形状，不代表任何项目的真实数据或分析成功。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "用单日热度替代周趋势或自动发布周报"
+          },
+          "question": "能否用本方法用单日热度替代周趋势或自动发布周报？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
         {
           "example_id": "complete-success",
           "expected": {
@@ -386,7 +530,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
@@ -414,7 +558,7 @@
         "depends_on": [
           "validate-evidence"
         ],
-        "instruction": "仅用已声明变量和项目校准参数计算周变化、情感弧线和事件覆盖，分母为零或单位冲突时不产出数值。",
+        "instruction": "仅用已声明变量和项目校准参数计算周变化、情感弧线和事件覆盖，分母为零或单位冲突时不产出数值。 周报对已分类条目数使用 mode=aggregate、additive；count scopes 绑定完整周窗口、同一有界语料总体与 classified_item_count。按项目单标签情感分类形成互斥分区，跨日条目先去重再重分桶；重叠主题不能相加。上周另建完整同口径请求，缺日/来源时只允许显式 rowwise 保留覆盖缺口。 使用 gravity operators describe operator://gravity/sentiment-aggregation@2 读取绑定 Schema；执行仅由 SDK OperatorRegistry.execute 负责。",
         "on_failure": "METHOD_FORMULA_INVALID",
         "step_id": "compute-indicators"
       },
@@ -527,7 +671,7 @@
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [
-    "operator://gravity/sentiment-aggregation@1"
+    "operator://gravity/sentiment-aggregation@2"
   ],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {

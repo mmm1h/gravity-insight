@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "仅在项目支出、结果、平台和归因定义均已明确后，比较受治理的投放观测结果。",
+  "description": "用于比较投放计划从曝光到付费回收的返回表现。用户问“哪个计划花得多但下游质量差”时使用。不用于自动调预算或保证回收；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -245,6 +245,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-channel-population",
+              "incremental-return"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "自动调预算或保证回收"
+          },
+          "question": "能否用本方法自动调预算或保证回收？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -396,7 +424,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

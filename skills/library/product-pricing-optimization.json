@@ -34,7 +34,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "分析弹性前，必须具备项目价格、数量、净价值、币种、优惠和分配语义。",
+  "description": "用于比较可比曝光下的价格带购买与收入响应，评估价格实验依据。用户问“这些价格档位的响应差异能支持价格实验吗”时使用。不用于保证最优价格、推断心理价位或直接改价；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -258,6 +258,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "guaranteed-revenue-improvement",
+              "price-write-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "保证最优价格、推断心理价位或直接改价"
+          },
+          "question": "能否用本方法保证最优价格、推断心理价位或直接改价？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -409,7 +437,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

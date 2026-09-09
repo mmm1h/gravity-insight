@@ -34,7 +34,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "在项目支付口径已绑定后，确认付费率异常，分解分子、分母与返回维度贡献，并沿两层诊断树排除口径漂移和数据质量问题。",
+  "description": "用于核对可比窗口的付费率异常，拆解分子分母和返回维度差异。用户问“付费率下降是人数变了还是分母变了”时使用。不用于证明某次发布或活动导致下降；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -270,6 +270,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-payment-population",
+              "inferred-metric-definition"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope",
+              "metric-definition",
+              "claims"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "证明某次发布或活动导致下降"
+          },
+          "question": "能否用本方法证明某次发布或活动导致下降？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -448,7 +476,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

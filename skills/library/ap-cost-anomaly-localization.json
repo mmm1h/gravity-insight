@@ -35,7 +35,7 @@
   "covers_journeys": [
     "analysis.merge2.ap-cost-anomaly-localization"
   ],
-  "description": "在精确锁定项目获客成本口径后，对比两个等长且不重叠窗口中的返回渠道行，并验证一个调用方选择的渠道切片是否同向变化。",
+  "description": "用于比较两个等长不重叠窗口的返回渠道支出，并检查指定渠道是否同向变化。用户问“这些返回渠道的支出变了吗，指定渠道是否同向”时使用。不用于完整 App 总支出、ROI 或因果归因；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -218,6 +218,37 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-app-total",
+              "unreturned-values",
+              "causality",
+              "incrementality",
+              "roi",
+              "natural-volume-attribution"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "完整 App 总支出、ROI 或因果归因"
+          },
+          "question": "能否用本方法完整 App 总支出、ROI 或因果归因？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "locked-complete-success",
           "expected": {
             "allowed_claims": ["window-metric-change", "returned-dimension-change", "selected-slice-observation"],
@@ -323,7 +354,7 @@
       "kind": "experiment",
       "target": "受治理的渠道假设验证实验"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

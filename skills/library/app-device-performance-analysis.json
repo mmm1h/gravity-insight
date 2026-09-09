@@ -27,7 +27,7 @@
   "covers_journeys": [
     "analysis.gravity.game.device-segment-event-review"
   ],
-  "description": "使用确切的事件、指标、日期时间窗和设备维度，仅比较受治理的事件分析产品返回的行。",
+  "description": "用于定位返回性能异常集中的设备、系统、版本和页面组合。用户问“新版本在哪些机型更卡”时使用。不用于修改客户端代码或保证修复效果；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -224,6 +224,33 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-device-population",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "修改客户端代码或保证修复效果"
+          },
+          "question": "能否用本方法修改客户端代码或保证修复效果？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -369,7 +396,7 @@
       "kind": "experiment",
       "target": "experiment://project/device-performance-remediation"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

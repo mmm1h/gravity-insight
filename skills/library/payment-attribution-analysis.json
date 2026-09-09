@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "比较归因价值前，必须具备项目自有的转化、渠道、时间窗、退款和币种语义。",
+  "description": "用于拆解付费率或规模变化中的分子、分母及返回分层差额。用户问“付费变化来自人数还是用户组成”时使用。不用于把相关维度定为因果责任方；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -238,6 +238,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-attribution",
+              "incremental-channel-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "把相关维度定为因果责任方"
+          },
+          "question": "能否用本方法把相关维度定为因果责任方？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -389,7 +417,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

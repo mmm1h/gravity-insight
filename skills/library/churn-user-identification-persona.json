@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "仅在项目定义流失资格、观测时间窗和获批画像维度后，构建有界分群。",
+  "description": "用于按项目流失定义比较流失队列与活跃对照的返回特征。用户问“流失用户与活跃用户有哪些差异”时使用。不用于预测个人必然流失或创建召回名单；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -252,6 +252,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-user-population",
+              "sensitive-trait-inference"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "预测个人必然流失或创建召回名单"
+          },
+          "question": "能否用本方法预测个人必然流失或创建召回名单？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -403,7 +431,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

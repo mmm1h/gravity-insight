@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "验证前，必须具备队列进入、回访活动、观测周期、时区和延迟数据语义。",
+  "description": "用于核查同一项目留存报表与事件复算的分子分母、队列和时间边界差异。用户问“两个次留结果为何不同，留存口径是否一致”时使用。不用于任意留存下降的因果诊断或只凭百分比判错；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -245,6 +245,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-cohort-population",
+              "inferred-retention-definition"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "任意留存下降的因果诊断或只凭百分比判错"
+          },
+          "question": "能否用本方法任意留存下降的因果诊断或只凭百分比判错？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -396,7 +424,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

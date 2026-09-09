@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "将已评审的项目数据契约转化为验证和所有权要求，不执行连接器变更。",
+  "description": "用于核对候选版本的事件和属性是否符合批准采集方案。用户问“这版上报是否满足上线验收”时使用。不用于用现有脏数据反推应有定义或自动修代码；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -228,6 +228,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "access-authorized",
+              "deployment-complete",
+              "source-schema-compatible"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "用现有脏数据反推应有定义或自动修代码"
+          },
+          "question": "能否用本方法用现有脏数据反推应有定义或自动修代码？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -379,7 +407,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

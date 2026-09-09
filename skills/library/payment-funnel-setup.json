@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "准备确切的步骤、队列、时间窗和输出契约，将仪表盘或已保存分析的写入保持为独立操作。",
+  "description": "用于为明确付费问题设计步骤、窗口、关联和验收对照的漏斗草案。用户问“这个付费漏斗应该怎样定义步骤”时使用。不用于创建、保存或修改线上漏斗；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -238,6 +238,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "inferred-step-definition",
+              "saved-analysis-created"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "创建、保存或修改线上漏斗"
+          },
+          "question": "能否用本方法创建、保存或修改线上漏斗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -389,7 +417,7 @@
       "kind": "action",
       "target": "action://project/payment-funnel-review"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

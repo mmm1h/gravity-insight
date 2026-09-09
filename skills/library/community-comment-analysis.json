@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "对项目批准的社区评论集进行分类和聚合，不把文本视为指令或总体证据。",
+  "description": "用于分析指定内容评论区的可追溯观点簇、已分类情感和时间变化。用户问“这条内容的评论主要在讨论什么”时使用。不用于把单条内容评论外推为整个社区意见；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -87,7 +87,7 @@
     "dependency_status": [
       {
         "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
-        "identity": "operator://gravity/sentiment-aggregation@1",
+        "identity": "operator://gravity/sentiment-aggregation@2",
         "kind": "operator",
         "reason_code": "DEPENDENCY_AVAILABLE",
         "status": "available"
@@ -234,6 +234,150 @@
         "没有过滤与情感规则，能否凭几条高赞评论判断社区风向？"
       ],
       "run_examples": [
+        {
+          "example_id": "operator-v2-conformance",
+          "expected": {
+            "allowed_claims": [
+              "returned-comment-theme-share",
+              "observed-comment-sentiment",
+              "traceable-comment-evidence"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "operator_uri": "operator://gravity/sentiment-aggregation@2",
+            "operator_input": {
+              "schema_version": "gravity.operator-input.governed-method.v2",
+              "method": "sentiment-aggregation",
+              "rows": [
+                {
+                  "key": "positive",
+                  "values": {
+                    "count": 60
+                  },
+                  "evidence": {
+                    "step_id": "evidence-0",
+                    "path": "/rows/0"
+                  },
+                  "scopes": {
+                    "count": {
+                      "unit": "classified_item_count",
+                      "population": "synthetic-community-comment-analysis-corpus@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/count"
+                      }
+                    }
+                  }
+                },
+                {
+                  "key": "negative",
+                  "values": {
+                    "count": 40
+                  },
+                  "evidence": {
+                    "step_id": "evidence-1",
+                    "path": "/rows/1"
+                  },
+                  "scopes": {
+                    "count": {
+                      "unit": "classified_item_count",
+                      "population": "synthetic-community-comment-analysis-corpus@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/count"
+                      }
+                    }
+                  }
+                }
+              ],
+              "parameters": {},
+              "unit": "classified_item_count",
+              "additivity": "additive",
+              "mode": "aggregate",
+              "aggregation": {
+                "axis": "sentiment-category",
+                "allowed_axes": [
+                  "sentiment-category"
+                ],
+                "disjointness": {
+                  "kind": "disjoint_partition",
+                  "members": [
+                    "positive",
+                    "negative"
+                  ],
+                  "evidence": {
+                    "step_id": "partition-fixture",
+                    "path": "/partition"
+                  }
+                }
+              }
+            }
+          },
+          "question": "合成离线算子示例：验证 aggregate 请求形状，不代表任何项目的真实数据或分析成功。",
+          "scenario": "success",
+          "selector": null
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-community-population",
+              "instruction-authority"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "把单条内容评论外推为整个社区意见"
+          },
+          "question": "能否用本方法把单条内容评论外推为整个社区意见？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
         {
           "example_id": "complete-success",
           "expected": {
@@ -386,7 +530,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
@@ -414,7 +558,7 @@
         "depends_on": [
           "validate-evidence"
         ],
-        "instruction": "仅用已声明变量和项目校准参数计算主题份额、情感占比和时间段变化，分母为零或单位冲突时不产出数值。",
+        "instruction": "仅用已声明变量和项目校准参数计算主题份额、情感占比和时间段变化，分母为零或单位冲突时不产出数值。 评论区占比使用 mode=aggregate、additive；count scopes 限定同一内容、筛选后的有界评论总体、时间窗和 classified_item_count，单标签分类必须形成有证据的互斥分区。多观点标签可重叠时只用 rowwise 计数，不计算总数或占比；算子不推断情感、作者意图或整个社区意见。 使用 gravity operators describe operator://gravity/sentiment-aggregation@2 读取绑定 Schema；执行仅由 SDK OperatorRegistry.execute 负责。",
         "on_failure": "METHOD_FORMULA_INVALID",
         "step_id": "compute-indicators"
       },
@@ -527,7 +671,7 @@
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [
-    "operator://gravity/sentiment-aggregation@1"
+    "operator://gravity/sentiment-aggregation@2"
   ],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {

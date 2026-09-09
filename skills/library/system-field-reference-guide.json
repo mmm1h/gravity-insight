@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "依据项目权威的事件和属性契约汇编有界指南，并附修订版和所有权引用。",
+  "description": "用于依据项目字段合同核对字段定义、归属和跨查询面的可见性。用户问“这个字段在哪个分析面可用，为什么看不到”时使用。不用于按字段名猜含义或创建字段权限连接；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -224,6 +224,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "field-permission-inferred",
+              "inferred-field-definition",
+              "undocumented-binding"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "按字段名猜含义或创建字段权限连接"
+          },
+          "question": "能否用本方法按字段名猜含义或创建字段权限连接？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -374,7 +402,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

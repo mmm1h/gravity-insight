@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "比较胜负观测结果前，必须具备对局资格、结果、模式、参与者和分组档位定义。",
+  "description": "用于比较胜率区间与留存付费的观测关联及段位匹配差异。用户问“哪些胜率区间与留存差异相关”时使用。不用于宣称胜率导致留存或自动调匹配；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -238,6 +238,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-match-population",
+              "matchmaking-fairness"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "宣称胜率导致留存或自动调匹配"
+          },
+          "question": "能否用本方法宣称胜率导致留存或自动调匹配？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -389,7 +417,7 @@
       "kind": "experiment",
       "target": "experiment://project/pvp-balance-calibration"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

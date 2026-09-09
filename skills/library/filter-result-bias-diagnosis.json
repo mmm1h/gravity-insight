@@ -29,7 +29,7 @@
   "covers_journeys": [
     "analysis.gravity.core.returned-filter-comparison"
   ],
-  "description": "针对两个有界时间窗或筛选项运行同一份受治理的事件定义，再仅对相匹配的返回键使用已注册的确定性行变化 Operator。",
+  "description": "用于核对两个筛选结果的模型、队列、时间和去重差异。用户问“换个筛选为什么人数对不上”时使用。不用于从抽样差集外推完整总体；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -236,6 +236,34 @@
       ],
       "run_examples": [
         {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "complete-population",
+              "causality",
+              "unreturned-values"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "从抽样差集外推完整总体"
+          },
+          "question": "能否用本方法从抽样差集外推完整总体？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -385,7 +413,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
