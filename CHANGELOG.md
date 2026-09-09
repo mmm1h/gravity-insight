@@ -24,12 +24,14 @@ Migration guide: [0.3.15](docs/migration/0.3.15.md)
 
 ### Added
 
+- Additive: Journey readiness now distinguishes executable, unbound and dependency-blocked tasks, with method-guidance bindings explicit. Default-value dictionary and realtime-event catalog Journeys delegate to their existing single-read SDK Products and return those native result schemas; the reference AP-cost Journey retains Analysis Result v1. Installed Skills resolve through the exact lock/CAS and project dependency owner without implying an executor or validated project forecasts.
 - Additive: `doctor` and `skills status --diagnose` distinguish read-only Runtime seed/CAS readiness, project lock resolution, native file consistency, unknown host discovery and unmeasured invocation/routing. Default `skills status` retains its maintenance receipt v1 and masks local paths; status no longer creates state or CAS directories. Neither diagnostic installs host files or infers business success from local readiness.
 - Additive: `ratio_identity` derived-metric operator reconciles a native ratio metric against the ratio of two unrounded amount columns via exact cross-multiplication, with caller-declared exact and quantization tolerances; disagreement surfaces `warn`/`fail` data-quality diagnostics (`RATIO_IDENTITY_QUANTIZATION_DRIFT`, `RATIO_IDENTITY_MISMATCH`) instead of unqualified success, zero or missing denominators yield explicitly undefined results, and total rows divide summed amounts rather than averaging row-level ratios.
 - Additive: `report-ap-cost-observation` v5 declares the ad-cost grain and provenance boundary: `click_company` as the only native non-time cost dimension, revenue cohorts anchored on activation, an estimation policy that forbids presenting allocated cost as native or exact, and machine-readable capability gaps `AP_COST_DATE_SEMANTICS_UNDECLARED` (upstream never declares which date `ap_cost` represents) and `POST_REGISTRATION_USER_GROUP_EXACT_COST_UNAVAILABLE` (no upstream fact links ad spend to post-registration user groups). Versions v1-v4 remain unchanged; existing bindings do not auto-upgrade.
 
 ### Fixed
 
+- Journey can-run no longer promises execution from dependency checks alone. Missing Product inputs and App bindings fail before I/O; run rechecks dependencies and identifies changed snapshot components, App bindings and result contracts. Direct/Composite entry points remain independent; Trust, completeness and scenario-only Model claims are unchanged.
 - Governed metric decomposition now sums and normalizes unrounded component changes, rounding only the output; sub-micro-unit changes no longer disappear before aggregation.
 
 ## [0.3.14] - 2026-09-08

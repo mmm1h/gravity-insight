@@ -79,7 +79,7 @@ class MCPToolTests(unittest.TestCase):
 
         self.assertEqual(13, inspected["structuredContent"]["result"]["count"])
         self.assertEqual(
-            "unknown", readiness["structuredContent"]["result"]["can_run_status"]
+            "blocked", readiness["structuredContent"]["result"]["can_run_status"]
         )
         self.assertEqual(
             "analysis.query.spec:event",
@@ -87,6 +87,8 @@ class MCPToolTests(unittest.TestCase):
         )
         self.assertEqual("blocked", execution["structuredContent"]["result"]["status"])
         self.assertFalse(readiness["isError"])
+        self.assertEqual("dependency_blocked", readiness["structuredContent"]["result"]["execution_readiness"])
+        self.assertEqual("unbound", readiness["structuredContent"]["result"]["execution_binding"]["status"])
         self.assertTrue(execution["isError"])
         self.assertEqual(0, self.network_calls)
 

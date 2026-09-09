@@ -62,15 +62,16 @@ class JourneyServiceTests(unittest.TestCase):
             )
         }
 
-        self.assertEqual("unknown", results["analysis.readable-app-catalog"]["can_run_status"])
-        self.assertEqual("unknown", results["analysis.event-trend"]["can_run_status"])
-        self.assertEqual("unknown", results["analysis.business-pulse"]["can_run_status"])
+        for identity in ("analysis.readable-app-catalog", "analysis.event-trend", "analysis.business-pulse"):
+            self.assertEqual("dependency_blocked", results[identity]["execution_readiness"])
+            self.assertIn("DEPENDENCY_VALIDATION_UNKNOWN", results[identity]["reason_codes"])
         ltv = results["analysis.ltv-curve-fit"]
         self.assertEqual("blocked", ltv["can_run_status"])
         self.assertEqual(
             {
-                "SEMANTIC_DEFINITION_MISSING",
+                "PROJECT_SKILL_OVERLAY_MISSING",
                 "OPERATOR_UNAVAILABLE",
+                "JOURNEY_EXECUTION_NOT_BOUND",
             },
             set(ltv["reason_codes"]),
         )
@@ -87,7 +88,9 @@ class JourneyServiceTests(unittest.TestCase):
         )
         outcome = results["analysis.experiment-outcome-evaluation"]
         self.assertEqual("unknown", outcome["can_run_status"])
-        self.assertEqual([], outcome["reason_codes"])
+        self.assertEqual(
+            ["DEPENDENCY_VALIDATION_UNKNOWN", "JOURNEY_EXECUTION_NOT_BOUND"], outcome["reason_codes"]
+        )
         self.assertEqual(
             0,
             sum(

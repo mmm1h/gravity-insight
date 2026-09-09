@@ -84,6 +84,24 @@ def compile_execution_snapshot(value: Mapping[str, Any]) -> dict[str, Any]:
     return selected
 
 
+def snapshot_change_reasons(before: Mapping[str, Any], after: Mapping[str, Any]) -> list[str]:
+    """Identify changed value-free dependency components, without leaking inputs."""
+
+    if before == after:
+        return []
+    return [
+        "DEPENDENCY_SNAPSHOT_CHANGED",
+        *[
+            f"DEPENDENCY_{field.upper()}_CHANGED"
+            for field in (
+                "runtime", "journey", "skill", "project_overlay", "capabilities",
+                "semantics", "operators", "models", "context_packs", "contracts",
+            )
+            if before.get(field) != after.get(field)
+        ],
+    ]
+
+
 def _ordered(
     values: Sequence[Mapping[str, Any]], *keys: str
 ) -> list[dict[str, Any]]:
@@ -157,4 +175,5 @@ __all__ = [
     "SCHEMA_VERSION",
     "build_execution_snapshot",
     "compile_execution_snapshot",
+    "snapshot_change_reasons",
 ]
