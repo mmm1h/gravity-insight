@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "仅在项目 LTV 语义和模型溯源信息准确后，定义版块、指标、时间窗和断言限制。",
+  "description": "用于设计可复核的 LTV 队列、同龄曲线、成熟状态和告警定义。用户问“LTV 监控应定义哪些指标和成熟条件”时使用。不用于创建线上看板、布局或发送告警；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -245,6 +245,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "设计可复核的 LTV 队列、同龄曲线、成熟状态和告警定义",
+            "missing_project_calibration": "ltv-metric-definition"
+          },
+          "question": "我想设计可复核的 LTV 队列、同龄曲线、成熟状态和告警定义，但尚未提供净收入、固定队列、观察龄和退款口径。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "dashboard-write-authorized",
+              "invented-confidence",
+              "unvalidated-future-value"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "计算已有队列的回本预测，不设计监控定义"
+          },
+          "question": "计算已有队列的回本预测，不设计监控定义，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -396,7 +453,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

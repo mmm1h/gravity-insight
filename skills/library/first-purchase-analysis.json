@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "仅在订单身份、退款处理、币种和队列时间窗均已明确后，分析首次符合条件的购买。",
+  "description": "用于分析新用户首购时间、返回转化步骤与可比人群差异。用户问“新用户首次付费卡在哪一步”时使用。不用于复购诊断、自动改价或保证首购提升；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -238,6 +238,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "unreturned-user-behavior"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "分析新用户首购时间、返回转化步骤与可比人群差异",
+            "missing_project_calibration": "first-purchase-contract"
+          },
+          "question": "我想分析新用户首购时间、返回转化步骤与可比人群差异，但尚未提供新用户、首笔有效支付、退款和成熟窗口。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "unreturned-user-behavior"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "分析已首购用户在成熟窗口内的复购间隔"
+          },
+          "question": "分析已首购用户在成熟窗口内的复购间隔，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -389,7 +446,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

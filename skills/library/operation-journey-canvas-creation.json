@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "将已评审的项目目标和触达策略转化为提案，并明确进入、退出和衡量规则。",
+  "description": "用于把运营意图整理为可评审的入口、条件、等待和动作候选有向图。用户问“这段运营流程的分支和退出条件是否完整”时使用。不用于创建、发布或启用线上旅程；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -235,6 +235,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "audience-write-authorized",
+              "causality",
+              "message-send-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "把运营意图整理为可评审的入口、条件、等待和动作候选有向图",
+            "missing_project_calibration": "journey-node-vocabulary"
+          },
+          "question": "我想把运营意图整理为可评审的入口、条件、等待和动作候选有向图，但尚未提供允许的入口、判断、分流、等待、动作和结束节点。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "audience-write-authorized",
+              "causality",
+              "message-send-authorized"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "诊断既有付费漏斗的转化损失，不设计运营流程图"
+          },
+          "question": "诊断既有付费漏斗的转化损失，不设计运营流程图，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -386,7 +443,7 @@
       "kind": "action",
       "target": "action://project/journey-draft-review"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

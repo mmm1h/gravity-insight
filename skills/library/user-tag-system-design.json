@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "提出实施方案前，定义目的、负责人、总体、字段、刷新、隐私和冲突规则。",
+  "description": "用于按项目实体与可观测事实设计标签分类、口径、刷新和治理清单。用户问“这些候选标签哪些可计算、哪些重叠”时使用。不用于写入标签、创建人群或推断敏感属性；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -235,6 +235,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "membership-write-authorized",
+              "sensitive-trait-inference",
+              "tag-population-complete"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "按项目实体与可观测事实设计标签分类、口径、刷新和治理清单",
+            "missing_project_calibration": "tag-purpose"
+          },
+          "question": "我想按项目实体与可观测事实设计标签分类、口径、刷新和治理清单，但尚未提供标签用途、允许受众和禁止推断。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "membership-write-authorized",
+              "sensitive-trait-inference",
+              "tag-population-complete"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "按已有流失定义比较群体特征，不设计标签分类与治理"
+          },
+          "question": "按已有流失定义比较群体特征，不设计标签分类与治理，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -386,7 +443,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

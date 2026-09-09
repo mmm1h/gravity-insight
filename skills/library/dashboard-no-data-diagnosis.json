@@ -34,7 +34,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "通过核对已注册查询结果与确切的仪表盘定义和时间范围，诊断无数据显示。",
+  "description": "用于核查看板无返回时的数据源、时间筛选、字段和引用断点。用户问“这个看板为什么没有数据”时使用。不用于直接修改线上看板或权限；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -240,6 +240,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "dashboard-ui-state",
+              "silent-permission-inference"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "核查看板无返回时的数据源、时间筛选、字段和引用断点",
+            "missing_project_calibration": "dashboard-definition"
+          },
+          "question": "我想核查看板无返回时的数据源、时间筛选、字段和引用断点，但尚未提供组件、查询、过滤和数据源的权威版本。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "dashboard-ui-state",
+              "silent-permission-inference"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "两份非空报表数值不同，需要逐项对账"
+          },
+          "question": "两份非空报表数值不同，需要逐项对账，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "metric-anomaly-localization@1"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -390,7 +447,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

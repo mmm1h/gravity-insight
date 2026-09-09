@@ -35,7 +35,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "在获客成本、净价值、队列和模型证据均明确时，区分观测值与预测值，估算批准预测周期内最早可能回收的队列年龄。",
+  "description": "用于比较指定获客队列累计净 LTV 与 CAC，估计获批周期内的回收情景。用户问“这批用户在预测窗口内可能回本吗”时使用。不用于承诺确定回收日期或无可信模型外推；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -290,6 +290,65 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "guaranteed-payback-date",
+              "invented-confidence",
+              "uncalibrated-project-metric"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope",
+              "formula-definition",
+              "claims"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较指定获客队列累计净 LTV 与 CAC，估计获批周期内的回收情景",
+            "missing_project_calibration": "acquisition-cost-scope"
+          },
+          "question": "我想比较指定获客队列累计净 LTV 与 CAC，估计获批周期内的回收情景，但尚未提供哪些媒体费、代理费、补贴、返点和税费计入获客成本。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "guaranteed-payback-date",
+              "invented-confidence",
+              "uncalibrated-project-metric"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope",
+              "formula-definition",
+              "claims"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "仅比较已观测收入分解，不要求 CAC 覆盖或回收时间"
+          },
+          "question": "仅比较已观测收入分解，不要求 CAC 覆盖或回收时间，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -500,7 +559,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

@@ -544,10 +544,10 @@ def run():
         )
 
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
-        """R2-07 owner/readiness imports reviewed; all cyclic SCC memberships unchanged."""
+        """Batch-B merge (R2-04/05/06/07): union of reviewed branch graphs; largest SCC sizes unchanged."""
         expected = module_graph_baseline()
         self.assertEqual(
-            "1da2a83d2c59dd00625297df8ca0036013b9c585dbbda556d022f9fc11d28683",
+            "a2e78e5c19bf18b2083f932164e30811a664c019e0a569b9976383a029f23e8e",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(

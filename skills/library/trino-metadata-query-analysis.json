@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "提出任何受治理的查询路径前，必须具备确切的 Trino 方言、只读身份和元数据允许列表。",
+  "description": "用于离线评审 Trino 元数据快照与有界元数据查询候选。用户问“这份元数据能证明哪些表列，查询范围合理吗”时使用。不用于连接生产 Trino、读取表数据或执行任意 SQL；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -228,6 +228,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "metadata-completeness",
+              "sql-execution-authorized",
+              "trino-dialect-supported"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "离线评审 Trino 元数据快照与有界元数据查询候选",
+            "missing_project_calibration": "trino-version"
+          },
+          "question": "我想离线评审 Trino 元数据快照与有界元数据查询候选，但尚未提供Trino 方言版本、连接器能力和受支持语句。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "metadata-completeness",
+              "sql-execution-authorized",
+              "trino-dialect-supported"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "提供的是非 Trino 方言 SQL，希望分析它的结构瓶颈"
+          },
+          "question": "提供的是非 Trino 方言 SQL，希望分析它的结构瓶颈，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -379,7 +436,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

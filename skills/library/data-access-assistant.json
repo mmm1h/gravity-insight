@@ -25,7 +25,7 @@
     ]
   },
   "covers_journeys": [],
-  "description": "将项目数据需求与已注册能力、所有权和访问契约进行匹配，资源开通仍由外部完成。",
+  "description": "用于依据已批准接入合同核对 SDK 版本、平台配置和生产红线。用户问“这个平台该按哪份接入合同配置”时使用。不用于部署采集服务或证明生产数据已到达；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -228,6 +228,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "access-authorized",
+              "credential-availability",
+              "unregistered-route-support"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "依据已批准接入合同核对 SDK 版本、平台配置和生产红线",
+            "missing_project_calibration": "integration-version"
+          },
+          "question": "我想依据已批准接入合同核对 SDK 版本、平台配置和生产红线，但尚未提供项目批准的 SDK、组件和文档版本。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "access-authorized",
+              "credential-availability",
+              "unregistered-route-support"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "已经完成接入，请按采集方案验收候选版本的事件与属性"
+          },
+          "question": "已经完成接入，请按采集方案验收候选版本的事件与属性，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": null
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -379,7 +436,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
