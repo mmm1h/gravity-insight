@@ -114,8 +114,12 @@ def _project_data_container_field(
         return _apply_data_scalar_list(
             copied, name, value, scalar_list_type, recorder
         )
-    if name == primary_list and isinstance(value, list):
-        return copied, (), ProjectionDrift.NONE
+    if name == primary_list:
+        if isinstance(value, list):
+            return copied, (), ProjectionDrift.NONE
+        copied.pop(name, None)
+        recorder.add_breaking_field(("data", name), "array", value)
+        return copied, ("invalid response primary list was omitted",), ProjectionDrift.BREAKING
     if name == page_info_name and isinstance(value, Mapping):
         return _apply_data_page_info(operation, copied, name, value, recorder)
     if _is_json_scalar(value):
