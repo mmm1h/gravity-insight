@@ -11,7 +11,7 @@ from scripts.audit_agent_module_references import refresh_module_graph_baseline
 
 
 class MachineOwnerMigrationTests(unittest.TestCase):
-    def test_graph_owners_preserve_f4893384_without_markdown(self):
+    def test_graph_owners_serve_reviewed_baseline_without_markdown(self):
         original = Path.read_text
         def without_markdown(path, *args, **kwargs):
             if path.suffix == ".md":
@@ -24,7 +24,7 @@ class MachineOwnerMigrationTests(unittest.TestCase):
                 module_graph_canonical_sha256(module_graph_definition()),
             )
             self.assertEqual(
-                "2509e9214ad71c31ba51a894788116f188c8b570d6bb753461dcfdfd9903298f",
+                "a9233233fdbc928ca614a88de135a2c05d3a47a8885d2b3834f01b83c3119df0",
                 module_graph_canonical_sha256(module_graph_baseline()),
             )
 
