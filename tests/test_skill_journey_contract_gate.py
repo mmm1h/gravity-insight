@@ -313,7 +313,7 @@ class SkillJourneyContractGateTests(unittest.TestCase):
         self.assertEqual(0, code, receipt)
         self.assertEqual(44, receipt["skill_contract_count"])
         self.assertEqual(13, receipt["journey_contract_count"])
-        self.assertEqual(5, receipt["model_contract_count"])
+        self.assertEqual(8, receipt["model_contract_count"])
         self.assertEqual(6, receipt["checked_skill_model_link_count"])
         self.assertEqual(2, receipt["checked_journey_model_link_count"])
         self.assertEqual(5, receipt["referenced_model_count"])

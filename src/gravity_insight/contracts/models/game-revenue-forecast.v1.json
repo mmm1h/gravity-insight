@@ -9,7 +9,7 @@
   "operator_uri": "operator://gravity/scenario-projection@1",
   "artifact": {
     "kind": "parameters",
-    "digest": "68ed7623569bbb36671292e55be14349d8523e9e2454166720ca46fd39b099b2",
+    "digest": "f2db2fd163b8a81cd408bca8754cdf3630ab8b254d051afdb57a33a5326defd6",
     "resource": "game-revenue-forecast.v1.json"
   },
   "lineage": {
@@ -21,7 +21,7 @@
       "fixture://gravity/game-revenue-forecast-conformance@1"
     ],
     "source_digests": [
-      "68ed7623569bbb36671292e55be14349d8523e9e2454166720ca46fd39b099b2"
+      "f2db2fd163b8a81cd408bca8754cdf3630ab8b254d051afdb57a33a5326defd6"
     ],
     "sample_count": 1
   },

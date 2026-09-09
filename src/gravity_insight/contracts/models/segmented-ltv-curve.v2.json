@@ -1,16 +1,16 @@
 {
   "artifact_kind": "model",
   "schema_version": "gravity.model-artifact.v1",
-  "uri": "model://gravity/segmented-ltv-curve@1",
-  "version": 1,
-  "alias": "segmented-ltv-curve",
+  "uri": "model://gravity/segmented-ltv-curve@2",
+  "version": 2,
+  "alias": "segmented-ltv-curve-v2",
   "owner": "gravity-runtime/model-methods",
   "lifecycle": "active",
-  "operator_uri": "operator://gravity/scenario-projection@1",
+  "operator_uri": "operator://gravity/scenario-projection@2",
   "artifact": {
     "kind": "parameters",
-    "digest": "47c04082bbce12d4a847719a6a05ff8148708112abc4882cf0f7c49833ed467c",
-    "resource": "segmented-ltv-curve.v1.json"
+    "digest": "5f7536f8dfc4825c147f572c5a63963c033ecbff4fcda1c6ad414511d2ebb134",
+    "resource": "segmented-ltv-curve.v2.json"
   },
   "lineage": {
     "fitting_window": {
@@ -21,7 +21,7 @@
       "fixture://gravity/segmented-ltv-curve-conformance@1"
     ],
     "source_digests": [
-      "47c04082bbce12d4a847719a6a05ff8148708112abc4882cf0f7c49833ed467c"
+      "5f7536f8dfc4825c147f572c5a63963c033ecbff4fcda1c6ad414511d2ebb134"
     ],
     "sample_count": 1
   },

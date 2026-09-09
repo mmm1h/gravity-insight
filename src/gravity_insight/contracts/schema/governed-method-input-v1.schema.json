@@ -53,6 +53,14 @@
         "semi_additive",
         "non_additive"
       ]
+    },
+    "mode": {
+      "enum": [
+        "rowwise",
+        "aggregate",
+        "cumulative"
+      ],
+      "description": "Optional explicit mode for the five scoped methods. Omission preserves the old aggregate/cumulative request, which now fails closed at @1. Other methods reject mode."
     }
   },
   "$defs": {
