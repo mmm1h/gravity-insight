@@ -75,6 +75,6 @@
 - 当前排期和跨模块决策更新本页。
 - 结构债务更新[技术债清单](maintainers/technical-debt.md)。
 - 候选证据更新[候选矩阵](candidate-capability-matrix.md)。
-- 动线状态更新[分析动线](analysis-journeys.md)。
+- 动线状态由 `governance/journey-ledger-facts.v1.json` 拥有，旧注释单列 `journey-ledger-annotations.v1.json`，再生成[分析动线](analysis-journeys.md)；snapshot v2 只改变来源身份，旧行字段、顺序与摘要等价，读取能力无损，当前消费者不再解析 Markdown。graph definition/baseline 同样由 `governance/module-graph-*.v1.json` 拥有。
 - 工作提案和请求账本放 `tmp/`；不要再创建逐趟 Markdown。
-- 历史与外部调研过程由 Git 保存；当前文档只保留写入唯一 Owner 的有效结论。
+- 2026-09-09 R2 审计是固定输入，已吸收结论退出默认阅读链；其他 R2 任务仍独立验收，不据文档迁移宣称 Host 毕业。CT01–CT05 保留有效合同、来源/权利边界与固定发行证据，施工史由 Git 保存；历史生产认证不代表当前状态。

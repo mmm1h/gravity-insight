@@ -38,7 +38,7 @@ def _load_contracts(root: Path) -> tuple[list[tuple[Path, dict[str, Any]]], list
 def _registry_errors(
     root: Path, contracts: list[tuple[Path, dict[str, Any]]]
 ) -> list[str]:
-    ledger_path = root / "src/gravity_insight/contracts/journeys/ledger-snapshot.v1.json"
+    ledger_path = root / "src/gravity_insight/contracts/journeys/ledger-snapshot.v2.json"
     try:
         validate_journey_bindings(
             [contract for _path, contract in contracts], load_object(ledger_path)
@@ -141,7 +141,7 @@ def journey_certifications(root: Path = PROJECT_ROOT) -> dict[str, Any]:
                 "reason_codes": reasons,
                 "evidence": {
                     "contract": relative(root, path),
-                    "ledger": "src/gravity_insight/contracts/journeys/ledger-snapshot.v1.json",
+                    "ledger": "src/gravity_insight/contracts/journeys/ledger-snapshot.v2.json",
                     "capabilities": capability_evidence,
                     "surfaces": copy.deepcopy(contract["surfaces"]),
                 "execution_mode": contract["execution"]["mode"],

@@ -1,0 +1,419 @@
+{
+  "schema_version": "gravity.journey-ledger-facts.v1",
+  "rows": [
+    {
+      "display_name": "看某事件随时间、分组和条件的变化",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "看多步行为的转化漏斗",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "看起始行为后的用户留存",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "看用户或事件属性的分布与聚合",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "看事件指标之间的散点关系",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "用同一分析定义比较两个时期",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "在已有结果上执行调用方绑定的派生算术与声明集合对账",
+      "ledger_status": "不计独立动线（调用方派生便利面）",
+      "surfaces": "有 / 有 / 有 / 有（未声明公式返回目标 gap）",
+      "request_budget": "1 / 2（公式未知；workspace 声明后）"
+    },
+    {
+      "display_name": "评估一组人群规则命中的人数与占比",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "一次取得构造分析所需的事件、属性、指标和模板上下文",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（实测）"
+    },
+    {
+      "display_name": "一次查看 App 的容量、角色、权限菜单和实时事件治理快照",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "一次查看 App 已登记的归因配置、映射与回溯设置",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "查看单个用户某日的画像、事件时间线和回传记录",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "汇总多个 App 的业务趋势和小时脉搏",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "查看公司资源用量趋势",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（实测）"
+    },
+    {
+      "display_name": "查看自定义人群覆盖与状态",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（实测）"
+    },
+    {
+      "display_name": "比较已支持平台的素材表现",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "读取单日订单目录",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "按 TraceID 追踪单日订单拆单结果",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "读取单日完整已登记变现明细（D27）",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（控制流）"
+    },
+    {
+      "display_name": "执行 workspace 登记的聚合 SQL 分析产品",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（实测）"
+    },
+    {
+      "display_name": "查看看板详情、成员和筛选收藏",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（引用未知、在线解析）"
+    },
+    {
+      "display_name": "忠实重放看板图表及页面条件（D22）",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（引用未知、在线解析）"
+    },
+    {
+      "display_name": "创建并管理可持久化的看板工作区与分析便签",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "整板 prepare 1；每个写动作 2（dry-run / 人工确认后 execute）"
+    },
+    {
+      "display_name": "按精确引用重放保存分析",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（引用未知、在线解析）"
+    },
+    {
+      "display_name": "创建、更新、重放并删除可复用保存分析",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 设计不适用 / 有",
+      "request_budget": "mutation 2（dry-run / 显式 execute）；重放 1"
+    },
+    {
+      "display_name": "按精确引用重放分析模板",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（引用未知、在线解析）"
+    },
+    {
+      "display_name": "查看分群详情、版本和单日聚合结果",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（引用未知、在线解析）"
+    },
+    {
+      "display_name": "查看精确分群成员及逐人属性",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（自然语言实测、卡面）"
+    },
+    {
+      "display_name": "从分析结果或规则创建并管理可复用分群",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 设计不适用 / 有",
+      "request_budget": "2（dry-run / 显式 execute）"
+    },
+    {
+      "display_name": "用显式物理维度、指标和筛选读取多维报表",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（物理字段未知、在线解析）"
+    },
+    {
+      "display_name": "用版本化语义成员组合已登记指标、维度与时间粒度",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（成员未知、机器 schema）"
+    },
+    {
+      "display_name": "可恢复地执行已登记 ap_cost 异常定位调查",
+      "ledger_status": "不计独立动线（既有语义组合调查编排）",
+      "surfaces": "有 / 有 / 编译为既有 Plan / 设计不新增卡",
+      "request_budget": "首跑 1；续跑 1"
+    },
+    {
+      "display_name": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
+      "ledger_status": "契约可达（生产 Journey 尚未重认证）",
+      "surfaces": "有 / 有 / 复用既有 Plan / 有（Library Agent Skill）",
+      "request_budget": "can-run 0；当前 run 0"
+    },
+    {
+      "display_name": "基于独立实验观察窗评估实验结果",
+      "ledger_status": "未闭环（本地评估可执行，四面尚未毕业）",
+      "surfaces": "已声明（CLI 可直调） / 已声明（SDK 可直调） / 已声明 / 已声明",
+      "request_budget": "0 / 0"
+    },
+    {
+      "display_name": "拟合 LT/LTV 曲线并给出安全预测区间",
+      "ledger_status": "完全缺失",
+      "surfaces": "无 / 无 / 无 / 无（目标 gap）",
+      "request_budget": "0 / 0"
+    },
+    {
+      "display_name": "定义、更新并在多维查询中使用可复用自定义指标",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "mutation 2（preview / execute）；查询 1"
+    },
+    {
+      "display_name": "创建并维护可复用的事件/属性元数据模板",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "mutation 2（preview / execute）"
+    },
+    {
+      "display_name": "按平台和物理指标读取推广表现",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（指标未知、在线解析）"
+    },
+    {
+      "display_name": "查看 B 站账户/产品投放表现",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（日期未知）"
+    },
+    {
+      "display_name": "读取巨量广告主消耗、余额、预算模式和状态",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "读取巨量普通/标准标题包的标题数、计划数与成本表现",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "离线查找可用于分析的事件、属性、指标和模板名称",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（冷目录在线刷新）"
+    },
+    {
+      "display_name": "查询已同步的数据表版本与变更观察",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（冷目录在线刷新）"
+    },
+    {
+      "display_name": "创建、轮询并下载素材分析报表",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 设计不适用 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "跨平台读取推广各已登记层级的兼容快照",
+      "ledger_status": "不计独立动线（legacy 兼容面）",
+      "surfaces": "有 / 有 / 设计不暴露 / 设计不暴露",
+      "request_budget": "1 / 不提供"
+    },
+    {
+      "display_name": "读取任意稳定元数据 operation 的统一快照",
+      "ledger_status": "不计独立动线（SDK 便利面）",
+      "surfaces": "设计不暴露 / 有 / 设计不暴露 / 设计不暴露",
+      "request_budget": "1 / 不提供"
+    },
+    {
+      "display_name": "查询分析默认值字典",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（App 已知；App 未知 3）"
+    },
+    {
+      "display_name": "查询实时事件目录",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问；缺 start/end 时 3）"
+    },
+    {
+      "display_name": "查询分析空间或报表设置",
+      "ledger_status": "不计独立动线（既有稳定读取面重复）",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（引用未知、在线解析）"
+    },
+    {
+      "display_name": "查找自有、共享和 MasterKey 报表并读取其定义",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问、卡面）"
+    },
+    {
+      "display_name": "查看报表订阅清单",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问、卡面）"
+    },
+    {
+      "display_name": "创建或删除可复用报表",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 设计不适用 / 有",
+      "request_budget": "2（dry-run / 显式 execute）"
+    },
+    {
+      "display_name": "创建或删除报表订阅",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 设计不适用 / 有",
+      "request_budget": "2（dry-run / 显式 execute）"
+    },
+    {
+      "display_name": "查找可用的媒体报表",
+      "ledger_status": "完全缺失",
+      "surfaces": "无 / 无 / 无 / 有（目标 gap）",
+      "request_budget": "未验证"
+    },
+    {
+      "display_name": "查找当前账号可读的 App 项目",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "查看 App 的 OneLink 与公开信息绑定",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（公开 URL 已知 / 未知）"
+    },
+    {
+      "display_name": "按平台、广告位和日期汇总变现结果（D28）",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "查询归因表现聚合（D35）",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（实测；未知 App 离线默认 3）"
+    },
+    {
+      "display_name": "下钻单用户归因明细（F40）",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（未知 App 3；未知设备父行 3；二者均未知 4）"
+    },
+    {
+      "display_name": "按表名或 App 查询数据表当前 schema、字段和版本（F41）",
+      "ledger_status": "完全缺失",
+      "surfaces": "无 / 无 / 无 / 有（目标 gap）",
+      "request_budget": "未验证"
+    },
+    {
+      "display_name": "下钻非 Bytedance 平台的计划、组和创意表现（D33/D34）",
+      "ledger_status": "部分闭环",
+      "surfaces": "有 / 有 / 有 / 有（目标 gap）",
+      "request_budget": "未验证"
+    },
+    {
+      "display_name": "深查各平台专属素材与创意（D32）",
+      "ledger_status": "部分闭环",
+      "surfaces": "有 / 有 / 有 / 有（目标 gap）",
+      "request_budget": "未验证"
+    },
+    {
+      "display_name": "导出事件、分群、用户、付费或变现分析结果",
+      "ledger_status": "部分闭环",
+      "surfaces": "部分 / 部分 / 设计不适用 / 有（七个具体卡；宽问法目标 gap）",
+      "request_budget": "1 / 2（七个可调子路径中英首问）"
+    },
+    {
+      "display_name": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
+      "ledger_status": "已闭环",
+      "surfaces": "有 / 有 / 设计不适用 / 有",
+      "request_budget": "1 / 2（中英首问）"
+    },
+    {
+      "display_name": "Review one declared event metric by device segment",
+      "ledger_status": "部分闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（精确输入 / 目录发现）"
+    },
+    {
+      "display_name": "Validate one project metric definition before analysis",
+      "ledger_status": "部分闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（绑定已知 / 绑定发现）"
+    },
+    {
+      "display_name": "Compare returned rows to diagnose filter selection bias",
+      "ledger_status": "部分闭环",
+      "surfaces": "有 / 有 / 有 / 有",
+      "request_budget": "1 / 2（精确输入 / 目录发现）"
+    },
+    {
+      "display_name": "Relate returned behavior observations to bounded community context",
+      "ledger_status": "完全缺失（依赖阻断）",
+      "surfaces": "无 / 无 / 无 / 无",
+      "request_budget": "0 / 0"
+    },
+    {
+      "display_name": "Assess whether a revenue forecast has validated model support",
+      "ledger_status": "完全缺失（依赖阻断）",
+      "surfaces": "无 / 无 / 无 / 无",
+      "request_budget": "0 / 0"
+    }
+  ]
+}

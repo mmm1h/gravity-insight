@@ -22,15 +22,15 @@
     "command": ".venv/Scripts/python.exe scripts/generate_agent_module_reference_dispositions.py --check",
     "file_universe": "git ls-files --cached --others --exclude-standard",
     "scanner_path": "scripts/audit_agent_module_references.py",
-    "scanner_sha256": "ded6d059bb93567c43af4b4326682053a04275a2916a348cb1ff7c99182ee77a",
+    "scanner_sha256": "5b2d0b1e2943706bb7ff071f84e8c1cb912b769bb3a364c40adb4ce9300f4f9f",
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "3c0fec35eb693571447d44c7c8d94fda10c5d21e46c254d5814256e1e797574b",
-    "manual_review_sha256": "ef885b8beaef9e28ef1fb1f08af4584ba5e3091df442d2530940d9ede4f40852",
+    "reference_evidence_sha256": "5ee32258686c42000cd25663c4ae6a40c9543c94be528dd7049b64302f78ab3a",
+    "manual_review_sha256": "578df2a30bd70453777ff21cae7568e88212318d1d0ac598a9b9ff600160b218",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3258,
-    "scanned_file_count": 3250,
+    "version_controlled_file_count": 3265,
+    "scanned_file_count": 3257,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -801,7 +801,7 @@
     "dispositions": {
       "no_migration_effect": 339
     },
-    "sites_sha256": "76df32d19d0bafdbca95940c6c426ce6306e9ce4bec2fc80937cab36a6a9228b"
+    "sites_sha256": "824708d2e11103775a942e2ed3b77dd1d71a507d039e6be1638b96d035e4f15c"
   },
   "blockers": [],
   "site_fields": [
@@ -954,7 +954,7 @@
       }
     ],
     [
-      "scripts/repository_map.py:1012:5:from import",
+      "scripts/repository_map.py:1014:5:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1164,7 +1164,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22638:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22401:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1179,7 +1179,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66240:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66098:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1524,7 +1524,7 @@
       }
     ],
     [
-      "src/gravity_insight/journey_ledger.py:12:1:from import",
+      "src/gravity_insight/journey_ledger.py:10:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -2454,7 +2454,7 @@
       }
     ],
     [
-      "tests/test_agent_usability_eval.py:236:18:patch.object",
+      "tests/test_agent_usability_eval.py:231:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.subject",
@@ -2469,7 +2469,7 @@
       }
     ],
     [
-      "tests/test_agent_usability_eval.py:421:18:patch.object",
+      "tests/test_agent_usability_eval.py:416:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.subject",
@@ -2484,7 +2484,7 @@
       }
     ],
     [
-      "tests/test_agent_usability_eval.py:421:69:patch.object",
+      "tests/test_agent_usability_eval.py:416:69:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.subject",
@@ -4719,6 +4719,36 @@
       }
     ],
     [
+      "tests/test_journey_ledger.py:96:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "Path",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      58,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_machine_owner_migration.py:21:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "Path",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      58,
+      {
+        "kind": "none"
+      }
+    ],
+    [
       "tests/test_maturity.py:108:13:mock.patch.object",
       "rm",
       "non_string_patch_expression",
@@ -5050,36 +5080,6 @@
     ],
     [
       "tests/test_skill_library_build.py:92:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "builder",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      18,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_skill_library_release.py:69:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "builder",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      18,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_skill_library_release.py:76:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "builder",

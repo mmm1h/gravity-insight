@@ -1,11 +1,9 @@
-"""Strict read-only projection of the human-owned analysis Journey ledger."""
+"""Structured Journey facts and separately identified legacy annotations."""
 
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
-import re
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -17,122 +15,107 @@ from .agent_runtime_contracts import (
 )
 
 
-SCHEMA_VERSION = "gravity.journey-ledger-snapshot.v1"
-SOURCE_PATH = "docs/analysis-journeys.md"
-_SCHEMA_NAME = "journey-ledger-snapshot-v1.schema.json"
-_PACKAGE_SNAPSHOT = (
-    Path(__file__).resolve().parent
-    / "contracts"
-    / "journeys"
-    / "ledger-snapshot.v1.json"
-)
-_HEADER = (
-    "动线",
-    "状态",
-    "四面可达（CLI / SDK / Plan / Agent 中英首问）",
-    "调用次数（已知 / 未知）",
-    "阻塞",
-)
-_SEPARATOR = re.compile(r"^:?-{3,}:?$")
+SCHEMA_VERSION = "gravity.journey-ledger-snapshot.v2"
+SOURCE_PATH = "src/gravity_insight/governance/journey-ledger-facts.v1.json"
+ANNOTATIONS_PATH = "src/gravity_insight/governance/journey-ledger-annotations.v1.json"
+_PACKAGE_ROOT = Path(__file__).resolve().parent
+FACTS_PATH = _PACKAGE_ROOT / "governance" / "journey-ledger-facts.v1.json"
+NOTES_PATH = _PACKAGE_ROOT / "governance" / "journey-ledger-annotations.v1.json"
+_PACKAGE_SNAPSHOT = _PACKAGE_ROOT / "contracts" / "journeys" / "ledger-snapshot.v2.json"
+_SCHEMA_NAME = "journey-ledger-snapshot-v2.schema.json"
 
 
 class JourneyLedgerError(AgentRuntimeContractError):
-    """The Markdown Journey ledger cannot be projected without ambiguity."""
+    """Journey facts or annotations cannot be projected without ambiguity."""
 
 
-def parse_journey_ledger(
-    text: str, *, source_path: str = SOURCE_PATH
-) -> dict[str, Any]:
-    if not isinstance(text, str) or not text:
-        raise JourneyLedgerError("Journey ledger must be non-empty UTF-8 text")
-    rows = _ledger_rows(text.splitlines())
-    display_keys = [row["legacy_display_key"] for row in rows]
-    if len(display_keys) != len(set(display_keys)):
+def load_journey_facts(path: Path = FACTS_PATH) -> dict[str, Any]:
+    facts = load_json_object(path, "Journey ledger facts")
+    try:
+        validate_schema(facts, "journey-ledger-facts-v1.schema.json", "Journey facts")
+    except AgentRuntimeContractError as exc:
+        raise JourneyLedgerError(str(exc)) from exc
+    keys = [row["display_name"] for row in facts["rows"]]
+    if len(keys) != len(set(keys)):
         raise JourneyLedgerError("Journey ledger display keys must be unique")
-    source_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
-    snapshot_body = {
-        "source_path": source_path,
-        "source_sha256": source_sha256,
+    return facts
+
+
+def load_journey_ledger(
+    facts_path: Path = FACTS_PATH, *, annotations_path: Path = NOTES_PATH,
+) -> dict[str, Any]:
+    facts = load_journey_facts(facts_path)
+    annotations = load_json_object(annotations_path, "Journey legacy annotations")
+    try:
+        validate_schema(
+            annotations, "journey-ledger-annotations-v1.schema.json", "Journey annotations",
+        )
+    except AgentRuntimeContractError as exc:
+        raise JourneyLedgerError(str(exc)) from exc
+    notes = annotations["notes"]
+    if set(notes) != {row["display_name"] for row in facts["rows"]}:
+        raise JourneyLedgerError("Journey annotation keys must exactly match facts")
+    rows = [
+        _row((row["display_name"], row["ledger_status"], row["surfaces"],
+              row["request_budget"], notes[row["display_name"]]))
+        for row in facts["rows"]
+    ]
+    body = {
+        "source_path": SOURCE_PATH,
+        "source_sha256": canonical_digest(facts),
+        "annotations_path": ANNOTATIONS_PATH,
+        "annotations_sha256": canonical_digest(annotations),
         "rows": rows,
     }
     result = {
-        "schema_version": SCHEMA_VERSION,
-        **snapshot_body,
-        "snapshot_digest": canonical_digest(snapshot_body),
-        "row_count": len(rows),
-        "network_called": False,
+        "schema_version": SCHEMA_VERSION, **body,
+        "snapshot_digest": canonical_digest(body),
+        "row_count": len(rows), "network_called": False,
     }
     _validate_snapshot(result)
     return result
 
 
-def _ledger_rows(lines: Sequence[str]) -> list[dict[str, Any]]:
-    header_index = _header_index(lines)
-    separator = _table_cells(lines[header_index + 1])
-    if len(separator) != len(_HEADER) or any(
-        _SEPARATOR.fullmatch(cell) is None for cell in separator
-    ):
-        raise JourneyLedgerError("Journey ledger table separator is invalid")
-    rows: list[dict[str, Any]] = []
-    for line in lines[header_index + 2 :]:
-        if not line.startswith("|"):
-            break
-        cells = _table_cells(line)
-        if len(cells) != len(_HEADER):
-            raise JourneyLedgerError("Journey ledger row must contain five columns")
-        rows.append(_row(cells))
-    if not rows:
-        raise JourneyLedgerError("Journey ledger table must contain rows")
-    return rows
-
-
-def _header_index(lines: Sequence[str]) -> int:
-    headers = [
-        index
-        for index, line in enumerate(lines)
-        if line.startswith("|") and _table_cells(line) == _HEADER
-    ]
-    if len(headers) != 1:
-        raise JourneyLedgerError("Journey ledger must contain one exact table header")
-    header_index = headers[0]
-    if header_index + 1 >= len(lines):
-        raise JourneyLedgerError("Journey ledger table separator is missing")
-    return header_index
-
-
-def render_journey_ledger_snapshot(text: str) -> str:
+def render_journey_ledger_snapshot(facts_path: Path = FACTS_PATH) -> str:
     return json.dumps(
-        parse_journey_ledger(text),
-        ensure_ascii=False,
-        indent=2,
-        sort_keys=True,
-        allow_nan=False,
+        load_journey_ledger(facts_path), ensure_ascii=False,
+        indent=2, sort_keys=True, allow_nan=False,
     ) + "\n"
+
+
+def render_journey_ledger_markdown(facts_path: Path = FACTS_PATH) -> str:
+    facts = load_journey_facts(facts_path)
+    lines = [
+        "# 分析动线台账",
+        "",
+        "本页由[结构化当前事实](../src/gravity_insight/governance/journey-ledger-facts.v1.json)生成，不是机器输入；修改 Owner 后运行 python scripts/generate_journey_ledger.py。",
+        "",
+        "每行对应一个独立问题；不计独立动线的兼容行仍保留。闭环要求已知输入一次、未知输入最多两次，四面可达并区分成功、空、部分失败与缺口；台账状态不替代当次 Journey readiness、权限或完整性。",
+        "",
+        "旧阻塞与验收文字逐字保留在[历史注释](../src/gravity_insight/governance/journey-ledger-annotations.v1.json)，仅供追溯，不作为最新认证。历史生产基线见[2026-09-01 认证](production-certification.md)；执行合同见[Agent 工作流](agent-workflow.md)。",
+        "",
+        "漏斗分组边界见[替代路径](guides/funnel-grouping-alternatives.md)。",
+        "",
+        "## 当前事实投影",
+        "",
+        "| 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） |",
+        "| --- | --- | --- | --- |",
+    ]
+    for row in facts["rows"]:
+        cells = [row[key].replace("|", "\\|") for key in
+                 ("display_name", "ledger_status", "surfaces", "request_budget")]
+        lines.append("| " + " | ".join(cells) + " |")
+    return "\n".join(lines) + "\n"
 
 
 def load_packaged_journey_ledger() -> dict[str, Any]:
     value = load_json_object(_PACKAGE_SNAPSHOT, "packaged Journey ledger")
     _validate_snapshot(value)
-    body = {
-        "source_path": value["source_path"],
-        "source_sha256": value["source_sha256"],
-        "rows": value["rows"],
-    }
-    if value["row_count"] != len(value["rows"]):
-        raise JourneyLedgerError("packaged Journey ledger row count drifted")
-    if value["snapshot_digest"] != canonical_digest(body):
-        raise JourneyLedgerError("packaged Journey ledger digest drifted")
     return copy.deepcopy(value)
 
 
-def ledger_row(
-    snapshot: dict[str, Any], legacy_display_key: str
-) -> dict[str, Any] | None:
-    matches = [
-        row
-        for row in snapshot["rows"]
-        if row["legacy_display_key"] == legacy_display_key
-    ]
+def ledger_row(snapshot: dict[str, Any], legacy_display_key: str) -> dict[str, Any] | None:
+    matches = [row for row in snapshot["rows"] if row["legacy_display_key"] == legacy_display_key]
     if len(matches) > 1:
         raise JourneyLedgerError("Journey ledger display binding is ambiguous")
     return copy.deepcopy(matches[0]) if matches else None
@@ -164,49 +147,19 @@ def _row(cells: Sequence[str]) -> dict[str, Any]:
     return {**body, "row_digest": canonical_digest(body)}
 
 
-def _table_cells(line: str) -> tuple[str, ...]:
-    if not line.startswith("|") or not line.rstrip().endswith("|"):
-        raise JourneyLedgerError("Journey ledger table line must use outer pipes")
-    value = line.strip()[1:-1]
-    cells: list[str] = []
-    current: list[str] = []
-    code_delimiter = 0
-    index = 0
-    while index < len(value):
-        character = value[index]
-        if character == "`":
-            end = index
-            while end < len(value) and value[end] == "`":
-                end += 1
-            count = end - index
-            if code_delimiter == 0:
-                code_delimiter = count
-            elif code_delimiter == count:
-                code_delimiter = 0
-            current.append(value[index:end])
-            index = end
-            continue
-        if character == "\\" and index + 1 < len(value):
-            current.append(value[index : index + 2])
-            index += 2
-            continue
-        if character == "|" and code_delimiter == 0:
-            cells.append("".join(current).strip())
-            current = []
-        else:
-            current.append(character)
-        index += 1
-    if code_delimiter:
-        raise JourneyLedgerError("Journey ledger row has an unterminated code span")
-    cells.append("".join(current).strip())
-    return tuple(cells)
-
-
 def _validate_snapshot(value: dict[str, Any]) -> None:
     try:
         validate_schema(value, _SCHEMA_NAME, "Journey ledger snapshot")
     except AgentRuntimeContractError as exc:
         raise JourneyLedgerError(str(exc)) from exc
+    body = {key: value[key] for key in (
+        "source_path", "source_sha256", "annotations_path", "annotations_sha256", "rows",
+    )}
+    if value["row_count"] != len(value["rows"]) or value["snapshot_digest"] != canonical_digest(body):
+        raise JourneyLedgerError("Journey ledger snapshot count or digest drifted")
+    keys = [row["legacy_display_key"] for row in value["rows"]]
+    if len(keys) != len(set(keys)):
+        raise JourneyLedgerError("Journey ledger display keys must be unique")
     for row in value["rows"]:
         body = {key: item for key, item in row.items() if key != "row_digest"}
         if row["row_digest"] != canonical_digest(body):
@@ -214,11 +167,7 @@ def _validate_snapshot(value: dict[str, Any]) -> None:
 
 
 __all__ = [
-    "JourneyLedgerError",
-    "SCHEMA_VERSION",
-    "SOURCE_PATH",
-    "ledger_row",
-    "load_packaged_journey_ledger",
-    "parse_journey_ledger",
-    "render_journey_ledger_snapshot",
+    "JourneyLedgerError", "SCHEMA_VERSION", "SOURCE_PATH", "ledger_row",
+    "load_journey_facts", "load_journey_ledger", "load_packaged_journey_ledger",
+    "render_journey_ledger_snapshot", "render_journey_ledger_markdown",
 ]

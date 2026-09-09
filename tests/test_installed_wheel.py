@@ -180,6 +180,11 @@ assert all(
     pathlib.Path(entry).resolve().is_relative_to(target)
     for entry in gravity_insight.__path__
 )
+from gravity_insight.governance.module_graph import module_graph_definition, module_graph_baseline
+from gravity_insight.journey_ledger import load_journey_ledger, load_packaged_journey_ledger
+assert module_graph_definition()["definition_id"] == module_graph_baseline()["definition_id"]
+assert load_journey_ledger() == load_packaged_journey_ledger()
+assert load_journey_ledger()["row_count"] == 69
 failures = []
 for module in json.load(sys.stdin):
     try:

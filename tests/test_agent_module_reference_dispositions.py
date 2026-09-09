@@ -1927,7 +1927,7 @@ class GateFailureGuidanceTests(unittest.TestCase):
                 journey_ledger, "rendered_snapshot", return_value="new"
             ), patch.object(sys, "argv", ["generate_journey_ledger.py", "--check"]), redirect_stdout(output):
                 self.assertEqual(1, journey_ledger.main())
-        self.assertIn("does not match docs/analysis-journeys.md", output.getvalue())
+        self.assertIn("does not match structured governance owners", output.getvalue())
         self.assertIn("python scripts/generate_journey_ledger.py", output.getvalue())
 
     def test_skill_library_check_rejects_tracked_generated_mirrors(self) -> None:

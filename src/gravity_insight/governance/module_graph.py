@@ -33,11 +33,8 @@ from typing import Any as _ModuleGraphAny
 from typing import Mapping as _ModuleGraphMapping
 
 
-MODULE_GRAPH_DEFINITION_START = "<!-- MODULE_GRAPH_DEFINITION_V1_START -->"
-MODULE_GRAPH_DEFINITION_END = "<!-- MODULE_GRAPH_DEFINITION_V1_END -->"
-MODULE_GRAPH_BASELINE_START = "<!-- MODULE_GRAPH_BASELINE_V1_START -->"
-MODULE_GRAPH_BASELINE_END = "<!-- MODULE_GRAPH_BASELINE_V1_END -->"
-MODULE_GRAPH_DEBT_PATH = ROOT / "docs/maintainers/technical-debt.md"
+MODULE_GRAPH_DEFINITION_PATH = Path(__file__).with_name("module-graph-definition.v1.json")
+MODULE_GRAPH_BASELINE_PATH = Path(__file__).with_name("module-graph-baseline.v1.json")
 MODULE_GRAPH_CURRENT_DEFINITION_ID = (
     "gravity-insight-runtime-possible-module-dependency-graph.v1"
 )
@@ -66,31 +63,17 @@ def module_graph_canonical_sha256(value: _ModuleGraphAny) -> str:
     return _module_graph_hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _module_graph_embedded_json(
-    start_marker: str,
-    end_marker: str,
-    path: Path = MODULE_GRAPH_DEBT_PATH,
-) -> dict[str, _ModuleGraphAny]:
-    text = path.read_text(encoding="utf-8")
-    try:
-        block = text.split(start_marker, 1)[1].split(end_marker, 1)[0]
-        payload = block[block.index("{"):block.rindex("}") + 1]
-    except (IndexError, ValueError) as exc:
-        raise ValueError(f"missing embedded module graph JSON in {path}") from exc
-    document = json.loads(payload)
+def _module_graph_json(path: Path) -> dict[str, _ModuleGraphAny]:
+    document = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(document, dict):
-        raise ValueError("embedded module graph JSON must be an object")
+        raise ValueError("module graph JSON must be an object")
     return document
 
 
 def module_graph_definition(
-    path: Path = MODULE_GRAPH_DEBT_PATH,
+    path: Path = MODULE_GRAPH_DEFINITION_PATH,
 ) -> dict[str, _ModuleGraphAny]:
-    definition = _module_graph_embedded_json(
-        MODULE_GRAPH_DEFINITION_START,
-        MODULE_GRAPH_DEFINITION_END,
-        path,
-    )
+    definition = _module_graph_json(path)
     profiles = definition.get("profiles")
     if (
         not isinstance(profiles, dict)
@@ -109,19 +92,15 @@ def module_graph_definition(
 
 
 def module_graph_baseline(
-    path: Path = MODULE_GRAPH_DEBT_PATH,
+    path: Path = MODULE_GRAPH_BASELINE_PATH,
 ) -> dict[str, _ModuleGraphAny]:
-    return _module_graph_embedded_json(
-        MODULE_GRAPH_BASELINE_START,
-        MODULE_GRAPH_BASELINE_END,
-        path,
-    )
+    return _module_graph_json(path)
 
 
 def module_graph_current_definition(
-    path: Path = MODULE_GRAPH_DEBT_PATH,
+    path: Path = MODULE_GRAPH_DEFINITION_PATH,
 ) -> dict[str, _ModuleGraphAny]:
-    """Project the embedded graph contract onto the current package identity."""
+    """Project the structured graph contract onto the current package identity."""
 
     definition = module_graph_definition(path)
     definition["definition_id"] = MODULE_GRAPH_CURRENT_DEFINITION_ID

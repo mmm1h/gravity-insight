@@ -6,19 +6,17 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
-import re
 from typing import Any, Mapping, Sequence
+
+from gravity_insight.journey_ledger import FACTS_PATH, load_journey_facts
 
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS_PATH = ROOT / "evals" / "agent_usability" / "journey-targets.json"
-LEDGER_PATH = ROOT / "docs" / "analysis-journeys.md"
+LEDGER_PATH = FACTS_PATH
 TARGETS_SCHEMA = "gravity.agent-usability-journey-targets.v2"
 STATUSES = frozenset({"已闭环", "部分闭环", "完全缺失"})
 MULTIPLE_INTENTS = "MULTIPLE_INTENTS"
-_LEDGER_ROW = re.compile(
-    r"^\| (?P<title>.*?) \| (?P<status>已闭环|部分闭环|完全缺失) \|"
-)
 
 
 def _targets(
@@ -74,21 +72,20 @@ def _ledger_statuses(
     payload = path.read_bytes()
     selected: dict[str, str] = {}
     titles = {str(target["ledger_title"]): journey_id for journey_id, target in targets.items()}
-    for line in payload.decode("utf-8").splitlines():
-        match = _LEDGER_ROW.match(line)
-        if match is None or match.group("title") not in titles:
+    for row in load_journey_facts(path)["rows"]:
+        if row["ledger_status"] not in STATUSES or row["display_name"] not in titles:
             continue
-        journey_id = titles[match.group("title")]
+        journey_id = titles[row["display_name"]]
         if journey_id in selected:
             raise ValueError(
-                "analysis-journeys.md contains a duplicate counted journey; actual value: "
-                f"{match.group('title')!r}; required action: keep exactly one authoritative row"
+                "Journey facts contain a duplicate counted journey; actual value: "
+                f"{row['display_name']!r}; required action: keep exactly one authoritative row"
             )
-        selected[journey_id] = match.group("status")
+        selected[journey_id] = row["ledger_status"]
     missing = sorted(set(targets) - set(selected))
     if missing:
         raise ValueError(
-            "analysis-journeys.md is missing registered journey rows; actual value: "
+            "Journey facts are missing registered journey rows; actual value: "
             f"{missing!r}; required action: restore the exact ledger_title rows"
         )
     return selected, hashlib.sha256(payload).hexdigest()

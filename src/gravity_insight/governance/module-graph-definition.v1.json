@@ -1,0 +1,86 @@
+{
+  "canonical_profile": "canonical",
+  "definition_id": "gravity-insight-runtime-possible-module-dependency-graph.v1",
+  "dynamic_exports": {
+    "edge": "The package containing the table points to each statically resolved owner module.",
+    "modeled_protocol": "_EXPORTS",
+    "other_protocols": "__all__, ordinary assignments, __getattr__ bodies, and generic dynamic-import calls do not create string edges.",
+    "symbol_multiplicity": "Multiple exported symbols owned by one module produce one edge.",
+    "unresolved_values": "Non-literal owners produce no edge and are not guessed."
+  },
+  "edge_direction": "The source module points to the module it may depend on at runtime.",
+  "edge_kinds": {
+    "all_or_assignment_reexport": {
+      "included_in_canonical": false,
+      "reason": "__all__ names symbols rather than owner modules, and an assignment does not add a module dependency beyond the expression that produced its value. Inferring owners from names would be guesswork.",
+      "rule": "Do not create an edge from __all__ strings or ordinary assignment-based re-exports. Their underlying AST import, when present, remains an edge."
+    },
+    "ast_delayed_import": {
+      "included_in_canonical": true,
+      "reason": "A delayed import does not create an eager import cycle, but calling the function can execute it. The graph measures possible runtime architecture dependencies, so excluding it would hide real coupling.",
+      "rule": "Collect the same Import and ImportFrom forms inside function or async-function bodies and mark them as delayed edges."
+    },
+    "ast_eager_import": {
+      "included_in_canonical": true,
+      "reason": "These statements declare direct, statically reproducible runtime dependencies.",
+      "resolution": "Import uses the exact imported module when it is a node. ImportFrom uses the resolved module operand; for from . import x, it also uses each named child module that is a node. Star imports point to the resolved module operand. Aliases do not change the target.",
+      "rule": "Collect Import and ImportFrom statements outside function and async-function bodies, including class bodies and both potentially executable conditional branches."
+    },
+    "generic_dynamic_import": {
+      "included_in_canonical": false,
+      "reason": "Targets can depend on runtime values. Partially evaluating selected call expressions would create an unstable, incomplete graph; a new governed dynamic table requires a new definition version.",
+      "rule": "Do not infer edges from importlib.import_module, __import__, loader APIs, computed strings, or plugin-like registries other than the explicit _EXPORTS rule."
+    },
+    "lazy_export_owner": {
+      "included_in_canonical": true,
+      "reason": "The table is an executable lazy import dispatch contract. Attribute access can import its owner even though no Import AST node names that owner.",
+      "rule": "In package __init__.py modules only, collect statically resolvable owner module strings from literal _EXPORTS dictionary values and _EXPORTS[...] assignments. Resolve relative owner strings against that package. Deduplicate symbols that share an owner."
+    },
+    "package_parent": {
+      "included_in_canonical": true,
+      "reason": "Python initializes a package before loading its child module. Keeping this as a separate edge kind makes its large SCC effect visible rather than silently folding it into AST resolution.",
+      "rule": "For every non-root module node, add an edge to its immediate dotted parent when that parent is also a node."
+    },
+    "type_checking_import": {
+      "included_in_canonical": false,
+      "reason": "TYPE_CHECKING is false in normal runtime execution, so these are type dependencies rather than possible runtime dependencies.",
+      "rule": "Exclude imports in branches proven unreachable at runtime from TYPE_CHECKING or typing.TYPE_CHECKING tests; include the runtime branch of a negated test. Unknown conditions retain both branches."
+    }
+  },
+  "profiles": {
+    "ast+lazy-exports": [
+      "ast_eager_import",
+      "ast_delayed_import",
+      "lazy_export_owner"
+    ],
+    "ast-only": [
+      "ast_eager_import",
+      "ast_delayed_import"
+    ],
+    "canonical": [
+      "ast_eager_import",
+      "ast_delayed_import",
+      "lazy_export_owner",
+      "package_parent"
+    ],
+    "eager-ast-only": [
+      "ast_eager_import"
+    ]
+  },
+  "purpose": "Measure possible runtime module dependencies for architecture review; this is not an eager-import deadlock detector or a domain ownership classifier.",
+  "scc": {
+    "algorithm": "Tarjan strongly connected components with nodes and outgoing targets visited in lexical order.",
+    "all_singletons": "A one-node component is an SCC in the algorithmic partition.",
+    "cycle": "A component is reported as cyclic when it has more than one node, or when its single node has an explicit self-edge.",
+    "ordering": "Reported cyclic components sort by descending size and then lexical member list. Members sort lexically.",
+    "self_loop": "A singleton with an explicit self-edge counts as a cyclic SCC.",
+    "singleton_without_self_loop": "A singleton without a self-edge does not count as a cycle or a non-trivial SCC."
+  },
+  "scope": {
+    "excluded": "Non-Python files, directories without a .py file of their own, tests, scripts, generated cache files, and dependencies outside gravity_insight are not nodes.",
+    "node": "Every .py file recursively below package_root is one module node.",
+    "ordinary_module": "Any other .py file maps to its dotted import name relative to package_root.",
+    "package_init": "A package __init__.py is the package module node itself; for example gravity_insight/agents/__init__.py is gravity_insight.agents.",
+    "package_root": "src/gravity_insight"
+  }
+}

@@ -1,5 +1,7 @@
 # CT04 Deterministic Agent Skill Distribution
 
+Delivery metadata and counts below are frozen release evidence, not the current architecture binding or catalog. Current Owners remain [index.json](index.json) and [directive.json](directive.json).
+
 | Field | Value |
 | --- | --- |
 | Status | `released` |
