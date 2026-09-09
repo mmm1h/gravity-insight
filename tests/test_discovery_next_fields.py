@@ -6,20 +6,30 @@ from gravity_insight import GravityInsightClient
 from gravity_insight.agent import discover_capabilities
 from gravity_insight.agents.caller_language import caller_language_fields
 from gravity_insight.agents.discovery_support import (
-    ANSWERABLE_LIMIT,
-    CATALOG_BROWSE_ARGV,
     HOST_CATALOG_ARGV,
-    NO_CANDIDATE_NEXT_ACTION,
     UNRANKED_OPERATIONS,
     UNRANKED_OPERATIONS_NEXT_ACTION,
+    unranked_operations_gap,
+)
+from gravity_insight.agents.output import (
+    ANSWERABLE_LIMIT,
+    CATALOG_BROWSE_ARGV,
+    NO_CANDIDATE_NEXT_ACTION,
     answerable_examples,
     discovery_next_fields,
-    unranked_operations_gap,
 )
 from gravity_insight.agents.product_inventory import canonical_capability_cards
 
 
 class DiscoveryNextFieldsTests(unittest.TestCase):
+    def test_public_agent_protocol_values_keep_the_output_owner(self) -> None:
+        from gravity_insight import agent
+        from gravity_insight.agents import output
+
+        self.assertEqual(("gravity.agent.v1", 3), (agent.SCHEMA_VERSION, agent.DEFAULT_LIMIT))
+        self.assertIs(agent.SCHEMA_VERSION, output.SCHEMA_VERSION)
+        self.assertIs(agent.DEFAULT_LIMIT, output.DEFAULT_LIMIT)
+
     def test_named_gap_next_is_copied_onto_the_envelope(self) -> None:
         gap = {
             "code": "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
