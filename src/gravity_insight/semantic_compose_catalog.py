@@ -16,6 +16,10 @@ from .workspace_semantic_context import compiled_operation
 
 
 DEFINITION_SCHEMA_VERSION = "gravity.semantic-definition.v1"
+AP_COST_DATE_SEMANTICS_GAP_CODE = "AP_COST_DATE_SEMANTICS_UNDECLARED"
+POST_REGISTRATION_USER_GROUP_COST_GAP_CODE = (
+    "POST_REGISTRATION_USER_GROUP_EXACT_COST_UNAVAILABLE"
+)
 _ID_RE = re.compile(r"^[a-z][a-z0-9.-]+$")
 _COLLECTIONS = ("metrics", "dimensions", "filters", "grains", "joins")
 _ROOT_FIELDS = frozenset(
@@ -31,6 +35,9 @@ _ROOT_FIELDS = frozenset(
         *_COLLECTIONS,
         "allowed_claims",
     }
+)
+_COST_BOUNDARY_FIELDS = frozenset(
+    {"cost_granularity_and_provenance", "forbidden_claims"}
 )
 _SOURCE_FIELDS = frozenset(
     {"product", "operation_id", "operation_contract_version", "fact_path"}
@@ -101,7 +108,7 @@ def _read_definition(path: Path) -> dict[str, Any]:
 
 
 def _validate_definition(value: Mapping[str, Any]) -> None:
-    _validate_header(value)
+    version = _validate_header(value)
     limits = _validate_limits(value.get("limits"))
     collections = {
         name: _members(value.get(name), name) for name in _COLLECTIONS
@@ -112,13 +119,25 @@ def _validate_definition(value: Mapping[str, Any]) -> None:
         if len(collections[name]) > limits[name]:
             raise ContractChangedError(f"semantic definition {name} exceed their limit")
     _validate_relationships(collections)
-    _validate_claims(value.get("allowed_claims"))
+    allowed_claims = _validate_claims(value.get("allowed_claims"), "allowed_claims")
+    if version >= 5:
+        forbidden_claims = _validate_claims(
+            value.get("forbidden_claims"), "forbidden_claims"
+        )
+        if allowed_claims & forbidden_claims:
+            raise ContractChangedError(
+                "semantic allowed and forbidden claims must be disjoint"
+            )
+        _validate_cost_boundaries(
+            value.get("cost_granularity_and_provenance"), collections["dimensions"]
+        )
 
 
-def _validate_header(value: Mapping[str, Any]) -> None:
-    if set(value) != _ROOT_FIELDS:
+def _validate_header(value: Mapping[str, Any]) -> int:
+    identity = _identity(value, "definition")
+    expected = _ROOT_FIELDS | _COST_BOUNDARY_FIELDS if identity[1] >= 5 else _ROOT_FIELDS
+    if set(value) != expected:
         raise ContractChangedError("semantic definition root fields changed")
-    _identity(value, "definition")
     if value.get("schema_version") != DEFINITION_SCHEMA_VERSION:
         raise ContractChangedError("semantic definition schema version changed")
     if not isinstance(value.get("description"), str) or not value["description"].strip():
@@ -126,6 +145,7 @@ def _validate_header(value: Mapping[str, Any]) -> None:
     _validate_source(value.get("source"))
     if value.get("access_scope") != {"kind": "app_bound", "physical_filter": "app_id"}:
         raise ContractChangedError("semantic definition access scope changed")
+    return identity[1]
 
 
 def _validate_limits(value: Any) -> Mapping[str, Any]:
@@ -137,16 +157,114 @@ def _validate_limits(value: Any) -> Mapping[str, Any]:
     return limits
 
 
-def _validate_claims(claims: Any) -> None:
+def _validate_claims(claims: Any, field: str) -> set[str]:
     if not isinstance(claims, list) or not claims:
-        raise ContractChangedError("semantic definition allowed_claims are empty")
+        raise ContractChangedError(f"semantic definition {field} are empty")
+    identifiers: set[str] = set()
     for claim in claims:
-        selected = _object(claim, "allowed_claims")
+        selected = _object(claim, field)
         if set(selected) != {"claim_id", "statement"}:
-            raise ContractChangedError("semantic allowed_claim fields changed")
-        _stable_id(selected.get("claim_id"), "claim_id")
+            raise ContractChangedError(f"semantic {field} fields changed")
+        identifier = _stable_id(selected.get("claim_id"), "claim_id")
+        if identifier in identifiers:
+            raise ContractChangedError(f"semantic {field} identities are duplicated")
+        identifiers.add(identifier)
         if not isinstance(selected.get("statement"), str) or not selected["statement"].strip():
-            raise ContractChangedError("semantic allowed claim statement is invalid")
+            raise ContractChangedError(f"semantic {field} statement is invalid")
+    return identifiers
+
+
+def _validate_cost_boundaries(
+    value: Any, dimensions: list[Mapping[str, Any]]
+) -> None:
+    boundaries = _object(value, "cost_granularity_and_provenance")
+    if set(boundaries) != {"native_cost", "revenue", "join_evidence"}:
+        raise ContractChangedError("semantic cost boundary fields changed")
+
+    native = _object(boundaries.get("native_cost"), "native_cost")
+    if set(native) != {
+        "metric",
+        "non_time_dimensions",
+        "date_semantics",
+        "post_registration_user_grouping",
+        "estimation",
+    }:
+        raise ContractChangedError("semantic native cost boundary fields changed")
+    dimension_names = [str(item["physical_name"]) for item in dimensions]
+    if native.get("metric") != "ap_cost" or native.get("non_time_dimensions") != dimension_names:
+        raise ContractChangedError("semantic native cost dimensions differ from registered dimensions")
+    _validate_cost_date_semantics(native.get("date_semantics"))
+    grouping = _object(
+        native.get("post_registration_user_grouping"),
+        "post_registration_user_grouping",
+    )
+    if grouping != {
+        "status": "unavailable",
+        "gap_code": POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+    }:
+        raise ContractChangedError("semantic post-registration cost boundary changed")
+    estimation = _object(native.get("estimation"), "estimation")
+    if estimation != {
+        "native_or_exact_allowed": False,
+        "required_label": "estimated",
+        "required_disclosures": [
+            "method",
+            "covered_population",
+            "excluded_label_treatment",
+            "assumptions",
+        ],
+    }:
+        raise ContractChangedError("semantic cost estimation policy changed")
+
+    _validate_revenue_boundaries(boundaries.get("revenue"))
+    join_evidence = _object(boundaries.get("join_evidence"), "join_evidence")
+    if join_evidence != {
+        "artifact_path": "../join-keys/registry.v1.json",
+        "registry_id": "join-key://gravity/acquisition-user@1",
+        "right_side_semantics": "acquisition_attribution_fields",
+        "post_registration_user_property_mapping": False,
+    }:
+        raise ContractChangedError("semantic cost join evidence changed")
+
+
+def _validate_cost_date_semantics(value: Any) -> None:
+    semantics = _object(value, "date_semantics")
+    if semantics != {
+        "status": "undeclared",
+        "basis": None,
+        "gap_code": AP_COST_DATE_SEMANTICS_GAP_CODE,
+        "evidence": {
+            "operation_id": STANDARD_METRIC_OPERATION,
+            "field": "data.list[].tip",
+            "declared_meaning": "total_spend_only",
+        },
+    }:
+        raise ContractChangedError("semantic ap_cost date boundary changed")
+
+
+def _validate_revenue_boundaries(value: Any) -> None:
+    revenue = _object(value, "revenue")
+    if revenue != {
+        "cohort_basis": "activation",
+        "evidence": {
+            "operation_id": STANDARD_METRIC_OPERATION,
+            "field": "data.list[].tip",
+            "declared_meaning": "activation_cohort",
+        },
+        "metrics": [
+            {
+                "physical_name": "standard_1day_pay_amount",
+                "metric_type": 0,
+                "event_timing": "within_activation_day",
+            },
+            {
+                "physical_name": "multi_day_pay_amount",
+                "metric_type": 2,
+                "event_timing": "post_activation_day_n",
+            },
+        ],
+    }:
+        raise ContractChangedError("semantic revenue date boundary changed")
 
 
 def _validate_source(value: Any) -> None:
@@ -275,7 +393,9 @@ def _object(value: Any, field: str) -> Mapping[str, Any]:
 
 
 __all__ = [
+    "AP_COST_DATE_SEMANTICS_GAP_CODE",
     "DEFINITION_SCHEMA_VERSION",
+    "POST_REGISTRATION_USER_GROUP_COST_GAP_CODE",
     "available_definition_refs",
     "definition_by_id",
     "definition_fingerprint",

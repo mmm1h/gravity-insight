@@ -9,6 +9,8 @@ from collections.abc import Mapping
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN, localcontext
 from typing import Any
 
+from .contracts.derived_metric_identity import identity_quality, ratio_identity_result
+
 
 def calculate_operator(
     specification: Mapping[str, Any],
@@ -24,6 +26,8 @@ def calculate_operator(
         return _share(specification, rows, places, partial, warnings)
     if operator == "change":
         return _change(specification, rows, places, partial, warnings)
+    if operator == "ratio_identity":
+        return _ratio_identity(specification, rows, places, partial, warnings)
     return _reconcile(specification, rows, partial, warnings)
 
 
@@ -48,6 +52,135 @@ def _ratio(
             )
         output.append({"row_index": index, "result": state})
     return _row_calculation(spec, output, partial)
+
+
+def _ratio_identity(
+    spec: Mapping[str, Any],
+    rows: list[Any],
+    places: int,
+    partial: bool,
+    warnings: Counter[str],
+) -> dict[str, Any]:
+    absolute_tolerance = Decimal(str(spec["absolute_tolerance"]))
+    quantization_tolerance = Decimal(str(spec["quantization_tolerance"]))
+    output: list[dict[str, Any]] = []
+    quality_counts: Counter[str] = Counter()
+    reason_codes: list[str] = []
+    for index, row in enumerate(rows):
+        item, quality_status, reason_code = _ratio_identity_row(
+            spec,
+            row,
+            index,
+            places,
+            partial,
+            absolute_tolerance,
+            quantization_tolerance,
+            warnings,
+        )
+        if reason_code is not None:
+            warnings[reason_code] += 1
+            reason_codes.append(reason_code)
+        item["data_quality"] = identity_quality(
+            quality_status,
+            f"{spec['result_name']}.row[{index}]",
+            reason_code,
+        )
+        quality_counts[quality_status] += 1
+        output.append(item)
+
+    return ratio_identity_result(
+        spec,
+        output,
+        quality_counts=quality_counts,
+        reason_codes=reason_codes,
+        partial=partial,
+        absolute_tolerance=_decimal_text(absolute_tolerance),
+        quantization_tolerance=_decimal_text(quantization_tolerance),
+    )
+
+
+def _ratio_identity_row(
+    spec: Mapping[str, Any],
+    row: Any,
+    index: int,
+    places: int,
+    partial: bool,
+    absolute_tolerance: Decimal,
+    quantization_tolerance: Decimal,
+    warnings: Counter[str],
+) -> tuple[dict[str, Any], str, str | None]:
+    observed = _operand(row, str(spec["observed"]), warnings)
+    numerator = _operand(row, str(spec["numerator"]), warnings)
+    denominator = _operand(row, str(spec["denominator"]), warnings)
+    expected = _first_failure(numerator, denominator)
+    if expected is None and denominator["number"] == 0:
+        warnings["DENOMINATOR_ZERO"] += 1
+        expected = _not_calculable("denominator_zero")
+    if expected is None:
+        expected = _division(
+            numerator["number"], denominator["number"], places, partial, warnings
+        )
+    item: dict[str, Any] = {
+        "row_index": index,
+        "observed": _observed_value(observed),
+        "expected": expected,
+    }
+    if observed["status"] != "valid" or expected["status"] == "not_calculable":
+        return item, "unknown", "RATIO_IDENTITY_UNDEFINED"
+    quality_status, scaled_difference = _ratio_identity_status(
+        observed["number"],
+        numerator["number"],
+        denominator["number"],
+        absolute_tolerance,
+        quantization_tolerance,
+    )
+    item["absolute_difference"] = _division(
+        scaled_difference,
+        abs(denominator["number"]),
+        places,
+        partial,
+        warnings,
+    )
+    reason_code = {
+        "pass": None,
+        "warn": "RATIO_IDENTITY_QUANTIZATION_DRIFT",
+        "fail": "RATIO_IDENTITY_MISMATCH",
+    }[quality_status]
+    return item, quality_status, reason_code
+
+
+def _ratio_identity_status(
+    observed: Decimal,
+    numerator: Decimal,
+    denominator: Decimal,
+    absolute_tolerance: Decimal,
+    quantization_tolerance: Decimal,
+) -> tuple[str, Decimal]:
+    digits = sum(
+        len(value.as_tuple().digits)
+        for value in (observed, numerator, denominator, quantization_tolerance)
+    )
+    with localcontext() as context:
+        context.prec = max(34, digits + 10)
+        scaled_difference = abs(observed * denominator - numerator)
+        denominator_scale = abs(denominator)
+        if scaled_difference <= absolute_tolerance * denominator_scale:
+            status = "pass"
+        elif scaled_difference <= quantization_tolerance * denominator_scale:
+            status = "warn"
+        else:
+            status = "fail"
+    return status, scaled_difference
+
+
+def _observed_value(value: Mapping[str, Any]) -> dict[str, Any]:
+    if value["status"] != "valid":
+        return dict(value)
+    return {
+        "status": "observed",
+        "value": _decimal_text(value["number"]),
+        "numeric_type": "decimal",
+    }
 
 
 def _share(

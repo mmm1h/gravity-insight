@@ -1,5 +1,5 @@
 {
-  "definition": {"definition_id": "report.ap-cost-observation", "version": 4},
+  "definition": {"definition_id": "report.ap-cost-observation", "version": 5},
   "window": {"start": "2026-08-01", "end": "2026-08-07"},
   "metric": {"definition_id": "report.metric.ap-cost", "version": 1},
   "dimensions": [{"definition_id": "report.dimension.click-company", "version": 1}],

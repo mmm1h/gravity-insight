@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from decimal import Decimal
 from pathlib import Path
 
 from gravity_insight.agent import discover_capabilities
 from gravity_insight.cli import build_parser, run
 from gravity_insight.derived_metrics import SPEC_SCHEMA_VERSION, derive_metrics
+from gravity_insight.errors import InputValidationError
 from gravity_insight.plan_adapters import build_plan_adapters
 from gravity_insight.plan import execute_plan
 from gravity_insight.sdk import GravitySDK
@@ -46,12 +48,184 @@ def ratio():
     }
 
 
+def ratio_identity(*, absolute="0.01", quantization="3"):
+    return {
+        "operator": "ratio_identity",
+        "result_name": "roi_power_identity",
+        "observed": "native_power",
+        "numerator": "cumulative_amount",
+        "denominator": "day_zero_amount",
+        "absolute_tolerance": absolute,
+        "quantization_tolerance": quantization,
+    }
+
+
 class Insight:
     def operations(self, **_options):
         return []
 
 
 class DerivedMetricsTests(unittest.TestCase):
+    def test_ratio_identity_small_positive_denominator_warns_on_quantization_drift(self):
+        result = derive_metrics(
+            source([{
+                "native_power": "2.5",
+                "cumulative_amount": "150",
+                "day_zero_amount": "30",
+            }]),
+            spec(ratio_identity()),
+        )["derived_metrics"]
+        calculation = result["calculations"][0]
+        row = calculation["rows"][0]
+
+        self.assertEqual((False, "partial", "warn"), (
+            result["ok"], result["status"], calculation["data_quality"]["status"]
+        ))
+        self.assertEqual(("2.5", "5.0000", "2.5000"), (
+            row["observed"]["value"], row["expected"]["value"],
+            row["absolute_difference"]["value"],
+        ))
+        self.assertEqual(
+            ["RATIO_IDENTITY_QUANTIZATION_DRIFT"],
+            calculation["data_quality"]["reason_codes"],
+        )
+
+    def test_ratio_identity_ordinary_scale_passes_without_false_positive(self):
+        result = derive_metrics(
+            source([{
+                "native_power": "3",
+                "cumulative_amount": "300",
+                "day_zero_amount": "100",
+            }]),
+            spec(ratio_identity()),
+        )["derived_metrics"]
+        calculation = result["calculations"][0]
+        row = calculation["rows"][0]
+
+        self.assertEqual((True, "success", "pass"), (
+            result["ok"], result["status"], calculation["data_quality"]["status"]
+        ))
+        self.assertEqual(
+            "valid", calculation["obligations"]["semantic_validity"]["state"]
+        )
+        self.assertEqual(("3", "3.0000", "0.0000"), (
+            row["observed"]["value"], row["expected"]["value"],
+            row["absolute_difference"]["value"],
+        ))
+        self.assertEqual([], result["warnings"])
+
+    def test_ratio_identity_zero_and_missing_denominators_are_explicitly_undefined(self):
+        result = derive_metrics(
+            source([
+                {
+                    "native_power": "0",
+                    "cumulative_amount": "150",
+                    "day_zero_amount": "0",
+                },
+                {"native_power": "0", "cumulative_amount": "150"},
+            ]),
+            spec(ratio_identity()),
+        )["derived_metrics"]
+        calculation = result["calculations"][0]
+        zero, missing = calculation["rows"]
+
+        self.assertEqual(("denominator_zero", "missing_column"), (
+            zero["expected"]["reason"], missing["expected"]["reason"]
+        ))
+        self.assertNotIn("value", zero["expected"])
+        self.assertNotIn("value", missing["expected"])
+        self.assertEqual(("unknown", "unknown"), (
+            zero["data_quality"]["status"], missing["data_quality"]["status"]
+        ))
+        self.assertEqual("partial", result["status"])
+
+    def test_ratio_identity_total_row_uses_ratio_of_summed_amounts(self):
+        detail = [
+            {"native_power": "10", "cumulative_amount": "100", "day_zero_amount": "10"},
+            {"native_power": "0.1", "cumulative_amount": "10", "day_zero_amount": "100"},
+        ]
+        total = {
+            "native_power": "1",
+            "cumulative_amount": str(sum(Decimal(row["cumulative_amount"]) for row in detail)),
+            "day_zero_amount": str(sum(Decimal(row["day_zero_amount"]) for row in detail)),
+        }
+        multidim = {
+            **source([]),
+            "query": {"data": {"list": detail}},
+            "total": {"data": {"list": [total]}},
+        }
+        definition = spec(ratio_identity())
+        definition["rows_path"] = "/total/data/list"
+        calculation = derive_metrics(multidim, definition)["derived_metrics"]["calculations"][0]
+        expected = calculation["rows"][0]["expected"]["value"]
+        unweighted_mean = (Decimal("10") + Decimal("0.1")) / 2
+
+        self.assertEqual("1.0000", expected)
+        self.assertNotEqual(format(unweighted_mean, ".4f"), expected)
+        self.assertEqual("pass", calculation["data_quality"]["status"])
+
+    def test_ratio_identity_difference_beyond_quantization_tolerance_fails(self):
+        calculation = derive_metrics(
+            source([{
+                "native_power": "0",
+                "cumulative_amount": "150",
+                "day_zero_amount": "30",
+            }]),
+            spec(ratio_identity(quantization="1")),
+        )["derived_metrics"]["calculations"][0]
+
+        self.assertEqual((False, "partial", "fail"), (
+            calculation["ok"], calculation["status"],
+            calculation["data_quality"]["status"],
+        ))
+        self.assertEqual(
+            "invalid", calculation["obligations"]["semantic_validity"]["state"]
+        )
+        self.assertEqual(
+            ["RATIO_IDENTITY_MISMATCH"],
+            calculation["data_quality"]["reason_codes"],
+        )
+
+    def test_ratio_identity_tolerances_are_exact_bounded_decimals(self):
+        invalid = (
+            ratio_identity(absolute=0.01),
+            ratio_identity(absolute="1e-2"),
+            ratio_identity(absolute="-0.01"),
+            ratio_identity(absolute="2", quantization="1"),
+        )
+        for calculation in invalid:
+            with self.subTest(calculation=calculation), self.assertRaises(InputValidationError):
+                derive_metrics(source([]), spec(calculation))
+
+    def test_ratio_identity_complete_empty_source_has_unknown_quality(self):
+        result = derive_metrics(
+            source([], "empty"), spec(ratio_identity())
+        )["derived_metrics"]
+        calculation = result["calculations"][0]
+
+        self.assertEqual(("empty", False, "partial", "unknown"), (
+            result["status"], calculation["ok"], calculation["status"],
+            calculation["data_quality"]["status"],
+        ))
+        self.assertEqual([], calculation["rows"])
+
+    def test_ratio_identity_quality_aggregation_stays_bounded_for_many_rows(self):
+        rows = [
+            {
+                "native_power": "3",
+                "cumulative_amount": "300",
+                "day_zero_amount": "100",
+            }
+            for _ in range(300)
+        ]
+        calculation = derive_metrics(
+            source(rows), spec(ratio_identity())
+        )["derived_metrics"]["calculations"][0]
+
+        self.assertEqual({"pass": 300}, calculation["quality_counts"])
+        self.assertEqual(1, len(calculation["data_quality"]["checks"]))
+        self.assertEqual("pass", calculation["data_quality"]["status"])
+
     def test_zero_denominator_is_not_a_zero_result(self):
         result = derive_metrics(source([{"orion_a": 0, "orion_b": 0}]), spec(ratio()))
         cell = result["derived_metrics"]["calculations"][0]["rows"][0]["result"]

@@ -19,6 +19,11 @@ Target release: `0.3.15`
 
 - None.
 
+### Added
+
+- Additive: `ratio_identity` derived-metric operator reconciles a native ratio metric against the ratio of two unrounded amount columns via exact cross-multiplication, with caller-declared exact and quantization tolerances; disagreement surfaces `warn`/`fail` data-quality diagnostics (`RATIO_IDENTITY_QUANTIZATION_DRIFT`, `RATIO_IDENTITY_MISMATCH`) instead of unqualified success, zero or missing denominators yield explicitly undefined results, and total rows divide summed amounts rather than averaging row-level ratios.
+- Additive: `report-ap-cost-observation` v5 declares the ad-cost grain and provenance boundary: `click_company` as the only native non-time cost dimension, revenue cohorts anchored on activation, an estimation policy that forbids presenting allocated cost as native or exact, and machine-readable capability gaps `AP_COST_DATE_SEMANTICS_UNDECLARED` (upstream never declares which date `ap_cost` represents) and `POST_REGISTRATION_USER_GROUP_EXACT_COST_UNAVAILABLE` (no upstream fact links ad spend to post-registration user groups). Versions v1-v4 remain unchanged; existing bindings do not auto-upgrade.
+
 ## [0.3.14] - 2026-09-08
 
 ### Breaking changes
