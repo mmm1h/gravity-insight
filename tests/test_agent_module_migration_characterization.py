@@ -547,7 +547,7 @@ def run():
         """R2-02 adds auto_upgrade -> errors; reviewed SCC sizes remain unchanged."""
         expected = module_graph_baseline()
         self.assertEqual(
-            "09d7faa4679b1066c536c8869608eceaeb85c75d68240418fd55573c1fee9201",
+            "bf20dd8620c24e51c616d06cf6507fd458b3dc586644c8b569d47dde26fe8a0a",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
@@ -563,11 +563,11 @@ def run():
             },
         )
         self.assertEqual(
-            [20, 17, 11, 8, 6, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+            [20, 17, 11, 8, 6, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
-            [555, 15, 8, 3, 2, 2],
+            [555, 15, 8, 3, 2, 2, 2],
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())

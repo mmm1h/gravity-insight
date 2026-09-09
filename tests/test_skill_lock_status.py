@@ -79,7 +79,7 @@ class SkillLockStatusTests(unittest.TestCase):
         self.assertEqual("no_lock", diagnostic["reason"])
         self.assertIsNone(diagnostic["locked_runtime_version"])
         self.assertIsNone(diagnostic["next_action"])
-        self.assertEqual(str(self.path), diagnostic["lock_path"])
+        self.assertEqual("<project-lock>", diagnostic["lock_path"])
         self.assertFalse(self.path.exists())
 
     def test_match_is_checked_independently_of_unbootstrapped_seed(self) -> None:
@@ -120,18 +120,20 @@ class SkillLockStatusTests(unittest.TestCase):
         else:
             arguments = shlex.split(command)[1:]
         self.assertEqual(["skills", "lock"], arguments[:2])
-        self.assertEqual(str(self.path), arguments[arguments.index("--output") + 1])
+        self.assertEqual("gravity.skills.next.lock.json", arguments[arguments.index("--output") + 1])
         self.assertEqual(self.source["source_id"], arguments[arguments.index("--source-id") + 1])
         write_hub_snapshot(
             self.state,
             build_hub_snapshot(self.source, self.source["source_descriptor_digest"], self.index, network_called=False),
         )
+        arguments[arguments.index("--state-root") + 1] = str(self.state)
         code, _, stderr = self.invoke(*arguments)
         self.assertEqual((0, ""), (code, stderr))
-        rebuilt = compile_skills_lock(json.loads(self.path.read_text(encoding="utf-8")))
+        rebuilt = compile_skills_lock(json.loads((self.root / "gravity.skills.next.lock.json").read_text(encoding="utf-8")))
         self.assertEqual(__version__, rebuilt["runtime_version"])
         self.assertEqual(list(self.index["skills"]), rebuilt["requested"])
-        self.assertEqual("match", self.status()["project_lock"]["status"])
+        self.assertEqual("mismatch", self.status()["project_lock"]["status"])
+        self.assertEqual(before, self.path.read_bytes())
 
     def test_workspace_root_is_used_from_subdirectory_even_with_explicit_state(self) -> None:
         self.write_lock()
@@ -139,7 +141,7 @@ class SkillLockStatusTests(unittest.TestCase):
         nested = self.root / "nested"
         nested.mkdir()
         report = self.status(start=nested)
-        self.assertEqual(str(self.path), report["project_lock"]["lock_path"])
+        self.assertEqual("<project-lock>", report["project_lock"]["lock_path"])
         self.assertEqual("match", report["project_lock"]["status"])
 
     def test_default_state_and_lock_both_use_discovered_workspace(self) -> None:
@@ -150,8 +152,8 @@ class SkillLockStatusTests(unittest.TestCase):
         self.assertEqual((0, ""), (code, stderr))
         report = compile_skill_maintenance_receipt(json.loads(stdout))
         self.assertEqual("mismatch", report["project_lock"]["status"])
-        self.assertEqual(str(self.path), report["project_lock"]["lock_path"])
-        self.assertIn("workspaces", report["project_lock"]["next_action"])
+        self.assertEqual("<project-lock>", report["project_lock"]["lock_path"])
+        self.assertIn("<state-root>", report["project_lock"]["next_action"])
 
     def test_explicit_lock_overrides_default_and_missing_is_not_checked(self) -> None:
         self.write_lock()
@@ -159,7 +161,7 @@ class SkillLockStatusTests(unittest.TestCase):
         report = self.status("--lock", str(other))
         self.assertEqual("not_checked", report["project_lock"]["status"])
         self.assertEqual("no_lock", report["project_lock"]["reason"])
-        self.assertEqual(str(other), report["project_lock"]["lock_path"])
+        self.assertEqual("<project-lock>", report["project_lock"]["lock_path"])
 
     def test_bad_lock_is_a_stderr_error_without_partial_stdout(self) -> None:
         lock = self.write_lock()
