@@ -573,7 +573,7 @@
       }
     },
     {
-      "blocker_note": "`gravity.semantic-compose-result.v1` 记录 definition/version/fingerprint、实际成员、生成查询、验证和 `allowed_claims`。`@1` 保持 `ap_cost` day/week/total 且 filter 为空；`@2` 增加 dimension-bound `click_company IN` 与 3 个 day/week 指标；`@3` 保留旧成员并增加 9 个 day/week 指标，注册数因已证空排除；`@4` 保持成员面并把结果限定为 fetched-at 时点观察，同输入跨执行不保证数值相同。v3/v4 维度兼容性为 4 个代表实测、5 个同族外推；未知成员、缺失 filter dimension、禁止 join、指标粒度冲突均在发网前失败。",
+      "blocker_note": "`gravity.semantic-compose-result.v1` 记录 definition/version/fingerprint、实际成员、生成查询、验证和 `allowed_claims`。`@1` 保持 `ap_cost` day/week/total 且 filter 为空；`@2` 增加 dimension-bound `click_company IN` 与 3 个 day/week 指标；`@3` 保留旧成员并增加 9 个 day/week 指标，注册数因已证空排除；`@4` 保持成员面并把结果限定为 fetched-at 时点观察，同输入跨执行不保证数值相同；`@5` 声明原生成本的唯一非时间维度为 `click_company`、`ap_cost` 日期语义未声明、收入按激活入队及估算不得冒充原生/精确成本；具名缺口问法为“ap_cost 日期语义是什么”和“按注册后 AB 分组拆分 IAP ROI 的精确成本”。v3-v5 维度兼容性为 4 个代表实测、5 个同族外推；未知成员、缺失 filter dimension、禁止 join、指标粒度冲突均在发网前失败。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "用版本化语义成员组合已登记指标、维度与时间粒度",
@@ -582,7 +582,7 @@
       "request_budget": {
         "raw": "1 / 2（成员未知、机器 schema）"
       },
-      "row_digest": "3dbd1eac211708b8e05791486a8c6daff30f202c66feb4348f6188653dcd5a1f",
+      "row_digest": "705860b52d7bd37d96cfb20601b7a6f0955027575be52e0ecab1888b758b9db4",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1315,7 +1315,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "ba1241b212f6396c17a4a2d9da057f783e6ee47e14cebc0af04e46a524b97bee",
+  "snapshot_digest": "0849ba505ea435f451503c91c586ad507c06e95533e8d3ee36521af7a5031dfe",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "bcdb887808f15ec3c059c6017953da4cad83e30843cd29880d52867712777dbd"
+  "source_sha256": "7696d67fecf17a4b719066307fd37103efdf512e22ac43277dc561ab8058d7c3"
 }

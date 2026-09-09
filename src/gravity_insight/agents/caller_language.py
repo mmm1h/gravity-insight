@@ -172,6 +172,14 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
         "custom event first exposure cohort",
         "自定义事件首次暴露 cohort",
     ),
+    "gap:AP_COST_DATE_SEMANTICS_UNDECLARED": (
+        "ap_cost 日期语义是什么",
+        "what date basis does ap_cost use",
+    ),
+    "gap:POST_REGISTRATION_USER_GROUP_EXACT_COST_UNAVAILABLE": (
+        "按注册后 AB 分组拆分 IAP ROI 的精确成本",
+        "exact ad cost by post-registration user group",
+    ),
     "material.asset.fetch": (
         "按精确平台素材引用预览或下载图片/视频",
     ),
