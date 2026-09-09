@@ -9,11 +9,13 @@ from typing import Any
 from .host_catalog import (
     MAX_CANDIDATES,
     SELECTION_SCHEMA_VERSION,
+    discovery_obligations,
     host_catalog_sources,
     host_product_catalog,
 )
 from .discovery_support import catalog_browse_next
 from ..errors import InputValidationError
+from ..contracts.envelope_obligations import serialize_envelope
 from ..host_effect_sources import (
     SOURCE_SCHEMA_VERSION,
     add_violation,
@@ -47,7 +49,9 @@ def add_host_routing_arguments(command: Any) -> None:
         help=(
             "Discovery router (when omitted: recognizer without a selection, "
             "host_catalog with one). host_catalog consumes "
-            "gravity.host-product-selection.v1 without invoking a model."
+            "gravity.host-product-selection.v1 without invoking a model. "
+            "Hosts should use known current contracts directly, read the catalog for "
+            "unknown capabilities, and use recognizer only as the selection floor."
         ),
     )
     command.add_argument(
@@ -164,7 +168,9 @@ def compile_host_product_selection(
                 f"Fix field={field} ({first['code']}). Fetch gravity "
                 "agent-catalog host again, copy selection_template, and submit "
                 "the complete response without adding operation, path, tool, or "
-                "Plan control fields."
+                "Plan control fields. Reuse the existing task budget; do not retry "
+                "unchanged input or silently switch to recognizer, a neighboring "
+                "product, another account or raw SQL."
             ),
             code="HOST_SELECTION_REJECTED",
         )
@@ -174,6 +180,9 @@ def compile_host_product_selection(
         "selected_catalog_refs": report["selected_catalog_refs"],
         "source_boundary": "gravity.host-source.v1 sdk_contract/instruction",
         "source_schema_version": report["source_schema_version"],
+        "selection_received": True,
+        "selection_validated": True,
+        "reason_origin": "host_declared",
         "host_reason": copy.deepcopy(dict(response["reason"])),
         "candidate_reasons": {
             str(item["catalog_ref"]): copy.deepcopy(dict(item["reason"]))
@@ -398,13 +407,17 @@ def _selection_envelope(
 ) -> dict[str, Any]:
     from ..agent import SCHEMA_VERSION
     from .discovery_policy import safe_discovery_query
-    from .handoff import agent_execution_contract, agent_fallbacks, resolve_workspace_path
+    from .handoff import (
+        agent_execution_contract, agent_fallbacks,
+        resolve_workspace_path,
+    )
 
     workspace_path = resolve_workspace_path(workspace)
-    return {
+    status = "success" if candidates else "capability_gap"
+    payload = {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
-        "status": "success" if candidates else "capability_gap",
+        "status": status,
         "offline": True,
         "network_called": False,
         "mode": "host_catalog_select_and_describe",
@@ -412,6 +425,11 @@ def _selection_envelope(
         "routing": {
             "mode": HOST_ROUTING_MODE,
             "floor": False,
+            **discovery_observation(
+                HOST_ROUTING_MODE, list(compiled["selected_catalog_refs"]), status,
+                catalog_sha256=str(compiled["catalog_sha256"]),
+                catalog_basis="host_product_catalog",
+            ),
         },
         "query": safe_discovery_query(query),
         "count": len(candidates),
@@ -422,7 +440,10 @@ def _selection_envelope(
         "execution": agent_execution_contract(workspace_path),
         "fallbacks": agent_fallbacks(safe_discovery_query(query), workspace_path),
         "next_action": (
-            "Fill the selected repository-owned card inputs and validate its Plan."
+            "Fill the selected repository-owned card inputs from authorized project sources "
+            "and validate its execution contract. Report remaining missing inputs; "
+            "recognizer cannot supply business facts. Permission/contract/quality failures "
+            "must be repaired or reported, not bypassed through another route."
             if candidates
             else (
                 "Follow the canonical gap; browse `gravity agent-catalog "
@@ -431,6 +452,29 @@ def _selection_envelope(
             )
         ),
         **({} if candidates else {"next": catalog_browse_next()}),
+    }
+    obligations = discovery_obligations(gaps)
+    return serialize_envelope(payload, obligations)
+
+
+def discovery_observation(
+    arm: str | None, selectors: list[str], terminal_state: str | None,
+    *, catalog_sha256: str | None = None, catalog_basis: str | None = None,
+) -> dict[str, Any]:
+    """Project only this discovery call, never an inferred host or execution trace."""
+
+    return {
+        "status": "observed" if arm is not None else "not_measured",
+        "arm": arm,
+        "selector": selectors[0] if len(selectors) == 1 else None,
+        "terminal_state": terminal_state,
+        "event": "discovery" if arm is not None else "protocol",
+        "catalog_sha256": catalog_sha256,
+        "catalog_basis": catalog_basis,
+        "host_catalog_read": "unknown",
+        "host_selection_attempt": "not_measured",
+        "fallback_reason": None,
+        "execution": {"status": "not_measured", "terminal_state": None},
     }
 
 

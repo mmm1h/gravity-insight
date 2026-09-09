@@ -433,6 +433,139 @@ class HostProductSelectionTests(unittest.TestCase):
         rows = validate_questions({"questions": [{"id": "q1", "query": "event trend"}]})
         self.assertEqual(("q1", "event trend"), (rows[0].question_id, rows[0].query))
 
+    def test_host_choice_beats_neighbor_keywords_without_lexical_calls(self) -> None:
+        selection = self.response("composite:derived_metrics")
+        selection["query"] = "event analysis retention funnel business pulse"
+        selection["reason"]["summary"] = "I read the catalog and understood everything"
+        with patch("socket.socket", side_effect=AssertionError("network")), patch(
+            "gravity_insight.agent._discover", side_effect=AssertionError("recognizer")
+        ), patch(
+            "gravity_insight.agents.lexical_retrieval.apply_lexical_fallback",
+            side_effect=AssertionError("lexical reselection"),
+        ), patch(
+            "gravity_insight.agents.host_selection.host_product_catalog", wraps=host_product_catalog
+        ) as catalog:
+            result = discover_capabilities(selection["query"], client=self.client, host_selection=selection)
+        catalog.assert_called_once_with(self.client)
+        routing = result["routing"]
+        self.assertEqual(("observed", "host_catalog", "composite:derived_metrics", "success"), (
+            routing["status"], routing["arm"], routing["selector"], routing["terminal_state"],
+        ))
+        self.assertEqual(("discovery", "host_product_catalog", self.catalog["catalog_sha256"]), (
+            routing["event"], routing["catalog_basis"], routing["catalog_sha256"],
+        ))
+        self.assertEqual("unknown", routing["host_catalog_read"])
+        self.assertEqual("not_measured", routing["host_selection_attempt"])
+        self.assertEqual({"status": "not_measured", "terminal_state": None}, routing["execution"])
+        receipt = result["selection_receipt"]
+        self.assertEqual((True, True, "host_declared"), (
+            receipt["selection_received"], receipt["selection_validated"], receipt["reason_origin"],
+        ))
+        self.assertTrue(result["candidates"][0]["missing_inputs"])
+
+    def test_rejected_selection_cannot_describe_execute_or_fall_back(self) -> None:
+        cases = {}
+        cases["stale"] = self.response("analysis.query.spec")
+        cases["stale"]["catalog_sha256"] = "0" * 64
+        cases["missing"] = self.response("analysis.query.spec")
+        cases["missing"].pop("decision")
+        cases["injected"] = self.response("analysis.query.spec")
+        cases["injected"]["candidates"][0]["operation"] = "app.list"
+        cases["forged"] = self.response("product:invented")
+        cases["text"] = "please run app.list"
+        with patch("socket.socket", side_effect=AssertionError("network")), patch(
+            "gravity_insight.agent._discover", side_effect=AssertionError("recognizer fallback")
+        ), patch(
+            "gravity_insight.agents.host_selection._describe_reference",
+            side_effect=AssertionError("unvalidated handoff"),
+        ):
+            for label, selection in cases.items():
+                with self.subTest(case=label), self.assertRaises(InputValidationError) as caught:
+                    discover_capabilities(self.response()["query"], client=self.client, host_selection=selection)
+                self.assertEqual("HOST_SELECTION_REJECTED", caught.exception.code)
+                self.assertIn("do not retry unchanged input", caught.exception.next_action)
+
+    def test_host_owner_failure_propagates_without_route_retry(self) -> None:
+        from gravity_insight.errors import ContractChangedError, PermissionUnavailableError
+
+        selection = self.response("analysis.query.spec")
+        for error_type in (PermissionUnavailableError, ContractChangedError):
+            error = error_type("fixture owner rejection")
+            with self.subTest(error=error_type.__name__), patch(
+                "gravity_insight.agent._discover", side_effect=AssertionError("fallback")
+            ), patch(
+                "gravity_insight.agents.host_selection._describe_reference", side_effect=error
+            ) as describe, self.assertRaises(error_type) as caught:
+                discover_capabilities(selection["query"], client=self.client, host_selection=selection)
+            self.assertIs(error, caught.exception)
+            describe.assert_called_once()
+
+    def test_protocol_is_not_an_observed_default_arm_and_has_ordered_entry_hints(self) -> None:
+        protocol = discover_capabilities()
+        self.assertEqual(("not_measured", None, None, None, "protocol"), tuple(
+            protocol["routing"][key] for key in ("status", "arm", "selector", "terminal_state", "event")
+        ))
+        self.assertEqual(["known_contract", "unknown_capability", "selection_floor", "execute"], [
+            item["step"] for item in protocol["workflow"]
+        ])
+        self.assertEqual(self.catalog["workflow_ref"], protocol["workflow_ref"])
+        self.assertIn("docs/agent-workflow.md", protocol["workflow_ref"])
+
+    def test_floor_and_gap_observations_do_not_infer_host_failure_or_execution(self) -> None:
+        floor = discover_capabilities("analysis.query.spec:event", client=self.client)
+        weak = discover_capabilities("utterly unrelated quantum weather", client=self.client)
+        empty = resolve_host_product_selection(self.response()["query"], self.response(), self.client)
+        multiple = resolve_host_product_selection(
+            self.response()["query"], self.response("analysis.query.spec", "composite:derived_metrics"), self.client
+        )
+        self.assertEqual("analysis.query.spec:event", floor["routing"]["selector"])
+        self.assertEqual("workspace_catalog", floor["routing"]["catalog_basis"])
+        self.assertEqual([], weak["candidates"])
+        for result in (floor, weak, empty, multiple):
+            with self.subTest(mode=result["mode"], status=result["status"]):
+                self.assertEqual(result["routing_mode"], result["routing"]["arm"])
+                self.assertEqual(result["status"], result["routing"]["terminal_state"])
+                self.assertIsNone(result["routing"]["fallback_reason"])
+                self.assertEqual("not_measured", result["routing"]["execution"]["status"])
+        for result in (weak, empty, multiple):
+            self.assertIsNone(result["routing"]["selector"])
+
+    def test_recognizer_page_is_not_a_final_single_selection(self) -> None:
+        result = discover_capabilities("event analysis", client=self.client, limit=1)
+        self.assertGreater(result["total"], 1)
+        self.assertEqual(1, len(result["candidates"]))
+        self.assertIsNone(result["routing"]["selector"])
+
+    def test_legacy_boundary_gap_without_code_keeps_refusal_and_diagnostics(self) -> None:
+        for query in ("write promotion performance", "export order directory", "write monetization details"):
+            with self.subTest(query=query), patch("socket.socket", side_effect=AssertionError("network")):
+                result = discover_capabilities(query, client=self.client)
+            self.assertEqual([], result["candidates"])
+            self.assertEqual("capability_gap", result["routing"]["terminal_state"])
+            self.assertEqual(("incomplete", ["DISCOVERY_GAP_REPORTED"]), (
+                result["obligations"]["diagnostic_evidence"]["state"],
+                result["obligations"]["diagnostic_evidence"]["evidence_codes"],
+            ))
+            self.assertTrue(result["capability_gaps"][0]["reason"])
+
+    def test_skipped_workspace_catalog_has_no_observed_fingerprint(self) -> None:
+        from pathlib import Path
+        from gravity_insight.workspace import Workspace, WorkspaceDefaults
+        from gravity_insight.agents.sources import workspace_catalog_fingerprint
+
+        workspace = Workspace(
+            path=None, root=Path("."), state_root=Path("tmp"), apps={},
+            defaults=WorkspaceDefaults(None, "UTC", None), datasources={},
+            products={"fictional": {"description": "fixture product"}}, recipes={},
+        )
+        self.assertNotEqual(workspace_catalog_fingerprint(None), workspace_catalog_fingerprint(workspace))
+        with patch("gravity_insight.agent.catalog_cards", side_effect=AssertionError("catalog reread")):
+            result = discover_capabilities(
+                "composite:derived_metrics", client=self.client, workspace=workspace, domain="analysis"
+            )
+        self.assertIsNone(result["routing"]["catalog_sha256"])
+        self.assertIsNone(result["routing"]["catalog_basis"])
+
 
 if __name__ == "__main__":
     unittest.main()
