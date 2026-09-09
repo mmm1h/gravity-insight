@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "37651ee2230f592bb17dd7432545f4aed1d3e75768412fab1fbc1c4cc84e4bc2",
-    "manual_review_sha256": "8bd36a328a9df4bc5032a4a98637bb6c863c953b3fe1b3c3bc2f5ae6cc885c2b",
+    "reference_evidence_sha256": "d0ca65dc026abdd2430916a9b2379364e9331298a70a5447625567418364cb4f",
+    "manual_review_sha256": "5f3d5a57e6b7c1fbcd4472e0e1eac3a509f3134ba14bec2664a65668a9eb4e8a",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3228,
-    "scanned_file_count": 3220,
+    "version_controlled_file_count": 3229,
+    "scanned_file_count": 3221,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -748,12 +748,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 311,
-    "reference_site_count": 309,
-    "manual_review_site_count": 213,
-    "reference_manual_overlap_count": 211,
+    "tracked_site_count": 312,
+    "reference_site_count": 310,
+    "manual_review_site_count": 214,
+    "reference_manual_overlap_count": 212,
     "manual_only_site_count": 2,
-    "unique_source_keys": 311,
+    "unique_source_keys": 312,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -762,7 +762,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 191,
+      "manual_patch_expression": 192,
       "module_qualname_dependency": 7,
       "static_import": 90,
       "string_reference": 5
@@ -772,12 +772,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 191
+      "non_string_patch_expression": 192
     },
     "dispositions": {
-      "no_migration_effect": 311
+      "no_migration_effect": 312
     },
-    "sites_sha256": "b8acd901897f9108f05cb1fa83e69efdaead670f020be27d5ee0dff81cf19740"
+    "sites_sha256": "6fd81f95e960b35bc1e2843ae09213c144369b683893eeb6741acfe86dfc0d4b"
   },
   "blockers": [],
   "site_fields": [
@@ -1155,7 +1155,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:65374:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:65430:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1905,7 +1905,7 @@
       }
     ],
     [
-      "src/gravity_insight/skill_host_install.py:13:1:from import",
+      "src/gravity_insight/skill_host_install.py:14:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1935,7 +1935,7 @@
       }
     ],
     [
-      "src/gravity_insight/skill_hub_cli.py:11:1:from import",
+      "src/gravity_insight/skill_hub_cli.py:12:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -4960,6 +4960,21 @@
       "no_migration_effect",
       "direct_object_patch",
       9,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_skill_trigger_diagnosis.py:196:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "Path",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      54,
       {
         "kind": "none"
       }

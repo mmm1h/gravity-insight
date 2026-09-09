@@ -7,6 +7,7 @@ from pathlib import Path
 import shlex
 import stat
 from typing import Any
+from types import SimpleNamespace
 
 from .agent_runtime_contracts import canonical_digest
 from .skill_hub_client import SkillHubClient
@@ -73,6 +74,7 @@ def add_skill_hub_actions(actions: Any) -> None:
         "status", help="Read bundled maintenance and project lock Runtime drift offline."
     )
     status.add_argument("--lock", help="Project Skill lock; defaults to workspace root or cwd.")
+    status.add_argument("--diagnose", action="store_true", help="Read layered Runtime, lock and native Host diagnostics; never install.")
     _local(status, required=False)
 
     bootstrap = actions.add_parser(
@@ -115,8 +117,16 @@ def dispatch(args: Any, _object_input: Any) -> dict[str, Any]:
 
         workspace = load_workspace()
         state_root = workspace.state_root
-    client = SkillHubClient(state_root, cas_root=args.cas_root)
     command = args.skills_command
+    if command == "status":
+        from . import __version__
+
+        client = SimpleNamespace(
+            state_root=assert_unlinked_path(Path(state_root), reason="HUB_STATE_INVALID", label="State root"), runtime_version=__version__,
+            cas=SimpleNamespace(root=Path(args.cas_root or Path(state_root) / "skill-hub-cas")),
+        )
+        return _maintenance_dispatch(command, client, args, workspace)
+    client = SkillHubClient(state_root, cas_root=args.cas_root)
     if command == "list":
         return client.list(maximum=args.maximum)
     if command == "show":
@@ -154,16 +164,25 @@ def _maintenance_dispatch(
     command: str, client: SkillHubClient, args: Any, workspace: Any
 ) -> dict[str, Any]:
     if command == "status":
+        if workspace is None:
+            from .workspace import load_workspace
+
+            workspace = load_workspace()
+        root = workspace.root if workspace.configured else Path.cwd()
         if args.lock is not None:
             lock_path = Path(args.lock)
         else:
-            if workspace is None:
-                from .workspace import load_workspace
-
-                workspace = load_workspace()
-            root = workspace.root if workspace.configured else Path.cwd()
             lock_path = root / "gravity.skills.lock.json"
-        result = client.status()
+        if getattr(args, "diagnose", False):
+            from .doctor_cli import diagnose_skills
+
+            return diagnose_skills(
+                state_root=client.state_root, cas_root=client.cas.root,
+                project_root=root, lock_path=lock_path,
+            )
+        from .skill_maintenance import maintenance_status
+
+        result = maintenance_status(client)
         result["project_lock"] = _project_lock_status(client, lock_path)
         # This observation includes transient project state, not a persisted receipt update.
         result.pop("receipt_digest")
@@ -191,7 +210,7 @@ def _project_lock_status(client: SkillHubClient, path: Path) -> dict[str, Any]:
     result = {
         "status": "not_checked",
         "reason": "no_lock",
-        "lock_path": str(path),
+        "lock_path": "<project-lock>",
         "runtime_version": client.runtime_version,
         "locked_runtime_version": None,
         "next_action": None,
@@ -224,9 +243,9 @@ def _project_lock_status(client: SkillHubClient, path: Path) -> dict[str, Any]:
     )
     if mismatch:
         arguments = [
-            "--state-root", str(client.state_root),
+            "--state-root", "<state-root>",
             "--source-id", lock["source"]["source_id"],
-            "--output", str(path),
+            "--output", "gravity.skills.next.lock.json",
         ]
         for identity in lock["requested"]:
             arguments.extend(("--skill", identity))

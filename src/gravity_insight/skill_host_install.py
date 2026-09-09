@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 import os
 import shlex
 import stat
@@ -214,12 +215,12 @@ def _classify_target(
 def _host_target_state(
     target: Path, entry: Mapping[str, Any]
 ) -> tuple[str, str | None]:
-    if not target.exists() and not target.is_symlink():
-        return "absent", None
     try:
         root_metadata = target.lstat()
+    except FileNotFoundError:
+        return "absent", None
     except OSError:
-        return "conflict", None
+        return "unknown", None
     if target.is_symlink() or is_reparse(root_metadata) or not target.is_dir():
         return "conflict", None
     observed = _bounded_target_files(target)
@@ -238,29 +239,137 @@ def _host_target_state(
 
 def _bounded_target_files(target: Path) -> list[dict[str, Any]] | None:
     try:
-        paths = sorted(target.rglob("*"))
-        if len(paths) > 64:
-            return None
         rows: list[dict[str, Any]] = []
-        for path in paths:
-            metadata = path.lstat()
-            if path.is_symlink() or is_reparse(metadata):
-                return None
-            if path.is_dir():
-                continue
-            if not _bounded_regular_file(metadata):
-                return None
-            content = path.read_bytes()
-            rows.append(
-                {
-                    "path": path.relative_to(target).as_posix(),
-                    "sha256": hashlib.sha256(content).hexdigest(),
-                    "size_bytes": len(content),
-                }
-            )
-        return rows
+        pending = [target]
+        count = 0
+        # Bound traversal before descent; never enumerate a linked subtree.
+        while pending:
+            with os.scandir(pending.pop()) as children:
+                for child in children:
+                    count += 1
+                    if count > 64:
+                        return None
+                    path = Path(child.path)
+                    metadata = path.lstat()
+                    if path.is_symlink() or is_reparse(metadata):
+                        return None
+                    if stat.S_ISDIR(metadata.st_mode):
+                        pending.append(path)
+                        continue
+                    if not _bounded_regular_file(metadata):
+                        return None
+                    content = path.read_bytes()
+                    rows.append({
+                        "path": path.relative_to(target).as_posix(),
+                        "sha256": hashlib.sha256(content).hexdigest(),
+                        "size_bytes": len(content),
+                    })
+        return sorted(rows, key=lambda row: Path(row["path"]))
     except OSError:
         return None
+
+
+def inspect_host_skills(
+    entries: list[dict[str, Any]], *, project_root: Path, home: Path,
+    packages: Mapping[str, Mapping[str, bytes]] | None = None,
+) -> list[dict[str, Any]]:
+    """Compare only known bundle targets, without staging or host activation."""
+    scopes = []
+    for host, directory in (("codex", ".agents"), ("claude", ".claude")):
+        for scope, base in (("user", home), ("project", project_root)):
+            root = base / directory / "skills"
+            label = f"<{scope}>/{directory}/skills"
+            try:
+                assert_unlinked_path(root, reason="HOST_SKILL_PATH_INVALID", label="Host root")
+                root_status = "present" if root.is_dir() else "missing"
+                if root.exists() and not root.is_dir():
+                    root_status = "invalid"
+            except (OSError, SkillHubContractError):
+                root_status = "unreadable_or_linked"
+            skills = []
+            for entry in entries:
+                state, digest = (
+                    _host_target_state(root / entry["directory"], entry)
+                    if root_status in {"present", "missing"} else ("unknown", None)
+                )
+                status = {
+                    "unchanged": "installed_consistent", "absent": "missing",
+                    "conflict": "local_override_conflict", "unknown": "unknown",
+                }[state]
+                target = root / entry["directory"]
+                details = _native_details(target, entry, host, packages) if state in {"unchanged", "conflict"} else {}
+                skills.append({
+                    "skill_uri": entry["skill_uri"],
+                    "target": f"{label}/{entry['directory']}",
+                    "status": status, "observed_digest": digest,
+                    "expected_digest": canonical_digest(sorted(entry["files"], key=lambda row: Path(row["path"]))),
+                    **details,
+                    "next_action": {
+                        "missing": "Review host-install-plan for this scope, then explicitly install with the native installer; a plan alone installs nothing.",
+                        "local_override_conflict": "Compare local files with the locked bundle; preserve local edits and explicitly reconcile before installation.",
+                        "unknown": "Check access and remove linked-path ambiguity for this exact target before retrying.",
+                        "installed_consistent": "Check host enablement and obtain a host discovery observation; file consistency does not prove loading.",
+                    }[status],
+                })
+            scopes.append({
+                "host": host, "scope": scope, "root": label,
+                "root_status": root_status, "skills": skills,
+                "enablement": "unknown", "discovery": "unknown",
+            })
+    return scopes
+
+
+def _native_details(
+    target: Path, entry: Mapping[str, Any], host: str,
+    packages: Mapping[str, Mapping[str, bytes]] | None,
+) -> dict[str, Any]:
+    try:
+        assert_unlinked_path(target, reason="HOST_SKILL_PATH_INVALID", label="Host target")
+    except SkillHubContractError:
+        return {}
+    rows = _bounded_target_files(target) if target.is_dir() and not target.is_symlink() else None
+    if rows is None:
+        return {}
+    paths = {row["path"] for row in rows}
+    result: dict[str, Any] = {
+        "missing_files": sorted(row["path"] for row in entry["files"] if row["path"] not in paths),
+        "version_match": "unknown", "implicit_invocation": "unknown",
+    }
+    try:
+        if "references/SCHEMA.json" in paths:
+            result.update(_native_version(target, entry))
+        if host == "claude" and packages and "SKILL.md" in paths:
+            result.update(_native_policy(target, packages[entry["skill_uri"]]["SKILL.md"]))
+    except (OSError, ValueError):
+        pass
+    return result
+
+
+def _native_version(target: Path, entry: Mapping[str, Any]) -> dict[str, Any]:
+    schema = json.loads((target / "references/SCHEMA.json").read_bytes())
+    if not isinstance(schema, dict) or not isinstance(schema.get("skill_uri"), str):
+        return {}
+    observed = schema["skill_uri"]
+    if observed.rsplit("@", 1)[0] != entry["skill_uri"].rsplit("@", 1)[0]:
+        return {}
+    if observed == entry["skill_uri"]:
+        return {"version_match": "match"}
+    return {
+        "version_match": "mismatch",
+        "version_next_action": "Installed declaration targets another Skill version; preserve it and explicitly reconcile with the selected lock and matching seed.",
+    }
+
+
+def _native_policy(target: Path, expected_content: bytes) -> dict[str, Any]:
+    expected = expected_content.split(b"\n---\n", 1)[0]
+    content = (target / "SKILL.md").read_bytes().replace(b"\r\n", b"\n")
+    observed, separator, _body = content.partition(b"\n---\n")
+    directive = b"\ndisable-model-invocation: true"
+    # Recognize only an exact generated header plus this single policy
+    # override. Other YAML remains unknown, never guessed as enabled.
+    if separator and observed.count(directive) == 1 and observed.replace(directive, b"") == expected:
+        return {"implicit_invocation": "disabled", "policy_next_action": "Claude's native header disables automatic invocation; explicitly review disable-model-invocation before enabling it. Manual invocation is a separate path."}
+    return {}
 
 
 def _bounded_regular_file(metadata: Any) -> bool:
@@ -298,4 +407,4 @@ def _compile_host_install_plan(value: Mapping[str, Any]) -> dict[str, Any]:
     return contract
 
 
-__all__ = ["build_host_install_plan"]
+__all__ = ["build_host_install_plan", "inspect_host_skills"]
