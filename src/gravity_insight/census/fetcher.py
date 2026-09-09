@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
+import math
 import threading
 import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 from urllib.parse import urljoin, urlsplit
@@ -20,6 +20,7 @@ from gravity_insight.receipt import (
     request_receipt_context,
 )
 from .io import CensusFetchError as _FetchError, census_entry_build_info, census_local_relative, census_looks_like_vite_chunk, census_manifest_assets, http_status_class, safe_url_host, sha256_bytes, stable_bundle_id, write_json
+from .observations import EntryHTMLParser as _EntryHTMLParser, entry_observation
 
 
 DEFAULT_SITE = "https://web.gravity-engine.com/"
@@ -32,29 +33,6 @@ _BUILD_INFO = re.compile(r"window\.BUILD_INFO\s*=\s*(\{.*?\})\s*</script>", re.D
 _VITE_CHUNK_NAME = re.compile(
     r"^.+-(?=[A-Za-z0-9_-]{8}\.js$)(?=[A-Za-z0-9_-]*[A-Z0-9_])[A-Za-z0-9_-]{8}\.js$"
 )
-
-
-class _EntryHTMLParser(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.module_scripts: list[str] = []
-        self.module_preloads: list[str] = []
-        self.manifests: list[str] = []
-        self.other_scripts: list[str] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        values = {key.lower(): value or "" for key, value in attrs}
-        if tag.lower() == "script" and values.get("src"):
-            if values.get("type", "").lower() == "module":
-                self.module_scripts.append(values["src"])
-            else:
-                self.other_scripts.append(values["src"])
-        if tag.lower() == "link" and values.get("href"):
-            rel = set(values.get("rel", "").lower().split())
-            if "modulepreload" in rel:
-                self.module_preloads.append(values["href"])
-            if "manifest" in rel:
-                self.manifests.append(values["href"])
 
 
 def _local_relative(url: str, *, default_name: str = "index.html") -> Path:
@@ -96,6 +74,7 @@ class StaticFetcher:
         concurrency: int = 4,
         timeout: float = 45.0,
         local_capacity_retries: int = 2,
+        max_elapsed_seconds: float = 1200.0,
     ) -> None:
         if not 1 <= max_attempts <= 3:
             raise ValueError("max_attempts must be between 1 and 3")
@@ -105,11 +84,17 @@ class StaticFetcher:
             raise ValueError("concurrency must be between 1 and 4")
         if not 0 <= local_capacity_retries <= 2:
             raise ValueError("local_capacity_retries must be between 0 and 2")
+        if not math.isfinite(max_elapsed_seconds) or max_elapsed_seconds <= 0:
+            raise ValueError("max_elapsed_seconds must be finite and positive")
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("timeout must be finite and positive")
         self.max_attempts = max_attempts
         self.max_requests = max_requests
         self.concurrency = concurrency
         self.timeout = timeout
         self.local_capacity_retries = local_capacity_retries
+        self.max_elapsed_seconds = max_elapsed_seconds
+        self._deadline = time.monotonic() + max_elapsed_seconds
         self.attempts = 0
         self.local_capacity_retries_used = 0
         self.user_agent = user_agent
@@ -146,6 +131,12 @@ class StaticFetcher:
         last_error: Exception | None = None
         last_status: int | None = None
         for attempt in range(self.max_attempts):
+            remaining = self._deadline - time.monotonic()
+            if remaining <= 0:
+                raise _FetchError(
+                    "Census elapsed budget exhausted before another request", url=url,
+                    status_class="time_budget_exhausted", request_attempts=self.attempts,
+                    request_limit=self.max_requests)
             if not self._reserve_attempt():
                 raise _FetchError(
                     f"request budget exhausted for host={safe_url_host(url)}", url=url,
@@ -155,19 +146,24 @@ class StaticFetcher:
             try:
                 response = perform_http_request(
                     self._session().get, url, kind=PRODUCTION_HTTP_KIND,
-                    timeout=self.timeout, allow_redirects=True,
+                    timeout=min(self.timeout, remaining / 2), allow_redirects=False,
                     http_receipt={**request_receipt_context(
                         operation_id="census_fetch", method="GET",
                         path=urlsplit(url).path, effect="read"),
                         "attempt": attempt + 1, "retry": attempt > 0},
                     receipt_root=STATE_ROOT,
                     governor_context={"profile": "census", "attempt_budget": self.max_attempts,
-                        "timeout_seconds": self.timeout,
+                        "timeout_seconds": min(self.timeout, remaining / 2),
                         "local_capacity_retries": self.local_capacity_retries,
                         "local_capacity_backoff_seconds": 0.05,
                         "local_capacity_retry_observer": self._record_local_capacity_retry,
                         "pre_network_failure": self._record_pre_network_failure})
                 last_status = response.status_code
+                if 300 <= response.status_code < 400:
+                    raise _FetchError(
+                        "Static resource redirect requires review; no unbudgeted hop was followed",
+                        url=url, status_code=response.status_code, status_class="content_incomplete",
+                        request_attempts=self.attempts, request_limit=self.max_requests)
                 if 400 <= response.status_code < 500 and response.status_code != 429:
                     raise _FetchError(
                         f"GET returned non-retryable HTTP {response.status_code} "
@@ -182,7 +178,7 @@ class StaticFetcher:
                 status = getattr(getattr(exc, "response", None), "status_code", None)
                 last_status = status if type(status) is int else last_status
                 if attempt + 1 < self.max_attempts and self.attempts < self.max_requests:
-                    time.sleep(0.25 * (2**attempt))
+                    time.sleep(min(0.25 * (2**attempt), max(0, self._deadline - time.monotonic())))
         status_class = http_status_class(last_status)
         raise _FetchError(
             f"GET failed after {self.max_attempts} attempts for host={safe_url_host(url)}; "
@@ -491,12 +487,25 @@ class StaticFetcher:
         site_url = site_url if site_url.endswith("/") else site_url + "/"
         raw_dir.mkdir(parents=True, exist_ok=True)
         write_json(snapshot_path, {"schema_version": 1, "site_url": site_url, "files": [], "summary": {"complete": False, "completeness_reason": "crawl started without a terminal static graph", "request_attempts": self.attempts, "request_limit": self.max_requests}})
-        entry = self._entry_seeds(site_url, raw_dir, probe_manifests)
-        seeds = entry["entry_urls"] + entry["preload_urls"] + entry["manifest_seed_urls"]
-        snapshot = self._build_snapshot(
-            site_url, entry, self._crawl_static_graph(seeds, raw_dir), started
-        )
-        write_json(snapshot_path, snapshot)
+        snapshot = None
+        try:
+            entry = self._entry_seeds(site_url, raw_dir, probe_manifests)
+            seeds = entry["entry_urls"] + entry["preload_urls"] + entry["manifest_seed_urls"]
+            snapshot = self._build_snapshot(
+                site_url, entry, self._crawl_static_graph(seeds, raw_dir), started
+            )
+        finally:
+            if snapshot is None:
+                snapshot = {"schema_version": 1, "site_url": site_url, "files": [],
+                    "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                    "bundle_id": stable_bundle_id([]),
+                    "summary": {"complete": False,
+                        "completeness_reason": "crawl exited without a terminal static graph"}}
+            snapshot["summary"].update({"request_attempts": self.attempts,
+                "request_limit": self.max_requests,
+                "elapsed_seconds": round(time.monotonic() - started, 3),
+                "elapsed_limit_seconds": self.max_elapsed_seconds})
+            write_json(snapshot_path, snapshot)
         return snapshot
 
 
@@ -512,24 +521,5 @@ def check_upstream(
     parser = _EntryHTMLParser()
     parser.feed(text)
     current_entries = sorted({urljoin(str(response.url), item) for item in parser.module_scripts})
-    baseline_entries = sorted(str(item) for item in baseline.get("entry_urls", []))
     build_info = _entry_build_info(text)
-    return {
-        "schema_version": 1,
-        "site_url": site_url,
-        "request_attempts": fetcher.attempts,
-        "baseline_entry_urls": baseline_entries,
-        "current_entry_urls": current_entries,
-        "entry_changed": current_entries != baseline_entries,
-        "baseline_html_sha256": baseline.get("html", {}).get("sha256"),
-        "current_html_sha256": sha256_bytes(response.content),
-        "html_changed": sha256_bytes(response.content) != baseline.get("html", {}).get("sha256"),
-        "upstream_changed": (
-            current_entries != baseline_entries
-            or sha256_bytes(response.content) != baseline.get("html", {}).get("sha256")
-        ),
-        "etag": response.headers.get("ETag"),
-        "last_modified": response.headers.get("Last-Modified"),
-        "build_info": build_info,
-        "note": "No JS was downloaded; hashed entry filenames are the lightweight content-version signal.",
-    }
+    return entry_observation(site_url, baseline, response, current_entries, build_info, fetcher.attempts)
