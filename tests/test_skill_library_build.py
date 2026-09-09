@@ -69,8 +69,10 @@ class SkillLibraryBuildTests(unittest.TestCase):
     def test_build_check_fails_on_pin_drift_and_preserves_other_release_output(self):
         from unittest.mock import patch
         with patch.object(builder, "PINNED_BUILD_MANIFEST_SHA256", "0" * 64):
-            with self.assertRaisesRegex(SystemExit, "pin drifted"):
+            with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
                 builder.main(["--check"])
+            with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
+                builder.render_seed(self.outputs)
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temporary:
             target = Path(temporary)
             old = {"publish_base_url": builder.PUBLISH_BASE.replace("-v6", "-v5")}
@@ -80,6 +82,36 @@ class SkillLibraryBuildTests(unittest.TestCase):
                 builder._write_outputs(target, self.outputs)
             self.assertEqual(original, (target / "build-manifest.json").read_bytes())
             self.assertEqual(["build-manifest.json"], [p.name for p in target.iterdir()])
+
+    def test_packaging_entrypoints_cannot_bypass_the_seed_pin(self):
+        import runpy
+        from unittest.mock import patch
+        from scripts.build_offline_wheel import _generated_seed_entry
+        with patch("setuptools.setup"):
+            setup_namespace = runpy.run_path(str(ROOT / "setup.py"))
+        with patch.object(builder, "PINNED_BUILD_MANIFEST_SHA256", "0" * 64):
+            for build in (setup_namespace["_render_seed"], lambda: _generated_seed_entry(ROOT)):
+                with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
+                    build()
+        tampered = dict(self.outputs)
+        archive = self.index["skills"][0]["archive"]["path"]
+        tampered[archive] += b"changed"
+        with self.assertRaisesRegex(SkillPackageError, "asset digest drifted"):
+            builder.render_seed(tampered)
+
+    def test_same_release_conflicts_are_preflighted_before_any_write(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temporary:
+            target = Path(temporary)
+            files = {"build-manifest.json": self.outputs["build-manifest.json"],
+                     "migration/gravity.skills.lock.json": b"first-project-lock"}
+            builder._write_outputs(target, files)
+            builder._write_outputs(target, files)
+            conflicting = {"early.json": b"must-not-be-written", **files,
+                           "migration/gravity.skills.lock.json": b"other-project-lock"}
+            with self.assertRaisesRegex(SkillPackageError, "conflicting"):
+                builder._write_outputs(target, conflicting)
+            self.assertFalse((target / "early.json").exists())
+            self.assertEqual(b"first-project-lock", (target / "migration/gravity.skills.lock.json").read_bytes())
 
     def test_two_builds_are_byte_identical(self) -> None:
         self.assertEqual(self.outputs, builder.render_outputs())
@@ -396,7 +428,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
     def test_build_check_accepts_the_current_source(self) -> None:
         self.assertEqual(0, builder.main(["--check"]))
 
-    def test_rendered_library_matches_the_published_release(self) -> None:
+    def test_rendered_library_matches_the_reviewed_release_pin(self) -> None:
         # The sealed seed is rebuilt from this checkout when the wheel is
         # built, but the Skill Library release is published separately, and
         # nothing else compares them. A Skill or capability edit that is never

@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "d46541e557a437b8acfac1de8a1a174be485a603de92d2c8a7fa24dc1be46151",
-    "manual_review_sha256": "ba7f55ae207b55c6b16b1605859ecaafe0fc52db0ea33e8395d01a74ca888f3e",
+    "reference_evidence_sha256": "3c00288c0655391e9853bdbd779b735c3d1a76a52e4bdb93fb3f1115f9848726",
+    "manual_review_sha256": "1fb7617c0cc4cd68b6051e941ed46bbe889c11ef5ad317dbce11fa64692f7f90",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3250,
     "scanned_file_count": 3242,
@@ -752,12 +752,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 318,
-    "reference_site_count": 316,
-    "manual_review_site_count": 219,
-    "reference_manual_overlap_count": 217,
+    "tracked_site_count": 319,
+    "reference_site_count": 317,
+    "manual_review_site_count": 220,
+    "reference_manual_overlap_count": 218,
     "manual_only_site_count": 2,
-    "unique_source_keys": 318,
+    "unique_source_keys": 319,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -766,7 +766,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 197,
+      "manual_patch_expression": 198,
       "module_qualname_dependency": 7,
       "static_import": 91,
       "string_reference": 5
@@ -776,12 +776,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 197
+      "non_string_patch_expression": 198
     },
     "dispositions": {
-      "no_migration_effect": 318
+      "no_migration_effect": 319
     },
-    "sites_sha256": "ba9d121f8f61ecabb04051077a84bf0745d60d0e1c7beafdf7c1fd9258ab3ce8"
+    "sites_sha256": "0633fb62242ebe065025bb7f6fa870fc8168d4ff5b7ac49bfd6cc354b58703d5"
   },
   "blockers": [],
   "site_fields": [
@@ -4910,6 +4910,21 @@
     ],
     [
       "tests/test_skill_library_build.py:71:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "builder",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      17,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_skill_library_build.py:92:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "builder",

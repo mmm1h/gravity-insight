@@ -186,11 +186,23 @@ def render_seed(outputs: dict[str, bytes] | None = None) -> bytes:
         }
     ):
         raise SkillPackageError("Skill seed release asset set drifted")
+    verify_build_manifest_pin(selected_outputs)
+    for row in manifest["release_assets"]:
+        content = selected_outputs[row["path"]]
+        if len(content) != row["size_bytes"] or hashlib.sha256(content).hexdigest() != row["sha256"]:
+            raise SkillPackageError("Skill seed release asset digest drifted")
     files = {
         "build-manifest.json": selected_outputs["build-manifest.json"],
         **{path: selected_outputs[path] for path in release_paths},
     }
     return _zip(files)
+
+
+def verify_build_manifest_pin(outputs: dict[str, bytes]) -> str:
+    digest = hashlib.sha256(outputs["build-manifest.json"]).hexdigest()
+    if digest != PINNED_BUILD_MANIFEST_SHA256:
+        raise SkillPackageError("Skill library build-manifest pin drifted; review a new library release and its pin")
+    return digest
 
 
 def _artifact(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -559,6 +571,10 @@ def _write_outputs(output_root: Path, outputs: dict[str, bytes]) -> None:
             raise SkillPackageError("Refusing to overwrite another immutable library; choose a new output directory")
     for relative, content in outputs.items():
         target = output_root.joinpath(*relative.split("/"))
+        if target.exists() and (not target.is_file() or target.read_bytes() != content):
+            raise SkillPackageError("Refusing to overwrite conflicting build output; choose a new output directory")
+    for relative, content in outputs.items():
+        target = output_root.joinpath(*relative.split("/"))
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
 
@@ -575,9 +591,7 @@ def main(argv: list[str] | None = None) -> int:
     second_seed = render_seed(second)
     if first != second or first_seed != second_seed:
         raise SystemExit("Skill library build is not deterministic")
-    manifest_digest = hashlib.sha256(first["build-manifest.json"]).hexdigest()
-    if manifest_digest != PINNED_BUILD_MANIFEST_SHA256:
-        raise SystemExit("Skill library build-manifest pin drifted; review a new library release and its pin")
+    manifest_digest = verify_build_manifest_pin(first)
     migration = {}
     if options.from_lock is not None:
         migration = render_lock_migration(first, load_json_object(options.from_lock, "previous Skill lock"))
@@ -599,8 +613,7 @@ def main(argv: list[str] | None = None) -> int:
         output.joinpath(*path.split("/")).resolve() for path in (*first, *migration, SEED_FILENAME)
     }:
         raise SkillPackageError("Refusing to overwrite the input project lock")
-    _write_outputs(output, {**first, **migration})
-    (output / SEED_FILENAME).write_bytes(first_seed)
+    _write_outputs(output, {**first, **migration, SEED_FILENAME: first_seed})
     print(
         f"rendered {len(first)} Skill Hub files and {SEED_FILENAME} "
         f"({len(first_seed)} bytes, sha256={hashlib.sha256(first_seed).hexdigest()}) "
