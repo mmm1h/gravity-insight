@@ -193,14 +193,15 @@ def _main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return exit_code_for_category(ErrorCategory.CALLER)
 
+    upgrade_exit = _startup_upgrade_exit(args)
+    if upgrade_exit is not None:
+        return upgrade_exit
+
     if args and args[0] == "cache":
         from .cache_cli import main as cache_main
 
         return cache_main(args[1:])
 
-    upgrade_exit = _startup_upgrade_exit(args)
-    if upgrade_exit is not None:
-        return upgrade_exit
     _startup_skill_maintenance(args)
 
     if not args:

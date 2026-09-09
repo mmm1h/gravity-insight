@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -17,6 +18,7 @@ from gravity_insight import __version__
 from gravity_insight import _auto_upgrade_state as upgrade_state
 from gravity_insight import __main__ as entry
 from gravity_insight import auto_upgrade as upgrade
+from gravity_insight.errors import InputValidationError, error_detail_from_exception
 from gravity_insight.auto_upgrade import (
     AUTO_UPGRADE_ENV,
     PINNED_VERSION_ENV,
@@ -515,7 +517,7 @@ class StartupInstallTests(unittest.TestCase):
                 environ={AUTO_UPGRADE_ENV: "0", "GRAVITY_SDK_AUTO_UPGRADE": "1"},
             )
         )
-        self.assertTrue(
+        with self.assertRaises(InputValidationError) as rejected:
             startup_update_enabled(
                 ["agent"],
                 environ={
@@ -523,7 +525,7 @@ class StartupInstallTests(unittest.TestCase):
                     "GRAVITY_SDK_PINNED_VERSION": __version__,
                 },
             )
-        )
+        self.assertEqual("RUNTIME_PIN_MISMATCH", rejected.exception.code)
         self.assertEqual(
             "new",
             upgrade._target_python_from_environment(
@@ -552,11 +554,114 @@ class StartupInstallTests(unittest.TestCase):
             (root / "scripts/agent_usability_eval.py").read_text(encoding="utf-8"),
         )
 
-    def test_invalid_or_mismatched_pin_does_not_disable_the_check(self):
-        for value in ("invalid", "99.0.0"):
-            self.assertTrue(
-                startup_update_enabled(["agent"], environ={PINNED_VERSION_ENV: value})
-            )
+    def test_invalid_or_mismatched_pin_rejects_before_any_update(self):
+        """R2-02 migrates permissive pins: exact constraints cannot select latest."""
+        for value, code in (
+            ("invalid", "INPUT_INVALID"),
+            ("0.3.11", "RUNTIME_PIN_MISMATCH"),
+            ("99.0.0", "RUNTIME_PIN_MISMATCH"),
+        ):
+            with self.subTest(pin=value):
+                with self.assertRaises(InputValidationError) as rejected:
+                    self.install(environ={PINNED_VERSION_ENV: value})
+                detail = error_detail_from_exception(rejected.exception)
+                self.assertEqual((code, "caller"), (detail.code, detail.category))
+                if code == "RUNTIME_PIN_MISMATCH":
+                    self.assertIn(f"gravity-insight=={value}", detail.next_action)
+                else:
+                    self.assertIn("format", detail.next_action)
+        self.request.assert_not_called()
+        self.python.assert_not_called()
+        self.assertEqual([], list(self.root.iterdir()))
+
+    def test_pin_matrix_precedes_off_switch_and_target_selection(self):
+        for pin, outcome in (
+            (__version__, False), ("0.3.11", "RUNTIME_PIN_MISMATCH"),
+            ("99.0.0", "RUNTIME_PIN_MISMATCH"), ("invalid", "INPUT_INVALID"),
+            ("", True), ("   ", True), (None, True),
+        ):
+            for off in (False, True):
+                for target in (None, "missing-python"):
+                    env = {} if pin is None else {PINNED_VERSION_ENV: pin}
+                    if off:
+                        env[AUTO_UPGRADE_ENV] = "0"
+                    if target:
+                        env[TARGET_PYTHON_ENV] = target
+                    with self.subTest(pin=pin, off=off, target=target):
+                        if isinstance(outcome, str):
+                            with self.assertRaises(InputValidationError) as rejected:
+                                startup_update_enabled(["agent"], environ=env)
+                            self.assertEqual(outcome, rejected.exception.code)
+                        else:
+                            self.assertEqual(
+                                outcome and not off,
+                                startup_update_enabled(["agent"], environ=env),
+                            )
+
+    def test_pin_primary_presence_and_legacy_rejections(self):
+        for primary, legacy, expected in (
+            ("", "invalid", True), (__version__, "invalid", False),
+            (None, "invalid", "INPUT_INVALID"),
+            (None, "0.3.11", "RUNTIME_PIN_MISMATCH"),
+        ):
+            env = {"GRAVITY_SDK_PINNED_VERSION": legacy}
+            if primary is not None:
+                env[PINNED_VERSION_ENV] = primary
+            with self.subTest(primary=primary, legacy=legacy):
+                if isinstance(expected, str):
+                    with self.assertRaises(InputValidationError) as rejected:
+                        startup_update_enabled(["agent"], environ=env)
+                    self.assertEqual(expected, rejected.exception.code)
+                    self.assertEqual("GRAVITY_SDK_PINNED_VERSION", rejected.exception.field)
+                else:
+                    self.assertEqual(expected, startup_update_enabled(["agent"], environ=env))
+
+    def test_offline_pin_matrix_never_falls_through_to_latest(self):
+        self.request.side_effect = OSError("offline")
+        for env, outcome in (
+            ({}, "failed"), ({PINNED_VERSION_ENV: ""}, "failed"),
+            ({PINNED_VERSION_ENV: __version__}, "disabled"),
+            ({AUTO_UPGRADE_ENV: "0"}, "disabled"),
+            ({PINNED_VERSION_ENV: "invalid"}, "INPUT_INVALID"),
+            ({PINNED_VERSION_ENV: "0.3.11"}, "RUNTIME_PIN_MISMATCH"),
+            ({PINNED_VERSION_ENV: "99.0.0"}, "RUNTIME_PIN_MISMATCH"),
+        ):
+            with self.subTest(env=env):
+                self.request.reset_mock()
+                if outcome in {"INPUT_INVALID", "RUNTIME_PIN_MISMATCH"}:
+                    with self.assertRaises(InputValidationError) as rejected:
+                        self.install(environ=env)
+                    self.assertEqual(outcome, rejected.exception.code)
+                else:
+                    self.assertEqual(outcome, self.install(environ=env).status)
+                self.assertEqual(int(outcome == "failed"), self.request.call_count)
+        self.python.assert_not_called()
+
+    def test_entry_rejects_pin_before_network_auth_maintenance_and_dispatch(self):
+        lock = self.root / "gravity.skills.lock.json"
+        lock.write_bytes(b'{"locked":true}')
+        for pin in ("invalid", "0.3.11", "99.0.0"):
+            for argv in ([], ["agent"], ["--help"], ["doctor"], ["insight", "doctor"], ["cache", "status"]):
+                output = io.StringIO()
+                with (
+                    self.subTest(pin=pin, argv=argv),
+                    patch.dict(os.environ, {PINNED_VERSION_ENV: pin, AUTO_UPGRADE_ENV: "0"}),
+                    patch.object(upgrade, "_distribution_get", side_effect=AssertionError("network")),
+                    patch.object(upgrade, "update_state_path", side_effect=AssertionError("state")),
+                    patch.object(entry, "ensure_first_run_credentials", side_effect=AssertionError("auth")),
+                    patch.object(entry, "_run_namespace", side_effect=AssertionError("dispatch")),
+                    patch.object(entry, "_startup_skill_maintenance", side_effect=AssertionError("maintenance")),
+                    patch("gravity_insight.cache_cli.main", side_effect=AssertionError("cache dispatch")),
+                    redirect_stderr(output),
+                ):
+                    self.assertEqual(2, entry.main(argv))
+                    error = json.loads(output.getvalue())["error"]
+                    self.assertEqual(
+                        "INPUT_INVALID" if pin == "invalid" else "RUNTIME_PIN_MISMATCH",
+                        error["code"],
+                    )
+        self.assertEqual(b'{"locked":true}', lock.read_bytes())
+        self.python.assert_not_called()
 
     def test_default_interpreter_installs_exact_version_in_separate_stage(self):
         result = self.install()
@@ -742,7 +847,16 @@ class StartupInstallTests(unittest.TestCase):
     ):
         result = self.install()
         self.python.reset_mock()
-        self.python.side_effect = [Mock(returncode=0), Mock(returncode=7)]
+        def child_observation(*args, **kwargs):
+            if kwargs.get("capture") is False:
+                journal = Path(kwargs["environment"][self.installer.RECEIPT_ENV])
+                observed = json.loads(journal.read_text(encoding="utf-8"))
+                self.assertIsNone(observed["running_version"])
+                observed.update(status="process_started", running_version="99.0.0")
+                journal.write_text(json.dumps(observed), encoding="utf-8")
+                return Mock(returncode=7)
+            return Mock(returncode=0)
+        self.python.side_effect = child_observation
         code = self.installer.activate_install(
             result.state, ["agent", "private query"], output=self.output
         )
@@ -763,6 +877,27 @@ class StartupInstallTests(unittest.TestCase):
         )
         self.assertNotIn("private query", json.dumps(receipt))
         self.assertEqual(2, self.python.call_count)
+
+    def test_child_exit_without_observation_does_not_claim_target_ran(self):
+        result = self.install()
+        self.python.side_effect = [Mock(returncode=0), Mock(returncode=1)]
+        self.assertEqual(1, self.installer.activate_install(result.state, ["agent"], output=self.output))
+        receipt = json.loads(next(self.root.rglob("activation-*.json")).read_text(encoding="utf-8"))
+        self.assertIsNone(receipt["running_version"])
+        self.assertEqual("process_exited", receipt["status"])
+
+    def test_corrupt_child_receipt_preserves_business_exit(self):
+        result = self.install()
+
+        def corrupt_receipt(*args, **kwargs):
+            if kwargs.get("capture") is False:
+                Path(kwargs["environment"][self.installer.RECEIPT_ENV]).write_text("[]", encoding="utf-8")
+                return Mock(returncode=7)
+            return Mock(returncode=0)
+
+        self.python.side_effect = corrupt_receipt
+        self.assertEqual(7, self.installer.activate_install(result.state, ["agent"], output=self.output))
+        self.assertIn("cannot finalize update receipt", self.output.getvalue())
 
     def test_activation_preflight_failure_falls_back_before_dispatch(self):
         result = self.install()
@@ -844,6 +979,65 @@ class StartupInstallTests(unittest.TestCase):
                 self.assertEqual(0, entry.main(["--help"]))
         state_path.assert_not_called()
         self.python.assert_not_called()
+
+
+class ObservedActivationReceiptTests(unittest.TestCase):
+    def test_real_child_records_imported_stage_version_before_business_exit(self):
+        """Use a local synthetic stage, never pip/download or base package metadata."""
+        from gravity_insight import _auto_upgrade_install as installer
+
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            stage = root / "stage"
+            package = stage / "gravity_insight"
+            package.mkdir(parents=True)
+            (package / "__init__.py").write_text("__version__ = '99.0.0'\n", encoding="utf-8")
+            (package / "__main__.py").write_text(
+                "import json, os, sys\n"
+                "from pathlib import Path\n"
+                "from . import __version__\n"
+                "def main():\n"
+                "    receipt = json.loads(Path(os.environ['GRAVITY_INSIGHT_UPDATE_RECEIPT']).read_text(encoding='utf-8'))\n"
+                "    Path(sys.argv[1]).write_text(json.dumps({'version': __version__, 'python': sys.executable, 'module': __file__, 'receipt': receipt}), encoding='utf-8')\n"
+                "    return 7\n"
+                "if __name__ == '__main__':\n"
+                "    raise SystemExit(main())\n",
+                encoding="utf-8",
+            )
+            receipt = {
+                "receipt_id": "local-fixture", "schema_version": installer.RECEIPT_SCHEMA,
+                "stage": str(stage), "target_python": sys.executable,
+                "to_version": "99.0.0", "running_version": __version__,
+            }
+            observation = root / "observed.json"
+            with patch.dict(os.environ, {AUTO_UPGRADE_ENV: "0", PINNED_VERSION_ENV: ""}):
+                self.assertEqual(7, installer.activate_install(receipt, [str(observation)], output=io.StringIO()))
+            child = json.loads(observation.read_text(encoding="utf-8"))
+            final = json.loads(next(root.glob("activation-*.json")).read_text(encoding="utf-8"))
+            self.assertEqual(("99.0.0", "process_started"), (child["version"], child["receipt"]["status"]))
+            self.assertEqual(Path(sys.executable).resolve(), Path(child["python"]).resolve())
+            self.assertTrue(Path(child["module"]).resolve().is_relative_to(stage.resolve()))
+            self.assertEqual((child["version"], 7), (final["running_version"], final["exit_code"]))
+            self.assertNotEqual(__version__, final["running_version"])
+
+    def test_real_bootstrap_rejects_changed_stage_without_claiming_execution(self):
+        from gravity_insight import _auto_upgrade_install as installer
+
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            package = root / "gravity_insight"
+            package.mkdir()
+            (package / "__init__.py").write_text("__version__ = '98.0.0'\n", encoding="utf-8")
+            journal = root / "activation.json"
+            journal.write_text(json.dumps({"to_version": "99.0.0", "running_version": None}), encoding="utf-8")
+            completed = subprocess.run(
+                [sys.executable, "-I", "-c", installer._BOOTSTRAP, str(root)],
+                env={**os.environ, installer.RECEIPT_ENV: str(journal)},
+                capture_output=True, text=True, timeout=30, check=False,
+            )
+            self.assertNotEqual(0, completed.returncode)
+            self.assertIn("version does not match", completed.stderr)
+            self.assertIsNone(json.loads(journal.read_text(encoding="utf-8"))["running_version"])
 
 
 if __name__ == "__main__":

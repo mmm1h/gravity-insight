@@ -28,10 +28,24 @@ from ._auto_upgrade_state import (
 
 RECEIPT_SCHEMA = "gravity.runtime-update-receipt.v1"
 RECEIPT_ENV = "GRAVITY_INSIGHT_UPDATE_RECEIPT"
-_BOOTSTRAP = (
-    "import sys,runpy; sys.path.insert(0,sys.argv.pop(1)); "
-    "runpy.run_module('gravity_insight',run_name='__main__')"
-)
+_BOOTSTRAP = """
+import json, os, runpy, sys
+from pathlib import Path
+stage = Path(sys.argv.pop(1)).resolve()
+sys.path.insert(0, str(stage))
+import gravity_insight as runtime
+journal = Path(os.environ['GRAVITY_INSIGHT_UPDATE_RECEIPT'])
+receipt = json.loads(journal.read_text(encoding='utf-8'))
+if not Path(runtime.__file__).resolve().is_relative_to(stage):
+    raise RuntimeError('activation imported a runtime outside its stage')
+if runtime.__version__ != receipt['to_version']:
+    raise RuntimeError('activation runtime version does not match target')
+receipt.update(status='process_started', running_version=runtime.__version__)
+temporary = journal.with_suffix('.started.tmp')
+temporary.write_text(json.dumps(receipt), encoding='utf-8')
+os.replace(temporary, journal)
+runpy.run_module('gravity_insight', run_name='__main__')
+"""
 _VERIFY = (
     "import sys; sys.path.insert(0,sys.argv[1]); "
     "import gravity_insight as g; import gravity_insight.__main__ as cli; "
@@ -263,6 +277,7 @@ def activate_install(
         **receipt,
         "receipt_id": uuid.uuid4().hex,
         "status": "activation_requested",
+        "running_version": None,
         "installation_receipt_id": receipt["receipt_id"],
         "from_version": __version__,
         "captured_at": format_timestamp(utc(None)),
@@ -309,14 +324,14 @@ def activate_install(
             file=output,
         )
         return None
-    activation.update(
-        status="process_exited",
-        exit_code=completed.returncode,
-        running_version=receipt["to_version"],
-    )
     try:
+        observed = json.loads(journal.read_text(encoding="utf-8"))
+        if not isinstance(observed, dict) or observed.get("receipt_id") != activation["receipt_id"]:
+            raise ValueError("activation receipt identity is invalid")
+        activation = observed
+        activation.update(status="process_exited", exit_code=completed.returncode)
         _write_state_file(journal, activation)
-    except OSError:
+    except (OSError, UnicodeError, ValueError):
         print(
             f"warning: cannot finalize update receipt {journal}; inspect cache permissions.",
             file=output,

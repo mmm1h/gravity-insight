@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "a607923adbc0579245684b76916145e4a315625b63b10f53e444a89957aaaf01"
+    "compatibility_sha256": "2a4e34ed7a8d1957158ae5446f1fa2e95c8ed471d070df303e2a877ebb1f6e13"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -326,11 +326,17 @@
       "version": "0.3.15",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.15-hard-break-1",
+          "description": "Nonempty runtime pins are exact execution constraints: malformed pins fail with `INPUT_INVALID`, mismatched pins fail with `RUNTIME_PIN_MISMATCH` before startup distribution access, authentication or dispatch, even when updates are disabled. Unset/empty pins retain default-on updates. Activation receipts now report `running_version: null` until the staged child observes its imported version; a child exit alone is not execution-version proof. Migration guide: [0.3.15](docs/migration/0.3.15.md)",
+          "migration_guide": "docs/migration/0.3.15.md"
+        }
+      ],
       "soft_breaks": [],
-      "migration_guide": null
+      "migration_guide": "docs/migration/0.3.15.md"
     }
   ]
 }
