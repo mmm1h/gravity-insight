@@ -110,7 +110,8 @@ Compose version choice (report.ap-cost-observation, no implicit latest/default):
   v2: small frontend-profile metric set with dimension-bound filters.
   v3: expanded acquisition/payer/revenue members, new members limited to day/week.
   v4: v3 members with fetched_at-scoped, point-in-time and cross-execution limits.
-  New illustrative inputs below pin v4 for its explicit observation limits;
+  v5: v4 members plus explicit cost grain/provenance and estimation-claim boundaries.
+  New illustrative inputs below pin v5 for those machine-readable boundaries;
   existing project bindings stay on their approved exact version, not auto-upgraded.
   Member versions are independent of the parent Definition version. Inspect
   gravity semantic compose --input-schema before changing a member or grain.

@@ -4,6 +4,18 @@
   "description": "Compose Definition: a versioned physical member catalog compiled to governed Multidim requests. Not a Business Definition or Business Source; select this schema by filename, not the shared $id/schema_version.",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["definition_id", "version"],
+        "properties": {
+          "definition_id": {"const": "report.ap-cost-observation"},
+          "version": {"minimum": 5}
+        }
+      },
+      "then": {"required": ["cost_granularity_and_provenance", "forbidden_claims"]}
+    }
+  ],
   "required": [
     "schema_version",
     "definition_id",
@@ -62,9 +74,117 @@
     "filters": {"type": "array", "items": {"$ref": "#/$defs/filter"}},
     "grains": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/grain"}},
     "joins": {"type": "array", "items": {"$ref": "#/$defs/join"}},
-    "allowed_claims": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/claim"}}
+    "allowed_claims": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/claim"}},
+    "cost_granularity_and_provenance": {"$ref": "#/$defs/cost_granularity_and_provenance"},
+    "forbidden_claims": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/claim"}}
   },
   "$defs": {
+    "cost_granularity_and_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native_cost", "revenue", "join_evidence"],
+      "properties": {
+        "native_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["metric", "non_time_dimensions", "date_semantics", "post_registration_user_grouping", "estimation"],
+          "properties": {
+            "metric": {"const": "ap_cost"},
+            "non_time_dimensions": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "uniqueItems": true,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "date_semantics": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "basis", "gap_code", "evidence"],
+              "properties": {
+                "status": {"const": "undeclared"},
+                "basis": {"type": "null"},
+                "gap_code": {"$ref": "#/$defs/gap_code"},
+                "evidence": {"$ref": "#/$defs/metric_metadata_evidence"}
+              }
+            },
+            "post_registration_user_grouping": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "gap_code"],
+              "properties": {
+                "status": {"const": "unavailable"},
+                "gap_code": {"$ref": "#/$defs/gap_code"}
+              }
+            },
+            "estimation": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["native_or_exact_allowed", "required_label", "required_disclosures"],
+              "properties": {
+                "native_or_exact_allowed": {"const": false},
+                "required_label": {"const": "estimated"},
+                "required_disclosures": {
+                  "type": "array",
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": ["method", "covered_population", "excluded_label_treatment", "assumptions"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "revenue": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cohort_basis", "evidence", "metrics"],
+          "properties": {
+            "cohort_basis": {"const": "activation"},
+            "evidence": {"$ref": "#/$defs/metric_metadata_evidence"},
+            "metrics": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["physical_name", "metric_type", "event_timing"],
+                "properties": {
+                  "physical_name": {"enum": ["standard_1day_pay_amount", "multi_day_pay_amount"]},
+                  "metric_type": {"enum": [0, 2]},
+                  "event_timing": {"enum": ["within_activation_day", "post_activation_day_n"]}
+                }
+              }
+            }
+          }
+        },
+        "join_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["artifact_path", "registry_id", "right_side_semantics", "post_registration_user_property_mapping"],
+          "properties": {
+            "artifact_path": {"const": "../join-keys/registry.v1.json"},
+            "registry_id": {"const": "join-key://gravity/acquisition-user@1"},
+            "right_side_semantics": {"const": "acquisition_attribution_fields"},
+            "post_registration_user_property_mapping": {"const": false}
+          }
+        }
+      }
+    },
+    "gap_code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"},
+    "metric_metadata_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_id", "field", "declared_meaning"],
+      "properties": {
+        "operation_id": {"const": "report.multidim.metric.list"},
+        "field": {"const": "data.list[].tip"},
+        "declared_meaning": {"enum": ["total_spend_only", "activation_cohort"]}
+      }
+    },
     "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
     "member": {
       "type": "object",

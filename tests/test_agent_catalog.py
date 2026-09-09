@@ -17,6 +17,14 @@ from gravity_insight.multidim_contract import (
     MULTIDIM_COHORT_HORIZON_GAP_CODE,
     multidim_multi_key_contract,
 )
+from gravity_insight.agents.unavailable_report import (
+    AP_COST_DATE_SEMANTICS_GAP_CODE,
+    AP_COST_DATE_SEMANTICS_NEXT_ACTION,
+    AP_COST_DATE_SEMANTICS_REASON,
+    POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+    POST_REGISTRATION_USER_GROUP_COST_NEXT_ACTION,
+    POST_REGISTRATION_USER_GROUP_COST_REASON,
+)
 from gravity_insight.segment_spec_schema import segment_rule_spec_schema
 
 
@@ -74,7 +82,7 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])
         self.assertEqual("discover_and_describe", result["mode"])
 
-    def test_registered_gap_inventory_has_nine_unique_machine_codes(self) -> None:
+    def test_registered_gap_inventory_has_eleven_unique_machine_codes(self) -> None:
         """Issue #19 adds a fail-closed gap for its unproved five-state contract.
 
         The existing single-role transfer stays callable, while the complete
@@ -82,8 +90,8 @@ class AgentCatalogTests(unittest.TestCase):
         """
 
         gaps = registered_unavailable_gaps()
-        self.assertEqual(9, len(gaps))
-        self.assertEqual(9, len({gap["code"] for gap in gaps}))
+        self.assertEqual(11, len(gaps))
+        self.assertEqual(11, len({gap["code"] for gap in gaps}))
 
     def test_custom_event_first_exposure_returns_narrow_evidence_gap(self) -> None:
         for query in (
@@ -134,6 +142,41 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertFalse(gap["network_called"])
         self.assertNotIn("use generic event retention", gap["next_action"])
         self.assertIn("do not substitute generic event retention", gap["next_action"])
+
+    def test_cost_provenance_and_post_registration_group_gaps_are_retrievable(self) -> None:
+        cases = (
+            (
+                "What date semantics does ap_cost use: spend, click, activation, or registration date?",
+                AP_COST_DATE_SEMANTICS_GAP_CODE,
+                "ap_cost_date_semantics",
+                AP_COST_DATE_SEMANTICS_REASON,
+                AP_COST_DATE_SEMANTICS_NEXT_ACTION,
+            ),
+            (
+                "按注册后 AB 分组拆分 IAP ROI 的精确成本。",
+                POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+                "post_registration_user_group_cost",
+                POST_REGISTRATION_USER_GROUP_COST_REASON,
+                POST_REGISTRATION_USER_GROUP_COST_NEXT_ACTION,
+            ),
+        )
+        for query, code, journey, reason, next_action in cases:
+            with self.subTest(code=code):
+                gap = unavailable_journey_gap(query)
+                self.assertIsNotNone(gap)
+                self.assertEqual("capability_gap", gap["kind"])
+                self.assertEqual(code, gap["code"])
+                self.assertEqual(journey, gap["journey"])
+                self.assertEqual(reason, gap["reason"])
+                self.assertEqual(next_action, gap["next_action"])
+                self.assertFalse(gap["network_called"])
+
+                described = run_agent_catalog_command(
+                    _args("describe", selector=f"gap:{code}"), self.client
+                )
+                self.assertEqual(code, described["capability"]["code"])
+                self.assertEqual(reason, described["capability"]["reason"])
+                self.assertEqual(next_action, described["capability"]["next_action"])
 
     def test_catalog_has_complete_cards_gaps_and_contract_status_parity(self) -> None:
         inventory = _inventory(self.client)

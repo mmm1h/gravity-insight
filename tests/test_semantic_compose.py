@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import copy
+import json
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
 from gravity_insight import InputValidationError
 from gravity_insight.agent import discover_capabilities
+from gravity_insight.agents.unavailable_report import (
+    AP_COST_DATE_SEMANTICS_GAP_CODE as AGENT_AP_COST_DATE_SEMANTICS_GAP_CODE,
+    POST_REGISTRATION_USER_GROUP_COST_GAP_CODE as AGENT_POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+)
 from gravity_insight.plan import AdapterContext
 from gravity_insight.plan_semantic_compose_adapter import validate_semantic_compose_plan
 from gravity_insight.semantic_compose import (
@@ -15,7 +21,11 @@ from gravity_insight.semantic_compose import (
     run_semantic_compose,
     semantic_compose_input_schema,
 )
-from gravity_insight.semantic_compose_catalog import definition_by_id
+from gravity_insight.semantic_compose_catalog import (
+    AP_COST_DATE_SEMANTICS_GAP_CODE,
+    POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+    definition_by_id,
+)
 
 
 APP_ID = 17
@@ -24,6 +34,7 @@ DEFINITION = {"definition_id": "report.ap-cost-observation", "version": 1}
 DEFINITION_V2 = {"definition_id": "report.ap-cost-observation", "version": 2}
 DEFINITION_V3 = {"definition_id": "report.ap-cost-observation", "version": 3}
 DEFINITION_V4 = {"definition_id": "report.ap-cost-observation", "version": 4}
+DEFINITION_V5 = {"definition_id": "report.ap-cost-observation", "version": 5}
 METRIC = {"definition_id": "report.metric.ap-cost", "version": 1}
 ACTIVATE_METRIC = {
     "definition_id": "report.metric.adclick-standard-activate-count",
@@ -193,7 +204,7 @@ class SemanticComposeTests(unittest.TestCase):
     def test_real_definition_versions_coexist_and_v2_compiles_live_wire(self):
         schema = semantic_compose_input_schema()
         self.assertEqual(
-            [DEFINITION, DEFINITION_V2, DEFINITION_V3, DEFINITION_V4],
+            [DEFINITION, DEFINITION_V2, DEFINITION_V3, DEFINITION_V4, DEFINITION_V5],
             schema["x-registered-definitions"],
         )
         v1 = compile_semantic_compose(request(), app_id=APP_ID)
@@ -268,6 +279,85 @@ class SemanticComposeTests(unittest.TestCase):
         self.assertIn("not guaranteed to return identical values", statements[0])
         self.assertIn("only as separately timestamped observations", statements[1])
         self.assertIn("not as replay-equivalent, stable, settled, or causal", statements[1])
+
+    def test_v5_declares_native_cost_grain_provenance_and_estimation_policy(self):
+        definition = definition_by_id("report.ap-cost-observation", 5)
+        boundaries = definition["cost_granularity_and_provenance"]
+        native = boundaries["native_cost"]
+        dimension_names = [item["physical_name"] for item in definition["dimensions"]]
+
+        self.assertEqual(["click_company"], dimension_names)
+        self.assertEqual(dimension_names, native["non_time_dimensions"])
+        compiled = compile_semantic_compose(
+            request(
+                "day",
+                definition=DEFINITION_V5,
+                dimensions=[CLICK_DIMENSION],
+                joins=[CLICK_JOIN],
+            ),
+            app_id=APP_ID,
+        )
+        self.assertEqual(["click_company"], compiled["generated_query"]["inputs"]["data_dims"])
+        unsupported = request("day", definition=DEFINITION_V5)
+        unsupported["dimensions"] = [
+            {"definition_id": "report.dimension.user-ab", "version": 1}
+        ]
+        self._assert_zero_network_failure(unsupported, "dimensions.0")
+
+        date_semantics = native["date_semantics"]
+        self.assertEqual(("undeclared", None), (date_semantics["status"], date_semantics["basis"]))
+        self.assertEqual(AP_COST_DATE_SEMANTICS_GAP_CODE, date_semantics["gap_code"])
+        self.assertEqual(
+            AP_COST_DATE_SEMANTICS_GAP_CODE,
+            AGENT_AP_COST_DATE_SEMANTICS_GAP_CODE,
+        )
+        self.assertEqual("total_spend_only", date_semantics["evidence"]["declared_meaning"])
+        self.assertEqual(
+            POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+            native["post_registration_user_grouping"]["gap_code"],
+        )
+        self.assertEqual(
+            POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+            AGENT_POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
+        )
+        self.assertEqual("activation", boundaries["revenue"]["cohort_basis"])
+        self.assertEqual(
+            [
+                ("standard_1day_pay_amount", 0, "within_activation_day"),
+                ("multi_day_pay_amount", 2, "post_activation_day_n"),
+            ],
+            [
+                (item["physical_name"], item["metric_type"], item["event_timing"])
+                for item in boundaries["revenue"]["metrics"]
+            ],
+        )
+
+        estimation = native["estimation"]
+        self.assertFalse(estimation["native_or_exact_allowed"])
+        self.assertEqual("estimated", estimation["required_label"])
+        self.assertEqual(
+            ["method", "covered_population", "excluded_label_treatment", "assumptions"],
+            estimation["required_disclosures"],
+        )
+        self.assertEqual(
+            ["allocated-cost-as-native-or-exact"],
+            [claim["claim_id"] for claim in definition["forbidden_claims"]],
+        )
+
+        registry_path = (
+            Path(__file__).resolve().parents[1]
+            / "src/gravity_insight/contracts/join-keys/registry.v1.json"
+        )
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+        self.assertEqual(boundaries["join_evidence"]["registry_id"], registry["registry_id"])
+        self.assertEqual(21, len(registry["mappings"]))
+        right_fields = {
+            field["reference"]["path"].rsplit(".", 1)[-1]
+            for mapping in registry["mappings"]
+            for field in mapping["right"]["fields"]
+        }
+        self.assertNotIn("user_ab", right_fields)
+        self.assertFalse(boundaries["join_evidence"]["post_registration_user_property_mapping"])
 
     def test_schema_agent_and_plan_preflight_share_one_contract(self):
         schema = semantic_compose_input_schema()

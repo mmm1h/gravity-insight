@@ -15,6 +15,8 @@ _REGISTERED_GAP_QUERIES = (
     "registered sql analysis product",
     "query multidim cohort horizon D60",
     "custom event first exposure cohort",
+    "what date semantics does ap_cost use: spend, click, activation, or registration date",
+    "exact ap_cost by post-registration user_ab group",
 )
 
 

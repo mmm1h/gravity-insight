@@ -41,7 +41,7 @@
       "effective_range": {"start": "2026-01-01", "end": "2026-12-31"},
       "provider": {
         "kind": "semantic_compose",
-        "definition": {"definition_id": "report.ap-cost-observation", "version": 4},
+        "definition": {"definition_id": "report.ap-cost-observation", "version": 5},
         "members": {
           "metric": {"definition_id": "report.metric.ap-cost", "version": 1},
           "dimension": {"definition_id": "report.dimension.click-company", "version": 1},
