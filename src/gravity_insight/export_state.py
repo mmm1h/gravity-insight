@@ -292,7 +292,9 @@ class ExportOrchestrator:
                 source,
                 destination,
                 blob_policy,
-                finalizer=ExportPrivacyFinalizer(privacy_contract),
+                finalizer=ExportPrivacyFinalizer(
+                    privacy_contract, archive_policy=blob_policy.archive_policy,
+                ),
                 observer=observe,
             )
             tracker.move(ExportState.COMMITTED)

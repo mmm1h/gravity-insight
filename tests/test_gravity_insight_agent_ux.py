@@ -1238,7 +1238,8 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertFalse(protocol["network_called"])
         self.assertIn("--concurrency", protocol["execution"]["input_forms"])
         self.assertIn("--concurrency", protocol["execution"]["large_result_argv_suffix"])
-        self.assertEqual("gravity", protocol["workflow"][0]["argv"][0])
+        catalog = next(step for step in protocol["workflow"] if step["step"] == "unknown_capability")
+        self.assertEqual(["gravity", "agent-catalog", "host"], catalog["argv"])
         self.assertEqual({"0", "2", "3", "4"}, set(protocol["exit_codes"]))
 
         discovered = cli.run_agent_command(

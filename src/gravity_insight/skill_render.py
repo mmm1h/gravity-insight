@@ -33,6 +33,41 @@ _ROLES = {
 }
 
 
+def _host_handoff(contract: Mapping[str, Any]) -> list[str]:
+    if contract.get("method", {}).get("method_revision", 1) < 2:
+        return []
+    return [
+        "## Host Entry and Handoff", "",
+        "1. 已知且有当前有效合同的能力：直接使用对应专用 CLI、SDK、Composite 或 Plan；"
+        "不为形式统一重复目录查询或提交原问题给规则识别器。版本或合同漂移时重新发现。",
+        "2. 未知能力：运行 `gravity agent-catalog categories`，再按需运行 "
+        "`gravity agent-catalog category <domain>` 和 "
+        "`gravity agent-catalog describe <selector>`。比较适用范围与限制，"
+        "沿返回的 `schema_argv` 读取当前输入 Schema；产品字段不从本教程复制。",
+        "3. 宿主能够选择时：运行 `gravity agent-catalog host`，按返回的 selection "
+        "Schema/template 和当前 catalog fingerprint 构造 selection 文件，再调用 "
+        "`gravity agent --host-selection <selection.json>`。核对 required_inputs，"
+        "按返回的 `next.argv` 补参或执行；目录与 selection 本身不执行产品。",
+        "4. 仅宿主仍无法可靠选择或选择协议不可用时，才用 "
+        "`gravity agent <question> --routing recognizer` 获取受限候选。弱匹配、歧义或 "
+        "Gap 应补充信息；缺业务事实、权限拒绝或执行失败不是换路由重试的理由。",
+        "5. 执行前检查项目 lock、Semantic/Context、Trust、完整性和预算；执行后核对状态、"
+        "覆盖范围、允许断言和证据，再决定追加查询或报告。没有 covers_journeys 不代表无条件可执行。",
+        "", "### Project Selection", "",
+        "优先使用项目已经锁定的少量适用 Skill。用 `gravity skills status` 检查锁，"
+        "用 `gravity skills list --state-root <state-root>` 发现完整本地供给；"
+        "安装计划只用显式项目锁选择，不以全库安装代替选型。",
+        "本次内容修订改变 manifest/package digest。仅在 Journey 边界外显式运行 "
+        "`gravity skills lock --source-id <source-id> --skill <exact-uri> "
+        "--output <new-lock.json> --state-root <state-root>`，为原锁所选每个 Skill 重复 "
+        "`--skill`；评审新旧锁的全部选项、依赖和 digest，再激活。保留旧 lock/CAS 与"
+        "匹配 Runtime/seed 以便整体回滚，禁止运行中更新或自动改项目锁。",
+        "", "示例中的项目模板不是产品请求 Schema；合成算子输入只验证离线算术合同，"
+        "不能当作真实证据。运行前从 describe 读取字段，替换为经过批准的项目输入。",
+        "实际宿主是否发现或自动触发此 Skill 由 R2-11 验收；本静态投影不证明触发质量。", "",
+    ]
+
+
 def render_guide(contract: Mapping[str, Any]) -> str:
     guide = contract["guide"]
     lines = [
@@ -42,6 +77,7 @@ def render_guide(contract: Mapping[str, Any]) -> str:
         "",
         str(guide["applicability"]),
         "",
+        *_host_handoff(contract),
         "## Quick Workflow",
         "",
     ]
@@ -433,6 +469,7 @@ def _agent_skill_markdown(
         "",
         f"# {contract['guide']['title']}",
         "",
+        *_host_handoff(contract),
         "Read `references/GUIDE.md` before using this Skill.",
         "",
         "Before selecting or executing a Gravity product, read `references/SCHEMA.json` for the exact identity, routing hints, effects, dependencies, request budget, and declared readiness and validation.",

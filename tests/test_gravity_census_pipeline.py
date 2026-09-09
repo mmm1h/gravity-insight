@@ -652,7 +652,7 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         fetcher._session = lambda: SimpleNamespace(get=fake_request)
         try:
             request_globals["perform_http_request"] = fake_request
-            request_globals["time"] = SimpleNamespace(sleep=sleeps.append)
+            request_globals["time"] = SimpleNamespace(sleep=sleeps.append, monotonic=original_time.monotonic)
             with self.assertRaises(_FetchError) as raised:
                 fetcher._get("https://example.test/bundle.js?signature=private")
         finally:
@@ -929,10 +929,8 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
             REPO_ROOT / ".github" / "workflows" / "upstream-census.yml"
         ).read_text(encoding="utf-8")
         self.assertIn("$attemptLimit = 3", workflow)
-        self.assertIn(
-            "--max-attempts 1 --local-capacity-retries 2", workflow
-        )
-        self.assertIn("--step-output $stepResult", workflow)
+        self.assertIn("'--max-attempts', '1', '--local-capacity-retries', '2'", workflow)
+        self.assertIn("'--step-output', $stepResult", workflow)
         self.assertIn("gravity-census.step-output.v1", workflow)
         self.assertIn('cron: "47 1 * * *"', workflow)
         self.assertIn("full_required=", workflow)
@@ -944,7 +942,7 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         )
         self.assertLess(
             workflow.index("Set-Content -Encoding utf8 -LiteralPath $snapshot"),
-            workflow.index("gravity census fetch"),
+            workflow.index("$process = Start-Process"),
         )
         self.assertIn("uploaded current-snapshot.json", workflow)
         self.assertIn("ConvertFrom-Json -ErrorAction Stop", workflow)
@@ -952,9 +950,7 @@ class GravityCensusCircuitFailureTests(unittest.TestCase):
         self.assertIn(
             "steps.upstream.outputs.full_required == 'true'", workflow
         )
-        self.assertIn(
-            "steps.fetch.outputs.failure_class != 'upstream_capacity'", workflow
-        )
+        self.assertIn("Reject unavailable monitoring after bounded attempts", workflow)
         self.assertIn("No route-drift conclusion was made", workflow)
         self.assertIn("issues: write", workflow)
         self.assertIn("Build the actionable upstream drift signal", workflow)

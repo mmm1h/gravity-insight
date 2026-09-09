@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "提出任何优化实验前，区分合格人群、曝光和符合条件的购买观测结果。",
+  "description": "用于拆解礼包返回分层的触达、购买渗透与组成变化。用户问“礼包渗透为什么低，哪些分层需要验证”时使用。不用于自动改价改商品或保证收入提升；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -104,7 +104,7 @@
       },
       {
         "evidence": "Runtime Core 已登记该确定性 Operator，并用严格 Schema、资源预算与 golden cases 锁定输入输出。",
-        "identity": "operator://gravity/metric-decomposition@1",
+        "identity": "operator://gravity/metric-decomposition@2",
         "kind": "operator",
         "reason_code": "DEPENDENCY_AVAILABLE",
         "status": "available"
@@ -244,6 +244,194 @@
         "没有礼包资格和分层合同，能否按平均购买率直接给出最优方案？"
       ],
       "run_examples": [
+        {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-eligible-population",
+              "optimal-offer-design"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "拆解礼包返回分层的触达、购买渗透与组成变化",
+            "missing_project_calibration": "gift-eligibility"
+          },
+          "question": "我想拆解礼包返回分层的触达、购买渗透与组成变化，但尚未提供目标人群、排除和商品有效期。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "operator-v2-conformance",
+          "expected": {
+            "allowed_claims": [
+              "observed-gift-penetration",
+              "returned-segment-contribution",
+              "qualified-offer-hypothesis"
+            ],
+            "completeness": "complete",
+            "forbidden_claims": [
+              "causality",
+              "complete-eligible-population",
+              "optimal-offer-design"
+            ],
+            "network_called": false,
+            "reason_codes": [],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "method-output",
+              "dimension-contribution",
+              "diagnostic-path",
+              "exclusions",
+              "evidence",
+              "claims-and-limitations"
+            ],
+            "status": "success"
+          },
+          "input_template": {
+            "operator_uri": "operator://gravity/metric-decomposition@2",
+            "operator_input": {
+              "schema_version": "gravity.operator-input.governed-method.v2",
+              "method": "metric-decomposition",
+              "rows": [
+                {
+                  "key": "component-a",
+                  "values": {
+                    "current": 0.14,
+                    "reference": 0.1
+                  },
+                  "evidence": {
+                    "step_id": "evidence-0",
+                    "path": "/rows/0"
+                  },
+                  "scopes": {
+                    "current": {
+                      "unit": "ratio",
+                      "population": "synthetic-0@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/current"
+                      }
+                    },
+                    "reference": {
+                      "unit": "ratio",
+                      "population": "synthetic-0@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/0/reference"
+                      }
+                    }
+                  }
+                },
+                {
+                  "key": "component-b",
+                  "values": {
+                    "current": 0.06,
+                    "reference": 0.1
+                  },
+                  "evidence": {
+                    "step_id": "evidence-1",
+                    "path": "/rows/1"
+                  },
+                  "scopes": {
+                    "current": {
+                      "unit": "ratio",
+                      "population": "synthetic-1@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/current"
+                      }
+                    },
+                    "reference": {
+                      "unit": "ratio",
+                      "population": "synthetic-1@1",
+                      "window": {
+                        "start": "2026-09-01",
+                        "end": "2026-09-07",
+                        "timezone": "UTC",
+                        "grain": "day"
+                      },
+                      "completeness": "complete",
+                      "evidence": {
+                        "step_id": "scope-fixture",
+                        "path": "/scopes/1/reference"
+                      }
+                    }
+                  }
+                }
+              ],
+              "parameters": {},
+              "unit": "ratio",
+              "additivity": "non_additive",
+              "mode": "rowwise"
+            }
+          },
+          "question": "合成离线算子示例：验证 rowwise 请求形状，不代表任何项目的真实数据或分析成功。",
+          "scenario": "success",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-eligible-population",
+              "optimal-offer-design"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "从联系政策和商品目录设计触达矩阵，不分析已有礼包渗透"
+          },
+          "question": "从联系政策和商品目录设计触达矩阵，不分析已有礼包渗透，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
         {
           "example_id": "complete-success",
           "expected": {
@@ -396,7 +584,7 @@
       "kind": "experiment",
       "target": "experiment://project/gift-penetration-design"
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],
@@ -424,7 +612,7 @@
         "depends_on": [
           "validate-evidence"
         ],
-        "instruction": "仅用已声明变量和项目校准参数计算渗透率、加权回算和分层贡献，分母为零或单位冲突时不产出数值。",
+        "instruction": "仅用已声明变量和项目校准参数计算渗透率、加权回算和分层贡献，分母为零或单位冲突时不产出数值。 渗透率是 non_additive，使用 mode=rowwise 比较各层 current/reference，scopes 分别绑定当前和基准人群窗口。若分析买家数或合格人数的组成贡献，应分开构造 entity_count 的 additive 请求，只有 complete 同侧 scopes、允许轴和互斥去重分区证据齐备才使用 mode=aggregate；最后从分子分母重算比率，绝不相加渗透率。 使用 gravity operators describe operator://gravity/metric-decomposition@2 读取绑定 Schema；执行仅由 SDK OperatorRegistry.execute 负责。",
         "on_failure": "METHOD_FORMULA_INVALID",
         "step_id": "compute-indicators"
       },
@@ -537,7 +725,7 @@
   "model_dependencies": [],
   "namespace": "gravity.game",
   "operator_dependencies": [
-    "operator://gravity/metric-decomposition@1"
+    "operator://gravity/metric-decomposition@2"
   ],
   "output_schema": "gravity.analysis-result.v1",
   "provenance": {

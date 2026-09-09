@@ -1,8 +1,42 @@
 # Agent 工作流
 
-本页定义调用方如何从任务走到受治理结果。产品参数和响应字段只在任务指南、reference 与机器合同中定义。
+本页是宿主从需求到受治理结果的唯一完整使用顺序 Owner。产品参数和响应字段只在任务指南、reference 与机器合同中定义；上手包、README 和 Runtime 入口只给短提示并引用本页。
 
-## 0. 选择最短入口
+## 0. 宿主优先的有序合同
+
+```text
+业务分析需求
+  → 宿主理解目标、拆解任务，核对必要项目口径
+  → 当前上下文已有适用能力及有效输入合同？
+      是：直接使用现有专用 CLI / SDK / Composite / Plan
+          不重复读取目录，不提交关键词重选
+      否：读取当前目录，按需 describe/schema
+          宿主比较能力与边界，构造现有 host-selection
+          Runtime 严格校验，交付补参或执行入口
+  → 宿主仍无法可靠选择，或环境不具备宿主选择能力？
+      允许 recognizer 提供受限候选
+      无匹配、弱匹配或歧义未解：补充必要信息或返回 Gap，不强选
+  → 输入、权限及执行合同满足后，由既有执行面执行
+  → 宿主检查结果、完整性与限制，再决定追加查询或形成结论
+```
+
+“已知能力”必须有当前可用目录/Schema、版本绑定或明确现行产品合同作依据，不能凭模型记忆猜 selector。版本或目录漂移时按协议重新获取；没有漂移不为证明读过目录而重复读取全目录。复杂问题由宿主拆解并复用现有 Composite/Plan，不默认把整段需求原样交给 recognizer。
+
+这是**宿主使用顺序**，不是 Runtime 内置推理阶段：公共 API 的 routing 缺省仍是“有 selection 走 host_catalog，无 selection 走 recognizer”。保留显式 `--routing recognizer` 及合法无 selection 调用作为保底工具；缺 selection 不能证明宿主尝试过选择。有效 selection 由现有宿主臂解析，词法评分不得覆盖它；直接入口也不新增词法重选。
+
+### 三类失败与预算
+
+| 情况 | 正确处置 |
+| --- | --- |
+| 宿主无法可靠选择，或环境不具备选择协议能力 | 可显式调用 recognizer 获取受限候选；候选仍须符合任务、输入、权限与执行合同。0 候选、弱匹配、未解歧义不执行 |
+| 日期、指标口径、App/事件绑定或业务事实缺失 | 先使用已授权项目资料补齐；仍缺则报告精确缺项或 Gap。可查候选，但规则不能替代事实，也不能把歧义改成默认值 |
+| selection 过期/格式错/缺字段、能力不存在、权限拒绝、合同漂移或质量/完整性不满足 | 按结构化错误修正协议或报告缺口；不得静默切 recognizer、邻近产品、裸 SQL 或其他账号 |
+
+提交的 selection 校验失败不等于宿主无法理解。`HOST_SELECTION_REJECTED` 的 field/code 指向协议修复；合法 abstained 返回 `HOST_PRODUCT_SELECTION_EMPTY`，多候选返回 `MULTIPLE_INTENTS`，均不自动重选或执行。选中能力仅是发现成功，仍须满足 `missing_inputs`、schema 与执行前门禁。
+
+目录刷新、候选兜底与重试共用当前任务已有的调用/Context/全局请求预算，不新增路由轮询预算。相同未变输入不交替轮询两臂；只在资料、合同、选择或授权等必要条件实际变化后继续。预算耗尽则报告缺口；不得为证明顺序重复全目录或自动重试写入。
+
+### 最短入口
 
 | 已知信息 | 入口 |
 | --- | --- |
@@ -11,9 +45,21 @@
 | 多个独立任务或存在依赖 | 一个显式 `gravity plan run` |
 | 未知当前能力 | `agent-catalog categories → category → describe` |
 | 调用方能选择目录项 | `agent-catalog host` + `host-selection`（省略 routing 即走宿主臂） |
-| 调用方无法选择 | 默认 `gravity agent` recognizer 保底 |
+| 调用方无法选择 | `gravity agent --routing recognizer`，或无 selection 的受控调用 |
 
 目录浏览和 schema 查询离线完成。发现不会执行产品，自然语言不会执行写入。
+
+### 观测与验收边界
+
+复用同一次调用的 `routing_mode/routing`、`selection_receipt`、已有执行 receipt、Plan 结果和 eval `observations`，不建立第二套追踪系统。机器字段以当前输出为准：
+
+- 发现输出的 routing `status/arm/selector/terminal_state` 对齐 R2-03；`event=discovery` 的 success 只表示交接成功，不表示执行或业务成功。多候选不伪造一个 selector，候选集合仍来自原 candidates/receipt。
+- catalog 指纹沿用已计算的指纹并标明 basis：宿主产品目录与 workspace 目录不是同一个分母，不能互相当 selection 绑定。协议帮助尚未走路由，记为 `not_measured`，不把缺省策略当已执行的臂。
+- 收到并校验 selection 只证明协议校验；`host_reason`/`candidate_reasons` 标明 `host_declared`，不是 Runtime 对推理质量的证明。兜底原因若由宿主声明，也须在现有 eval 记录中标注该来源；无证据不虚构原因。
+- 宿主是否先读目录、是否加载 Skill 以宿主工具调用记录核验；无记录为 `unknown`。发现阶段的后续执行为 `not_measured`，不能把交接卡的 `next.argv` 当执行事件。
+- 直接 CLI/SDK/Plan 保留实际工具入口、原有 operation/node 身份、合同指纹、receipt/status 和错误结果作执行证据，不强制包装成第三条路由。把发现事件与执行事件分开；无执行记录，终态不猜为成功。不要采集私有思维链、凭据或原始用户级数据。
+
+R2-06 离线回归只证明 Runtime 对实际输入的分支、边界与能力保留。真实 Host 的调用顺序、Skill 触发和首次采用验收归 R2-11；固定脚本 catalog → selection、模型自述或离线 mock 均不能代替真实宿主工具事件。R2-05 的生成宿主指导应投影短优先级、可执行目录入口及本页引用，不复制完整合同或假定未加载 Skill 的正文已被读取。
 
 ## 1. 解析 Semantic Schema 与项目绑定
 

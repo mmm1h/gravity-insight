@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "在分群定义、净价值语义、观测周期和 Model 评估均准确之前，不拟合任何曲线。",
+  "description": "用于用获批曲线模型拟合互斥分层的 LTV 并限定预测窗口。用户问“各分层 LTV 曲线能外推到哪一天”时使用。不用于自动选模型或保证长期价值；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -245,6 +245,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unsupported-segment-extrapolation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "用获批曲线模型拟合互斥分层的 LTV 并限定预测窗口",
+            "missing_project_calibration": "segmented-ltv-contract"
+          },
+          "question": "我想用获批曲线模型拟合互斥分层的 LTV 并限定预测窗口，但尚未提供固定队列、净收入、冻结分层和加权规则。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "invented-confidence",
+              "unsupported-segment-extrapolation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "只做两份已观测 LTV 结果口径对账，不拟合曲线"
+          },
+          "question": "只做两份已观测 LTV 结果口径对账，不拟合曲线，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -402,7 +459,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

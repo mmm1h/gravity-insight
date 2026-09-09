@@ -36,6 +36,83 @@ class SkillLibraryBuildTests(unittest.TestCase):
         cls.source = json.loads(cls.outputs["source.json"])
         cls.build_manifest = json.loads(cls.outputs["build-manifest.json"])
 
+    def test_v6_migration_preserves_exact_selection_without_activation(self):
+        from gravity_insight.skill_hub_contract import compile_hub_index, compile_hub_source
+        from gravity_insight.skill_hub_locks import build_skills_lock, compile_skills_lock
+        index = compile_hub_index(self.index)
+        source = compile_hub_source(self.source)
+        source_ref = {"source_id": self.source["source_id"], "transport": "static_https",
+                      "source_descriptor_digest": source["digest"],
+                      "source_revision": self.source["https"]["source_revision"],
+                      "index_digest": index["digest"]}
+        requested = [entry["skill_uri"] for entry in self.index["skills"]
+                     if entry["manifest"]["skill_id"] in {"payment-conversion-funnel", "community-daily-report"}]
+        old = build_skills_lock(index, source_ref, requested)
+        original = copy.deepcopy(old)
+        first = builder.render_lock_migration(self.outputs, old)
+        self.assertEqual(first, builder.render_lock_migration(self.outputs, old))
+        self.assertEqual(original, old)
+        successor = compile_skills_lock(json.loads(first["migration/gravity.skills.lock.json"]))
+        self.assertEqual(sorted(requested), successor["requested"])
+        self.assertEqual(2, len(successor["skills"]))
+        receipt = json.loads(first["migration/receipt.json"])
+        self.assertEqual("not_performed", receipt["activation"])
+        self.assertFalse(receipt["network_called"])
+        self.assertEqual([], receipt["changes"])
+        changed = copy.deepcopy(old)
+        changed["source"]["source_id"] = "hub-source://org/unrelated@1"
+        from gravity_insight.agent_runtime_contracts import canonical_digest
+        changed["lock_digest"] = canonical_digest({k: v for k, v in changed.items() if k != "lock_digest"})
+        with self.assertRaisesRegex(SkillPackageError, "source identity"):
+            builder.render_lock_migration(self.outputs, changed)
+
+    def test_build_check_fails_on_pin_drift_and_preserves_other_release_output(self):
+        from unittest.mock import patch
+        with patch.object(builder, "PINNED_BUILD_MANIFEST_SHA256", "0" * 64):
+            with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
+                builder.main(["--check"])
+            with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
+                builder.render_seed(self.outputs)
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temporary:
+            target = Path(temporary)
+            old = {"publish_base_url": builder.PUBLISH_BASE.replace("-v6", "-v5")}
+            original = json.dumps(old).encode()
+            (target / "build-manifest.json").write_bytes(original)
+            with self.assertRaisesRegex(SkillPackageError, "immutable"):
+                builder._write_outputs(target, self.outputs)
+            self.assertEqual(original, (target / "build-manifest.json").read_bytes())
+            self.assertEqual(["build-manifest.json"], [p.name for p in target.iterdir()])
+
+    def test_packaging_entrypoints_cannot_bypass_the_seed_pin(self):
+        import runpy
+        from unittest.mock import patch
+        from scripts.build_offline_wheel import _generated_seed_entry
+        with patch("setuptools.setup"):
+            setup_namespace = runpy.run_path(str(ROOT / "setup.py"))
+        with patch.object(builder, "PINNED_BUILD_MANIFEST_SHA256", "0" * 64):
+            for build in (setup_namespace["_render_seed"], lambda: _generated_seed_entry(ROOT)):
+                with self.assertRaisesRegex(SkillPackageError, "pin drifted"):
+                    build()
+        tampered = dict(self.outputs)
+        archive = self.index["skills"][0]["archive"]["path"]
+        tampered[archive] += b"changed"
+        with self.assertRaisesRegex(SkillPackageError, "asset digest drifted"):
+            builder.render_seed(tampered)
+
+    def test_same_release_conflicts_are_preflighted_before_any_write(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as temporary:
+            target = Path(temporary)
+            files = {"build-manifest.json": self.outputs["build-manifest.json"],
+                     "migration/gravity.skills.lock.json": b"first-project-lock"}
+            builder._write_outputs(target, files)
+            builder._write_outputs(target, files)
+            conflicting = {"early.json": b"must-not-be-written", **files,
+                           "migration/gravity.skills.lock.json": b"other-project-lock"}
+            with self.assertRaisesRegex(SkillPackageError, "conflicting"):
+                builder._write_outputs(target, conflicting)
+            self.assertFalse((target / "early.json").exists())
+            self.assertEqual(b"first-project-lock", (target / "migration/gravity.skills.lock.json").read_bytes())
+
     def test_two_builds_are_byte_identical(self) -> None:
         self.assertEqual(self.outputs, builder.render_outputs())
         self.assertEqual(
@@ -279,7 +356,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
             )
 
     def test_static_hub_source_points_to_release_payload(self) -> None:
-        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v5"))
+        self.assertTrue(builder.PUBLISH_BASE.endswith("/skill-library-v6"))
         self.assertEqual("static_https", self.source["transport"])
         self.assertIsNone(self.source["git"])
         self.assertTrue(self.source["https"]["index_url"].endswith("/index.json"))
@@ -351,7 +428,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
     def test_build_check_accepts_the_current_source(self) -> None:
         self.assertEqual(0, builder.main(["--check"]))
 
-    def test_rendered_library_matches_the_published_release(self) -> None:
+    def test_rendered_library_matches_the_reviewed_release_pin(self) -> None:
         # The sealed seed is rebuilt from this checkout when the wheel is
         # built, but the Skill Library release is published separately, and
         # nothing else compares them. A Skill or capability edit that is never
@@ -361,7 +438,7 @@ class SkillLibraryBuildTests(unittest.TestCase):
         # digest, or revert the change. Refreshing the constant alone
         # reintroduces exactly the divergence it exists to catch.
         self.assertEqual(
-            builder.PUBLISHED_BUILD_MANIFEST_SHA256,
+            builder.PINNED_BUILD_MANIFEST_SHA256,
             hashlib.sha256(self.outputs["build-manifest.json"]).hexdigest(),
         )
 

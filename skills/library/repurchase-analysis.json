@@ -28,7 +28,7 @@
     "required": []
   },
   "covers_journeys": [],
-  "description": "对复购分类前，必须具备合格订单、退款、用户身份和复购时间窗语义。",
+  "description": "用于比较成熟首购队列的复购率、间隔和返回分层变化。用户问“复购下降是队列没成熟还是组成变了”时使用。不用于首购转化诊断、推断个人意愿或自动触达；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -238,6 +238,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "purchase-motivation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "比较成熟首购队列的复购率、间隔和返回分层变化",
+            "missing_project_calibration": "repurchase-contract"
+          },
+          "question": "我想比较成熟首购队列的复购率、间隔和返回分层变化，但尚未提供首购、有效复购、跨商品、退款和机会定义。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "causality",
+              "complete-lifetime-history",
+              "purchase-motivation"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "定位新用户首次付费链路的转化步骤，不分析首购后的重复购买"
+          },
+          "question": "定位新用户首次付费链路的转化步骤，不分析首购后的重复购买，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "analysis.query.spec:event"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -389,7 +446,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

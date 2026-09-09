@@ -30,7 +30,7 @@
   "covers_journeys": [
     "analysis.gravity.game.revenue-forecast-readiness"
   ],
-  "description": "仅将当前 business-pulse 观测结果作为有界输入证据；除非具备确切获批的预测模型、血缘、评估、有效期和安全预测周期，否则停止。",
+  "description": "用于在获批模型有效域内计算收入基线情景与目标参数组合。用户问“按当前假设收入会怎样，目标需要哪些参数”时使用。不用于保证收入或自动调整运营策略；缺少项目口径或可复核数据时先报告缺口。",
   "effects": [
     "read"
   ],
@@ -241,6 +241,63 @@
       ],
       "run_examples": [
         {
+          "example_id": "missing-required-contract",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "unvalidated-revenue-forecast",
+              "invented-confidence",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_INPUT_GAP"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "在获批模型有效域内计算收入基线情景与目标参数组合",
+            "missing_project_calibration": "forecast-model"
+          },
+          "question": "我想在获批模型有效域内计算收入基线情景与目标参数组合，但尚未提供模型版本、评估、有效域和安全窗口。请先说明缺口。",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
+          "example_id": "near-neighbor-out-of-scope",
+          "expected": {
+            "allowed_claims": [],
+            "completeness": "unknown",
+            "forbidden_claims": [
+              "unvalidated-revenue-forecast",
+              "invented-confidence",
+              "causality"
+            ],
+            "network_called": false,
+            "reason_codes": [
+              "METHOD_SCOPE_NOT_APPLICABLE"
+            ],
+            "sections": [
+              "scope-and-contract",
+              "data-readiness",
+              "claims-and-limitations"
+            ],
+            "status": "gap"
+          },
+          "input_template": {
+            "requested_outcome": "只估计留存曲线下的用户生命周期 LT，不预测收入"
+          },
+          "question": "只估计留存曲线下的用户生命周期 LT，不预测收入，能用本方法完成吗？",
+          "scenario": "blocked_or_gap",
+          "selector": "composite:business_pulse"
+        },
+        {
           "example_id": "complete-success",
           "expected": {
             "allowed_claims": [
@@ -398,7 +455,7 @@
       "kind": "none",
       "target": null
     },
-    "method_revision": 1,
+    "method_revision": 2,
     "procedure": [
       {
         "depends_on": [],

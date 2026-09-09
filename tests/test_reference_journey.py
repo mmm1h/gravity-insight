@@ -12,6 +12,7 @@ from gravity_insight.analysis_playbook import run_metric_anomaly_playbook
 from gravity_insight.analysis_artifact import compile_analysis_artifact
 from gravity_insight.analysis_artifact_markdown import render_analysis_artifact_markdown
 from gravity_insight.core_skill_runtime import CoreSkillRuntime
+from gravity_insight.journey_service import JourneyService
 from gravity_insight.data_quality import data_quality_result
 from gravity_insight.execution_snapshot import build_execution_snapshot
 from gravity_insight.reference_journey import (
@@ -200,6 +201,18 @@ class ReferenceJourneyTests(unittest.TestCase):
         self.assertFalse(result["network_called"])
         self.assertEqual([], self.sdk.calls)
 
+    def test_journey_facade_preserves_reference_execution_and_checks_actual_owner(self):
+        service = JourneyService(self.sdk, capability_trust=StaticTrustService(stable_trust()))
+        identity = reference_artifacts()["journey"]["contract"]["journey_id"]
+        self.assertEqual("executable", service.can_run(identity, journey_input())["execution_readiness"])
+        result = service.run(identity, journey_input())
+        self.assertEqual("success", result["status"])
+        self.assertEqual(1, len(self.sdk.calls))
+        self.sdk.metric_anomaly_playbook = None
+        blocked = service.run(identity, journey_input())
+        self.assertIn("JOURNEY_EXECUTION_NOT_BOUND", blocked["reason_codes"])
+        self.assertFalse(blocked["network_called"])
+
     def test_verified_snapshot_uses_existing_playbook_and_builds_analysis_result(self):
         self.service = ReferenceJourneyRunner(
             self.sdk,
@@ -288,7 +301,10 @@ class ReferenceJourneyTests(unittest.TestCase):
         result = self.service.run(journey_input())
 
         self.assertEqual("blocked", result["status"])
-        self.assertEqual(["DEPENDENCY_SNAPSHOT_CHANGED"], result["reason_codes"])
+        self.assertEqual(
+            ["DEPENDENCY_SNAPSHOT_CHANGED", "DEPENDENCY_PROJECT_OVERLAY_CHANGED"],
+            result["reason_codes"],
+        )
         self.assertEqual([], result["findings"])
         self.assertEqual([], result["allowed_claims"])
         self.assertEqual(1, len(self.sdk.calls))
