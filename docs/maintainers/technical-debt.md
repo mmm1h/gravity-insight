@@ -73,8 +73,9 @@
 - **当前证据**：纯词法 `query_match` 已从跨 catalog 的 `find.py` 下沉到 `agents/query_match.py`，旧的
   `gravity_insight.find.query_match` 保持静态再导出；三个 Agent consumer 改依赖 leaf owner 后，AST-only 最大 SCC 从 **41 降到 20**，并非靠移动文件或延迟导入。
   当前全仓/根级的模块数、已归层数、未归层数、完整未归层清单与已分类反向边均由 `domain-boundary report` 实时计算，覆盖率下限和违规上限写入上述机器 baseline，本页不再复制计数。
-  SQL 的唯一 eager-import SCC 已改为调用时反向解析；当前 eager/canonical SCC 实数由下方机器 Owner 计算。
-- **Agent 包边界**：`gravity_insight.agents` 是 compact Agent interaction 的唯一实现包，`gravity_insight.agent` 是稳定 facade，`agent_runtime_contracts` 保留独立根级合同职责。五条有意保留的 facade 依赖由 bounded module/symbol-set gate 锁定；只有真实职责变化、第二 owner 或 eager cycle 才触发另行批准的拆分。
+  SQL 的唯一 eager-import SCC 已改为调用时反向解析；当前 eager/canonical SCC 实数以 governance 机器图合同（module-graph-baseline.v1.json）为准。
+- **R2-08 第一环**：`sql.catalog` 改从 Workspace 读取注册定义与 App，执行侧复用其读取 owner；词法匹配直接依赖既有 `agents.query_match`。切断 `sql.catalog → sql/find` 后，原 20 模块环先拆为 15/4/1。发现响应协议与导航投影再归入既有 `agents.output`，切断 `find/catalog/host_selection → discovery_support` 及 `batch_questions/host_selection/output → agent`，最终原环为 **4/3/2 加 11 个单点**；非平凡集合由 characterization 精确锁定。AST-only 最大环降到 17；eager 为 0，canonical 最大环仍为 555 且成员集合不变。查询、验证、路由枚举、selection receipt 与公共 facade 保留，不新增模块、延迟 import 或 shim。
+- **Agent 包边界**：`gravity_insight.agents` 是 compact Agent interaction 的唯一实现包，`gravity_insight.agent` 是稳定 facade，`agent_runtime_contracts` 保留独立根级合同职责。两条执行型 facade 依赖（batch、input_resolution 调用 discover_capabilities）由 bounded module/symbol-set gate 锁定；值/输出 consumer 已直接依赖 response owner。残留 SQL 四环、发现执行三环和词法二环仍属本条债务，不宣称所有环已消除。
 - **影响**：不改变公开导入或运行行为，但增加定位、归属判断和跨域审查成本。目录治理不得损失调用能力、改变执行 owner 或添加 deep-path shim。
 - **退出条件**：按机器图逐个批准有界迁移单元，使根级家族迁入明确 owner 或留下机器可验证的保留理由，偿还 baseline 中剩余反向边并消除剩余大环；每次必须使 SCC、违规数或分类覆盖率真实改善，公开 facade、请求行为和能力保持不变。
 

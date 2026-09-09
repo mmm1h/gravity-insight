@@ -141,6 +141,11 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
         self.assertEqual([], eager_import_cycles(PACKAGE_ROOT))
 
     def test_retained_facade_dependencies_match_the_reviewed_module_symbol_set(self) -> None:
+        """R2-08: only two execution consumers retain the public Agent facade.
+
+        Schema/default consumers now use agents.output, the discovery response
+        owner. These were value-only reverse edges, not execution handoffs.
+        """
         # Lock direct import syntax, not an inferred domain or binding graph.
         dependencies: set[tuple[str, str]] = set()
         for path, (module, is_package) in module_inventory(PACKAGE_ROOT).items():
@@ -164,10 +169,7 @@ class AgentModuleMigrationCharacterizationTests(unittest.TestCase):
         self.assertEqual(
             {
                 ("gravity_insight.agents.batch", "discover_capabilities"),
-                ("gravity_insight.agents.batch_questions", "DEFAULT_LIMIT"),
-                ("gravity_insight.agents.host_selection", "SCHEMA_VERSION"),
                 ("gravity_insight.agents.input_resolution", "discover_capabilities"),
-                ("gravity_insight.agents.output", "SCHEMA_VERSION"),
             },
             dependencies,
         )
@@ -544,15 +546,21 @@ def run():
         )
 
     def test_unified_current_graph_matches_the_reviewed_baseline(self) -> None:
-        """Issue #203 export validation imports preserve every reviewed SCC size."""
+        """R2-08: the v1 graph splits the 20-ring into 4/3/2 and 11 singletons.
+
+        SQL catalog reads registration, not execution; discovery navigation and
+        schema/default values use output, not routing or the public Agent facade.
+        Eager/canonical SCC sets are unchanged. The untouched 17-module Agent
+        orchestration ring is now the largest; no edges are ignored or delayed.
+        """
         expected = module_graph_baseline()
         self.assertEqual(
-            "9f22e2e8703649838b78b8ecc22cf3baa128eb5113f4760728e251b823d53053",
+            "a9233233fdbc928ca614a88de135a2c05d3a47a8885d2b3834f01b83c3119df0",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
-                "ast-only": 20,
+                "ast-only": 17,
                 "ast+lazy-exports": 438,
                 "canonical": 555,
                 "eager-ast-only": 0,
@@ -563,7 +571,7 @@ def run():
             },
         )
         self.assertEqual(
-            [20, 17, 11, 8, 6, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+            [17, 11, 8, 6, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
@@ -571,6 +579,34 @@ def run():
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())
+
+    def test_discovery_sql_ring_has_only_the_reviewed_residual_components(self) -> None:
+        """Lock actual first-ring membership, not only a largest-SCC count."""
+
+        members = {
+            f"gravity_insight.{name}" for name in (
+                "agent agents.batch agents.batch_questions agents.batch_sources "
+                "agents.catalog agents.discovery_support agents.host_selection "
+                "agents.input_resolution agents.lexical_retrieval "
+                "agents.operation_contract agents.output agents.semantic_context "
+                "agents.sources agents.sql_product_discovery find sql sql.catalog "
+                "sql.products sql.query sql.verification"
+            ).split()
+        }
+        graph = module_graph_adjacency(PACKAGE_ROOT, module_graph_definition(), "ast-only")["edges"]
+        observed = {
+            frozenset(component) for component in module_graph_cyclic_sccs(graph)
+            if members.intersection(component)
+        }
+        expected = {
+            frozenset(f"gravity_insight.{name}" for name in group)
+            for group in (
+                ("sql", "sql.products", "sql.query", "sql.verification"),
+                ("agent", "agents.batch", "agents.input_resolution"),
+                ("agents.lexical_retrieval", "agents.sql_product_discovery"),
+            )
+        }
+        self.assertEqual(expected, observed)
 
 
 if __name__ == "__main__":

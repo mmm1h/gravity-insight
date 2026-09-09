@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..actionable_error_values import actual_value
-from ..agent import DEFAULT_LIMIT
+from .output import DEFAULT_LIMIT
 from ..errors import InputValidationError
 
 

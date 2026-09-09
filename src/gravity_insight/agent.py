@@ -37,19 +37,15 @@ from .agents.discovery_support import (
     assert_discovery_page,
     finish_discovery_candidates,
     capability_gaps_for_page,
-    discovery_next_fields,
     materialize_candidates,
     select_authoritative_cards,
 )
 from .agents.lexical_retrieval import response_match_policy
 from .errors import InputValidationError
-from .agents.output import ndjson_metadata
+from .agents.output import DEFAULT_LIMIT, SCHEMA_VERSION, discovery_next_fields, ndjson_metadata
 from .actionable_error_values import actual_value
 from .contracts.envelope_obligations import serialize_envelope
 
-
-SCHEMA_VERSION = "gravity.agent.v1"
-DEFAULT_LIMIT = 3
 
 @dataclass(frozen=True)
 class _DiscoveryPage:
