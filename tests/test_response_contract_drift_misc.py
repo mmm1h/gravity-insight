@@ -53,6 +53,38 @@ def read(
 
 
 class MiscResponseContractDriftTests(unittest.TestCase):
+    def test_primary_list_shape_drift_fails_closed(self) -> None:
+        for operation_id in ("app.list", "app.permission_menu.list"):
+            for observed, data in (
+                ("string", {"list": "private malformed rows"}),
+                ("missing", {}),
+                ("null", {"list": None}),
+            ):
+                with self.subTest(operation=operation_id, observed=observed):
+                    result = read(operation_id, {"code": 0, "data": data}, {})
+                    self.assertFalse(result["ok"])
+                    self.assertEqual("contract_changed", result["status"])
+                    self.assertEqual("CONTRACT_CHANGED", result["error"]["code"])
+                    drift = result["result_audit"]["response_drift"]
+                    self.assertIn(
+                        {"classification": "breaking", "path": "/data/list",
+                         "expected_type": "array", "observed_type": observed},
+                        drift["fields"],
+                    )
+                    self.assertNotIn("private malformed rows", json.dumps(result))
+
+    def test_primary_list_arrays_keep_success_and_empty_semantics(self) -> None:
+        for rows, status in (([{"id": 1, "name": "fixture"}], "success"), ([], "empty")):
+            with self.subTest(status=status):
+                result = read("app.list", {"code": 0, "data": {
+                    "list": rows,
+                    "page_info": {"page": 1, "page_size": 6000, "total_page": 1},
+                }}, {})
+                self.assertTrue(result["ok"])
+                self.assertEqual(status, result["status"])
+                self.assertEqual(rows, result["data"]["list"])
+                self.assertNotIn("response_drift", result["result_audit"])
+
     def test_bytedance_project_scalar_additions_are_projected_without_drift(self) -> None:
         fields = {
             "delay": 1,
