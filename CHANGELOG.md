@@ -30,6 +30,7 @@ Migration guide: [0.3.15](docs/migration/0.3.15.md)
 
 ### Fixed
 
+- Governed gzip CSV exports now use the verified extension across temporary download/finalization paths and preserve gzip on atomic publication. Nonempty custom-event files no longer fail by decoding compressed bytes as UTF-8. Failed CSV finalization reports value-free `diagnostics.stage`/`reason` (compression, encoding, headers, CSV framing, completeness or local I/O); property cells remain contracted text, not implicitly parsed JSON. Run/download results add typed `obligations` without replacing existing status fields. Schema/privacy, source integrity and output size checks remain enforced; gzip expansion also obeys the existing archive size/ratio budgets and malformed CSV quoting fails closed.
 - Governed metric decomposition now sums and normalizes unrounded component changes, rounding only the output; sub-micro-unit changes no longer disappear before aggregation.
 
 ## [0.3.14] - 2026-09-08

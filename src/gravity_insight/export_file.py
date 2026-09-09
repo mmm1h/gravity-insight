@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import gzip
+import io
+import os
 from pathlib import Path
 import re
 from typing import Any, Iterator, Mapping, TextIO
@@ -141,16 +143,70 @@ def _archive_policy(
 
 
 @contextmanager
-def open_export_csv(path: Path, encoding: str) -> Iterator[TextIO]:
+def open_export_csv(
+    path: Path,
+    encoding: str,
+    *,
+    extension: str | None = None,
+    max_uncompressed_bytes: int | None = None,
+) -> Iterator[TextIO]:
     """Open a verified CSV or gzip-wrapped CSV without decoding cell values."""
 
     text_encoding = encoding + "-sig" if encoding.casefold() == "utf-8" else encoding
-    if path.name.casefold().endswith(".csv.gz"):
-        with gzip.open(path, "rt", encoding=text_encoding, newline="") as handle:
-            yield handle
+    compressed = extension == ".csv.gz" if extension is not None else path.name.casefold().endswith(".csv.gz")
+    if compressed:
+        with gzip.open(path, "rb") as binary:
+            with io.BufferedReader(_BoundedCsvReader(binary, max_uncompressed_bytes)) as bounded:
+                with io.TextIOWrapper(bounded, encoding=text_encoding, newline="") as handle:
+                    yield handle
         return
     with path.open("r", encoding=text_encoding, newline="") as handle:
         yield handle
+
+
+class _BoundedCsvReader(io.RawIOBase):
+    """Bound expanded bytes before text buffering, including concatenated members."""
+
+    def __init__(self, source: Any, maximum: int | None) -> None:
+        self._source = source
+        self._remaining = maximum
+
+    def readable(self) -> bool:
+        return True
+
+    def readinto(self, buffer: Any) -> int:
+        size = len(buffer)
+        if self._remaining is not None:
+            size = min(size, self._remaining + 1)
+        chunk = self._source.read(size)
+        if self._remaining is not None:
+            self._remaining -= len(chunk)
+            if self._remaining < 0:
+                raise _export_error(
+                    "CSV gzip expansion exceeds the governed size or ratio limit",
+                    code="BLOB_SIZE_LIMIT",
+                    stage="compression",
+                )
+        buffer[:len(chunk)] = chunk
+        return len(chunk)
+
+
+@contextmanager
+def write_export_csv(path: Path, encoding: str, extension: str) -> Iterator[TextIO]:
+    """Finish the declared container, including its trailer, before durable commit."""
+
+    with path.open("wb") as raw:
+        if extension == ".csv.gz":
+            with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed:
+                with io.TextIOWrapper(compressed, encoding=encoding, newline="") as text:
+                    yield text
+            raw.flush()
+            os.fsync(raw.fileno())
+        else:
+            with io.TextIOWrapper(raw, encoding=encoding, newline="") as text:
+                yield text
+                text.flush()
+                os.fsync(text.fileno())
 
 
 __all__ = ["export_file_policies", "open_export_csv"]
