@@ -10,7 +10,7 @@ from typing import Any, Iterable, Mapping
 
 from .errors import InputValidationError, ManifestError, UnknownOperationError
 from .export_describe_actions import describe_next_action, describe_workflow
-from .export_models import _export_error
+from .export_models import _export_error, validate_origin_conditions
 from .export_policy import EffectRoute
 
 
@@ -207,7 +207,9 @@ class ExportContractRegistry:
         if not isinstance(values, list):
             raise ManifestError("export route registry requires a routes array")
         return cls(
-            ExportRouteContract.from_dict(_mapping(item, "routes[]"))
+            ExportRouteContract.from_dict(_resolve_schema_refs(
+                _mapping(item, "routes[]"), document.get("definitions", {})
+            ))
             for item in values
         )
 
@@ -229,6 +231,35 @@ class ExportContractRegistry:
 
     def effect_routes(self) -> tuple[EffectRoute, ...]:
         return tuple(contract.effect_route() for contract in self.all())
+
+
+def _resolve_schema_refs(value: Any, definitions: Any, seen: tuple[str, ...] = (),
+                         *, depth: int = 0, remaining: list[int] | None = None) -> Any:
+    """Resolve only in-document definitions; never fetch a schema over the network."""
+    if depth > 30:
+        raise ManifestError("local export schema depth budget exceeded (maximum 30)")
+    if remaining is None:
+        remaining = [4096]
+    remaining[0] -= 1
+    if remaining[0] < 0:
+        raise ManifestError("local export schema expansion budget exceeded (maximum 4096 values)")
+    if isinstance(value, list):
+        return [_resolve_schema_refs(item, definitions, seen, depth=depth + 1, remaining=remaining)
+                for item in value]
+    if not isinstance(value, Mapping):
+        return value
+    if "$ref" in value:
+        ref = value["$ref"]
+        prefix = "#/definitions/"
+        if (not isinstance(ref, str) or not ref.startswith(prefix)
+                or ref in seen or set(value) != {"$ref"}
+                or not isinstance(definitions, Mapping)
+                or not isinstance(definitions.get(ref[len(prefix):]), Mapping)):
+            raise ManifestError("invalid or cyclic local export schema reference")
+        return _resolve_schema_refs(definitions[ref[len(prefix):]], definitions, (*seen, ref),
+                                    depth=depth + 1, remaining=remaining)
+    return {key: _resolve_schema_refs(item, definitions, seen, depth=depth + 1, remaining=remaining)
+            for key, item in value.items()}
 
 
 def _mapping(value: Any, label: str) -> Mapping[str, Any]:
@@ -347,6 +378,11 @@ def validate_export_payload(contract: Any, payload: Mapping[str, Any]) -> None:
     for field, value in payload.items():
         field_schema = properties.get(field)
         if isinstance(field_schema, Mapping):
+            if field == "conditions" and contract.operation_id in {
+                "export.analysis.origin_event.start", "export.analysis.origin_event.evaluate",
+            }:
+                validate_origin_conditions(value, field_schema)
+                continue
             _validate_export_field(
                 contract.operation_id, field, value, field_schema
             )

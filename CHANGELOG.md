@@ -19,6 +19,10 @@ Target release: `0.3.17`
 
 - None.
 
+### Added
+
+- `export.analysis.origin_event.start`/`.evaluate` publish a typed, metadata-bound `conditions` item schema (`export describe`) and validate every submitted item locally before any request is sent: unknown/missing keys, out-of-enum or out-of-length strings, non-scalar or non-finite values, and out-of-bound value counts all fail closed with `INPUT_INVALID` and an actionable `field`/`next_action`, instead of surfacing an opaque upstream `CONTRACT_CHANGED` after a round trip. Nonempty conditions remain explicitly unsupported (`EXPORT_CONDITIONS_UNSUPPORTED`) pending a verified filtered-export contract; the empty-conditions path is unchanged. `export.task.list` is a separate operation family and keeps its existing classification gap.
+
 ## [0.3.16] - 2026-09-10
 
 ### Breaking changes

@@ -89,6 +89,27 @@ task list/progress/file 仍无任务绑定 total；SDK 在 create 前用同一 A
 表格序列化，未调用声明的 loader，因此它不是待探测的 SDK 服务端缺口。用
 `export list-capabilities` 查看边界，不要把 catalog 条目当成可执行能力。
 
+## 原始事件过滤边界
+
+`origin_event.evaluate` 与 `origin_event.start` 共享版本化输入 schema。
+`export describe` 发布 `gravity.export.origin-event-condition.v1` 条目定义：
+这是未验证的客户端草案子集，不表示上游接受这些过滤写法。当前执行合同
+只允许 `conditions: []`（`max_items: 0`）；非空条件即使符合草案也会在任何
+请求前以 `EXPORT_CONDITIONS_UNSUPPORTED` 拒绝，形状错误为 `INPUT_INVALID`。
+错误包含字段路径和下一步建议。需要业务过滤时应保留过滤需求、等待维护者
+取得真实上游证据并发布新契约；删除过滤器不等于获得等价结果。
+
+仅就 `origin_event.evaluate` / `origin_event.start`（含 run 创建阶段）而言，
+上游非成功语义状态为 `EXPORT_SEMANTIC_REJECTED`；成功状态同时带非空
+`extra.error` 为 `EXPORT_RESPONSE_CONTRADICTED`，均停止执行。未知拒绝的
+责任归属保留 `diagnostics.responsibility=unclassified`；`category=local` 仅表示
+本地尚无可用的责任分类，不指称调用方或上游有错。诊断仅含固定原因与安全数字状态，
+不回显原始错误文本。真实文件结构漂移仍为 `CONTRACT_CHANGED`。
+
+`export.task.list` 属于独立操作族，仍有历史遗留的响应分类缺口：非成功状态、
+矛盾成功和非标量 code 尚未统一处理。已列为独立后续跟进，不在 Issue #218 范围内；
+上述两个原始事件操作的分类保证不应外推至任务列表。
+
 ## 超时和分阶段恢复
 
 `run` 创建任务只尝试一次，超时不会自动取消。结果含 `job_id` 时，从该任务继续，不要再次

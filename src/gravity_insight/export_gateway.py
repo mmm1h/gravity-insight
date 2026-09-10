@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .blob import AuthorizedBlobSource
 from .errors import AuthenticationError, PermissionUnavailableError, TransportError
-from .export_contracts import ExportContractRegistry, ExportRouteContract
+from .export_contracts import ExportContractRegistry, ExportRouteContract, validate_export_payload
 from .export_models import (
     ExportCreationRequest,
     ExportJobSnapshot,
@@ -245,6 +245,10 @@ def call_export_effect(
     timeout_seconds: float,
     attempts: int = 1,
 ) -> tuple[_AuthorizedEffectRequest, Mapping[str, Any], Mapping[str, str]]:
+    if contract.operation_id in {
+        "export.analysis.origin_event.start", "export.analysis.origin_event.evaluate",
+    }:
+        validate_export_payload(contract, payload)
     authorization = policy._prepare_effect_request(
         contract.operation_id,
         contract.effect,
@@ -277,14 +281,45 @@ def call_export_effect(
             stage=contract.effect,
         )
     code = raw_payload.get("code")
+    if code is not None and type(code) not in (int, str):
+        raise _export_error(
+            "Gravity export returned an invalid semantic status type",
+            code="EXPORT_PROTOCOL_ERROR", stage=contract.effect,
+            field="response.code",
+        )
     if code not in _SUCCESS_CODES:
         raise _export_error(
-            "Gravity export returned a non-success semantic code",
-            code="EXPORT_UPSTREAM_FAILED",
+            "Gravity export rejected the request; responsibility is unclassified",
+            code="EXPORT_SEMANTIC_REJECTED",
             stage=contract.effect,
-            details={"semantic_code": str(code)[:64]},
+            category="local", field="response.code",
+            next_action=_SEMANTIC_NEXT_ACTION,
+            details={"semantic_code": _safe_semantic_code(code)},
+        )
+    extra = raw_payload.get("extra")
+    if isinstance(extra, Mapping) and extra.get("error") not in (None, "", [], {}):
+        raise _export_error(
+            "Gravity export success status contradicts its error indicator",
+            code="EXPORT_RESPONSE_CONTRADICTED", stage=contract.effect,
+            category="local", field="response.extra.error",
+            next_action=_SEMANTIC_NEXT_ACTION,
+            details={"semantic_code": _safe_semantic_code(code)},
         )
     return authorization, raw_payload, getattr(response, "headers", {})
+
+
+_SEMANTIC_NEXT_ACTION = (
+    "Stop this export and report the sanitized diagnostics to the maintainer; "
+    "do not change business filters or retry unchanged. For a create attempt, "
+    "inspect gravity export list before authorizing another job."
+)
+
+
+def _safe_semantic_code(value: Any) -> str:
+    # Arbitrary text (even identifier-shaped text) can contain user values.
+    if type(value) in (int, str) and re.fullmatch(r"-?[0-9]{1,6}", str(value)):
+        return str(value)
+    return "redacted"
 
 
 class ExportTaskCenter:

@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "bb2a5a4eeb4d300562e7c42ebc9971b9eae3560a3e11c9f886db5d197ec7e55c",
+    "reference_evidence_sha256": "f2db0e0478178a950b7b925bfc3cbc5ea4d14bdb85820cd7fd4752f5ee9df17e",
     "manual_review_sha256": "10a811c24b7d58f4e62f74ef7fee898aea4809cabf60c3a6cc8b8c526f20d6af",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3269,
-    "scanned_file_count": 3261,
+    "version_controlled_file_count": 3271,
+    "scanned_file_count": 3263,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -780,12 +780,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 346,
-    "reference_site_count": 344,
+    "tracked_site_count": 347,
+    "reference_site_count": 345,
     "manual_review_site_count": 245,
     "reference_manual_overlap_count": 243,
     "manual_only_site_count": 2,
-    "unique_source_keys": 346,
+    "unique_source_keys": 347,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -797,7 +797,7 @@
       "manual_patch_expression": 223,
       "module_qualname_dependency": 7,
       "static_import": 93,
-      "string_reference": 5
+      "string_reference": 6
     },
     "manual_review_categories": {
       "agent_prefix_template": 2,
@@ -807,9 +807,9 @@
       "non_string_patch_expression": 223
     },
     "dispositions": {
-      "no_migration_effect": 346
+      "no_migration_effect": 347
     },
-    "sites_sha256": "b6c0f10981bf7e392899cd818be56c00054a5cc220c39e849be053c1b9279ce1"
+    "sites_sha256": "7bed3c40ed39c87b5b19a71484b01d5a1f92eaae554539c0b4c2466c1fd8fcd5"
   },
   "blockers": [],
   "site_fields": [
@@ -852,6 +852,21 @@
       "no_migration_effect",
       "retained_exact_reference",
       90,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "out.md:543:10:text module path",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "string_reference",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      91,
       {
         "kind": "none"
       }
@@ -1172,7 +1187,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22416:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22426:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1187,7 +1202,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66299:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66434:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

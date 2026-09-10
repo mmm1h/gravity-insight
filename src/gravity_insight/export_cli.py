@@ -1,7 +1,7 @@
 """Agent-facing CLI helpers for governed exports."""
 from __future__ import annotations
 
-from .export_results import _failure_diagnostics
+from .export_results import _failure_diagnostics, _public_export_error
 from .export_describe_actions import download_receipt_argument
 from .contracts.envelope_obligations import (
     CompletenessState, DataCompleteness, EnvelopeObligations, ExecutionState,
@@ -240,7 +240,7 @@ def export_cli_error(
         category=(
             ErrorCategory.LOCAL
             if str(getattr(error, "code", "")) == "EXPORT_PRIVACY_DENIED"
-            else None
+            else getattr(error, "category", None)
         ),
         field=_export_error_field(error),
         retryable=bool(getattr(error, "retryable", False)),
@@ -298,7 +298,7 @@ def _public_error_code(error: BaseException) -> ErrorCode | str | None:
     if raw_code in {"LOCAL_IO_ERROR", "BLOB_PATH_UNSAFE", "BLOB_PATH_REPARSE"}:
         return ErrorCode.LOCAL_IO_ERROR
     if raw_code.startswith("EXPORT_") or raw_code.startswith("BLOB_"):
-        return ErrorCode.CONTRACT_CHANGED
+        return _public_export_error(raw_code, "<operation-id>", None)[0]
     return None
 
 

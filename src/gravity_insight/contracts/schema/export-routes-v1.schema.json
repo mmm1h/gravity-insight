@@ -6,6 +6,8 @@
   "required": ["schema_version", "routes"],
   "additionalProperties": false,
   "properties": {
+    "$schema": {"type": "string"},
+    "definitions": {"type": "object", "additionalProperties": {"type": "object"}},
     "schema_version": {"const": 1},
     "routes": {
       "type": "array",

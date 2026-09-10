@@ -32,13 +32,14 @@ def authentication_rejected(response: Any, semantic_codes: Any, lease: Any) -> b
     from collections.abc import Mapping
 
     code = response.payload.get("code") if isinstance(response.payload, Mapping) else None
+    semantic_rejected = type(code) in (int, str) and code in semantic_codes
     if lease is None:
-        return response.status_code in {401, 403} or code in semantic_codes
+        return response.status_code in {401, 403} or semantic_rejected
     if response.status_code == 403:
         raise PermissionUnavailableError("the authenticated Gravity account cannot read this capability")
     # Owner's 2026-09-07 two-process reproduction (382 + 7 requests) disproved
     # account-isolated 429 quotas. Capacity/5xx bodies cannot trigger failover.
-    return response.status_code == 401 or (200 <= response.status_code < 300 and code in semantic_codes)
+    return response.status_code == 401 or (200 <= response.status_code < 300 and semantic_rejected)
 
 
 def refresh_authentication(provider: Any, credential: Credential, response: Any,

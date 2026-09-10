@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import re
 from typing import Any
 
 from .contracts.envelope_obligations import serialize_envelope
@@ -114,10 +115,11 @@ def _export_result_error_detail(operation_id: str, result: Any) -> ErrorDetail:
         public_code,
         result.error,
         operation_id=operation_id,
-        category=(ErrorCategory.LOCAL if code == "EXPORT_PRIVACY_DENIED" else None),
-        field=export_error_field(code),
+        category=(ErrorCategory.LOCAL if code == "EXPORT_PRIVACY_DENIED"
+                  else getattr(result.error, "category", None)),
+        field=getattr(result.error, "field", None) or export_error_field(code),
         retryable=bool(getattr(result.error, "retryable", False)),
-        next_action=next_action,
+        next_action=getattr(result.error, "next_action", None) or next_action,
     )
 
 
@@ -127,6 +129,8 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
     stage = getattr(error, "stage", None)
     code = str(getattr(error, "code", ""))
     reasons = {
+        ("conditions", "INPUT_INVALID"): "condition_shape_invalid",
+        ("conditions", "EXPORT_CONDITIONS_UNSUPPORTED"): "nonempty_conditions_unsupported",
         ("compression", "EXPORT_FORMAT_INVALID"): "invalid_gzip",
         ("compression", "BLOB_SIZE_LIMIT"): "gzip_expansion_limit",
         ("encoding", "EXPORT_FORMAT_INVALID"): "invalid_text_encoding",
@@ -141,12 +145,25 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
         ("metadata", "EXPORT_METADATA_UNAVAILABLE"): "metadata_unavailable",
     }
     reason = reasons.get((stage, code))
+    semantic_reasons = {
+        "EXPORT_SEMANTIC_REJECTED": "unclassified_semantic_rejection",
+        "EXPORT_RESPONSE_CONTRADICTED": "success_with_error_indicator",
+    }
+    if code in semantic_reasons:
+        stage, reason = "semantic_response", semantic_reasons[code]
     if code in {"BLOB_SIZE_MISMATCH", "BLOB_HASH_MISMATCH", "BLOB_MD5_MISMATCH"}:
         stage, reason = "completeness", "source_integrity_mismatch"
     if reason is None:
         return {}
     diagnostic: dict[str, Any] = {"stage": stage, "reason": reason}
     details = getattr(error, "details", {})
+    if code in semantic_reasons:
+        diagnostic["responsibility"] = "unclassified"
+        value = details.get("semantic_code") if isinstance(details, Mapping) else None
+        diagnostic["semantic_code"] = (
+            value if isinstance(value, str) and re.fullmatch(r"-?[0-9]{1,6}", value)
+            else "redacted"
+        )
     for key in ("line", "rows_processed", "column", "missing_column_count", "unknown_column_count"):
         value = details.get(key) if isinstance(details, Mapping) else None
         if type(value) is int and value >= 0:
@@ -158,7 +175,13 @@ def _public_export_error(
     code: str,
     operation_id: str,
     job_id: str | None,
-) -> tuple[ErrorCode, str]:
+) -> tuple[ErrorCode | str, str]:
+    if code in {"EXPORT_CONDITIONS_UNSUPPORTED", "EXPORT_SEMANTIC_REJECTED",
+                "EXPORT_RESPONSE_CONTRADICTED", "INPUT_INVALID"}:
+        return code, (
+            f"Inspect gravity export describe {operation_id} and the error field; "
+            "preserve business filters and stop until the reported limitation is resolved."
+        )
     input_codes = {
         "EXPORT_COLUMNS_INVALID", "EXPORT_JOB_INVALID",
         "EXPORT_IDEMPOTENCY_KEY_INVALID", "EXPORT_TIMEOUT_INVALID",
@@ -168,6 +191,7 @@ def _public_export_error(
         "EXPORT_PRIVACY_DENIED", "EXPORT_SCHEMA_MISMATCH",
         "EXPORT_FORMAT_INVALID", "EXPORT_FORMAT_UNSUPPORTED",
         "EXPORT_TYPE_MISMATCH",
+        "EXPORT_PROTOCOL_ERROR",
         "BLOB_MIME_MISMATCH", "BLOB_TYPE_MISMATCH", "BLOB_MAGIC_MISMATCH",
     }
     if code == "EXPORT_TIMEOUT":
