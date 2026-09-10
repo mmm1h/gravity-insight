@@ -29,6 +29,7 @@ _GOVERNED_CARD_KINDS = {
     "custom_metric_mutation",
     "export",
     "material_asset",
+    "material_game_performance",
     "report_mutation",
     "saved_analysis_mutation",
     "realtime_event_mutation",

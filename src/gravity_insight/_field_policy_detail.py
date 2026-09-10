@@ -38,6 +38,7 @@ from ._field_policy_shared import (
 from ._field_policy_segment_members import validate_segment_member_fields
 from ._order_read import STATIC_ORDER_FIELD_PROFILES
 from .monetization_detail import SAFE_ROW_FIELDS, validate_monetization_operation_request
+from ._field_policy_user_detail import static_user_detail_request
 from .errors import InputValidationError
 from .models import OperationSpec
 
@@ -74,7 +75,7 @@ def validate_analysis_detail(
     if operation.operation_id == ANALYSIS_SEGMENT_USER_DETAIL:
         validate_segment_member_fields(operation, inputs, app_id, metadata_loader)
         return
-    if _static_detail_product_request(operation, inputs):
+    if _static_detail_product_request(operation, inputs) or static_user_detail_request(operation, inputs):
         parse_iso_calendar_date(inputs.get("date"), "date")
         _validate_selected_fields(
             inputs.get("fields", ()), set(operation.response_projection.item_keys)

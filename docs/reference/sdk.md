@@ -313,6 +313,31 @@ result = gravity.user_detail_aggregate(request, max_workers=4)
 动态字段、公共分页/receipts、隐私和错误分类统一见 [User Detail Aggregate 合同](cli.md#user-detail-aggregate)；
 源合同不证明完整 collection，调用方必须检查 `pagination.completeness` 和 `claims.forbidden`，按错误码而非文本判断重试或修复 owner。
 
+## Material Game Performance
+
+```python
+result = gravity.material_game_performance(
+    "main", ["900001", "900002"], "bytedance",
+    start="2026-09-01", end="2026-09-07",
+    metrics={"payment": {"op": "count_if", "condition": {
+        "field": "user$pay_count", "operator": "GT", "values": [0],
+    }}},
+    max_report_pages=100, max_user_pages=1000, max_user_items=100000,
+    max_days=90, max_workers=6,
+)
+```
+
+`app` is a required workspace alias or ID; select 1..20 unique material IDs.
+JSON types are preserved, not silently coerced. Dates must be supplied together;
+omitting them uses `as_of` (yesterday by default) and `lookback_days=30`.
+The candidate window is extended to earlier observed creation dates, not narrowed
+into a presumed delivery period. Metrics are explicit project-owned bindings. Unproven user-side platform isolation
+keeps user results unavailable (`USER_PLATFORM_SCOPE_UNPROVEN`), even with full paging.
+`candidate_observations.observed_value` is a diagnostic same-ID row subtotal; `value=null` when coverage is
+incomplete/unknown, and `distinct_users` remains unproven. See the canonical
+[CLI method, budget, type and result contract](cli.md#material-game-performance).
+No Plan adapter is registered; `material.game_performance` is a direct Agent handoff.
+
 ## Insight 专用 facade
 
 ```python

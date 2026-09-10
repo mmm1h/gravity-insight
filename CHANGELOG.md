@@ -19,6 +19,10 @@ Target release: `0.3.18`
 
 - None.
 
+### Added
+
+- `material_game_performance()` / `materials game-performance` compose bounded material discovery with shared registration-day user aggregation. Proven join-key resolution, global page/item/day budgets, per-metric type failures, unknown completeness and continuation positions are explicit. Auto windows are candidate bounds, not proven delivery periods; project-owned metric bindings remain explicit and retention remains unavailable. User-side platform discriminator binding remains unproven: matched users/game metrics are unavailable, with same-ID subtotals confined to diagnostic candidates. No new upstream operation, privacy rule or Event grouping capability is introduced.
+
 ## [0.3.17] - 2026-09-10
 
 ### Breaking changes

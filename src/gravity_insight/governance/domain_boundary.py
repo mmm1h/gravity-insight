@@ -52,6 +52,11 @@ DOMAIN_PACKAGE_LAYER_DEFAULTS = {
     "mcp": "facade_cli_mcp",
 }
 DOMAIN_MODULE_LAYER_OVERRIDES = {
+    "gravity_insight._field_policy_user_detail": "domain_services",
+    "gravity_insight.user_detail_registered_aggregate": "product_composite_plan",
+    "gravity_insight.material_game_contract": "product_composite_plan",
+    "gravity_insight.material_game_performance": "product_composite_plan",
+    "gravity_insight.material_game_result": "product_composite_plan",
     "gravity_insight": "facade_cli_mcp",
     "gravity_insight.__main__": "facade_cli_mcp",
     "gravity_insight._auto_upgrade_install": "facade_cli_mcp",

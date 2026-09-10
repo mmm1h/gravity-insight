@@ -60,12 +60,12 @@ class HostProductSelectionTests(unittest.TestCase):
         }
 
     def test_host_catalog_is_exact_card_gap_projection_without_raw_operations(self) -> None:
-        """Eleven registered gaps plus 97 products yield 108 host identities."""
+        """Eleven registered gaps plus 98 products yield 109 host identities."""
 
         cards = canonical_capability_cards(self.client)
         gaps = registered_unavailable_gaps()
         refs = {item["catalog_ref"] for item in self.catalog["entries"]}
-        self.assertEqual(108, len(refs))
+        self.assertEqual(109, len(refs))
         self.assertEqual(
             {card["selector"] for card in cards} | {f"gap:{gap['code']}" for gap in gaps},
             refs,
