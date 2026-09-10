@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import math
 import re
 from types import MappingProxyType
 from typing import Any, Mapping, Protocol
@@ -103,6 +104,14 @@ _TRANSITIONS: Mapping[ExportState, frozenset[ExportState]] = {
 
 class ExportRuntimeError(BlobTransferError):
     """Structured Export SDK failure using the blob core error contract."""
+
+    def __init__(self, message: str, *, field: str | None = None,
+                 category: str | None = None, next_action: str | None = None,
+                 **kwargs: Any) -> None:
+        super().__init__(message, **kwargs)
+        self.field = field
+        self.category = category
+        self.next_action = next_action
 
 
 @dataclass(frozen=True)
@@ -275,6 +284,9 @@ def _export_error(
     stage: str,
     retryable: bool = False,
     details: Mapping[str, Any] | None = None,
+    field: str | None = None,
+    category: str | None = None,
+    next_action: str | None = None,
 ) -> ExportRuntimeError:
     return ExportRuntimeError(
         message,
@@ -282,6 +294,91 @@ def _export_error(
         stage=stage,
         retryable=retryable,
         details=details,
+        field=field,
+        category=category,
+        next_action=next_action,
+    )
+
+
+def validate_origin_conditions(value: Any, schema: Mapping[str, Any]) -> None:
+    if not isinstance(value, list):
+        _reject("conditions", "Expected an array.")
+    # Bound draft diagnostics independently of the executable max_items=0 contract.
+    if len(value) > 100:
+        _reject("conditions", "Submit at most 100 condition draft items for validation.")
+    item_schema = schema["items"]
+    for index, item in enumerate(value):
+        _validate_item(item, item_schema, f"conditions[{index}]")
+    if value:
+        _reject("conditions[0]", "Nonempty raw-export conditions are not supported.",
+                unsupported=True)
+
+
+def _validate_item(item: Any, schema: Mapping[str, Any], path: str) -> None:
+    if not isinstance(item, Mapping):
+        _reject(path, "Expected a condition object.")
+    properties = schema["properties"]
+    for key in schema["required"]:
+        if key not in item:
+            _reject(f"{path}.{key}", "Required condition key is missing.")
+    if set(item) - set(properties):
+        # Unknown keys may themselves contain user values; never echo them.
+        _reject(path, "Unexpected condition key; only type, field, operator and value are allowed.")
+    _validate_condition_strings(item, properties, path)
+    _validate_condition_values(item, schema, path)
+
+
+def _validate_condition_strings(item: Mapping[str, Any], properties: Mapping[str, Any], path: str) -> None:
+    for key in ("type", "field", "operator"):
+        value = item[key]
+        spec = properties[key]
+        if not isinstance(value, str):
+            _reject(f"{path}.{key}", "Expected a string.")
+        if "enum" in spec and value not in spec["enum"]:
+            _reject(f"{path}.{key}", "Value is outside the client-draft enum.")
+        if not spec.get("min_length", 0) <= len(value) <= spec.get("max_length", 256):
+            _reject(f"{path}.{key}", "String length is outside the client-draft bounds.")
+
+
+def _validate_condition_values(item: Mapping[str, Any], schema: Mapping[str, Any], path: str) -> None:
+    properties = schema["properties"]
+    values = item["value"]
+    if not isinstance(values, list):
+        _reject(f"{path}.value", "Expected an array of scalar values.")
+    rule = schema["operator_constraints"][item["operator"]]
+    if not rule["min_items"] <= len(values) <= rule["max_items"]:
+        _reject(f"{path}.value", "Value count is outside the client-draft operator bounds.")
+    for index, value in enumerate(values):
+        _validate_condition_scalar(value, properties["value"]["items"], f"{path}.value[{index}]")
+    if rule.get("ordered_numeric"):
+        for index, value in enumerate(values):
+            if type(value) not in (int, float):
+                _reject(f"{path}.value[{index}]", "RANGE_IN requires numeric bounds.")
+        if values[0] > values[1]:
+            _reject(f"{path}.value", "RANGE_IN lower bound must not exceed upper bound.")
+
+
+def _validate_condition_scalar(value: Any, schema: Mapping[str, Any], path: str) -> None:
+    scalar = type(value) in (str, int, float, bool)
+    if not scalar or (type(value) is float and not math.isfinite(value)):
+        _reject(path, "Expected a finite JSON scalar, excluding null.")
+    if isinstance(value, str) and len(value) > schema["max_length"]:
+        _reject(path, "Scalar text exceeds the client-draft bound.")
+
+
+def _reject(field: str, reason: str, *, unsupported: bool = False) -> None:
+    raise _export_error(
+        reason + " No request was sent; the item schema is an unverified client draft.",
+        code="EXPORT_CONDITIONS_UNSUPPORTED" if unsupported else "INPUT_INVALID",
+        stage="conditions", field=field,
+        category="local" if unsupported else "caller",
+        next_action=(
+            reason + " "
+            "Inspect conditions in gravity export describe export.analysis.origin_event.start. "
+            "Correct the draft shape if needed, but do not retry nonempty conditions: "
+            "filtered export requires maintainer validation and a future contract. "
+            "Preserve required business filters; an unfiltered export is not equivalent."
+        ),
     )
 
 

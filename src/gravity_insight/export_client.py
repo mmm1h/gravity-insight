@@ -106,6 +106,7 @@ class ExportClientMixin:
                 ),
             )
         validate_export_payload(contract, payload)
+        payload = deepcopy(dict(payload))
         policy.authorize_effect_operation(operation_id)
         _, body, _ = call_export_effect(
             policy, export_runtime, contract, payload, timeout_seconds=timeout_seconds
@@ -370,9 +371,9 @@ class ExportClientMixin:
         requested_columns: Sequence[str],
         idempotency_key: str,
     ) -> tuple[ExportCreationRequest, ExportPrivacyContract]:
-        payload = deepcopy(dict(payload))
         contract = self._export_contract(operation_id)
         validate_export_payload(contract, payload)
+        payload = deepcopy(dict(payload))
         file_allowed = tuple(
             str(value) for value in contract.privacy.get("allowed_columns", [])
         )

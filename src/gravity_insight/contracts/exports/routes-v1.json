@@ -1,6 +1,146 @@
 {
   "$schema": "../schema/export-routes-v1.schema.json",
   "schema_version": 1,
+  "definitions": {
+    "origin_event_input_v1": {
+      "type": "object",
+      "additional_properties": false,
+      "required": [
+        "app_id",
+        "task_name",
+        "task_type",
+        "time_range",
+        "event_name_list",
+        "cond_logic",
+        "conditions"
+      ],
+      "optional": [],
+      "properties": {
+        "app_id": {
+          "type": "integer",
+          "minimum": 1,
+          "default": null,
+          "has_default": false,
+          "description": "Copy the exact App id used by a positive origin_event.evaluate preflight."
+        },
+        "task_name": {
+          "type": "string",
+          "min_length": 1,
+          "max_length": 200,
+          "default": null,
+          "has_default": false,
+          "description": "Caller-generated recovery label; do not include credentials or user-level values."
+        },
+        "task_type": {
+          "type": "string",
+          "enum": [
+            "origin_event_data"
+          ],
+          "default": null,
+          "has_default": false,
+          "description": "Fixed frontend task type for raw event export."
+        },
+        "time_range": {
+          "type": "array",
+          "item_type": "date",
+          "min_items": 2,
+          "max_items": 2,
+          "default": null,
+          "has_default": false,
+          "description": "Inclusive YYYY-MM-DD pair already confirmed by origin_event.evaluate."
+        },
+        "event_name_list": {
+          "type": "array",
+          "item_type": "string",
+          "min_items": 1,
+          "max_items": 2000,
+          "default": null,
+          "has_default": false,
+          "description": "Copy the exact event names used by the successful evaluate request."
+        },
+        "cond_logic": {
+          "type": "string",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "default": null,
+          "has_default": false,
+          "description": "Copy the condition logic from the successful evaluate request."
+        },
+        "conditions": {
+          "type": "array",
+          "item_type": "object",
+          "max_items": 0,
+          "default": null,
+          "has_default": false,
+          "description": "Only an empty array is executable. Items describe an unverified client-draft subset, not upstream acceptance.",
+          "items": {
+            "$ref": "#/definitions/origin_event_condition_v1"
+          }
+        }
+      },
+      "schema_version": "gravity.export.origin-event-input.v1"
+    },
+    "origin_event_condition_v1": {
+      "schema_version": "gravity.export.origin-event-condition.v1",
+      "status": "unverified_client_draft",
+      "executable": false,
+      "type": "object",
+      "required": [
+        "type",
+        "field",
+        "operator",
+        "value"
+      ],
+      "additional_properties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "user"
+          ]
+        },
+        "field": {
+          "type": "string",
+          "min_length": 1,
+          "max_length": 256
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "EQUALS",
+            "RANGE_IN"
+          ]
+        },
+        "value": {
+          "type": "array",
+          "min_items": 1,
+          "max_items": 2,
+          "items": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ],
+            "max_length": 1024,
+            "finite": true
+          }
+        }
+      },
+      "operator_constraints": {
+        "EQUALS": {
+          "min_items": 1,
+          "max_items": 1
+        },
+        "RANGE_IN": {
+          "min_items": 2,
+          "max_items": 2,
+          "ordered_numeric": true
+        }
+      }
+    }
+  },
   "routes": [
     {
       "operation_id": "export.openapi.event.submit",
@@ -49,7 +189,7 @@
       "contract_status": "verified",
       "executable": true,
       "block_reason": null,
-      "request": {"location": "body", "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "fixed_fields": {"task_type": "origin_event_data"}},
+      "request": {"location": "body", "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "fixed_fields": {"task_type": "origin_event_data"}, "input_schema": {"$ref": "#/definitions/origin_event_input_v1"}},
       "response": {"estimated_rows_paths": ["data.total", "total"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
       "verification": {"method_source": "frontend_asset_and_online", "online": true, "notes": "POST with ISO calendar dates returned HTTP 200/code 0 and data.total. On 2026-08-17 the third catalog App plus a 7-day window returned data.total=0 for one non-preset event and data.total=1 for the first visible $ preset event. analysis.event.list yesterday_count was 0 for all 129 events on that App and is not a substitute for evaluate_data. On 2026-08-18 all 7 catalog Apps returned yesterday_count=0 while attribution.attribution.query on the live Douyin App and the Android twin returned positive AppRealRegisterCnt for 2026-08-17."}
@@ -67,21 +207,7 @@
         "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"],
         "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"],
         "fixed_fields": {"task_type": "origin_event_data"},
-        "input_schema": {
-          "type": "object",
-          "additional_properties": false,
-          "required": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"],
-          "optional": [],
-          "properties": {
-            "app_id": {"type": "integer", "minimum": 1, "default": null, "has_default": false, "description": "Copy the exact App id used by a positive origin_event.evaluate preflight."},
-            "task_name": {"type": "string", "min_length": 1, "max_length": 200, "default": null, "has_default": false, "description": "Caller-generated recovery label; do not include credentials or user-level values."},
-            "task_type": {"type": "string", "enum": ["origin_event_data"], "default": null, "has_default": false, "description": "Fixed frontend task type for raw event export."},
-            "time_range": {"type": "array", "item_type": "date", "min_items": 2, "max_items": 2, "default": null, "has_default": false, "description": "Inclusive YYYY-MM-DD pair already confirmed by origin_event.evaluate."},
-            "event_name_list": {"type": "array", "item_type": "string", "min_items": 1, "max_items": 2000, "default": null, "has_default": false, "description": "Copy the exact event names used by the successful evaluate request."},
-            "cond_logic": {"type": "string", "enum": ["AND", "OR"], "default": null, "has_default": false, "description": "Copy the condition logic from the successful evaluate request."},
-            "conditions": {"type": "array", "item_type": "object", "max_items": 100, "default": null, "has_default": false, "description": "Copy evaluate conditions exactly; an empty list is verified."}
-          }
-        },
+        "input_schema": {"$ref": "#/definitions/origin_event_input_v1"},
         "scale_controls": {
           "page_size_limits_total_rows": false,
           "observed_file_row_limit": null,
