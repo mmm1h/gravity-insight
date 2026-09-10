@@ -19,6 +19,10 @@ Target release: `0.3.16`
 
 - None.
 
+### Fixed
+
+- Multi-page `read_all`/`read_limited` results now recompute the merged envelope's `ok` field from the final aggregated `status` instead of carrying it over from page 1 alone. A breaking contract change (`contract_changed`) reported by page 2 or later previously left `ok=true` even though the merged `status` correctly reflected the break, silently telling callers the read succeeded. Additive contract drift (`contract_changed_additive`) and single-page reads are unaffected.
+
 ## [0.3.15] - 2026-09-10
 
 ### Breaking changes

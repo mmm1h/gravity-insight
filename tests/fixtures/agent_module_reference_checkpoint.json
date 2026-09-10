@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "2f21946f5472c5b8c5e4ac3bb6029224eff318e6ae07cd9e5be6320d16b78fea",
-    "manual_review_sha256": "889708f337586c04ab7ec54bee2fa047a26b54e719e6f20cb95a1c1b4303d5b2",
+    "reference_evidence_sha256": "0d4b1a9de860e1bdd12357b8136112fb0f57ba74dfa142615d6dde54c4b74d85",
+    "manual_review_sha256": "10a811c24b7d58f4e62f74ef7fee898aea4809cabf60c3a6cc8b8c526f20d6af",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3269,
     "scanned_file_count": 3261,
@@ -780,12 +780,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 344,
-    "reference_site_count": 342,
-    "manual_review_site_count": 243,
-    "reference_manual_overlap_count": 241,
+    "tracked_site_count": 346,
+    "reference_site_count": 344,
+    "manual_review_site_count": 245,
+    "reference_manual_overlap_count": 243,
     "manual_only_site_count": 2,
-    "unique_source_keys": 344,
+    "unique_source_keys": 346,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -794,7 +794,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 221,
+      "manual_patch_expression": 223,
       "module_qualname_dependency": 7,
       "static_import": 93,
       "string_reference": 5
@@ -804,12 +804,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 221
+      "non_string_patch_expression": 223
     },
     "dispositions": {
-      "no_migration_effect": 344
+      "no_migration_effect": 346
     },
-    "sites_sha256": "58e087fbfbf550e8d69c859e14c601327d1055ef67771418bc0f18e84601d63a"
+    "sites_sha256": "b6c0f10981bf7e392899cd818be56c00054a5cc220c39e849be053c1b9279ce1"
   },
   "blockers": [],
   "site_fields": [
@@ -1187,7 +1187,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66295:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66299:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -4082,7 +4082,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:190:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:196:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4097,7 +4097,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:214:18:patch.object",
+      "tests/test_gravity_insight_pagination.py:220:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4112,7 +4112,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:233:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:239:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4127,7 +4127,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:252:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:258:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4142,7 +4142,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:263:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:269:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4157,7 +4157,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:299:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:305:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4172,7 +4172,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:322:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:328:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4187,7 +4187,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:342:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:348:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4202,7 +4202,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:403:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:409:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",
@@ -4217,7 +4217,37 @@
       }
     ],
     [
-      "tests/test_gravity_insight_pagination.py:418:14:patch.object",
+      "tests/test_gravity_insight_pagination.py:424:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      6,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:441:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.client",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      6,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_insight_pagination.py:459:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.client",

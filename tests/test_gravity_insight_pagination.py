@@ -111,13 +111,19 @@ def _legacy_full_page_heuristic(
     return bool(page_size and item_count >= page_size)
 
 
-def _page(page: int, rows: list[dict], total_pages: int | None) -> ReadResult:
+def _page(
+    page: int,
+    rows: list[dict],
+    total_pages: int | None,
+    *,
+    status: str | None = None,
+) -> ReadResult:
     page_info = {"page": page, "page_size": 1}
     if total_pages is not None:
         page_info["total_page"] = total_pages
     return ReadResult(
         "gravity-insight.read.v1",
-        "success" if rows else "empty",
+        status if status is not None else ("success" if rows else "empty"),
         {},
         "2026-08-11T00:00:00Z",
         "a" * 64,
@@ -424,6 +430,37 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual([1, 2, 3], [row["id"] for row in result["data"]["list"]])
         self.assertEqual("serial_known_total", result["page"]["fetch_strategy"])
         self.assertFalse(result["page"]["has_more"])
+
+    def test_merged_ok_reflects_a_later_page_breaking_contract_change(self) -> None:
+        def execute(_operation_id, inputs):
+            page = int(inputs.get("page", 1))
+            if page == 1:
+                return _page(1, [{"id": 1}], 2)
+            return _page(2, [{"id": 2}], 2, status="contract_changed")
+
+        with patch.object(self.client, "_execute_result", side_effect=execute):
+            result = self.client.read_all("example.concurrent.list", max_workers=1)
+
+        # Pre-fix: merge_pages seeded `ok` from page 1 alone (`to_dict()`)
+        # and never re-derived it once a later page's status overrode the
+        # merged `status`, so a breaking drift on page 2+ still read `ok=True`.
+        self.assertEqual("contract_changed", result["status"])
+        self.assertFalse(result["ok"])
+
+    def test_merged_ok_stays_true_for_a_later_page_additive_contract_change(
+        self,
+    ) -> None:
+        def execute(_operation_id, inputs):
+            page = int(inputs.get("page", 1))
+            if page == 1:
+                return _page(1, [{"id": 1}], 2)
+            return _page(2, [{"id": 2}], 2, status="contract_changed_additive")
+
+        with patch.object(self.client, "_execute_result", side_effect=execute):
+            result = self.client.read_all("example.concurrent.list", max_workers=1)
+
+        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertTrue(result["ok"])
 
     def test_page_info_schema_exposes_wire_fields(self) -> None:
         schema = self.client.schema("example.concurrent.list")

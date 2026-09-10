@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .drift import aggregate_contract_status
+from .error_models import is_success_status
 from .fingerprints import shape_fingerprint
 from .models import OperationSpec, ReadResult
 from .pagination_completeness import page_completeness
@@ -44,6 +45,10 @@ def merge_pages(
         if not items
         else "success"
     )
+    # `pages[0].to_dict()` seeded `ok` from the first page's own status; a
+    # later page's contract-changed status can override the merged
+    # `status` above without this line ever re-deriving `ok` to match it.
+    result["ok"] = is_success_status(result["status"])
     final_page = pages[-1].page or {}
     first_page = pages[0].page or {}
     result["page"] = {
