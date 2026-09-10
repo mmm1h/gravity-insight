@@ -12,6 +12,8 @@ from .intent_text import affirmative_intent_text
 
 
 MATERIAL_PERFORMANCE_NAME = "material_performance"
+MATERIAL_GAME_SELECTOR = "material.game_performance"
+_GAME_QUERIES = frozenset({MATERIAL_GAME_SELECTOR, "material game performance", "素材游戏表现", "素材新增用户表现"})
 MATERIAL_PERFORMANCE_SELECTOR = f"composite:{MATERIAL_PERFORMANCE_NAME}"
 _EXACT = frozenset(
     {
@@ -103,12 +105,41 @@ MATERIAL_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
 def material_performance_query(query: str) -> bool:
     """Recognize aggregate material reporting and reject adjacent products."""
 
+    if query.strip().casefold() in _GAME_QUERIES:
+        return False
     selected = affirmative_intent_text(query)
     words = frozenset(_ASCII_WORD.findall(selected))
     compact = "".join(selected.split())
     if _blocked_query(selected, words, compact):
         return False
     return material_performance_intent(query)
+
+
+def material_game_capability_cards(
+    query: str, *, domain: str | None, platform: str | None,
+) -> list[dict[str, Any]]:
+    if query.strip().casefold() not in _GAME_QUERIES or domain not in {None, "material", "analysis"}:
+        return []
+    if platform not in {None, "bytedance", "kuaishou", "tencent"}:
+        return []
+    required = ["app", "material_id", "platform"]
+    return [{
+        "kind": "material_game_performance", "selector": MATERIAL_GAME_SELECTOR,
+        "domain": "material", "effect": "read", "executable": True,
+        "currently_callable": True, "plan_executable": False,
+        "natural_language_auto_execute": False,
+        "description": "Bounded material discovery and diagnostic same-ID registration-day aggregates; user platform scope unproven.",
+        "boundaries": ["Only proven material joins; no Event/Retention grouping.",
+                       "User platform binding unproven: user metrics unavailable; same-ID counts are diagnostic only.",
+                       "Project metric bindings required; no user rows, coercion or inferred retention."],
+        "required_inputs": required, "missing_inputs": required,
+        "input_template": {"app": "<app>", "material_id": "<material-id>", "platform": "<platform>"},
+        "match": {"confidence": "strong", "coverage": 1.0, "matched_terms": [MATERIAL_GAME_SELECTOR],
+                  "missing_terms": [], "exact_selector": query.strip().casefold() == MATERIAL_GAME_SELECTOR},
+        "next": {"ready_without_input": False, "call_count_after_discovery": 1,
+                 "argv": ["gravity", "materials", "game-performance", "--app", "<app>",
+                          "--platform", "<platform>", "--material-id", "<material-id>"]},
+    }]
 
 
 def material_performance_intent(query: str) -> bool:

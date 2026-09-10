@@ -250,6 +250,7 @@ def _routed_handoff_cards(
     from .discovery_policy import operation_fallback_excluded
     from .export import export_capability_cards
     from .material_asset import material_asset_capability_cards
+    from .material_performance import material_game_capability_cards
     from .metadata_search import metadata_search_capability_cards
     from .mutation_cards import mutation_cards
     from .table_lineage import table_lineage_capability_cards
@@ -258,6 +259,7 @@ def _routed_handoff_cards(
     direct_effects = [
         *mutation_cards(query, domain=domain, platform=platform),
         *material_asset_capability_cards(query, domain=domain, platform=platform),
+        *material_game_capability_cards(query, domain=domain, platform=platform),
         *export_capability_cards(
             query, domain=domain, platform=platform, inventory=export_inventory
         ),

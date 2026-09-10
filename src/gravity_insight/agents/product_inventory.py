@@ -15,6 +15,7 @@ from .capabilities import (
 )
 from .export import export_capability_inventory
 from .material_asset import material_asset_capability_inventory
+from .material_performance import MATERIAL_GAME_SELECTOR, material_game_capability_cards
 from .kanban_mutation import kanban_mutation_capability_inventory
 from .metadata_search import metadata_search_capability_inventory
 from .metadata_onboarding import metadata_onboarding_capability_inventory
@@ -58,6 +59,7 @@ def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
         *realtime_event_mutation_capability_inventory(),
         *user_journey_capability_inventory(),
         *material_asset_capability_inventory(),
+        *material_game_capability_cards(MATERIAL_GAME_SELECTOR, domain=None, platform=None),
         *metadata_search_capability_inventory(),
         *metadata_onboarding_capability_inventory(),
         *table_lineage_capability_inventory(),

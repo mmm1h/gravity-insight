@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import json
 from typing import Any
 
 from . import runtime
@@ -39,6 +40,7 @@ def add_material_commands(
         add_input(item)
         add_pagination(item)
     _add_material_fetch_command(subcommands, add_input)
+    _add_material_game_command(subcommands, positive_int, concurrency_parser)
     performance = subcommands.add_parser(
         "performance",
         help="Read platform material performance through one stable operation.",
@@ -116,6 +118,22 @@ def _add_material_fetch_command(
 def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> Any:
     """Dispatch old catalog commands unchanged or run the new product."""
 
+    if args.materials_command == "game-performance":
+        from .material_game_contract import prepare_material_game_performance
+        from .material_game_performance import material_game_performance
+
+        app_id = resolve_workspace_app(load_workspace(), args.app)
+        ids = args.material_ids_json if args.material_ids_json is not None else _split_values(args.material_id, field="material-id")
+        options = {key: getattr(args, key) for key in (
+            "start", "end", "as_of", "lookback_days", "object_type",
+            "max_report_pages", "max_user_pages", "max_user_items", "max_days",
+        )}
+        options["max_workers"] = args.concurrency
+        options["metrics"] = object_input(args.metrics) if args.metrics else None
+        preview = prepare_material_game_performance(app_id, ids, args.platform, **options)
+        if args.material_game_dry_run:
+            return preview
+        return material_game_performance(runtime.build_client(), app_id, ids, args.platform, **options)
     if args.materials_command in {"list", "tags", "reviews"}:
         client = runtime.build_client()
         operation_id = runtime.resolve_operation_id(
@@ -189,6 +207,27 @@ def _split_values(values: list[str], *, field: str) -> list[str]:
             f"actual value: {actual_value(result)}; " + (f"--{field} must select at least one value"), field=field
         )
     return result
+
+
+def _add_material_game_command(subcommands: Any, positive_int: Any, concurrency: Any) -> None:
+    command = subcommands.add_parser("game-performance", help="Join material reports to bounded registration-day aggregates.")
+    command.add_argument("--app", required=True)
+    ids = command.add_mutually_exclusive_group(required=True)
+    ids.add_argument("--material-id", action="append", help="String material ID; repeat or comma-separate.")
+    ids.add_argument("--material-ids-json", type=json.loads, help="Explicitly typed JSON array of material IDs.")
+    command.add_argument("--platform", choices=DEFAULT_PLATFORMS, required=True)
+    command.add_argument("--start")
+    command.add_argument("--end")
+    command.add_argument("--as-of", help="Auto-window cutoff; defaults to yesterday in the local calendar.")
+    command.add_argument("--lookback-days", type=positive_int, default=30)
+    command.add_argument("--metrics", help="JSON file with project-owned level/payment/duration aggregate measure bindings.")
+    command.add_argument("--object-type", choices=("material", "creative", "campaign"), default="material")
+    command.add_argument("--max-report-pages", type=positive_int, default=100)
+    command.add_argument("--max-user-pages", type=positive_int, default=1000)
+    command.add_argument("--max-user-items", type=positive_int, default=100000)
+    command.add_argument("--max-days", type=positive_int, default=90)
+    command.add_argument("--concurrency", type=concurrency, default=6)
+    command.add_argument("--dry-run", dest="material_game_dry_run", action="store_true")
 
 
 def _output_file(value: str) -> str:

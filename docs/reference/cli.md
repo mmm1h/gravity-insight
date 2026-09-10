@@ -234,6 +234,49 @@ gravity materials performance --app main --start 2026-08-01 --end 2026-08-07 `
 
 平台保留原生物理字段，不跨平台归一、汇总、排名或推导策略。允许的平台和指标从当前输入 schema 获取。
 
+### Material Game Performance
+
+```powershell
+gravity materials game-performance --app main --platform bytedance `
+  --material-id 900001 --material-id 900002 --as-of 2026-09-10 `
+  --max-report-pages 100 --max-user-pages 1000 --max-user-items 100000 --max-days 90
+```
+
+`--material-id` preserves strings; use `--material-ids-json '[900001,900002]'`
+for numeric IDs. Identity normalization never coerces JSON types.
+`--start`/`--end` override the automatic candidate window; `--lookback-days`
+defaults to 30. The report has no material-ID filter or proven last-delivery date.
+Discovery scans one bounded window; a prefix miss is unresolved, not absent.
+App is explicit. Duplicate report rows and percentages are never summed.
+
+`--metrics metrics.json` accepts project-owned level/payment/duration `count_if`
+bindings ([example](sdk.md#material-game-performance)); `--dry-run` discloses
+method, type prerequisites and budgets without creating a client. No string-to-number
+conversion or lexical threshold fallback occurs. Per-metric `failures` retain
+`USER_DETAIL_AGGREGATE_CONDITION_TYPE_MISMATCH` (caller/exit 2, field and types)
+versus `USER_DETAIL_AGGREGATE_MIXED_TYPE` (upstream/exit 3, no field/value).
+Neither is retried. All-null/unobserved metrics, unbound metrics, unsupported sums
+and retention have separate gaps. Successful metrics include validated definitions
+(string conditions redacted); `scope` and `metric_binding_digests` bind the request.
+
+Report pages hold at most 10 rows; user pages 100. All materials share one daily
+pagination pool (`--concurrency`, default 6), with no outer worker pool.
+`--max-user-pages`/`--max-user-items` are global; `--max-days` caps attempted dates.
+`report_scan` and `days[].scan` retain scanned pages/items, `next_page`,
+`remaining_pages` (null when unknown), and completeness. `budget` exposes next/failed
+or incomplete date/page; `remaining_days` includes failed and not-yet-read dates.
+The first incomplete/failed day stops scanning; failed-read reservations are separate
+from known usage. Bounds count logical pages, not HTTP transport retry attempts.
+Rescan with larger bounds or smaller date windows; never add a prefix to its replacement.
+
+Missing coverage is never zero-filled. User-side platform discriminator bindings are
+unproven: `USER_PLATFORM_SCOPE_UNPROVEN` keeps matched users/game metrics unavailable.
+`candidate_observations.observed_value` is diagnostic same-ID row count only; collisions
+across platforms cannot be excluded. Unknown completeness also prevents population totals,
+ad-registration reconciliation, historical properties and mature retention. The overall
+result remains partial (exit 3); inspect its components. Creative/campaign are unsupported, not fallback queries. No Event grouping
+is enabled. Raw rows and personnel fields are never returned.
+
 ### Material Asset Fetch
 
 `--input` 是 source operation 的请求，不是上一条命令的结果文件。下面的 ID 是脱敏示例值；调用时替换

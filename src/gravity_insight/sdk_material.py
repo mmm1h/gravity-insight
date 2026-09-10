@@ -14,6 +14,29 @@ from .actionable_error_values import actual_value
 class MaterialSdkMixin:
     """Expose governed material analysis without duplicating its core."""
 
+    def material_game_performance(
+        self, app: str | int, material_ids: Sequence[str | int], platform: str, *,
+        start: str | None = None, end: str | None = None, as_of: str | None = None,
+        lookback_days: int = 30, metrics: Mapping[str, Any] | None = None,
+        object_type: str = "material", max_report_pages: int = 100,
+        max_user_pages: int = 1_000, max_user_items: int = 100_000,
+        max_days: int = 90, max_workers: int = 6, workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Compose bounded material discovery and registration-day aggregates."""
+        from .material_game_contract import normalize_request
+        from .material_game_performance import material_game_performance
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        options = {
+            "start": start, "end": end, "as_of": as_of, "lookback_days": lookback_days,
+            "metrics": metrics, "object_type": object_type, "max_report_pages": max_report_pages,
+            "max_user_pages": max_user_pages, "max_user_items": max_user_items,
+            "max_days": max_days, "max_workers": max_workers,
+        }
+        normalize_request(app_id, material_ids, platform, **options)
+        return material_game_performance(self.insight, app_id, material_ids, platform, **options)
+
     def material_performance(
         self,
         apps: str | int | Sequence[str | int],

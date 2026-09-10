@@ -550,19 +550,19 @@ def run():
 
         SQL catalog reads registration, not execution; discovery navigation and
         schema/default values use output, not routing or the public Agent facade.
-        Eager/canonical SCC sets are unchanged. The untouched 17-module Agent
-        orchestration ring is now the largest; no edges are ignored or delayed.
+        Material-game composition adds reachable product nodes, not AST-only
+        or eager cycles. The untouched 17-module Agent ring remains largest.
         """
         expected = module_graph_baseline()
         self.assertEqual(
-            "a1860cd497ae2d8ced5d6fcdbda37ecd9b08a16e6453d611188937382ef65707",
+            "91e4d55432d1d635ccecbbf3b927c66a24a6221ce5789d9dfc3e243ae0431a98",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
                 "ast-only": 17,
-                "ast+lazy-exports": 438,
-                "canonical": 555,
+                "ast+lazy-exports": 444,
+                "canonical": 561,
                 "eager-ast-only": 0,
             },
             {
@@ -575,7 +575,7 @@ def run():
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
-            [555, 15, 8, 3, 2, 2, 2],
+            [561, 15, 8, 3, 2, 2, 2],
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())

@@ -53,6 +53,7 @@ Usage:
   gravity analysis dashboard kanban schema
   gravity analysis dashboard kanban mutate --action <action> --input <json|file|-> --dry-run|--execute
   gravity materials performance --app <alias|id> --start <date> --end <date>
+  gravity materials game-performance --app <alias|id> --platform <platform> --material-id <id>
   gravity materials fetch --source <local|bytedance_project> --input <json|file|-> --ref-field <field> --ref <value> --role <file|thumbnail> --output <file>
   gravity materials title-packages --app <alias|id> --package-kind <regular|standard>
   gravity promotion performance --app <alias|id> --start <date> --end <date>
