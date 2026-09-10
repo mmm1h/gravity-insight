@@ -13,7 +13,13 @@
 
 ## [Unreleased]
 
-Target release: `0.3.16`
+Target release: `0.3.17`
+
+### Breaking changes
+
+- None.
+
+## [0.3.16] - 2026-09-10
 
 ### Breaking changes
 
