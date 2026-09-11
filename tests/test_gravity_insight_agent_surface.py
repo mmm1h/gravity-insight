@@ -460,7 +460,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         def status_for(config):
             class Config:
                 @classmethod
-                def from_env(cls, _path):
+                def from_env(cls, _path, environ=None):
                     return config
 
             with patch.object(runtime, "_sdk_module", return_value=SimpleNamespace(

@@ -110,6 +110,69 @@ def resolve_env_path(
     return selected, isolated
 
 
+def _location_configures_account(path: Path) -> bool:
+    """Report whether a credential file names an account, never its values."""
+
+    values = _credential_values(read_env_file(path))
+    username = values.get("GRAVITY_USERNAME", "").strip()
+    password = values.get("GRAVITY_PASSWORD", "").strip()
+    if username and password:
+        return True
+    return any(str(values.get(key, "")).strip() for key in TOKEN_KEYS)
+
+
+def _default_credential_locations(environ: Mapping[str, str]) -> tuple[Path, ...]:
+    """Enumerate the workspace-free default credential files only.
+
+    Other workspaces are deliberately not enumerated: their existence is not
+    needed to explain this mismatch and would disclose unrelated local state.
+    """
+
+    candidates = [root / "default" / ".env.gravity.local" for root in cache_roots(environ)]
+    return tuple(dict.fromkeys(candidates))
+
+
+def credential_location_diagnosis(
+    env_path: str | Path | None = None,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Explain which credential file is selected and what else is configured.
+
+    This reports locations only. It never selects, merges, or falls back to
+    another account: workspace-scoped principal isolation is preserved, and a
+    different account is only ever used when the caller sets the env-file
+    override explicitly.
+    """
+
+    env = os.environ if environ is None else environ
+    selected, isolated = resolve_env_path(env_path, environ=env)
+    selected_configured = _location_configures_account(selected)
+    try:
+        selected_key = selected.resolve()
+    except OSError:
+        selected_key = selected
+    alternatives: list[Path] = []
+    if not selected_configured:
+        for candidate in _default_credential_locations(env):
+            try:
+                if candidate.resolve() == selected_key:
+                    continue
+            except OSError:
+                if candidate == selected:
+                    continue
+            if _location_configures_account(candidate):
+                alternatives.append(candidate)
+    return {
+        "selected_path": str(selected),
+        "selected_configured": selected_configured,
+        "explicitly_selected": isolated,
+        "mismatch": bool(alternatives),
+        "configured_elsewhere": [str(path) for path in alternatives],
+        "env_file_variable": ENV_FILE_VAR,
+    }
+
+
 def runtime_scope_key(
     env_path: str | Path | None = None,
     *,
@@ -329,6 +392,7 @@ def _read_opaque_id(path: Path) -> str | None:
 __all__ = [
     "ENV_FILE_VAR",
     "RuntimeScopeKey",
+    "credential_location_diagnosis",
     "credential_scope_opaque_id",
     "env_isolation_key",
     "field_policy_cache_dir",

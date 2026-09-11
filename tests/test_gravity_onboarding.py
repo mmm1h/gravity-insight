@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import io
+import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from gravity_insight import __main__ as unified_cli
+from gravity_insight import runtime
 from gravity_insight.cli import build_parser
 from gravity_insight.credentials import CredentialConfig, CredentialProvider, session_path
+from gravity_insight.errors import InputValidationError
+from gravity_insight.runtime_scope import credential_location_diagnosis
 from gravity_insight.sql import __main__ as sql_cli
 from gravity_insight.onboarding import (
     command_requires_credentials,
@@ -202,6 +207,185 @@ class GravityOnboardingTests(unittest.TestCase):
             config = CredentialConfig.from_env(env_path, environ={})
             self.assertIsNone(config.username)
             self.assertIsNone(config.password)
+
+
+class CredentialLocationSelectionTests(unittest.TestCase):
+    """Regressions for #226: workspace-scoped credential selection diagnostics.
+
+    A business workspace resolves its own credential location, so a previous
+    default-location login is not visible there. That isolation is intended;
+    these tests pin the diagnostics that explain it instead of a fallback.
+    """
+
+    def _layout(self, root: Path) -> tuple[dict[str, str], Path, Path]:
+        cache = root / "cache"
+        default_path = cache / "default" / ".env.gravity.local"
+        default_path.parent.mkdir(parents=True)
+        default_path.write_text(
+            "GRAVITY_USERNAME=analyst@example.invalid\nGRAVITY_PASSWORD=local-secret\n",
+            encoding="utf-8",
+        )
+        workspace_path = cache / "workspaces" / "biz-0123456789ab" / ".env.gravity.local"
+        workspace_path.parent.mkdir(parents=True)
+        home = root / "home"
+        home.mkdir()
+        # cache_roots() also consults LOCALAPPDATA, XDG_CACHE_HOME and Path.home().
+        # Redirect every one of them into the temporary tree so no test ever reads
+        # the developer's real credential directory.
+        return (
+            {
+                "GRAVITY_CACHE_HOME": str(cache),
+                "LOCALAPPDATA": str(home),
+                "XDG_CACHE_HOME": str(home),
+                "USERPROFILE": str(home),
+                "HOME": str(home),
+                "HOMEDRIVE": home.drive,
+                "HOMEPATH": str(home)[len(home.drive):],
+                "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
+                "PATH": os.environ.get("PATH", ""),
+            },
+            default_path,
+            workspace_path,
+        )
+
+    def test_workspace_location_reports_the_configured_default_without_selecting_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            environ, default_path, workspace_path = self._layout(Path(directory))
+
+            with patch.dict(os.environ, environ, clear=True):
+                diagnosis = credential_location_diagnosis(workspace_path, environ=environ)
+
+            self.assertFalse(diagnosis["selected_configured"])
+            self.assertTrue(diagnosis["mismatch"])
+            self.assertEqual(str(workspace_path), diagnosis["selected_path"])
+            self.assertIn(str(default_path), diagnosis["configured_elsewhere"])
+            self.assertEqual("GRAVITY_ENV_FILE", diagnosis["env_file_variable"])
+            # The mismatch is reported, never resolved by adopting the account.
+            self.assertNotIn("analyst@example.invalid", json.dumps(diagnosis))
+            self.assertNotIn("local-secret", json.dumps(diagnosis))
+
+    def test_explicitly_selected_configured_file_reports_no_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            environ, default_path, _workspace_path = self._layout(Path(directory))
+
+            with patch.dict(os.environ, environ, clear=True):
+                diagnosis = credential_location_diagnosis(default_path, environ=environ)
+
+            self.assertTrue(diagnosis["selected_configured"])
+            self.assertFalse(diagnosis["mismatch"])
+            self.assertEqual([], diagnosis["configured_elsewhere"])
+
+    def test_unconfigured_location_without_alternatives_reports_no_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            environ, default_path, workspace_path = self._layout(Path(directory))
+            default_path.unlink()
+
+            with patch.dict(os.environ, environ, clear=True):
+                diagnosis = credential_location_diagnosis(workspace_path, environ=environ)
+
+            self.assertFalse(diagnosis["selected_configured"])
+            self.assertFalse(diagnosis["mismatch"])
+            self.assertEqual([], diagnosis["configured_elsewhere"])
+
+    def test_non_interactive_onboarding_does_not_advertise_auth_refresh(self) -> None:
+        """#226 step 3: refresh cannot fix a location mismatch, so never suggest it."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            environ, default_path, workspace_path = self._layout(Path(directory))
+            with patch.dict(os.environ, environ, clear=True):
+                with self.assertRaises(InputValidationError) as raised:
+                    ensure_first_run_credentials(
+                        env_path=workspace_path,
+                        stdin=_Pipe(),
+                        stderr=_Pipe(),
+                    )
+
+            next_action = raised.exception.next_action
+            self.assertIn(str(default_path), next_action)
+            self.assertIn("GRAVITY_ENV_FILE", next_action)
+            self.assertIn("ignores process-environment credentials", next_action)
+            # auth refresh may be named, but only to rule it out, never as the action.
+            self.assertIn("`auth refresh` cannot resolve this", next_action)
+            self.assertNotIn("run `gravity insight auth refresh`", next_action)
+            self.assertNotIn("Run `gravity auth refresh`", next_action)
+
+    def test_auth_status_reports_the_location_mismatch_instead_of_bare_missing(self) -> None:
+        """#226 steps 1-2: a previous default login must be explained, not hidden."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            environ, default_path, workspace_path = self._layout(Path(directory))
+            selected = {**environ, "GRAVITY_ENV_FILE": str(workspace_path)}
+
+            with patch.dict(os.environ, selected, clear=True):
+                status = runtime.credential_status()
+
+            self.assertEqual("missing", status["auth_state"])
+            self.assertEqual("CREDENTIAL_LOCATION_MISMATCH", status["remediation_code"])
+            self.assertFalse(status["onboarding_satisfied"])
+            self.assertIn(str(default_path), status["next_action"])
+            self.assertIn(
+                str(default_path), status["credential_location"]["configured_elsewhere"]
+            )
+            self.assertNotIn("analyst@example.invalid", json.dumps(status))
+
+    def test_auth_status_does_not_advertise_refresh_for_ambient_only_credentials(self) -> None:
+        """#226 step 3: status and onboarding must not disagree about readiness."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            environ, _default_path, workspace_path = self._layout(Path(directory))
+            exported = {
+                **environ,
+                "GRAVITY_ENV_FILE": str(workspace_path),
+                "GRAVITY_USERNAME": "analyst@example.invalid",
+                "GRAVITY_PASSWORD": "local-secret",
+            }
+
+            with patch.dict(os.environ, exported, clear=True):
+                status = runtime.credential_status()
+
+            self.assertEqual("credentials_available", status["auth_state"])
+            self.assertTrue(status["can_exchange_credentials"])
+            # Readiness is still reported, but the dead-end remediation is not.
+            self.assertFalse(status["onboarding_satisfied"])
+            self.assertEqual("CREDENTIAL_AMBIENT_ONLY", status["remediation_code"])
+            self.assertIn("will reject them", status["next_action"])
+            self.assertNotIn(
+                "Run `gravity auth refresh` to exchange", status["next_action"]
+            )
+            self.assertNotIn("local-secret", json.dumps(status))
+
+    def test_auth_status_keeps_the_plain_refresh_action_when_onboarding_agrees(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            environ, default_path, _workspace_path = self._layout(Path(directory))
+            selected = {**environ, "GRAVITY_ENV_FILE": str(default_path)}
+
+            with patch.dict(os.environ, selected, clear=True):
+                status = runtime.credential_status()
+
+            self.assertEqual("credentials_available", status["auth_state"])
+            self.assertTrue(status["onboarding_satisfied"])
+            self.assertIsNone(status["remediation_code"])
+            self.assertIn("Run `gravity auth refresh`", status["next_action"])
+
+    def test_process_environment_credentials_are_rejected_by_onboarding(self) -> None:
+        """#226 step 3: exporting credentials satisfies auth status but not onboarding."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            environ, _default_path, workspace_path = self._layout(Path(directory))
+            exported = {
+                **environ,
+                "GRAVITY_USERNAME": "analyst@example.invalid",
+                "GRAVITY_PASSWORD": "local-secret",
+            }
+
+            ambient = CredentialConfig.from_env(workspace_path)
+            persisted = CredentialConfig.from_env(workspace_path, environ={})
+
+            self.assertIsNone(persisted.username)
+            self.assertIsNone(persisted.password)
+            with patch.dict(os.environ, exported, clear=True):
+                ambient = CredentialConfig.from_env(workspace_path)
+            self.assertEqual("analyst@example.invalid", ambient.username)
 
 
 if __name__ == "__main__":

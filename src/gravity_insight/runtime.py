@@ -203,10 +203,66 @@ def call_batch(
     return method([dict(item) for item in requests], **kwargs)
 
 
+def _credential_next_action(
+    *,
+    token_valid: bool,
+    credentials_available: bool,
+    onboarding_satisfied: bool,
+    location: Mapping[str, Any],
+) -> tuple[str, str, str | None]:
+    """Resolve state, next action and remediation code as one decision.
+
+    A remediation is only omitted when first-run onboarding accepts the same
+    credentials the execution path just read; otherwise the caller would be
+    told to run a command that is guaranteed to reject them.
+    """
+
+    from .runtime_scope import ENV_FILE_VAR
+
+    if token_valid:
+        return "valid_token", "Run the requested Gravity Insight operation.", None
+    if credentials_available and onboarding_satisfied:
+        return (
+            "credentials_available",
+            "Run `gravity auth refresh` to exchange the "
+            "configured username/password for a token.",
+            None,
+        )
+    if credentials_available:
+        return (
+            "credentials_available",
+            f"Credentials were read from the process environment, but the selected "
+            f"credential file `{location['selected_path']}` configures no account. "
+            f"`gravity auth refresh` enters first-run onboarding, which ignores "
+            f"process values and will reject them. Set `{ENV_FILE_VAR}` to an "
+            f"already configured credential file, or run `gravity` in an "
+            f"interactive terminal to save the account to the selected file.",
+            "CREDENTIAL_AMBIENT_ONLY",
+        )
+    if location["mismatch"]:
+        elsewhere = ", ".join(f"`{path}`" for path in location["configured_elsewhere"])
+        return (
+            "missing",
+            f"The selected credential file `{location['selected_path']}` "
+            f"configures no account, but {elsewhere} does. This workspace "
+            f"resolves its own credential location; no account is selected for "
+            f"you. Set `{ENV_FILE_VAR}` to that file to reuse it, or run "
+            f"`gravity` in an interactive terminal to configure this location.",
+            "CREDENTIAL_LOCATION_MISMATCH",
+        )
+    return (
+        "missing",
+        "Run `gravity` in an interactive terminal to configure the Gravity "
+        "username and password, or place them in the ignored "
+        "`.env.gravity.local` and run `gravity insight auth refresh`.",
+        None,
+    )
+
+
 def credential_status() -> dict[str, Any]:
     """Report credential metadata without returning credential values."""
 
-    from .runtime_scope import resolve_env_path
+    from .runtime_scope import credential_location_diagnosis, resolve_env_path
 
     env_path, _isolated = resolve_env_path()
     sdk = _sdk_module()
@@ -223,23 +279,25 @@ def credential_status() -> dict[str, Any]:
         )
     )
     credentials_available = bool(config.username and config.password)
-    if token_valid:
-        state = "valid_token"
-        next_action = "Run the requested Gravity Insight operation."
-    elif credentials_available:
-        state = "credentials_available"
-        next_action = (
-            "Run `gravity auth refresh` to exchange the "
-            "configured username/password for a token."
-        )
-    else:
-        state = "missing"
-        next_action = (
-            "Run `gravity` in an interactive terminal to configure the Gravity "
-            "username and password, or place them in the ignored "
-            "`.env.gravity.local` and run `gravity insight auth refresh`."
-        )
+    location = credential_location_diagnosis(env_path)
+    # First-run onboarding deliberately ignores ambient process values, because a
+    # refreshed file cannot update an already-inherited parent environment. Read
+    # the same explicit-mapping view it uses so this report never advertises a
+    # remediation that onboarding will reject.
+    persisted = config_class.from_env(env_path, environ={})
+    onboarding_satisfied = bool(
+        (persisted.username and persisted.password) or persisted.token
+    )
+    state, next_action, remediation = _credential_next_action(
+        token_valid=token_valid,
+        credentials_available=credentials_available,
+        onboarding_satisfied=onboarding_satisfied,
+        location=location,
+    )
     return {
+        "credential_location": location,
+        "onboarding_satisfied": onboarding_satisfied,
+        "remediation_code": remediation,
         "status": state,
         "auth_state": state,
         "credential_present": token_present,
