@@ -627,6 +627,8 @@ Registered Product 自动选中，方言与上游身份/事务/scan/cancel 缺�
 不得出现在 argv、仓库、日志或 receipt。`gravity auth status` 可离线检查本地状态；需要刷新时显式运行
 `gravity auth refresh`。
 
+凭据位置随 workspace 变化（有 `gravity.toml` 按其路径派生，否则用 `default`），不共享也不自动回退到别处已登录的账号，复用它须显式设 `GRAVITY_ENV_FILE`。`auth status` 另返回 `credential_location`（选中路径与别处已配置的位置，只含路径不含账号值）、`onboarding_satisfied`（首次登录引导只读落盘文件，不采纳可能陈旧的进程环境变量）和 `remediation_code`——`CREDENTIAL_LOCATION_MISMATCH` 或 `CREDENTIAL_AMBIENT_ONLY` 时 `auth refresh` 会被引导拒绝，改设 `GRAVITY_ENV_FILE` 或交互式登录；为 `null` 时 `next_action` 才可直接执行。
+
 <a id="result-and-errors"></a>
 ## 结果与错误
 

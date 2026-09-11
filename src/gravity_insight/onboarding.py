@@ -328,6 +328,36 @@ def _saved_window_valid(args: Any, *, required: bool) -> bool:
     return True
 
 
+def _non_interactive_remediation(selected_path: Path) -> str:
+    """Name an action that resolves this state, never one onboarding rejects.
+
+    Onboarding reads only the persisted file, so suggesting `auth refresh` for
+    exported process credentials would send the caller back through the same
+    rejection.
+    """
+
+    from .runtime_scope import ENV_FILE_VAR, credential_location_diagnosis
+
+    location = credential_location_diagnosis(selected_path)
+    if location["mismatch"]:
+        elsewhere = ", ".join(f"`{path}`" for path in location["configured_elsewhere"])
+        return (
+            f"The selected credential file `{location['selected_path']}` "
+            f"configures no account, but {elsewhere} does. Set "
+            f"`{ENV_FILE_VAR}` to that file to reuse it, or run `gravity` in "
+            f"an interactive terminal to configure this location. Onboarding "
+            f"ignores process-environment credentials, so `auth refresh` "
+            f"cannot resolve this on its own."
+        )
+    return (
+        f"Run `gravity` in an interactive terminal to save username and "
+        f"password to `{location['selected_path']}`, or set "
+        f"`{ENV_FILE_VAR}` to a credential file that already configures "
+        f"an account. Onboarding ignores process-environment credentials, "
+        f"so exporting them and running `auth refresh` will not work."
+    )
+
+
 def ensure_first_run_credentials(
     *,
     requires_credentials: bool = True,
@@ -358,11 +388,7 @@ def ensure_first_run_credentials(
         raise InputValidationError(
             "actual value: non-interactive stdin; Gravity username/password are not configured",
             field="auth",
-            next_action=(
-                "Run `gravity` in an interactive terminal to save username and "
-                "password, or place them in the ignored `.env.gravity.local` "
-                "and run `gravity insight auth refresh`."
-            ),
+            next_action=_non_interactive_remediation(selected_path),
         )
 
     output_stream.write("Gravity 首次使用设置\n")

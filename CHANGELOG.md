@@ -19,6 +19,10 @@ Target release: `0.3.19`
 
 - None.
 
+### Fixed
+
+- `auth status` explains workspace-scoped credential selection instead of reporting a bare `missing`. A business workspace derives its own credential location, so a previous default-location login is not visible there; that isolation is unchanged and no other account is ever selected, merged or fallen back to. `credential_location` now reports the selected path, whether it configures an account, and any configured default location detected elsewhere (paths and existence only, never account values). `onboarding_satisfied` exposes the explicit-mapping view that first-run onboarding actually reads, and `remediation_code` distinguishes `CREDENTIAL_LOCATION_MISMATCH` from `CREDENTIAL_AMBIENT_ONLY`. Credentials supplied only through the process environment still report `credentials_available`, because the execution path accepts them, but `auth refresh` is no longer advertised as the remedy: onboarding deliberately ignores ambient values, which previously produced a contradictory readiness signal and a dead-end first-run prompt on empty stdin. The non-interactive onboarding error carries the same actionable `GRAVITY_ENV_FILE` remediation.
+
 ## [0.3.18] - 2026-09-11
 
 ### Breaking changes

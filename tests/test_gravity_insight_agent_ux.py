@@ -160,7 +160,7 @@ class CredentialUxTests(unittest.TestCase):
 
         class Config:
             @classmethod
-            def from_env(cls, _path):
+            def from_env(cls, _path, environ=None):
                 return config
 
         with patch.object(
