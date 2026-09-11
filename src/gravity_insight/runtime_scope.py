@@ -148,6 +148,9 @@ def credential_location_diagnosis(
     env = os.environ if environ is None else environ
     selected, isolated = resolve_env_path(env_path, environ=env)
     selected_configured = _location_configures_account(selected)
+    # Candidate roots are already resolved, so resolve the selected path too.
+    # Comparing one short 8.3 name against one long name would both miss a
+    # self-match and render the same directory as two locations in one message.
     try:
         selected_key = selected.resolve()
     except OSError:
@@ -164,7 +167,7 @@ def credential_location_diagnosis(
             if _location_configures_account(candidate):
                 alternatives.append(candidate)
     return {
-        "selected_path": str(selected),
+        "selected_path": str(selected_key),
         "selected_configured": selected_configured,
         "explicitly_selected": isolated,
         "mismatch": bool(alternatives),

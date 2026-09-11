@@ -218,6 +218,10 @@ class CredentialLocationSelectionTests(unittest.TestCase):
     """
 
     def _layout(self, root: Path) -> tuple[dict[str, str], Path, Path]:
+        # Resolve first: on Windows CI the temp root is an 8.3 short name, while
+        # cache roots are resolved, so unresolved expectations compare
+        # RUNNER~1 against runneradmin for the very same directory.
+        root = root.resolve()
         cache = root / "cache"
         default_path = cache / "default" / ".env.gravity.local"
         default_path.parent.mkdir(parents=True)
@@ -263,6 +267,24 @@ class CredentialLocationSelectionTests(unittest.TestCase):
             # The mismatch is reported, never resolved by adopting the account.
             self.assertNotIn("analyst@example.invalid", json.dumps(diagnosis))
             self.assertNotIn("local-secret", json.dumps(diagnosis))
+
+    def test_reported_paths_use_one_consistent_representation(self) -> None:
+        """One message must not render the same directory two different ways."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            environ, default_path, workspace_path = self._layout(Path(directory))
+
+            with patch.dict(os.environ, environ, clear=True):
+                diagnosis = credential_location_diagnosis(workspace_path, environ=environ)
+
+            reported = [diagnosis["selected_path"], *diagnosis["configured_elsewhere"]]
+            for path in reported:
+                with self.subTest(path=path):
+                    self.assertEqual(str(Path(path).resolve()), path)
+            # Both sides share a real common root rather than two spellings of it.
+            self.assertTrue(
+                all(Path(path).is_relative_to(default_path.parents[1]) for path in reported)
+            )
 
     def test_explicitly_selected_configured_file_reports_no_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
