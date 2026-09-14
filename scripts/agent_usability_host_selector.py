@@ -4,14 +4,14 @@ The evaluator starts this file as a subprocess, writes one
 ``gravity.agent-external-selector-request.v1`` object to stdin, and expects
 one ``gravity.agent-external-selector-response.v1`` object on stdout.
 
-Call path: one Anthropic Messages request per trial against the already
-configured Anthropic-compatible gateway (``ANTHROPIC_BASE_URL`` +
-``ANTHROPIC_AUTH_TOKEN``). The child never talks to Gravity.
+Call path: one OpenAI Responses request per trial, using GPT-6 Astra and
+``OPENAI_API_KEY`` at the fixed official endpoint. The child never talks to
+Gravity. Historical Claude trial receipts retain their original identity.
 
-One batch call, not one call per question, so a 240-question holdout trial
-fits inside ``--selector-timeout`` (default 120s; last clean arm was ~87s).
-Questions share the catalog prefix only. There is no cross-trial memory and
-no local answer cache.
+One batch call covers all questions. Use ``--selector-timeout 330`` to allow
+three bounded 100s HTTP attempts plus backoff and subprocess overhead; actual
+Astra latency must be measured on development cases. Questions share the
+catalog prefix only. There is no cross-trial memory or local answer cache.
 
 Failure policy: missing credentials, exhausted retries, malformed model
 output, missing ids, or selectors outside the supplied catalog fail the
@@ -31,9 +31,10 @@ import urllib.request
 from typing import Any, Mapping
 
 
-SELECTOR_VERSION = "anthropic-compatible/claude-sonnet-4-6/host-selector.v1"
-MODEL = "claude-sonnet-4-6"
-ANTHROPIC_VERSION = "2023-06-01"
+SELECTOR_VERSION = "openai/gpt-6-astra/low/host-selector.v2"
+MODEL = "gpt-6-astra"
+REASONING_EFFORT = "low"
+API_URL = "https://api.openai.com/v1/responses"
 MAX_OUTPUT_TOKENS = 24_000
 HTTP_TIMEOUT_SECONDS = 100
 RETRY_ATTEMPTS = 3
@@ -56,9 +57,11 @@ SYSTEM_PROMPT = (
     "empty string for every row."
 )
 TOOL = {
+    "type": "function",
     "name": TOOL_NAME,
     "description": "Submit catalog selectors for every anonymous question.",
-    "input_schema": {
+    "strict": True,
+    "parameters": {
         "type": "object",
         "additionalProperties": False,
         "required": ["results"],
@@ -154,12 +157,14 @@ def _allowed_selectors(catalog: Mapping[str, Any]) -> frozenset[str]:
 def _complete(request: Mapping[str, Any]) -> list[Any]:
     body = json.dumps({
         "model": MODEL,
-        "max_tokens": MAX_OUTPUT_TOKENS,
-        "temperature": 0,
-        "system": SYSTEM_PROMPT,
+        "reasoning": {"effort": REASONING_EFFORT},
+        "max_output_tokens": MAX_OUTPUT_TOKENS,
+        "instructions": SYSTEM_PROMPT,
+        "store": False,
         "tools": [TOOL],
-        "tool_choice": {"type": "tool", "name": TOOL_NAME},
-        "messages": [{
+        "tool_choice": {"type": "function", "name": TOOL_NAME},
+        "parallel_tool_calls": False,
+        "input": [{
             "role": "user",
             "content": (
                 "Return one submit_catalog_selections tool call covering every "
@@ -186,30 +191,27 @@ def _complete(request: Mapping[str, Any]) -> list[Any]:
 
 
 def _post(body: bytes) -> Mapping[str, Any]:
-    base = (os.environ.get("ANTHROPIC_BASE_URL") or "").rstrip("/")
-    token = os.environ.get("ANTHROPIC_AUTH_TOKEN") or ""
-    if not base or not token:
-        raise SystemExit(
-            "host selector requires ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN"
-        )
+    token = (os.environ.get("OPENAI_API_KEY") or "").strip()
+    if not token:
+        raise SystemExit("host selector requires OPENAI_API_KEY")
     request = urllib.request.Request(
-        f"{base}/v1/messages",
+        API_URL,
         data=body,
         method="POST",
         headers={
             "content-type": "application/json",
-            "x-api-key": token,
-            "anthropic-version": ANTHROPIC_VERSION,
+            "authorization": f"Bearer {token}",
         },
     )
     try:
         with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
             raw = response.read()
     except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", errors="replace")[:400]
+        # Provider bodies may echo input or credentials; report only the status.
+        error.close()
         if error.code in {408, 409, 425, 429} or error.code >= 500:
-            raise HostSelectorTransientError(f"HTTP {error.code}: {detail}") from error
-        raise SystemExit(f"host selector HTTP {error.code}: {detail}") from error
+            raise HostSelectorTransientError(f"HTTP {error.code}") from error
+        raise SystemExit(f"host selector HTTP {error.code}") from error
     except urllib.error.URLError as error:
         raise HostSelectorTransientError(f"transport: {error.reason}") from error
     except TimeoutError as error:
@@ -224,24 +226,48 @@ def _post(body: bytes) -> Mapping[str, Any]:
 
 
 def _parse_tool_results(payload: Mapping[str, Any]) -> list[Any]:
-    stop = payload.get("stop_reason")
-    if stop not in {"tool_use", "end_turn"}:
-        raise SystemExit(f"host selector stopped with {stop!r}")
-    blocks = payload.get("content")
+    if (
+        payload.get("status") != "completed"
+        or payload.get("error") is not None
+        or payload.get("incomplete_details") is not None
+    ):
+        raise SystemExit("host selector response did not complete successfully")
+    blocks = payload.get("output")
     if not isinstance(blocks, list):
-        raise SystemExit("host selector returned no content blocks")
+        raise SystemExit("host selector returned no output items")
+    calls = []
     for block in blocks:
-        if not isinstance(block, Mapping) or block.get("type") != "tool_use":
+        if not isinstance(block, Mapping):
+            raise SystemExit("host selector returned a malformed output item")
+        if block.get("type") == "reasoning":
             continue
-        if block.get("name") != TOOL_NAME:
+        if block.get("type") == "message":
+            content = block.get("content")
+            if not isinstance(content, list) or any(
+                not isinstance(item, Mapping) or item.get("type") != "output_text"
+                for item in content
+            ):
+                raise SystemExit("host selector returned a refusal or malformed message")
             continue
-        tool_input = block.get("input")
-        if not isinstance(tool_input, Mapping):
-            break
-        rows = tool_input.get("results")
-        if isinstance(rows, list):
-            return rows
-    raise SystemExit(f"host selector did not call {TOOL_NAME} with results")
+        if (
+            block.get("type") != "function_call"
+            or block.get("name") != TOOL_NAME
+            or block.get("status") not in {None, "completed"}
+        ):
+            raise SystemExit("host selector returned an unexpected or incomplete tool call")
+        calls.append(block)
+    if len(calls) != 1:
+        raise SystemExit(f"host selector must call {TOOL_NAME} exactly once")
+    arguments = calls[0].get("arguments")
+    if not isinstance(arguments, str):
+        raise SystemExit("host selector tool arguments must be a JSON string")
+    try:
+        tool_input = json.loads(arguments)
+    except json.JSONDecodeError as error:
+        raise SystemExit("host selector tool arguments were not valid JSON") from error
+    if not isinstance(tool_input, Mapping) or not isinstance(tool_input.get("results"), list):
+        raise SystemExit("host selector tool arguments must contain results")
+    return tool_input["results"]
 
 
 def _normalize_results(
