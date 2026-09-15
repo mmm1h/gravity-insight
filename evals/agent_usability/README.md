@@ -5,6 +5,48 @@ measurement. It is deliberately separate from product tests: these prompts are
 analysis-journey examples, not examples copied from recognizer tables, selectors,
 or routing tests.
 
+## Current live selector: GPT-6 Astra
+
+`scripts/agent_usability_host_selector.py` uses `gpt-6-astra` through the
+OpenAI Responses API with `OPENAI_API_KEY` from the subprocess environment.
+Its endpoint is fixed to `https://api.openai.com/v1/responses`; Anthropic
+credentials and gateway settings no longer configure this script. Configure
+the key outside version control; do not put it in command arguments or reports.
+
+The migration follows [OpenAI's Astra migration guidance](https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md#migration-quickstart)
+and [Responses function calling](https://developers.openai.com/api/docs/guides/function-calling).
+It starts with `reasoning.effort=low` for the bounded selection workload and
+preserves the 24,000-token output ceiling, batch input, selection prompt and
+external v1 result envelope. The ceiling now includes reasoning tokens, so
+development measurements must check for truncation. Sampling controls are
+omitted; a strict named function submits the rows with parallel tool calls
+disabled. Response storage is disabled and no conversation state is reused.
+Incomplete responses, refusals, ambiguous calls, invalid JSON and missing or
+out-of-catalog selections fail the trial instead of producing a score.
+
+New receipts identify `openai/gpt-6-astra/low/host-selector.v2`; historical Claude
+receipts and scores remain unchanged. Offline wire tests establish protocol
+handling, not model access, accuracy, latency or cost. Before using a protected
+split, run a fresh development evaluation and compare correctness, exact
+selection stability and elapsed time with the prior arm on the same suite and
+catalog. Check API usage separately for cost; the evaluator does not meter it.
+Use a new output directory and leave the sealed holdout/final keys unused:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\agent_usability_eval.py run --split development `
+  --selector-plugin scripts\agent_usability_host_selector.py `
+  --selector-timeout 330 --label gpt6-astra-low-v2 `
+  --output-dir tmp\agent-usability-astra-development
+```
+
+The 330s subprocess budget accommodates three 100s HTTP attempts plus the
+existing 2s/5s backoff and startup overhead; it is not a latency promise. To
+reproduce the prior Claude arm or roll back the provider migration, use a
+separate worktree at `684ab65fc964315d568f62e4561c8f5c69aec6b7` with its own editable
+environment and the original Anthropic configuration. Do not label an Astra
+trial as Claude or reinterpret old results as Astra validation. Gravity's
+production Runtime remains independent of the host model.
+
 ## Version and construction
 
 `gravity-agent-usability-2026-08-16.v4` preserves all 336 v3 prompt strings and

@@ -24,7 +24,7 @@
 - Owner 裁定 CLI 启动更新默认开启且真实安装，包括 Hard break；精确 pin、doctor 与显式关闭继续有效。安装使用独立不可变 pip stage，校验后由新进程执行，失败回退到未改动的基础环境，不在业务执行中换版。换版留机器可读记录，详见 [0.3.10 迁移指南](migration/0.3.10.md)。变化不删除任何读取 surface，外部 Installer 计划合同仍保留；调用方若需固定语境必须显式 pin 或关闭自动更新。
 - Insight-first；SQL 只执行 workspace 已登记产品。
 - Workspace SQL 的间接问法必须同时具备审核、跨表聚合、登记名称、日期窗和运行意图；发现只按精确登记名选择 product，无匹配返回既有配置缺口，绝不降级为 Insight、raw operation 或裸 SQL。
-- 调用方能选择目录时使用 host catalog；没有 selection 时 recognizer 保持离线地板。
+- 调用方能选择目录时使用 host catalog；没有 selection 时 recognizer 保持离线地板。宿主评测器迁到 Astra Responses `low`，新身份 `openai/gpt-6-astra/low/host-selector.v2` 保留匿名批次与 v1 输出，未完成/歧义响应失败关闭。Runtime 读取能力无损，旧 Claude 成绩保留；真实质量、延迟、费用待[development 对照](../evals/agent_usability/README.md#current-live-selector-gpt-6-astra)验证，不据离线门禁提升宿主毕业状态。
 - `app.app_info.get` 的 Agent owner card 按 CLI/SDK 输入对象暴露 `url` 模板；Plan `run` node 仍由 `request.inputs` 承载该对象。
 - recognizer 的零候选词法恢复保留原评分；只在原评分弃权且索引内证据足量、唯一并明显领先近邻时选择 owner，索引外填充词不单独构成召回依据。
 - recognizer 只对显式协调结构拆分多意图；中文成对 `既…也/又…`、保留右侧名词的 `和其他` 及 `和…一起/一并` 可由各子句独立 owner 组成精确 selector 集，已登记 unavailable gap 仍作为同次交接附件返回。
