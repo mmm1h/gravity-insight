@@ -17,7 +17,6 @@ from gravity_insight.support.documents import DocumentError, load_document, repl
 from gravity_insight.support.evidence import (
     EvidenceBinding,
     publish_json_snapshot,
-    resolve_json_evidence,
     serialize_json_result,
 )
 from gravity_insight.sql.credential_source import credential_source as _credential_source
@@ -37,9 +36,13 @@ from gravity_insight.sql.provenance import (
 from gravity_insight.sql.product_result import product_envelope_parts, summarize_product_rows
 from gravity_insight.sql.evidence_validation import (
     evidence_aggregate_lists,
-    validate_evidence_document, validate_product_evidence,
+    validate_product_evidence,
     validate_resume_checkpoint, validate_verification_history,
     verification_resume_state,
+)
+from gravity_insight.sql.evidence_diagnostics import (
+    EvidenceContractError,
+    resolve_evidence_with_diagnostic, validate_document_with_diagnostic,
 )
 from gravity_insight.sql.time_window import (
     BEIJING, EvidenceFormatError, VERIFICATION_CONCURRENCY, VERIFICATION_MAX_BACKOFF_MS,
@@ -206,11 +209,9 @@ def build_evidence(
 
 def validate_evidence(evidence: Any, *, workspace: Workspace | None = None) -> None:
     selected = load_workspace() if workspace is None else workspace
-    validate_evidence_document(
-        evidence,
-        configured_products=product_names(selected),
-        datasource_id=_datasource_id(workspace=selected),
-        hash_json=_sha256_json,
+    validate_document_with_diagnostic(
+        evidence, configured_products=product_names(selected),
+        datasource_id=_datasource_id(workspace=selected), hash_json=_sha256_json,
     )
 
 
@@ -265,15 +266,10 @@ def resolve_current_evidence(
     """Resolve latest.yaml once and return one validated immutable binding."""
 
     selected = load_workspace() if workspace is None else workspace
-    try:
-        return resolve_json_evidence(
-            product_root or EVIDENCE_PRODUCT_ROOT,
-            result_validator=lambda value: validate_evidence(
-                value, workspace=selected
-            ),
-        )
-    except (ValueError, OSError) as exc:
-        raise EvidenceFormatError(f"cannot resolve immutable Evidence: {exc}") from exc
+    return resolve_evidence_with_diagnostic(
+        product_root or EVIDENCE_PRODUCT_ROOT,
+        validator=lambda value: validate_evidence(value, workspace=selected),
+    )
 
 
 def read_evidence(

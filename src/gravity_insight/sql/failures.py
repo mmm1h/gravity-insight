@@ -122,7 +122,7 @@ _COMMAND_FAILURES = {
     ),
     "status_evidence_invalid": _SqlCommandFailure(
         "contract", "SQL_STATUS_EVIDENCE_INVALID", "evidence", "Current SQL Evidence violates its local contract", "shape", False, "no",
-        "Run `gravity sql evidence-preflight`, then regenerate reviewed Evidence before using status.",
+        "Inspect error.violation; run `gravity sql verify` without --publish to preview the latest safe day, review the aggregate receipt, then explicitly rerun with --publish before status.",
     ),
     "preflight_local_io": _SqlCommandFailure(
         "local_io", "SQL_EVIDENCE_PREFLIGHT_LOCAL_IO", "workspace.state", "SQL Evidence preflight could not read local state", "bind", False, "no",
@@ -130,7 +130,7 @@ _COMMAND_FAILURES = {
     ),
     "preflight_contract_invalid": _SqlCommandFailure(
         "contract", "SQL_EVIDENCE_PREFLIGHT_CONTRACT_INVALID", "evidence", "SQL Evidence violates its local contract", "shape", False, "no",
-        "Repair or regenerate reviewed SQL Evidence, then rerun the offline preflight.",
+        "Inspect error.violation; run `gravity sql verify` without --publish to preview the latest safe day, review the aggregate receipt, then explicitly rerun with --publish before preflight.",
     ),
     "preflight_input_invalid": _SqlCommandFailure(
         "input", "SQL_EVIDENCE_PREFLIGHT_INPUT_INVALID", "date_or_workspace", "SQL Evidence preflight input is invalid", "bind", False, "no",
@@ -175,9 +175,11 @@ def emit_command_error(
     serializer: Any,
     source: Mapping[str, Any],
     stream: TextIO,
+    violation: Mapping[str, str | int] | None = None,
 ) -> int:
     """Serialize one pre-query command failure through the CLI-owned transport."""
 
+    error = command_failure_fields(kind) | ({"violation": dict(violation)} if violation is not None else {})
     payload = {
         "schema_version": SQL_COMMAND_ERROR_SCHEMA_VERSION,
         "result_source": dict(source),
@@ -185,7 +187,7 @@ def emit_command_error(
         "status": "error",
         "command": command,
         "exit_code": exit_code,
-        "error": command_failure_fields(kind),
+        "error": error,
     }
     print(
         serializer(payload, ensure_ascii=False, indent=2, sort_keys=True),

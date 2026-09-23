@@ -31,6 +31,7 @@ from gravity_insight.sql.failures import (
 )
 from gravity_insight.sql.products import (
     EVIDENCE_PATH,
+    EvidenceContractError,
     EvidenceFormatError,
     dry_run_checks,
     describe_products,
@@ -56,10 +57,11 @@ class _DirectQueryInputError(ValueError):
         self.field = field
 
 
-def _emit_command_error(command: str, kind: str, exit_code: int) -> int:
+def _emit_command_error(command: str, kind: str, exit_code: int, evidence_error: EvidenceFormatError | None = None) -> int:
     return emit_command_error(
         command, kind, exit_code, serializer=json_output.dumps,
         source=result_source(CALLER_DEFINED), stream=sys.stderr,
+        violation=evidence_error.diagnostic if isinstance(evidence_error, EvidenceContractError) else None,
     )
 
 
@@ -356,9 +358,9 @@ def _run_status_command(args: argparse.Namespace) -> int:
             resolve_current_evidence(workspace=workspace),
             workspace=workspace,
         )
-    except EvidenceFormatError:
+    except EvidenceFormatError as exc:
         return _emit_command_error(
-            "status", "status_evidence_invalid", sql_error_exit_code("input")
+            "status", "status_evidence_invalid", sql_error_exit_code("input"), exc
         )
     except WorkspaceError:
         return _emit_command_error(
@@ -387,11 +389,12 @@ def _run_preflight_command(args: argparse.Namespace) -> int:
             "preflight_local_io",
             sql_error_exit_code("local_io"),
         )
-    except EvidenceFormatError:
+    except EvidenceFormatError as exc:
         return _emit_command_error(
             "evidence-preflight",
             "preflight_contract_invalid",
             sql_error_exit_code("input"),
+            exc,
         )
     except ValueError:
         return _emit_command_error(

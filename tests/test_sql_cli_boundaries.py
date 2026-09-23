@@ -9,7 +9,8 @@ from unittest import mock
 
 from gravity_insight.sql import __main__ as sql_cli
 from gravity_insight.sql.credentials import CredentialSyncError, CredentialSyncNotReady
-from gravity_insight.sql.products import EvidenceFormatError
+from gravity_insight.sql.products import EvidenceContractError, EvidenceFormatError
+from gravity_insight.sql.evidence_diagnostics import missing_current_evidence
 from gravity_insight.workspace import WorkspaceError
 
 
@@ -136,6 +137,22 @@ class SqlCliBoundaryTests(unittest.TestCase):
                 stage=stage,
                 exit_code=2,
             )
+            self.assertNotIn("abc123", output.getvalue())
+
+    def test_evidence_commands_emit_only_typed_value_free_violation(self) -> None:
+        diagnostic = missing_current_evidence()
+        error = EvidenceContractError("secret evidence token=abc123", diagnostic)
+        for command, target, run in (
+            ("status", "resolve_current_evidence", lambda: sql_cli._run_status_command(SimpleNamespace(json=True))),
+            ("evidence-preflight", "evidence_preflight", lambda: sql_cli._run_preflight_command(SimpleNamespace(date=None, json=True))),
+        ):
+            with self.subTest(command=command), mock.patch.object(
+                sql_cli, "load_workspace", return_value=object()
+            ), mock.patch.object(
+                sql_cli, target, side_effect=error
+            ), redirect_stderr(io.StringIO()) as output:
+                self.assertEqual(2, run())
+            self.assertEqual(diagnostic, json.loads(output.getvalue())["error"]["violation"])
             self.assertNotIn("abc123", output.getvalue())
 
     def test_evidence_preflight_classifies_each_boundary_stage(self) -> None:

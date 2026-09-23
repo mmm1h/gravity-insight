@@ -75,6 +75,8 @@ gravity sql status --json
 
 ## 失败处理
 
+- Evidence 本地合同错误：`status --json` / `evidence-preflight` 的 `error.violation` 仅含受控 `path`、`expected_type`、`observed_type`、`schema_version`、`reason`；产品集合差异另含三个数量，不回显产品名或业务值。`missing_current_snapshot` 表示当前 workspace 的 `evidence/daily-verification/latest.yaml` 缺失，`snapshot_integrity_invalid` 表示指针/manifest/结果不一致；`unknown` 表示版本未能确认，`*` 隐去产品键。查询继续失败关闭，SQL 请求数为零。
+- 恢复顺序：确认 `--workspace <workspace>` 指向预期配置；运行 `gravity --workspace <workspace> sql --dry-run` → 获得在线只读授权后运行 `gravity --workspace <workspace> sql verify` 预览最新安全日的聚合回执（不改已发布 Evidence；最终 429 可写私有续跑 checkpoint）→ 审查窗口、warnings、forbidden_claims 和合同哈希 → 单独授权后运行 `gravity --workspace <workspace> sql verify --publish` → `gravity --workspace <workspace> sql evidence-preflight` → `gravity --workspace <workspace> sql status --json`。发布会重新核验并原子更新指针；配置漂移先审查配置，不手工改写旧快照或 latest。
 - 最终 429：不发布，保留 typed retry receipt 与已完成前缀；按 `--resume` 的严格前缀合同续跑；
 - 非 429 上游失败：不发布且不允许借 checkpoint 跳过失败产品；先按结构化 `next_action` 修复；
 - 产品 partial：只有合同允许且 warnings 完整时才可继续评审；
