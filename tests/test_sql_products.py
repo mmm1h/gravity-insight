@@ -38,6 +38,7 @@ from gravity_insight.sql.products import (
     verify_all,
 )
 from gravity_insight.sql.time_window import summarize_custom_result
+from gravity_insight.sql.evidence_diagnostics import EvidenceContractError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,6 +92,21 @@ class GravityProductTests(unittest.TestCase):
         self.assertEqual(
             date(2026, 7, 22),
             latest_safe_date(datetime(2026, 7, 23, 2, 0, 0, tzinfo=BEIJING)),
+        )
+
+    def test_missing_current_evidence_reports_absent_pointer_without_reading_network(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaises(EvidenceContractError) as caught:
+                resolve_current_evidence(Path(temporary))
+        self.assertEqual(
+            {
+                "path": "evidence.daily-verification.latest.yaml",
+                "expected_type": "file",
+                "observed_type": "missing",
+                "schema_version": "unknown",
+                "reason": "missing_current_snapshot",
+            },
+            caught.exception.diagnostic,
         )
 
     def test_registered_product_below_cap_is_complete_without_row_cap_warning(self):
@@ -228,8 +244,29 @@ class GravityProductTests(unittest.TestCase):
         incomplete["products"]["daily-event-summary"].pop("completeness")
         with self.assertRaisesRegex(
             EvidenceFormatError, "incomplete product completeness signal"
-        ):
+        ) as caught:
             products.validate_evidence(incomplete)
+        self.assertEqual("evidence.products.*.completeness", caught.exception.diagnostic["path"])
+        self.assertEqual("missing", caught.exception.diagnostic["observed_type"])
+        self.assertEqual("2", caught.exception.diagnostic["schema_version"])
+        malformed = copy.deepcopy(evidence)
+        malformed["verification_status"] = ["secret token=abc123"]
+        with self.assertRaises(EvidenceContractError) as caught:
+            products.validate_evidence(malformed)
+        self.assertEqual("evidence.verification_status", caught.exception.diagnostic["path"])
+        self.assertEqual("string", caught.exception.diagnostic["expected_type"])
+        self.assertEqual("array", caught.exception.diagnostic["observed_type"])
+        self.assertNotIn("abc123", str(caught.exception.diagnostic))
+        changed_products = copy.deepcopy(evidence)
+        changed_products["products"] = {}
+        with self.assertRaises(EvidenceContractError) as caught:
+            products.validate_evidence(changed_products)
+        self.assertEqual(
+            "configured_product_set_mismatch", caught.exception.diagnostic["reason"]
+        )
+        self.assertEqual(1, caught.exception.diagnostic["expected_count"])
+        self.assertEqual(0, caught.exception.diagnostic["observed_count"])
+        self.assertEqual(0, caught.exception.diagnostic["matching_count"])
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "gravity-latest.json"
             publish_evidence(evidence, path)
