@@ -196,6 +196,8 @@ class GravityOnboardingTests(unittest.TestCase):
                 + "[products]\n",
                 encoding="utf-8",
             )
+            # The receipt reports the resolved file (8.3 short names expand on Windows).
+            expected_path = workspace.resolve().as_posix()
             stderr = _Pipe()
             with patch.dict(os.environ, {"GRAVITY_WORKSPACE": str(workspace)}), patch.object(
                 unified_cli, "ensure_first_run_credentials", return_value=True
@@ -208,7 +210,7 @@ class GravityOnboardingTests(unittest.TestCase):
         ensure.assert_called_once_with(requires_credentials=False)
         payload = json.loads(stderr.getvalue())
         self.assertEqual("SQL_PRODUCTS_NOT_CONFIGURED", payload["error"]["code"])
-        self.assertEqual(workspace.as_posix(), payload["workspace"]["path"])
+        self.assertEqual(expected_path, payload["workspace"]["path"])
 
     def test_plain_gravity_runs_first_setup_but_help_does_not(self) -> None:
         with patch.object(
