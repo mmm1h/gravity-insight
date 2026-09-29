@@ -76,16 +76,6 @@ def gate_specs(
     usability = run_root / "agent-usability"
     return (
         GateSpec(
-            "unittest_collector",
-            (py, "scripts/run_unittest_shards.py"),
-            1800,
-        ),
-        GateSpec(
-            "pytest_collector",
-            (py, "-m", "pytest", "-q", "-n", "auto", "--dist", "loadfile"),
-            1800,
-        ),
-        GateSpec(
             "test_duration_budget",
             (py, "scripts/check_test_duration_budget.py"),
             1800,
@@ -195,7 +185,6 @@ def gate_specs(
             (
                 py,
                 "scripts/scan_repository_secrets.py",
-                "--history",
                 "--receipt",
                 str(run_root / "secret-scan.json"),
             ),

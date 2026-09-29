@@ -206,6 +206,41 @@ def require_products(workspace: Workspace | None = None) -> tuple[str, ...]:
     return selected.product_names
 
 
+def selected_workspace_path(environ: Mapping[str, str] | None = None) -> Path | None:
+    """Return the ``gravity.toml`` that ``load_workspace`` would select, unread.
+
+    Unlike ``load_workspace`` this never raises: a ``GRAVITY_WORKSPACE`` value
+    that points nowhere is still reported as the selected path.
+    """
+
+    env = os.environ if environ is None else environ
+    configured = env.get(WORKSPACE_ENV, "").strip()
+    if not configured:
+        return find_workspace()
+    selected = Path(configured).expanduser().resolve()
+    return selected / WORKSPACE_FILENAME if selected.is_dir() else selected
+
+
+def workspace_selection(environ: Mapping[str, str] | None = None) -> dict[str, str | None]:
+    """Describe the selected ``gravity.toml`` for receipts (path only, never contents)."""
+
+    env = os.environ if environ is None else environ
+    path = selected_workspace_path(env)
+    if path is None:
+        return {"path": None, "source": None}
+    source = "environment" if env.get(WORKSPACE_ENV, "").strip() else "discovery"
+    return {"path": path.as_posix(), "source": source}
+
+
+def workspace_state_root(environ: Mapping[str, str] | None = None) -> Path:
+    """Return the private state root of the selected workspace without reading it."""
+
+    env = os.environ if environ is None else environ
+    path = selected_workspace_path(env)
+    cache_root = user_cache_root(env)
+    return cache_root / "default" if path is None else _workspace_state_root(cache_root, path)
+
+
 def _explicit_workspace_path(value: str | Path) -> Path:
     selected = Path(value).expanduser().resolve()
     if selected.is_dir():
@@ -517,6 +552,9 @@ __all__ = [
     "find_workspace",
     "load_workspace",
     "require_products",
+    "selected_workspace_path",
     "user_cache_root",
     "validate_registered_sql_product_definition",
+    "workspace_selection",
+    "workspace_state_root",
 ]

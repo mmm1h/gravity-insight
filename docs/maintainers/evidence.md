@@ -7,7 +7,7 @@ Evidence 是已登记 SQL 产品的可复核状态，不是普通查询缓存。
 ```powershell
 gravity sql --dry-run
 gravity sql evidence-preflight
-python -m unittest discover -s tests
+python -m pytest -q
 python -m gravity_insight.compiler check
 python -m gravity_insight.quality check
 git diff --check

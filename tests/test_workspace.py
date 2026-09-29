@@ -22,6 +22,8 @@ from gravity_insight.workspace import (
     find_workspace,
     load_workspace,
     user_cache_root,
+    workspace_selection,
+    workspace_state_root,
 )
 
 
@@ -213,6 +215,112 @@ app_input = "app_id"
         assert Path(paths["tmp"]) == cache / "default" / "tmp"
 
 
+    def test_workspace_selection_reports_the_selected_file_without_reading_it(self):
+        selected_dir = self.tmp_path / "selected"
+        selected_dir.mkdir()
+        (selected_dir / "gravity.toml").write_text("not = [valid", encoding="utf-8")
+        discovered = self.tmp_path / "discovered" / "nested"
+        discovered.mkdir(parents=True)
+        (self.tmp_path / "discovered" / "gravity.toml").write_text("", encoding="utf-8")
+        empty = self.tmp_path / "empty"
+        empty.mkdir()
+
+        assert workspace_selection({"GRAVITY_WORKSPACE": str(selected_dir)}) == {
+            "path": (selected_dir / "gravity.toml").as_posix(),
+            "source": "environment",
+        }
+        missing = self.tmp_path / "missing.toml"
+        assert workspace_selection({"GRAVITY_WORKSPACE": str(missing)}) == {
+            "path": missing.as_posix(),
+            "source": "environment",
+        }
+        with mock.patch("pathlib.Path.cwd", return_value=discovered):
+            assert workspace_selection({}) == {
+                "path": (self.tmp_path / "discovered" / "gravity.toml").as_posix(),
+                "source": "discovery",
+            }
+        with mock.patch("pathlib.Path.cwd", return_value=empty):
+            assert workspace_selection({}) == {"path": None, "source": None}
+            assert workspace_state_root({"GRAVITY_CACHE_HOME": str(self.tmp_path / "cache")}) == (
+                self.tmp_path / "cache" / "default"
+            )
+
+
+    def test_paths_do_not_parse_the_workspace_at_import(self):
+        project = self.tmp_path / "broken-project"
+        cache = self.tmp_path / "cache"
+        project.mkdir()
+        (project / "gravity.toml").write_text("schema_version = 1\n[apps]\nmain = 101\n", encoding="utf-8")
+        environment = os.environ.copy()
+        environment.pop("GRAVITY_WORKSPACE", None)
+        environment["GRAVITY_CACHE_HOME"] = str(cache)
+        environment["PYTHONPATH"] = str(ROOT / "src")
+        command = (
+            "import json\n"
+            "from gravity_insight.paths import STATE_ROOT\n"
+            "from gravity_insight.workspace import WorkspaceError, load_workspace\n"
+            "try:\n"
+            "    load_workspace()\n"
+            "    error = None\n"
+            "except WorkspaceError as exc:\n"
+            "    error = str(exc)\n"
+            "print(json.dumps({'state': str(STATE_ROOT), 'error': error}))\n"
+        )
+
+        completed = subprocess.run(
+            [sys.executable, "-c", command],
+            cwd=project,
+            env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        result = json.loads(completed.stdout)
+
+        state_root = Path(result["state"])
+        assert state_root.parent == cache / "workspaces"
+        assert state_root.name.startswith("broken-project-")
+        assert "[defaults]" in result["error"]
+
+
+    def test_sql_query_without_products_fails_closed_before_first_run_onboarding(self):
+        environment = os.environ.copy()
+        environment.pop("GRAVITY_WORKSPACE", None)
+        environment["PYTHONPATH"] = str(ROOT / "src")
+        environment["GRAVITY_CACHE_HOME"] = str(self.tmp_path / "cache")
+        environment["GRAVITY_ENV_FILE"] = str(self.tmp_path / "missing.env")
+        product_less = self.tmp_path / "gravity.toml"
+        product_less.write_text(
+            _workspace_text().partition("[products.")[0] + "[products]\n", encoding="utf-8"
+        )
+        query = ["sql", "query", "anything", "--start", "2026-07-22T00:00:00", "--end", "2026-07-23T00:00:00"]
+
+        def run(workspace: Path) -> subprocess.CompletedProcess[str]:
+            return subprocess.run(
+                [sys.executable, "-m", "gravity_insight", "--workspace", str(workspace), *query],
+                cwd=self.tmp_path,
+                env={**environment, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"},
+                input="",
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+
+        failed_closed = run(product_less)
+        assert failed_closed.returncode == 2, failed_closed.stderr
+        payload = json.loads(failed_closed.stderr)
+        assert payload["schema_version"] == "gravity-sql.command-error.v1"
+        assert payload["error"]["code"] == "SQL_PRODUCTS_NOT_CONFIGURED"
+        assert payload["workspace"] == {"path": product_less.as_posix(), "source": "environment"}
+
+        # Negative control: with a product configured the same run still needs credentials.
+        onboarding = json.loads(run(ROOT / "examples" / "workspace").stderr)
+        assert onboarding["schema_version"] == "gravity-insight.error.v1"
+        assert onboarding["error"]["field"] == "auth"
+
+
     def test_sql_cli_reports_unconfigured_products_without_crashing(self):
         stderr = io.StringIO()
         with mock.patch.dict(
@@ -241,6 +349,7 @@ app_input = "app_id"
         assert payload["error"]["field"] == "workspace.products"
         assert payload["error"]["stage"] == "bind"
         assert payload["error"]["reached_upstream"] == "no"
+        assert payload["workspace"] == {"path": None, "source": None}
 
     def test_sql_products_names_missing_products_in_valid_workspace(self):
         workspace = self.tmp_path / "gravity.toml"
@@ -265,6 +374,7 @@ app_input = "app_id"
         assert payload["error"]["code"] == "SQL_PRODUCTS_NOT_CONFIGURED"
         assert payload["error"]["field"] == "workspace.products"
         assert payload["error"]["stage"] == "bind"
+        assert payload["workspace"] == {"path": workspace.as_posix(), "source": "environment"}
         assert "test_datasource" not in stderr.getvalue()
 
 

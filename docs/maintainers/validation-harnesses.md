@@ -24,7 +24,7 @@ Release 固定按高风险处理。非 changed-files 查询按匹配实体判定
 | Harness | purpose | load-bearing evidence | cost | ablation method | removal trigger |
 | --- | --- | --- | --- | --- | --- |
 | Task Context + Focused | 用机器图只读最小上下文，并在分钟内反馈受影响回归 | Focused 运行 registry tests 加改动模块的两层反向依赖闭包，而不是第一个测试文件；命中高扇出或超过 80 个测试文件时升级 Full | `run_changed_tests.py` 对每条命令计时；Focused 合计硬上限 100s | 保留目标测试、去掉 Map check 或闭包中的非首个测试后注入漂移，比较哪类错误未被发现 | 连续 3 个重大模型/工具版本没有独有检出，且相同错误已由更便宜门禁稳定拦截 |
-| Full 双 collector | 高风险/Release 同时覆盖 pytest CI 语义与原生 unittest discovery/import 顺序 | `tests/__init__.py` 隔离真实 cache；历史 `f3c9a849` 修复 repository-tree 并发，说明 collector 行为曾暴露维护陷阱 | J5 同一 HEAD：原生 collector 503.208s；pytest `load` 224.502s；pytest 多出的唯一项是 `test_workspace.py` 的原生 pytest 函数。精确项数留在本轮 receipt | `validation_observability.py --gate full --ablate unittest_collector ...`，其余五条不变；比较失败集与计数 | **本轮结论：留**。pytest 当前是执行集合超集且本轮无独有失败，但尚无连续 3 个重大版本的有效消融收据；原生 discovery/import 顺序已有历史独有检出。满足原 trigger 后删除串行 collector，保留按需兼容诊断 |
+| Full 单 collector | 高风险/Release 用一次完整 pytest 收集覆盖 CI 语义；pytest 已收集全部 unittest 用例 | `tests/__init__.py` 隔离真实 cache；历史 `f3c9a849` 修复 repository-tree 并发，说明 collector 行为曾暴露维护陷阱 | J5 同一 HEAD：pytest `load` 224.502s；被删的原生 collector 503.208s，且其执行集合是 pytest 的子集 | `validation_observability.py --gate full --ablate ...` 省略单条命令；比较失败集与计数 | **0.3.21 已删除串行 unittest collector 与 IV 的第二次 pytest 收集**：v0.3.1–v0.3.20 没有一次 release 由它独有检出，且 `test_duration_budget` 已在同一进程内实施集合守恒；按需兼容诊断用裸 `python -m unittest discover -s tests` |
 | Compiler + Quality | 验证 manifest/provenance 确定性及复杂度、文档、治理基线 | 本趟第一次消融运行实际拦下新函数 complexity 21/16 与 broken local link | compiler 5.640s；quality 27.140s；合计 32.780s | 分别省略一个命令，注入 stale generated artifact、复杂函数或断链，再跑其余门禁 | 只有替代门禁能拦下同一 mutation 集，且成本更低，才移除旧 owner |
 | High Integrated + usability + canary | 在 clean exact HEAD 汇合 release、wheel、consumer、runtime 与 Agent 使用路径；canary 只验证离线生命周期合同 | `test_canary_failure_leaves_prior_complete_snapshot_active` 锁住 canary 失败不激活候选；agent usability 检查真实任务选择；IV receipt 的 measurement 同时绑定 commit、clean/dirty、完整 gate set、trial、worktree scope、capture time 与 gate inventory | N11 Full 1,164.842s；agent usability 41.270s；offline canary 4.245s | `run_integrated_validation.py --trial --only ...` 逐个省略 gate，运行该 gate 的 fault fixture 并比较 receipt；把旧 HEAD receipt 交给新 HEAD maturity consumer，必须得到 `not_applicable` 而非 `not_measured` | 某 gate 连续 3 个重大版本没有独有失败，且 fault fixture 被另一更便宜 gate 拦截 |
 | Ordered generators + package checkpoint | 让生成物固定点、package reference 分母与 disposition 坐标一致 | 反序实测会令两个 checkpoint tests 以 `7b5d… != 3176…` 失败；本趟编排测试锁住 Map→checkpoint 顺序 | 五个普通 generator checks 2.596s；Map→checkpoint check 33.048s | `test_validation_harness_refresh.py` 把第一步设为失败，断言第二步绝不执行；在临时 clone 反序重建确认 checkpoint stale | Map 不再是 checkpoint 扫描输入，或 checkpoint 改为直接消费同一次内存 projection 后删除编排约束 |
@@ -37,7 +37,7 @@ Release 固定按高风险处理。非 changed-files 查询按匹配实体判定
 | Registry semantic surface parity | 从编译后 operation registry 派生 Direct SDK / CLI / SDK wrapper / Plan / MCP 五列表，比较公共 schema、完整 Empty/Upstream Error envelope、completeness walker 与错误身份 | 当前 190 个 stable read operation、38 个精确登记的 action-specific mutation scope exclusion、950 次精确合法差异应用、0 个未登记 finding；反向测试分别删除 SDK 字段和 CLI audit allowance，均使门禁失败 | 本机完整矩阵约 12s；复用既有 `surface-parity` job 的测试文件，不新增 CI job | `test_rejects_new_sdk_envelope_field_loss` 注入字段丢失；`test_rejects_removed_cli_pagination_audit_allowance` 删除精确 allowance | 只有另一条 registry-derived 门禁能在完整真实 envelope 上拦住同一 schema/field/type/completeness/error mutation corpus，才可移除 |
 | CLI exception boundary | 阻止 CLI 最外层把已捕获异常扁平化为不可决策的一行文本 | `test_new_plain_text_exception_collapse_makes_gate_fail` 注入新 handler 并证明仓库测试失败；`test_allowlist_without_reason_is_rejected` 证明空理由不能豁免 | 单独 AST check 约 2s | 向新的 `*_cli.py` 注入 `except ... print(exc)`，再分别省略理由、移动行号或改 handler AST，确认未命中精确豁免 | 所有公开入口统一由一个类型化 error-envelope owner 包裹，且结构测试覆盖任意新增入口后才可移除 |
 | Provenance + installed wheel + canonical consumer | 验证非 editable wheel 的五 surface parity、离线 provenance 与真实 pinned consumer | 本趟 wheel matrix 通过五 surface；work-dashboard pinned suite 实跑通过，network_calls=0 | provenance 0.378s；wheel surface 20.540s；consumer 74.032s；合计 94.950s | 分别移除 wheel/provenance/consumer gate，使用 tampered fixture、editable escape 与旧 envelope consumer fixture | 三类失败全部被单一 installed-artifact gate 以同等隔离度和更低成本覆盖 |
-| Test duration budget | 阻止慢测试重新混回本地高频层 | 40s 本地当量以上必须标 `full_gate`，标记集合由 quality baseline 锁定；240s 仍按原始 CI 墙钟执行，是任何单项不可越过的绝对上限 | 与完整 pytest collector 同量级；CI shard receipt 记录 marker、测量坐标与换算比率，汇总审计证明 9 项和完整 collection 都守恒 | 去掉 marker 后对受控本地当量 40.001s report 运行 duration gate；删一片 shard 或过滤 collection 再运行 audit | 主 pytest collector直接实施同一 marker/时长/集合守恒后，删除第二次全量收集 |
+| Test duration budget | 阻止慢测试重新混回本地高频层 | 40s 本地当量以上必须标 `full_gate`，标记集合由 quality baseline 锁定；240s 仍按原始 CI 墙钟执行，是任何单项不可越过的绝对上限 | 它就是 CI 与 IV 唯一的一次全量 pytest 收集（0.3.20 IV 实测 455s）；CI shard receipt 记录 marker、测量坐标与换算比率，汇总审计证明 9 项和完整 collection 都守恒 | 去掉 marker 后对受控本地当量 40.001s report 运行 duration gate；删一片 shard 或过滤 collection 再运行 audit | 0.3.21 已兑现原 trigger：IV 不再另跑 `pytest_collector`/`unittest_collector`；再拆分须先证明总墙钟更低 |
 
 Repository Map v2 仍是单个可直接 `json.load` 的 JSON 文件；它只把重复值换成确定性表。
 生成器先校验 compact v2 transport，loader 再还原并校验完整 v1 fact contract，逐字段
@@ -65,10 +65,10 @@ J5 在同机、固定 4 workers 连续实测 `load=224.502s`、`loadscope=227.02
 既不能共享 Python 对象，也会让会修改临时仓库树的负向用例读到过期快照，所以不新增全局可变 fixture。
 
 第一次 unittest 消融运行不是有效“绿色证据”：pytest 在 414.170s 后报告 5 failures，其中 broken link 与
-complexity 是真实实现缺陷，另一个 isolated import 受同机并发影响超时。修复缺陷后必须重跑；不得把这次失败
-包装成“unittest 承重”或“可以删除”。修复后第二次以同一 ablation receipt 重跑：CI collector 225.100s、compiler
-7.524s、quality 24.969s、CLI help 0.946s、diff check 0.154s，合计 258.698s 全绿。因此独立 unittest
-collector 当前没有本趟可见的独有检出，正式列为删除候选；仍按上表 trigger 等待跨版本证据，不在本趟直接删除。
+complexity 是真实实现缺陷，另一个 isolated import 受同机并发影响超时。修复后第二次以同一 ablation receipt
+重跑 258.698s 全绿，独立 unittest collector 没有独有检出。跨版本证据在 0.3.21 补齐：v0.3.1–v0.3.20 每次
+release 的失败都来自 verify-ci、consumer fetch、IV 环境准备、checkout 或 build，没有一次由 collector 独有；
+因此删除 `run_unittest_shards.py` 与 IV 的 `pytest_collector`，IV 的 secret scan 也只扫工作树（历史扫描由 CI main push 的 `ci-secret-scan` 持有，release gate receipt 消费的正是它）。
 
 ## 十一项指标
 
@@ -82,7 +82,7 @@ collector 当前没有本趟可见的独有检出，正式列为删除候选；�
 | `time_to_first_reproduction` | 首个 `reproduction.at - session_started_at`；缺事件时 `unmeasured` |
 | `time_to_first_useful_edit` | 首个 owner-confirmed `useful_edit.at - session_started_at`；缺事件时 `unmeasured` |
 | `focused_gate_seconds` | runner 用 `perf_counter` 逐命令计时并求和；失败或消融 receipt 不当作完整门禁值 |
-| `full_gate_seconds` | 同上，只接受未消融且全绿的六命令 Full receipt |
+| `full_gate_seconds` | 同上，只接受未消融且全绿的五命令 Full receipt |
 | `review_iterations` | trace 内 `review_result` 事件数；无 trace 时 `unmeasured` |
 | `context_resets` | host trace 内 `context_reset` 事件数；无 trace 时 `unmeasured` |
 | `archive_tokens_loaded` | Task Pack 中 archive/history prefix 引用 token 之和，不用常量零 |
@@ -97,7 +97,7 @@ collector 当前没有本趟可见的独有检出，正式列为删除候选；�
 
 ## Focused 不等于 Full
 
-Focused 有意会漏掉：不在反向依赖图上的远端测试、pytest/unittest discovery 差异、完整 compiler/quality、
+Focused 有意会漏掉：不在反向依赖图上的远端测试、完整 collection 守恒、完整 compiler/quality、
 CLI import/help、wheel 安装隔离、canonical consumer、release provenance、Agent usability 与 canary lifecycle。
 低风险安全性来自“改动不能进入 Runtime/合同/安全边界”的判定，不来自 Focused 能证明全仓绿色。测试-only
 改动仍可能删除断言，这是 Self-review 的剩余风险；一旦涉及治理 fixture、privacy/security 等高风险词会被

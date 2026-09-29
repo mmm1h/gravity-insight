@@ -163,7 +163,6 @@ Do not let the list become an archive.
 Full Gate 只用于高风险或 Release，不作为低/中风险提交的默认前置条件：
 
 ```powershell
-& ".venv/Scripts/python.exe" -m unittest discover -s tests
 & ".venv/Scripts/python.exe" -m pytest -q
 & ".venv/Scripts/python.exe" -m gravity_insight.compiler check
 & ".venv/Scripts/python.exe" -m gravity_insight.quality check
@@ -178,10 +177,10 @@ Repository Map 与 package-reference checkpoint 有显式生成顺序；只运�
 & ".venv/Scripts/python.exe" scripts/refresh_validation_harnesses.py --check
 ```
 
-CI runs `pytest`, not `unittest discover`. Re-derive test and subtest counts on
-high-risk/Release rounds from the latest fully green dual-collector gate. The
-separate unittest collector is an ablation candidate because pytest already
-collects unittest cases; retain it until repeated receipts resolve its net value.
+CI and Integrated Validation run `pytest` only; it already collects every
+unittest case. The separate `unittest discover` collector was removed in 0.3.21
+after its ablation receipts showed no unique detection. Re-derive test and
+subtest counts on high-risk/Release rounds from the latest fully green run.
 
 Tests isolate the developer's private cache in `tests/__init__.py`; without it a
 machine holding a real metadata cache fails discovery-ordering tests that pass

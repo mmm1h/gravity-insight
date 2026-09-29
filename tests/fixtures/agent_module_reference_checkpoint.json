@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "269c84e0dccff78abc318067e5265c3a2fb9462eb876f9492d35c9141156c01d",
-    "manual_review_sha256": "04c3de1932c194b19f2fa273602e006d3f49face0c68ea58e3477649cc94e5f3",
+    "reference_evidence_sha256": "4af308e0ef18c96455125c4516e515920e82b71f1cb366b2270e4311ea071b68",
+    "manual_review_sha256": "0750e45c1db9e9bcab888e2e0c6398ced5b14d933a59df5eb2c541c8b21e5f11",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3278,
-    "scanned_file_count": 3270,
+    "version_controlled_file_count": 3276,
+    "scanned_file_count": 3268,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -796,12 +796,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 357,
-    "reference_site_count": 355,
-    "manual_review_site_count": 256,
-    "reference_manual_overlap_count": 254,
+    "tracked_site_count": 358,
+    "reference_site_count": 356,
+    "manual_review_site_count": 257,
+    "reference_manual_overlap_count": 255,
     "manual_only_site_count": 2,
-    "unique_source_keys": 357,
+    "unique_source_keys": 358,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -810,7 +810,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 234,
+      "manual_patch_expression": 235,
       "module_qualname_dependency": 7,
       "static_import": 93,
       "string_reference": 5
@@ -820,12 +820,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 234
+      "non_string_patch_expression": 235
     },
     "dispositions": {
-      "no_migration_effect": 357
+      "no_migration_effect": 358
     },
-    "sites_sha256": "600de6451831ec7a63b976b0178baf95b4bd663ac34a4979adaf3f079b5774ee"
+    "sites_sha256": "52368d862c1c2bff425402ba9f3a5c897ca5d058fca6ba8ee3fc0fb6f2936fdc"
   },
   "blockers": [],
   "site_fields": [
@@ -4728,7 +4728,7 @@
       }
     ],
     [
-      "tests/test_gravity_onboarding.py:143:14:patch.object",
+      "tests/test_gravity_onboarding.py:146:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "unified_cli",
@@ -4743,7 +4743,7 @@
       }
     ],
     [
-      "tests/test_gravity_onboarding.py:168:14:patch.object",
+      "tests/test_gravity_onboarding.py:202:81:patch.object",
       "rm",
       "non_string_patch_expression",
       "unified_cli",
@@ -4758,7 +4758,22 @@
       }
     ],
     [
-      "tests/test_gravity_onboarding.py:174:14:patch.object",
+      "tests/test_gravity_onboarding.py:216:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "unified_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      44,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_gravity_onboarding.py:222:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "unified_cli",

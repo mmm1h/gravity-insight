@@ -13,11 +13,27 @@
 
 ## [Unreleased]
 
-Target release: `0.3.21`
+Target release: `0.3.22`
 
 ### Breaking changes
 
 - None.
+
+## [0.3.21] - 2026-09-29
+
+### Breaking changes
+
+- None.
+
+### Fixed
+
+- `sql verify` and `sql query` no longer ask for Gravity credentials before checking the workspace. In a product-less or invalid workspace they now emit `SQL_PRODUCTS_NOT_CONFIGURED` / `SQL_WORKSPACE_INVALID` (exit `2`) before first-run onboarding runs, so a non-interactive caller gets the configuration receipt instead of an unrelated `auth` prompt or `INPUT_INVALID` on empty stdin. Once `[products.<name>]` is configured, both commands still require credentials exactly as before.
+- `gravity-sql.command-error.v1` gains a top-level additive `workspace` object stating which `gravity.toml` was selected: `path` (POSIX form) and `source` (`environment` for `GRAVITY_WORKSPACE`/`--workspace`, `discovery` for upward search), both `null` when no workspace was selected. Automation can tell a mis-set environment variable from a wrong working directory without parsing `message`. No other field changed.
+- The unified CLI no longer parses `gravity.toml` at process start. `gravity_insight.paths` derives the per-workspace state root from the selected path alone, so an invalid `gravity.toml` stops failing every command at entry; commands that consume the workspace keep raising the typed `INPUT_INVALID` error naming path and key. `paths.WORKSPACE` and `paths.WORKSPACE_ROOT` were internal constants and were removed.
+
+### Changed
+
+- Integrated Validation runs the pytest suite once, through the test-duration budget gate. The separate `pytest_collector` and `unittest_collector` gates and `scripts/run_unittest_shards.py` were removed after release-gate receipts since 0.3.1 showed no failure unique to them; the IV secret scan now covers the working tree only, because the history scan is already produced by the CI main push and consumed by the release gate receipt. The Task Context Pack Full gate is five commands. Release tooling is otherwise unchanged; only the gate inventory changed.
 
 ## [0.3.20] - 2026-09-29
 
