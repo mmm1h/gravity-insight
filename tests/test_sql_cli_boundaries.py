@@ -11,7 +11,7 @@ from gravity_insight.sql import __main__ as sql_cli
 from gravity_insight.sql.credentials import CredentialSyncError, CredentialSyncNotReady
 from gravity_insight.sql.products import EvidenceContractError, EvidenceFormatError
 from gravity_insight.sql.evidence_diagnostics import missing_current_evidence
-from gravity_insight.workspace import WorkspaceError
+from gravity_insight.workspace import WorkspaceError, WorkspaceNotConfiguredError
 
 
 class SqlCliBoundaryTests(unittest.TestCase):
@@ -94,12 +94,17 @@ class SqlCliBoundaryTests(unittest.TestCase):
             )
 
     def test_configured_product_discovery_retains_typed_failure_state(self) -> None:
-        with mock.patch.object(
-            sql_cli, "product_names", side_effect=WorkspaceError("secret token=abc123")
-        ):
-            products, invalid = sql_cli._configured_products()
-        self.assertEqual((), products)
-        self.assertTrue(invalid)
+        cases = (
+            (WorkspaceError("secret token=abc123"), True),
+            (WorkspaceNotConfiguredError("secret token=abc123"), False),
+        )
+        for error, invalid in cases:
+            with self.subTest(error=type(error).__name__), mock.patch.object(
+                sql_cli, "product_names", side_effect=error
+            ):
+                products, workspace_invalid = sql_cli._configured_products()
+            self.assertEqual((), products)
+            self.assertEqual(invalid, workspace_invalid)
 
     def test_status_classifies_evidence_and_workspace_failures(self) -> None:
         cases = (
