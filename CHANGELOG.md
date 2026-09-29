@@ -13,11 +13,21 @@
 
 ## [Unreleased]
 
-Target release: `0.3.20`
+Target release: `0.3.21`
 
 ### Breaking changes
 
 - None.
+
+## [0.3.20] - 2026-09-29
+
+### Breaking changes
+
+- None.
+
+### Fixed
+
+- `sql products`, `sql status`, `sql evidence-preflight`, `sql verify` and `sql query` no longer report `SQL_WORKSPACE_INVALID` for a valid workspace that simply registers no `[products.<name>]` entry (including a directory with no `gravity.toml` at all). That state now returns the existing `SQL_PRODUCTS_NOT_CONFIGURED` receipt with `field=workspace.products` and a `next_action` stating that SQL is unavailable there by configuration, not by failure, so callers can distinguish an intentionally SQL-less workspace from a `gravity.toml` that must be corrected. The workspace-validity error path itself is unchanged: an actually invalid `gravity.toml` continues to fail every command at entry with `INPUT_INVALID` naming the offending path and key. Exit code `2` and the `gravity-sql.command-error.v1` schema are unchanged.
 
 ## [0.3.19] - 2026-09-11
 

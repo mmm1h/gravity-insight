@@ -117,8 +117,8 @@ _COMMAND_FAILURES = {
         "Correct the selected gravity.toml workspace, then rerun the failed SQL command.",
     ),
     "products_not_configured": _SqlCommandFailure(
-        "input", "SQL_PRODUCTS_NOT_CONFIGURED", "workspace.products", "No SQL products are configured", "bind", False, "no",
-        "Add a reviewed [products.<name>] entry to gravity.toml, then rerun `gravity sql products`.",
+        "input", "SQL_PRODUCTS_NOT_CONFIGURED", "workspace.products", "The selected Gravity workspace registers no SQL products", "bind", False, "no",
+        "SQL is unavailable in this workspace by configuration, not by failure: add a reviewed [products.<name>] entry to gravity.toml to enable it, or use Insight reads via `gravity agent-catalog categories` instead.",
     ),
     "status_evidence_invalid": _SqlCommandFailure(
         "contract", "SQL_STATUS_EVIDENCE_INVALID", "evidence", "Current SQL Evidence violates its local contract", "shape", False, "no",

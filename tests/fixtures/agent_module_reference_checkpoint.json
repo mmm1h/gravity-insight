@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "9e2a04e9c80db739e743caf265c8bf9e6d6650dfe5a9c87d5a62dfeaea200171",
-    "manual_review_sha256": "f5f9a298721f1cba102cad8a654b1ba3b6717d635ee6b00cda3efad1d58c2b78",
+    "reference_evidence_sha256": "269c84e0dccff78abc318067e5265c3a2fb9462eb876f9492d35c9141156c01d",
+    "manual_review_sha256": "04c3de1932c194b19f2fa273602e006d3f49face0c68ea58e3477649cc94e5f3",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3278,
     "scanned_file_count": 3270,
@@ -825,7 +825,7 @@
     "dispositions": {
       "no_migration_effect": 357
     },
-    "sites_sha256": "0d2cf3bc951a4921e29f9c3bb8ae94013c271d2bd5d97272cd1846548e7eaad9"
+    "sites_sha256": "600de6451831ec7a63b976b0178baf95b4bd663ac34a4979adaf3f079b5774ee"
   },
   "blockers": [],
   "site_fields": [
@@ -5673,7 +5673,7 @@
       }
     ],
     [
-      "tests/test_sql_cli_boundaries.py:120:43:mock.patch.object",
+      "tests/test_sql_cli_boundaries.py:102:60:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_cli",
@@ -5688,7 +5688,7 @@
       }
     ],
     [
-      "tests/test_sql_cli_boundaries.py:125:16:mock.patch.object",
+      "tests/test_sql_cli_boundaries.py:125:43:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_cli",
@@ -5703,7 +5703,7 @@
       }
     ],
     [
-      "tests/test_sql_cli_boundaries.py:149:49:mock.patch.object",
+      "tests/test_sql_cli_boundaries.py:130:16:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_cli",
@@ -5718,7 +5718,7 @@
       }
     ],
     [
-      "tests/test_sql_cli_boundaries.py:151:16:mock.patch.object",
+      "tests/test_sql_cli_boundaries.py:154:49:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_cli",
@@ -5733,7 +5733,7 @@
       }
     ],
     [
-      "tests/test_sql_cli_boundaries.py:180:43:mock.patch.object",
+      "tests/test_sql_cli_boundaries.py:156:16:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_cli",
@@ -5748,7 +5748,22 @@
       }
     ],
     [
-      "tests/test_sql_cli_boundaries.py:182:16:mock.patch.object",
+      "tests/test_sql_cli_boundaries.py:185:43:mock.patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sql_cli",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      46,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_sql_cli_boundaries.py:187:16:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "sql_cli",
@@ -5773,21 +5788,6 @@
       "no_migration_effect",
       "direct_object_patch",
       50,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_sql_cli_boundaries.py:97:14:mock.patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "sql_cli",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      46,
       {
         "kind": "none"
       }

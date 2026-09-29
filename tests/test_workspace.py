@@ -237,9 +237,35 @@ app_input = "app_id"
         payload = json.loads(stderr.getvalue())
         assert payload["schema_version"] == "gravity-sql.command-error.v1"
         assert payload["command"] == "query"
-        assert payload["error"]["code"] == "SQL_WORKSPACE_INVALID"
+        assert payload["error"]["code"] == "SQL_PRODUCTS_NOT_CONFIGURED"
+        assert payload["error"]["field"] == "workspace.products"
         assert payload["error"]["stage"] == "bind"
         assert payload["error"]["reached_upstream"] == "no"
+
+    def test_sql_products_names_missing_products_in_valid_workspace(self):
+        workspace = self.tmp_path / "gravity.toml"
+        workspace.write_text(
+            _workspace_text().partition("[products.")[0] + "[products]\n",
+            encoding="utf-8",
+        )
+        stderr = io.StringIO()
+        with mock.patch.dict(
+            os.environ,
+            {
+                "GRAVITY_CACHE_HOME": str(self.tmp_path / "cache"),
+                "GRAVITY_WORKSPACE": str(workspace),
+            },
+            clear=True,
+        ), redirect_stdout(io.StringIO()), redirect_stderr(stderr):
+            exit_code = sql_cli.main(["products"])
+
+        assert exit_code == 2
+        payload = json.loads(stderr.getvalue())
+        assert payload["command"] == "products"
+        assert payload["error"]["code"] == "SQL_PRODUCTS_NOT_CONFIGURED"
+        assert payload["error"]["field"] == "workspace.products"
+        assert payload["error"]["stage"] == "bind"
+        assert "test_datasource" not in stderr.getvalue()
 
 
     def test_custom_sql_product_is_added_only_by_workspace_data(self):

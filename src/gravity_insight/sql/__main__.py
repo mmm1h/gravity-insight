@@ -47,7 +47,7 @@ from gravity_insight.sql.products import (
 )
 from gravity_insight.sql.query import sql_error_exit_code
 from gravity_insight.sql_explorer_cli import add_sql_explorer_commands, dispatch_sql_explorer
-from gravity_insight.workspace import WorkspaceError, load_workspace
+from gravity_insight.workspace import WorkspaceError, WorkspaceNotConfiguredError, load_workspace
 
 
 class _DirectQueryInputError(ValueError):
@@ -105,6 +105,8 @@ def _configured_products() -> tuple[tuple[str, ...], bool]:
     workspace_invalid = False
     try:
         configured_products = product_names()
+    except WorkspaceNotConfiguredError:
+        configured_products = ()
     except WorkspaceError:
         configured_products = ()
         workspace_invalid = True

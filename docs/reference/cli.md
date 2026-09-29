@@ -598,8 +598,8 @@ Explorer 不接受 DDL/DML、多语句或自动生成 SQL，不拦截 Insight/re
 `gravity sql credentials`、SQL product 启动发现、`status` 和 `evidence-preflight` 的失败使用
 `gravity-sql.command-error.v1` stderr JSON。顶层包含 `command/exit_code`，`error` 包含
 `category/code/field/message/stage/retryable/reached_upstream/reached_sql_engine/upstream_error/
-execution_evidence/next_action`；异常原文不进入收据。成功输出、registered query 与 verify 继续使用
-各自既有 schema。自动化按 code 和决策字段分支，不解析 message。
+execution_evidence/next_action`；异常原文不进入收据。有效 workspace 未登记任何 product 时返回
+`SQL_PRODUCTS_NOT_CONFIGURED`（SQL 按配置不可用，不是故障）；`SQL_WORKSPACE_INVALID` 只表示 gravity.toml 本身无效。成功输出、registered query 与 verify 继续使用各自既有 schema。自动化按 code 和决策字段分支，不解析 message。
 
 `gravity sql verify --date YYYY-MM-DD [--publish]` 固定按登记顺序单并发验证全部产品。最终 429
 返回 typed `RATE_LIMITED` checkpoint（`readiness_achieved=false`）并保留已成功的严格前缀；
