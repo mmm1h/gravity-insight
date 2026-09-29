@@ -16,6 +16,6 @@ user-level output, or private evidence. Production probing follows
 `docs/maintainers/probing.md`; ordinary development checks stay offline.
 
 Before requesting review, run the validation commands in `AGENTS.md` with
-`PYTHONPATH=src`. Run both pytest and unittest discovery. Preserve the quality
+`PYTHONPATH=src`. Run the full pytest suite once. Preserve the quality
 ratchet, compiler output, actionable-error counts, and public API surface. CI
 green status is necessary but does not replace these local checks.

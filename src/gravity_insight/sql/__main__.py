@@ -47,7 +47,7 @@ from gravity_insight.sql.products import (
 )
 from gravity_insight.sql.query import sql_error_exit_code
 from gravity_insight.sql_explorer_cli import add_sql_explorer_commands, dispatch_sql_explorer
-from gravity_insight.workspace import WorkspaceError, WorkspaceNotConfiguredError, load_workspace
+from gravity_insight.workspace import WorkspaceError, WorkspaceNotConfiguredError, load_workspace, workspace_selection
 
 
 class _DirectQueryInputError(ValueError):
@@ -60,7 +60,7 @@ class _DirectQueryInputError(ValueError):
 def _emit_command_error(command: str, kind: str, exit_code: int, evidence_error: EvidenceFormatError | None = None) -> int:
     return emit_command_error(
         command, kind, exit_code, serializer=json_output.dumps,
-        source=result_source(CALLER_DEFINED), stream=sys.stderr,
+        source=result_source(CALLER_DEFINED), stream=sys.stderr, workspace=workspace_selection(),
         violation=evidence_error.diagnostic if isinstance(evidence_error, EvidenceContractError) else None,
     )
 
@@ -147,12 +147,12 @@ def build_parser(
     preflight_parser.add_argument("--date", help="Proposed Beijing calendar day (YYYY-MM-DD).")
     preflight_parser.add_argument("--json", action="store_true", help="Print machine-readable preflight.")
     verify_parser = commands.add_parser("verify", help="Verify the latest safe Beijing calendar day.")
-    verify_parser.set_defaults(network_required=True)
+    verify_parser.set_defaults(network_required=bool(configured_products))
     verify_parser.add_argument("--date", help="Beijing calendar day (YYYY-MM-DD).")
     verify_parser.add_argument("--publish", action="store_true", help="Atomically update rolling aggregate evidence.")
     verify_parser.add_argument("--resume", action="store_true", help="Resume the exact rate-limited prefix checkpoint for this date.")
     query_parser = commands.add_parser("query", help="Run an aggregate product only when Insight cannot express equivalent semantics.")
-    query_parser.set_defaults(network_required=True)
+    query_parser.set_defaults(network_required=bool(configured_products))
     query_parser.add_argument("product", nargs="?")
     query_parser.add_argument("--start", help="Inclusive ISO timestamp.")
     query_parser.add_argument("--end", help="Exclusive ISO timestamp.")

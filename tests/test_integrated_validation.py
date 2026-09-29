@@ -346,8 +346,7 @@ class IntegratedValidationTests(unittest.TestCase):
         self.assertEqual(len(names), len(set(names)))
         self.assertTrue(
             {
-                "unittest_collector",
-                "pytest_collector",
+                "test_duration_budget",
                 "compiler_check",
                 "quality_check",
                 "changelog",
@@ -367,6 +366,11 @@ class IntegratedValidationTests(unittest.TestCase):
             {"release_sbom", "dependency_audit"},
             {gate.name for gate in gates if gate.allow_network},
         )
+        # test_duration_budget already runs the whole pytest suite once.
+        self.assertNotIn("pytest_collector", names)
+        self.assertNotIn("unittest_collector", names)
+        secret_scan = next(gate for gate in gates if gate.name == "secret_scan")
+        self.assertNotIn("--history", secret_scan.command)
 
     def test_cumulative_capability_compares_the_previous_main_revision(self) -> None:
         self.assertEqual("HEAD^", _cumulative_capability_base(branch_is_main=True))

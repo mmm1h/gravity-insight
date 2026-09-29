@@ -22,6 +22,9 @@ from gravity_insight.onboarding import (
 )
 
 
+ROOT = Path(__file__).resolve().parents[1]
+
+
 class _Terminal(io.StringIO):
     def isatty(self) -> bool:
         return True
@@ -158,11 +161,54 @@ class GravityOnboardingTests(unittest.TestCase):
                 self.assertFalse(
                     command_requires_credentials(command, sql_cli.build_parser)
                 )
-        for command in (["verify"], ["query", "sample", "--start", "a", "--end", "b"]):
-            with self.subTest(command=command):
-                self.assertTrue(
-                    command_requires_credentials(command, sql_cli.build_parser)
+        network_commands = (["verify"], ["query", "sample", "--start", "a", "--end", "b"])
+        with patch.dict(
+            os.environ, {"GRAVITY_WORKSPACE": str(ROOT / "examples" / "workspace")}
+        ):
+            for command in network_commands:
+                with self.subTest(command=command, products="configured"):
+                    self.assertTrue(
+                        command_requires_credentials(command, sql_cli.build_parser)
+                    )
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory) / "gravity.toml"
+            workspace.write_text(
+                (ROOT / "examples" / "workspace" / "gravity.toml")
+                .read_text(encoding="utf-8")
+                .partition("[products.")[0]
+                + "[products]\n",
+                encoding="utf-8",
+            )
+            with patch.dict(os.environ, {"GRAVITY_WORKSPACE": str(workspace)}):
+                for command in network_commands:
+                    with self.subTest(command=command, products="none"):
+                        self.assertFalse(
+                            command_requires_credentials(command, sql_cli.build_parser)
+                        )
+
+    def test_sql_query_without_products_skips_onboarding_and_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory) / "gravity.toml"
+            workspace.write_text(
+                (ROOT / "examples" / "workspace" / "gravity.toml")
+                .read_text(encoding="utf-8")
+                .partition("[products.")[0]
+                + "[products]\n",
+                encoding="utf-8",
+            )
+            stderr = _Pipe()
+            with patch.dict(os.environ, {"GRAVITY_WORKSPACE": str(workspace)}), patch.object(
+                unified_cli, "ensure_first_run_credentials", return_value=True
+            ) as ensure, patch("sys.stderr", stderr):
+                exit_code = unified_cli.main(
+                    ["sql", "query", "anything", "--start", "a", "--end", "b"]
                 )
+
+        self.assertEqual(2, exit_code)
+        ensure.assert_called_once_with(requires_credentials=False)
+        payload = json.loads(stderr.getvalue())
+        self.assertEqual("SQL_PRODUCTS_NOT_CONFIGURED", payload["error"]["code"])
+        self.assertEqual(workspace.as_posix(), payload["workspace"]["path"])
 
     def test_plain_gravity_runs_first_setup_but_help_does_not(self) -> None:
         with patch.object(

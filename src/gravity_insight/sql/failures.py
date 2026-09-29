@@ -157,12 +157,7 @@ def command_failure_fields(kind: str) -> dict[str, Any]:
             "category": "not_reached" if reached == "no" else "unknown",
             "code": failure.code,
         },
-        "execution_evidence": {
-            **execution_evidence(
-                elapsed_seconds=0, request_count=0, request_count_bound=0
-            ),
-            "request_scope": "gravity_sql_engine",
-        },
+        "execution_evidence": {**execution_evidence(elapsed_seconds=0, request_count=0, request_count_bound=0), "request_scope": "gravity_sql_engine"},
         "next_action": failure.next_action,
     }
 
@@ -176,6 +171,7 @@ def emit_command_error(
     source: Mapping[str, Any],
     stream: TextIO,
     violation: Mapping[str, str | int] | None = None,
+    workspace: Mapping[str, str | None] | None = None,
 ) -> int:
     """Serialize one pre-query command failure through the CLI-owned transport."""
 
@@ -188,6 +184,7 @@ def emit_command_error(
         "command": command,
         "exit_code": exit_code,
         "error": error,
+        "workspace": None if workspace is None else dict(workspace),
     }
     print(
         serializer(payload, ensure_ascii=False, indent=2, sort_keys=True),

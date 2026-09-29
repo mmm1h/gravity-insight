@@ -1,16 +1,17 @@
-"""Canonical package, workspace, and mutable-state paths."""
+"""Canonical package and mutable-state paths."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from gravity_insight.workspace import load_workspace
+from gravity_insight.workspace import workspace_state_root
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
-WORKSPACE = load_workspace()
-WORKSPACE_ROOT = WORKSPACE.root
-STATE_ROOT = WORKSPACE.state_root
+# Derived from the selected gravity.toml path alone; the file itself is parsed
+# only by commands that load the workspace, so an invalid file cannot block
+# every command at import time.
+STATE_ROOT = workspace_state_root()
 
 # Maintainer-only tools still need the SDK checkout while run from that checkout.
 # Installed runtime consumers receive the cache-backed state root, never the
