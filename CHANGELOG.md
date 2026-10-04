@@ -41,6 +41,10 @@ Migration guide: [0.3.22](docs/migration/0.3.22.md)
 - `metadata properties|search|tables|vocabulary --help` states the enforced `--limit` range (1-100) and how to page with `--offset`; the shared `--all-pages` help (including `multidim query --help`) states that `--all-pages` needs `--output <path>` or `--format ndjson`. Validation is unchanged (#246, #241).
 - A `materials performance` `PAGINATION_LIMIT` now advises raising `--max-pages`/`--max-items` with the same App, dates and platform instead of telling the caller to change a correct scope (#223).
 
+### Added
+
+- Analysis Plan results, including every `analysis query batch` component, now carry the additive `result_audit` with the `http_receipts` references of the execution that produced that component, exactly as the scalar Analysis envelope does. References are only `receipt_id`/`storage_status` and are attributed per component under concurrent workers and adaptive retries; a retried component references its final execution. They resolve with `gravity receipts` and are kept when `output_fields` is declared (#245).
+
 ## [0.3.21] - 2026-09-29
 
 ### Breaking changes
