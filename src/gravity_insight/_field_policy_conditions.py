@@ -22,6 +22,7 @@ from ._field_policy_shared import (
     validate_scalar_list,
 )
 from .errors import InputValidationError
+from .analysis_spec_validation import require_condition_value
 
 
 _ANALYSIS_DATA_TYPES = frozenset({"STRING", "INT", "FLOAT", "BOOL", "DATE", "DATETIME", "LIST"})
@@ -172,8 +173,8 @@ def validate_analysis_conditions(
             "not echoed because errors may enter logs",
             field=label,
         )
-    for item in value:
-        _validate_analysis_condition(item, references, label)
+    for index, item in enumerate(value):
+        _validate_analysis_condition(item, references, f"{label}[{index}]")
 
 
 def _validate_analysis_condition(
@@ -201,6 +202,7 @@ def _validate_analysis_condition(
             field="conditions[].operator",
         )
     field = item.get("field")
+    require_condition_value(item, label)
     if not isinstance(field, str) or not field or len(field) > 256:
         raise InputValidationError(
             f"actual value: {actual_value(field)}; allowed value: a non-empty metadata "

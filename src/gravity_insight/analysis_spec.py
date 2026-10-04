@@ -31,6 +31,8 @@ from .analysis_spec_controls import (
     validate_time_grain,
 )
 from .analysis_spec_validation import (
+    compile_condition_values,
+    compile_event_quantile,
     boolean as _boolean,
     bounded_string as _bounded_string,
     choice as _choice,
@@ -180,7 +182,7 @@ def compile_query_spec(
     compiled = CompiledAnalysisQuery(
         kind=selected_kind,
         operation_id=ANALYSIS_QUERY_OPERATIONS[selected_kind],
-        inputs=inputs,
+        inputs=compile_condition_values(inputs),
     )
     validate_analysis_shape(compiled.kind, compiled.inputs)
     return compiled
@@ -247,7 +249,7 @@ def _compile_dated_query(
     inputs["date_list"] = [_date_range(selected_start, selected_end)]
     steps = _steps(spec.get("steps"), kind)
     inputs["query_item_list"] = [
-        _event_step(item, index=index, scatter=kind == "scatter")
+        _event_step(item, index=index, kind=kind)
         for index, item in enumerate(steps)
     ]
     if kind in {"event", "funnel"}:
@@ -339,12 +341,14 @@ def _copy_shared_controls(spec: Mapping[str, Any], inputs: dict[str, Any]) -> No
         )
 
 
-def _event_step(value: Mapping[str, Any], *, index: int, scatter: bool) -> dict[str, Any]:
+def _event_step(value: Mapping[str, Any], *, index: int, kind: str) -> dict[str, Any]:
     item = _mapping(value, f"steps[{index}]")
     allowed = {"event", "metric", "label", "conditions", "condition_logic"}
     _reject_keys(item, allowed, f"steps[{index}]")
     event = _bounded_string(item.get("event"), f"steps[{index}].event")
     metric = _metric(item.get("metric"), f"steps[{index}].metric")
+    if kind == "event":
+        compile_event_quantile(metric, f"steps[{index}].metric")
     label = _optional_string(item.get("label"), f"steps[{index}].label", event)
     step = {
         "event_name": event,
@@ -355,7 +359,7 @@ def _event_step(value: Mapping[str, Any], *, index: int, scatter: bool) -> dict[
         "cond_logic": _logic(item.get("condition_logic", "AND"), f"steps[{index}].condition_logic"),
         "event_index": index,
     }
-    if scatter:
+    if kind == "scatter":
         step["prop_to_calc"] = metric["field"]
         step["prop_to_calc_sub"] = "" if metric["name"] == metric["field"] else metric["name"]
     return step

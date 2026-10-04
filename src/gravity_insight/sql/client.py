@@ -231,14 +231,18 @@ _CLIENT_LOCK = threading.Lock()
 
 
 def build_sql_client() -> GravityClient:
-    """Return one long-lived SQL facade per process."""
+    """Return the process SQL facade bound to the current shared runtime.
+
+    A credential-generation change retires the previous shared runtime, so the
+    facade is rebound instead of pinning a runtime that can only fail (#230).
+    """
 
     global _CLIENT
-    if _CLIENT is None:
-        with _CLIENT_LOCK:
-            if _CLIENT is None:
-                _CLIENT = GravityClient.from_env()
-    return _CLIENT
+    runtime = get_shared_runtime(env_path=None)
+    with _CLIENT_LOCK:
+        if _CLIENT is None or _CLIENT._runtime is not runtime:
+            _CLIENT = GravityClient(runtime)
+        return _CLIENT
 
 
 def _validate_sql(sql: Any) -> str:

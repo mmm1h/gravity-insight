@@ -13,6 +13,7 @@ from ._field_policy_metadata import (
     wire_dimension_tables,
     wire_property_names,
 )
+from .user_event_projection import user_event_response_labels, validate_user_event_request
 from ._field_policy_operations import (
     ANALYSIS_EVENT,
     ANALYSIS_EVENT_PROPERTY,
@@ -66,10 +67,10 @@ def validate_analysis_detail(
     operation: OperationSpec,
     inputs: Mapping[str, Any],
     metadata_loader: MetadataLoader,
-) -> None:
+) -> Mapping[str, Any] | None:
     app_id = _validate_app_id(inputs.get("app_id"))
     if operation.operation_id == ANALYSIS_USER_EVENT:
-        _validate_user_event_contract(inputs)
+        validate_user_event_request(inputs)
     if operation.operation_id == ANALYSIS_MONETIZATION_DETAIL:
         validate_monetization_operation_request(operation, inputs)
     if operation.operation_id == ANALYSIS_SEGMENT_USER_DETAIL:
@@ -98,6 +99,10 @@ def validate_analysis_detail(
     if operation.operation_id == ANALYSIS_USER_EVENT:
         _validate_user_event_items(
             inputs, app_id, metadata, metadata_loader
+        )
+        return user_event_response_labels(
+            inputs, metadata.event_properties.rows,
+            lambda event: load_event_property_rows([event], app_id, metadata_loader),
         )
 
 
@@ -139,32 +144,6 @@ def _validate_app_id(value: Any) -> str:
             field="app_id",
         )
     return value
-
-
-def _validate_user_event_contract(inputs: Mapping[str, Any]) -> None:
-    has_date = inputs.get("date") not in (None, "")
-    has_date_list = inputs.get("date_list") not in (None, (), [])
-    if has_date == has_date_list:
-        raise InputValidationError(
-            f"actual value: {actual_value({'date_present': has_date, 'date_list_present': has_date_list})}; "
-            "allowed shape: provide exactly one of date or date_list",
-            field="date/date_list",
-        )
-    page = inputs.get("page", 1)
-    page_size = inputs.get("page_size", 20)
-    if (
-        not isinstance(page, int)
-        or isinstance(page, bool)
-        or page < 1
-        or not isinstance(page_size, int)
-        or isinstance(page_size, bool)
-        or not 1 <= page_size <= 200
-    ):
-        raise InputValidationError(
-            f"actual value: {actual_value({'page': page, 'page_size': page_size})}; "
-            "allowed range: page is an integer >= 1 and page_size is 1 through 200",
-            field="page/page_size",
-        )
 
 
 def _load_detail_metadata(

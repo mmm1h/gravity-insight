@@ -11,6 +11,7 @@ _HELP = """Gravity SDK
 
 Usage:
   gravity [--workspace <gravity.toml|directory>] <command> [options]
+  gravity --version
   gravity agent [query]
   gravity agent --input <questions.json>
   gravity agent-catalog categories|category <domain>|describe <selector>|host
@@ -197,6 +198,12 @@ def _main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return exit_code_for_category(ErrorCategory.CALLER)
 
+    if args == ["--version"]:
+        # Offline: report the executing runtime before any update check (#243).
+        from ._version import __version__
+
+        print(f"gravity-insight {__version__}")
+        return 0
     upgrade_exit = _startup_upgrade_exit(args)
     if upgrade_exit is not None:
         return upgrade_exit

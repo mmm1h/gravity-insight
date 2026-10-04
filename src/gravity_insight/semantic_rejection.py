@@ -18,6 +18,11 @@ from .errors import SemanticRejectedError, UpstreamContradictedRequestError
 # Exact extra.error strings reproduced on App 29034827 (2026-08-18).
 # Do not add synonyms or guessed translations.
 REVIEWED_READ_REJECTIONS: dict[str, tuple[str, str]] = {
+    # Short comparison aliases, reproduced on Event 2026-10-04 (#247).
+    "operator:GT非法": ("conditions[].operator", "Replace GT with GREATER in the Analysis condition; keep field and values unchanged. Do not retry unchanged."),
+    "operator:GTE非法": ("conditions[].operator", "Replace GTE with GREATER_EQUALS in the Analysis condition; keep field and values unchanged. Do not retry unchanged."),
+    "operator:LT非法": ("conditions[].operator", "Replace LT with LESS in the Analysis condition; keep field and values unchanged. Do not retry unchanged."),
+    "operator:LTE非法": ("conditions[].operator", "Replace LTE with LESS_EQUALS in the Analysis condition; keep field and values unchanged. Do not retry unchanged."),
     "入参错误：group_by_list为list且不能为空": (
         "group_by_list",
         "actual value: group_by_list=[]; allowed next action: send create_time/day "
@@ -30,8 +35,36 @@ REVIEWED_READ_REJECTIONS: dict[str, tuple[str, str]] = {
         "type=user (compact group_by.source=user already compiles to type=user)",
     ),
 }
-# One observed sentence embeds the caller's group_by payload after this prefix.
+# Observed sentences that embed caller-chosen names or payload after the prefix.
 REVIEWED_READ_REJECTION_PREFIXES: tuple[tuple[str, str, str], ...] = (
+    (
+        # Reproduced 2026-10-04 with Quantile_50 on Event (#244).
+        "统计指标不正确: ",
+        "target.name",
+        "Upstream rejected this metric aggregation encoding. Compact Event "
+        "Quantile_N now compiles to target.name=Quantile with quantile_level=N; "
+        "for other aggregations choose a value listed by `gravity analysis query "
+        "--kind event --spec-schema` for the field's data type. Do not retry "
+        "unchanged.",
+    ),
+    (
+        # Reproduced 2026-10-04 with pay_cancel grouped by $pay_reason (#239).
+        "处理事件属性分组错误：该事件未绑定属性[",
+        "group_by_list[].field",
+        "The selected event has no upstream binding for the requested group "
+        "property. Catalog registration alone does not establish that binding "
+        "or instance presence. Inspect `gravity metadata events` and the event "
+        "property metadata; remove the unsupported group or choose a verified "
+        "bound property. Keep the missing dimension unknown, not zero or absent "
+        "activity; do not retry unchanged.",
+    ),
+    (
+        "参数缺失,value:",
+        "conditions[].value",
+        "Supply value=[] for WITH_VAL/WITHOUT_VAL (compact specs now compile "
+        "it), or an explicit scalar value array for a value-bearing operator. "
+        "Do not retry unchanged. The upstream payload suffix is not echoed.",
+    ),
     (
         "入参错误：group_by_list缺失create_time",
         "group_by_list",

@@ -16,6 +16,7 @@ from .export_completion import (
 from .export_contracts import export_error_field
 from .export_describe_actions import download_receipt_argument
 from .export_models import ExportState
+from .export_recovery import recovery_diagnostics, semantic_reason, semantic_responsibility
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -149,16 +150,16 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
         "EXPORT_SEMANTIC_REJECTED": "unclassified_semantic_rejection",
         "EXPORT_RESPONSE_CONTRADICTED": "success_with_error_indicator",
     }
+    details = getattr(error, "details", {})
     if code in semantic_reasons:
-        stage, reason = "semantic_response", semantic_reasons[code]
+        stage, reason = "semantic_response", semantic_reason(code, details, semantic_reasons[code])
     if code in {"BLOB_SIZE_MISMATCH", "BLOB_HASH_MISMATCH", "BLOB_MD5_MISMATCH"}:
         stage, reason = "completeness", "source_integrity_mismatch"
     if reason is None:
         return {}
     diagnostic: dict[str, Any] = {"stage": stage, "reason": reason}
-    details = getattr(error, "details", {})
     if code in semantic_reasons:
-        diagnostic["responsibility"] = "unclassified"
+        diagnostic["responsibility"] = semantic_responsibility(details)
         value = details.get("semantic_code") if isinstance(details, Mapping) else None
         diagnostic["semantic_code"] = (
             value if isinstance(value, str) and re.fullmatch(r"-?[0-9]{1,6}", value)
@@ -168,7 +169,7 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
         value = details.get(key) if isinstance(details, Mapping) else None
         if type(value) is int and value >= 0:
             diagnostic[key] = value
-    return {"diagnostics": diagnostic}
+    return {"diagnostics": diagnostic, **recovery_diagnostics(error)}
 
 
 def _public_export_error(

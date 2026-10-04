@@ -481,6 +481,12 @@ def _failure_action(code: str, category: str) -> str:
         return "Stop this Plan until the material performance contract is re-verified."
     if code in {ErrorCode.AUTH_MISSING.value, ErrorCode.AUTH_REJECTED.value}:
         return "Run `gravity auth status`, then retry the same material performance query."
+    if code == ErrorCode.PAGINATION_LIMIT.value:
+        return (
+            "The page or item budget ended before the material report did; this is not a "
+            "wrong App, date, or platform. Keep them unchanged and rerun with a larger "
+            "--max-pages (up to 1000) or --max-items (up to 100000)."
+        )
     if category == ErrorCategory.CALLER.value:
         return "Correct the selected App, dates, or platform and retry."
     return "Retry only the failed platform; do not replay successful siblings."

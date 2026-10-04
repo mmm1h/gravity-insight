@@ -19,6 +19,7 @@ from .export_models import (
 )
 from .result_source import GOVERNED_PRODUCT, result_source
 from .export_policy import _AuthorizedEffectRequest
+from .export_recovery import rejected_creation_error, reviewed_semantic_rejection
 from .registry import PolicyEngine
 
 
@@ -86,12 +87,15 @@ class GravityExportGateway:
         *,
         timeout_seconds: float,
     ) -> ExportJobSnapshot:
-        _, payload, _ = self._call(
-            self.create_contract,
-            request.payload,
-            timeout_seconds=timeout_seconds,
-            attempts=1,
-        )
+        try:
+            _, payload, _ = self._call(
+                self.create_contract, request.payload,
+                timeout_seconds=timeout_seconds, attempts=1,
+            )
+        except ExportRuntimeError as exc:
+            if exc.code != "EXPORT_SEMANTIC_REJECTED" or not self.create_contract.response.get("creation_recovery"):
+                raise
+            raise rejected_creation_error(exc, self.create_contract, self.contracts, self._call, request.payload, timeout_seconds) from None
         job_id = _first_path(payload, self.create_contract.response.get("job_id_paths", []))
         if job_id is None:
             raise _export_error(
@@ -288,13 +292,14 @@ def call_export_effect(
             field="response.code",
         )
     if code not in _SUCCESS_CODES:
+        reviewed = reviewed_semantic_rejection(raw_payload.get("msg"))
         raise _export_error(
-            "Gravity export rejected the request; responsibility is unclassified",
+            reviewed.get("message", "Gravity export rejected the request; responsibility is unclassified"),
             code="EXPORT_SEMANTIC_REJECTED",
             stage=contract.effect,
             category="local", field="response.code",
-            next_action=_SEMANTIC_NEXT_ACTION,
-            details={"semantic_code": _safe_semantic_code(code)},
+            next_action=reviewed.get("next_action", _SEMANTIC_NEXT_ACTION),
+            details={"semantic_code": _safe_semantic_code(code), **reviewed.get("details", {})},
         )
     extra = raw_payload.get("extra")
     if isinstance(extra, Mapping) and extra.get("error") not in (None, "", [], {}):
