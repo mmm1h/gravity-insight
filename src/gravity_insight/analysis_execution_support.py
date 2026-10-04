@@ -130,6 +130,32 @@ def reject_unsupported_property_groups(
         )
 
 
+def reject_unsupported_funnel_groups(groups: Any) -> None:
+    """Funnel upstream keys groups by the first non-time dimension only (#94)."""
+
+    if not _sequence(groups):
+        return
+    dimensions = [
+        (index, group) for index, group in enumerate(groups)
+        if isinstance(group, Mapping) and group.get("type") != "default_event"
+    ]
+    if len(dimensions) < 2:
+        return
+    dropped = [str(group.get("field")) for _index, group in dimensions[1:]]
+    raise InputValidationError(
+        f"actual value: {actual_value(len(dimensions))} grouping dimensions; Funnel "
+        "keys its groups by the first non-time dimension only and silently drops "
+        "the rest",
+        field=f"group_by_list[{dimensions[1][0]}].field",
+        next_action=(
+            "Keep exactly one grouping dimension per Funnel request; split another "
+            "dimension into one request per known value with an equality filter, or "
+            "use Event Analysis for a multi-dimension breakdown."
+        ),
+        unsupported_items=[{"field": field, "type": "unsupported_grouping"} for field in dropped],
+    )
+
+
 def _sequence(value: Any) -> bool:
     return isinstance(value, Sequence) and not isinstance(value, (str, bytes))
 
@@ -140,6 +166,7 @@ __all__ = [
     "SEGMENT_EVENT_RULE_GAP_NEXT_ACTION",
     "SEGMENT_EVENT_RULE_GAP_REASON",
     "SEGMENT_FIRST_EXPOSURE_GAP_NEXT_ACTION",
+    "reject_unsupported_funnel_groups",
     "reject_unsupported_property_groups",
     "reject_unsupported_segment_event",
     "segment_event_support_metadata",

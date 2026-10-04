@@ -17,7 +17,16 @@ Target release: `0.3.23`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** A Funnel Analysis request with more than one non-time grouping dimension is rejected before dispatch with `INPUT_INVALID`; `unsupported_items` names the dimensions that would have been dropped. Upstream keys Funnel groups by the first non-time dimension only, so the extra dimensions previously vanished from a `success` result with no warning. Keep one dimension per Funnel request (#94).
+
+Migration guide: [0.3.23](docs/migration/0.3.23.md)
+
+### Fixed
+
+- A user-source `create_time` group is no longer reported as an unverified time grain with advice to change `time_grain` to `day`, even when the request already used `day`. Upstream rejects that group as a deleted user property: registration time is the `default_user` `create_time` field, which works only in conditions. That rejection is now `INPUT_INVALID`, non-retryable, and says how to split by registration date (#23).
+- A DATETIME user-property condition with date-only values is now a reviewed, non-retryable `INPUT_INVALID` on `conditions[].value` that names the required `yyyy-MM-dd HH:mm:ss` format, on both Analysis queries and Segment evaluation. This replaces the opaque `field=input` Segment rejection (#107) and the retryable Event rejection of scalar first-payment conditions (#23).
+- An empty Retention result now warns that it does not establish a zero starting population. Gravity omits a start cohort whose follow-up event never matches, so the warning names the Event control to run before reporting zero (#104).
+- `INPUT_INVALID` errors that have no operation id, such as compact Analysis and Segment spec errors, no longer suggest `gravity insight operations describe <operation-id>` with an unresolvable placeholder. `metadata properties|search|events` with a missing local catalog now names `gravity metadata sync --all-apps`.
 
 ## [0.3.22] - 2026-10-05
 

@@ -118,6 +118,9 @@ REJECTIONS = [
     ("处理事件属性分组错误：该事件未绑定属性[$pay_reason]", "group_by_list[].field", "unknown"),
     # The sentence embeds the caller's property name, so the prefix must generalize.
     ("处理事件属性分组错误：该事件未绑定属性[other_property]", "group_by_list[].field", "unknown"),
+    ("处理事件属性分组错误：用户属性[create_time]已经被删除", "group_by_list[].field", "default_user create_time"),
+    # The DATETIME sentence starts with the caller's property name, so it matches by suffix.
+    ("$first_pay_time属性格式不正确,需传递[yyyy-MM-dd HH:mm:ss]格式", "conditions[].value", "YYYY-MM-DD 00:00:00"),
 ]
 
 

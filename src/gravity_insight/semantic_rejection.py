@@ -59,6 +59,18 @@ REVIEWED_READ_REJECTION_PREFIXES: tuple[tuple[str, str, str], ...] = (
         "activity; do not retry unchanged.",
     ),
     (
+        # Reproduced 2026-10-05 with a user-source create_time group (#23).
+        "处理事件属性分组错误：用户属性[",
+        "group_by_list[].field",
+        "Gravity reports the requested user-property group as unavailable "
+        "(deleted). A user-source create_time group is not the registration "
+        "date: registration time is the default_user create_time field and works "
+        "only in conditions. Remove the group or choose a property listed by "
+        "`gravity metadata properties`; to split by registration date, send one "
+        "request per date with a flat default_user create_time condition. Do not "
+        "retry unchanged.",
+    ),
+    (
         "参数缺失,value:",
         "conditions[].value",
         "Supply value=[] for WITH_VAL/WITHOUT_VAL (compact specs now compile "
@@ -71,6 +83,19 @@ REVIEWED_READ_REJECTION_PREFIXES: tuple[tuple[str, str, str], ...] = (
         "actual value: group_by_list lacks create_time; allowed next action: add "
         "create_time/day (compact time_grain=day) before other groups; do not retry "
         "the same group_by_list",
+    ),
+)
+# Observed sentences that start with the caller's property name.
+REVIEWED_READ_REJECTION_SUFFIXES: tuple[tuple[str, str, str], ...] = (
+    (
+        # Reproduced 2026-10-05 on Event and Segment with a DATETIME user
+        # property compared to date-only values (#23, #107).
+        "属性格式不正确,需传递[yyyy-MM-dd HH:mm:ss]格式",
+        "conditions[].value",
+        "A DATETIME property condition needs full `yyyy-MM-dd HH:mm:ss` values; "
+        "date-only values are rejected. Use `YYYY-MM-DD 00:00:00` for a day start "
+        "and `YYYY-MM-DD 23:59:59` for a day end, keeping the field and operator. "
+        "Do not retry unchanged.",
     ),
 )
 # Upstream sends the sentence above even when create_time/day IS present, once
@@ -261,6 +286,9 @@ def _reviewed_remedy(extra_error: str) -> tuple[str, str] | None:
     for prefix, field, next_action in REVIEWED_READ_REJECTION_PREFIXES:
         if extra_error.startswith(prefix):
             return field, next_action
+    for suffix, field, next_action in REVIEWED_READ_REJECTION_SUFFIXES:
+        if extra_error.endswith(suffix):
+            return field, next_action
     return None
 
 
@@ -401,7 +429,13 @@ def _unverified_time_grain(
     if not isinstance(groups, (list, tuple)):
         return None
     for item in groups:
-        if not isinstance(item, Mapping) or item.get("field") != "create_time":
+        # Only the compiler's time-grain group carries the grain; a user-source
+        # create_time group is a property group, not a grain (#23).
+        if (
+            not isinstance(item, Mapping)
+            or item.get("field") != "create_time"
+            or item.get("type") != "default_event"
+        ):
             continue
         grain = item.get("group_by")
         if (

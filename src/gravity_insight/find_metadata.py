@@ -62,6 +62,7 @@ def search_metadata(
         raise InputValidationError(
             f"actual value: {actual_value(public_catalog)}; " + ("metadata catalog does not exist; run `gravity metadata sync --all-apps`"),
             field="database",
+            next_action="Run `gravity metadata sync --all-apps`, then retry.",
         )
     with closing(sqlite3.connect(f"{catalog.as_uri()}?mode=ro", uri=True)) as connection:
         connection.row_factory = sqlite3.Row
