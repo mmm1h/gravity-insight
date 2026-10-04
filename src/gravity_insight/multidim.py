@@ -133,7 +133,8 @@ def build_request_body(operation_id: str, values: Mapping[str, Any]) -> dict[str
     if operation_id == QUERY_OPERATION:
         body.update(page=values.get("page", 1), page_size=values.get("page_size", 100))
     elif "data_list" in values:
-        body["data_list"] = values["data_list"]
+        # Web sends one row group per total: data_list=[rows]. Flat rows get 1003 (#242).
+        body["data_list"] = [values["data_list"]]
     return body
 
 

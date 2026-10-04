@@ -185,13 +185,13 @@ def _add_search_commands(metadata_commands: Any) -> None:
             "--limit",
             type=metadata_limit,
             default=20,
-            help="Maximum rows to return (default: 20).",
+            help="Maximum rows to return, 1-100 (default: 20); page larger catalogs with --offset.",
         )
         query.add_argument(
             "--offset",
             type=nonnegative_int,
             default=0,
-            help="Skip this many matching rows.",
+            help="Skip this many matching rows; advance by --limit to read the next page.",
         )
 
 

@@ -64,7 +64,7 @@ def add_table_lineage_commands(metadata_commands: Any, sync: Any) -> None:
     tables.set_defaults(network_required=False)
     tables.add_argument("query", nargs="?", default="")
     tables.add_argument("--database", type=Path, default=None)
-    tables.add_argument("--limit", type=metadata_limit, default=20)
+    tables.add_argument("--limit", type=metadata_limit, default=20, help="Maximum rows, 1-100 (default: 20); page with --offset.")
     tables.add_argument("--offset", type=nonnegative_int, default=0)
 
 

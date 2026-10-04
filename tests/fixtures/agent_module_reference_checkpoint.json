@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "4af308e0ef18c96455125c4516e515920e82b71f1cb366b2270e4311ea071b68",
-    "manual_review_sha256": "0750e45c1db9e9bcab888e2e0c6398ced5b14d933a59df5eb2c541c8b21e5f11",
+    "reference_evidence_sha256": "c8899e7201a8fd97020bd5a096c5c2be20fa887b56554728bcef8c6dd3a7a58e",
+    "manual_review_sha256": "74454fef86527d9970af0ea70b9f5eba6bdb0082927f95e08b32ebe40f83c30e",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3276,
-    "scanned_file_count": 3268,
+    "version_controlled_file_count": 3277,
+    "scanned_file_count": 3269,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -825,7 +825,7 @@
     "dispositions": {
       "no_migration_effect": 358
     },
-    "sites_sha256": "52368d862c1c2bff425402ba9f3a5c897ca5d058fca6ba8ee3fc0fb6f2936fdc"
+    "sites_sha256": "cde6e3ed31e242c5ea28fd7ba8a5177003ad34050a026424917aa1519a451999"
   },
   "blockers": [],
   "site_fields": [
@@ -1203,7 +1203,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:66739:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:67071:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -3948,7 +3948,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2845:18:patch",
+      "tests/test_gravity_insight_core.py:2868:18:patch",
       "rm",
       "non_string_patch_expression",
       "f\"{_atomic_update_env.__module__}._restrict_secret_file\"",
@@ -3963,7 +3963,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_core.py:2845:27:__module__",
+      "tests/test_gravity_insight_core.py:2868:27:__module__",
       "rm",
       "module_owner_receiver",
       "_atomic_update_env.__module__",

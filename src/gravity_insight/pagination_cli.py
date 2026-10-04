@@ -18,7 +18,7 @@ def add_pagination_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--all-pages",
         action="store_true",
-        help="Follow the manifest pagination contract.",
+        help="Follow the manifest pagination contract; requires --output <path> or --format ndjson.",
     )
     parser.add_argument(
         "--continue-without-total",

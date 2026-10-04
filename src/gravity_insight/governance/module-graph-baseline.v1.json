@@ -2,7 +2,7 @@
   "definition_id": "gravity-insight-runtime-possible-module-dependency-graph.v1",
   "definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
   "edge_kind_counts": {
-    "ast_delayed_import": 524,
+    "ast_delayed_import": 525,
     "ast_eager_import": 2756,
     "lazy_export_owner": 62,
     "package_parent": 723
@@ -18,8 +18,8 @@
         2,
         2
       ],
-      "edge_count": 3319,
-      "graph_sha256": "5f999e300983c4449b91374462de49fca5a7be9d173764e62bb0dfe10b363638",
+      "edge_count": 3320,
+      "graph_sha256": "b43475daa073b85da32bc477b22a210b514fd61f6a3a3a72cde21379f31cdfa7",
       "largest_cyclic_scc_size": 444,
       "self_loop_scc_count": 0
     },
@@ -49,8 +49,8 @@
         2,
         1
       ],
-      "edge_count": 3257,
-      "graph_sha256": "9c69b96d4d9be53c7f595c0aa7a52d8aaaa1b5596b4386e511010c695ee013e5",
+      "edge_count": 3258,
+      "graph_sha256": "3101184badbc071ee5a311785a665d9fd094f29b3be1bc5313a6a03899fa2cfd",
       "largest_cyclic_scc_size": 17,
       "self_loop_scc_count": 1
     },
@@ -66,8 +66,8 @@
         2,
         2
       ],
-      "edge_count": 3957,
-      "graph_sha256": "588877a2a0343afa6ce357592dd4439ec586524c8ca61f409ee4f2f4e6a0beee",
+      "edge_count": 3958,
+      "graph_sha256": "d0e5d21941e9ab46ca545272f79478e8e3ca9cbe55e3acb0c5069e9f7d05a832",
       "largest_cyclic_scc_size": 562,
       "self_loop_scc_count": 0
     },

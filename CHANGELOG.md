@@ -19,6 +19,16 @@ Target release: `0.3.22`
 
 - None.
 
+### Added
+
+- `gravity --version` prints the executing runtime version (`gravity-insight X.Y.Z`) offline, before any startup update check, and is listed in `gravity --help` (#243).
+
+### Fixed
+
+- `multidim query --include-total` works again. The calc-total request now sends `data_list` as one row group (`[rows]`), as Gravity Web does; the previous flat rows were rejected upstream (`1003`) for every metric. Multi-day rows expanded to `<metric>_<N>` are accepted when `N` is a requested `multi_keys`/`--multi-days` value; other unknown fields are still rejected before the request (#242).
+- `metadata properties|search|tables|vocabulary --help` states the enforced `--limit` range (1-100) and how to page with `--offset`; the shared `--all-pages` help (including `multidim query --help`) states that `--all-pages` needs `--output <path>` or `--format ndjson`. Validation is unchanged (#246, #241).
+- A `materials performance` `PAGINATION_LIMIT` now advises raising `--max-pages`/`--max-items` with the same App, dates and platform instead of telling the caller to change a correct scope (#223).
+
 ## [0.3.21] - 2026-09-29
 
 ### Breaking changes
