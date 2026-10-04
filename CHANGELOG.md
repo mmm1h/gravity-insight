@@ -13,7 +13,13 @@
 
 ## [Unreleased]
 
-Target release: `0.3.22`
+Target release: `0.3.23`
+
+### Breaking changes
+
+- None.
+
+## [0.3.22] - 2026-10-04
 
 ### Breaking changes
 
@@ -21,36 +27,21 @@ Target release: `0.3.22`
 
 Migration guide: [0.3.22](docs/migration/0.3.22.md)
 
-### Fixed
-
-- Event compact `Quantile_N` now compiles to the upstream-verified `name=Quantile, quantile_level=N`; contradictory duplicate percentiles fail locally (#244).
-- Reviewed operator, missing-value, quantile and unbound-property rejections return non-retryable, value-safe remedies and are not replayed by Analysis batch. Unreviewed rejection text retains the #23/#24 retry policy; missing grouping dimensions remain unknown rather than zero activity (#247, #239, #244).
-
-### Fixed
-
-- `analysis.user_event.list` now returns explicitly selected event properties instead of dropping them under a `success` status. Upstream keys each timeline event by the property's display label, which is unique only within one event: the SDK maps each selected name through its registered label (event-scoped through `event_list` when a label is shared across events) and returns it under the requested name, keeps `事件英文名` as the exact event identity, and reports per-field coverage in the additive `data.field_coverage` (`missing_counts`, `unmapped_fields`) rather than treating absent values as contract drift. Unselected registered properties are omitted without drift warnings. The contract records the observed 50-row page cap (#238).
-- A rejected `export.analysis.user_event.start` creation now certifies whether an upstream task already holds exactly this request: one bounded read of the newest export tasks compares each task's stored request with the submitted body and returns `creation_recovery.association` (`existing_identical_task` with a resumable `job_id`, `ambiguous`, `not_found`, or `unconfirmed`), never matching by display name or timestamp. An upstream `msg` of `参数错误` is reported as `diagnostics.responsibility=upstream_reported_invalid_parameter` and is not retryable unchanged (#248).
-
 ### Added
 
 - `gravity --version` prints the executing runtime version (`gravity-insight X.Y.Z`) offline, before any startup update check, and is listed in `gravity --help` (#243).
-
-### Fixed
-
-- `multidim query --include-total` works again. The calc-total request now sends `data_list` as one row group (`[rows]`), as Gravity Web does; the previous flat rows were rejected upstream (`1003`) for every metric. Multi-day rows expanded to `<metric>_<N>` are accepted when `N` is a requested `multi_keys`/`--multi-days` value; other unknown fields are still rejected before the request (#242).
-- `metadata properties|search|tables|vocabulary --help` states the enforced `--limit` range (1-100) and how to page with `--offset`; the shared `--all-pages` help (including `multidim query --help`) states that `--all-pages` needs `--output <path>` or `--format ndjson`. Validation is unchanged (#246, #241).
-- A `materials performance` `PAGINATION_LIMIT` now advises raising `--max-pages`/`--max-items` with the same App, dates and platform instead of telling the caller to change a correct scope (#223).
-
-### Added
-
 - Analysis Plan results, including every `analysis query batch` component, now carry the additive `result_audit` with the `http_receipts` references of the execution that produced that component, exactly as the scalar Analysis envelope does. References are only `receipt_id`/`storage_status` and are attributed per component under concurrent workers and adaptive retries; a retried component references its final execution. They resolve with `gravity receipts` and are kept when `output_fields` is declared (#245).
-
-### Added
-
 - SQL failures classified `SQL_PRODUCT_CREDENTIALS_UNAVAILABLE` add `upstream_error.credential_origin`, a closed vocabulary naming the credential step that failed: `credential_load` (reading the selected credential or session file), `token_refresh` (a login needed before dispatch), `auth_rejection_refresh` (a refresh after the SQL service rejected the token), `runtime_retired` (a stale credential generation), or `unclassified`. It never carries paths, account names, or credential values, and `code`/`next_action` are unchanged (#230).
 
 ### Fixed
 
+- Event compact `Quantile_N` now compiles to the upstream-verified `name=Quantile, quantile_level=N`; contradictory duplicate percentiles fail locally (#244).
+- Reviewed operator, missing-value, quantile and unbound-property rejections return non-retryable, value-safe remedies and are not replayed by Analysis batch. Unreviewed rejection text retains the #23/#24 retry policy; missing grouping dimensions remain unknown rather than zero activity (#247, #239, #244).
+- `analysis.user_event.list` now returns explicitly selected event properties instead of dropping them under a `success` status. Upstream keys each timeline event by the property's display label, which is unique only within one event: the SDK maps each selected name through its registered label (event-scoped through `event_list` when a label is shared across events) and returns it under the requested name, keeps `事件英文名` as the exact event identity, and reports per-field coverage in the additive `data.field_coverage` (`missing_counts`, `unmapped_fields`) rather than treating absent values as contract drift. Unselected registered properties are omitted without drift warnings. The contract records the observed 50-row page cap (#238).
+- A rejected `export.analysis.user_event.start` creation now certifies whether an upstream task already holds exactly this request: one bounded read of the newest export tasks compares each task's stored request with the submitted body and returns `creation_recovery.association` (`existing_identical_task` with a resumable `job_id`, `ambiguous`, `not_found`, or `unconfirmed`), never matching by display name or timestamp. An upstream `msg` of `参数错误` is reported as `diagnostics.responsibility=upstream_reported_invalid_parameter` and is not retryable unchanged (#248).
+- `multidim query --include-total` works again. The calc-total request now sends `data_list` as one row group (`[rows]`), as Gravity Web does; the previous flat rows were rejected upstream (`1003`) for every metric. Multi-day rows expanded to `<metric>_<N>` are accepted when `N` is a requested `multi_keys`/`--multi-days` value; other unknown fields are still rejected before the request (#242).
+- `metadata properties|search|tables|vocabulary --help` states the enforced `--limit` range (1-100) and how to page with `--offset`; the shared `--all-pages` help (including `multidim query --help`) states that `--all-pages` needs `--output <path>` or `--format ndjson`. Validation is unchanged (#246, #241).
+- A `materials performance` `PAGINATION_LIMIT` now advises raising `--max-pages`/`--max-items` with the same App, dates and platform instead of telling the caller to change a correct scope (#223).
 - `build_sql_client()` no longer pins its process to the first shared runtime. A persisted login or refresh changes the credential generation, and the next runtime lookup retires the previous runtime; the SQL facade now rebinds to the current runtime when it is built again, so a retried SQL call in the same process, including through a new `GravitySDK()`, recovers instead of failing with `SQL_PRODUCT_CREDENTIALS_UNAVAILABLE` again. Default and explicit `GRAVITY_ENV_FILE` credential selection is unchanged (#230).
 
 ## [0.3.21] - 2026-09-29
