@@ -19,6 +19,10 @@ Target release: `0.3.22`
 
 - None.
 
+### Added
+
+- Analysis Plan results, including every `analysis query batch` component, now carry the additive `result_audit` with the `http_receipts` references of the execution that produced that component, exactly as the scalar Analysis envelope does. References are only `receipt_id`/`storage_status` and are attributed per component under concurrent workers and adaptive retries; a retried component references its final execution. They resolve with `gravity receipts` and are kept when `output_fields` is declared (#245).
+
 ## [0.3.21] - 2026-09-29
 
 ### Breaking changes

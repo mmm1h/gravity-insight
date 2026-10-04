@@ -14,6 +14,7 @@ from .analysis_spec import (
     validate_query_spec,
 )
 from .output_projection import validate_output_fields
+from .result_audit import project_result_audit
 from .field_metadata_override import use_field_metadata_loader
 from .metadata_catalog_snapshot import (
     metadata_snapshot_loader,
@@ -324,6 +325,8 @@ def safe_analysis_envelope(
         for key, value in result.items()
         if key in _SAFE_ENVELOPE_FIELDS and key != "error"
     }
+    # Carry only this component's receipt references, as the scalar envelope does (#245).
+    selected = project_result_audit(selected, result)
     status = str(result.get("status", "")).casefold()
     if expected_operation is not None and result.get("operation_id") != expected_operation:
         selected["ok"] = False

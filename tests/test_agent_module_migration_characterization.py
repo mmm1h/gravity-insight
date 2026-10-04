@@ -555,7 +555,7 @@ def run():
         """
         expected = module_graph_baseline()
         self.assertEqual(
-            "e69f29f438aeeb35891bc0b7a6b9f1ae395100fe6d787261a1084ef868cc508b",
+            "4f9eae1760a2092dfd02e543a84742aacb5f15f66db2f024f6fa3c810c52fd24",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
