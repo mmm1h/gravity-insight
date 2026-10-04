@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "c4de9dbbc6e9612613951421b9a09684a7b9388f1c0336668a6d4effe6826bb0",
-    "manual_review_sha256": "0b111a0d7944a6ed8bcf486f0369aecf07bea34fa52c0eebdd3bdef18d8be368",
+    "reference_evidence_sha256": "0456527cb4659fa86580b77b650fb340a9a908ccb759ebf2837626bcf9d077eb",
+    "manual_review_sha256": "20f980da0ae9760684e4ea54b051c231d522690047f68373b327f7ffb77fa614",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3286,
     "scanned_file_count": 3278,
@@ -833,7 +833,7 @@
     "dispositions": {
       "no_migration_effect": 360
     },
-    "sites_sha256": "fa8e6d26d3cddbb127ac67a79fb8cd801782d37556decac6f8fe7f72bbb497d4"
+    "sites_sha256": "5ad26409dbc32e5b30172e8cda0d213c2403f206351d6f825807a7436017c0b1"
   },
   "blockers": [],
   "site_fields": [
@@ -5891,7 +5891,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1139:18:mock.patch.object",
+      "tests/test_sql_products.py:1140:18:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "provenance",
@@ -5906,7 +5906,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1174:14:mock.patch.object",
+      "tests/test_sql_products.py:1175:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "provenance",
@@ -5921,7 +5921,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1208:18:mock.patch.object",
+      "tests/test_sql_products.py:1209:18:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.credentials",
@@ -5936,7 +5936,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1208:84:mock.patch.object",
+      "tests/test_sql_products.py:1209:84:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.credentials.subprocess",
@@ -5951,7 +5951,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:1218:14:mock.patch.object",
+      "tests/test_sql_products.py:1219:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6011,7 +6011,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:474:14:mock.patch.object",
+      "tests/test_sql_products.py:475:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6026,7 +6026,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:500:14:mock.patch.object",
+      "tests/test_sql_products.py:501:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6041,7 +6041,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:524:14:mock.patch.object",
+      "tests/test_sql_products.py:525:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6056,7 +6056,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:545:14:mock.patch.object",
+      "tests/test_sql_products.py:546:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6071,7 +6071,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:580:14:mock.patch.object",
+      "tests/test_sql_products.py:581:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6086,7 +6086,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:596:14:mock.patch.object",
+      "tests/test_sql_products.py:597:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6101,7 +6101,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:638:14:mock.patch.object",
+      "tests/test_sql_products.py:639:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6116,7 +6116,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:660:14:mock.patch.object",
+      "tests/test_sql_products.py:661:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6131,7 +6131,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:696:22:mock.patch.object",
+      "tests/test_sql_products.py:697:22:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6146,7 +6146,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:696:72:mock.patch",
+      "tests/test_sql_products.py:697:72:mock.patch",
       "rm",
       "non_string_patch_expression",
       "f\"gravity_insight.sql.__main__.{patch_target}\"",
@@ -6161,7 +6161,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:709:14:mock.patch.object",
+      "tests/test_sql_products.py:710:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6176,7 +6176,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:746:14:mock.patch.object",
+      "tests/test_sql_products.py:747:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6191,7 +6191,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:764:14:mock.patch.object",
+      "tests/test_sql_products.py:765:14:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
@@ -6206,7 +6206,7 @@
       }
     ],
     [
-      "tests/test_sql_products.py:808:12:mock.patch.object",
+      "tests/test_sql_products.py:809:12:mock.patch.object",
       "rm",
       "non_string_patch_expression",
       "gravity_cli.sys",
