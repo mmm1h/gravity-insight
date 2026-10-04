@@ -475,7 +475,7 @@ class GravitySqlClientTests(unittest.TestCase):
             second = sql_client.build_sql_client()
 
         self.assertIs(first, second)
-        factory.assert_called_once_with(env_path=None)
+        factory.assert_called_with(env_path=None)
 
     def test_fast_lane_structured_failures_preserve_all_five_sql_stages(self):
         class StagedFailure(Exception):

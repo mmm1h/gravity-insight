@@ -8,6 +8,27 @@ from .credentials import Credential
 from .errors import AuthenticationError, CredentialError, PermissionUnavailableError
 
 
+_ORIGIN_ATTRIBUTE = "_gravity_credential_origin"
+# Fixed CredentialError sentences grouped by the credential step that raised them (#230).
+_CREDENTIAL_ORIGINS = {
+    "Gravity runtime credential generation actual value: stale": "runtime_retired",
+    "could not read the Gravity credential file": "credential_load",
+    "Gravity credential expiry is invalid": "credential_load",
+    "Gravity credentials are missing or the token has expired": "token_refresh",
+    "could not atomically update the Gravity credential file": "token_refresh",
+    "could not restrict the Gravity credential file": "token_refresh",
+    "the Gravity credential path must be a regular file": "token_refresh",
+    "credential values must not contain line breaks": "token_refresh",
+}
+
+
+def credential_origin(error: BaseException) -> str:
+    """Return the closed-vocabulary step of one credential failure, never its text."""
+
+    tagged = getattr(error, _ORIGIN_ATTRIBUTE, None)
+    return tagged if isinstance(tagged, str) else _CREDENTIAL_ORIGINS.get(str(error), "unclassified")
+
+
 def current_principal_id(credentials: Any) -> str | None:
     resolver = getattr(credentials, "current_principal_id", None)
     credential_or_id = resolver() if callable(resolver) else credentials.get()
@@ -54,8 +75,9 @@ def refresh_authentication(provider: Any, credential: Credential, response: Any,
         raise AuthenticationError("Gravity authorization is invalid or expired")
     try:
         refresh_if_rejected(provider, credential)
-    except CredentialError:
+    except CredentialError as exc:
         if lease is None:
+            setattr(exc, _ORIGIN_ATTRIBUTE, "auth_rejection_refresh")
             raise
         raise AuthenticationError("Gravity authorization is invalid or expired") from None
     if lease is not None:
@@ -63,4 +85,4 @@ def refresh_authentication(provider: Any, credential: Credential, response: Any,
     return True
 
 
-__all__ = ["current_principal_id", "refresh_if_rejected"]
+__all__ = ["credential_origin", "current_principal_id", "refresh_if_rejected"]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Mapping, TextIO
 
 from gravity_insight.errors import (
@@ -14,6 +14,7 @@ from gravity_insight.errors import (
     SqlValidationError,
     TransportError,
 )
+from gravity_insight.runtime_principal import credential_origin
 from gravity_insight.semantic_status import protocol_status_evidence
 
 
@@ -38,6 +39,7 @@ class SqlFailure:
     http_status: int | None = None
     protocol_status: Mapping[str, Any] | None = None
     retry_after_ms: int | None = None
+    credential_origin: str | None = None
 
 
 @dataclass(frozen=True)
@@ -342,6 +344,8 @@ def classify_sql_failure(error: BaseException, *, request_count: int = 0) -> Sql
             "Governed SQL product compilation failed", False, "no",
             "Inspect the registered product placeholders and local contract; do not retry unchanged.",
         )
+    if selected.kind == "credentials":
+        selected = replace(selected, credential_origin=credential_origin(error))
     return _with_context(selected, context)
 
 
@@ -399,10 +403,9 @@ def diagnostic_fields(
     request_count_bound: int,
 ) -> dict[str, Any]:
     effective_count = 0 if failure.kind == "local_validation" else request_count
-    upstream: dict[str, Any] = {
-        "category": failure.upstream_category,
-        "code": failure.code,
-    }
+    upstream: dict[str, Any] = {"category": failure.upstream_category, "code": failure.code}
+    if failure.credential_origin is not None:
+        upstream["credential_origin"] = failure.credential_origin
     if failure.http_status is not None:
         upstream["http_status"] = failure.http_status
         upstream["http_status_class"] = f"{failure.http_status // 100}xx"
