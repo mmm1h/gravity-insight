@@ -47,6 +47,7 @@ from ._field_policy_shared import (
     require_exact_mapping,
 )
 from .actionable_error_values import actual_value
+from .analysis_spec_validation import validate_event_operators
 from .errors import InputValidationError
 
 
@@ -118,6 +119,8 @@ def validate_analysis_shape(
             field="query_id",
         )
     references = new_analysis_references()
+    if query_kind == "event":
+        validate_event_operators(inputs)
     validate_analysis_group_by(inputs.get("group_by_list", ()), references)
     if query_kind == "property":
         reject_unsupported_property_groups(inputs.get("group_by_list", ()))

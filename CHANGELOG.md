@@ -17,7 +17,14 @@ Target release: `0.3.22`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** Event Analysis conditions reject `GT/GTE/LT/LTE` locally with exact `GREATER/GREATER_EQUALS/LESS/LESS_EQUALS` replacements. Other Analysis kinds and Segment/detail operator vocabularies are unchanged. Analysis wire conditions now require `value`; compact `WITH_VAL/WITHOUT_VAL` supplies `[]`, while value-bearing operators must provide it. Bare Event `Quantile` requires an explicit percentile (#247, #244).
+
+Migration guide: [0.3.22](docs/migration/0.3.22.md)
+
+### Fixed
+
+- Event compact `Quantile_N` now compiles to the upstream-verified `name=Quantile, quantile_level=N`; contradictory duplicate percentiles fail locally (#244).
+- Reviewed operator, missing-value, quantile and unbound-property rejections return non-retryable, value-safe remedies and are not replayed by Analysis batch. Unreviewed rejection text retains the #23/#24 retry policy; missing grouping dimensions remain unknown rather than zero activity (#247, #239, #244).
 
 ## [0.3.21] - 2026-09-29
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Mapping
+from .analysis_spec_validation import VALUELESS_CONDITION_OPERATORS, event_input_definitions
 
 from ._field_policy_shared import (
     ANALYSIS_CONTROL_ID_RE,
@@ -77,8 +78,8 @@ def _kind_schemas() -> dict[str, Any]:
                 "event",
                 required=("start", "end", "steps"),
                 properties={
-                    "steps": _array_ref("event_step", 1, 50),
-                    "global_filters": _array_ref("condition", 0, 100),
+                    "steps": _array_ref("event_query_step", 1, 50),
+                    "global_filters": _array_ref("event_condition", 0, 100),
                     "global_logic": _enum("AND", "OR"),
                     "calculate_layer_y": {"type": "boolean", "default": False},
                     "return_hierarchy_list": {"type": "boolean", "default": False},
@@ -144,19 +145,26 @@ def _kind_schemas() -> dict[str, Any]:
 
 
 def _definitions() -> dict[str, Any]:
-    return {
+    definitions = {
         "condition": _condition_definition(),
         **_target_definitions(),
         **_flow_definitions(),
         **_retention_definitions(),
         "aggregate": _aggregate_definition(),
     }
+    definitions.update(event_input_definitions(definitions))
+    return definitions
 
 
 def _condition_definition() -> dict[str, Any]:
     return {
             "type": "object",
             "required": ["operator", "field", "type"],
+            "allOf": [{
+                "if": {"properties": {"operator": {"enum": sorted(VALUELESS_CONDITION_OPERATORS)}}, "required": ["operator"]},
+                "then": {"properties": {"value": {"default": []}}},
+                "else": {"required": ["value"]},
+            }],
             "additionalProperties": False,
             "properties": {
                 "operator": {"type": "string", "enum": sorted(ANALYSIS_CONDITION_OPERATORS)},
