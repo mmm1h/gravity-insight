@@ -26,13 +26,15 @@ def _row(event: str, **properties: Any) -> dict[str, Any]:
     return {"事件名称": event, "事件时间": "2026-10-03 10:00:00", "事件英文名": event, **properties}
 
 
-def _read(rows: list[Mapping[str, Any]], **inputs: Any) -> tuple[dict[str, Any], list[Any]]:
+def _read(
+    rows: list[Mapping[str, Any]], properties: list[dict[str, Any]] = _PROPERTIES, **inputs: Any
+) -> tuple[dict[str, Any], list[Any]]:
     def handler(_method: str, path: str, kwargs: Mapping[str, Any]):
         if path.endswith("event_list/"):
             return page([{"name": "stamina_res", "cname": "体力", "visible": True},
                          {"name": "piece_res", "cname": "碎片", "visible": True}])
         if path.endswith("event_property_list/"):
-            return page(_PROPERTIES)
+            return page(properties)
         if path.endswith("event_info/"):
             event = kwargs["query"]["event_name"]
             bound = {"stamina_res": ("stamina_action", "stamina_change_count"), "piece_res": ("piece_action",)}[event]
@@ -88,3 +90,30 @@ def test_absent_selected_property_is_partial_coverage_not_contract_drift():
     assert result["status"] == "success"
     assert (coverage["status"], coverage["missing_counts"]["stamina_change_count"]) == ("partial", 1)
     assert coverage["missing_fields"] == ["stamina_change_count"]
+
+
+def test_listed_events_keep_app_wide_unique_labels_they_do_not_bind():
+    # piece_res binds neither selected property; the App-wide unique label still maps.
+    result, _calls = _read([_row("piece_res", 获得或消耗="piece-value", 体力变化次数=3)], event_list=["piece_res"])
+    event = result["data"]["event_timeline"][0]["list"][0]
+    coverage = result["data"]["field_coverage"]
+    assert event["stamina_change_count"] == 3 and "stamina_action" not in event
+    assert (coverage["status"], coverage["unmapped_fields"]) == ("partial", ["stamina_action"])
+
+
+def test_a_selected_shared_label_is_never_certified_complete():
+    result, _calls = _read(
+        [_row("stamina_res", 获得或消耗="get"), _row("piece_res", 获得或消耗="piece-value")],
+        fields=["获得或消耗"], event_list=[],
+    )
+    coverage = result["data"]["field_coverage"]
+    assert (coverage["status"], coverage["unmapped_fields"]) == ("partial", ["获得或消耗"])
+    assert any("shared labels" in warning for warning in result["warnings"])
+
+
+def test_a_property_with_two_labels_stays_unmapped():
+    properties = [{**_PROPERTIES[2], "dim_table": [{"name": "stamina_change_count", "cname": "ID"}]}]
+    result, _calls = _read([_row("stamina_res", 体力变化次数=2)], properties=properties,
+                           fields=["stamina_change_count"], event_list=[])
+    coverage = result["data"]["field_coverage"]
+    assert (coverage["status"], coverage["unmapped_fields"]) == ("partial", ["stamina_change_count"])

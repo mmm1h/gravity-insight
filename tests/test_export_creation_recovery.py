@@ -9,6 +9,9 @@ import tempfile
 import pytest
 
 from gravity_insight.export_contracts import ExportContractRegistry
+from gravity_insight.export_models import ExportRuntimeError
+from gravity_insight.export_recovery import reviewed_semantic_rejection
+from gravity_insight.export_results import _failure_diagnostics
 from tests.test_export_condition_contract import Client
 from tests.test_gravity_insight_export_integration import CONTRACT_PATH
 
@@ -24,7 +27,7 @@ REJECTION = {"code": 1004, "msg": "参数错误", "extra": {"error": "PRIVATE_SE
 def task(task_id, body, *, status=2, task_type="user_detail"):
     # Upstream rewrites task_name; args keeps the submitted body (key order may differ).
     args = json.dumps(dict(reversed(list(body.items()))), ensure_ascii=False)
-    return {"id": task_id, "task_type": task_type, "status": status,
+    return {"id": task_id, "task_type": task_type, "status": status, "create_time": "2026-10-04 19:01:28",
             "task_name": "用户行为序列-SENSITIVE-CLIENT", "args": args}
 
 
@@ -45,22 +48,37 @@ def run(*responses):
 OTHER = {**BODY, "client_id": "another-client"}
 
 
-@pytest.mark.parametrize("responses,association,job_id", [
-    ((listing(task("a" * 32, OTHER), task("b" * 32, BODY)),), "existing_identical_task", "b" * 32),
-    ((listing(task("a" * 32, OTHER), task("c" * 32, BODY, task_type="segment")),), "not_found", None),
-    ((listing(task("a" * 32, BODY), task("b" * 32, BODY)),), "ambiguous", None),
-    (({"code": 1004, "msg": "参数错误"},), "unconfirmed", None),
+@pytest.mark.parametrize("responses,association,job_id,candidates,resume", [
+    ((listing(task("a" * 32, OTHER), task("b" * 32, BODY)),), "existing_identical_task", "b" * 32, ["b" * 32], True),
+    ((listing(task("a" * 32, OTHER), task("c" * 32, BODY, task_type="segment")),), "not_found", None, [], False),
+    ((listing(task("a" * 32, BODY), task("b" * 32, BODY, status=3)),), "ambiguous", None, ["a" * 32, "b" * 32], True),
+    ((listing(task("b" * 32, BODY, status=4)),), "existing_identical_task", "b" * 32, ["b" * 32], False),
+    ((listing(task("b" * 32, BODY, status="2")),), "existing_identical_task", "b" * 32, ["b" * 32], True),
+    (({"code": 1004, "msg": "参数错误"},), "unconfirmed", None, [], False),
 ])
-def test_rejected_creation_reports_certified_association(responses, association, job_id):
+def test_rejected_creation_reports_certified_association(responses, association, job_id, candidates, resume):
     result, calls = run(*responses)
     recovery = result["creation_recovery"]
-    assert (recovery["association"], result["job_id"], result["resumable"]) == (association, job_id, job_id is not None)
+    assert (recovery["association"], result["job_id"]) == (association, job_id)
+    assert [item["job_id"] for item in recovery["candidates"]] == candidates
+    assert result["resumable"] is (resume and job_id is not None)
     assert recovery["match_basis"] == "exact_submitted_args"
     assert [path.rsplit("/", 2)[-2] for _m, path, *_ in calls] == ["download", "list"]
     assert result["error"]["retryable"] is False
-    assert ("export wait" in result["error"]["next_action"]) is (job_id is not None)
+    # A dead (failed, cancelled, expired) match is never offered for resumption.
+    assert ("export wait" in result["error"]["next_action"]) is resume
     dumped = json.dumps(result, ensure_ascii=False)
     assert "SENSITIVE-CLIENT" not in dumped and "PRIVATE_SENTINEL" not in dumped
+
+
+def test_export_start_failure_envelope_carries_the_recovered_job_id():
+    contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
+    client = Client(contracts, [REJECTION, listing(task("b" * 32, BODY))])
+    columns = tuple(contracts.get(START).privacy["allowed_columns"])
+    with pytest.raises(ExportRuntimeError) as raised:
+        client.export_start(START, dict(BODY), requested_columns=columns, idempotency_key="synthetic-start-248")
+    recovery = _failure_diagnostics(raised.value)["creation_recovery"]
+    assert recovery["candidates"] == [{"job_id": "b" * 32, "resumable": True, "created_at": "2026-10-04 19:01:28"}]
 
 
 def test_invalid_parameter_message_is_not_an_unclassified_retryable_failure():
@@ -69,3 +87,8 @@ def test_invalid_parameter_message_is_not_an_unclassified_retryable_failure():
     assert result["diagnostics"]["semantic_code"] == "1004"
     assert result["creation_recovery"]["association"] == "not_found"
     assert result["creation_recovery"]["readback_complete"] is True
+
+
+def test_reviewed_message_keeps_duplicate_safety_and_ignores_unhashable_messages():
+    assert "inspect gravity export list" in reviewed_semantic_rejection("参数错误")["next_action"]
+    assert reviewed_semantic_rejection(["参数错误"]) == {} == reviewed_semantic_rejection({"msg": "参数错误"})

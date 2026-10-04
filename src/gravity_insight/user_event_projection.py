@@ -76,6 +76,7 @@ def user_event_response_labels(
         "labels": labels,
         "event_labels": event_labels,
         "known_labels": frozenset(known),
+        "shared_labels": frozenset(label for label, group in owners.items() if len(group) > 1),
         "event_fields": frozenset(selected & (names | known)),
     }
 
@@ -90,9 +91,12 @@ def _label_owners(rows: Any) -> dict[str, set[str]]:
 
 
 def _selected_labels(owners: Mapping[str, set[str]], selected: set[str]) -> dict[str, str]:
-    return {next(iter(names)): label for label, names in owners.items()
-            if len(names) == 1 and next(iter(names)) in selected
-            and label not in selected - names}
+    candidates: dict[str, set[str]] = {}
+    for label, names in owners.items():
+        if len(names) == 1 and label not in selected - names:
+            candidates.setdefault(next(iter(names)), set()).add(label)
+    # A name with several unique labels has no single timeline key; leave it unmapped.
+    return {name: next(iter(labels)) for name, labels in candidates.items() if name in selected and len(labels) == 1}
 
 
 def project_analysis_user_event(
@@ -273,33 +277,34 @@ class _SelectedEventFields:
     labels: Mapping[str, str]
     event_labels: Mapping[str, Mapping[str, str]]
     known_labels: frozenset[str]
+    shared_labels: frozenset[str]
     event_fields: frozenset[str]
 
     @classmethod
     def from_validation(cls, value: Any) -> "_SelectedEventFields":
         if not isinstance(value, Mapping):
-            return cls({}, {}, frozenset(), frozenset())
+            return cls({}, {}, frozenset(), frozenset(), frozenset())
         labels, scoped = value.get("labels"), value.get("event_labels")
         return cls(
             dict(labels) if isinstance(labels, Mapping) else {},
             {str(k): dict(v) for k, v in scoped.items() if isinstance(v, Mapping)}
             if isinstance(scoped, Mapping) else {},
             frozenset(value.get("known_labels", ())),
+            frozenset(value.get("shared_labels", ())),
             frozenset(value.get("event_fields", ())),
         )
 
     def labels_for(self, event_name: Any) -> Mapping[str, str]:
-        if not self.event_labels:
-            return self.labels
-        return self.event_labels.get(event_name, {}) if isinstance(event_name, str) else {}
+        # App-wide unique labels hold on every row; listed events add their bindings.
+        scoped = self.event_labels.get(event_name, {}) if isinstance(event_name, str) else {}
+        return {**self.labels, **scoped}
 
     def coverage(self, timeline: Any, warnings: list[str]) -> dict[str, Any]:
         events = [
             event for group in timeline if isinstance(group, Mapping)
             for event in group.get("list", ()) if isinstance(event, Mapping)
         ]
-        mapped = set(self.labels).union(*self.event_labels.values())
-        unmapped = sorted(self.event_fields - mapped - self.known_labels)
+        unmapped = self._unmapped()
         counts = {
             name: sum(name not in event for event in events if self._applies(name, event))
             for name in sorted(self.event_fields)
@@ -307,26 +312,39 @@ class _SelectedEventFields:
         missing = [name for name, count in counts.items() if count]
         if unmapped:
             warnings.append(
-                "selected event properties have no unique display label; list their events in "
-                "event_list for event-scoped mapping and see field_coverage"
+                "selected event properties have no unique display label; select property names "
+                "rather than shared labels, list their events in event_list for event-scoped "
+                "mapping, and see field_coverage"
             )
         elif missing:
             warnings.append("selected event properties are absent from some timeline rows; see field_coverage")
-        status = "not_observed" if not events else "partial" if missing else "complete"
         return {
             "scope": "returned_timeline_rows",
             "row_count": len(events),
-            "status": status if self.event_fields else "not_requested",
+            "status": _coverage_status(bool(self.event_fields), bool(events), bool(missing or unmapped)),
             "missing_fields": missing,
             "missing_counts": counts,
             "unmapped_fields": unmapped,
         }
 
+    def _unmapped(self) -> list[str]:
+        mapped = set(self.labels).union(*self.event_labels.values())
+        # A selected label shared by several properties mixes their values; never certify it.
+        return sorted((self.event_fields - mapped - self.known_labels) | (self.event_fields & self.shared_labels))
+
     def _applies(self, name: str, event: Mapping[str, Any]) -> bool:
-        # With event-scoped labels a field counts only on rows of an event binding it.
+        # With event-scoped labels a field counts only on rows whose event maps it.
         if not self.event_labels or name in self.known_labels:
             return True
-        return name in self.event_labels.get(event.get("事件英文名"), {})
+        return name in self.labels_for(event.get("事件英文名"))
+
+
+def _coverage_status(requested: bool, observed: bool, gaps: bool) -> str:
+    if not requested:
+        return "not_requested"
+    if not observed:
+        return "not_observed"
+    return "partial" if gaps else "complete"
 
 
 def _project_profile(
