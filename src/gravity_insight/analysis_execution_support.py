@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from ._field_policy_shared import ANALYSIS_EVENT_TYPES
 from .actionable_error_values import actual_value
 from .errors import InputValidationError
 
@@ -130,6 +131,16 @@ def reject_unsupported_property_groups(
         )
 
 
+def is_analysis_time_group(group: Any) -> bool:
+    """The create_time group that carries the time grain, as the field policy reads it."""
+
+    return (
+        isinstance(group, Mapping)
+        and group.get("type") in ANALYSIS_EVENT_TYPES
+        and group.get("field") == "create_time"
+    )
+
+
 def reject_unsupported_funnel_groups(groups: Any) -> None:
     """Funnel upstream keys groups by the first non-time dimension only (#94)."""
 
@@ -137,7 +148,7 @@ def reject_unsupported_funnel_groups(groups: Any) -> None:
         return
     dimensions = [
         (index, group) for index, group in enumerate(groups)
-        if isinstance(group, Mapping) and group.get("type") != "default_event"
+        if isinstance(group, Mapping) and not is_analysis_time_group(group)
     ]
     if len(dimensions) < 2:
         return
@@ -166,6 +177,7 @@ __all__ = [
     "SEGMENT_EVENT_RULE_GAP_NEXT_ACTION",
     "SEGMENT_EVENT_RULE_GAP_REASON",
     "SEGMENT_FIRST_EXPOSURE_GAP_NEXT_ACTION",
+    "is_analysis_time_group",
     "reject_unsupported_funnel_groups",
     "reject_unsupported_property_groups",
     "reject_unsupported_segment_event",

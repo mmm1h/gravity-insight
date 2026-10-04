@@ -56,9 +56,16 @@ def attach_analysis_interpretation(
         return result
     selected = dict(result)
     selected["interpretation"] = analysis_interpretation(kind, spec)
-    if str(kind).casefold() == "retention" and selected.get("status") == "empty":
+    if str(kind).casefold() == "retention" and "empty" in _statuses(selected):
         selected["warnings"] = [*selected.get("warnings", ()), RETENTION_EMPTY_WARNING]
     return selected
+
+
+def _statuses(result: Mapping[str, Any]) -> list[Any]:
+    # Period compare keeps each window's own status beside the combined one.
+    windows = result.get("windows")
+    nested = windows.values() if isinstance(windows, Mapping) else ()
+    return [result.get("status"), *(item.get("status") for item in nested if isinstance(item, Mapping))]
 
 
 def _metrics(kind: str, spec: Mapping[str, Any]) -> list[dict[str, str]]:

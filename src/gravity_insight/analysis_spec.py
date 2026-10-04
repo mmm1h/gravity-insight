@@ -14,7 +14,7 @@ from typing import Any
 from ._field_policy_analysis import validate_analysis_shape
 from .actionable_error_values import actual_value, allowed_values
 from .analysis_spec_preview import prepare_query_spec_preview
-from .analysis_execution_support import reject_unsupported_property_groups
+from .analysis_execution_support import is_analysis_time_group, reject_unsupported_property_groups
 from .analysis_spec_schema import (
     ANALYSIS_SPEC_KINDS,
     ANALYSIS_TIME_GROUPS_BY_KIND,
@@ -272,9 +272,7 @@ def _compile_dated_query(
     elif kind == "retention":
         inputs.update(retention_controls(spec))
         if spec.get("time_grain") is None and not any(
-            isinstance(item, Mapping)
-            and item.get("field") == "create_time"
-            for item in inputs.get("group_by_list", ())
+            is_analysis_time_group(item) for item in inputs.get("group_by_list", ())
         ):
             inputs["group_by_list"] = [
                 {

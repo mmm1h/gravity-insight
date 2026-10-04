@@ -17,7 +17,7 @@ Target release: `0.3.23`
 
 ### Breaking changes
 
-- **Hard break:** A Funnel Analysis request with more than one non-time grouping dimension is rejected before dispatch with `INPUT_INVALID`; `unsupported_items` names the dimensions that would have been dropped. Upstream keys Funnel groups by the first non-time dimension only, so the extra dimensions previously vanished from a `success` result with no warning. Keep one dimension per Funnel request (#94).
+- **Hard break:** A Funnel Analysis request with more than one non-time grouping dimension is rejected before dispatch with `INPUT_INVALID`; `unsupported_items` names the dimensions that would have been dropped. Upstream keys Funnel groups by the first non-time dimension only, so the extra dimensions previously vanished from a `success` result with no warning. Keep one dimension per Funnel request; a saved or dashboard Funnel chart that stores several dimensions is now reported as unsupported on re-execution (#94).
 
 Migration guide: [0.3.23](docs/migration/0.3.23.md)
 
