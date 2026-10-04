@@ -22,6 +22,38 @@ _CREDENTIAL_ORIGINS = {
 }
 
 
+# One remedy per origin, so a valid `auth status` is never the only advice (#230).
+_ORIGIN_NEXT_ACTIONS = {
+    "runtime_retired": (
+        "Another login or refresh in this process replaced the credentials this client "
+        "was bound to; rerun the command so a new process binds them, or call "
+        "gravity_insight.connect() again in an SDK session."
+    ),
+    "credential_load": (
+        "The selected credential file or its session cache could not be read, or holds an "
+        "unparseable token expiry; check that the file GRAVITY_ENV_FILE names (or the "
+        "workspace default) is a readable regular file no other process holds open, delete "
+        "an invalid session cache, then retry."
+    ),
+    "token_refresh": (
+        "A login was needed before the request but could not run or its session could not "
+        "be saved; `gravity auth status` names the selected credential file: give it "
+        "GRAVITY_USERNAME and GRAVITY_PASSWORD, keep it and its session cache writable, then retry."
+    ),
+    "auth_rejection_refresh": (
+        "Gravity rejected the current token and a fresh login could not run or could not be "
+        "saved; `gravity auth status` names the selected credential file: give it "
+        "GRAVITY_USERNAME and GRAVITY_PASSWORD, keep it and its session cache writable, then retry."
+    ),
+}
+
+
+def credential_next_action(origin: str, default: str) -> str:
+    """Return the remedy for one credential origin, or *default* when unclassified."""
+
+    return _ORIGIN_NEXT_ACTIONS.get(origin, default)
+
+
 def credential_origin(error: BaseException) -> str:
     """Return the closed-vocabulary step of one credential failure, never its text."""
 
@@ -85,4 +117,4 @@ def refresh_authentication(provider: Any, credential: Credential, response: Any,
     return True
 
 
-__all__ = ["credential_origin", "current_principal_id", "refresh_if_rejected"]
+__all__ = ["credential_next_action", "credential_origin", "current_principal_id", "refresh_if_rejected"]

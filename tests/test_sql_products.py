@@ -468,6 +468,7 @@ class GravityProductTests(unittest.TestCase):
         )
         self.assertEqual(2, credential_payload["exit_code"])
         self.assertIn("gravity auth status", credential_payload["error"]["next_action"])
+        self.assertEqual("unclassified", credential_payload["error"]["upstream_error"]["credential_origin"])
         self.assertNotIn("abc123", credential_error.getvalue())
 
         injection_error = io.StringIO()
@@ -1191,6 +1192,15 @@ class GravityProductTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertEqual("local_account_file", _credential_source(Path(tempdir)))
+
+        # An explicit file is what the runtime authenticates with; it ignores ambient tokens (#230).
+        with tempfile.TemporaryDirectory() as tempdir:
+            selected = Path(tempdir, "elsewhere", "account.env")
+            selected.parent.mkdir()
+            selected.write_text("GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password\n", encoding="utf-8")
+            explicit = {"GRAVITY_ENV_FILE": str(selected), "GRAVITY_AUTH_TOKEN": "ambient"}
+            with mock.patch.dict("os.environ", explicit, clear=True):
+                self.assertEqual("local_account_file", _credential_source(Path(tempdir)))
 
     def test_credential_subprocess_falls_back_when_state_root_is_absent(self):
         completed = __import__("subprocess").CompletedProcess(["tool"], 0, b"", b"")

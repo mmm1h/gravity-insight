@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Sequence as SequenceABC
 from dataclasses import dataclass
@@ -18,7 +19,8 @@ try:
         TransportError,
     )
     from gravity_insight.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
-    from gravity_insight.shared_runtime import get_shared_runtime
+    from gravity_insight.runtime_principal import credential_origin
+    from gravity_insight.shared_runtime import get_shared_runtime, shared_account_scope
     from gravity_insight.sql.failures import (
         annotate_sql_failure,
         classify_sql_failure,
@@ -34,7 +36,8 @@ except ModuleNotFoundError:  # pragma: no cover - source-tree execution without 
         TransportError,
     )
     from gravity_insight.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
-    from gravity_insight.shared_runtime import get_shared_runtime
+    from gravity_insight.runtime_principal import credential_origin
+    from gravity_insight.shared_runtime import get_shared_runtime, shared_account_scope
     from gravity_insight.sql.failures import (
         annotate_sql_failure,
         classify_sql_failure,
@@ -47,6 +50,9 @@ DEFAULT_ORIGIN = "https://bi.gravity-engine.com"
 _SQL_PATH = "/custom_sql/api/sql/execute"
 _SQL_TIMEOUT_SECONDS = 300.0
 _AUTH_CODES = frozenset({2001, 10000, 10001})
+# Credential failures these origins name are raised before dispatch (#230).
+_REBINDABLE_ORIGINS = frozenset({"runtime_retired", "credential_load"})
+_REREAD_DELAY_SECONDS = 0.1
 
 # Compatibility name retained for callers that already classify authentication
 # failures.  CredentialProvider now owns token loading and refresh.
@@ -99,14 +105,7 @@ class GravityClient:
     def execute_sql(self, sql: str) -> list[dict[str, Any]]:
         normalized = _validate_sql(sql)
         try:
-            response = self._runtime.request(
-                SQL_PROFILE,
-                "POST",
-                _SQL_PATH,
-                json_body={"sql": normalized, "tabId": "1"},
-                semantic_auth_codes=_AUTH_CODES,
-                timeout=_SQL_TIMEOUT_SECONDS,
-            )
+            response = self._dispatch(normalized)
         except GravityInsightError:
             raise
         except Exception:  # Keep dependency/session details out of errors and tracebacks.
@@ -165,6 +164,16 @@ class GravityClient:
                 ),
             )
         return rows
+
+    def _dispatch(self, normalized: str, runtime: Any | None = None) -> Any:
+        return (runtime or self._runtime).request(
+            SQL_PROFILE,
+            "POST",
+            _SQL_PATH,
+            json_body={"sql": normalized, "tabId": "1"},
+            semantic_auth_codes=_AUTH_CODES,
+            timeout=_SQL_TIMEOUT_SECONDS,
+        )
 
     def execute_batch(
         self,
@@ -226,6 +235,34 @@ class GravityClient:
             return [result.to_dict() for result in pool.map(run, pending)]
 
 
+class _ProcessSqlClient(GravityClient):
+    """The CLI facade, held by one command across all of its products.
+
+    A request that fails locally before dispatch (a retired credential
+    generation or a briefly unreadable credential file) rebinds to the current
+    shared runtime of the same account and retries once; nothing reached the
+    SQL engine (#230).
+    """
+
+    def __init__(self, runtime: Any) -> None:
+        super().__init__(runtime)
+        self._account = shared_account_scope()
+
+    def _dispatch(self, normalized: str, runtime: Any | None = None) -> Any:
+        try:
+            return super()._dispatch(normalized, runtime)
+        except CredentialError as exc:
+            origin = credential_origin(exc)
+            if runtime is not None or origin not in _REBINDABLE_ORIGINS:
+                raise
+            if origin == "credential_load":
+                time.sleep(_REREAD_DELAY_SECONDS)
+            if shared_account_scope() != self._account:
+                raise  # The selected account changed; never mix two in one command.
+            current = self._runtime = get_shared_runtime(env_path=None)
+            return self._dispatch(normalized, current)
+
+
 _CLIENT: GravityClient | None = None
 _CLIENT_LOCK = threading.Lock()
 
@@ -241,7 +278,7 @@ def build_sql_client() -> GravityClient:
     runtime = get_shared_runtime(env_path=None)
     with _CLIENT_LOCK:
         if _CLIENT is None or _CLIENT._runtime is not runtime:
-            _CLIENT = GravityClient(runtime)
+            _CLIENT = _ProcessSqlClient(runtime)
         return _CLIENT
 
 

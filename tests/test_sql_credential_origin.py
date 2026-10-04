@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+from gravity_insight import runtime_scope
 from gravity_insight.credential_storage import EXPIRY_KEY, session_path
 from gravity_insight.credentials import CredentialProvider
 from gravity_insight.errors import CredentialError
@@ -36,6 +37,26 @@ class _Response:
         return self._payload
 
 
+class _TabularSession:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def request(self, _method, _url, **_kwargs):
+        self.calls += 1
+        return _Response({"status": "success", "result": {"columns": [{"name": "n"}], "rows": [[1]]}})
+
+
+class _UnreadableOnce:
+    def __init__(self, original) -> None:
+        self.original, self.armed = original, False
+
+    def __call__(self, path):
+        if self.armed:
+            self.armed = False
+            raise CredentialError("could not read the Gravity credential file")
+        return self.original(path)
+
+
 class _AuthRejectingSession:
     def __init__(self) -> None:
         self.calls = 0
@@ -54,24 +75,76 @@ class SqlCredentialOriginTests(unittest.TestCase):
         reset_shared_runtimes()
         sql_client._CLIENT = None
 
-    def test_rebuilt_sql_client_follows_a_retired_shared_runtime(self):
+    def _account(self, raw: str) -> Path:
+        env_path = Path(raw) / "account.env"
+        env_path.write_text("GRAVITY_USERNAME=fixture\nGRAVITY_PASSWORD=pw\n", encoding="utf-8")
+        session_path(env_path).write_text("GRAVITY_AUTH_TOKEN=token-1\nGRAVITY_SESSION_USERNAME=fixture\n", encoding="utf-8")
+        return env_path
+
+    def _new_generation(self, env_path: Path) -> None:
+        # A login elsewhere in the process persists a token; the next lookup retires the old runtime.
+        session_path(env_path).write_text("GRAVITY_AUTH_TOKEN=token-2\nGRAVITY_SESSION_USERNAME=fixture\n", encoding="utf-8")
+        get_shared_runtime()
+
+    def test_held_cli_facade_rebinds_once_when_a_request_fails_before_dispatch(self):
+        # verify and query hold one facade across products; a failure that never
+        # reached the engine must not fail every later product (#230).
+        reader = _UnreadableOnce(runtime_scope.read_env_file)
+        disturbances = {"runtime_retired": self._new_generation, "credential_load": lambda _path: setattr(reader, "armed", True)}
+        for origin, disturb in disturbances.items():
+            with self.subTest(origin=origin), tempfile.TemporaryDirectory() as raw:
+                reset_shared_runtimes()
+                sql_client._CLIENT = None
+                session, env_path = _TabularSession(), self._account(raw)
+                with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(env_path)}), mock.patch(
+                    "gravity_insight.http_runtime._build_session", return_value=session
+                ), mock.patch.object(runtime_scope, "read_env_file", reader), mock.patch.object(sql_client.time, "sleep"):
+                    facade = sql_client.build_sql_client()
+                    facade.execute_sql("SELECT 1")
+                    disturb(env_path)
+                    self.assertEqual([{"n": 1}], facade.execute_sql("SELECT 2"))
+                self.assertEqual(2, session.calls)
+
+    def test_held_cli_facade_never_rebinds_to_another_account(self):
+        with tempfile.TemporaryDirectory() as raw:
+            session, env_path = _TabularSession(), self._account(raw)
+            with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(env_path)}), mock.patch(
+                "gravity_insight.http_runtime._build_session", return_value=session
+            ):
+                facade = sql_client.build_sql_client()
+                facade.execute_sql("SELECT 1")
+                env_path.write_text("GRAVITY_USERNAME=other\nGRAVITY_PASSWORD=pw\n", encoding="utf-8")
+                get_shared_runtime()
+                with self.assertRaises(CredentialError) as raised:
+                    facade.execute_sql("SELECT 2")
+        self.assertEqual(("SQL_PRODUCT_CREDENTIALS_UNAVAILABLE", "runtime_retired"), _code_and_origin(raised.exception))
+        self.assertEqual(1, session.calls)
+
+    def test_held_cli_facade_never_retries_a_request_the_service_rejected(self):
         with tempfile.TemporaryDirectory() as raw:
             env_path = Path(raw) / "account.env"
-            env_path.write_text("GRAVITY_USERNAME=fixture\nGRAVITY_PASSWORD=pw\n", encoding="utf-8")
-            session = session_path(env_path)
-            session.write_text("GRAVITY_AUTH_TOKEN=token-1\nGRAVITY_SESSION_USERNAME=fixture\n", encoding="utf-8")
-            with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(env_path)}):
-                first = sql_client.build_sql_client()
-                self.assertIs(first, sql_client.build_sql_client())
-                # A login elsewhere persists a new token; the next lookup retires that generation.
-                session.write_text("GRAVITY_AUTH_TOKEN=token-2\nGRAVITY_SESSION_USERNAME=fixture\n", encoding="utf-8")
-                current = get_shared_runtime()
+            env_path.write_text("", encoding="utf-8")
+            session_path(env_path).write_text("GRAVITY_AUTH_TOKEN=token-1\n", encoding="utf-8")
+            session = _AuthRejectingSession()
+            with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(env_path)}), mock.patch(
+                "gravity_insight.http_runtime._build_session", return_value=session
+            ):
                 with self.assertRaises(CredentialError) as raised:
-                    first.execute_sql("SELECT 1")
-                rebuilt = sql_client.build_sql_client()
+                    sql_client.build_sql_client().execute_sql("SELECT 1")
+        self.assertEqual(("SQL_PRODUCT_CREDENTIALS_UNAVAILABLE", "auth_rejection_refresh"), _code_and_origin(raised.exception))
+        self.assertEqual(1, session.calls)
+
+    def test_sdk_pinned_client_still_fails_closed_on_a_retired_runtime(self):
+        with tempfile.TemporaryDirectory() as raw:
+            env_path = self._account(raw)
+            with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(env_path)}), mock.patch(
+                "gravity_insight.http_runtime._build_session", return_value=_TabularSession()
+            ):
+                pinned = GravityClient(get_shared_runtime())
+                self._new_generation(env_path)
+                with self.assertRaises(CredentialError) as raised:
+                    pinned.execute_sql("SELECT 1")
         self.assertEqual(("SQL_PRODUCT_CREDENTIALS_UNAVAILABLE", "runtime_retired"), _code_and_origin(raised.exception))
-        self.assertIsNot(first, rebuilt)
-        self.assertIs(current, rebuilt._runtime)
 
     def test_refresh_failure_states_whether_a_response_was_rejected_first(self):
         expired = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(timespec="seconds")
@@ -96,6 +169,8 @@ class SqlCredentialOriginTests(unittest.TestCase):
                     GravityClient(runtime).execute_sql("SELECT 1")
                 self.assertEqual(("SQL_PRODUCT_CREDENTIALS_UNAVAILABLE", origin), _code_and_origin(raised.exception))
                 self.assertEqual(dispatched, session.calls)
+                # The remedy names what fixes the failed step, not a status check that passes.
+                self.assertIn("GRAVITY_USERNAME and GRAVITY_PASSWORD", classify_sql_failure(raised.exception).next_action)
 
 
 if __name__ == "__main__":

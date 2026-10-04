@@ -308,6 +308,21 @@ class SqlVerificationResumeTests(unittest.TestCase):
         with self.assertRaisesRegex(EvidenceFormatError, "pending suffix"):
             write_verification_checkpoint(skipped, DAY, workspace=workspace)
 
+    def test_publish_outside_git_fails_before_any_query(self):
+        # Evidence could never be published, so no product may spend a query (#230).
+        args = gravity_cli.build_parser(("p1", "p2")).parse_args(["verify", "--date", DAY.isoformat(), "--publish"])
+        client, output, error = _SequenceClient(self._successes(2)), io.StringIO(), io.StringIO()
+        with mock.patch("gravity_insight.sql.__main__.latest_safe_date", return_value=DAY), mock.patch(
+            "gravity_insight.sql.__main__.load_workspace", return_value=self._workspace(2)
+        ), mock.patch("gravity_insight.sql.__main__._client", return_value=client), mock.patch(
+            "gravity_insight.sql.provenance.provenance_root", return_value=None
+        ), redirect_stdout(output), redirect_stderr(error):
+            exit_code = gravity_cli._run_verify_command(args)
+
+        failure = json.loads(error.getvalue())["failure"]
+        self.assertEqual((2, [], "SQL_VERIFY_INPUT_INVALID"), (exit_code, client.calls, failure["code"]))
+        self.assertIn("Git checkout", failure["next_action"])
+
     def test_verify_cli_checkpoints_partial_and_never_calls_publish(self):
         workspace = self._workspace(2)
         args = gravity_cli.build_parser(("p1", "p2")).parse_args(

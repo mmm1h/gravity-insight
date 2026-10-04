@@ -5,16 +5,24 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+# runtime_scope.ENV_FILE_VAR; this module stays a leaf of the import graph.
+ENV_FILE_VAR = "GRAVITY_ENV_FILE"
+
 
 def credential_source(root: Path) -> str:
-    if os.environ.get("GRAVITY_AUTH_TOKEN") or os.environ.get("GRAVITY_AUTHORIZATION"):
-        return "environment"
-    if os.environ.get("GRAVITY_USERNAME") and os.environ.get("GRAVITY_PASSWORD"):
-        return "environment"
+    default = root / ".env.gravity.local"
+    override = os.environ.get(ENV_FILE_VAR, "").strip()
+    selected = Path(override).expanduser() if override else default
+    # An explicit file isolates the runtime from ambient credentials (#230).
+    if not override or _same_path(selected, default):
+        if os.environ.get("GRAVITY_AUTH_TOKEN") or os.environ.get("GRAVITY_AUTHORIZATION"):
+            return "environment"
+        if os.environ.get("GRAVITY_USERNAME") and os.environ.get("GRAVITY_PASSWORD"):
+            return "environment"
     try:
         keys = {
             line.split("=", 1)[0].strip()
-            for line in (root / ".env.gravity.local").read_text(encoding="utf-8").splitlines()
+            for line in selected.read_text(encoding="utf-8-sig").splitlines()
             if "=" in line and not line.lstrip().startswith("#")
         }
     except (OSError, UnicodeError):
@@ -24,6 +32,13 @@ def credential_source(root: Path) -> str:
         if {"GRAVITY_USERNAME", "GRAVITY_PASSWORD"}.issubset(keys)
         else "missing"
     )
+
+
+def _same_path(left: Path, right: Path) -> bool:
+    try:
+        return left.resolve() == right.resolve()
+    except OSError:
+        return left == right
 
 
 __all__ = ["credential_source"]
