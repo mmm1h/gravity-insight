@@ -29,6 +29,10 @@ from gravity_insight.sql.failures import (
 from gravity_insight.workspace import Workspace, load_workspace
 
 
+class PublishProvenanceError(EvidenceFormatError):
+    """Evidence can be published only from a committed Git workspace."""
+
+
 ROOT = PROJECT_ROOT
 VERIFICATION_RUN_VERSION = "gravity.sql-verification-run.v1"
 VERIFICATION_RESUME_POLICY = "gravity.sql-verification-strict-prefix.v1"
@@ -79,7 +83,7 @@ def git_state(workspace: Workspace | None = None) -> tuple[str, bool]:
 
     root = provenance_root(workspace)
     if root is None:
-        raise EvidenceFormatError("cannot publish evidence without a Git-backed workspace")
+        raise PublishProvenanceError("cannot publish evidence without a Git-backed workspace")
     head = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=root,
@@ -90,7 +94,7 @@ def git_state(workspace: Workspace | None = None) -> tuple[str, bool]:
         check=False,
     )
     if head.returncode or re.fullmatch(r"[0-9a-f]{40}", head.stdout.strip()) is None:
-        raise EvidenceFormatError("cannot publish evidence without a valid repository Git SHA")
+        raise PublishProvenanceError("cannot publish evidence without a valid repository Git SHA")
     status = subprocess.run(
         ["git", "status", "--porcelain=v1", "--untracked-files=all"],
         cwd=root,
@@ -98,7 +102,7 @@ def git_state(workspace: Workspace | None = None) -> tuple[str, bool]:
         check=False,
     )
     if status.returncode:
-        raise EvidenceFormatError("cannot determine repository state for evidence provenance")
+        raise PublishProvenanceError("cannot determine repository state for evidence provenance")
     return head.stdout.strip(), bool(status.stdout.strip())
 
 
@@ -306,6 +310,15 @@ def run_verification_boundary_error_cli(
             "SQL verification could not read or write local state", False, "no",
             "Inspect the workspace state path and permissions, then rerun verification.",
         )
+    elif isinstance(error, PublishProvenanceError):
+        # Checked before any query; distinct from credentials and other input (#230).
+        failure = SqlFailure(
+            "local_validation", "bind", "local_validation",
+            "SQL_VERIFY_INPUT_INVALID",
+            "--publish needs the workspace inside a Git checkout with a commit; no product was queried", False, "no",
+            "Commit gravity.toml inside a Git checkout or select a workspace that is one, then rerun with --publish; "
+            "verification without --publish does not need Git.",
+        )
     elif category == "input":
         failure = SqlFailure(
             "local_validation", "bind", "local_validation",
@@ -462,6 +475,8 @@ def run_verification_cli(
     serializer: Any,
 ) -> int:
     checkpoint = read_verification_checkpoint(owner, day, workspace) if resume else None
+    if publish:
+        git_state(workspace)  # Fail before any query when Evidence could never be published.
     evidence = owner.execute_sql_verification(
         owner, client, day, workspace=workspace, resume=checkpoint
     )
@@ -503,6 +518,7 @@ run_verification_cli.boundary_error = run_verification_boundary_error_cli
 
 
 __all__ = [
+    "PublishProvenanceError",
     "ROOT",
     "VERIFICATION_CLI_RESULT_VERSION",
     "VERIFICATION_RESUME_POLICY",

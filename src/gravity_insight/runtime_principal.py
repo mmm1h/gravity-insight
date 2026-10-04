@@ -22,6 +22,36 @@ _CREDENTIAL_ORIGINS = {
 }
 
 
+# One remedy per origin, so a valid `auth status` is never the only advice (#230).
+_ORIGIN_NEXT_ACTIONS = {
+    "runtime_retired": (
+        "Another login or refresh in this process replaced the credentials this client "
+        "was bound to; rerun the command so a new process binds them, or call "
+        "gravity_insight.connect() again in an SDK session."
+    ),
+    "credential_load": (
+        "The selected credential file or its session cache could not be read; check that "
+        "the file GRAVITY_ENV_FILE names (or the workspace default) is a readable regular "
+        "file that no other process holds open, then retry."
+    ),
+    "token_refresh": (
+        "A login was needed before the request and could not complete; run "
+        "`gravity auth refresh` with the same GRAVITY_ENV_FILE, then retry."
+    ),
+    "auth_rejection_refresh": (
+        "Gravity rejected the current token and a fresh login also failed; run "
+        "`gravity auth refresh` with the same GRAVITY_ENV_FILE, and report "
+        "credential_origin if the request still fails after it succeeds."
+    ),
+}
+
+
+def credential_next_action(origin: str, default: str) -> str:
+    """Return the remedy for one credential origin, or *default* when unclassified."""
+
+    return _ORIGIN_NEXT_ACTIONS.get(origin, default)
+
+
 def credential_origin(error: BaseException) -> str:
     """Return the closed-vocabulary step of one credential failure, never its text."""
 
@@ -85,4 +115,4 @@ def refresh_authentication(provider: Any, credential: Credential, response: Any,
     return True
 
 
-__all__ = ["credential_origin", "current_principal_id", "refresh_if_rejected"]
+__all__ = ["credential_next_action", "credential_origin", "current_principal_id", "refresh_if_rejected"]

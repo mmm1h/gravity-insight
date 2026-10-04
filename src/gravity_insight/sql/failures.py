@@ -14,7 +14,7 @@ from gravity_insight.errors import (
     SqlValidationError,
     TransportError,
 )
-from gravity_insight.runtime_principal import credential_origin
+from gravity_insight.runtime_principal import credential_next_action, credential_origin
 from gravity_insight.semantic_status import protocol_status_evidence
 
 
@@ -345,7 +345,7 @@ def classify_sql_failure(error: BaseException, *, request_count: int = 0) -> Sql
             "Inspect the registered product placeholders and local contract; do not retry unchanged.",
         )
     if selected.kind == "credentials":
-        selected = replace(selected, credential_origin=credential_origin(error))
+        selected = replace(selected, credential_origin=(origin := credential_origin(error)), next_action=credential_next_action(origin, selected.next_action))
     return _with_context(selected, context)
 
 

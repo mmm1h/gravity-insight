@@ -19,6 +19,13 @@ Target release: `0.3.24`
 
 - None.
 
+### Fixed
+
+- `gravity sql verify` and `gravity sql query` hold one SQL client across all of their products. Previously, one request that failed locally before dispatch made every later product fail with `SQL_PRODUCT_CREDENTIALS_UNAVAILABLE`. Two such failures are now recovered: a retired credential generation and a briefly unreadable credential file (`credential_origin` `runtime_retired` or `credential_load`). In both cases the client rebinds to the current credential runtime and retries the request once. Nothing had reached the SQL engine, so no read is duplicated. SDK sessions keep their pinned runtime (#230).
+- `SQL_PRODUCT_CREDENTIALS_UNAVAILABLE` now carries a `next_action` specific to its `credential_origin`, instead of always pointing at `gravity auth status` (#230).
+- `gravity sql verify --publish` now checks its Git provenance precondition before querying any product, and names the precondition in the error. Previously it ran every product, then failed as a generic `SQL_VERIFY_INPUT_INVALID` that reported `completed_product_count: 0` (#230).
+- `gravity sql evidence-preflight` now reports the credential source from an explicitly selected `GRAVITY_ENV_FILE`. Like the runtime, it ignores ambient credential variables for that file. It previously reported such a selection as `missing`, or as `environment` when an unrelated ambient token was set (#230).
+
 ## [0.3.23] - 2026-10-05
 
 ### Breaking changes
