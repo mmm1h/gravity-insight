@@ -45,6 +45,14 @@ Migration guide: [0.3.22](docs/migration/0.3.22.md)
 
 - Analysis Plan results, including every `analysis query batch` component, now carry the additive `result_audit` with the `http_receipts` references of the execution that produced that component, exactly as the scalar Analysis envelope does. References are only `receipt_id`/`storage_status` and are attributed per component under concurrent workers and adaptive retries; a retried component references its final execution. They resolve with `gravity receipts` and are kept when `output_fields` is declared (#245).
 
+### Added
+
+- SQL failures classified `SQL_PRODUCT_CREDENTIALS_UNAVAILABLE` add `upstream_error.credential_origin`, a closed vocabulary naming the credential step that failed: `credential_load` (reading the selected credential or session file), `token_refresh` (a login needed before dispatch), `auth_rejection_refresh` (a refresh after the SQL service rejected the token), `runtime_retired` (a stale credential generation), or `unclassified`. It never carries paths, account names, or credential values, and `code`/`next_action` are unchanged (#230).
+
+### Fixed
+
+- `build_sql_client()` no longer pins its process to the first shared runtime. A persisted login or refresh changes the credential generation, and the next runtime lookup retires the previous runtime; the SQL facade now rebinds to the current runtime when it is built again, so a retried SQL call in the same process, including through a new `GravitySDK()`, recovers instead of failing with `SQL_PRODUCT_CREDENTIALS_UNAVAILABLE` again. Default and explicit `GRAVITY_ENV_FILE` credential selection is unchanged (#230).
+
 ## [0.3.21] - 2026-09-29
 
 ### Breaking changes
