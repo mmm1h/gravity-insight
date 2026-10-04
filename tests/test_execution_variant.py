@@ -59,7 +59,7 @@ _EVIDENCE_FIELDS = {
     "request_count": "request_count",
     "journey_regression": "journey_sha256",
 }
-_PRODUCT_DIGEST = "00d2c0b97042144c848db6dda76105453359af7430bb09e03ff57c6da4fa523b"
+_PRODUCT_DIGEST = "269169f0425ef0d13ab0f2f22c905c0c1c145f74685d4e1911470e5416ee3a6d"
 
 
 def _selection_service(status="stable", reasons=()):
