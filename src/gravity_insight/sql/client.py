@@ -20,7 +20,7 @@ try:
     )
     from gravity_insight.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
     from gravity_insight.runtime_principal import credential_origin
-    from gravity_insight.shared_runtime import get_shared_runtime
+    from gravity_insight.shared_runtime import get_shared_runtime, shared_account_scope
     from gravity_insight.sql.failures import (
         annotate_sql_failure,
         classify_sql_failure,
@@ -37,7 +37,7 @@ except ModuleNotFoundError:  # pragma: no cover - source-tree execution without 
     )
     from gravity_insight.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
     from gravity_insight.runtime_principal import credential_origin
-    from gravity_insight.shared_runtime import get_shared_runtime
+    from gravity_insight.shared_runtime import get_shared_runtime, shared_account_scope
     from gravity_insight.sql.failures import (
         annotate_sql_failure,
         classify_sql_failure,
@@ -165,8 +165,8 @@ class GravityClient:
             )
         return rows
 
-    def _dispatch(self, normalized: str) -> Any:
-        return self._runtime.request(
+    def _dispatch(self, normalized: str, runtime: Any | None = None) -> Any:
+        return (runtime or self._runtime).request(
             SQL_PROFILE,
             "POST",
             _SQL_PATH,
@@ -240,20 +240,27 @@ class _ProcessSqlClient(GravityClient):
 
     A request that fails locally before dispatch (a retired credential
     generation or a briefly unreadable credential file) rebinds to the current
-    shared runtime and retries once; nothing reached the SQL engine (#230).
+    shared runtime of the same account and retries once; nothing reached the
+    SQL engine (#230).
     """
 
-    def _dispatch(self, normalized: str) -> Any:
+    def __init__(self, runtime: Any) -> None:
+        super().__init__(runtime)
+        self._account = shared_account_scope()
+
+    def _dispatch(self, normalized: str, runtime: Any | None = None) -> Any:
         try:
-            return super()._dispatch(normalized)
+            return super()._dispatch(normalized, runtime)
         except CredentialError as exc:
             origin = credential_origin(exc)
-            if origin not in _REBINDABLE_ORIGINS:
+            if runtime is not None or origin not in _REBINDABLE_ORIGINS:
                 raise
             if origin == "credential_load":
                 time.sleep(_REREAD_DELAY_SECONDS)
-            self._runtime = get_shared_runtime(env_path=None)
-            return super()._dispatch(normalized)
+            if shared_account_scope() != self._account:
+                raise  # The selected account changed; never mix two in one command.
+            current = self._runtime = get_shared_runtime(env_path=None)
+            return self._dispatch(normalized, current)
 
 
 _CLIENT: GravityClient | None = None

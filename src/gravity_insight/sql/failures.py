@@ -195,14 +195,12 @@ def emit_command_error(
     return exit_code
 
 
-def query_boundary_failure_fields(
-    message: str, *, category: str, code: str, field: str | None = None
-) -> dict[str, Any]:
+def query_boundary_failure_fields(message: str, *, category: str, code: str, field: str | None = None,
+                                  credential_error: BaseException | None = None) -> dict[str, Any]:
     """Return the established direct-query boundary error shape."""
 
-    stage = "shape" if category == "contract" else (
-        "execute" if category == "runtime" else "bind"
-    )
+    stage = "shape" if category == "contract" else "execute" if category == "runtime" else "bind"
+    origin = {"credential_origin": credential_origin(credential_error)} if credential_error is not None else {}
     return {
         "category": category,
         "code": code,
@@ -213,13 +211,13 @@ def query_boundary_failure_fields(
         "reached_sql_engine": "unknown" if category == "runtime" else "no",
         "upstream_error": {
             "category": "unexpected_failure" if category == "runtime" else "not_reached",
-            "code": code,
+            "code": code, **origin,
         },
         "execution_evidence": execution_evidence(
             elapsed_seconds=0, request_count=0, request_count_bound=1
         ),
         "next_action": (
-            "Run `gravity auth status`; refresh or configure credentials, then retry."
+            credential_next_action(origin.get("credential_origin", ""), "Run `gravity auth status`; refresh or configure credentials, then retry.")
             if category == "authentication"
             else "Run `gravity sql products`, correct this request, and retry."
             if category == "input"
@@ -240,6 +238,7 @@ def emit_query_boundary_error(
     serializer: Any,
     source: Mapping[str, Any],
     stream: TextIO,
+    credential_error: BaseException | None = None,
 ) -> int:
     """Serialize the established query failure through the CLI-owned transport."""
 
@@ -250,7 +249,7 @@ def emit_query_boundary_error(
         "status": "error",
         "exit_code": exit_code,
         "error": query_boundary_failure_fields(
-            message, category=category, code=code, field=field
+            message, category=category, code=code, field=field, credential_error=credential_error
         ),
     }
     print(serializer(payload, ensure_ascii=False, sort_keys=True), file=stream)

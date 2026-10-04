@@ -116,6 +116,17 @@ def get_shared_runtime(
         return existing
 
 
+def shared_account_scope(*, env_path: Path | None = None, receipt_root: Path | None = None) -> str:
+    """Return the account scope get_shared_runtime binds now; a token refresh keeps it."""
+
+    selected, isolated = resolve_env_path(env_path)
+    return runtime_scope_key(
+        Path(selected).resolve(),
+        isolated=isolated,
+        workspace_root=Path(receipt_root or STATE_ROOT).resolve(),
+    ).storage_fingerprint
+
+
 def reset_shared_runtimes() -> None:
     with _SHARED_LOCK:
         for runtime in _SHARED_RUNTIMES.values():
@@ -123,4 +134,4 @@ def reset_shared_runtimes() -> None:
         _SHARED_RUNTIMES.clear()
 
 
-__all__ = ["get_shared_runtime", "reset_shared_runtimes"]
+__all__ = ["get_shared_runtime", "reset_shared_runtimes", "shared_account_scope"]

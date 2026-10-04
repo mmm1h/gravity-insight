@@ -264,10 +264,11 @@ def _emit_query_error(
     category: str,
     code: str,
     field: str | None = None,
+    credential_error: BaseException | None = None,
 ) -> int:
     exit_code = sql_error_exit_code(category)
     return emit_query_boundary_error(
-        message, category=category, code=code, field=field, exit_code=exit_code,
+        message, category=category, code=code, field=field, exit_code=exit_code, credential_error=credential_error,
         serializer=json_output.dumps, source=result_source(CALLER_DEFINED),
         stream=sys.stderr,
     )
@@ -460,11 +461,11 @@ def _run_query_command(
             code=exc.code,
             field=exc.field,
         )
-    except GravityAuthError:
+    except GravityAuthError as exc:
         return _emit_query_error(
             "Gravity SQL credentials are unavailable",
             category="authentication",
-            code="SQL_PRODUCT_CREDENTIALS_UNAVAILABLE",
+            code="SQL_PRODUCT_CREDENTIALS_UNAVAILABLE", credential_error=exc,
         )
     except OSError:
         return _emit_query_error(

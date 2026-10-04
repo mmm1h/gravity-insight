@@ -30,18 +30,20 @@ _ORIGIN_NEXT_ACTIONS = {
         "gravity_insight.connect() again in an SDK session."
     ),
     "credential_load": (
-        "The selected credential file or its session cache could not be read; check that "
-        "the file GRAVITY_ENV_FILE names (or the workspace default) is a readable regular "
-        "file that no other process holds open, then retry."
+        "The selected credential file or its session cache could not be read, or holds an "
+        "unparseable token expiry; check that the file GRAVITY_ENV_FILE names (or the "
+        "workspace default) is a readable regular file no other process holds open, delete "
+        "an invalid session cache, then retry."
     ),
     "token_refresh": (
-        "A login was needed before the request and could not complete; run "
-        "`gravity auth refresh` with the same GRAVITY_ENV_FILE, then retry."
+        "A login was needed before the request but could not run or its session could not "
+        "be saved; `gravity auth status` names the selected credential file: give it "
+        "GRAVITY_USERNAME and GRAVITY_PASSWORD, keep it and its session cache writable, then retry."
     ),
     "auth_rejection_refresh": (
-        "Gravity rejected the current token and a fresh login also failed; run "
-        "`gravity auth refresh` with the same GRAVITY_ENV_FILE, and report "
-        "credential_origin if the request still fails after it succeeds."
+        "Gravity rejected the current token and a fresh login could not run or could not be "
+        "saved; `gravity auth status` names the selected credential file: give it "
+        "GRAVITY_USERNAME and GRAVITY_PASSWORD, keep it and its session cache writable, then retry."
     ),
 }
 

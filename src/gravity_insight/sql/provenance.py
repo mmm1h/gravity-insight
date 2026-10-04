@@ -290,44 +290,42 @@ def verification_cli_failure_result(
     }
 
 
+_BOUNDARY_LOCAL_IO = SqlFailure(
+    "local_io", "bind", "local_io", "SQL_VERIFY_LOCAL_IO",
+    "SQL verification could not read or write local state", False, "no",
+    "Inspect the workspace state path and permissions, then rerun verification.",
+)
+# Checked before any query; distinct from credentials and other input (#230).
+_BOUNDARY_PUBLISH_PROVENANCE = SqlFailure(
+    "local_validation", "bind", "local_validation", "SQL_VERIFY_INPUT_INVALID",
+    "--publish needs the workspace inside a Git checkout with a commit", False, "no",
+    "Commit gravity.toml inside a Git checkout or select a workspace that is one, then rerun with --publish; "
+    "verification without --publish does not need Git.",
+)
+_BOUNDARY_INPUT = SqlFailure(
+    "local_validation", "bind", "local_validation", "SQL_VERIFY_INPUT_INVALID",
+    "SQL verification input or local contract is invalid", False, "no",
+    "Correct the verify date, workspace, or Evidence contract before retrying.",
+)
+
+
+def _boundary_failure(error: BaseException) -> tuple[str, SqlFailure]:
+    """Choose the receipt category and failure for one error outside the product loop."""
+
+    if isinstance(error, (OSError, UnicodeError)):
+        return "local_io", _BOUNDARY_LOCAL_IO
+    classified = classify_sql_failure(error, request_count=0)
+    if classified.kind in {"authentication", "credentials"}:
+        return "authentication", classified
+    return "input", _BOUNDARY_PUBLISH_PROVENANCE if isinstance(error, PublishProvenanceError) else _BOUNDARY_INPUT
+
+
 def run_verification_boundary_error_cli(
     owner: Any, error: BaseException, *, serializer: Any
 ) -> int:
     """Emit a safe public receipt for failures outside the product loop."""
 
-    if isinstance(error, (OSError, UnicodeError)):
-        category = "local_io"
-    else:
-        classified = classify_sql_failure(error, request_count=0)
-        category = (
-            "authentication"
-            if classified.kind in {"authentication", "credentials"}
-            else "input"
-        )
-    if category == "local_io":
-        failure = SqlFailure(
-            "local_io", "bind", "local_io", "SQL_VERIFY_LOCAL_IO",
-            "SQL verification could not read or write local state", False, "no",
-            "Inspect the workspace state path and permissions, then rerun verification.",
-        )
-    elif isinstance(error, PublishProvenanceError):
-        # Checked before any query; distinct from credentials and other input (#230).
-        failure = SqlFailure(
-            "local_validation", "bind", "local_validation",
-            "SQL_VERIFY_INPUT_INVALID",
-            "--publish needs the workspace inside a Git checkout with a commit; no product was queried", False, "no",
-            "Commit gravity.toml inside a Git checkout or select a workspace that is one, then rerun with --publish; "
-            "verification without --publish does not need Git.",
-        )
-    elif category == "input":
-        failure = SqlFailure(
-            "local_validation", "bind", "local_validation",
-            "SQL_VERIFY_INPUT_INVALID",
-            "SQL verification input or local contract is invalid", False, "no",
-            "Correct the verify date, workspace, or Evidence contract before retrying.",
-        )
-    else:
-        failure = classified
+    category, failure = _boundary_failure(error)
     evidence = diagnostic_fields(
         failure, elapsed_seconds=0, request_count=0, request_count_bound=1
     )

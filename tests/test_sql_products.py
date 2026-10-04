@@ -468,6 +468,7 @@ class GravityProductTests(unittest.TestCase):
         )
         self.assertEqual(2, credential_payload["exit_code"])
         self.assertIn("gravity auth status", credential_payload["error"]["next_action"])
+        self.assertEqual("unclassified", credential_payload["error"]["upstream_error"]["credential_origin"])
         self.assertNotIn("abc123", credential_error.getvalue())
 
         injection_error = io.StringIO()

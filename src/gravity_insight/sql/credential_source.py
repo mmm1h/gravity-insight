@@ -22,7 +22,7 @@ def credential_source(root: Path) -> str:
     try:
         keys = {
             line.split("=", 1)[0].strip()
-            for line in selected.read_text(encoding="utf-8").splitlines()
+            for line in selected.read_text(encoding="utf-8-sig").splitlines()
             if "=" in line and not line.lstrip().startswith("#")
         }
     except (OSError, UnicodeError):
