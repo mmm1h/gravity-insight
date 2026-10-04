@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from gravity_insight.runtime_scope import ENV_FILE_VAR
+# runtime_scope.ENV_FILE_VAR; this module stays a leaf of the import graph.
+ENV_FILE_VAR = "GRAVITY_ENV_FILE"
 
 
 def credential_source(root: Path) -> str:
