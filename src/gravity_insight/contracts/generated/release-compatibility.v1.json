@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "ea1e636eda20011b49d5b62178cb05ed41f98c72f8c7ea32cd0941a0074232b6"
+    "compatibility_sha256": "b466b4e288651c5a65aa780d7fafa0708e35af82d74ec4961c888d0b164b2dc5"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -434,11 +434,17 @@
       "version": "0.3.23",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.23-hard-break-1",
+          "description": "A Funnel Analysis request with more than one non-time grouping dimension is rejected before dispatch with `INPUT_INVALID`; `unsupported_items` names the dimensions that would have been dropped. Upstream keys Funnel groups by the first non-time dimension only, so the extra dimensions previously vanished from a `success` result with no warning. Keep one dimension per Funnel request (#94). Migration guide: [0.3.23](docs/migration/0.3.23.md)",
+          "migration_guide": "docs/migration/0.3.23.md"
+        }
+      ],
       "soft_breaks": [],
-      "migration_guide": null
+      "migration_guide": "docs/migration/0.3.23.md"
     }
   ]
 }
