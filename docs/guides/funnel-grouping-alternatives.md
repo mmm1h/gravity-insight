@@ -1,8 +1,8 @@
 # Funnel property-grouping alternative
 
 Funnel responses must not be interpreted as property-grouped when a requested
-non-time grouping is absent. The current upstream date-priority behavior is an
-explicit unsupported response shape:
+non-time grouping is absent. Upstream keys groups by the first non-time dimension only, so a request with more than one is rejected before dispatch (`INPUT_INVALID`, extra dimensions in `unsupported_items`).
+The current upstream date-priority behavior is an explicit unsupported response shape:
 
 - whole-window grouping labels must appear at `aggregate_date.group.*`;
 - daily grouping labels must appear at `date_list.[].*.[].group`;

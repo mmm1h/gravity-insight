@@ -75,13 +75,13 @@ def _from_analysis(values: Mapping[str, Any]) -> None:
         "to_calc_each_day",
     }
     analysis = {key: values[key] for key in analysis_fields}
-    validate_analysis_shape("funnel", analysis)
     if values.get("group_by_list") != []:
         raise InputValidationError(
             f"actual value: {actual_value(values.get('group_by_list'))}; allowed value: an empty group_by_list for from_analysis v1",
             field="group_by_list",
             next_action="Remove group_by from the funnel spec, dry-run again, then explicitly execute the create.",
         )
+    validate_analysis_shape("funnel", analysis)
     dates = values.get("date_list")
     first = dates[0] if isinstance(dates, list) and dates else None
     if not isinstance(first, Mapping):

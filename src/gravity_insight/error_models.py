@@ -164,6 +164,9 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
     describe = (
         "Run `gravity insight operations describe "
         f"{operation}` and retry with the documented input."
+        if operation_id
+        else "Correct the input named by field as the message states, then retry; "
+        "compact Analysis and Segment specs print their contract with `--spec-schema`."
     )
     actions = {
         "HUB_SKILL_MISSING": (

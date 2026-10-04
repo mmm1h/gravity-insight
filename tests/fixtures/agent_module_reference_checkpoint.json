@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "0142e7e23b00d521f667dd59fc02293a4202481d1fef9e21d9d1cb4b8232abe9",
-    "manual_review_sha256": "74454fef86527d9970af0ea70b9f5eba6bdb0082927f95e08b32ebe40f83c30e",
+    "reference_evidence_sha256": "ba0a7de62b8add6646b98a84d55745402bddd8e7efb7e6065ec0ad1f507dbb41",
+    "manual_review_sha256": "7da9cefde9abeaaef2abe07353689865bcb962c94d744d2d96f47e8626bd79c0",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3284,
-    "scanned_file_count": 3276,
+    "version_controlled_file_count": 3286,
+    "scanned_file_count": 3278,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -825,7 +825,7 @@
     "dispositions": {
       "no_migration_effect": 358
     },
-    "sites_sha256": "e4eee03f7755fb3134b031edd0640d7bbfead75b33ee98557a0d7428ad048d2e"
+    "sites_sha256": "9e518fa4c74a09a885a53003ba7e4545f5a549b8b9a353f8e472f111503ef732"
   },
   "blockers": [],
   "site_fields": [
@@ -1188,7 +1188,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22489:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22499:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1203,7 +1203,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:68047:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:68273:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1308,7 +1308,7 @@
       }
     ],
     [
-      "src/gravity_insight/error_models.py:435:5:__module__",
+      "src/gravity_insight/error_models.py:438:5:__module__",
       "rm",
       "module_owner_receiver",
       "_compat_symbol.__module__",

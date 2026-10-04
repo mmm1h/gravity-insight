@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from .analysis_execution_support import (
+    reject_unsupported_funnel_groups,
     reject_unsupported_property_groups,
     validate_segment_event_support_inputs,
 )
@@ -222,6 +223,7 @@ def _validate_query_kind_controls(
         _validate_event_controls(inputs, references)
     elif query_kind == "funnel":
         validate_analysis_window(inputs.get("stat_time_window"))
+        reject_unsupported_funnel_groups(inputs.get("group_by_list"))
     elif query_kind == "retention":
         _validate_retention_controls(inputs, references)
     elif query_kind == "scatter":
