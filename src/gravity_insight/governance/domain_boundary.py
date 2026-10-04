@@ -57,6 +57,7 @@ DOMAIN_MODULE_LAYER_OVERRIDES = {
     "gravity_insight.material_game_contract": "product_composite_plan",
     "gravity_insight.material_game_performance": "product_composite_plan",
     "gravity_insight.material_game_result": "product_composite_plan",
+    "gravity_insight.export_recovery": "domain_services",
     "gravity_insight": "facade_cli_mcp",
     "gravity_insight.__main__": "facade_cli_mcp",
     "gravity_insight._auto_upgrade_install": "facade_cli_mcp",

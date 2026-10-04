@@ -101,10 +101,10 @@ task list/progress/file 仍无任务绑定 total；SDK 在 create 前用同一 A
 
 仅就 `origin_event.evaluate` / `origin_event.start`（含 run 创建阶段）而言，
 上游非成功语义状态为 `EXPORT_SEMANTIC_REJECTED`；成功状态同时带非空
-`extra.error` 为 `EXPORT_RESPONSE_CONTRADICTED`，均停止执行。未知拒绝的
-责任归属保留 `diagnostics.responsibility=unclassified`；`category=local` 仅表示
-本地尚无可用的责任分类，不指称调用方或上游有错。诊断仅含固定原因与安全数字状态，
-不回显原始错误文本。真实文件结构漂移仍为 `CONTRACT_CHANGED`。
+`extra.error` 为 `EXPORT_RESPONSE_CONTRADICTED`，均停止执行。上游 msg 为“参数错误”时 `diagnostics.responsibility=upstream_reported_invalid_parameter`，其余未知拒绝的
+责任归属保留 `unclassified`；`category=local` 仅表示本地尚无可用的责任分类，不指称调用方或上游有错。
+诊断仅含固定原因与安全数字状态，不回显原始错误文本。`user_event.start` 创建被拒后读一次最新任务页，按任务保存的完整请求精确比对，结果见 `creation_recovery`；上游会改写展示名，名称与时间不作身份。
+真实文件结构漂移仍为 `CONTRACT_CHANGED`。
 
 `export.task.list` 属于独立操作族，仍有历史遗留的响应分类缺口：非成功状态、
 矛盾成功和非标量 code 尚未统一处理。已列为独立后续跟进，不在 Issue #218 范围内；

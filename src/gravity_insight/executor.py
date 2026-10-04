@@ -58,12 +58,12 @@ class ReadExecutor:
         self._registry = registry
         self._policy = policy
         self._transport = transport
-        self._field_validator: Callable[[OperationSpec, Mapping[str, Any]], None] | None = None
+        self._field_validator: Callable[..., Any] | None = None
         self._call_guard: Callable[[str], Mapping[str, Any]] | None = None
 
     def _bind_field_validator(
         self,
-        validator: Callable[[OperationSpec, Mapping[str, Any]], None],
+        validator: Callable[..., Any],
     ) -> None:
         if not callable(validator):
             raise TypeError("executor field validator must be callable")
@@ -84,7 +84,7 @@ class ReadExecutor:
         self._call_guard(operation_id)
         operation = self._policy.authorize_operation(operation_id)
         values = operation.validate_inputs(inputs)
-        self._field_validator(operation, values)
+        response_fields = self._field_validator(operation, values)
         authorization = self._policy._prepare_request(operation_id, values)
         with capture_http_receipt_references() as http_receipts:
             response = self._transport.request(
@@ -96,7 +96,7 @@ class ReadExecutor:
         semantic_status = _enforce_semantic_rules(operation, payload, http_receipts, values)
         _capture_private_material_asset_rows(operation_id, payload)
         projected, drift_warnings, projection_drift, response_drift = _project_response(
-            operation, payload, values, semantic_status,
+            operation, payload, {**values, "_validated_response_fields": response_fields or {}}, semantic_status,
             getattr(response, "status_code", 200), http_receipts,
         )
         projected = _redact(

@@ -29,15 +29,14 @@ class FieldPolicy:
         operation: OperationSpec,
         inputs: Mapping[str, Any],
         metadata_loader: MetadataLoader,
-    ) -> None:
+    ) -> Mapping[str, Any] | None:
         metadata_loader = selected_metadata_loader(metadata_loader)
         rule = operation_rule(operation.operation_id)
         if rule.request_kind == "analysis_segment":
             validate_analysis_segment_rule(inputs, metadata_loader)
             return
         if rule.request_kind == "analysis_detail":
-            validate_analysis_detail(operation, inputs, metadata_loader)
-            return
+            return validate_analysis_detail(operation, inputs, metadata_loader)
         validate_request_controls(operation, inputs, metadata_loader)
         if rule.request_kind == "property_values":
             validate_analysis_property_values(

@@ -18,6 +18,7 @@ from .export_models import (
 )
 from .export_privacy import ExportPrivacyFinalizer
 from .export_scope_total import classify_export_rows
+from .export_recovery import recovery_fields
 
 class ExportOrchestrator:
     def __init__(
@@ -62,7 +63,9 @@ class ExportOrchestrator:
             snapshot = self._gateway.create(request, timeout_seconds=timeout)
         except BlobTransferError as exc:
             tracker.move(ExportState.FAILED)
-            return _result(tracker, job_id=None, error=exc)
+            recovered = recovery_fields(exc)
+            return _result(tracker, job_id=recovered.get("job_id"), error=exc,
+                           resumable=recovered.get("resumable", False))
         except Exception:
             error = _export_error(
                 "export creation failed and was not retried",
