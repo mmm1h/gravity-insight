@@ -1338,6 +1338,14 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "page_info": ["page", "page_size", "total_number", "total_page"]
                 },
                 "analysis.user_event.list": {
+                    "field_coverage": [
+                        "scope",
+                        "row_count",
+                        "status",
+                        "missing_fields",
+                        "missing_counts",
+                        "unmapped_fields",
+                    ],
                     "device": [
                         "Android_Version",
                         "Api_Version",

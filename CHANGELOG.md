@@ -19,6 +19,11 @@ Target release: `0.3.22`
 
 - None.
 
+### Fixed
+
+- `analysis.user_event.list` now returns explicitly selected event properties instead of dropping them under a `success` status. Upstream keys each timeline event by the property's display label, which is unique only within one event: the SDK maps each selected name through its registered label (event-scoped through `event_list` when a label is shared across events) and returns it under the requested name, keeps `事件英文名` as the exact event identity, and reports per-field coverage in the additive `data.field_coverage` (`missing_counts`, `unmapped_fields`) rather than treating absent values as contract drift. Unselected registered properties are omitted without drift warnings. The contract records the observed 50-row page cap (#238).
+- A rejected `export.analysis.user_event.start` creation now certifies whether an upstream task already holds exactly this request: one bounded read of the newest export tasks compares each task's stored request with the submitted body and returns `creation_recovery.association` (`existing_identical_task` with a resumable `job_id`, `ambiguous`, `not_found`, or `unconfirmed`), never matching by display name or timestamp. An upstream `msg` of `参数错误` is reported as `diagnostics.responsibility=upstream_reported_invalid_parameter` and is not retryable unchanged (#248).
+
 ## [0.3.21] - 2026-09-29
 
 ### Breaking changes

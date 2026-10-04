@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
-    "description": "单用户事件流；支持事件选择和结构化查询项，输出已登记的用户、设备、事件时间线及汇总字段。上游不返回 page_info，请显式递增 page，直到 event_timeline[*].list 为空。",
+    "contract_version": 3,
+    "description": "单用户事件流；上游逐条事件以属性显示名为键，SDK 按已登记 name→cname 唯一映射，以所选字段名输出事件属性；显示名跨事件重名时须在 event_list 列出事件才能按事件映射。在部分返回行缺失或没有唯一显示名的所选字段见 field_coverage。保留事件英文名作为精确事件身份，不把显示名称当作事件身份。上游每页最多返回 50 条（page_size=200 时实测 50 条，逐页总数与导出行数一致）；上游不返回 page_info，不可用短页推断完整，请递增 page 直到全部 event_timeline[*].list 为空，并按 summary 核验同窗覆盖。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -169,6 +169,14 @@
         ]
       },
       "data_item_keys": {
+        "field_coverage": [
+          "scope",
+          "row_count",
+          "status",
+          "missing_fields",
+          "missing_counts",
+          "unmapped_fields"
+        ],
         "device": [
           "Android_Version",
           "Api_Version",
@@ -212,6 +220,7 @@
         ]
       },
       "data_keys": [
+        "field_coverage",
         "event_timeline",
         "summary",
         "device",

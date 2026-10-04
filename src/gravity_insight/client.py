@@ -469,10 +469,9 @@ class GravityInsightClient(
             lambda: self._executor.execute(operation_id, normalized_inputs),
         )
 
-    def _validate_field_request(
-        self, operation: OperationSpec, inputs: Mapping[str, Any]
-    ) -> None:
-        self._field_policy.validate(operation, inputs, self._load_field_metadata)
+    def _validate_field_request(self, operation: OperationSpec, inputs: Mapping[str, Any]):
+        # Returns optional response hints (e.g. user-event display labels, #238).
+        return self._field_policy.validate(operation, inputs, self._load_field_metadata)
 
     def _load_field_metadata(
         self, operation_id: str, inputs: Mapping[str, Any]
