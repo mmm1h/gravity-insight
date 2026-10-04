@@ -31,6 +31,16 @@ Migration guide: [0.3.22](docs/migration/0.3.22.md)
 - `analysis.user_event.list` now returns explicitly selected event properties instead of dropping them under a `success` status. Upstream keys each timeline event by the property's display label, which is unique only within one event: the SDK maps each selected name through its registered label (event-scoped through `event_list` when a label is shared across events) and returns it under the requested name, keeps `事件英文名` as the exact event identity, and reports per-field coverage in the additive `data.field_coverage` (`missing_counts`, `unmapped_fields`) rather than treating absent values as contract drift. Unselected registered properties are omitted without drift warnings. The contract records the observed 50-row page cap (#238).
 - A rejected `export.analysis.user_event.start` creation now certifies whether an upstream task already holds exactly this request: one bounded read of the newest export tasks compares each task's stored request with the submitted body and returns `creation_recovery.association` (`existing_identical_task` with a resumable `job_id`, `ambiguous`, `not_found`, or `unconfirmed`), never matching by display name or timestamp. An upstream `msg` of `参数错误` is reported as `diagnostics.responsibility=upstream_reported_invalid_parameter` and is not retryable unchanged (#248).
 
+### Added
+
+- `gravity --version` prints the executing runtime version (`gravity-insight X.Y.Z`) offline, before any startup update check, and is listed in `gravity --help` (#243).
+
+### Fixed
+
+- `multidim query --include-total` works again. The calc-total request now sends `data_list` as one row group (`[rows]`), as Gravity Web does; the previous flat rows were rejected upstream (`1003`) for every metric. Multi-day rows expanded to `<metric>_<N>` are accepted when `N` is a requested `multi_keys`/`--multi-days` value; other unknown fields are still rejected before the request (#242).
+- `metadata properties|search|tables|vocabulary --help` states the enforced `--limit` range (1-100) and how to page with `--offset`; the shared `--all-pages` help (including `multidim query --help`) states that `--all-pages` needs `--output <path>` or `--format ndjson`. Validation is unchanged (#246, #241).
+- A `materials performance` `PAGINATION_LIMIT` now advises raising `--max-pages`/`--max-items` with the same App, dates and platform instead of telling the caller to change a correct scope (#223).
+
 ## [0.3.21] - 2026-09-29
 
 ### Breaking changes

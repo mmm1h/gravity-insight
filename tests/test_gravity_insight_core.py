@@ -1917,7 +1917,30 @@ class GravityInsightCoreTests(unittest.TestCase):
                 {**base, "data_list": [safe_row]},
             )
         self.assertEqual("success", result["status"])
-        self.assertEqual([safe_row], transport.calls[1][2]["body"]["data_list"])
+        # One row group per total, as Gravity Web sends it (#242).
+        self.assertEqual([[safe_row]], transport.calls[1][2]["body"]["data_list"])
+
+    def test_calc_total_controls_only_requested_multi_day_suffixes(self):
+        # Multi-day rows carry <metric>_<N>; only the requested N are controlled (#242).
+        controlled = repository_manifest(
+            "report.multidim.metric.list", "report.multidim.query", "report.multidim.calc_total"
+        )
+        metadata = {"code": 0, "data": {
+            "list": [{"name": "ap_cost", "tag_ids": [], "exclusion_dims": []}],
+            "page_info": {"page": 1, "page_size": 20, "total_page": 1},
+        }}
+        base = {"time_dims": "day", "date_list": ["2026-08-07", "2026-08-07"], "data_dims": [],
+                "metrics_list": ["ap_cost"], "multi_keys": [2, 3]}
+        requested = {"day": "2026-08-07", "ap_cost_2": 1, "ap_cost_3": 2}
+        with tempfile.TemporaryDirectory() as directory:
+            client, transport = client_for(
+                Path(directory), [FakeResponse(metadata), FakeResponse({"code": 0, "data": {"list": [{"ap_cost_2": 1}]}})],
+                operation_manifest=controlled,
+            )
+            self.assertEqual("success", client.read("report.multidim.calc_total", {**base, "data_list": [requested]})["status"])
+            with self.assertRaises(InputValidationError):
+                client.read("report.multidim.calc_total", {**base, "data_list": [{"ap_cost_7": 1}]})
+        self.assertEqual(2, len(transport.calls))
 
     def test_composite_calc_total_accepts_contracted_advertiser_and_group_ids(self):
         multidim = repository_manifest(
@@ -1965,7 +1988,7 @@ class GravityInsightCoreTests(unittest.TestCase):
             )
 
         self.assertEqual("success", result["status"])
-        self.assertEqual(row, transport.calls[2][2]["body"]["data_list"][0])
+        self.assertEqual([[row]], transport.calls[2][2]["body"]["data_list"])
         self.assertEqual(row, result["total"]["data"]["list"][0])
 
     def test_read_all_enforces_item_limit_for_nonpaginated_direct_lists(self):

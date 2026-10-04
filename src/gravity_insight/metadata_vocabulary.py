@@ -95,7 +95,7 @@ def add_vocabulary_command(
         "--kind", choices=VOCABULARY_SEARCH_KINDS, default="vocabulary"
     )
     vocabulary.add_argument("--database", type=Path, default=None)
-    vocabulary.add_argument("--limit", type=metadata_limit, default=20)
+    vocabulary.add_argument("--limit", type=metadata_limit, default=20, help="Maximum rows, 1-100 (default: 20); page with --offset.")
     vocabulary.add_argument("--offset", type=nonnegative_int, default=0)
 
 

@@ -312,7 +312,15 @@ def control_fields(operation: OperationSpec, inputs: Mapping[str, Any]) -> set[s
             allowed.add(value)
         elif isinstance(value, (list, tuple)):
             allowed.update(item for item in value if isinstance(item, str) and item)
-    return allowed
+    return allowed | _multi_day_fields(operation, inputs)
+
+
+def _multi_day_fields(operation: OperationSpec, inputs: Mapping[str, Any]) -> set[str]:
+    # Multi-day queries expand registered metrics to <metric>_<N> for requested N (#242).
+    days = [day for day in inputs.get("multi_keys") or () if type(day) is int]
+    names = (inputs.get(name) for name in operation.response_projection.numeric_suffix_item_fields)
+    bases = [base for value in names if isinstance(value, (list, tuple)) for base in value]
+    return {f"{base}_{day}" for base in bases if isinstance(base, str) and base for day in days}
 
 
 def promotion_metadata_inputs(
