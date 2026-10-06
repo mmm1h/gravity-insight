@@ -20,6 +20,10 @@ _PROPERTIES = [
     {"name": "piece_action", "cname": "获得或消耗", "data_type": "STRING", "visible": True},
     {"name": "stamina_change_count", "cname": "体力变化次数", "data_type": "INT", "visible": True},
 ]
+_PAYMENT_PROPERTIES = [
+    {"name": "$pay_reason", "cname": "商品SKU", "data_type": "STRING", "visible": True},
+    {"name": "$pay_method", "cname": "商品SKU", "data_type": "STRING", "visible": True},
+]
 
 
 def _row(event: str, **properties: Any) -> dict[str, Any]:
@@ -32,15 +36,20 @@ def _read(
     def handler(_method: str, path: str, kwargs: Mapping[str, Any]):
         if path.endswith("event_list/"):
             return page([{"name": "stamina_res", "cname": "体力", "visible": True},
-                         {"name": "piece_res", "cname": "碎片", "visible": True}])
+                         {"name": "piece_res", "cname": "碎片", "visible": True},
+                         {"name": "pay_click", "cname": "支付调用", "visible": True}])
         if path.endswith("event_property_list/"):
             return page(properties)
         if path.endswith("event_info/"):
             event = kwargs["query"]["event_name"]
-            bound = {"stamina_res": ("stamina_action", "stamina_change_count"), "piece_res": ("piece_action",)}[event]
+            bound = {
+                "stamina_res": ("stamina_action", "stamina_change_count"),
+                "piece_res": ("piece_action",),
+                "pay_click": tuple(row["name"] for row in properties),
+            }[event]
             return {"code": 0, "data": {"properties": {
                 "common": [], "preset": [],
-                "custom": [row for row in _PROPERTIES if row["name"] in bound],
+                "custom": [row for row in properties if row["name"] in bound],
             }}}
         if path.endswith(("user_property_list/", "segment/list/")):
             return page([])
@@ -79,6 +88,20 @@ def test_unlisted_events_never_attribute_a_shared_label():
     assert coverage["unmapped_fields"] == ["stamina_action"]
     assert any("event_list" in warning for warning in result["warnings"])
     assert not any(path.endswith("event_info/") for _m, path, _k in calls)
+
+
+def test_unmapped_payment_fields_have_no_missing_count():
+    result, _calls = _read(
+        [_row("pay_click", lv_id=12, prod_inlet="offer")],
+        properties=_PAYMENT_PROPERTIES,
+        fields=["$pay_reason", "$pay_method"],
+        event_list=["pay_click"],
+    )
+    coverage = result["data"]["field_coverage"]
+    assert coverage["status"] == "partial"
+    assert coverage["unmapped_fields"] == ["$pay_method", "$pay_reason"]
+    assert coverage["missing_fields"] == []
+    assert coverage["missing_counts"] == {}
 
 
 def test_absent_selected_property_is_partial_coverage_not_contract_drift():

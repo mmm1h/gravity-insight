@@ -13,11 +13,21 @@
 
 ## [Unreleased]
 
-Target release: `0.3.25`
+Target release: `0.3.26`
 
 ### Breaking changes
 
 - None.
+
+## [0.3.25] - 2026-10-07
+
+### Breaking changes
+
+- None.
+
+### Fixed
+
+- `analysis.user_event.list` no longer reports `missing_counts=0` for selected event properties that were never projected. `missing_counts` and `missing_fields` now contain only fields with a governed display-label mapping; fields without one remain exclusively in `unmapped_fields` and keep coverage `partial`. The operation contract documents the bounded payment-invocation SKU fallback: request the exact event for event-scoped mapping, otherwise treat the invocation SKU as unavailable and never impute successful-cash product fields onto invocation rows (#256).
 
 ## [0.3.24] - 2026-10-05
 
