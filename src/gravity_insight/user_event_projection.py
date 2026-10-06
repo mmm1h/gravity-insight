@@ -305,9 +305,10 @@ class _SelectedEventFields:
             for event in group.get("list", ()) if isinstance(event, Mapping)
         ]
         unmapped = self._unmapped()
+        mapped = self.event_fields - set(unmapped)
         counts = {
             name: sum(name not in event for event in events if self._applies(name, event))
-            for name in sorted(self.event_fields)
+            for name in sorted(mapped)
         }
         missing = [name for name, count in counts.items() if count]
         if unmapped:

@@ -26,7 +26,7 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "920760bffb6e75afbb5fe0f15c97777543a80e9f6240c7f91996cc745b9fbd77",
+    "reference_evidence_sha256": "81a422c805e65ec439089ce5d0aeed0c584d3633e67325f4b3787ff1d7303832",
     "manual_review_sha256": "20f980da0ae9760684e4ea54b051c231d522690047f68373b327f7ffb77fa614",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3286,
@@ -833,7 +833,7 @@
     "dispositions": {
       "no_migration_effect": 360
     },
-    "sites_sha256": "5ad26409dbc32e5b30172e8cda0d213c2403f206351d6f825807a7436017c0b1"
+    "sites_sha256": "f4af7d962442a6ca7cc1b74ecc794c6c9878653b17faf29b9385cb0c51efd2cd"
   },
   "blockers": [],
   "site_fields": [
@@ -1211,7 +1211,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:68530:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:68545:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

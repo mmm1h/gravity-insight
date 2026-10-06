@@ -5,7 +5,7 @@
     "action": "list",
     "auth_profile": "gravity_authorization",
     "contract_version": 3,
-    "description": "单用户事件流；上游逐条事件以属性显示名为键，SDK 按已登记 name→cname 唯一映射，以所选字段名输出事件属性；显示名跨事件重名时须在 event_list 列出事件才能按事件映射。在部分返回行缺失或没有唯一显示名的所选字段见 field_coverage。保留事件英文名作为精确事件身份，不把显示名称当作事件身份。上游每页最多返回 50 条（page_size=200 时实测 50 条，逐页总数与导出行数一致）；上游不返回 page_info，不可用短页推断完整，请递增 page 直到全部 event_timeline[*].list 为空，并按 summary 核验同窗覆盖。",
+    "description": "单用户事件流；上游逐条事件以属性显示名为键，SDK 按已登记 name→cname 唯一映射，以所选字段名输出事件属性；显示名跨事件重名时须在 event_list 列出精确事件，尝试事件级映射。在部分返回行缺失或没有唯一显示名的所选字段见 field_coverage：missing_counts/missing_fields 只描述已映射字段，未投影字段只列入 unmapped_fields，不能将其解释为缺失数 0。支付调用 SKU 在精确事件级映射后仍 unmapped 或 absent 时即不可用；成功支付事件的商品字段只可作为成功侧证据，不得反填调用行。保留事件英文名作为精确事件身份，不把显示名称当作事件身份。上游每页最多返回 50 条（page_size=200 时实测 50 条，逐页总数与导出行数一致）；上游不返回 page_info，不可用短页推断完整，请递增 page 直到全部 event_timeline[*].list 为空，并按 summary 核验同窗覆盖。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
