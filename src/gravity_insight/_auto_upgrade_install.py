@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import uuid
@@ -250,6 +251,13 @@ def _install_and_verify(
     with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
         stream.write(installed.stdout + installed.stderr)
     if installed.returncode:
+        diagnostics = installed.stdout + installed.stderr
+        if re.search(r"No module named ['\"]?pip['\"]?", diagnostics):
+            raise RuntimeError(
+                "installer unavailable: target Python cannot import pip; "
+                f"inspect private log {log}; install pip for that interpreter or "
+                "select a supported target Python"
+            )
         raise RuntimeError(
             f"pip exited {installed.returncode}; inspect private log {log}; "
             "check index connectivity, wheel availability and cache write permissions"
