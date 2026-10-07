@@ -128,7 +128,12 @@ def startup_update_enabled(
             raise error
         return False
     args = list(argv)
-    if args[:1] in (["doctor"], ["cache"]) or args[:2] == ["insight", "doctor"]:
+    if (
+        "--help" in args
+        or "-h" in args
+        or args[:1] in (["doctor"], ["cache"])
+        or args[:2] == ["insight", "doctor"]
+    ):
         return False
     configured = _environment_value(env, AUTO_UPGRADE_ENV, _LEGACY_AUTO_UPGRADE_ENV)
     return configured is None or configured.strip().casefold() in {"1", "true", "yes", "on"}

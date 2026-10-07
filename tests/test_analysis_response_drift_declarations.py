@@ -181,6 +181,7 @@ class AnalysisResponseDriftDeclarationTests(unittest.TestCase):
         )
 
     def test_scatter_recertified_paths_preserve_observed_aggregate_fields(self) -> None:
+        # Issue #255: total-window rows and y rows must keep their group identity.
         data = {
             "aggregate_date": [],
             "zone_tags": {"unit": "day"},
@@ -189,8 +190,14 @@ class AnalysisResponseDriftDeclarationTests(unittest.TestCase):
                 "proc_zone": 1, "stat_time": "2026-01-02", "stat_total": 2,
                 "zone_stat_sum": 3, "zone_stat_users": 4,
             }]]},
+            "total": [{
+                "group_cols": ["2026-01-02"], "is_total": 1,
+                "mean_while_values": [1.5, 2.5], "total_user_num": 7,
+                "values": [2, 5],
+            }],
             "y": {"2026-01-02": [{
-                "is_total": 1, "total_another_event_count": 2,
+                "group_cols": ["2026-01-02"], "is_total": 1,
+                "total_another_event_count": 2,
                 "total_another_event_sum": 3, "total_another_event_uniques": 4,
                 "total_another_event_value": 5, "total_another_users": 6,
                 "total_user_num": 7,
@@ -201,6 +208,28 @@ class AnalysisResponseDriftDeclarationTests(unittest.TestCase):
         )
         self.assertEqual(data, projected)
         self.assertEqual(((), ProjectionDrift.NONE, None), (warnings, drift, audit))
+
+    def test_scatter_total_rows_keep_unknown_fields_closed(self) -> None:
+        projected, _warnings, drift, audit = _project(
+            _operation("analysis.scatter.query"),
+            {"data": {
+                "aggregate_date": [],
+                "total": [{
+                    "group_cols": ["2026-01-02"], "values": [2],
+                    "uid": "private-user", "unregistered_total": 9,
+                }],
+            }},
+            {},
+        )
+        self.assertEqual(
+            [{"group_cols": ["2026-01-02"], "values": [2]}],
+            projected["total"],
+        )
+        self.assertIs(ProjectionDrift.ADDITIVE, drift)
+        self.assertEqual(
+            ["/data/total/*/uid", "/data/total/*/unregistered_total"],
+            [field["path"] for field in audit["fields"]],
+        )
 
     def test_scatter_numeric_openings_do_not_apply_at_unobserved_paths(self) -> None:
         projected, _warnings, drift, audit = _project(
@@ -223,6 +252,7 @@ class AnalysisResponseDriftDeclarationTests(unittest.TestCase):
     def test_scatter_string_openings_reject_unobserved_paths(self) -> None:
         for data, expected in (
             ({"zone_tags": {"stat_time": "day"}}, "/data/zone_tags/stat_time"),
+            ({"zone_tags": {"group_cols": []}}, "/data/zone_tags/group_cols"),
             ({"y": {"2026-01-02": [{"unit": "day"}]}}, "/data/y/2026-01-02/*/unit"),
         ):
             with self.subTest(path=expected):
