@@ -28,6 +28,7 @@ def aggregate_registered_day(
     groups: Sequence[Mapping[str, Any]],
     metrics: Mapping[str, Mapping[str, Any]],
     *,
+    scope_filter: Mapping[str, Any] | None = None,
     max_pages: int,
     max_items: int,
     max_workers: int = 6,
@@ -38,7 +39,9 @@ def aggregate_registered_day(
     sums. The caller supplies proven, typed material join conditions.
     """
     _workers(max_workers)
-    requests, failures, fields = _registered_requests(client, source, groups, metrics, max_pages, max_items)
+    requests, failures, fields = _registered_requests(
+        client, source, groups, metrics, scope_filter, max_pages, max_items
+    )
     if not requests:
         return {"cells": failures, "scan": None, "http_receipts": []}
     native = client.read_limited(
@@ -63,30 +66,40 @@ def aggregate_registered_day(
     else:
         for key, inputs in requests.items():
             try:
-                # Validate against all observed rows, as the original product
-                # does, before applying material or acquisition-date filters.
-                _validate_row_types(rows, inputs)
-                selected = [
-                    row
-                    for row in cohort
-                    if _matches(row.get(inputs["filters"][0]["field"]), inputs["filters"][0])
-                ]
-                metric_fields = referenced_fields({**inputs, "filters": []})
-                if metric_fields and not any(
-                    row.get(field) is not None for row in selected for field in metric_fields
-                ):
-                    cells[key] = {
-                        "status": "unavailable",
-                        "value": None,
-                        "reason": "METRIC_VALUES_UNAVAILABLE",
-                    }
-                    continue
-                cells[key] = {"status": "obtained", "value": _aggregate_cells(cohort, inputs)[0]["value"]}
-                if inputs["measures"][0]["op"] != "count":
-                    cells[key]["definition"] = _registered_definition(inputs["measures"][0])
+                cells[key] = _aggregate_registered_request(rows, cohort, inputs)
             except GravityInsightError as exc:
                 cells[key] = _registered_failure(exc)
     return {"cells": cells, "scan": scan, "http_receipts": result_receipt_references(native)}
+
+
+def _aggregate_registered_request(
+    rows: Sequence[Mapping[str, Any]],
+    cohort: Sequence[Mapping[str, Any]],
+    inputs: Mapping[str, Any],
+) -> dict[str, Any]:
+    # Validate all observed rows before applying material, platform or date filters.
+    _validate_row_types(rows, inputs)
+    selected = [
+        row
+        for row in cohort
+        if all(
+            _matches(row.get(condition["field"]), condition)
+            for condition in inputs["filters"]
+        )
+    ]
+    metric_fields = referenced_fields({**inputs, "filters": []})
+    if metric_fields and not any(
+        row.get(field) is not None for row in selected for field in metric_fields
+    ):
+        return {
+            "status": "unavailable",
+            "value": None,
+            "reason": "METRIC_VALUES_UNAVAILABLE",
+        }
+    result = {"status": "obtained", "value": _aggregate_cells(cohort, inputs)[0]["value"]}
+    if inputs["measures"][0]["op"] != "count":
+        result["definition"] = _registered_definition(inputs["measures"][0])
+    return result
 
 
 def _registered_definition(measure: Mapping[str, Any]) -> dict[str, Any]:
@@ -140,6 +153,7 @@ def _registered_requests(
     source: Mapping[str, str],
     groups: Sequence[Mapping[str, Any]],
     metrics: Mapping[str, Mapping[str, Any]],
+    scope_filter: Mapping[str, Any] | None,
     max_pages: int,
     max_items: int,
 ) -> tuple[Any, ...]:
@@ -152,7 +166,10 @@ def _registered_requests(
             key = f"{group['key']}:{name}"
             inputs = {
                 "source": dict(source),
-                "filters": [dict(group["condition"])],
+                "filters": [
+                    dict(group["condition"]),
+                    *([dict(scope_filter)] if scope_filter is not None else []),
+                ],
                 "group_by": [],
                 "measures": [dict(measure)],
                 "bounds": {"max_pages": max_pages, "max_items": max_items, "max_cells": 200},

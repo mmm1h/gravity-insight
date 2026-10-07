@@ -23,6 +23,7 @@ from .contracts.envelope_obligations import (
 )
 from .errors import ContractChangedError, GravityInsightError, exit_code_for_category
 from .material_game_contract import METHOD, SCHEMA_VERSION
+from .contracts.user_platform_discriminator import UserPlatformBinding
 from .result_audit import add_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
 
@@ -80,20 +81,11 @@ def envelope(
     budget: Mapping[str, Any],
     receipts: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    prefix = (report_scan is not None and not report_scan["pagination_finished"]) or budget[
-        "remaining_days"
-    ] > 0
-    prefix = prefix or any(day.get("scan") and not day["scan"]["pagination_finished"] for day in days)
-    codes = tuple(
-        sorted(
-            {
-                "DISTINCT_USER_POPULATION_UNPROVEN",
-                "SOURCE_COMPLETENESS_UNPROVEN",
-                "RETENTION_UNAVAILABLE",
-                "USER_PLATFORM_SCOPE_UNPROVEN",
-            }
-        )
-    )
+    platform_scope = request.get("platform_scope")
+    platform_proven = isinstance(platform_scope, UserPlatformBinding)
+    prefix = _is_prefix(report_scan, budget, days)
+    codes = _semantic_codes(platform_proven)
+    allowed, forbidden = _claims(platform_proven)
     payload = {
         "schema_version": SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
@@ -108,6 +100,7 @@ def envelope(
             for name, measure in request["metrics"].items()
         },
         "platform": request["platform"],
+        "platform_scope": _platform_scope_result(platform_scope, platform_proven),
         "object_type": request["object_type"],
         "method": dict(METHOD),
         "materials": materials,
@@ -116,15 +109,8 @@ def envelope(
         "budget": dict(budget),
         "error": None,
         "claims": {
-            "allowed": ["diagnostic_same_id_acquisition_row_counts", "per_metric_availability"],
-            "forbidden": [
-                "complete_distinct_new_user_total",
-                "platform_scoped_user_counts_or_game_metrics",
-                "ad_registration_reconciliation",
-                "proven_delivery_window",
-                "mature_retention",
-                "causal_ad_quality",
-            ],
+            "allowed": allowed,
+            "forbidden": forbidden,
         },
     }
     obligations = EnvelopeObligations(
@@ -140,6 +126,65 @@ def envelope(
         MutationCertainty(MutationState.NOT_APPLICABLE, "READ_ONLY"),
     )
     return add_result_audit(serialize_envelope(payload, obligations), receipts)
+
+
+def _semantic_codes(platform_proven: bool) -> tuple[str, ...]:
+    codes = {
+        "DISTINCT_USER_POPULATION_UNPROVEN",
+        "SOURCE_COMPLETENESS_UNPROVEN",
+        "RETENTION_UNAVAILABLE",
+    }
+    if not platform_proven:
+        codes.add("USER_PLATFORM_SCOPE_UNPROVEN")
+    return tuple(sorted(codes))
+
+
+def _is_prefix(
+    report_scan: Any, budget: Mapping[str, Any], days: list[dict[str, Any]]
+) -> bool:
+    return bool(
+        report_scan is not None and not report_scan["pagination_finished"]
+        or budget["remaining_days"] > 0
+        or any(
+            day.get("scan") and not day["scan"]["pagination_finished"]
+            for day in days
+        )
+    )
+
+
+def _platform_scope_result(scope: Any, proven: bool) -> dict[str, Any]:
+    if not proven:
+        return gap(
+            "USER_PLATFORM_SCOPE_UNPROVEN",
+            "Use a platform with a current reviewed user-side discriminator binding.",
+        )
+    return {
+        "status": "proven",
+        "binding_id": scope.binding_id,
+        "field": scope.field_path,
+        "accepted_value": scope.accepted_value,
+    }
+
+
+def _claims(platform_proven: bool) -> tuple[list[str], list[str]]:
+    allowed = [
+        "platform_scoped_observed_acquisition_rows"
+        if platform_proven
+        else "diagnostic_same_id_acquisition_row_counts",
+        "platform_scoped_observed_metric_aggregates"
+        if platform_proven
+        else "per_metric_availability",
+    ]
+    forbidden = [
+        "complete_distinct_new_user_total",
+        "ad_registration_reconciliation",
+        "proven_delivery_window",
+        "mature_retention",
+        "causal_ad_quality",
+    ]
+    if not platform_proven:
+        forbidden.insert(1, "platform_scoped_user_counts_or_game_metrics")
+    return allowed, forbidden
 
 
 def _scan_total(page: Mapping[str, Any], pages: int) -> int | None:

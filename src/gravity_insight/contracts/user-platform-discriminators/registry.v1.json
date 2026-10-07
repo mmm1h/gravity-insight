@@ -1,0 +1,72 @@
+{
+  "$schema": "../schema/user-platform-discriminator-v1.schema.json",
+  "artifact_kind": "user_platform_discriminator_registry",
+  "schema_version": "gravity.user-platform-discriminator-registry.v1",
+  "registry_id": "user-platform-discriminator://gravity/acquisition-user@1",
+  "bindings": [
+    {
+      "binding_id": "bytedance.ad-platform",
+      "platform": "bytedance",
+      "status": "proven",
+      "field": {
+        "operation_id": "analysis.user_detail.list",
+        "path": "data.list[].AdPlatform"
+      },
+      "accepted_value": "bytedance",
+      "evidence": {
+        "source": "issue://mmm1h/gravity-insight/223#user-platform-discriminator-scope",
+        "sampled_on": "2026-10-08",
+        "revalidate_after": "2027-01-06",
+        "request_count": 20,
+        "source_row_count": 867,
+        "observations": [
+          {
+            "field": "bytedanceMid1",
+            "selected_row_count": 654,
+            "observed_values": ["bytedance"]
+          },
+          {
+            "field": "bytedanceMid3",
+            "selected_row_count": 657,
+            "observed_values": ["bytedance"]
+          }
+        ],
+        "limitation_codes": [
+          "material_slot_subsets_overlap",
+          "single_app",
+          "single_day",
+          "source_completeness_unknown"
+        ]
+      }
+    },
+    {
+      "binding_id": "kuaishou.ad-platform",
+      "platform": "kuaishou",
+      "status": "proven",
+      "field": {
+        "operation_id": "analysis.user_detail.list",
+        "path": "data.list[].AdPlatform"
+      },
+      "accepted_value": "kuaishou",
+      "evidence": {
+        "source": "issue://mmm1h/gravity-insight/223#user-platform-discriminator-scope",
+        "sampled_on": "2026-10-08",
+        "revalidate_after": "2027-01-06",
+        "request_count": 5,
+        "source_row_count": 244,
+        "observations": [
+          {
+            "field": "bytedanceMid3",
+            "selected_row_count": 162,
+            "observed_values": ["kuaishou"]
+          }
+        ],
+        "limitation_codes": [
+          "single_app",
+          "single_day",
+          "source_completeness_unknown"
+        ]
+      }
+    }
+  ]
+}

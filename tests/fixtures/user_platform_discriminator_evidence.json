@@ -1,0 +1,40 @@
+{
+  "schema_version": "gravity.user-platform-discriminator-evidence.v1",
+  "source": "issue://mmm1h/gravity-insight/223#user-platform-discriminator-scope",
+  "sampled_on": "2026-10-08",
+  "runs": {
+    "bytedance": {
+      "request_count": 20,
+      "source_row_count": 867,
+      "observations": [
+        {
+          "field": "bytedanceMid1",
+          "selected_row_count": 654,
+          "observed_values": ["bytedance"]
+        },
+        {
+          "field": "bytedanceMid3",
+          "selected_row_count": 657,
+          "observed_values": ["bytedance"]
+        }
+      ]
+    },
+    "kuaishou": {
+      "request_count": 5,
+      "source_row_count": 244,
+      "observations": [
+        {
+          "field": "bytedanceMid3",
+          "selected_row_count": 162,
+          "observed_values": ["kuaishou"]
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "material_slot_subsets_overlap",
+    "single_app",
+    "single_day",
+    "source_completeness_unknown"
+  ]
+}

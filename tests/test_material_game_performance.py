@@ -52,6 +52,7 @@ class Client:
             "response_projection": {
                 "item_keys": [
                     "CreateTime",
+                    "AdPlatform",
                     "bytedanceMid1",
                     "bytedanceMid3",
                     "Version",
@@ -74,7 +75,13 @@ class Client:
 
 
 def user(day, **values):
-    return {"CreateTime": day + " 12:00:00", "bytedanceMid3": "901", "ClientID": "PRIVATE-USER", **values}
+    return {
+        "CreateTime": day + " 12:00:00",
+        "AdPlatform": "bytedance",
+        "bytedanceMid3": "901",
+        "ClientID": "PRIVATE-USER",
+        **values,
+    }
 
 
 class MaterialGamePerformanceTests(unittest.TestCase):
@@ -127,10 +134,11 @@ class MaterialGamePerformanceTests(unittest.TestCase):
             client, "101", ["901", "902"], "bytedance", start="2026-09-01", end="2026-09-02"
         )
         self.assertEqual(
-            [m["matched_users"]["candidate_observations"]["observed_value"] for m in result["materials"]],
+            [m["matched_users"]["observed_value"] for m in result["materials"]],
             [3, 1],
         )
         self.assertIsNone(result["materials"][0]["matched_users"]["value"])
+        self.assertEqual(result["platform_scope"]["status"], "proven")
         self.assertEqual(len(client.calls), 3)
         self.assertEqual(client.calls[-1][2]["max_pages"], 999)
         serialized = json.dumps(result)
@@ -155,20 +163,56 @@ class MaterialGamePerformanceTests(unittest.TestCase):
             client, "101", ["901"], "bytedance", start="2026-09-01", end="2026-09-01"
         )
         count = result["materials"][0]["matched_users"]
-        self.assertEqual(count["status"], "unavailable")
+        self.assertEqual((count["status"], count["value"]), ("obtained", 0))
+        self.assertEqual(count["observed_value"], 0)
+        self.assertEqual(count["platform_scope"]["accepted_value"], "bytedance")
+        self.assertNotIn("platform_scoped_user_counts_or_game_metrics", result["claims"]["forbidden"])
+
+    def test_unproven_platform_keeps_same_id_rows_diagnostic_only(self):
+        client = Client(
+            daily={
+                "2026-09-01": source(
+                    SOURCE_OPERATION_ID,
+                    [user("2026-09-01", AdPlatform="tencent")],
+                    completeness="complete",
+                )
+            }
+        )
+        result = material_game_performance(
+            client, "101", ["901"], "tencent", start="2026-09-01", end="2026-09-01"
+        )
+        count = result["materials"][0]["matched_users"]
         self.assertEqual(count["reason"], "USER_PLATFORM_SCOPE_UNPROVEN")
-        self.assertIsNone(count["value"])
-        self.assertNotIn("observed_value", count)
-        self.assertEqual(count["candidate_observations"]["observed_value"], 2)
-        self.assertEqual(count["candidate_observations"]["status"], "diagnostic_only")
+        self.assertEqual(count["candidate_observations"]["observed_value"], 1)
         self.assertIn("platform_scoped_user_counts_or_game_metrics", result["claims"]["forbidden"])
+
+    def test_kuaishou_exact_platform_value_excludes_same_slot_collision(self):
+        client = Client(
+            [report(subtype="other")],
+            daily={
+                "2026-09-01": source(
+                    SOURCE_OPERATION_ID,
+                    [
+                        user("2026-09-01", AdPlatform="kuaishou"),
+                        user("2026-09-01", AdPlatform="bytedance"),
+                    ],
+                    completeness="complete",
+                )
+            },
+        )
+        result = material_game_performance(
+            client, "101", ["901"], "kuaishou", start="2026-09-01", end="2026-09-01"
+        )
+        count = result["materials"][0]["matched_users"]
+        self.assertEqual((count["status"], count["value"]), ("obtained", 1))
+        self.assertEqual(count["platform_scope"]["accepted_value"], "kuaishou")
 
     def test_empty_observation_does_not_claim_zero_attributed_users(self):
         result = material_game_performance(Client(), "101", ["901"], "bytedance",
                                           start="2026-09-01", end="2026-09-01")
         count = result["materials"][0]["matched_users"]
-        self.assertEqual((count["status"], count["value"]), ("unavailable", None))
-        self.assertEqual(count["candidate_observations"]["observed_value"], 0)
+        self.assertEqual((count["status"], count["value"]), ("partial", None))
+        self.assertEqual(count["observed_value"], 0)
 
     def test_partial_day_retains_position_and_never_zero_fills_dates(self):
         client = Client(
@@ -191,7 +235,7 @@ class MaterialGamePerformanceTests(unittest.TestCase):
             ("2026-09-01", 2, 3),
         )
         count = result["materials"][0]["matched_users"]
-        self.assertEqual(count["candidate_observations"]["observed_value"], 1)
+        self.assertEqual(count["observed_value"], 1)
         self.assertIsNone(count["value"])
         self.assertEqual(len(client.calls), 2)
 
@@ -344,13 +388,13 @@ class MaterialGamePerformanceTests(unittest.TestCase):
         )
         self.assertEqual(result["scope"]["app_id"], "101")
         self.assertEqual(
-            result["materials"][0]["metrics"]["payment"]["candidate_observations"]["definition"],
+            result["materials"][0]["metrics"]["payment"]["definition"],
             {"name": "payment", **metrics["payment"]},
         )
         self.assertEqual(len(result["metric_binding_digests"]["level"]), 64)
         self.assertNotIn("PRIVATE-CONDITION", json.dumps(result))
         self.assertTrue(
-            result["materials"][0]["metrics"]["level"]["candidate_observations"]["definition"]["condition"][
+            result["materials"][0]["metrics"]["level"]["definition"]["condition"][
                 "values_redacted"
             ]
         )

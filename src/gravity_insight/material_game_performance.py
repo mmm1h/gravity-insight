@@ -13,6 +13,11 @@ from .contracts.join_key import (
     normalize_join_value,
     resolve_proven_join_key,
 )
+from .contracts.user_platform_discriminator import (
+    UserPlatformBinding,
+    UserPlatformDiscriminatorError,
+    require_proven_user_platform_binding,
+)
 from .errors import ContractChangedError, GravityInsightError
 from .material_game_contract import METRICS, normalize_request
 from .material_game_result import envelope, gap, safe_failure, scan_receipt
@@ -25,6 +30,7 @@ def material_game_performance(
     client: Any, app_id: str | int, material_ids: Any, platform: str, **options: Any
 ) -> dict[str, Any]:
     request = normalize_request(app_id, material_ids, platform, **options)
+    request["platform_scope"] = _platform_scope(platform)
     bounds = request["bounds"]
     materials = [_initial_material(value) for value in request["material_ids"]]
     days: list[dict[str, Any]] = []
@@ -78,7 +84,7 @@ def material_game_performance(
             groups.append(group)
     if groups:
         _read_days(client, request, groups, materials, days, budget, receipts)
-    _finish_metrics(materials, days)
+    _finish_metrics(materials, days, request["platform_scope"])
     return envelope(request, materials, report_scan, days, budget, receipts)
 
 
@@ -236,6 +242,7 @@ def _read_days(
                 {"app_id": request["app_id"], "date": day},
                 active,
                 {key: value for key, value in request["metrics"].items() if key != "retention"},
+                scope_filter=_platform_filter(request.get("platform_scope")),
                 max_pages=remaining_pages,
                 max_items=remaining_items,
                 max_workers=request["max_workers"],
@@ -286,7 +293,11 @@ def _failed_day(
     return {"date": day, "scan": None, "error": failure, "cells": cells}
 
 
-def _finish_metrics(materials: list[dict[str, Any]], days: list[dict[str, Any]]) -> None:
+def _finish_metrics(
+    materials: list[dict[str, Any]],
+    days: list[dict[str, Any]],
+    platform_scope: UserPlatformBinding | None,
+) -> None:
     for index, item in enumerate(materials):
         window = item.get("window", {})
         if "start" not in window or item["join_key"]["status"] != "proven":
@@ -296,10 +307,24 @@ def _finish_metrics(materials: list[dict[str, Any]], days: list[dict[str, Any]])
             result = _metric_summary(index, name, window, total, days)
             if result is None:
                 continue
-            if result.get("observed_value") is not None:
+            if result.get("observed_value") is not None and platform_scope is None:
                 result = _platform_unverified(result)
+            elif result.get("observed_value") is not None:
+                result["platform_scope"] = {
+                    "status": "proven",
+                    "binding_id": platform_scope.binding_id,
+                    "field": platform_scope.field_path,
+                    "accepted_value": platform_scope.accepted_value,
+                }
             if name == "matched_users":
-                result.update({"unit": "platform_scoped_users", "distinct_users": None})
+                result.update(
+                    {
+                        "unit": "platform_scoped_observed_acquisition_rows"
+                        if platform_scope is not None
+                        else "platform_scoped_users",
+                        "distinct_users": None,
+                    }
+                )
                 item[name] = result
             else:
                 item["metrics"][name] = result
@@ -327,6 +352,23 @@ def _platform_unverified(result: Mapping[str, Any]) -> dict[str, Any]:
             "platform_scope": "unproven",
         },
         "failures": result["failures"],
+    }
+
+
+def _platform_scope(platform: str) -> UserPlatformBinding | None:
+    try:
+        return require_proven_user_platform_binding(platform)
+    except UserPlatformDiscriminatorError:
+        return None
+
+
+def _platform_filter(scope: UserPlatformBinding | None) -> dict[str, Any] | None:
+    if scope is None:
+        return None
+    return {
+        "field": scope.field_path.rsplit(".", 1)[-1],
+        "operator": "EQUALS",
+        "values": [scope.accepted_value],
     }
 
 

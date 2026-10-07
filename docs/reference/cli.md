@@ -269,13 +269,12 @@ The first incomplete/failed day stops scanning; failed-read reservations are sep
 from known usage. Bounds count logical pages, not HTTP transport retry attempts.
 Rescan with larger bounds or smaller date windows; never add a prefix to its replacement.
 
-Missing coverage is never zero-filled. User-side platform discriminator bindings are
-unproven: `USER_PLATFORM_SCOPE_UNPROVEN` keeps matched users/game metrics unavailable.
-`candidate_observations.observed_value` is diagnostic same-ID row count only; collisions
-across platforms cannot be excluded. Unknown completeness also prevents population totals,
-ad-registration reconciliation, historical properties and mature retention. The overall
-result remains partial (exit 3); inspect its components. Creative/campaign are unsupported, not fallback queries. No Event grouping
-is enabled. Raw rows and personnel fields are never returned.
+Missing coverage is never zero-filled. Reviewed exact `AdPlatform` bindings scope ByteDance
+and Kuaishou rows; blank, unknown and mismatched values are excluded. Tencent and unregistered
+platforms retain `USER_PLATFORM_SCOPE_UNPROVEN`, with same-ID rows diagnostic-only. Proven
+bindings permit only observed acquisition rows and metric aggregates; unknown completeness
+keeps `value=null` and distinct-user, reconciliation, retention and causal claims forbidden.
+The result remains partial (exit 3). Creative/campaign and Event grouping remain unsupported; raw rows and personnel fields are never returned.
 
 ### Material Asset Fetch
 
