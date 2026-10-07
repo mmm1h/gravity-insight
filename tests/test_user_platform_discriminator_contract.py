@@ -16,7 +16,7 @@ from gravity_insight.contracts.user_platform_discriminator import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SAMPLED_ON = "2026-10-08"
+SAMPLED_ON = "2026-10-07"
 
 
 def test_checked_in_registry_matches_reviewed_aggregate_evidence() -> None:

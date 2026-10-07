@@ -1,7 +1,7 @@
 {
   "schema_version": "gravity.user-platform-discriminator-evidence.v1",
   "source": "issue://mmm1h/gravity-insight/223#user-platform-discriminator-scope",
-  "sampled_on": "2026-10-08",
+  "sampled_on": "2026-10-07",
   "runs": {
     "bytedance": {
       "request_count": 20,
