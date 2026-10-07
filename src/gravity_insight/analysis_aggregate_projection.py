@@ -121,8 +121,11 @@ def _project_mapping(
             or sensitive_key(
                 name, blocked, allow_contracted_identifiers=allow_identifiers
             )
-            or not allowed_analysis_response_key(
-                name, response_keys, path, response_paths[0], response_paths[1]
+            or not (
+                allowed_analysis_response_key(
+                    name, response_keys, path, response_paths[0], response_paths[1]
+                )
+                or _scatter_group_identity_key(name, path)
             )
         ):
             audit_path = ("data", *("*" if part == "[]" else part for part in path))
@@ -148,6 +151,15 @@ def _project_mapping(
             result[name] = normalized
             drift = max(drift, nested_drift)
     return result, drift
+
+
+def _scatter_group_identity_key(name: str, path: tuple[str, ...]) -> bool:
+    """Open only the two production-observed Scatter group identity rows."""
+
+    return name == "group_cols" and (
+        path == ("total", "[]")
+        or len(path) == 3 and path[0] == "y" and path[2] == "[]"
+    )
 
 
 def _project_sequence(

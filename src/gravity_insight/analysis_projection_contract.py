@@ -489,9 +489,9 @@ def validate_group_identity_invariant(
 ) -> None:
     """Reject contracts that can request a group or identity they cannot keep.
 
-    This is not "project every key". Chart helpers, ``uid``, and ``group_cols``
-    stay fail-closed. The check only requires a known opening for the group
-    or identity the caller actually asked for.
+    This is not "project every key". Chart helpers, ``uid``, and unregistered
+    ``group_cols`` paths stay fail-closed. The check only requires a known
+    opening for the group or identity the caller actually asked for.
     """
 
     _validate_groupable_analysis_shape(fields, projection)

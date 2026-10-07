@@ -61,11 +61,14 @@ class OperationRecertificationEvidenceTests(unittest.TestCase):
     def test_validation_evidence_references_resolve_to_successful_http_receipts(self):
         evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
         receipts = {r["receipt_id"]: r for r in evidence["http_receipts"]}
+        # Issue #255 changed the Scatter projection; its v2 receipt remains
+        # historical evidence but cannot certify the v3 contract digest.
         expected = set(evidence["scope"]["171"]) - {
-            "analysis.default_val.list", "material.local.list", "material.report.query",
+            "analysis.default_val.list", "analysis.scatter.query",
+            "material.local.list", "material.report.query",
         }
         actual = {r["selector"] for r in evidence["records"]["171"] if r.get("current_validation")}
-        self.assertEqual(19, evidence["stage_171_current_validations"])
+        self.assertEqual(18, evidence["stage_171_current_validations"])
         self.assertEqual(expected, actual)
         for row in evidence["records"]["171"]:
             validation = row.get("current_validation")
