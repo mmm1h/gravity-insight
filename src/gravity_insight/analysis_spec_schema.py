@@ -79,7 +79,7 @@ def _kind_schemas() -> dict[str, Any]:
                 required=("start", "end", "steps"),
                 properties={
                     "steps": _array_ref("event_query_step", 1, 50),
-                    "global_filters": _array_ref("event_condition", 0, 100),
+                    "global_filters": _array_ref("event_global_condition", 0, 100),
                     "global_logic": _enum("AND", "OR"),
                     "calculate_layer_y": {"type": "boolean", "default": False},
                     "return_hierarchy_list": {"type": "boolean", "default": False},

@@ -217,6 +217,8 @@ gravity analysis segment evaluate --app main --spec custom-event-first-exposure.
 
 ## 已知失败边界
 
+Event 顶层 `default_user/create_date_list/RANGE_IN` SDK 创建时间 cohort 在 compact 编译期返回 `ANALYSIS_EVENT_SDK_COHORT_UNSUPPORTED`，不再发送已知失败形状；注册事件 Funnel 只回答有序活动诊断，`analysis.user_detail.list` 只读取精确 SDK 创建用户集合，两者均不保留 Event 周期去重计数，不得当作等价替代或改用项目角色时间戳。
+
 非空 `retention.property_conditions` 与
 `retention.query_item_before_after.before_custom` 现在在 compact 编译期返回
 `INPUT_INVALID`，不会发请求。普通单起始事件 Retention、空列表和
