@@ -472,6 +472,9 @@ class StartupInstallTests(unittest.TestCase):
 
     def test_default_is_on_and_all_explicit_off_values_skip_every_side_effect(self):
         self.assertTrue(startup_update_enabled(["agent"], environ={}))
+        for argv in (["--help"], ["analysis", "query", "--help"], ["agent", "-h"]):
+            with self.subTest(argv=argv):
+                self.assertFalse(startup_update_enabled(argv, environ={}))
         for value in ("0", "false", "no", "off", " FALSE "):
             self.assertEqual(
                 "disabled", self.install(environ={AUTO_UPGRADE_ENV: value}).status
@@ -720,60 +723,61 @@ class StartupInstallTests(unittest.TestCase):
 
     def test_failed_pip_is_diagnosable_and_retry_is_throttled(self):
         self.python.return_value = Mock(
-            returncode=1, stdout="", stderr="Permission denied"
+            returncode=1,
+            stdout="",
+            stderr="python.exe: No module named pip",
         )
         first = self.install()
         second = self.install(now=NOW + timedelta(seconds=1))
         self.assertEqual(("failed", "suppressed"), (first.status, second.status))
-        self.assertIn("pip exited 1", self.output.getvalue())
-        self.assertIn("permissions", self.output.getvalue())
+        self.assertIn("installer unavailable", self.output.getvalue())
+        self.assertIn("target Python cannot import pip", self.output.getvalue())
+        self.assertNotIn("No module named pip", self.output.getvalue())
         self.assertEqual(1, self.python.call_count)
         self.assertIn(
-            "Permission denied",
+            "No module named pip",
             next(self.root.rglob("pip-*.log")).read_text(encoding="utf-8"),
         )
 
-    def test_network_failure_continues_actual_cli_help(self):
-        stdout, stderr = io.StringIO(), io.StringIO()
-        with (
-            patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
-            patch.object(
-                upgrade,
-                "update_state_path",
-                return_value=self.root / "update-check.json",
-            ),
-            patch.object(upgrade, "_distribution_get", side_effect=OSError("offline")),
-            redirect_stdout(stdout),
-            redirect_stderr(stderr),
-        ):
-            code = entry.main(["--help"])
-        self.assertEqual(0, code)
-        self.assertIn("Gravity SDK", stdout.getvalue())
-        self.assertIn("PyPI release source is unavailable", stderr.getvalue())
-        self.assertIn("retry", stderr.getvalue())
-        self.python.assert_not_called()
-
-    def test_pip_failure_continues_actual_cli_help(self):
+    def test_other_pip_failures_keep_private_detail_and_generic_remedy(self):
         self.python.return_value = Mock(
-            returncode=1, stdout="", stderr="injected pip failure"
+            returncode=1, stdout="", stderr="private index failure"
         )
+
+        result = self.install()
+
+        self.assertEqual("failed", result.status)
+        self.assertIn("pip exited 1", self.output.getvalue())
+        self.assertIn("connectivity", self.output.getvalue())
+        self.assertNotIn("private index failure", self.output.getvalue())
+        self.assertIn(
+            "private index failure",
+            next(self.root.rglob("pip-*.log")).read_text(encoding="utf-8"),
+        )
+
+    def test_help_skips_release_check_and_install(self):
+        # Issue #258: help/discovery must not retry a failing installer.
         stdout, stderr = io.StringIO(), io.StringIO()
         with (
             patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
             patch.object(
                 upgrade,
                 "update_state_path",
-                return_value=self.root / "update-check.json",
+                side_effect=AssertionError("help must stay offline"),
             ),
-            patch.object(upgrade, "_distribution_get", self.request),
+            patch.object(
+                upgrade,
+                "_distribution_get",
+                side_effect=AssertionError("help must stay offline"),
+            ),
             redirect_stdout(stdout),
             redirect_stderr(stderr),
         ):
             code = entry.main(["--help"])
         self.assertEqual(0, code)
         self.assertIn("Gravity SDK", stdout.getvalue())
-        self.assertIn("pip exited 1", stderr.getvalue())
-        self.assertIn("Continuing this command", stderr.getvalue())
+        self.assertEqual("", stderr.getvalue())
+        self.python.assert_not_called()
 
     def test_state_write_failure_is_nonfatal_and_no_install_occurs(self):
         with patch.object(
@@ -948,16 +952,19 @@ class StartupInstallTests(unittest.TestCase):
 
     def test_unexpected_startup_state_failure_is_nonfatal(self):
         with (
-            patch.dict(os.environ, {AUTO_UPGRADE_ENV: "1"}),
             patch.object(
                 upgrade,
                 "update_state_path",
                 side_effect=PermissionError("cache unavailable"),
             ),
-            redirect_stdout(io.StringIO()),
-            redirect_stderr(self.output),
         ):
-            self.assertEqual(0, entry.main(["--help"]))
+            result = maybe_auto_upgrade(
+                ["agent"],
+                environ={AUTO_UPGRADE_ENV: "1"},
+                request=self.request,
+                stderr=self.output,
+            )
+        self.assertEqual("failed", result.status)
         self.assertIn("permissions", self.output.getvalue())
         self.python.assert_not_called()
 
