@@ -19,6 +19,10 @@ Target release: `0.3.26`
 
 - None.
 
+### Added
+
+- `materials game-performance` now applies a versioned, reviewed user-side `AdPlatform` discriminator before aggregating ByteDance or Kuaishou material rows. Blank, unknown and mismatched platform values are excluded; Tencent remains fail-closed with `USER_PLATFORM_SCOPE_UNPROVEN`. The result exposes only platform-scoped observed acquisition rows and observed metric aggregates: source completeness, distinct users, mature retention and causal claims remain unavailable (#223).
+
 ## [0.3.25] - 2026-10-07
 
 ### Breaking changes

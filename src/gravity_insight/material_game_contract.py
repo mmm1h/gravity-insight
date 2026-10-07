@@ -34,7 +34,7 @@ SCHEMA_VERSION = "gravity-insight.material-game-performance.v1"
 METRICS = ("level", "payment", "duration", "retention")
 METHOD = {
     "count": "Sum candidate same-ID rows with CreateTime on each queried calendar date; not matched or distinct users.",
-    "platform_scope": "User-side platform discriminator binding is unproven; user metrics are unavailable, candidate aggregates diagnostic only.",
+    "platform_scope": "Reviewed exact AdPlatform bindings scope observed rows for ByteDance/Kuaishou; blank, unknown and unregistered platforms fail closed.",
     "auto_window": "Lookback through cutoff, extended to earlier report create_time; delivery bounds are unproven.",
     "types": "Native scalar types only; validate before reduction, never cast strings or retry mixed types.",
     "metrics": "Project-owned count_if bindings; sum requires numeric metadata outside this two-source product.",

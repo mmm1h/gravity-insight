@@ -330,11 +330,10 @@ result = gravity.material_game_performance(
 `app` is a required workspace alias or ID; select 1..20 unique material IDs.
 JSON types are preserved, not silently coerced. Dates must be supplied together;
 omitting them uses `as_of` (yesterday by default) and `lookback_days=30`.
-The candidate window is extended to earlier observed creation dates, not narrowed
-into a presumed delivery period. Metrics are explicit project-owned bindings. Unproven user-side platform isolation
-keeps user results unavailable (`USER_PLATFORM_SCOPE_UNPROVEN`), even with full paging.
-`candidate_observations.observed_value` is a diagnostic same-ID row subtotal; `value=null` when coverage is
-incomplete/unknown, and `distinct_users` remains unproven. See the canonical
+The candidate window extends to earlier observed creation dates, not a presumed delivery period.
+Metrics are project-owned. Reviewed `AdPlatform` bindings scope ByteDance and Kuaishou; Tencent
+and unknown values fail closed. Proven `observed_value` is a row subtotal, while unknown completeness
+keeps `value=null` and distinct users unproven; unproven platforms retain diagnostic candidates. See the canonical
 [CLI method, budget, type and result contract](cli.md#material-game-performance).
 No Plan adapter is registered; `material.game_performance` is a direct Agent handoff.
 

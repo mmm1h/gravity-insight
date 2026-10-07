@@ -10,6 +10,9 @@ from gravity_insight.documentation_status import (
 )
 from gravity_insight.governance.envelope_obligation_gate import validate
 from gravity_insight.contracts.join_key import inspect_join_key_contract
+from gravity_insight.contracts.user_platform_discriminator import (
+    inspect_user_platform_discriminator_contract,
+)
 
 
 def integrated_errors(root: Path) -> list[str]:
@@ -17,6 +20,7 @@ def integrated_errors(root: Path) -> list[str]:
         *integrated_documentation_errors(root),
         *validate(root),
         *inspect_join_key_contract(root),
+        *inspect_user_platform_discriminator_contract(root),
     ]
 
 
