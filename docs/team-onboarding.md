@@ -15,7 +15,7 @@ gravity insight auth status
 
 首次运行会在交互终端引导登录；账号由团队发放。凭据只留在用户私有状态目录；认证失败时停止，不把 token、cookie、用户名或密码写进命令、日志或 Plan。
 
-**自动更新全团队默认开启**，不要逐机关闭。`GRAVITY_INSIGHT_AUTO_UPGRADE` 未设置即为开启，启动时安装更新版本（含破坏性变更）并在新进程重跑命令；破坏性变更靠[迁移说明](migration/)传达，不靠停留旧版躲避。因此 `pip show` 显示的是基础安装版本而非实际执行版本，要认实际版本读 `gravity.runtime-update-receipt.v1` 收据。取证需临时钉版时设 `GRAVITY_INSIGHT_PINNED_VERSION`，**必须在第一条命令之前**。从 `0.3.9` 及更早升上来的人要手动装一次 `0.3.10`：执行更新的代码在 `0.3.10` 里，旧运行时没有它。
+**自动更新全团队默认开启**，不要逐机关闭。`GRAVITY_INSIGHT_AUTO_UPGRADE` 未设置即为开启，普通业务命令启动时安装更新版本（含破坏性变更）并在新进程重跑命令；任意 `--help`/`-h` 只做本地发现，不检查 release 或调用 pip。破坏性变更靠[迁移说明](migration/)传达，不靠停留旧版躲避。因此 `pip show` 显示的是基础安装版本而非实际执行版本，要认实际版本读 `gravity.runtime-update-receipt.v1` 收据。取证需临时钉版时设 `GRAVITY_INSIGHT_PINNED_VERSION`，**必须在第一条命令之前**。从 `0.3.9` 及更早升上来的人要手动装一次 `0.3.10`：执行更新的代码在 `0.3.10` 里，旧运行时没有它。
 
 密封 Skill seed 也默认在普通业务命令 dispatch 前离线装配；相同 seed digest 直接短路，更新随 Runtime
 版本进入下一进程，不另查远程 Skill channel。需要冻结 Skill 时单独设置
