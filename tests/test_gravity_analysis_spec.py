@@ -195,6 +195,68 @@ class AnalysisQuerySpecTests(unittest.TestCase):
             )
         self.assertEqual([], sdk.insight.validated)
 
+    def test_issue_259_event_sdk_creation_cohort_fails_before_dispatch(self) -> None:
+        # Issue #259 is a proven Event-only capability boundary.
+        insight = FakeInsight()
+        sdk = GravitySDK(insight=insight)
+        spec = {
+            "app": "101",
+            "start": "2026-08-01",
+            "end": "2026-08-02",
+            "time_grain": "total",
+            "global_filters": [{
+                "field": "create_date_list",
+                "type": "default_user",
+                "operator": "RANGE_IN",
+                "value": ["2026-08-01 00:00:00", "2026-08-02 23:59:59"],
+            }],
+            "steps": [step("open")],
+        }
+
+        with self.assertRaises(InputValidationError) as caught:
+            sdk.analysis_query("event", spec)
+
+        detail = caught.exception.to_error_detail(
+            operation_id="analysis.event.query"
+        ).to_dict()
+        self.assertEqual(
+            (
+                "ANALYSIS_EVENT_SDK_COHORT_UNSUPPORTED",
+                "caller",
+                "global_conditions[0]",
+                False,
+            ),
+            (
+                detail["code"],
+                detail["category"],
+                detail["field"],
+                detail["retryable"],
+            ),
+        )
+        self.assertIn("registration-anchored Funnel", detail["next_action"])
+        self.assertIn("analysis.user_detail.list", detail["next_action"])
+        self.assertIn("Neither preserves period-unique Event counts", detail["next_action"])
+        self.assertIn("do not substitute a custom role timestamp", detail["next_action"])
+        self.assertNotIn("2026-08", repr(detail))
+        self.assertEqual(([], []), (insight.validated, insight.reads))
+
+        definitions = analysis_query_spec_schema()["definitions"]
+        global_condition = definitions["event_global_condition"]
+        self.assertIn("create_date_list/RANGE_IN", global_condition["description"])
+        self.assertTrue(any("not" in rule for rule in global_condition["allOf"]))
+        self.assertFalse(any("not" in rule for rule in definitions["event_condition"]["allOf"]))
+
+        step_condition = {**spec, "global_filters": []}
+        step_condition["steps"] = [{
+            **step("open"),
+            "conditions": spec["global_filters"],
+        }]
+        compiled = compile_query_spec("event", step_condition)
+        self.assertEqual(
+            "create_date_list",
+            compiled.inputs["query_item_list"][0]["conditions"][0]["field"],
+        )
+
     def test_device_id_count_is_rejected_before_dispatch_with_valid_controls(self) -> None:
         dated = {
             "app": "101",

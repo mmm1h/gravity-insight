@@ -137,6 +137,7 @@ def validate_analysis_shape(
             inputs.get("global_conditions", ()), "global_conditions", query_kind
         )
     if query_kind == "event":
+        _reject_event_sdk_creation_filter(inputs.get("global_conditions", ()))
         # Issue #22 reproduced the same upstream rejection from a step condition.
         for index, item in enumerate(inputs.get("query_item_list", ())):
             _reject_user_property_conditions(
@@ -152,6 +153,31 @@ def validate_analysis_shape(
 # never got wrong.  Proven on funnel (issue #1) and event (issue #22); the other
 # kinds have no reproduction, so they stay unrestricted.
 _USER_PROPERTY_CONDITION_KINDS = frozenset({"funnel", "event"})
+
+
+def _reject_event_sdk_creation_filter(value: Any) -> None:
+    """Keep an upstream-rejected SDK cohort binding out of Event execution."""
+
+    for index, item in enumerate(value):
+        if not isinstance(item, Mapping) or (
+            item.get("type"), item.get("field"), item.get("operator")
+        ) != ("default_user", "create_date_list", "RANGE_IN"):
+            continue
+        error = InputValidationError(
+            "analysis event global filters do not support the SDK creation-time "
+            "create_date_list/RANGE_IN binding; request was not sent",
+            code="ANALYSIS_EVENT_SDK_COHORT_UNSUPPORTED",
+            field=f"global_conditions[{index}]",
+            next_action=(
+                "Use a registration-anchored Funnel for an ordered activity "
+                "diagnostic, or analysis.user_detail.list for an exact SDK-created "
+                "user cohort. Neither preserves period-unique Event counts; label the "
+                "different semantics explicitly and do not substitute a custom role "
+                "timestamp."
+            ),
+        )
+        error.category = "caller"
+        raise error
 
 
 def _reject_user_property_conditions(value: Any, field: str, kind: str) -> None:

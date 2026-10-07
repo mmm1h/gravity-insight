@@ -106,6 +106,22 @@ def event_input_definitions(definitions: Mapping[str, Any]) -> dict[str, Any]:
     condition = copy.deepcopy(definitions["condition"])
     operators = condition["properties"]["operator"]["enum"]
     condition["properties"]["operator"]["enum"] = sorted(set(operators) - EVENT_OPERATOR_REPLACEMENTS.keys())
+    global_condition = copy.deepcopy(condition)
+    global_condition["allOf"].append({
+        "not": {
+            "required": ["type", "field", "operator"],
+            "properties": {
+                "type": {"const": "default_user"},
+                "field": {"const": "create_date_list"},
+                "operator": {"const": "RANGE_IN"},
+            },
+        }
+    })
+    global_condition["description"] = (
+        "Event does not support SDK creation-time create_date_list/RANGE_IN; "
+        "use a registration-anchored Funnel or user-detail cohort with explicitly "
+        "different semantics."
+    )
     metric = copy.deepcopy(definitions["metric"])
     metric["allOf"] = [{
         "if": {"properties": {"aggregation": {"const": "Quantile"}}, "required": ["aggregation"]},
@@ -118,7 +134,12 @@ def event_input_definitions(definitions: Mapping[str, Any]) -> dict[str, Any]:
     step = copy.deepcopy(definitions["event_step"])
     step["properties"]["conditions"]["items"] = {"$ref": "#/definitions/event_condition"}
     step["properties"]["metric"] = {"$ref": "#/definitions/event_metric"}
-    return {"event_condition": condition, "event_metric": metric, "event_query_step": step}
+    return {
+        "event_condition": condition,
+        "event_global_condition": global_condition,
+        "event_metric": metric,
+        "event_query_step": step,
+    }
 
 
 def reject_keys(
