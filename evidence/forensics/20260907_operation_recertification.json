@@ -6406,62 +6406,6 @@
       },
       {
         "conclusion": "drift_cleared_validation_recorded",
-        "current_validation": {
-          "completeness": "unknown",
-          "contract_digest": "fd586d192636729b2c23e34cf4b3230f0b6d96c886b049eadd8d2dcef37ec466",
-          "contract_version": "2",
-          "data_quality": {
-            "checks": [
-              {
-                "check_id": "execution.receipt",
-                "scope": "analysis.scatter.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "execution.semantic-status",
-                "scope": "analysis.scatter.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.nonempty",
-                "scope": "analysis.scatter.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.schema-and-type",
-                "scope": "analysis.scatter.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.freshness",
-                "scope": "analysis.scatter.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.no-drift",
-                "scope": "analysis.scatter.query",
-                "status": "pass"
-              }
-            ],
-            "reason_codes": [],
-            "schema_version": "gravity.data-quality-result.v1",
-            "status": "pass"
-          },
-          "evidence_references": [
-            {
-              "kind": "receipt",
-              "reference": "receipt:1e15f839b67e4947abef54faa8c65fc6"
-            }
-          ],
-          "expires_at": "2026-09-08T13:08:34Z",
-          "identity_kind": "operation",
-          "provider_fingerprint": "25fd04fa4f339c9a56314aa9a1568fb46b06914bf4dc54af5172f4b9da695c01",
-          "reason_codes": [],
-          "schema_version": "gravity.capability-validation.v1",
-          "selector": "analysis.scatter.query",
-          "trust_status": "stable",
-          "validated_at": "2026-09-07T13:08:34Z"
-        },
         "initial_observation": {
           "conclusion": "unproven",
           "outcome": {
@@ -13347,7 +13291,7 @@
       "report.multidim.media_enum.list"
     ]
   },
-  "stage_171_current_validations": 19,
+  "stage_171_current_validations": 18,
   "validations": [
     {
       "completeness": "unknown",
