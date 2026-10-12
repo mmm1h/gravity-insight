@@ -16,6 +16,7 @@ _REGISTERED_GAP_QUERIES = (
     "query multidim cohort horizon D60",
     "custom event first exposure cohort",
     "external competitor download iap market history",
+    "group native event aggregates by canonical ClientID",
     "what date semantics does ap_cost use: spend, click, activation, or registration date",
     "exact ap_cost by post-registration user_ab group",
 )
