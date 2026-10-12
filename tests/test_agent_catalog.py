@@ -14,6 +14,9 @@ from gravity_insight.agents.product_inventory import canonical_capability_cards
 from gravity_insight.agents.unavailable import registered_unavailable_gaps
 from gravity_insight.agents.unavailable import unavailable_journey_gap
 from gravity_insight.agents.unavailable_analysis import (
+    CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE,
+    CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION,
+    CANONICAL_CLIENT_ID_EVENT_COHORT_REASON,
     EXTERNAL_MARKET_HISTORY_GAP_CODE,
     EXTERNAL_MARKET_HISTORY_NEXT_ACTION,
     EXTERNAL_MARKET_HISTORY_REASON,
@@ -87,12 +90,12 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])
         self.assertEqual("discover_and_describe", result["mode"])
 
-    def test_registered_gap_inventory_has_twelve_unique_machine_codes(self) -> None:
+    def test_registered_gap_inventory_has_thirteen_unique_machine_codes(self) -> None:
         """Every unavailable journey is indexed once under a unique code."""
 
         gaps = registered_unavailable_gaps()
-        self.assertEqual(12, len(gaps))
-        self.assertEqual(12, len({gap["code"] for gap in gaps}))
+        self.assertEqual(13, len(gaps))
+        self.assertEqual(13, len({gap["code"] for gap in gaps}))
 
     def test_external_market_history_gap_preserves_own_app_discovery(self) -> None:
         for query in (
@@ -134,6 +137,57 @@ class AgentCatalogTests(unittest.TestCase):
         )
         self.assertEqual("success", own_app["status"])
         self.assertEqual("analysis.task.handoff", own_app["candidates"][0]["selector"])
+
+    def test_canonical_client_id_event_cohort_returns_identity_boundary_gap(self) -> None:
+        for query in (
+            "Filter native event analysis by canonical ClientID.",
+            "Group event aggregates by client_id.",
+            "按 canonical ClientID 分组原生事件聚合。",
+        ):
+            with self.subTest(query=query):
+                gap = unavailable_journey_gap(query)
+                self.assertIsNotNone(gap)
+                self.assertEqual("capability_gap", gap["kind"])
+                self.assertEqual(CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE, gap["code"])
+                self.assertEqual("canonical_client_id_event_cohort", gap["journey"])
+                self.assertEqual(CANONICAL_CLIENT_ID_EVENT_COHORT_REASON, gap["reason"])
+                self.assertEqual(
+                    CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION,
+                    gap["next_action"],
+                )
+                self.assertFalse(gap["network_called"])
+                self.assertNotIn("next", gap)
+
+                result = discover_capabilities(query, client=self.client)
+                self.assertEqual("capability_gap", result["status"])
+                self.assertEqual([], result["candidates"])
+
+        described = run_agent_catalog_command(
+            _args(
+                "describe",
+                selector=f"gap:{CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE}",
+            ),
+            self.client,
+        )
+        self.assertFalse(described["capability"]["executable"])
+        self.assertEqual(
+            CANONICAL_CLIENT_ID_EVENT_COHORT_REASON,
+            described["capability"]["reason"],
+        )
+
+    def test_canonical_client_id_gap_does_not_capture_other_identity_routes(self) -> None:
+        for query in (
+            "Show the event timeline for client_id.",
+            "Filter events by $device_id.",
+            "Group events by custom user long_id.",
+            "Do not filter native event analysis by canonical ClientID.",
+        ):
+            with self.subTest(query=query):
+                gap = unavailable_journey_gap(query)
+                self.assertTrue(
+                    gap is None
+                    or gap["code"] != CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE
+                )
 
     def test_custom_event_first_exposure_returns_narrow_evidence_gap(self) -> None:
         for query in (

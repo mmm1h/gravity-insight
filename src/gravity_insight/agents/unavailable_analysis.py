@@ -54,6 +54,24 @@ EXTERNAL_MARKET_HISTORY_NEXT_ACTION = (
     "keep public version observations separate and do not substitute own-App Insight "
     "or an unreviewed SQL product."
 )
+CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE = (
+    "CANONICAL_CLIENT_ID_EVENT_COHORT_UNAVAILABLE"
+)
+CANONICAL_CLIENT_ID_EVENT_COHORT_REASON = (
+    "Native Event Analysis has no registered metadata/contract-bound filter or "
+    "grouping dimension for canonical SDK customer identity. Governed profile and "
+    "origin-event export `ClientID` and timeline `client_id` are surface-specific "
+    "canonical identity projections; event `$device_id` is a device property, while "
+    "custom-user `device_id` and `long_id` are separate project-defined properties. "
+    "None is a proven substitute for a canonical ClientID event cohort dimension."
+)
+CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION = (
+    "Use the governed origin-event export, validate its complete row count against "
+    "the same-window native event aggregate, and join locally on canonical ClientID. "
+    "Use a custom-identity route only for an explicitly verified subset, quantify "
+    "unmapped identity, cohort, order, and amount coverage, and keep missing behavior "
+    "unknown rather than zero. Do not register or send an inferred Event field."
+)
 
 
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
@@ -74,6 +92,14 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             journey="external_competitor_market_history",
             reason=EXTERNAL_MARKET_HISTORY_REASON,
             next_action=EXTERNAL_MARKET_HISTORY_NEXT_ACTION,
+        )
+    if _canonical_client_id_event_cohort(selected, words):
+        return unavailable_gap(
+            query,
+            code=CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE,
+            journey="canonical_client_id_event_cohort",
+            reason=CANONICAL_CLIENT_ID_EVENT_COHORT_REASON,
+            next_action=CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION,
         )
     if _current_table_schema(selected, words):
         return unavailable_gap(
@@ -169,6 +195,39 @@ def _external_market_history(selected: str, words: frozenset[str]) -> bool:
     return (english_subject or chinese_subject) and market_metric and historical
 
 
+def _canonical_client_id_event_cohort(
+    selected: str, words: frozenset[str]
+) -> bool:
+    canonical_identity = bool(words & {"clientid", "client_id"}) or (
+        {"canonical", "client"} <= words and bool(words & {"id", "identity"})
+    )
+    event_context = "event" in words or "事件" in selected
+    aggregate_intent = bool(
+        words
+        & {
+            "aggregate",
+            "aggregates",
+            "aggregation",
+            "cohort",
+            "dimension",
+            "group",
+            "grouping",
+        }
+    ) or any(term in selected for term in ("分组", "聚合", "人群", "队列"))
+    filter_intent = bool(words & {"filter", "filtering"}) or any(
+        term in selected for term in ("筛选", "过滤")
+    )
+    timeline_context = bool(words & {"journey", "timeline"}) or any(
+        term in selected for term in ("时间线", "用户事件列表")
+    )
+    return (
+        canonical_identity
+        and event_context
+        and (aggregate_intent or filter_intent)
+        and (aggregate_intent or not timeline_context)
+    )
+
+
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
     return (
         _explicit_current_schema(selected)
@@ -227,6 +286,9 @@ def _analysis_export(selected: str, words: frozenset[str]) -> bool:
 
 
 __all__ = [
+    "CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE",
+    "CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION",
+    "CANONICAL_CLIENT_ID_EVENT_COHORT_REASON",
     "EXTERNAL_MARKET_HISTORY_GAP_CODE",
     "EXTERNAL_MARKET_HISTORY_NEXT_ACTION",
     "EXTERNAL_MARKET_HISTORY_REASON",

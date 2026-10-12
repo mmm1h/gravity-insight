@@ -157,6 +157,10 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
         "查询外部竞品的下载、安装、IAP、收入或市场历史",
         "external competitor download IAP revenue market history",
     ),
+    "gap:CANONICAL_CLIENT_ID_EVENT_COHORT_UNAVAILABLE": (
+        "按 canonical ClientID 筛选或分组原生事件聚合",
+        "filter or group native event aggregates by canonical ClientID",
+    ),
     "gap:NON_BYTEDANCE_HIERARCHY_PARENT_MISSING": (
         "下钻非 Bytedance 平台的计划、组和创意表现",
     ),
