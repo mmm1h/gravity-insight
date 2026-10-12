@@ -82,11 +82,48 @@ class AnalysisQuerySpecTests(unittest.TestCase):
         self.assertIn("total", grains_by_kind["event"])
         for kind in ("funnel", "retention", "scatter"):
             self.assertEqual(ANALYSIS_TIME_GROUPS, grains_by_kind[kind])
+        for kind in ("event", "funnel", "retention", "scatter"):
+            notes = schema["kind_schemas"][kind]["notes"]
+            self.assertEqual(90, notes["date_window"]["maximum_span_days"])
+            self.assertIn("end - start", notes["date_window"]["validation"])
+            self.assertIn(
+                "non-overlapping windows",
+                notes["cross_window_aggregation"]["additive_measures"],
+            )
+            self.assertIn(
+                "do not sum them across windows",
+                notes["cross_window_aggregation"]["distinct_users"],
+            )
         funnel_notes = schema["kind_schemas"]["funnel"]["notes"]
         self.assertFalse(funnel_notes["returns_conversion_rate"])
         self.assertIn("step_n / step_1", funnel_notes["rate_denominators"]["first_step"])
         self.assertIn("step_n / step_{n-1}", funnel_notes["rate_denominators"]["previous_step"])
         self.assertEqual(4, funnel_notes["window_funnel_mode"])
+
+        accepted = compile_query_spec(
+            "event",
+            {
+                "app": "101",
+                "start": "2026-01-01",
+                "end": "2026-04-01",
+                "steps": [step("purchase")],
+            },
+        )
+        self.assertEqual(
+            {"start_date": "2026-01-01", "end_date": "2026-04-01"},
+            accepted.inputs["date_list"][0],
+        )
+        with self.assertRaises(InputValidationError) as caught:
+            compile_query_spec(
+                "event",
+                {
+                    "app": "101",
+                    "start": "2026-01-01",
+                    "end": "2026-04-02",
+                    "steps": [step("purchase")],
+                },
+            )
+        self.assertEqual("start/end", caught.exception.field)
         with self.assertRaises(InputValidationError):
             compile_query_spec(
                 "scatter",

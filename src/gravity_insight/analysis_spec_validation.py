@@ -17,6 +17,27 @@ EVENT_OPERATOR_REPLACEMENTS = {
 VALUELESS_CONDITION_OPERATORS = frozenset({"WITH_VAL", "WITHOUT_VAL"})
 
 
+def dated_spec_notes() -> dict[str, Any]:
+    """Publish the date-window validator and cross-window aggregation boundary."""
+    return {
+        "date_window": {
+            "maximum_span_days": 90,
+            "validation": "end - start must be between 0 and 90 days",
+        },
+        "cross_window_aggregation": {
+            "additive_measures": (
+                "may be summed only across non-overlapping windows with identical "
+                "metric, filter, grouping, unit, and time-grain semantics"
+            ),
+            "distinct_users": (
+                "PresetUserCount and other distinct-user measures are non-additive; "
+                "do not sum them across windows; use a member union or an independent "
+                "whole-period control"
+            ),
+        },
+    }
+
+
 def compile_condition_values(inputs: dict[str, Any]) -> dict[str, Any]:
     """Supply the wire-required empty array without mutating the caller's spec."""
     result = copy.deepcopy(inputs)

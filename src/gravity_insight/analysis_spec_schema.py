@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from typing import Any, Mapping
-from .analysis_spec_validation import VALUELESS_CONDITION_OPERATORS, event_input_definitions
+from .analysis_spec_validation import (
+    VALUELESS_CONDITION_OPERATORS,
+    dated_spec_notes,
+    event_input_definitions,
+)
 
 from ._field_policy_shared import (
     ANALYSIS_CONTROL_ID_RE,
@@ -451,8 +455,7 @@ def _dated_spec(
             **properties,
         },
     )
-    if notes:
-        spec["notes"] = dict(notes)
+    spec["notes"] = {**dated_spec_notes(), **dict(notes or {})}
     return spec
 
 

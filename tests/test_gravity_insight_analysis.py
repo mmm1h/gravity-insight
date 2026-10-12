@@ -473,7 +473,9 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         described = client.describe("analysis.event.list")
         note = described["response_projection"]["unreliable_item_keys"]["yesterday_count"]
         self.assertIn("do not treat this field as event volume", note["reason"])
-        self.assertIn("attribution.attribution.query", note["use_instead"])
+        self.assertIn("analysis.event.query", note["use_instead"])
+        self.assertIn("analysis.query.spec:event", note["use_instead"])
+        self.assertNotIn("analysis.origin_event.evaluate_data", repr(described))
 
         as_int = client.validate("analysis.event.list", {"app_id": 101})
         self.assertTrue(as_int["ok"])
