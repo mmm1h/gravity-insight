@@ -9,7 +9,7 @@ from .drift import aggregate_contract_status
 from .error_models import is_success_status
 from .fingerprints import shape_fingerprint
 from .models import OperationSpec, ReadResult
-from .pagination_completeness import page_completeness
+from .pagination_completeness import apply_record_identity_audit, page_completeness
 from .result_audit import add_result_audit
 from .response_drift import merge_response_drifts
 
@@ -66,6 +66,9 @@ def merge_pages(
         operation.pagination.completeness, result["page"], all_pages=True
     )
     result["pagination_evidence"] = operation.pagination.pagination_evidence
+    apply_record_identity_audit(
+        result, items, operation.pagination.record_identity_field
+    )
     result["schema_fingerprint"] = shape_fingerprint(result["data"])
     return add_result_audit(
         result,

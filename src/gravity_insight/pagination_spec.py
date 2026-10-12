@@ -24,6 +24,7 @@ class PaginationSpec:
     page_info_path: str = "data.page_info"
     default_page_size: int | None = None
     max_page_size: int | None = None
+    record_identity_field: str | None = None
 
     @classmethod
     def from_dict(cls, value: Any) -> "PaginationSpec":
@@ -47,6 +48,9 @@ class PaginationSpec:
                 raise ManifestError(f"pagination.{label} must be a positive integer")
         if default_size and max_size and default_size > max_size:
             raise ManifestError("pagination.default_page_size exceeds max_page_size")
+        record_identity_field = _record_identity_field(
+            value.get("record_identity_field"), kind
+        )
         return cls(
             kind=kind,
             completeness=completeness,
@@ -60,7 +64,18 @@ class PaginationSpec:
             page_info_path=str(value.get("page_info_path", "data.page_info")),
             default_page_size=default_size,
             max_page_size=max_size,
+            record_identity_field=record_identity_field,
         )
+
+
+def _record_identity_field(value: Any, kind: str) -> str | None:
+    if value is None:
+        return None
+    if kind != "page_info" or not isinstance(value, str) or not value.strip():
+        raise ManifestError(
+            "pagination.record_identity_field requires a non-empty paginated field"
+        )
+    return value.strip()
 
 
 __all__ = ["PaginationSpec"]

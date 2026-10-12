@@ -64,6 +64,7 @@ PAGINATION_FIELDS = {
     "total_page_field",
 }
 PAGINATION_LIMIT_FIELDS = {"default_page_size", "max_page_size"}
+PAGINATION_IDENTITY_FIELDS = {"record_identity_field"}
 STABILITIES = {
     "stable",
     "experimental",
@@ -458,7 +459,13 @@ class GravityInsightManifestTests(unittest.TestCase):
                     )
                     if item["stability"] == "stable":
                         self.assertEqual(
-                            PAGINATION_FIELDS | PAGINATION_LIMIT_FIELDS,
+                            PAGINATION_FIELDS
+                            | PAGINATION_LIMIT_FIELDS
+                            | (
+                                PAGINATION_IDENTITY_FIELDS
+                                if "record_identity_field" in pagination
+                                else set()
+                            ),
                             set(pagination),
                         )
                         default_page_size = pagination["default_page_size"]
@@ -522,6 +529,17 @@ class GravityInsightManifestTests(unittest.TestCase):
                     for name, field in item["input_fields"].items():
                         if field.get("required") and "default" not in field:
                             self.assertIn(name, probe["input"])
+
+    def test_order_detail_declares_projected_record_identity(self) -> None:
+        operation = self.by_id["analysis.order_detail.list"]
+        self.assertEqual(4, operation["contract_version"])
+        self.assertEqual(
+            "event_pay_id", operation["pagination"]["record_identity_field"]
+        )
+        self.assertIn(
+            operation["pagination"]["record_identity_field"],
+            operation["response_projection"]["item_keys"],
+        )
 
     def test_unverified_candidates_are_not_stable(self) -> None:
         for item in self.documents["candidates.json"]["operations"]:

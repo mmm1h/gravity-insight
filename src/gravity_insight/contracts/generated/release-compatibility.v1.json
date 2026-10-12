@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "1dcebd412767bb2f937d4a5b39950fabe3eeba229b0a0d3cf6703ce1203c0bd8"
+    "compatibility_sha256": "723c486363174b9ba50fef1243bf0c61b1aeadda68adfc7d49a7d01a4d69850f"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -470,11 +470,17 @@
       "version": "0.3.26",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.26-hard-break-1",
+          "description": "`analysis.order_detail.list` contract version 4 no longer reports overall `completeness=complete` when returned nonempty `event_pay_id` values repeat or any row lacks that identity. It preserves every row and exposes value-free counts plus separate structural pagination closure; consumers that treated page-count equality as a unique-record census must gate on the new record audit (#269). Migration guide: [0.3.26](docs/migration/0.3.26.md)",
+          "migration_guide": "docs/migration/0.3.26.md"
+        }
+      ],
       "soft_breaks": [],
-      "migration_guide": null
+      "migration_guide": "docs/migration/0.3.26.md"
     }
   ]
 }

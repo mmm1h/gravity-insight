@@ -229,7 +229,7 @@ def _projection_payload(projection: Any) -> dict[str, Any]:
 
 
 def _pagination_payload(pagination: Any) -> dict[str, Any]:
-    return {
+    result = {
         "kind": pagination.kind,
         "page_field": pagination.page_field,
         "page_size_field": pagination.page_size_field,
@@ -241,6 +241,9 @@ def _pagination_payload(pagination: Any) -> dict[str, Any]:
         "default_page_size": pagination.default_page_size,
         "max_page_size": pagination.max_page_size,
     }
+    if pagination.record_identity_field is not None:
+        result["record_identity_field"] = pagination.record_identity_field
+    return result
 
 
 def _semantic_error_payload(rules: Any) -> list[dict[str, Any]]:

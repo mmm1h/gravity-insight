@@ -174,7 +174,8 @@
         "list_path": {"type": "string"},
         "page_info_path": {"type": "string"},
         "default_page_size": {"type": ["integer", "null"], "minimum": 1},
-        "max_page_size": {"type": ["integer", "null"], "minimum": 1}
+        "max_page_size": {"type": ["integer", "null"], "minimum": 1},
+        "record_identity_field": {"type": "string", "minLength": 1}
       },
       "oneOf": [
         {
