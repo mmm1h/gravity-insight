@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from gravity_insight._field_policy_analysis import validate_analysis_shape
+from gravity_insight._field_policy_operations import ANALYSIS_EVENT
 from gravity_insight._field_policy_shared import ANALYSIS_CONDITION_OPERATORS
 from gravity_insight.analysis_spec import analysis_query_spec_schema, compile_query_spec
 from gravity_insight.analysis_spec_cli import _spec_schema_result
@@ -106,6 +107,39 @@ def test_cli_publishes_the_same_kind_scoped_input_contract():
     assert definitions["condition"]["allOf"][0]["else"] == {"required": ["value"]}
     assert definitions["event_query_step"]["properties"]["conditions"]["items"]["$ref"] == "#/definitions/event_condition"
     assert definitions["event_metric"]["allOf"][0]["then"] == {"required": ["quantile"]}
+
+
+def test_event_count_field_miss_gives_exact_zero_dispatch_remedy():
+    sdk, transport = _transport_sdk(_event_result(), disable_field_validation=False)
+
+    def metadata_loader(operation_id, _inputs):
+        if operation_id == ANALYSIS_EVENT:
+            return {"status": "success", "data": {"list": [{"name": "registered"}]}}
+        return {"status": "empty", "data": {"list": []}}
+
+    sdk.insight._load_field_metadata = metadata_loader
+    spec = {
+        "start": "2026-07-01",
+        "end": "2026-07-01",
+        "steps": [{
+            "event": "registered",
+            "metric": {
+                "field": "$event_count",
+                "aggregation": "PresetAllCount",
+            },
+        }],
+    }
+
+    with pytest.raises(InputValidationError) as caught:
+        sdk.analysis_query("event", spec, app="demo")
+
+    error = caught.value
+    assert (error.code, error.field, error.to_error_detail().retryable) == (
+        "INPUT_INVALID", "event_fields", False,
+    )
+    assert "field=PresetAllCount, aggregation=PresetAllCount" in error.next_action
+    assert 'gravity metadata properties ""' in error.next_action
+    assert transport.calls == []
 
 
 REJECTIONS = [

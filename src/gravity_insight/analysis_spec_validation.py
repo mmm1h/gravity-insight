@@ -127,9 +127,19 @@ def event_input_definitions(definitions: Mapping[str, Any]) -> dict[str, Any]:
         "if": {"properties": {"aggregation": {"const": "Quantile"}}, "required": ["aggregation"]},
         "then": {"required": ["quantile"]},
     }]
+    metric["examples"] = [{
+        "field": "PresetAllCount",
+        "aggregation": "PresetAllCount",
+    }]
     metric["description"] = (
-        "Event Quantile_N compiles to name=Quantile and quantile_level=N. "
+        "For total event occurrence count use field=PresetAllCount and "
+        "aggregation=PresetAllCount; other fields are metadata-backed event "
+        "properties. Event Quantile_N compiles to name=Quantile and quantile_level=N. "
         "Bare Quantile requires quantile; a redundant quantile must equal N."
+    )
+    metric["properties"]["field"]["description"] = (
+        "Use PresetAllCount with aggregation=PresetAllCount for total event "
+        "occurrence count; otherwise use a metadata-backed event property name."
     )
     step = copy.deepcopy(definitions["event_step"])
     step["properties"]["conditions"]["items"] = {"$ref": "#/definitions/event_condition"}
