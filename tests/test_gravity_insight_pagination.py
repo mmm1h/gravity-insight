@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import threading
 from threading import Barrier
 import unittest
@@ -7,6 +8,7 @@ from unittest.mock import patch
 
 from gravity_insight import GravityInsightClient
 from gravity_insight import runtime
+from gravity_insight.errors import ManifestError
 from gravity_insight.models import ReadResult
 from gravity_insight.pagination_audit import pagination_audit
 from gravity_insight.pagination_completeness import aggregate_completeness, page_completeness
@@ -93,6 +95,15 @@ def _detail_operation() -> dict:
     return operation
 
 
+def _identity_operation() -> dict:
+    operation = _operation()
+    operation["operation_id"] = "analysis.order_detail.list"
+    operation["resource"] = "order_detail"
+    operation["response_projection"]["item_keys"] = ["id", "event_pay_id"]
+    operation["pagination"]["record_identity_field"] = "event_pay_id"
+    return operation
+
+
 class _NeverTransport:
     is_test_transport = True
 
@@ -117,6 +128,7 @@ def _page(
     total_pages: int | None,
     *,
     status: str | None = None,
+    operation_id: str = "example.concurrent.list",
 ) -> ReadResult:
     page_info = {"page": page, "page_size": 1}
     if total_pages is not None:
@@ -136,7 +148,7 @@ def _page(
             "total_items": total_pages,
         },
         {"list": rows, "page_info": page_info},
-        "example.concurrent.list",
+        operation_id,
         items=tuple(rows),
         page_info=page_info,
     )
@@ -163,6 +175,111 @@ class GravityInsightPaginationTests(unittest.TestCase):
             "unknown",
             page_completeness("complete", None, all_pages=True),
         )
+
+    def test_order_identity_duplicates_preserve_rows_but_block_complete_claim(self) -> None:
+        client = GravityInsightClient._from_manifest_for_tests(
+            {"manifest_version": 1, "operations": [_identity_operation()]},
+            transport=_NeverTransport(),
+        )
+
+        def execute(_operation_id, inputs):
+            page = int(inputs.get("page", 1))
+            return _page(
+                page,
+                [{"id": page, "event_pay_id": "private-record-key"}],
+                2,
+                operation_id="analysis.order_detail.list",
+            )
+
+        with patch.object(client, "_execute_result", side_effect=execute):
+            result = client.read_all(
+                "analysis.order_detail.list", max_workers=1
+            )
+
+        self.assertEqual([1, 2], [row["id"] for row in result["data"]["list"]])
+        self.assertEqual("complete", result["structural_completeness"])
+        self.assertEqual("unknown", result["completeness"])
+        self.assertEqual("unknown", aggregate_completeness(result))
+        self.assertEqual(
+            {
+                "status": "unknown",
+                "criterion": (
+                    "record identities are missing or repeated; "
+                    "unique-record completeness is unknown"
+                ),
+                "identity_field": "event_pay_id",
+                "item_count": 2,
+                "identified_item_count": 2,
+                "unidentified_item_count": 0,
+                "duplicate_identity_count": 1,
+                "duplicate_item_count": 1,
+            },
+            result["record_completeness"],
+        )
+        audit = pagination_audit(result, {}, all_pages=True)
+        self.assertEqual("complete", audit["structural_completeness"]["status"])
+        self.assertEqual("unknown", audit["completeness"]["status"])
+        self.assertEqual(1, audit["record_completeness"]["duplicate_item_count"])
+        self.assertNotIn("private-record-key", json.dumps(audit))
+
+    def test_order_identity_unique_rows_retain_complete_claim(self) -> None:
+        client = GravityInsightClient._from_manifest_for_tests(
+            {"manifest_version": 1, "operations": [_identity_operation()]},
+            transport=_NeverTransport(),
+        )
+
+        def execute(_operation_id, inputs):
+            page = int(inputs.get("page", 1))
+            return _page(
+                page,
+                [{"id": page, "event_pay_id": f"record-{page}"}],
+                2,
+                operation_id="analysis.order_detail.list",
+            )
+
+        with patch.object(client, "_execute_result", side_effect=execute):
+            result = client.read_all(
+                "analysis.order_detail.list", max_workers=1
+            )
+
+        self.assertEqual("complete", result["completeness"])
+        self.assertEqual("complete", result["record_completeness"]["status"])
+        self.assertEqual(0, result["record_completeness"]["duplicate_item_count"])
+        self.assertEqual(
+            "event_pay_id",
+            client.schema("analysis.order_detail.list")["pagination"][
+                "record_identity_field"
+            ],
+        )
+
+    def test_order_identity_missing_from_projection_is_unknown(self) -> None:
+        client = GravityInsightClient._from_manifest_for_tests(
+            {"manifest_version": 1, "operations": [_identity_operation()]},
+            transport=_NeverTransport(),
+        )
+        with patch.object(
+            client,
+            "_execute_result",
+            return_value=_page(
+                1, [{"id": 1}], 1,
+                operation_id="analysis.order_detail.list",
+            ),
+        ):
+            result = client.read_all("analysis.order_detail.list", max_workers=1)
+
+        self.assertEqual("unknown", result["completeness"])
+        self.assertEqual(1, result["record_completeness"]["unidentified_item_count"])
+
+    def test_record_identity_must_name_a_projected_item_key(self) -> None:
+        operation = _identity_operation()
+        operation["response_projection"]["item_keys"] = ["id"]
+        with self.assertRaisesRegex(
+            ManifestError, "record_identity_field must name a projected item key"
+        ):
+            GravityInsightClient._from_manifest_for_tests(
+                {"manifest_version": 1, "operations": [operation]},
+                transport=_NeverTransport(),
+            )
 
     def setUp(self) -> None:
         self.client = GravityInsightClient._from_manifest_for_tests(

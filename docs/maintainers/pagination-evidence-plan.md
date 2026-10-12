@@ -211,6 +211,6 @@ wire/production 合同出现总数或终止信号时才重开；重复采短页�
 | `report.multidim.metric_tag_category.list` | 8/8 | false | 8/8 |
 | `analysis.order_detail.list` | 1/1 | false | 1/1 |
 
-订单证据只覆盖最小单页请求，不证明任意大 cohort 的多页稳定性。其余待采项保持 unknown：
+订单生产证据只证明页号、末页与条数的结构闭合；#269 另以 `event_pay_id` 审计记录身份，缺失或重复时总体完整性保持 unknown，不把任意大 cohort 的多页结果认证为唯一记录全集。其余待采项保持 unknown：
 空结果 `page=1/total_page=0` 不满足末页回显，超安全页数、父项不可用、
 缺分页信号或 response drift 都不得提升。逐 operation 原因和生产请求账本以收据为准。

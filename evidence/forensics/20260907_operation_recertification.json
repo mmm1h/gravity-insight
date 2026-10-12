@@ -6315,62 +6315,6 @@
       },
       {
         "conclusion": "drift_cleared_validation_recorded",
-        "current_validation": {
-          "completeness": "complete",
-          "contract_digest": "a875fc1244c6925375e349f723839c0540ceffa57ef347bf4aa15647a128e74b",
-          "contract_version": "3",
-          "data_quality": {
-            "checks": [
-              {
-                "check_id": "execution.receipt",
-                "scope": "analysis.order_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "execution.semantic-status",
-                "scope": "analysis.order_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.nonempty",
-                "scope": "analysis.order_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.schema-and-type",
-                "scope": "analysis.order_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.freshness",
-                "scope": "analysis.order_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.no-drift",
-                "scope": "analysis.order_detail.list",
-                "status": "pass"
-              }
-            ],
-            "reason_codes": [],
-            "schema_version": "gravity.data-quality-result.v1",
-            "status": "pass"
-          },
-          "evidence_references": [
-            {
-              "kind": "receipt",
-              "reference": "receipt:165f6f209a714db9adfa565b955e705a"
-            }
-          ],
-          "expires_at": "2026-09-08T13:08:40Z",
-          "identity_kind": "operation",
-          "provider_fingerprint": "34a77a974e0a96901a3418834db73dc7f68c2d48886b56e53c17886da7680089",
-          "reason_codes": [],
-          "schema_version": "gravity.capability-validation.v1",
-          "selector": "analysis.order_detail.list",
-          "trust_status": "stable",
-          "validated_at": "2026-09-07T13:08:40Z"
-        },
         "outcome": {
           "attempted": true,
           "category": "validated",
@@ -13291,7 +13235,7 @@
       "report.multidim.media_enum.list"
     ]
   },
-  "stage_171_current_validations": 18,
+  "stage_171_current_validations": 17,
   "validations": [
     {
       "completeness": "unknown",

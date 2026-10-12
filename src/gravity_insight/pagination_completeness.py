@@ -101,6 +101,80 @@ def force_prefix(result: dict[str, Any], truncated: bool) -> None:
         result["completeness"] = PREFIX
 
 
+def apply_record_identity_audit(
+    result: dict[str, Any], items: Sequence[Any], identity_field: str | None,
+) -> None:
+    """Downgrade complete collections when record identities are not unique."""
+
+    if identity_field is None:
+        return
+    identified, unidentified, duplicate_identities, duplicate_items = (
+        _record_identity_counts(items, identity_field)
+    )
+    record_status = COMPLETE if not unidentified and not duplicate_items else UNKNOWN
+    criterion = (
+        "every returned item has a unique nonempty record identity"
+        if record_status == COMPLETE
+        else "record identities are missing or repeated; unique-record completeness is unknown"
+    )
+    structural = result.get("completeness")
+    structural = structural if structural in COMPLETENESS_VALUES else UNKNOWN
+    result["structural_completeness"] = structural
+    result["record_completeness"] = {
+        "status": record_status,
+        "criterion": criterion,
+        "identity_field": identity_field,
+        "item_count": len(items),
+        "identified_item_count": identified,
+        "unidentified_item_count": unidentified,
+        "duplicate_identity_count": duplicate_identities,
+        "duplicate_item_count": duplicate_items,
+    }
+    if structural == COMPLETE and record_status != COMPLETE:
+        result["completeness"] = UNKNOWN
+    if record_status != COMPLETE:
+        warning = (
+            "record identity audit did not prove unique records; structural page "
+            "closure remains separate and returned rows are unchanged"
+        )
+        warnings = result.get("warnings")
+        warnings = list(warnings) if isinstance(warnings, (list, tuple)) else []
+        if warning not in warnings:
+            warnings.append(warning)
+        result["warnings"] = warnings
+
+
+def _record_identity_counts(
+    items: Sequence[Any], identity_field: str,
+) -> tuple[int, int, int, int]:
+    seen: set[tuple[str, Any]] = set()
+    repeated: set[tuple[str, Any]] = set()
+    identified = unidentified = duplicate_items = 0
+    for item in items:
+        value = item.get(identity_field) if isinstance(item, Mapping) else None
+        identity = _record_identity(value)
+        if identity is None:
+            unidentified += 1
+        else:
+            identified += 1
+            if identity in seen:
+                duplicate_items += 1
+                repeated.add(identity)
+            else:
+                seen.add(identity)
+    return identified, unidentified, len(repeated), duplicate_items
+
+
+def _record_identity(value: Any) -> tuple[str, Any] | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return "integer", value
+    if isinstance(value, str) and value.strip():
+        return "string", value
+    return None
+
+
 def aggregate_completeness(value: Any) -> str:
     """Propagate any nested result completeness into an aggregate envelope."""
 
@@ -421,6 +495,7 @@ __all__ = [
     "SurfaceDeclaration",
     "UNKNOWN",
     "aggregate_completeness",
+    "apply_record_identity_audit",
     "collection_claims",
     "compact_pagination",
     "contract_dimensions",

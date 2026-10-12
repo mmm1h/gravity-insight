@@ -54,7 +54,7 @@ def pagination_schema(pagination: Any) -> dict[str, Any]:
             "page_field": pagination.page_field,
             "page_size_field": pagination.page_size_field,
         }
-    return {
+    result = {
         "kind": pagination.kind,
         "completeness": pagination.completeness,
         "pagination_evidence": pagination.pagination_evidence,
@@ -66,6 +66,9 @@ def pagination_schema(pagination: Any) -> dict[str, Any]:
         "default_page_size": pagination.default_page_size,
         "max_page_size": pagination.max_page_size,
     }
+    if pagination.record_identity_field is not None:
+        result["record_identity_field"] = pagination.record_identity_field
+    return result
 
 
 __all__ = ["pagination_schema", "validate_page_inputs"]

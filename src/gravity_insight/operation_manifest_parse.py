@@ -206,6 +206,13 @@ def _parse_operation_flags(config: Mapping[str, Any]) -> tuple[str, bool, str | 
 
 
 def _validate_projection_normalization(response_projection: Any, pagination: Any) -> None:
+    if (
+        pagination.record_identity_field is not None
+        and pagination.record_identity_field not in response_projection.item_keys
+    ):
+        raise ManifestError(
+            "pagination.record_identity_field must name a projected item key"
+        )
     if response_projection.empty_object_as_empty_page and (
         pagination.kind != "page_info"
         or not {"list", "page_info"}.issubset(response_projection.data_keys)

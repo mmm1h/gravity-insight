@@ -155,6 +155,11 @@ def normalize_operation(operation: models.OperationSpec) -> dict[str, Any]:
             "page_info_path": operation.pagination.page_info_path,
             "default_page_size": operation.pagination.default_page_size,
             "max_page_size": operation.pagination.max_page_size,
+            **(
+                {"record_identity_field": operation.pagination.record_identity_field}
+                if operation.pagination.record_identity_field is not None
+                else {}
+            ),
         },
         "semantic_error_rules": [
             {

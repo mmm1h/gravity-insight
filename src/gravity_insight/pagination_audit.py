@@ -29,10 +29,17 @@ def pagination_audit(
     if not page:
         returned_items = _data_item_count(result.get("data"))
         total_items = _reported_total(result.get("data"))
-    criterion = _completeness_criterion(
-        page, has_more, completeness_status, total_items
+    structural_status = result.get("structural_completeness", completeness_status)
+    structural_status = (
+        structural_status
+        if structural_status in {"complete", "prefix", "unknown"}
+        else "unknown"
     )
-    return {
+    structural_criterion = _completeness_criterion(
+        page, has_more, structural_status, total_items
+    )
+    record = _safe_record_completeness(result.get("record_completeness"))
+    audit = {
         "mode": "all_pages" if all_pages else "bounded" if bounded else "single_page",
         "operation_requests_made": _operation_request_count(result, page),
         "http_requests_made": (
@@ -44,13 +51,47 @@ def pagination_audit(
         "effective_page_size": effective_size,
         "page_size_clamped": _page_size_clamped(requested_size, effective_size),
         "completeness": {
-            "criterion": criterion,
+            "criterion": (
+                "structural pagination and record identity audits must both be complete"
+                if record is not None else structural_criterion
+            ),
             "status": completeness_status,
             "has_more": has_more,
             "returned_items": returned_items,
             "total_items": total_items,
         },
     }
+    if record is not None:
+        audit["structural_completeness"] = {
+            "criterion": structural_criterion,
+            "status": structural_status,
+            "has_more": has_more,
+            "returned_items": returned_items,
+            "total_items": total_items,
+        }
+        audit["record_completeness"] = record
+    return audit
+
+
+def _safe_record_completeness(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, Mapping):
+        return None
+    keys = (
+        "status", "criterion", "identity_field", "item_count",
+        "identified_item_count", "unidentified_item_count",
+        "duplicate_identity_count", "duplicate_item_count",
+    )
+    selected = {key: value.get(key) for key in keys}
+    if selected["status"] not in {"complete", "unknown"}:
+        return None
+    if not all(
+        type(selected[key]) is int and selected[key] >= 0
+        for key in keys[3:]
+    ):
+        return None
+    if not all(isinstance(selected[key], str) and selected[key] for key in keys[:3]):
+        return None
+    return selected
 
 
 def _data_item_count(data: Any) -> int:

@@ -3912,8 +3912,8 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "3",
-      "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回已登记的订单、归因、内部分析标识与成员姓名。",
+      "contract_version": "4",
+      "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回已登记的订单、归因、内部分析标识与成员姓名；event_pay_id 用于值无关的记录唯一性审计。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [
@@ -4134,6 +4134,7 @@
         "page_info_field": "page_info",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "record_identity_field": "event_pay_id",
         "total_page_field": "total_page"
       },
       "path_template": "/report/api/v3/dataanalysis/user/pay_event/list/",
