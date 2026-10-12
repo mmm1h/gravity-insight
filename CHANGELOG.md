@@ -21,6 +21,7 @@ Target release: `0.3.26`
 
 ### Added
 
+- Agent discovery now distinguishes authorized own-App analytics from external competitor download, install, IAP, revenue, and market history. Explicit competitor-market history requests return `EXTERNAL_MARKET_HISTORY_SOURCE_NOT_CONFIGURED` with the minimum governed datasource contract instead of weak own-App operation matches or an unreviewed SQL fallback (#267).
 - `materials game-performance` now applies a versioned, reviewed user-side `AdPlatform` discriminator before aggregating ByteDance or Kuaishou material rows. Blank, unknown and mismatched platform values are excluded; Tencent remains fail-closed with `USER_PLATFORM_SCOPE_UNPROVEN`. The result exposes only platform-scoped observed acquisition rows and observed metric aggregates: source completeness, distinct users, mature retention and causal claims remain unavailable (#223).
 
 ### Fixed
