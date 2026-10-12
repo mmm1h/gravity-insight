@@ -386,7 +386,7 @@ def _validate_event_fields(
         raise InputValidationError(
             live_metadata_miss(actual_value(missing), noun="event fields"),
             field="event_fields",
-            next_action="Run `gravity metadata properties \"\"` and retry with a listed event field.",
+            next_action="If the intended metric is total event occurrence count, set `field=PresetAllCount, aggregation=PresetAllCount`; otherwise run `gravity metadata properties \"\"` and retry with a listed ordinary event property.",
         )
     if unresolved:
         reject_sensitive_metadata_fields(property_rows, unresolved)

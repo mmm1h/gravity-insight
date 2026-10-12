@@ -367,6 +367,12 @@ class AgentCatalogTests(unittest.TestCase):
             _args("describe", selector="analysis.query.spec:event"),
             self.client,
         )
+        event_metric = result["capability"]["input_schema"]["spec"]["definitions"]["event_metric"]
+        self.assertEqual(
+            [{"field": "PresetAllCount", "aggregation": "PresetAllCount"}],
+            event_metric["examples"],
+        )
+        self.assertIn("total event occurrence count", event_metric["description"])
         self.assertEqual(
             ["gravity", "plan", "run", "--input", "<plan.json>"],
             result["capability"]["next"]["argv"],
