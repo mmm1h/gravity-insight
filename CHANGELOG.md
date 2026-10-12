@@ -25,6 +25,7 @@ Target release: `0.3.26`
 
 ### Fixed
 
+- `analysis.event.list` no longer recommends the unregistered `analysis.origin_event.evaluate_data` selector or implies that App registration counts establish whether a particular event has data. It now points to the registered `analysis.event.query` / `analysis.query.spec:event` path. Every dated Analysis Spec schema also publishes the existing 90-day span limit and warns that compatible additive measures may be combined across non-overlapping windows while `PresetUserCount` and other distinct-user measures must not be summed (#268).
 - Event Analysis discovery now documents the exact total-occurrence metric as `field=PresetAllCount, aggregation=PresetAllCount`. When callers use the unsupported `$event_count` field, `INPUT_INVALID / event_fields` gives that correction before directing ordinary event properties to metadata discovery; validation remains fail-closed and the query is not dispatched (#265).
 
 ## [0.3.25] - 2026-10-07

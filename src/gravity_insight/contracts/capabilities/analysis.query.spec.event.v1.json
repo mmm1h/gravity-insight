@@ -11,7 +11,7 @@
   "privacy_classification": "user_level",
   "provider": {
     "kind": "agent_product_card",
-    "fingerprint": "96e5456b7d0e3b9254f9661c41387f1661cbef8774c204acd421409d9c4a9c87"
+    "fingerprint": "3d4d9141f2aa400f0cc4553567bd965843e751d84c3711dbf6ab54a8bfc0867e"
   },
   "dependencies": [
     {
