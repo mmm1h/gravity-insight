@@ -69,14 +69,20 @@ class ExportPrivacyFinalizer:
         rows = 0
         reader = None
         try:
-            maximum = min(
-                self._archive_policy.max_uncompressed_size_bytes,
-                int(metadata.size_bytes * self._archive_policy.max_compression_ratio),
+            ratio_maximum = int(
+                metadata.size_bytes * self._archive_policy.max_compression_ratio
             )
+            if self._archive_policy.max_uncompressed_size_bytes <= ratio_maximum:
+                maximum = self._archive_policy.max_uncompressed_size_bytes
+                limit_reason = "gzip_expanded_byte_budget"
+            else:
+                maximum = ratio_maximum
+                limit_reason = "gzip_compression_ratio_budget"
             # Transfer staging names are .part/.final; only verified metadata binds the container.
             with open_export_csv(
                 source_path, self._contract.encoding,
                 extension=metadata.extension, max_uncompressed_bytes=maximum,
+                limit_reason=limit_reason,
             ) as source_handle:
                 reader = csv.DictReader(source_handle, delimiter=self._contract.delimiter, strict=True)
                 header = tuple(reader.fieldnames or ())

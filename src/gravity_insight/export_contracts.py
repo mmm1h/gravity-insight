@@ -155,16 +155,7 @@ class ExportRouteContract:
                 "location": self.request.get("location"),
                 "fixed_fields": _plain(self.request.get("fixed_fields", {})),
             },
-            "pagination_and_scale": _plain(
-                self.request.get(
-                    "scale_controls",
-                    {
-                        "page_size_limits_total_rows": None,
-                        "controls": [],
-                        "status": "not_verified",
-                    },
-                )
-            ),
+            "pagination_and_scale": _scale_description(self.request, self.privacy),
             "examples": _plain(examples),
             "examples_status": "complete" if examples else "not_provided",
             "workflow": describe_workflow(self.operation_id, self.effect),
@@ -289,6 +280,23 @@ def _plain(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_plain(item) for item in value]
     return value
+
+
+def _scale_description(
+    request: Mapping[str, Any], privacy: Mapping[str, Any],
+) -> dict[str, Any]:
+    scale = _plain(request.get(
+        "scale_controls",
+        {
+            "page_size_limits_total_rows": None,
+            "controls": [],
+            "status": "not_verified",
+        },
+    ))
+    for key in ("max_uncompressed_size_bytes", "max_compression_ratio"):
+        if key in privacy:
+            scale[key] = privacy[key]
+    return scale
 
 
 def _fallback_input_schema(request: Mapping[str, Any]) -> dict[str, Any]:
