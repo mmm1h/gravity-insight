@@ -13,6 +13,11 @@ from gravity_insight.agents.catalog_parity import validate_catalog_parity
 from gravity_insight.agents.product_inventory import canonical_capability_cards
 from gravity_insight.agents.unavailable import registered_unavailable_gaps
 from gravity_insight.agents.unavailable import unavailable_journey_gap
+from gravity_insight.agents.unavailable_analysis import (
+    EXTERNAL_MARKET_HISTORY_GAP_CODE,
+    EXTERNAL_MARKET_HISTORY_NEXT_ACTION,
+    EXTERNAL_MARKET_HISTORY_REASON,
+)
 from gravity_insight.multidim_contract import (
     MULTIDIM_COHORT_HORIZON_GAP_CODE,
     multidim_multi_key_contract,
@@ -82,16 +87,53 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])
         self.assertEqual("discover_and_describe", result["mode"])
 
-    def test_registered_gap_inventory_has_eleven_unique_machine_codes(self) -> None:
-        """Issue #19 adds a fail-closed gap for its unproved five-state contract.
-
-        The existing single-role transfer stays callable, while the complete
-        image-and-video journey cannot be mistaken for a closed capability.
-        """
+    def test_registered_gap_inventory_has_twelve_unique_machine_codes(self) -> None:
+        """Every unavailable journey is indexed once under a unique code."""
 
         gaps = registered_unavailable_gaps()
-        self.assertEqual(11, len(gaps))
-        self.assertEqual(11, len({gap["code"] for gap in gaps}))
+        self.assertEqual(12, len(gaps))
+        self.assertEqual(12, len({gap["code"] for gap in gaps}))
+
+    def test_external_market_history_gap_preserves_own_app_discovery(self) -> None:
+        for query in (
+            "竞品 下载 收入 历史",
+            "查询第三方 App 的长期下载与 IAP 收入趋势",
+            "Compare competitor download and revenue history by market.",
+        ):
+            with self.subTest(query=query):
+                gap = unavailable_journey_gap(query)
+                self.assertIsNotNone(gap)
+                self.assertEqual(EXTERNAL_MARKET_HISTORY_GAP_CODE, gap["code"])
+                self.assertEqual(EXTERNAL_MARKET_HISTORY_REASON, gap["reason"])
+                self.assertEqual(
+                    EXTERNAL_MARKET_HISTORY_NEXT_ACTION, gap["next_action"]
+                )
+                self.assertFalse(gap["network_called"])
+
+                result = discover_capabilities(query, client=self.client)
+                self.assertEqual("capability_gap", result["status"])
+                self.assertEqual([], result["candidates"])
+                self.assertEqual(
+                    EXTERNAL_MARKET_HISTORY_GAP_CODE,
+                    result["capability_gaps"][0]["code"],
+                )
+
+        for query in (
+            "自有 App 付费收入历史趋势",
+            "梳理竞品版本历史，不估算下载或收入",
+            "不要竞品下载收入历史，只看自有 App 付费收入趋势",
+        ):
+            with self.subTest(query=query):
+                gap = unavailable_journey_gap(query)
+                self.assertTrue(
+                    gap is None or gap["code"] != EXTERNAL_MARKET_HISTORY_GAP_CODE
+                )
+
+        own_app = discover_capabilities(
+            "自有 App 付费收入历史趋势", client=self.client
+        )
+        self.assertEqual("success", own_app["status"])
+        self.assertEqual("analysis.task.handoff", own_app["candidates"][0]["selector"])
 
     def test_custom_event_first_exposure_returns_narrow_evidence_gap(self) -> None:
         for query in (

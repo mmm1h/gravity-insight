@@ -153,6 +153,10 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "gap:CURRENT_TABLE_SCHEMA_PARENT_MISSING": (
         "按表名或 App 查询数据表当前 schema、字段和版本",
     ),
+    "gap:EXTERNAL_MARKET_HISTORY_SOURCE_NOT_CONFIGURED": (
+        "查询外部竞品的下载、安装、IAP、收入或市场历史",
+        "external competitor download IAP revenue market history",
+    ),
     "gap:NON_BYTEDANCE_HIERARCHY_PARENT_MISSING": (
         "下钻非 Bytedance 平台的计划、组和创意表现",
     ),

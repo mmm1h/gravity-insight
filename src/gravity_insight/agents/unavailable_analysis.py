@@ -38,6 +38,22 @@ _SEGMENT_FIRST_EXPOSURE_GAP_NEXT_ACTION = (
     "existing set-once first-occurrence property; without one the read-only "
     "surfaces cannot compute the required NOT-before intersection."
 )
+EXTERNAL_MARKET_HISTORY_GAP_CODE = "EXTERNAL_MARKET_HISTORY_SOURCE_NOT_CONFIGURED"
+EXTERNAL_MARKET_HISTORY_REASON = (
+    "Runtime has no reviewed external-App market datasource. Registered Insight "
+    "operations read authorized own-App data; their report, promotion, payment, "
+    "and history metrics are not competitor download, install, IAP, revenue, or "
+    "market estimates."
+)
+EXTERNAL_MARKET_HISTORY_NEXT_ACTION = (
+    "Before execution, register a project-owned governed datasource or product "
+    "that declares source/provider provenance; external App identity; platform "
+    "and country/region; date coverage and grain; each metric's unit and semantics "
+    "(downloads versus installs, gross versus net IAP, and estimate method); "
+    "authorization; freshness; completeness; and estimate limitations. Until then "
+    "keep public version observations separate and do not substitute own-App Insight "
+    "or an unreviewed SQL product."
+)
 
 
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
@@ -50,6 +66,14 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             journey="segment_custom_event_first_exposure",
             reason=_SEGMENT_EVENT_RULE_GAP_REASON,
             next_action=_SEGMENT_FIRST_EXPOSURE_GAP_NEXT_ACTION,
+        )
+    if _external_market_history(selected, words):
+        return unavailable_gap(
+            query,
+            code=EXTERNAL_MARKET_HISTORY_GAP_CODE,
+            journey="external_competitor_market_history",
+            reason=EXTERNAL_MARKET_HISTORY_REASON,
+            next_action=EXTERNAL_MARKET_HISTORY_NEXT_ACTION,
         )
     if _current_table_schema(selected, words):
         return unavailable_gap(
@@ -112,6 +136,39 @@ def _custom_event_first_exposure(
     return english or chinese
 
 
+def _external_market_history(selected: str, words: frozenset[str]) -> bool:
+    english_subject = (
+        bool(words & {"competitor", "competitors"})
+        or {"third", "party"} <= words
+        or (
+            "external" in words
+            and bool(words & {"app", "apps", "application", "market"})
+        )
+    )
+    chinese_subject = (
+        any(term in selected for term in ("竞品", "竞对", "竞争对手"))
+        or re.search(r"(?:外部|第三方)\s*(?:app|应用|产品|市场数据)", selected)
+        is not None
+    )
+    market_metric = bool(
+        words
+        & {
+            "download",
+            "downloads",
+            "iap",
+            "install",
+            "installs",
+            "market",
+            "revenue",
+            "sales",
+        }
+    ) or any(term in selected for term in ("下载", "安装", "收入", "流水", "市场"))
+    historical = bool(
+        words & {"historical", "history", "longitudinal", "timeline", "trend", "trends"}
+    ) or any(term in selected for term in ("历史", "历年", "长期", "趋势", "演进"))
+    return (english_subject or chinese_subject) and market_metric and historical
+
+
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
     return (
         _explicit_current_schema(selected)
@@ -169,4 +226,9 @@ def _analysis_export(selected: str, words: frozenset[str]) -> bool:
     return english or chinese
 
 
-__all__ = ["unavailable_analysis_gap"]
+__all__ = [
+    "EXTERNAL_MARKET_HISTORY_GAP_CODE",
+    "EXTERNAL_MARKET_HISTORY_NEXT_ACTION",
+    "EXTERNAL_MARKET_HISTORY_REASON",
+    "unavailable_analysis_gap",
+]

@@ -279,6 +279,10 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
         self.assertEqual(shared, affirmative_intent_text(shared))
         self.assertEqual("", affirmative_intent_text("别给我素材报表"))
         self.assertEqual(
+            "梳理竞品版本历史",
+            affirmative_intent_text("梳理竞品版本历史，不估算下载或收入"),
+        )
+        self.assertEqual(
             "横比各平台素材表现",
             affirmative_intent_text("不是查计划或账户余额，我要横比各平台素材表现。"),
         )
