@@ -239,8 +239,17 @@ class ExportContractTests(unittest.TestCase):
         self.assertEqual("complete", description["examples_status"])
         self.assertFalse(description["pagination_and_scale"]["page_size_limits_total_rows"])
         origin = ExportContractRegistry.from_file(CONTRACT_PATH)
-        self.assertTrue(origin.describe("export.analysis.origin_event.start")["currently_callable"])
+        origin_description = origin.describe("export.analysis.origin_event.start")
+        self.assertTrue(origin_description["currently_callable"])
         self.assertEqual(".csv.gz", origin.get("export.analysis.origin_event.start").privacy["extension"])
+        self.assertEqual(
+            128 * 1024 * 1024,
+            origin_description["pagination_and_scale"]["max_uncompressed_size_bytes"],
+        )
+        self.assertEqual(
+            100.0,
+            origin_description["pagination_and_scale"]["max_compression_ratio"],
+        )
 
     def test_export_completion_statuses_are_mutually_distinct(self):
         receipt = SimpleNamespace(

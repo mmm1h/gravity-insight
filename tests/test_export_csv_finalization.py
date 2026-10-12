@@ -150,15 +150,23 @@ class ExportCsvFinalizationTests(unittest.TestCase):
     def test_gzip_expansion_obeys_both_policy_budgets(self):
         raw = synthetic_csv()[0]
         policies = (
-            ArchivePolicy(max_uncompressed_size_bytes=len(raw) - 1),
-            ArchivePolicy(max_compression_ratio=1),
+            (ArchivePolicy(max_uncompressed_size_bytes=len(raw) - 1),
+             "gzip_expanded_byte_budget"),
+            (ArchivePolicy(max_compression_ratio=1),
+             "gzip_compression_ratio_budget"),
         )
-        for policy in policies:
-            with self.subTest(policy=policy), tempfile.TemporaryDirectory() as directory:
+        for policy, reason in policies:
+            with self.subTest(reason=reason), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 result, envelope = run_download(root, gzip.compress(raw), archive_policy=policy)
                 self.assertEqual("BLOB_SIZE_LIMIT", result.error.code)
-                self.assertEqual("gzip_expansion_limit", envelope["diagnostics"]["reason"])
+                self.assertEqual(reason, envelope["diagnostics"]["reason"])
+                self.assertEqual(
+                    "Split the same full interval into adjacent, non-overlapping closed "
+                    "date windows; keep App, event, columns, and empty conditions "
+                    "unchanged; evaluate and reconcile every child window.",
+                    envelope["error"]["next_action"],
+                )
                 self.assertEqual([], list(root.iterdir()))
 
     def test_gzip_projection_still_removes_contracted_credentials(self):

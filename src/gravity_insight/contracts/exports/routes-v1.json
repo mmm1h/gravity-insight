@@ -270,7 +270,9 @@
         "allowed_path_prefixes": {"gravity-client-resource.oss-cn-hangzhou.aliyuncs.com": ["/266183/excels/"]},
         "magic_prefix_hex": "1f8b",
         "download_authorization_ttl_seconds": 300,
-        "max_size_bytes": 104857600
+        "max_size_bytes": 104857600,
+        "max_uncompressed_size_bytes": 134217728,
+        "max_compression_ratio": 100.0
       },
       "verification": {"method_source": "frontend_asset_and_online", "online": true, "attempted_online": true, "notes": "Hash-matched Download-DlEV6nb1.js proves evaluate/create share the seven-field body. On 2026-08-17 one create of the evaluate-proven 7-day $ preset event returned a task id, READY on the first poll, and a 511-byte gzip CSV (magic 1f8b, Content-Type text/csv, URL suffix .csv.gz, uncompressed 803 bytes) with five headers and one data row. All five cells were non-empty strings. analysis.event.list yesterday_count was 0 for every event on that App and must not be used as the create gate. On 2026-08-18 this was tenant-wide: 7/7 Apps had yesterday_count=0 while attribution on the live Douyin App and the Android twin returned positive AppRealRegisterCnt."}
     },

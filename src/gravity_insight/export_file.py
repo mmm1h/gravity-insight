@@ -201,6 +201,7 @@ def open_export_csv(
     *,
     extension: str | None = None,
     max_uncompressed_bytes: int | None = None,
+    limit_reason: str | None = None,
 ) -> Iterator[TextIO]:
     """Open a verified CSV or gzip-wrapped CSV without decoding cell values."""
 
@@ -208,7 +209,9 @@ def open_export_csv(
     compressed = extension == ".csv.gz" if extension is not None else path.name.casefold().endswith(".csv.gz")
     if compressed:
         with gzip.open(path, "rb") as binary:
-            with io.BufferedReader(_BoundedCsvReader(binary, max_uncompressed_bytes)) as bounded:
+            with io.BufferedReader(
+                _BoundedCsvReader(binary, max_uncompressed_bytes, limit_reason)
+            ) as bounded:
                 with io.TextIOWrapper(bounded, encoding=text_encoding, newline="") as handle:
                     yield handle
         return
@@ -219,9 +222,12 @@ def open_export_csv(
 class _BoundedCsvReader(io.RawIOBase):
     """Bound expanded bytes before text buffering, including concatenated members."""
 
-    def __init__(self, source: Any, maximum: int | None) -> None:
+    def __init__(
+        self, source: Any, maximum: int | None, limit_reason: str | None,
+    ) -> None:
         self._source = source
         self._remaining = maximum
+        self._limit_reason = limit_reason
 
     def readable(self) -> bool:
         return True
@@ -238,6 +244,12 @@ class _BoundedCsvReader(io.RawIOBase):
                     "CSV gzip expansion exceeds the governed size or ratio limit",
                     code="BLOB_SIZE_LIMIT",
                     stage="compression",
+                    details={"reason": self._limit_reason},
+                    next_action=(
+                        "Split the same full interval into adjacent, non-overlapping "
+                        "closed date windows; keep App, event, columns, and empty "
+                        "conditions unchanged; evaluate and reconcile every child window."
+                    ),
                 )
         buffer[:len(chunk)] = chunk
         return len(chunk)

@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "9f3f95e4fe048ab6373c428085259d394edd14d0af49272a0df32d5bed556c03",
-    "manual_review_sha256": "08f95b0c1047b3685541a08ddd99f7ed214acc271bd397a01564f98763f5a29d",
+    "reference_evidence_sha256": "d67dc15f9d18aa2bb91afd39da935855063c18e2d6beddfd4b4e5c877eee30f0",
+    "manual_review_sha256": "26be307aa5609315052a3aaf8265fb3d698a76d3689983cddad2f9aef53a00c0",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3291,
     "scanned_file_count": 3283,
@@ -833,7 +833,7 @@
     "dispositions": {
       "no_migration_effect": 359
     },
-    "sites_sha256": "546c606d33dba740322e01f59c56fa407efcdad2e600b61d7933069c88f0d1e0"
+    "sites_sha256": "e2988b3030eb79dd30d36b83bda50e99274f377bd4ffa96c3c2ef418dce76c9b"
   },
   "blockers": [],
   "site_fields": [
@@ -1211,7 +1211,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:69196:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:69211:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -4016,7 +4016,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_export_integration.py:397:18:patch.object",
+      "tests/test_gravity_insight_export_integration.py:406:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "client",
@@ -4031,7 +4031,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_export_integration.py:397:70:patch.object",
+      "tests/test_gravity_insight_export_integration.py:406:70:patch.object",
       "rm",
       "non_string_patch_expression",
       "client",
@@ -4046,7 +4046,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_export_integration.py:635:14:patch.object",
+      "tests/test_gravity_insight_export_integration.py:644:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "GravityInsightClient",

@@ -155,6 +155,12 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
         stage, reason = "semantic_response", semantic_reason(code, details, semantic_reasons[code])
     if code in {"BLOB_SIZE_MISMATCH", "BLOB_HASH_MISMATCH", "BLOB_MD5_MISMATCH"}:
         stage, reason = "completeness", "source_integrity_mismatch"
+    if (stage, code) == ("compression", "BLOB_SIZE_LIMIT"):
+        budget_reason = details.get("reason") if isinstance(details, Mapping) else None
+        if budget_reason in {
+            "gzip_expanded_byte_budget", "gzip_compression_ratio_budget",
+        }:
+            reason = budget_reason
     if reason is None:
         return {}
     diagnostic: dict[str, Any] = {"stage": stage, "reason": reason}
