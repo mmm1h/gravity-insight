@@ -17,6 +17,9 @@ from gravity_insight.agents.unavailable_analysis import (
     CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE,
     CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION,
     CANONICAL_CLIENT_ID_EVENT_COHORT_REASON,
+    EVENT_DATASET_SNAPSHOT_BOUNDARY_GAP_CODE,
+    EVENT_DATASET_SNAPSHOT_BOUNDARY_NEXT_ACTION,
+    EVENT_DATASET_SNAPSHOT_BOUNDARY_REASON,
     EXTERNAL_MARKET_HISTORY_GAP_CODE,
     EXTERNAL_MARKET_HISTORY_NEXT_ACTION,
     EXTERNAL_MARKET_HISTORY_REASON,
@@ -90,12 +93,12 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])
         self.assertEqual("discover_and_describe", result["mode"])
 
-    def test_registered_gap_inventory_has_thirteen_unique_machine_codes(self) -> None:
+    def test_registered_gap_inventory_has_fourteen_unique_machine_codes(self) -> None:
         """Every unavailable journey is indexed once under a unique code."""
 
         gaps = registered_unavailable_gaps()
-        self.assertEqual(13, len(gaps))
-        self.assertEqual(13, len({gap["code"] for gap in gaps}))
+        self.assertEqual(14, len(gaps))
+        self.assertEqual(14, len({gap["code"] for gap in gaps}))
 
     def test_external_market_history_gap_preserves_own_app_discovery(self) -> None:
         for query in (
@@ -187,6 +190,57 @@ class AgentCatalogTests(unittest.TestCase):
                 self.assertTrue(
                     gap is None
                     or gap["code"] != CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE
+                )
+
+    def test_event_snapshot_boundary_returns_non_atomic_reconciliation_gap(self) -> None:
+        for query in (
+            "Reconcile grouped and control event counts at one dataset snapshot.",
+            "Can Event aggregates share an as-of watermark?",
+            "事件聚合的分组和总量对账是否有同一数据快照水位？",
+        ):
+            with self.subTest(query=query):
+                gap = unavailable_journey_gap(query)
+                self.assertIsNotNone(gap)
+                self.assertEqual("capability_gap", gap["kind"])
+                self.assertEqual(EVENT_DATASET_SNAPSHOT_BOUNDARY_GAP_CODE, gap["code"])
+                self.assertEqual("event_count_snapshot_reconciliation", gap["journey"])
+                self.assertEqual(EVENT_DATASET_SNAPSHOT_BOUNDARY_REASON, gap["reason"])
+                self.assertEqual(
+                    EVENT_DATASET_SNAPSHOT_BOUNDARY_NEXT_ACTION,
+                    gap["next_action"],
+                )
+                self.assertFalse(gap["network_called"])
+                self.assertNotIn("next", gap)
+
+                result = discover_capabilities(query, client=self.client)
+                self.assertEqual("capability_gap", result["status"])
+                self.assertEqual([], result["candidates"])
+
+        described = run_agent_catalog_command(
+            _args(
+                "describe",
+                selector=f"gap:{EVENT_DATASET_SNAPSHOT_BOUNDARY_GAP_CODE}",
+            ),
+            self.client,
+        )
+        self.assertFalse(described["capability"]["executable"])
+        self.assertEqual(
+            EVENT_DATASET_SNAPSHOT_BOUNDARY_NEXT_ACTION,
+            described["capability"]["next_action"],
+        )
+
+    def test_event_snapshot_gap_does_not_capture_other_snapshot_requests(self) -> None:
+        for query in (
+            "Show fetched_at for this event aggregate.",
+            "Export the event snapshot rows.",
+            "Reconcile SQL counts at one dataset snapshot.",
+            "Do not compare event counts across dataset snapshots.",
+        ):
+            with self.subTest(query=query):
+                gap = unavailable_journey_gap(query)
+                self.assertTrue(
+                    gap is None
+                    or gap["code"] != EVENT_DATASET_SNAPSHOT_BOUNDARY_GAP_CODE
                 )
 
     def test_custom_event_first_exposure_returns_narrow_evidence_gap(self) -> None:

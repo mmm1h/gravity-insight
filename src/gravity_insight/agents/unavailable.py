@@ -17,6 +17,7 @@ _REGISTERED_GAP_QUERIES = (
     "custom event first exposure cohort",
     "external competitor download iap market history",
     "group native event aggregates by canonical ClientID",
+    "reconcile grouped and control event counts at one dataset snapshot",
     "what date semantics does ap_cost use: spend, click, activation, or registration date",
     "exact ap_cost by post-registration user_ab group",
 )
