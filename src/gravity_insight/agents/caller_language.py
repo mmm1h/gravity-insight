@@ -161,6 +161,10 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
         "按 canonical ClientID 筛选或分组原生事件聚合",
         "filter or group native event aggregates by canonical ClientID",
     ),
+    "gap:EVENT_DATASET_SNAPSHOT_BOUNDARY_UNAVAILABLE": (
+        "用同一数据快照水位对账分组与总量事件计数",
+        "reconcile grouped and control event counts at one dataset snapshot",
+    ),
     "gap:NON_BYTEDANCE_HIERARCHY_PARENT_MISSING": (
         "下钻非 Bytedance 平台的计划、组和创意表现",
     ),

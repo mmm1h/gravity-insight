@@ -72,6 +72,26 @@ CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION = (
     "unmapped identity, cohort, order, and amount coverage, and keep missing behavior "
     "unknown rather than zero. Do not register or send an inferred Event field."
 )
+EVENT_DATASET_SNAPSHOT_BOUNDARY_GAP_CODE = (
+    "EVENT_DATASET_SNAPSHOT_BOUNDARY_UNAVAILABLE"
+)
+EVENT_DATASET_SNAPSHOT_BOUNDARY_REASON = (
+    "Native Event Analysis responses expose `fetched_at`, but no registered dataset "
+    "as-of, version, or watermark boundary. `fetched_at` is fetch/receipt time, not "
+    "dataset snapshot time. The native bucket timezone, timestamp semantics, and "
+    "completed-day boundary are also unverified, so sequential grouped and control "
+    "reads cannot certify an atomic count view, day maturity, lateness cause, or "
+    "physical SDK-delivery completeness."
+)
+EVENT_DATASET_SNAPSHOT_BOUNDARY_NEXT_ACTION = (
+    "Preserve each original request, result, and `fetched_at`. Establish the native "
+    "bucket calendar from governed evidence or keep the latest date unresolved. At "
+    "most once, refresh the grouped read and its ungrouped control with the identical "
+    "cohort, window, metrics, precision, and conditions, differing only by grouping. "
+    "If any cell/date changes or the refreshed pair differs, keep those cells/dates "
+    "unknown; do not apply a tolerance, infer a cause, or retry again. Reconciliation "
+    "covers only the returned native counts, not physical SDK delivery."
+)
 
 
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
@@ -100,6 +120,14 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             journey="canonical_client_id_event_cohort",
             reason=CANONICAL_CLIENT_ID_EVENT_COHORT_REASON,
             next_action=CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION,
+        )
+    if _event_dataset_snapshot_boundary(selected, words):
+        return unavailable_gap(
+            query,
+            code=EVENT_DATASET_SNAPSHOT_BOUNDARY_GAP_CODE,
+            journey="event_count_snapshot_reconciliation",
+            reason=EVENT_DATASET_SNAPSHOT_BOUNDARY_REASON,
+            next_action=EVENT_DATASET_SNAPSHOT_BOUNDARY_NEXT_ACTION,
         )
     if _current_table_schema(selected, words):
         return unavailable_gap(
@@ -228,6 +256,35 @@ def _canonical_client_id_event_cohort(
     )
 
 
+def _event_dataset_snapshot_boundary(
+    selected: str, words: frozenset[str]
+) -> bool:
+    event_context = "event" in words or "事件" in selected
+    count_reconciliation = bool(
+        words
+        & {
+            "aggregate",
+            "aggregates",
+            "atomic",
+            "control",
+            "controls",
+            "count",
+            "counts",
+            "grouped",
+            "reconcile",
+            "reconciliation",
+            "ungrouped",
+        }
+    ) or any(term in selected for term in ("分组", "聚合", "计数", "总量", "对账"))
+    snapshot_boundary = bool(
+        words & {"as_of", "asof", "snapshot", "snapshots", "watermark"}
+    ) or any(
+        term in selected
+        for term in ("as-of", "as of", "数据截止", "快照", "水位", "版本边界")
+    )
+    return event_context and count_reconciliation and snapshot_boundary
+
+
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
     return (
         _explicit_current_schema(selected)
@@ -289,6 +346,9 @@ __all__ = [
     "CANONICAL_CLIENT_ID_EVENT_COHORT_GAP_CODE",
     "CANONICAL_CLIENT_ID_EVENT_COHORT_NEXT_ACTION",
     "CANONICAL_CLIENT_ID_EVENT_COHORT_REASON",
+    "EVENT_DATASET_SNAPSHOT_BOUNDARY_GAP_CODE",
+    "EVENT_DATASET_SNAPSHOT_BOUNDARY_NEXT_ACTION",
+    "EVENT_DATASET_SNAPSHOT_BOUNDARY_REASON",
     "EXTERNAL_MARKET_HISTORY_GAP_CODE",
     "EXTERNAL_MARKET_HISTORY_NEXT_ACTION",
     "EXTERNAL_MARKET_HISTORY_REASON",
