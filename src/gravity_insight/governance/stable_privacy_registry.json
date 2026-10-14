@@ -342,6 +342,7 @@
       "data.list[].lookup",
       "data.list[].modify_time",
       "data.list[].name",
+      "data.list[].remark",
       "data.list[].trigger_opportunity",
       "data.list[].uploaded",
       "data.list[].visible",
@@ -378,6 +379,7 @@
       "data.list[].modify_time",
       "data.list[].name",
       "data.list[].prop_type",
+      "data.list[].remark",
       "data.list[].uploaded",
       "data.list[].visible",
       "data.page_info"
@@ -1360,6 +1362,7 @@
       "data.list[].modify_time",
       "data.list[].name",
       "data.list[].prop_type",
+      "data.list[].remark",
       "data.list[].uploaded",
       "data.list[].visible",
       "data.page_info"

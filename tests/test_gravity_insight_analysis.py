@@ -462,6 +462,122 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             '[{"field":"visible","operator":1,"values":[true]}]',
             query["filters"],
         )
+        self.assertEqual(0, query["need_yesterday_count"])
+        self.assertEqual("modify_time", query["order_by_field"])
+        self.assertEqual("desc", query["order_by_op"])
+
+    def test_app_catalog_filters_are_typed_and_encoded_without_raw_passthrough(
+        self,
+    ) -> None:
+        client, transport = client_for(
+            "app.list", handler=lambda *_args: page([], page_size=6_000)
+        )
+        result = client.read(
+            "app.list",
+            {
+                "filters": [
+                    {"field": "name", "operator": 8, "values": ["demo"]},
+                    {"field": "os", "operator": 6, "values": [0, 1]},
+                ]
+            },
+        )
+        self.assertEqual("empty", result["status"])
+        self.assertEqual(
+            [
+                {"field": "name", "operator": 8, "values": ["demo"]},
+                {"field": "os", "operator": 6, "values": [0, 1]},
+            ],
+            json.loads(transport.calls[0][2]["query"]["filters"]),
+        )
+
+        invalid_filters = (
+            "[]",
+            [{"field": "name", "operator": 1, "values": ["demo"]}],
+            [{"field": "favourite", "operator": 1, "values": [True]}],
+            [{"field": "os", "operator": 6, "values": ["android"]}],
+        )
+        for filters in invalid_filters:
+            with self.subTest(filters=filters), self.assertRaises(InputValidationError):
+                client.read("app.list", {"filters": filters})
+        self.assertEqual(1, len(transport.calls))
+
+    def test_event_catalog_filters_sort_and_visible_override_are_exact(self) -> None:
+        client, transport = client_for(
+            "analysis.event.list", handler=lambda *_args: event_metadata()
+        )
+        result = client.read(
+            "analysis.event.list",
+            {
+                "app_id": "101",
+                "filters": [
+                    {"field": "visible", "operator": 1, "values": [False]},
+                    {"field": "like_name_cname", "operator": 9, "values": ["pay"]},
+                ],
+                "order_by_field": "name",
+                "order_by_op": "asc",
+                "need_yesterday_count": 1,
+            },
+        )
+        self.assertEqual("success", result["status"])
+        query = transport.calls[0][2]["query"]
+        self.assertEqual(
+            [
+                {"field": "visible", "operator": 1, "values": [False]},
+                {"field": "like_name_cname", "operator": 9, "values": ["pay"]},
+            ],
+            json.loads(query["filters"]),
+        )
+        self.assertEqual("name", query["order_by_field"])
+        self.assertEqual("asc", query["order_by_op"])
+        self.assertEqual(1, query["need_yesterday_count"])
+
+    def test_property_catalog_filter_controls_and_remark_projection(self) -> None:
+        client, transport = client_for(
+            "analysis.event_property.list",
+            handler=lambda *_args: page(
+                [{"name": "amount", "data_type": "FLOAT", "remark": "safe"}]
+            ),
+        )
+        result = client.read(
+            "analysis.event_property.list",
+            {
+                "app_id": "101",
+                "filters": [
+                    {"field": "data_type", "operator": 6, "values": ["INT", "FLOAT"]}
+                ],
+                "only_dim_prop": True,
+            },
+        )
+        self.assertEqual("safe", result["data"]["list"][0]["remark"])
+        query = transport.calls[0][2]["query"]
+        self.assertEqual(1, query["only_dim_prop"])
+        self.assertEqual(
+            [{"field": "data_type", "operator": 6, "values": ["INT", "FLOAT"]}],
+            json.loads(query["filters"]),
+        )
+
+        with self.assertRaises(InputValidationError):
+            client.read(
+                "analysis.event_property.list",
+                {
+                    "app_id": "101",
+                    "filters": [
+                        {"field": "data_type", "operator": 6, "values": ["UNKNOWN"]}
+                    ],
+                },
+            )
+        self.assertEqual(1, len(transport.calls))
+
+    def test_user_property_catalog_preserves_default_visible_filter(self) -> None:
+        client, transport = client_for(
+            "analysis.user_property.list", handler=lambda *_args: page([])
+        )
+        result = client.read("analysis.user_property.list", {"app_id": "101"})
+        self.assertEqual("empty", result["status"])
+        self.assertEqual(
+            [{"field": "visible", "operator": 1, "values": [True]}],
+            json.loads(transport.calls[0][2]["query"]["filters"]),
+        )
 
     def test_event_list_marks_yesterday_count_unreliable_and_normalizes_app_id(
         self,

@@ -555,13 +555,13 @@ def run():
         """
         expected = module_graph_baseline()
         self.assertEqual(
-            "1b79d4aa90779c070a8cca6ec0ee72224dc8639227539cbdc837ec0e73db6e9b",
+            "53b054d63e13bb4d091ce82be79977fbf465513e77fbe97857d983b171fde6d4",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
                 "ast-only": 17,
-                "ast+lazy-exports": 446,
+                "ast+lazy-exports": 448,
                 "canonical": 564,
                 "eager-ast-only": 0,
             },

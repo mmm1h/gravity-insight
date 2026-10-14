@@ -1,6 +1,6 @@
 {
   "annotations_path": "src/gravity_insight/governance/journey-ledger-annotations.v1.json",
-  "annotations_sha256": "2d91ffc2cda6573ebbd9876d47246efbe31c6302aa4c9a09e72ac38dcd3c9f41",
+  "annotations_sha256": "7a2d0351a304b4c44e68019f32442896abe037aac515fccbd6f5ac514e79fc46",
   "network_called": false,
   "row_count": 69,
   "rows": [
@@ -1031,7 +1031,7 @@
       }
     },
     {
-      "blocker_note": "设置 → 应用管理的真实账号级列表为既有 stable `app.list`：`GET /turbo_engine/api/v1/user/open_app/list/`，不是 `app.project.list` 的 `POST /turbo_engine/api/v1/user/project/list/`。自然页面首屏 HTTP 200 非空 7 行；`cid/create_time/download_url/event_version/icon_url/id/industry_id/is_enabled/is_iaa/modify_time/name/os/package_name/remark/sub_package_list/wechat_app_id/wechat_origin_id` 与 `page_info.page/page_size/total_number/total_page` 均已在 v4 投影登记暴露。`app.project.list` 无时间窗、无 App 输入，扩窗/枚举不适用；08-16 账号级最小第一页空仍只约束该 draft，本轮不重打。CLI/SDK/Plan 复用 raw `app.list`，Agent 中英首问均交付 `app.list` 卡；英文冻结问法为 “List the app projects that the current account is allowed to read.”。",
+      "blocker_note": "设置 → 应用管理的真实账号级列表为既有 stable `app.list`：`GET /turbo_engine/api/v1/user/open_app/list/`，不是 `app.project.list` 的 `POST /turbo_engine/api/v1/user/project/list/`。自然页面首屏 HTTP 200 非空 7 行；`cid/create_time/download_url/event_version/icon_url/id/industry_id/is_enabled/is_iaa/modify_time/name/os/package_name/remark/sub_package_list/wechat_app_id/wechat_origin_id` 与 `page_info.page/page_size/total_number/total_page` 均已在 v5 投影登记暴露；v5 新增 App 元数据类型化筛选并拒绝任意 JSON 字符串透传。`app.project.list` 无时间窗、无 App 输入，扩窗/枚举不适用；08-16 账号级最小第一页空仍只约束该 draft，本轮不重打。CLI/SDK/Plan 复用 raw `app.list`，Agent 中英首问均交付 `app.list` 卡；英文冻结问法为 “List the app projects that the current account is allowed to read.”。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "查找当前账号可读的 App 项目",
@@ -1040,7 +1040,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "79807e95679335f4fe50c017cc037425a1c33146e8544674f60e4cece54d9671",
+      "row_digest": "1336f6603f0cb24659964606fbc0e641700d56831e90ee1d6d5a1b314e71443c",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1317,7 +1317,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v2",
-  "snapshot_digest": "392c8fddfe57c1e1cfa730ff512295a13a731502758dae418b193ef5917d1b42",
+  "snapshot_digest": "56ccadd56fd9b9e3193829c3f2fde65e62851fccf2c9691338052c9a05be9783",
   "source_path": "src/gravity_insight/governance/journey-ledger-facts.v1.json",
   "source_sha256": "5b86904c4a52a9b92f5cca551c6cf1ddd5d61ebe7616e4287ab8c37eef6a568f"
 }

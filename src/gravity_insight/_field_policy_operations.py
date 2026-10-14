@@ -5,6 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
+from .request_codecs import (
+    APP_FILTER_RULES,
+    EVENT_FILTER_RULES,
+    PROPERTY_FILTER_RULES,
+    catalog_filter_operator_profile,
+)
+
 
 def _operation(*parts: str) -> str:
     return ".".join(parts)
@@ -34,6 +41,7 @@ ANALYSIS_EVENT_PROPERTY_VALUE = _operation("analysis", "event_property_value", "
 ANALYSIS_USER_PROPERTY = _operation("analysis", "user_property", "list")
 ANALYSIS_EVENT = _operation("analysis", "event", "list")
 ANALYSIS_EVENT_PROPERTY = _operation("analysis", "event_property", "list")
+APP_LIST = _operation("app", "list")
 ANALYSIS_SEGMENT = _operation("analysis", "segment", "list")
 ANALYSIS_SEGMENT_HISTORY = _operation("analysis", "segment", "history_version", "list")
 ANALYSIS_EVENT_INFO = _operation("analysis", "event", "info")
@@ -121,6 +129,18 @@ OPERATION_RULES: Mapping[str, OperationRule] = {
     ANALYSIS_SEGMENT_EVALUATE: OperationRule("analysis_segment"),
     ANALYSIS_USER_PROPERTY_VALUE: OperationRule("property_values", "user"),
     ANALYSIS_EVENT_PROPERTY_VALUE: OperationRule("property_values", "event"),
+    APP_LIST: OperationRule(
+        exact_filter_profile=catalog_filter_operator_profile(APP_FILTER_RULES)
+    ),
+    ANALYSIS_EVENT: OperationRule(
+        exact_filter_profile=catalog_filter_operator_profile(EVENT_FILTER_RULES)
+    ),
+    ANALYSIS_EVENT_PROPERTY: OperationRule(
+        exact_filter_profile=catalog_filter_operator_profile(PROPERTY_FILTER_RULES)
+    ),
+    ANALYSIS_USER_PROPERTY: OperationRule(
+        exact_filter_profile=catalog_filter_operator_profile(PROPERTY_FILTER_RULES)
+    ),
     ANALYSIS_ACCOUNT_USER: OperationRule(
         exact_filter_profile=_ACCOUNT_FILTERS,
         exact_filter_values="account",

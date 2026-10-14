@@ -11,7 +11,6 @@ import time
 import weakref
 from dataclasses import dataclass
 from datetime import date as calendar_date
-from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping
 
@@ -32,26 +31,8 @@ from .wire import (
     isolated_wire as _isolated_wire,
 )
 from .multidim import OPERATIONS as MULTIDIM_OPERATIONS, build_request_body
-from .request_codecs import (
-    analysis_account_user_request_parts,
-    analysis_segment_request_parts,
-    app_onelink_request_parts,
-)
-_RUNTIME_BINDINGS_PATH = (
-    Path(__file__).resolve().parent / "contracts" / "runtime-operation-bindings.json"
-)
-
-
-def _load_request_builder_names(
-    path: Path = _RUNTIME_BINDINGS_PATH,
-) -> dict[str, str]:
-    try:
-        return dict(json.loads(path.read_text(encoding="utf-8"))["request_builders"])
-    except (KeyError, OSError, TypeError, UnicodeError, json.JSONDecodeError) as exc:
-        raise ManifestError("could not load runtime operation bindings") from exc
-
-
-_REQUEST_BUILDER_NAMES = _load_request_builder_names()
+from . import request_codecs
+_REQUEST_BUILDER_NAMES = request_codecs.REQUEST_BUILDER_NAMES
 _READ_ACTIONS = frozenset(
     {"get", "list", "read", "query", "detail", "tree", "status", "metadata", "schema", "calc_total"})
 _BLOCKED_STABILITY = frozenset({"permission_unavailable", "blocked_privacy", "blocked_write"})
@@ -378,12 +359,9 @@ class PolicyEngine(MutationPolicyMixin, ExportPolicyMixin):
 
 def _request_builder(operation: OperationSpec) -> Any:
     builder = segment_mutation_request_builder(operation.operation_id)
-    builder_name = _REQUEST_BUILDER_NAMES.get(operation.operation_id)
-    if builder is None and builder_name is not None:
-        builder = globals().get(builder_name)
-        if not callable(builder):
-            raise ManifestError("runtime operation binding names an unavailable builder")
-    return builder
+    return builder or request_codecs.resolve_request_builder(
+        operation.operation_id, globals()
+    )
 
 
 def _manifest_request_parts(operation: OperationSpec, values: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any], set[str]]:

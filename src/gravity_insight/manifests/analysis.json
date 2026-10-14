@@ -4,7 +4,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "分析页事件目录；只输出事件定义元数据，不输出事件记录。不要用 item.yesterday_count 判断某个事件在指定窗口是否有数据；请用 analysis.event.query（Agent selector: analysis.query.spec:event）查询明确的事件和指标。",
       "domain": "analysis",
       "effect": "read",
@@ -14,9 +14,86 @@
           "required": true,
           "type": "string"
         },
+        "filters": {
+          "default": [],
+          "description": "Allowlisted event-definition filters. Valid pairs: name/1; accepted, is_preset, visible or uploaded/1; create_time or modify_time/7; like_name_cname/9. Favourite filters are out of scope.",
+          "item_schema": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "name",
+                  "accepted",
+                  "is_preset",
+                  "visible",
+                  "uploaded",
+                  "create_time",
+                  "modify_time",
+                  "like_name_cname"
+                ],
+                "type": "string"
+              },
+              "operator": {
+                "enum": [
+                  1,
+                  7,
+                  9
+                ],
+                "type": "integer"
+              },
+              "values": {
+                "items": {
+                  "type": [
+                    "string",
+                    "boolean"
+                  ]
+                },
+                "maxItems": 2,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "values"
+            ],
+            "type": "object"
+          },
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
         "need_favourite": {
           "default": true,
           "type": "boolean"
+        },
+        "need_yesterday_count": {
+          "default": 0,
+          "description": "Whether Gravity should calculate yesterday_count. Defaults to 0 because the count is expensive and is not a substitute for an event query.",
+          "enum": [
+            0,
+            1
+          ],
+          "type": "integer"
+        },
+        "order_by_field": {
+          "default": "modify_time",
+          "enum": [
+            "modify_time",
+            "name",
+            "cname",
+            "yesterday_count"
+          ],
+          "type": "string"
+        },
+        "order_by_op": {
+          "default": "desc",
+          "enum": [
+            "desc",
+            "asc"
+          ],
+          "type": "string"
         },
         "page": {
           "default": 1,
@@ -62,20 +139,26 @@
       "request": {
         "body_fields": [],
         "defaults": {
+          "filters": [],
           "need_favourite": true,
+          "need_yesterday_count": 0,
+          "order_by_field": "modify_time",
+          "order_by_op": "desc",
           "page": 1,
           "page_size": 100
         },
         "fixed_body": {},
-        "fixed_query": {
-          "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]}]"
-        },
+        "fixed_query": {},
         "path_fields": [],
         "query_fields": [
           "app_id",
           "page",
           "page_size",
-          "need_favourite"
+          "need_favourite",
+          "filters",
+          "order_by_field",
+          "order_by_op",
+          "need_yesterday_count"
         ]
       },
       "required_parent": [
@@ -99,13 +182,11 @@
           "lookup",
           "modify_time",
           "name",
+          "remark",
           "trigger_opportunity",
           "uploaded",
           "visible",
           "yesterday_count"
-        ],
-        "known_omitted_item_keys": [
-          "remark"
         ],
         "required_data_keys": [
           "list"
@@ -127,13 +208,89 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "分析页用户属性元数据；仅输出属性定义，不输出用户属性值。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
         "app_id": {
           "required": true,
+          "type": "string"
+        },
+        "filters": {
+          "default": [],
+          "description": "Allowlisted property-definition filters. Valid pairs: name/1; data_type/6; prop_type, is_common, is_preset, uploaded or visible/1; create_time or modify_time/7; like_name_cname/9. Favourite filters are out of scope.",
+          "item_schema": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "name",
+                  "data_type",
+                  "prop_type",
+                  "is_common",
+                  "is_preset",
+                  "uploaded",
+                  "visible",
+                  "create_time",
+                  "modify_time",
+                  "like_name_cname"
+                ],
+                "type": "string"
+              },
+              "operator": {
+                "enum": [
+                  1,
+                  6,
+                  7,
+                  9
+                ],
+                "type": "integer"
+              },
+              "values": {
+                "items": {
+                  "type": [
+                    "string",
+                    "integer",
+                    "boolean"
+                  ]
+                },
+                "maxItems": 1000,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "values"
+            ],
+            "type": "object"
+          },
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "only_dim_prop": {
+          "default": false,
+          "description": "Return only properties associated with a dimension table.",
+          "type": "boolean"
+        },
+        "order_by_field": {
+          "default": "modify_time",
+          "enum": [
+            "modify_time",
+            "name",
+            "cname"
+          ],
+          "type": "string"
+        },
+        "order_by_op": {
+          "default": "desc",
+          "enum": [
+            "desc",
+            "asc"
+          ],
           "type": "string"
         },
         "page": {
@@ -180,18 +337,24 @@
       "request": {
         "body_fields": [],
         "defaults": {
+          "filters": [],
+          "only_dim_prop": false,
+          "order_by_field": "modify_time",
+          "order_by_op": "desc",
           "page": 1,
           "page_size": 100
         },
         "fixed_body": {},
-        "fixed_query": {
-          "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]}]"
-        },
+        "fixed_query": {},
         "path_fields": [],
         "query_fields": [
           "app_id",
           "page",
-          "page_size"
+          "page_size",
+          "filters",
+          "only_dim_prop",
+          "order_by_field",
+          "order_by_op"
         ]
       },
       "required_parent": [
@@ -217,12 +380,10 @@
           "is_preset",
           "modify_time",
           "name",
+          "remark",
           "prop_type",
           "uploaded",
           "visible"
-        ],
-        "known_omitted_item_keys": [
-          "remark"
         ],
         "nested_item_keys": {
           "dim_table": [
@@ -246,13 +407,89 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "分析页事件属性目录；静态包确认无需事件名即可分页读取。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
         "app_id": {
           "required": true,
+          "type": "string"
+        },
+        "filters": {
+          "default": [],
+          "description": "Allowlisted property-definition filters. Valid pairs: name/1; data_type/6; prop_type, is_common, is_preset, uploaded or visible/1; create_time or modify_time/7; like_name_cname/9. Favourite filters are out of scope.",
+          "item_schema": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "name",
+                  "data_type",
+                  "prop_type",
+                  "is_common",
+                  "is_preset",
+                  "uploaded",
+                  "visible",
+                  "create_time",
+                  "modify_time",
+                  "like_name_cname"
+                ],
+                "type": "string"
+              },
+              "operator": {
+                "enum": [
+                  1,
+                  6,
+                  7,
+                  9
+                ],
+                "type": "integer"
+              },
+              "values": {
+                "items": {
+                  "type": [
+                    "string",
+                    "integer",
+                    "boolean"
+                  ]
+                },
+                "maxItems": 1000,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "values"
+            ],
+            "type": "object"
+          },
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "only_dim_prop": {
+          "default": false,
+          "description": "Return only properties associated with a dimension table.",
+          "type": "boolean"
+        },
+        "order_by_field": {
+          "default": "modify_time",
+          "enum": [
+            "modify_time",
+            "name",
+            "cname"
+          ],
+          "type": "string"
+        },
+        "order_by_op": {
+          "default": "desc",
+          "enum": [
+            "desc",
+            "asc"
+          ],
           "type": "string"
         },
         "page": {
@@ -299,6 +536,10 @@
       "request": {
         "body_fields": [],
         "defaults": {
+          "filters": [],
+          "only_dim_prop": false,
+          "order_by_field": "modify_time",
+          "order_by_op": "desc",
           "page": 1,
           "page_size": 100
         },
@@ -308,7 +549,11 @@
         "query_fields": [
           "app_id",
           "page",
-          "page_size"
+          "page_size",
+          "filters",
+          "only_dim_prop",
+          "order_by_field",
+          "order_by_op"
         ]
       },
       "required_parent": [
@@ -334,12 +579,10 @@
           "is_preset",
           "modify_time",
           "name",
+          "remark",
           "prop_type",
           "uploaded",
           "visible"
-        ],
-        "known_omitted_item_keys": [
-          "remark"
         ],
         "nested_item_keys": {
           "dim_table": [

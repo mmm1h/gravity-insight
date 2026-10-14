@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "af33bd24ce48e8863db67c4aa485f939041b9324d9347993d2b7983d0c2a65ff",
-    "manual_review_sha256": "007ab64be5ca1f716f575a44bd043537acd9c255732aff00b44edbdb08eb39e5",
+    "reference_evidence_sha256": "33ae2154962b73cf71f5f7daae80ac652841d3b276c80a8dddc57201245876c4",
+    "manual_review_sha256": "2a5cff80fd45c89d566185a6b0a5abec0d6881ce6b096c40814dc00043630fc2",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3292,
     "scanned_file_count": 3284,
@@ -833,7 +833,7 @@
     "dispositions": {
       "no_migration_effect": 362
     },
-    "sites_sha256": "9c802a78cec25338ca8036dd78995106880f3d7a95b1131df29ec7f1bd70e6a2"
+    "sites_sha256": "9c27b1c9972757516fcc5157137848ec785193d41b31bd3bf735da0c3374aeca"
   },
   "blockers": [],
   "site_fields": [
@@ -1196,7 +1196,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22915:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22925:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1211,7 +1211,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:69274:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:69341:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -4061,7 +4061,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_golden.py:397:14:patch.object",
+      "tests/test_gravity_insight_golden.py:401:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "registry.time",
@@ -4076,7 +4076,7 @@
       }
     ],
     [
-      "tests/test_gravity_insight_golden.py:399:12:patch.object",
+      "tests/test_gravity_insight_golden.py:403:12:patch.object",
       "rm",
       "non_string_patch_expression",
       "registry.secrets",

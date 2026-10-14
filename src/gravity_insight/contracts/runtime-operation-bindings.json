@@ -23,6 +23,8 @@
   },
   "request_builders": {
     "analysis.account_user.list": "analysis_account_user_request_parts",
+    "analysis.event.list": "analysis_event_catalog_request_parts",
+    "analysis.event_property.list": "analysis_event_property_catalog_request_parts",
     "analysis.monetization_detail.list": "_analysis_monetization_detail_request_parts",
     "analysis.order_detail.list": "_analysis_order_detail_request_parts",
     "analysis.order_split_detail.list": "_analysis_order_split_detail_request_parts",
@@ -32,7 +34,9 @@
     "analysis.segment.user_detail.list": "_analysis_segment_user_detail_request_parts",
     "analysis.user_detail.list": "_analysis_user_detail_request_parts",
     "analysis.user_event.list": "_analysis_user_event_request_parts",
+    "analysis.user_property.list": "analysis_user_property_catalog_request_parts",
     "analysis.user_postback_log.list": "_analysis_user_postback_log_request_parts",
+    "app.list": "app_catalog_request_parts",
     "app.onelink.list": "app_onelink_request_parts",
     "material.report.query": "_material_report_request_parts",
     "report.business.query": "_business_report_request_parts"

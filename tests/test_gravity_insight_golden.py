@@ -6,13 +6,17 @@ from pathlib import Path
 from typing import Any, Mapping
 from unittest.mock import patch
 
-from gravity_insight import executor, models, registry
+from gravity_insight import executor, models, registry, request_codecs
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_ROOT = ROOT / "src" / "gravity_insight" / "manifests"
 FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "gravity_insight_golden"
 WIRE_OPERATION_IDS = {
+    "app.list",
+    "analysis.event.list",
+    "analysis.event_property.list",
+    "analysis.user_property.list",
     "analysis.segment.list",
     "analysis.segment.evaluate_percent",
     "analysis.account_user.list",
@@ -384,12 +388,12 @@ class GravityInsightGoldenTests(unittest.TestCase):
         self.assertEqual(len(expected["operations"]), expected["operation_count"])
         self.assertEqual(expected, actual)
 
-    def test_all_13_special_codec_input_to_wire_cases_match_golden(self) -> None:
+    def test_all_17_special_codec_input_to_wire_cases_match_golden(self) -> None:
         expected = json.loads(
             (FIXTURE_ROOT / "wire.json").read_text(encoding="utf-8")
         )
         operations = repository_operations()
-        self.assertEqual(13, expected["case_count"])
+        self.assertEqual(17, expected["case_count"])
         self.assertEqual(
             WIRE_OPERATION_IDS,
             {case["operation_id"] for case in expected["cases"]},
@@ -433,7 +437,10 @@ class GravityInsightGoldenTests(unittest.TestCase):
             self.assertTrue(callable(getattr(executor, name, None)))
         for operation_id, builder_name in bindings.items():
             with self.subTest(operation_id=operation_id):
-                self.assertTrue(callable(getattr(registry, builder_name, None)))
+                self.assertTrue(
+                    callable(getattr(registry, builder_name, None))
+                    or callable(getattr(request_codecs, builder_name, None))
+                )
 
 
 if __name__ == "__main__":

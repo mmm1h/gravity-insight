@@ -63,11 +63,64 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 4,
+      "contract_version": 5,
       "description": "列出当前账号有权限读取的 App 项目（当前账号可见 App 列表）；List the app projects that the current account is allowed to read. sub_package_list is a nullable string array.",
       "domain": "app",
       "effect": "read",
       "input_fields": {
+        "filters": {
+          "default": [],
+          "description": "Allowlisted App metadata filters. Valid pairs: app_id or id/1; os or industry_id/6; package_name or is_enabled/1; name or remark/8; create_time/7. Raw JSON strings and favourite filters are rejected.",
+          "item_schema": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "app_id",
+                  "id",
+                  "os",
+                  "industry_id",
+                  "package_name",
+                  "name",
+                  "remark",
+                  "is_enabled",
+                  "create_time"
+                ],
+                "type": "string"
+              },
+              "operator": {
+                "enum": [
+                  1,
+                  6,
+                  7,
+                  8
+                ],
+                "type": "integer"
+              },
+              "values": {
+                "items": {
+                  "type": [
+                    "string",
+                    "integer",
+                    "boolean"
+                  ]
+                },
+                "maxItems": 1000,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "field",
+              "operator",
+              "values"
+            ],
+            "type": "object"
+          },
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
         "page": {
           "default": 1,
           "type": "integer"
@@ -111,6 +164,7 @@
       "request": {
         "body_fields": [],
         "defaults": {
+          "filters": [],
           "page": 1,
           "page_size": 6000
         },
@@ -119,7 +173,8 @@
         "path_fields": [],
         "query_fields": [
           "page",
-          "page_size"
+          "page_size",
+          "filters"
         ]
       },
       "required_parent": [],
