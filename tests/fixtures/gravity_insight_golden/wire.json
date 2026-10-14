@@ -1,5 +1,5 @@
 {
-  "case_count": 13,
+  "case_count": 17,
   "cases": [
     {
       "input": {
@@ -488,6 +488,131 @@
         "method": "POST",
         "path": "/report/api/v1/manager_report/list/",
         "query": {}
+      }
+    },
+    {
+      "input": {
+        "filters": [
+          {
+            "field": "name",
+            "operator": 8,
+            "values": [
+              "demo"
+            ]
+          }
+        ],
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "app.list",
+      "wire": {
+        "body": {},
+        "method": "GET",
+        "path": "/turbo_engine/api/v1/user/open_app/list/",
+        "query": {
+          "filters": "[{\"field\":\"name\",\"operator\":8,\"values\":[\"demo\"]}]",
+          "page": 2,
+          "page_size": 3
+        }
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "filters": [
+          {
+            "field": "like_name_cname",
+            "operator": 9,
+            "values": [
+              "pay"
+            ]
+          }
+        ],
+        "need_favourite": false,
+        "need_yesterday_count": 1,
+        "order_by_field": "name",
+        "order_by_op": "asc",
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.event.list",
+      "wire": {
+        "body": {},
+        "method": "GET",
+        "path": "/turbo_engine/api/v2/event/event_list/",
+        "query": {
+          "app_id": "101",
+          "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]},{\"field\":\"like_name_cname\",\"operator\":9,\"values\":[\"pay\"]}]",
+          "need_favourite": false,
+          "need_yesterday_count": 1,
+          "order_by_field": "name",
+          "order_by_op": "asc",
+          "page": 2,
+          "page_size": 3
+        }
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "filters": [
+          {
+            "field": "data_type",
+            "operator": 6,
+            "values": [
+              "INT",
+              "FLOAT"
+            ]
+          }
+        ],
+        "only_dim_prop": true,
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.event_property.list",
+      "wire": {
+        "body": {},
+        "method": "GET",
+        "path": "/turbo_engine/api/v2/event/event_property_list/",
+        "query": {
+          "app_id": "101",
+          "filters": "[{\"field\":\"data_type\",\"operator\":6,\"values\":[\"INT\",\"FLOAT\"]}]",
+          "only_dim_prop": 1,
+          "order_by_field": "modify_time",
+          "order_by_op": "desc",
+          "page": 2,
+          "page_size": 3
+        }
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "filters": [
+          {
+            "field": "like_name_cname",
+            "operator": 9,
+            "values": [
+              "vip"
+            ]
+          }
+        ],
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.user_property.list",
+      "wire": {
+        "body": {},
+        "method": "GET",
+        "path": "/turbo_engine/api/v2/event/user_property_list/",
+        "query": {
+          "app_id": "101",
+          "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]},{\"field\":\"like_name_cname\",\"operator\":9,\"values\":[\"vip\"]}]",
+          "order_by_field": "modify_time",
+          "order_by_op": "desc",
+          "page": 2,
+          "page_size": 3
+        }
       }
     }
   ],

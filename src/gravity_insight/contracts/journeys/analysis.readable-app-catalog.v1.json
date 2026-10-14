@@ -12,7 +12,7 @@
     {
       "identity_kind": "operation",
       "selector": "app.list",
-      "contract_version": "4",
+      "contract_version": "5",
       "minimum_trust": "stable",
       "completeness": "complete",
       "data_quality": "pass"

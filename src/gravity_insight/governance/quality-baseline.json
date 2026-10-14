@@ -165,10 +165,10 @@
       "sloc_hard_limit": 1005
     },
     "src/gravity_insight/registry.py": {
-      "ast_hard_limit": 4833,
-      "ast_nodes": 4833,
+      "ast_hard_limit": 4717,
+      "ast_nodes": 4717,
       "migration_sloc": 746,
-      "sloc_hard_limit": 741
+      "sloc_hard_limit": 723
     }
   },
   "scope": [

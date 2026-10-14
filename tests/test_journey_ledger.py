@@ -96,7 +96,7 @@ class JourneyLedgerTests(unittest.TestCase):
         with patch.object(Path, "read_text", without_markdown):
             rows = load_journey_ledger()["rows"]
         self.assertEqual(
-            "36f77fd20e0bd03d0a894ca3bf97061a918f98abafb637bd5d2c8df0847c0d35",
+            "87b30e28c5712278723fd0dda61d1d9b2f0df941aab6e70ddc8211338bb3e297",
             module_graph_canonical_sha256(rows),
         )
 
