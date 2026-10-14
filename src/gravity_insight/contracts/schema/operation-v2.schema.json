@@ -33,6 +33,20 @@
       "type": "object",
       "additionalProperties": {"$ref": "#/$defs/stringArray"}
     },
+    "inputItemSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "properties"],
+      "properties": {
+        "type": {"const": "object"},
+        "additionalProperties": {"type": "boolean"},
+        "required": {"$ref": "#/$defs/stringArray"},
+        "properties": {
+          "type": "object",
+          "minProperties": 1
+        }
+      }
+    },
     "inputField": {
       "type": "object",
       "additionalProperties": false,
@@ -62,6 +76,7 @@
           "enum": ["any", "string", "integer", "number", "boolean", "object", null]
         },
         "item_enum": {"type": "array"},
+        "item_schema": {"$ref": "#/$defs/inputItemSchema"},
         "min_items": {"type": ["integer", "null"], "minimum": 0},
         "max_items": {"type": ["integer", "null"], "minimum": 0},
         "max_length": {"type": ["integer", "null"], "minimum": 1},

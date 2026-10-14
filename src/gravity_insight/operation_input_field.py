@@ -65,6 +65,12 @@ def parse_input_field(
     item_enum_value = sequence_or_empty(
         config.get("item_enum"), f"input_fields.{name}.item_enum"
     )
+    item_schema_value = config.get("item_schema")
+    item_schema = (
+        {}
+        if item_schema_value is None
+        else mapping_or_error(item_schema_value, f"input_fields.{name}.item_schema")
+    )
     normalized_type = str(config.get("type", "any")).strip().lower() or "any"
     default_array = _DEFAULT_ARRAY_CONSTRAINTS.get(name) if normalized_type == "array" else None
     item_type = config.get("item_type", default_array[0] if default_array else None)
@@ -74,6 +80,7 @@ def parse_input_field(
     max_depth = config.get("max_depth", 5)
     item_type = _normalized_item_type(name, item_type)
     _validate_item_enum_type(name, normalized_type, item_enum_value)
+    _validate_item_schema_type(name, normalized_type, item_type, item_schema)
     _validate_array_bounds(name, min_items, max_items)
     _validate_max_length(name, max_length)
     _validate_max_depth(name, normalized_type, max_depth)
@@ -92,11 +99,39 @@ def parse_input_field(
         sensitive=bool(config.get("sensitive", False)),
         item_type=item_type,
         item_enum=tuple(freeze_json(item) for item in item_enum_value),
+        item_schema=freeze_json(dict(item_schema)),
         min_items=min_items,
         max_items=max_items,
         max_length=max_length,
         max_depth=max_depth,
     )
+
+
+def input_field_schema(field: Any, *, thaw_json: Any, missing: Any) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "type": field.type,
+        "required": field.required,
+        "nullable": field.nullable,
+        "sensitive": field.sensitive,
+    }
+    optional = (
+        ("enum", field.enum),
+        ("description", field.description),
+        ("item_type", field.item_type),
+        ("item_enum", field.item_enum),
+        ("item_schema", field.item_schema),
+        ("min_items", field.min_items),
+        ("max_items", field.max_items),
+        ("max_length", field.max_length),
+    )
+    for name, value in optional:
+        if value not in (None, (), {}, ""):
+            result[name] = thaw_json(value)
+    if field.default is not missing and not field.sensitive:
+        result["default"] = thaw_json(field.default)
+    if field.max_depth != 5:
+        result["max_depth"] = field.max_depth
+    return result
 
 
 def validate_input_field(
@@ -163,6 +198,39 @@ def _validate_item_enum_type(
     if item_enum_value and normalized_type != "array":
         raise ManifestError(
             f"input_fields.{name}.item_enum is only supported for arrays"
+        )
+
+
+def _validate_item_schema_type(
+    name: str,
+    normalized_type: str,
+    item_type: str | None,
+    item_schema: Mapping[str, Any],
+) -> None:
+    if not item_schema:
+        return
+    if normalized_type != "array" or item_type != "object":
+        raise ManifestError(
+            f"input_fields.{name}.item_schema requires an array of object items"
+        )
+    if item_schema.get("type") != "object":
+        raise ManifestError(
+            f"input_fields.{name}.item_schema must describe an object"
+        )
+    properties = item_schema.get("properties")
+    if not isinstance(properties, Mapping) or not properties:
+        raise ManifestError(
+            f"input_fields.{name}.item_schema must declare object properties"
+        )
+    required = item_schema.get("required", ())
+    if (
+        not isinstance(required, Sequence)
+        or isinstance(required, (str, bytes))
+        or any(not isinstance(item, str) for item in required)
+        or not set(required) <= set(properties)
+    ):
+        raise ManifestError(
+            f"input_fields.{name}.item_schema required fields must be declared properties"
         )
 
 
@@ -310,6 +378,7 @@ def _validate_array_value(
 
 
 __all__ = [
+    "input_field_schema",
     "mapping_or_error",
     "parse_input_field",
     "sequence_or_empty",

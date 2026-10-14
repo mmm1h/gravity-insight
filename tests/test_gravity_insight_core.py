@@ -327,6 +327,58 @@ class GravityInsightCoreTests(unittest.TestCase):
             client.probe("example.items.list")
             self.assertEqual(1, transport.calls[0][2]["body"]["page"])
 
+    def test_nested_item_schema_is_described_and_reference_isolated(self):
+        isolated = manifest()
+        operation = isolated["operations"][0]
+        operation["input_fields"]["filters"] = {
+            "type": "array",
+            "item_type": "object",
+            "item_schema": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["field"],
+                "properties": {"field": {"type": "string"}},
+            },
+        }
+        operation["request"]["body_fields"].append("filters")
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(Path(directory), [], operation_manifest=isolated)
+            described = client.schema("example.items.list")["input_fields"]["filters"]
+            self.assertEqual(["field"], described["item_schema"]["required"])
+            described["item_schema"]["properties"]["field"]["type"] = "integer"
+            fresh = client.schema("example.items.list")["input_fields"]["filters"]
+            self.assertEqual(
+                "string", fresh["item_schema"]["properties"]["field"]["type"]
+            )
+
+    def test_nested_item_schema_requires_an_object_array(self):
+        isolated = manifest()
+        field = isolated["operations"][0]["input_fields"]["filter"]
+        field["item_schema"] = {"type": "object"}
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(
+                ManifestError, "item_schema requires an array of object items"
+            ):
+                client_for(Path(directory), [], operation_manifest=isolated)
+
+    def test_nested_item_schema_requires_declared_required_properties(self):
+        isolated = manifest()
+        field = isolated["operations"][0]["input_fields"]["filter"]
+        field.update(
+            type="array",
+            item_type="object",
+            item_schema={
+                "type": "object",
+                "properties": {"field": {"type": "string"}},
+                "required": ["missing"],
+            },
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(
+                ManifestError, "required fields must be declared properties"
+            ):
+                client_for(Path(directory), [], operation_manifest=isolated)
+
     def test_material_probe_resolves_advertiser_from_registered_parent(self):
         parent = {
             "code": 0,

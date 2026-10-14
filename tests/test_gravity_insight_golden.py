@@ -53,6 +53,7 @@ def normalize_input(field: models.InputField) -> dict[str, Any]:
         "sensitive": field.sensitive,
         "item_type": field.item_type,
         "item_enum": plain(field.item_enum),
+        **({"item_schema": plain(field.item_schema)} if field.item_schema else {}),
         "min_items": field.min_items,
         "max_items": field.max_items,
         "max_length": field.max_length,
