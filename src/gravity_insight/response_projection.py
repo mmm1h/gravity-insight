@@ -122,17 +122,28 @@ def _project_data_container_field(
         return copied, ("invalid response primary list was omitted",), ProjectionDrift.BREAKING
     if name == page_info_name and isinstance(value, Mapping):
         return _apply_data_page_info(operation, copied, name, value, recorder)
+    if value is None:
+        return copied, (), ProjectionDrift.NONE
+    recursive_allowed = operation.response_projection.recursive_data_item_keys.get(name)
+    if recursive_allowed is not None:
+        return _apply_recursive_data_collection(
+            copied, name, value, recursive_allowed, recorder
+        )
+    projection = operation.response_projection
+    if (
+        name in projection.data_item_keys
+        or name in projection.data_dynamic_item_fields
+        or name in projection.data_numeric_suffix_item_fields
+    ):
+        return _apply_nested_data_container(
+            operation, copied, name, value, values, recorder, "object_or_array"
+        )
     if _is_json_scalar(value):
         return copied, (), ProjectionDrift.NONE
     if not isinstance(value, (Mapping, list, tuple)):
         copied.pop(name, None)
         recorder.add_breaking_field(("data", name), "json_scalar", value)
         return copied, ("non-JSON response data values were omitted (count=1)",), ProjectionDrift.BREAKING
-    recursive_allowed = operation.response_projection.recursive_data_item_keys.get(name)
-    if recursive_allowed is not None:
-        return _apply_recursive_data_collection(
-            copied, name, value, recursive_allowed, recorder
-        )
     expected_type = (
         "array" if name == primary_list else "object" if name == page_info_name
         else "json_scalar"

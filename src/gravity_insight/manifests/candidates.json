@@ -4,8 +4,8 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
-      "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-08-08 最小探针 code=0，响应仅投影安全 App 元数据，下载、图标、回调和归因配置容器固定省略。",
+      "contract_version": 3,
+      "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-10-14 官方 MCP 与前端字段证据确认安全配置容器，响应仅投影逐叶白名单中的 App 元数据和非敏感配置状态，凭据、任意属性对象及回调、下载和签名 URL 固定省略。",
       "domain": "app",
       "effect": "read",
       "input_fields": {
@@ -39,7 +39,10 @@
           "access_token",
           "token",
           "cookie",
-          "password"
+          "password",
+          "secret",
+          "client_secret",
+          "secret_key"
         ]
       },
       "request": {
@@ -71,11 +74,48 @@
             "wechat_app_id",
             "wechat_origin_id",
             "event_version",
-            "is_iaa"
-          ]
+            "is_iaa",
+            "remark"
+          ],
+          "attributed_order": [],
+          "booking_info": [
+            "attributed_priority",
+            "booking_attributed_window",
+            "booking_time",
+            "enable_booking",
+            "first_publish_time"
+          ],
+          "dryrun_mode": [
+            "baidu",
+            "bytedance",
+            "facebook",
+            "google",
+            "kuaishou",
+            "tencent"
+          ],
+          "extra_attribution_conf": [
+            "enable_asa_query",
+            "enable_dy_mini_ip_query",
+            "enable_huawei_store_client_attribution",
+            "enable_tencent_channel_data_get"
+          ],
+          "postback_conf": [
+            "alipay"
+          ],
+          "ta_conf": [
+            "ta_conf_type"
+          ],
+          "wx_app": []
         },
         "data_keys": [
           "app",
+          "wx_app",
+          "ta_conf",
+          "postback_conf",
+          "booking_info",
+          "extra_attribution_conf",
+          "attributed_order",
+          "dryrun_mode",
           "distinct_strategy",
           "reactive_window"
         ],
@@ -85,21 +125,46 @@
           "app": [
             "download_url",
             "icon_url",
-            "sub_package_list",
-            "remark"
+            "sub_package_list"
+          ],
+          "postback_conf": [
+            "bytedance",
+            "datanexus",
+            "douyu",
+            "huawei_store",
+            "masterkey",
+            "meiyou",
+            "netease_music",
+            "qihu360",
+            "tiktok",
+            "wechat_video",
+            "xiaohongshu",
+            "youku"
+          ],
+          "ta_conf": [
+            "ta_app_id",
+            "ta_properties",
+            "ta_url"
+          ],
+          "wx_app": [
+            "secret"
           ]
         },
         "known_omitted_data_keys": [
-          "wx_app",
-          "ta_conf",
-          "postback_conf",
-          "booking_info",
           "clickback_url",
-          "callback_url",
-          "extra_attribution_conf",
-          "attributed_order",
-          "dryrun_mode"
+          "callback_url"
         ],
+        "known_omitted_nested_item_keys": {
+          "alipay": [
+            "alipay_app_id",
+            "key"
+          ]
+        },
+        "nested_item_keys": {
+          "alipay": [
+            "user_id_mode"
+          ]
+        },
         "required_data_keys": [
           "app"
         ]

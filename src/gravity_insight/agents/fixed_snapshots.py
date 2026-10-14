@@ -14,7 +14,7 @@ _EXACT = {
     }),
     "app_snapshot": frozenset({
         "app snapshot", "app snapshots", "application snapshot", "app governance",
-        "应用快照", "应用治理",
+        "app configuration", "应用快照", "应用治理", "应用配置",
     }),
     "attribution_snapshot": frozenset({
         "attribution snapshot", "attribution configuration",

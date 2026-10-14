@@ -23,7 +23,8 @@ def add_deepening_commands(
     concurrency_parser: Callable[[str], int],
 ) -> None:
     apps = apps_commands.add_parser(
-        "snapshot", help="Read the fixed App governance snapshot concurrently."
+        "snapshot",
+        help="Read the safe App configuration and governance snapshot concurrently.",
     )
     _add_app_and_concurrency(apps, concurrency_parser)
     apps.set_defaults(_gravity_handler=_dispatch_app_snapshot)

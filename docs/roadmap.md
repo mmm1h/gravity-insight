@@ -1,6 +1,6 @@
 # 路线图
 
-产品目标：任何数据分析任务都能在不打开 Gravity Web 的前提下，仅用本仓库完成；Agent 能机器判定发现、执行、空结果、部分失败和能力缺口。衡量单位是[分析动线](analysis-journeys.md)，不是 operation 数量；动态目录规模只从 `gravity agent-catalog` 与 compiler 获取，不在路线图手写。
+产品目标：任何数据分析任务都能在不打开 Gravity Web 的前提下，仅用本仓库完成；Agent 能机器判定发现、执行、空结果、部分失败和能力缺口。衡量单位是[分析动线](analysis-journeys.md)，不是 operation 数量；动态目录规模只从 `gravity agent-catalog` 与 compiler 获取，不在路线图手写。官方 MCP 补全复用现有 Runtime owner：U1 提供受控元数据筛选，U2 以逐叶白名单提供 App 安全配置；凭据、任意属性对象、敏感 URL、未知字段和收藏失败关闭，应用创建及远程托管排除；canonical `work-dashboard` 无 `app_snapshot` 消费者，现有读取能力未删除。
 
 ## 当前优先级
 
