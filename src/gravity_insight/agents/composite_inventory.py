@@ -134,15 +134,18 @@ COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
             "app snapshot",
             "application snapshot",
             "app governance",
+            "app configuration",
             "应用快照",
             "应用治理",
+            "应用配置",
         ),
         "description": (
-            "并发读取 App 详情、实时事件、容量、权限菜单、角色和模板的治理快照。"
+            "并发读取 App 安全配置详情、实时事件、容量、权限菜单、角色和模板的治理快照。"
         ),
         "boundaries": (
             "不用于账号可读 App 项目清单。",
             "不执行分析查询。",
+            "不返回凭据、任意属性对象或回调、下载和签名 URL。",
         ),
         "required_inputs": ("app",),
         "input_schema": {

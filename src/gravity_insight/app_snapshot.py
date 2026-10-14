@@ -1,4 +1,4 @@
-"""Application governance snapshot composed from six stable read contracts."""
+"""Application configuration and governance snapshot from stable read contracts."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from .actionable_error_values import actual_value
 from .process_limits import MAX_CONCURRENCY
 
 
-SCHEMA_VERSION = "gravity-insight.app-snapshot.v1"
+SCHEMA_VERSION = "gravity-insight.app-snapshot.v2"
 DEFAULT_CONCURRENCY = 6
 
 
@@ -58,7 +58,7 @@ def app_snapshot(
     max_pages: int = 1_000,
     max_items: int = 100_000,
 ) -> dict[str, Any]:
-    """Return six fixed sources, using app detail as the capacity parent."""
+    """Return safe App configuration and five governance sources."""
 
     normalized_app_id = _positive_identifier(app_id, field="app_id")
     workers = _workers(max_workers)

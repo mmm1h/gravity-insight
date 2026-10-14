@@ -807,6 +807,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "start_time",
                 ],
             },
+            "app.detail": {"alipay": ["user_id_mode"]},
             "app.capacity.list": {
                 "relation_package": [
                     "end_time",
@@ -1463,7 +1464,29 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "wechat_origin_id",
                         "event_version",
                         "is_iaa",
-                    ]
+                        "remark",
+                    ],
+                    "wx_app": [],
+                    "ta_conf": ["ta_conf_type"],
+                    "postback_conf": ["alipay"],
+                    "booking_info": [
+                        "attributed_priority",
+                        "booking_attributed_window",
+                        "booking_time",
+                        "enable_booking",
+                        "first_publish_time",
+                    ],
+                    "extra_attribution_conf": [
+                        "enable_asa_query",
+                        "enable_dy_mini_ip_query",
+                        "enable_huawei_store_client_attribution",
+                        "enable_tencent_channel_data_get",
+                    ],
+                    "attributed_order": [],
+                    "dryrun_mode": [
+                        "baidu", "bytedance", "facebook", "google",
+                        "kuaishou", "tencent",
+                    ],
                 },
                 "material.bytedance.project_material.list": {
                     "instant_play_material_list": [],

@@ -120,7 +120,7 @@ preflight 决定；先用 Agent 产品卡生成节点，不手写猜测。
 | <a id="segment-members-composite"></a>`segment_members` | 产品行为见 [Segment Members v1](cli.md#segment-members-v1)。 |
 | <a id="analysis-default-dictionary-composite"></a>Analysis Default Dictionary (`analysis_default_dictionary`) | 只接受显式 App 或 `/app` binding，返回受治理的默认值字典。新增未登记键 按响应漂移处理，不能自动成为调用方配置。 |
 | `analysis_context`、`analysis_template`、`monetization_detail`、`realtime_event_catalog`、`metadata_sync` | 其他 Analysis |
-| `app_snapshot`、`attribution_snapshot`、`attribution_performance`、`attribution_user_detail` | App / Attribution |
+| `app_snapshot`、`attribution_snapshot`、`attribution_performance`、`attribution_user_detail` | App / Attribution；`app_snapshot` 返回逐叶白名单约束的安全配置与治理来源，不返回凭据或回调、下载、签名 URL。 |
 | `title_package`、`bilibili_account_performance`、`advertiser_profile` | 其他 Material / Promotion |
 | `company_usage`、`report_directory`、`report_subscriptions`、`custom_audience` | 其他 Reports |
 | `kanban_mutation`、`custom_metric_mutation`、`metadata_template_mutation` | Governed mutation |

@@ -29,8 +29,8 @@
     "reference_evidence_sha256": "33ae2154962b73cf71f5f7daae80ac652841d3b276c80a8dddc57201245876c4",
     "manual_review_sha256": "2a5cff80fd45c89d566185a6b0a5abec0d6881ce6b096c40814dc00043630fc2",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3292,
-    "scanned_file_count": 3284,
+    "version_controlled_file_count": 3293,
+    "scanned_file_count": 3285,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",

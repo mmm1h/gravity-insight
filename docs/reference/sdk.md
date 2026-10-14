@@ -134,7 +134,7 @@ methods = sorted(
 | Segment | `prepare_segment_evaluation()`、`segment_evaluate()`、`segment_snapshot()`、`segment_members()`、`segment_create_from_analysis()`、`segment_create_from_rule()`、`segment_create_from_history()`、`segment_create_from_tmp()`、`segment_update()`、`segment_update_rule()`、`segment_refresh()`、`segment_delete()` |
 | Dashboard / Kanban | `dashboard_snapshot()`、`prepare_dashboard_analysis()`、`run_dashboard_analysis()`、`kanban_mutation_schema()`、`kanban_mutation()` |
 | 用户、订单与变现 | `user_journey()`、`user_detail_aggregate_input_schema()`、`prepare_user_detail_aggregate()`、`user_detail_aggregate()`、`order_directory()`、`order_split_trace()`、`monetization_detail()` |
-| App 与归因 | `app_snapshot()`、`account_permission_profile()`、`attribution_snapshot()`、`attribution_performance()`、`attribution_user_detail()` |
+| App 安全配置与归因 | `app_snapshot()`、`account_permission_profile()`、`attribution_snapshot()`、`attribution_performance()`、`attribution_user_detail()`；`app_snapshot()` 的 App 配置只含逐叶白名单，不含凭据或回调、下载、签名 URL。 |
 | 经营与投放 | `business_pulse()`、`company_usage()`、`advertiser_profile()`、`bilibili_account_performance()`、`custom_audiences()` |
 | 素材 | `material_performance()`、`fetch_material_asset()`、`title_packages()` |
 | Promotion | `promotion_performance()` |

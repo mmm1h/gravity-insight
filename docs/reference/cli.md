@@ -64,7 +64,7 @@ raw operation。
 | Analysis Query | `analysis query` | `analysis_query()` | `analysis_query` |
 | Analysis Context / Defaults | `analysis context` / `analysis defaults` | `analysis_context()` / `analysis_default_dictionary()` | `analysis_context` / `analysis_default_dictionary` |
 | Realtime Event Catalog | `analysis realtime-events` | 见[方法索引](sdk.md#method-index) | 见[adapter 索引](plan.md#adapter-index) |
-| App / Permission Snapshot | `apps snapshot` / `apps permission-profile` | 同上 | 同上 |
+| App Configuration / Permission Snapshot | `apps snapshot` / `apps permission-profile` | 同上 | 同上 |
 | Attribution | `attribution snapshot\|performance\|user-detail` | 同上 | 同上 |
 | Reports / Business Pulse / Report Directory | `reports pulse\|usage\|directory\|subscriptions` | `business_pulse()` / matching methods | `business_pulse` / matching composites |
 | Dashboard | `analysis dashboard snapshot/prepare/run`、`analysis dashboard kanban schema/prepare/mutate` | `dashboard_snapshot()` / dashboard analysis / Kanban methods | `dashboard_snapshot` / `dashboard_analysis` / `kanban_mutation` |
@@ -192,6 +192,7 @@ gravity insight run analysis.event.list --input <request.json> --all-pages
 | --- | --- |
 | <a id="derived-metrics"></a>Derived Metrics | `gravity derive --input <request.json>` 对已有 result envelope 做本地确定性算术，不访问网络。 request 使用 `source/spec`；结果保留来源状态，输入为 partial 时不会把派生值包装成完整上游事实；派生 provenance 标为 caller-defined，不改写上游来源。 |
 | <a id="single-user-journey"></a>Single-user journey | `gravity analysis user journey` 只接受调用方明确给出的 client id、App 和日期/日期窗；返回固定受管 字段，不用于发现任意用户。 |
+| <a id="app-configuration-snapshot"></a>App configuration snapshot | `gravity apps snapshot --app <app>` 返回 App 安全配置与五个治理来源。`app.detail` v3 只开放逐叶白名单中的元数据、预约状态、演练开关、额外归因开关和有限回传模式；凭据、任意属性对象、回调/下载/签名 URL 及未知新增字段均不会穿过投影边界。 |
 | <a id="order-directory-v1"></a>Order Directory v1 | `gravity analysis order directory --app <app> --date <date>` 完整读取单日受管订单目录。额外身份、字段或不完整分页失败关闭。 |
 | <a id="order-split-trace-v1"></a>Order Split Trace v1 | `gravity analysis order trace --app <app> --date <date> --trace-id <id>` 先在单日父目录唯一匹配显式 TraceID，再读取一次 child 安全投影；结果、错误或 receipt 不回显 TraceID。 |
 | <a id="dashboard-control-plane-snapshot"></a>Dashboard control-plane snapshot | `gravity analysis dashboard snapshot --app <app> --ref <id-or-exact-name>` 读取控制面，不执行图表，也不 模拟 layout、favourite 或页面 global filter。 |
